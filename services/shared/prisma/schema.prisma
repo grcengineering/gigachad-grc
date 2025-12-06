@@ -1,0 +1,3041 @@
+// GigaChad GRC - Prisma Schema
+// This schema is shared across all services
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ===========================================
+// Enums for Tier 1 Models
+// ===========================================
+
+// Control Implementation Status
+enum ControlImplementationStatus {
+  not_started
+  in_progress
+  implemented
+  not_applicable
+}
+
+// Evidence Status
+enum EvidenceStatus {
+  pending_review
+  approved
+  rejected
+  expired
+}
+
+// Policy Status
+enum PolicyStatus {
+  draft
+  in_review
+  approved
+  published
+  retired
+}
+
+// Risk Intake Status
+enum RiskIntakeStatus {
+  risk_identified
+  not_a_risk
+  actual_risk
+  risk_analysis_in_progress
+  risk_analyzed
+}
+
+// Risk Assessment Status
+enum RiskAssessmentStatus {
+  risk_assessor_analysis
+  grc_approval
+  grc_revision
+  done
+}
+
+// Risk Treatment Status
+enum RiskTreatmentStatus {
+  treatment_decision_review
+  risk_mitigation_in_progress
+  identify_executive_approver
+  executive_approval
+  mitigation_status_update
+  mitigation_status_routing
+  risk_mitigation_complete
+  still_mitigating
+  risk_accept
+  risk_transfer
+  risk_avoid
+  risk_auto_accept
+}
+
+// Risk Likelihood
+enum RiskLikelihood {
+  rare
+  unlikely
+  possible
+  likely
+  almost_certain
+}
+
+// Risk Impact
+enum RiskImpact {
+  negligible
+  minor
+  moderate
+  major
+  severe
+}
+
+// Risk Level
+enum RiskLevel {
+  very_low
+  low
+  medium
+  high
+  very_high
+}
+
+// Vendor Status
+enum VendorStatus {
+  active
+  inactive
+  pending_onboarding
+  offboarding
+  terminated
+}
+
+// Vendor Tier
+enum VendorTier {
+  tier_1
+  tier_2
+  tier_3
+  tier_4
+}
+
+// Organization Status
+enum OrganizationStatus {
+  active
+  inactive
+  archived
+}
+
+// User Status
+enum UserStatus {
+  active
+  inactive
+  suspended
+}
+
+// User Role
+enum UserRole {
+  admin
+  compliance_manager
+  auditor
+  viewer
+}
+
+// Collector Run Status
+enum CollectorRunStatus {
+  running
+  success
+  error
+}
+
+// Readiness Assessment Status
+enum ReadinessAssessmentStatus {
+  draft
+  in_progress
+  completed
+}
+
+// Assessment Requirement Compliance Status
+enum ComplianceStatus {
+  not_assessed
+  compliant
+  partial
+  non_compliant
+  not_applicable
+}
+
+// Task Status
+enum TaskStatus {
+  todo
+  in_progress
+  completed
+  cancelled
+}
+
+// Review Status (for Policy Reviews)
+enum ReviewStatus {
+  pending
+  approved
+  rejected
+}
+
+// Policy Training Status
+enum PolicyTrainingStatus {
+  scheduled
+  in_progress
+  completed
+  overdue
+}
+
+// Integration Status
+enum IntegrationStatus {
+  pending_setup
+  active
+  inactive
+  error
+}
+
+// API Key Status
+enum ApiKeyStatus {
+  active
+  revoked
+  expired
+}
+
+// Alert Job Status
+enum AlertJobStatus {
+  queued
+  running
+  completed
+  failed
+  cancelled
+}
+
+// Alert Status
+enum AlertStatus {
+  open
+  acknowledged
+  resolved
+  suppressed
+}
+
+// Audit Status
+enum AuditStatus {
+  planning
+  fieldwork
+  testing
+  reporting
+  completed
+  cancelled
+}
+
+// Asset Status
+enum AssetStatus {
+  active
+  inactive
+  decommissioned
+}
+
+// Contract Status
+enum ContractStatus {
+  draft
+  pending
+  active
+  expiring_soon
+  expired
+  terminated
+  renewed
+}
+
+// Risk Scenario Status
+enum RiskScenarioStatus {
+  open
+  acknowledged
+  mitigated
+  accepted
+  closed
+}
+
+// Vendor Assessment Status
+enum VendorAssessmentStatus {
+  pending
+  in_progress
+  completed
+}
+
+// Security Questionnaire Question Status
+enum QuestionStatus {
+  pending
+  in_progress
+  completed
+  declined
+}
+
+// Security Questionnaire Status
+enum QuestionnaireStatus {
+  pending
+  in_progress
+  answered
+  approved
+}
+
+// Priority Levels (used across multiple models)
+enum Priority {
+  low
+  medium
+  high
+  critical
+}
+
+// Severity Levels (used across multiple models)
+enum Severity {
+  critical
+  high
+  medium
+  low
+  info
+  observation
+}
+
+// Vendor Category
+enum VendorCategory {
+  software_vendor
+  cloud_provider
+  professional_services
+  hardware_vendor
+  consultant
+}
+
+// Vendor Compliance Status
+enum VendorComplianceStatus {
+  compliant
+  non_compliant
+  pending_review
+}
+
+// Asset Criticality
+enum AssetCriticality {
+  low
+  medium
+  high
+  critical
+}
+
+// Knowledge Base Category
+enum KnowledgeBaseCategory {
+  security
+  privacy
+  compliance
+  technical
+  operational
+}
+
+// Knowledge Base Status
+enum KnowledgeBaseStatus {
+  draft
+  approved
+  archived
+}
+
+// Audit Request Status
+enum AuditRequestStatus {
+  open
+  in_progress
+  submitted
+  under_review
+  approved
+  rejected
+  clarification_needed
+}
+
+// Audit Finding Status
+enum AuditFindingStatus {
+  open
+  acknowledged
+  remediation_planned
+  remediation_in_progress
+  resolved
+  accepted_risk
+}
+
+// Webhook Event Status
+enum WebhookEventStatus {
+  received
+  processing
+  processed
+  failed
+}
+
+// Risk Treatment Decision
+enum RiskTreatmentDecision {
+  mitigate
+  accept
+  transfer
+  avoid
+}
+
+// Risk Treatment Plan Status
+enum RiskTreatmentPlanStatus {
+  pending
+  in_progress
+  completed
+  cancelled
+}
+
+// Vendor Risk Score
+enum VendorRiskScore {
+  very_low
+  low
+  medium
+  high
+  critical
+}
+
+// Asset Type
+enum AssetType {
+  server
+  workstation
+  mobile
+  network
+  application
+  data
+}
+
+// Control Test Type
+enum ControlTestType {
+  manual
+  automated
+}
+
+// Control Test Result
+enum ControlTestResult {
+  pass
+  fail
+  partial
+  not_tested
+}
+
+// ===========================================
+// Core Entities
+// ===========================================
+
+model Organization {
+  id          String             @id @default(uuid())
+  name        String
+  slug        String             @unique
+  description String?
+  status      OrganizationStatus @default(active)
+  settings    Json               @default("{}")
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+
+  // Relations
+  users                  User[]
+  controls               Control[]
+  controlImplementations ControlImplementation[]
+  evidence               Evidence[]
+  policies               Policy[]
+  integrations           Integration[]
+  apiKeys                ApiKey[]
+  alerts                 Alert[]
+  auditLogs              AuditLog[]
+  readinessAssessments   ReadinessAssessment[]
+  evidenceCollectors     ControlEvidenceCollector[]
+  permissionGroups       PermissionGroup[]
+  assets                 Asset[]
+  risks                  Risk[]
+  vendors                Vendor[]
+
+  @@map("organizations")
+}
+
+model User {
+  id             String     @id @default(uuid())
+  keycloakId     String     @unique @map("keycloak_id")
+  email          String
+  firstName      String     @map("first_name")
+  lastName       String     @map("last_name")
+  displayName    String     @map("display_name")
+  organizationId String     @map("organization_id")
+  role           UserRole   @default(viewer)
+  status         UserStatus @default(active)
+  lastLoginAt    DateTime?  @map("last_login_at")
+  preferences    Json       @default("{}")
+  createdAt      DateTime   @default(now()) @map("created_at")
+  updatedAt      DateTime   @updatedAt @map("updated_at")
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  // Owned entities
+  ownedImplementations ControlImplementation[] @relation("ImplementationOwner")
+  ownedPolicies        Policy[]                @relation("PolicyOwner")
+  assignedTasks        RemediationTask[]       @relation("TaskAssignee")
+  ownedRequirements    FrameworkRequirement[]  @relation("RequirementOwner")
+
+  // Comments & Tasks
+  comments         Comment[] @relation("CommentAuthor")
+  assignedNewTasks Task[]    @relation("TaskAssigneeNew")
+  createdTasks     Task[]    @relation("TaskCreator")
+
+  // Policy status changes
+  policyStatusChanges PolicyStatusHistory[] @relation("PolicyStatusChanger")
+
+  // Notifications
+  notifications           Notification[]           @relation("UserNotifications")
+  notificationPreferences NotificationPreference[] @relation("UserNotificationPreferences")
+
+  // RBAC
+  groupMemberships    UserGroupMembership[]
+  permissionOverrides UserPermissionOverride[]
+
+  // Audit trail relations for Tier 1 models
+  controlsDeleted  Control[]  @relation("ControlDeletedBy")
+  evidenceCreated  Evidence[] @relation("EvidenceCreatedBy")
+  evidenceUpdated  Evidence[] @relation("EvidenceUpdatedBy")
+  evidenceReviewed Evidence[] @relation("EvidenceReviewedBy")
+  evidenceDeleted  Evidence[] @relation("EvidenceDeletedBy")
+  policiesCreated  Policy[]   @relation("PolicyCreatedBy")
+  policiesUpdated  Policy[]   @relation("PolicyUpdatedBy")
+  policiesApproved Policy[]   @relation("PolicyApprovedBy")
+  policiesDeleted  Policy[]   @relation("PolicyDeletedBy")
+  risksCreated     Risk[]     @relation("RiskCreatedBy")
+  risksReported    Risk[]     @relation("RiskReporter")
+  risksAsGrcSme    Risk[]     @relation("RiskGrcSme")
+  risksAsAssessor  Risk[]     @relation("RiskAssessor")
+  risksOwned       Risk[]     @relation("RiskOwner")
+  risksDeleted     Risk[]     @relation("RiskDeletedBy")
+  vendorsCreated   Vendor[]   @relation("VendorCreatedBy")
+  vendorsDeleted   Vendor[]   @relation("VendorDeletedBy")
+
+  // Phase 1: Controls & Evidence audit trail
+  evidenceFoldersCreated        EvidenceFolder[]        @relation("EvidenceFolderCreatedBy")
+  controlImplementationsCreated ControlImplementation[] @relation("ControlImplementationCreatedBy")
+  controlImplementationsUpdated ControlImplementation[] @relation("ControlImplementationUpdatedBy")
+  controlTestsCreated           ControlTest[]           @relation("ControlTestCreatedBy")
+  controlTestsUpdated           ControlTest[]           @relation("ControlTestUpdatedBy")
+  policyVersionsCreated         PolicyVersion[]         @relation("PolicyVersionCreatedBy")
+  vendorContractsCreated        VendorContract[]        @relation("VendorContractCreatedBy")
+  vendorDocumentsCreated        VendorDocument[]        @relation("VendorDocumentCreatedBy")
+  vendorDocumentsReviewed       VendorDocument[]        @relation("VendorDocumentReviewedBy")
+  auditsCreated                 Audit[]                 @relation("AuditCreatedBy")
+  auditEvidenceUploaded         AuditEvidence[]         @relation("AuditEvidenceUploadedBy")
+  auditEvidenceReviewed         AuditEvidence[]         @relation("AuditEvidenceReviewedBy")
+  auditTestResultsTested        AuditTestResult[]       @relation("AuditTestResultTestedBy")
+  auditTestResultsReviewed      AuditTestResult[]       @relation("AuditTestResultReviewedBy")
+
+  // Phase 2: Frameworks & Policies audit trail
+  controlEvidenceCollectorsCreated ControlEvidenceCollector[] @relation("ControlEvidenceCollectorCreatedBy")
+  policyApprovalsApproved          PolicyApproval[]           @relation("PolicyApprovalApprover")
+
+  // Phase 3: Risks & TPRM audit trail
+  riskTreatmentUpdatesCreated  RiskTreatmentUpdate[] @relation("RiskTreatmentUpdateCreatedBy")
+  riskScenariosCreated         RiskScenario[]        @relation("RiskScenarioCreatedBy")
+  riskHistoryChanged           RiskHistory[]         @relation("RiskHistoryChangedBy")
+  riskConfigurationsUpdated    RiskConfiguration[]   @relation("RiskConfigurationUpdatedBy")
+  vendorAssessmentsCreated     VendorAssessment[]    @relation("VendorAssessmentCreatedBy")
+  vendorRiskFindingsDiscovered VendorRiskFinding[]   @relation("VendorRiskFindingDiscoveredBy")
+  vendorAccessReviewsCreated   VendorAccessReview[]  @relation("VendorAccessReviewCreatedBy")
+  vendorAccessReviewsReviewed  VendorAccessReview[]  @relation("VendorAccessReviewReviewedBy")
+
+  // Phase 4: Trust & Audit audit trail
+  questionnaireRequestsCreated     QuestionnaireRequest[]  @relation("QuestionnaireRequestCreatedBy")
+  questionnaireRequestsAssignedTo  QuestionnaireRequest[]  @relation("QuestionnaireRequestAssignedTo")
+  questionnaireQuestionsAssignedTo QuestionnaireQuestion[] @relation("QuestionnaireQuestionAssignedTo")
+  questionnaireQuestionsReviewed   QuestionnaireQuestion[] @relation("QuestionnaireQuestionReviewedBy")
+  questionAttachmentsUploaded      QuestionAttachment[]    @relation("QuestionAttachmentUploadedBy")
+  knowledgeBaseEntriesCreated      KnowledgeBaseEntry[]    @relation("KnowledgeBaseEntryCreatedBy")
+  knowledgeBaseEntriesUpdated      KnowledgeBaseEntry[]    @relation("KnowledgeBaseEntryUpdatedBy")
+  knowledgeBaseEntriesApproved     KnowledgeBaseEntry[]    @relation("KnowledgeBaseEntryApprovedBy")
+  knowledgeAttachmentsUploaded     KnowledgeAttachment[]   @relation("KnowledgeAttachmentUploadedBy")
+  trustCenterContentCreated        TrustCenterContent[]    @relation("TrustCenterContentCreatedBy")
+  auditRequestsCreated             AuditRequest[]          @relation("AuditRequestCreatedBy")
+  auditRequestsAssignedTo          AuditRequest[]          @relation("AuditRequestAssignedTo")
+  auditRequestsRequestedBy         AuditRequest[]          @relation("AuditRequestRequestedBy")
+  auditFindingsIdentified          AuditFinding[]          @relation("AuditFindingIdentifiedBy")
+  auditMeetingsCreated             AuditMeeting[]          @relation("AuditMeetingCreatedBy")
+  auditPortalUsersInvited          AuditPortalUser[]       @relation("AuditPortalUserInvitedBy")
+
+  @@unique([organizationId, email])
+  @@map("users")
+}
+
+// ===========================================
+// Controls Module
+// ===========================================
+
+model Control {
+  id                  String    @id @default(uuid())
+  controlId           String    @map("control_id") // e.g., "AC-001"
+  title               String
+  description         String
+  category            String // access_control, data_protection, etc.
+  subcategory         String?
+  isCustom            Boolean   @default(false) @map("is_custom")
+  organizationId      String?   @map("organization_id") // null for system controls
+  tags                String[]  @default([])
+  guidance            String?
+  automationSupported Boolean   @default(false) @map("automation_supported")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+  deletedAt           DateTime? @map("deleted_at")
+  deletedBy           String?   @map("deleted_by")
+
+  // Relations
+  organization           Organization?              @relation(fields: [organizationId], references: [id])
+  deletedByUser          User?                      @relation("ControlDeletedBy", fields: [deletedBy], references: [id])
+  implementations        ControlImplementation[]
+  mappings               ControlMapping[]
+  evidenceLinks          EvidenceControlLink[]
+  policyLinks            PolicyControlLink[]
+  complianceChecks       ComplianceCheck[]
+  evidenceCollectors     ControlEvidenceCollector[]
+  riskControls           RiskControl[]
+  requirementStatusLinks RequirementStatusControl[]
+  remediationTaskLinks   RemediationTaskControl[]
+  knowledgeBaseLinks     KnowledgeBaseControl[]
+
+  @@unique([controlId, organizationId])
+  @@index([category])
+  @@index([organizationId])
+  @@map("controls")
+}
+
+model ControlImplementation {
+  id                  String                      @id @default(uuid())
+  controlId           String                      @map("control_id")
+  organizationId      String                      @map("organization_id")
+  status              ControlImplementationStatus @default(not_started)
+  ownerId             String?                     @map("owner_id")
+  implementationNotes String?                     @map("implementation_notes")
+  testingFrequency    String                      @default("quarterly") @map("testing_frequency")
+  lastTestedAt        DateTime?                   @map("last_tested_at")
+  nextTestDue         DateTime?                   @map("next_test_due")
+  effectivenessScore  Int?                        @map("effectiveness_score") // 0-100
+  dueDate             DateTime?                   @map("due_date")
+  createdBy           String                      @map("created_by")
+  updatedBy           String                      @map("updated_by")
+  createdAt           DateTime                    @default(now()) @map("created_at")
+  updatedAt           DateTime                    @updatedAt @map("updated_at")
+
+  // Relations
+  control            Control                    @relation(fields: [controlId], references: [id])
+  organization       Organization               @relation(fields: [organizationId], references: [id])
+  owner              User?                      @relation("ImplementationOwner", fields: [ownerId], references: [id])
+  createdByUser      User                       @relation("ControlImplementationCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+  updatedByUser      User                       @relation("ControlImplementationUpdatedBy", fields: [updatedBy], references: [id], onDelete: Restrict)
+  tests              ControlTest[]
+  evidenceLinks      EvidenceControlLink[]
+  evidenceCollectors ControlEvidenceCollector[]
+
+  @@unique([controlId, organizationId])
+  @@index([organizationId, status])
+  @@map("control_implementations")
+}
+
+model ControlTest {
+  id               String            @id @default(uuid())
+  implementationId String            @map("implementation_id")
+  testType         ControlTestType   @default(manual) @map("test_type")
+  result           ControlTestResult @default(not_tested)
+  findings         String?
+  recommendations  String?
+  testedAt         DateTime          @map("tested_at")
+  createdBy        String            @map("created_by")
+  updatedBy        String            @map("updated_by")
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  implementation ControlImplementation @relation(fields: [implementationId], references: [id])
+  createdByUser  User                  @relation("ControlTestCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+  updatedByUser  User                  @relation("ControlTestUpdatedBy", fields: [updatedBy], references: [id], onDelete: Restrict)
+  evidenceLinks  ControlTestEvidence[]
+
+  @@index([implementationId])
+  @@map("control_tests")
+}
+
+model ControlTestEvidence {
+  id         String   @id @default(uuid())
+  testId     String   @map("test_id")
+  evidenceId String   @map("evidence_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  test     ControlTest @relation(fields: [testId], references: [id], onDelete: Cascade)
+  evidence Evidence    @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+
+  @@unique([testId, evidenceId])
+  @@index([evidenceId])
+  @@map("control_test_evidence")
+}
+
+// ===========================================
+// Control Evidence Collectors
+// ===========================================
+
+model ControlEvidenceCollector {
+  id               String  @id @default(uuid())
+  controlId        String  @map("control_id")
+  implementationId String  @map("implementation_id")
+  organizationId   String  @map("organization_id")
+  name             String
+  description      String?
+
+  // Configuration mode
+  mode          String  @default("standalone") // 'standalone' or 'integration'
+  integrationId String? @map("integration_id") // If using existing integration auth
+
+  // API Configuration (standalone mode or endpoint override)
+  baseUrl     String? @map("base_url")
+  endpoint    String? // Path like /api/users/mfa-status
+  method      String  @default("GET")
+  headers     Json?
+  queryParams Json?   @map("query_params")
+  body        Json?
+  authType    String? @map("auth_type") // api_key, oauth2, bearer, basic
+  authConfig  Json?   @map("auth_config")
+
+  // Response mapping
+  responseMapping Json?   @map("response_mapping") // How to transform response to evidence
+  evidenceTitle   String? @map("evidence_title") // Template for evidence title
+  evidenceType    String  @default("automated") @map("evidence_type")
+
+  // Schedule
+  scheduleEnabled   Boolean @default(false) @map("schedule_enabled")
+  scheduleFrequency String? @map("schedule_frequency") // daily, weekly, monthly, custom
+  scheduleCron      String? @map("schedule_cron") // For custom schedules
+
+  // Status tracking
+  isActive       Boolean   @default(true) @map("is_active")
+  lastRunAt      DateTime? @map("last_run_at")
+  lastRunStatus  String?   @map("last_run_status") // success, error
+  lastRunError   String?   @map("last_run_error")
+  nextRunAt      DateTime? @map("next_run_at")
+  totalRuns      Int       @default(0) @map("total_runs")
+  successfulRuns Int       @default(0) @map("successful_runs")
+
+  createdBy String   @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  control        Control               @relation(fields: [controlId], references: [id])
+  implementation ControlImplementation @relation(fields: [implementationId], references: [id])
+  organization   Organization          @relation(fields: [organizationId], references: [id])
+  integration    Integration?          @relation(fields: [integrationId], references: [id])
+  createdByUser  User                  @relation("ControlEvidenceCollectorCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+  runs           CollectorRun[]
+
+  @@index([organizationId, controlId])
+  @@index([scheduleEnabled, nextRunAt])
+  @@map("control_evidence_collectors")
+}
+
+model CollectorRun {
+  id              String             @id @default(uuid())
+  collectorId     String             @map("collector_id")
+  triggeredBy     String             @map("triggered_by") // 'schedule' or 'manual'
+  triggeredByUser String?            @map("triggered_by_user")
+  status          CollectorRunStatus @default(running)
+  startedAt       DateTime           @default(now()) @map("started_at")
+  completedAt     DateTime?          @map("completed_at")
+  evidenceCreated Int                @default(0) @map("evidence_created")
+  evidenceId      String?            @map("evidence_id") // ID of created evidence
+  responseCode    Int?               @map("response_code")
+  errorMessage    String?            @map("error_message")
+  logs            Json               @default("[]")
+
+  // Relations
+  collector ControlEvidenceCollector @relation(fields: [collectorId], references: [id], onDelete: Cascade)
+
+  @@index([collectorId, startedAt])
+  @@map("collector_runs")
+}
+
+// ===========================================
+// Evidence Module
+// ===========================================
+
+model Evidence {
+  id                String         @id @default(uuid())
+  organizationId    String         @map("organization_id")
+  title             String
+  description       String?
+  type              String // screenshot, document, export, report, etc.
+  source            String         @default("manual") // manual, aws, github, etc.
+  status            EvidenceStatus @default(pending_review)
+  filename          String
+  mimeType          String         @map("mime_type")
+  size              Int
+  storagePath       String         @map("storage_path")
+  collectedAt       DateTime       @map("collected_at")
+  validFrom         DateTime       @map("valid_from")
+  validUntil        DateTime?      @map("valid_until")
+  isExpired         Boolean        @default(false) @map("is_expired")
+  tags              String[]       @default([])
+  category          String?
+  metadata          Json?
+  reviewedBy        String?        @map("reviewed_by")
+  reviewedAt        DateTime?      @map("reviewed_at")
+  reviewNotes       String?        @map("review_notes")
+  version           Int            @default(1)
+  previousVersionId String?        @map("previous_version_id")
+  folderId          String?        @map("folder_id")
+  createdBy         String         @map("created_by")
+  updatedBy         String         @map("updated_by")
+  createdAt         DateTime       @default(now()) @map("created_at")
+  updatedAt         DateTime       @updatedAt @map("updated_at")
+  deletedAt         DateTime?      @map("deleted_at")
+  deletedBy         String?        @map("deleted_by")
+
+  // Relations
+  organization           Organization                @relation(fields: [organizationId], references: [id])
+  folder                 EvidenceFolder?             @relation(fields: [folderId], references: [id])
+  createdByUser          User                        @relation("EvidenceCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser          User                        @relation("EvidenceUpdatedBy", fields: [updatedBy], references: [id])
+  reviewedByUser         User?                       @relation("EvidenceReviewedBy", fields: [reviewedBy], references: [id])
+  deletedByUser          User?                       @relation("EvidenceDeletedBy", fields: [deletedBy], references: [id])
+  controlLinks           EvidenceControlLink[]
+  testLinks              ControlTestEvidence[]
+  requirementStatusLinks RequirementStatusEvidence[]
+  vendorAssessmentLinks  VendorAssessmentEvidence[]
+  knowledgeBaseLinks     KnowledgeBaseEvidence[]
+
+  @@index([organizationId, status])
+  @@index([organizationId, type])
+  @@index([validUntil])
+  @@map("evidence")
+}
+
+model EvidenceFolder {
+  id             String   @id @default(uuid())
+  organizationId String   @map("organization_id")
+  name           String
+  parentId       String?  @map("parent_id")
+  path           String
+  createdBy      String   @map("created_by")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  // Relations
+  parent        EvidenceFolder?  @relation("FolderHierarchy", fields: [parentId], references: [id])
+  children      EvidenceFolder[] @relation("FolderHierarchy")
+  evidence      Evidence[]
+  createdByUser User             @relation("EvidenceFolderCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+
+  @@unique([organizationId, path])
+  @@map("evidence_folders")
+}
+
+model EvidenceControlLink {
+  id               String   @id @default(uuid())
+  evidenceId       String   @map("evidence_id")
+  controlId        String   @map("control_id")
+  implementationId String   @map("implementation_id")
+  linkedBy         String   @map("linked_by")
+  notes            String?
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  // Relations
+  evidence       Evidence              @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+  control        Control               @relation(fields: [controlId], references: [id])
+  implementation ControlImplementation @relation(fields: [implementationId], references: [id])
+
+  @@unique([evidenceId, implementationId])
+  @@index([controlId])
+  @@index([implementationId])
+  @@map("evidence_control_links")
+}
+
+// ===========================================
+// Frameworks Module
+// ===========================================
+
+model Framework {
+  id             String    @id @default(uuid())
+  type           String // soc2, iso27001, hipaa, etc.
+  name           String
+  version        String
+  description    String
+  isActive       Boolean   @default(true) @map("is_active")
+  isCustom       Boolean   @default(false) @map("is_custom")
+  organizationId String?   @map("organization_id") // null for system frameworks
+  publishedDate  DateTime? @map("published_date")
+  effectiveDate  DateTime? @map("effective_date")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  requirements FrameworkRequirement[]
+  mappings     ControlMapping[]
+  assessments  ReadinessAssessment[]
+
+  @@unique([type, version, organizationId])
+  @@map("frameworks")
+}
+
+model FrameworkRequirement {
+  id          String    @id @default(uuid())
+  frameworkId String    @map("framework_id")
+  parentId    String?   @map("parent_id")
+  reference   String // e.g., "CC1.1", "A.5.1"
+  title       String
+  description String
+  guidance    String?
+  level       Int       @default(0) // hierarchy level
+  order       Int       @default(0)
+  isCategory  Boolean   @default(false) @map("is_category")
+  ownerId     String?   @map("owner_id") // Requirement owner
+  ownerNotes  String?   @map("owner_notes") // Notes from the owner
+  dueDate     DateTime? @map("due_date") // Target completion date
+  priority    String? // high, medium, low
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  framework         Framework              @relation(fields: [frameworkId], references: [id], onDelete: Cascade)
+  parent            FrameworkRequirement?  @relation("RequirementHierarchy", fields: [parentId], references: [id])
+  children          FrameworkRequirement[] @relation("RequirementHierarchy")
+  mappings          ControlMapping[]
+  requirementStatus RequirementStatus[]
+  gaps              Gap[]
+  owner             User?                  @relation("RequirementOwner", fields: [ownerId], references: [id])
+
+  @@unique([frameworkId, reference])
+  @@index([frameworkId, parentId])
+  @@index([ownerId])
+  @@map("framework_requirements")
+}
+
+model ControlMapping {
+  id            String   @id @default(uuid())
+  frameworkId   String   @map("framework_id")
+  requirementId String   @map("requirement_id")
+  controlId     String   @map("control_id")
+  mappingType   String   @default("primary") @map("mapping_type") // primary, supporting
+  notes         String?
+  createdBy     String   @map("created_by")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relations
+  framework   Framework            @relation(fields: [frameworkId], references: [id], onDelete: Cascade)
+  requirement FrameworkRequirement @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+  control     Control              @relation(fields: [controlId], references: [id])
+
+  @@unique([frameworkId, requirementId, controlId])
+  @@map("control_mappings")
+}
+
+model ReadinessAssessment {
+  id             String                    @id @default(uuid())
+  organizationId String                    @map("organization_id")
+  frameworkId    String                    @map("framework_id")
+  name           String
+  description    String?
+  status         ReadinessAssessmentStatus @default(draft)
+  assessedAt     DateTime?                 @map("assessed_at")
+  assessedBy     String?                   @map("assessed_by")
+  score          Float                     @default(0)
+  gapCount       Int                       @default(0) @map("gap_count")
+  createdAt      DateTime                  @default(now()) @map("created_at")
+  updatedAt      DateTime                  @updatedAt @map("updated_at")
+
+  // Relations
+  organization        Organization        @relation(fields: [organizationId], references: [id])
+  framework           Framework           @relation(fields: [frameworkId], references: [id])
+  requirementStatuses RequirementStatus[]
+  gaps                Gap[]
+  remediationTasks    RemediationTask[]
+
+  @@index([organizationId, frameworkId])
+  @@map("readiness_assessments")
+}
+
+model RequirementStatus {
+  id            String           @id @default(uuid())
+  assessmentId  String           @map("assessment_id")
+  requirementId String           @map("requirement_id")
+  status        ComplianceStatus @default(not_assessed)
+  notes         String?
+  updatedBy     String?          @map("updated_by")
+  createdAt     DateTime         @default(now()) @map("created_at")
+  updatedAt     DateTime         @updatedAt @map("updated_at")
+
+  // Relations
+  assessment    ReadinessAssessment         @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  requirement   FrameworkRequirement        @relation(fields: [requirementId], references: [id])
+  evidenceLinks RequirementStatusEvidence[]
+  controlLinks  RequirementStatusControl[]
+
+  @@unique([assessmentId, requirementId])
+  @@map("requirement_statuses")
+}
+
+model RequirementStatusEvidence {
+  id         String   @id @default(uuid())
+  statusId   String   @map("status_id")
+  evidenceId String   @map("evidence_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  status   RequirementStatus @relation(fields: [statusId], references: [id], onDelete: Cascade)
+  evidence Evidence          @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+
+  @@unique([statusId, evidenceId])
+  @@index([evidenceId])
+  @@map("requirement_status_evidence")
+}
+
+model RequirementStatusControl {
+  id        String   @id @default(uuid())
+  statusId  String   @map("status_id")
+  controlId String   @map("control_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  status  RequirementStatus @relation(fields: [statusId], references: [id], onDelete: Cascade)
+  control Control           @relation(fields: [controlId], references: [id], onDelete: Cascade)
+
+  @@unique([statusId, controlId])
+  @@index([controlId])
+  @@map("requirement_status_controls")
+}
+
+model Gap {
+  id                 String    @id @default(uuid())
+  assessmentId       String    @map("assessment_id")
+  requirementId      String    @map("requirement_id")
+  severity           String // critical, high, medium, low
+  description        String
+  recommendation     String
+  remediationStatus  String    @default("open") @map("remediation_status") // open, in_progress, resolved
+  remediationDueDate DateTime? @map("remediation_due_date")
+  assignedTo         String?   @map("assigned_to")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  assessment       ReadinessAssessment  @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  requirement      FrameworkRequirement @relation(fields: [requirementId], references: [id])
+  remediationTasks RemediationTask[]
+
+  @@index([assessmentId, severity])
+  @@map("gaps")
+}
+
+model RemediationTask {
+  id           String     @id @default(uuid())
+  gapId        String     @map("gap_id")
+  assessmentId String     @map("assessment_id")
+  title        String
+  description  String?
+  priority     String     @default("medium") // critical, high, medium, low
+  status       TaskStatus @default(todo)
+  assignedTo   String?    @map("assigned_to")
+  dueDate      DateTime?  @map("due_date")
+  completedAt  DateTime?  @map("completed_at")
+  effort       String? // low, medium, high
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  // Relations
+  gap          Gap                      @relation(fields: [gapId], references: [id], onDelete: Cascade)
+  assessment   ReadinessAssessment      @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  assignee     User?                    @relation("TaskAssignee", fields: [assignedTo], references: [id])
+  controlLinks RemediationTaskControl[]
+
+  @@index([assessmentId, status])
+  @@map("remediation_tasks")
+}
+
+model RemediationTaskControl {
+  id        String   @id @default(uuid())
+  taskId    String   @map("task_id")
+  controlId String   @map("control_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  task    RemediationTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  control Control         @relation(fields: [controlId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, controlId])
+  @@index([controlId])
+  @@map("remediation_task_controls")
+}
+
+// ===========================================
+// Policies Module
+// ===========================================
+
+model Policy {
+  id              String       @id @default(uuid())
+  organizationId  String       @map("organization_id")
+  title           String
+  description     String?
+  category        String // information_security, data_privacy, etc.
+  status          PolicyStatus @default(draft)
+  version         String       @default("1.0")
+  filename        String
+  mimeType        String       @map("mime_type")
+  size            Int
+  storagePath     String       @map("storage_path")
+  ownerId         String       @map("owner_id")
+  reviewFrequency String       @default("annual") @map("review_frequency")
+  lastReviewedAt  DateTime?    @map("last_reviewed_at")
+  nextReviewDue   DateTime?    @map("next_review_due")
+  approvedBy      String?      @map("approved_by")
+  approvedAt      DateTime?    @map("approved_at")
+  effectiveDate   DateTime?    @map("effective_date")
+  tags            String[]     @default([])
+  scope           String?
+  audience        String?
+  createdBy       String       @map("created_by")
+  updatedBy       String       @map("updated_by")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+  deletedAt       DateTime?    @map("deleted_at")
+  deletedBy       String?      @map("deleted_by")
+
+  // Relations
+  organization       Organization          @relation(fields: [organizationId], references: [id])
+  owner              User                  @relation("PolicyOwner", fields: [ownerId], references: [id])
+  createdByUser      User                  @relation("PolicyCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser      User                  @relation("PolicyUpdatedBy", fields: [updatedBy], references: [id])
+  approvedByUser     User?                 @relation("PolicyApprovedBy", fields: [approvedBy], references: [id])
+  deletedByUser      User?                 @relation("PolicyDeletedBy", fields: [deletedBy], references: [id])
+  versions           PolicyVersion[]
+  approvals          PolicyApproval[]
+  reviews            PolicyReview[]
+  controlLinks       PolicyControlLink[]
+  statusHistory      PolicyStatusHistory[]
+  knowledgeBaseLinks KnowledgeBasePolicy[]
+
+  @@index([organizationId, status])
+  @@index([organizationId, category])
+  @@map("policies")
+}
+
+model PolicyVersion {
+  id          String   @id @default(uuid())
+  policyId    String   @map("policy_id")
+  version     String
+  filename    String
+  storagePath String   @map("storage_path")
+  size        Int
+  changeNotes String?  @map("change_notes")
+  createdBy   String   @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  policy        Policy           @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  createdByUser User             @relation("PolicyVersionCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+  approvals     PolicyApproval[]
+
+  @@index([policyId])
+  @@map("policy_versions")
+}
+
+model PolicyApproval {
+  id           String       @id @default(uuid())
+  policyId     String       @map("policy_id")
+  versionId    String       @map("version_id")
+  approverId   String       @map("approver_id")
+  approverName String       @map("approver_name")
+  status       ReviewStatus @default(pending)
+  comments     String?
+  decidedAt    DateTime?    @map("decided_at")
+  order        Int          @default(0)
+  createdAt    DateTime     @default(now()) @map("created_at")
+
+  // Relations
+  policy   Policy        @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  version  PolicyVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  approver User          @relation("PolicyApprovalApprover", fields: [approverId], references: [id], onDelete: Restrict)
+
+  @@index([policyId, status])
+  @@map("policy_approvals")
+}
+
+model PolicyReview {
+  id           String               @id @default(uuid())
+  policyId     String               @map("policy_id")
+  reviewerId   String               @map("reviewer_id")
+  reviewerName String               @map("reviewer_name")
+  scheduledFor DateTime             @map("scheduled_for")
+  completedAt  DateTime?            @map("completed_at")
+  status       PolicyTrainingStatus @default(scheduled)
+  outcome      String? // no_changes, minor_updates, major_revision, retired
+  notes        String?
+  createdAt    DateTime             @default(now()) @map("created_at")
+
+  // Relations
+  policy Policy @relation(fields: [policyId], references: [id], onDelete: Cascade)
+
+  @@index([policyId, status])
+  @@map("policy_reviews")
+}
+
+model PolicyStatusHistory {
+  id            String   @id @default(uuid())
+  policyId      String   @map("policy_id")
+  fromStatus    String?  @map("from_status")
+  toStatus      String   @map("to_status")
+  changedById   String   @map("changed_by_id")
+  changedByName String   @map("changed_by_name")
+  notes         String?
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relations
+  policy    Policy @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  changedBy User   @relation("PolicyStatusChanger", fields: [changedById], references: [id])
+
+  @@index([policyId])
+  @@map("policy_status_history")
+}
+
+model PolicyControlLink {
+  id        String   @id @default(uuid())
+  policyId  String   @map("policy_id")
+  controlId String   @map("control_id")
+  linkedBy  String   @map("linked_by")
+  notes     String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  policy  Policy  @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  control Control @relation(fields: [controlId], references: [id])
+
+  @@unique([policyId, controlId])
+  @@index([controlId])
+  @@map("policy_control_links")
+}
+
+// ===========================================
+// Integrations Module
+// ===========================================
+
+model Integration {
+  id                     String            @id @default(uuid())
+  organizationId         String            @map("organization_id")
+  type                   String // aws, gcp, github, okta, jira, slack, custom
+  name                   String
+  description            String?
+  status                 IntegrationStatus @default(pending_setup)
+  config                 Json              @default("{}") // encrypted credentials
+  syncFrequency          String            @default("daily") @map("sync_frequency")
+  lastSyncAt             DateTime?         @map("last_sync_at")
+  nextSyncAt             DateTime?         @map("next_sync_at")
+  lastSyncStatus         String?           @map("last_sync_status")
+  lastSyncError          String?           @map("last_sync_error")
+  totalEvidenceCollected Int               @default(0) @map("total_evidence_collected")
+  lastEvidenceAt         DateTime?         @map("last_evidence_at")
+  createdBy              String            @map("created_by")
+  updatedBy              String            @map("updated_by")
+  createdAt              DateTime          @default(now()) @map("created_at")
+  updatedAt              DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  organization       Organization               @relation(fields: [organizationId], references: [id])
+  syncJobs           SyncJob[]
+  complianceChecks   ComplianceCheck[]
+  customConfig       CustomIntegrationConfig?
+  evidenceCollectors ControlEvidenceCollector[]
+
+  @@index([organizationId, type])
+  @@map("integrations")
+}
+
+// ===========================================
+// Custom Integration Configuration
+// ===========================================
+
+model CustomIntegrationConfig {
+  id            String @id @default(uuid())
+  integrationId String @unique @map("integration_id")
+  mode          String @default("visual") // 'visual' or 'code'
+
+  // Visual mode config
+  baseUrl         String? @map("base_url")
+  endpoints       Json? // Array of endpoint configs: [{method, path, headers, params, responseMapping}]
+  authType        String? @map("auth_type") // 'api_key', 'oauth2', 'basic', 'bearer'
+  authConfig      Json?   @map("auth_config") // Encrypted auth details
+  responseMapping Json?   @map("response_mapping") // How to transform responses to evidence
+
+  // Code mode config  
+  customCode String? @map("custom_code") // JavaScript code for advanced users
+
+  // Metadata
+  lastTestAt     DateTime? @map("last_test_at")
+  lastTestStatus String?   @map("last_test_status") // 'success', 'error'
+  lastTestError  String?   @map("last_test_error")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  integration Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  @@map("custom_integration_configs")
+}
+
+model SyncJob {
+  id              String         @id @default(uuid())
+  integrationId   String         @map("integration_id")
+  organizationId  String         @map("organization_id")
+  status          AlertJobStatus @default(queued)
+  triggeredBy     String         @map("triggered_by") // schedule, manual, webhook
+  startedAt       DateTime?      @map("started_at")
+  completedAt     DateTime?      @map("completed_at")
+  itemsProcessed  Int            @default(0) @map("items_processed")
+  itemsFailed     Int            @default(0) @map("items_failed")
+  evidenceCreated Int            @default(0) @map("evidence_created")
+  logs            Json           @default("[]")
+  error           String?
+  createdAt       DateTime       @default(now()) @map("created_at")
+
+  // Relations
+  integration Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  @@index([integrationId, status])
+  @@map("sync_jobs")
+}
+
+model ApiKey {
+  id             String    @id @default(uuid())
+  organizationId String    @map("organization_id")
+  name           String
+  description    String?
+  keyHash        String    @map("key_hash")
+  keyPrefix      String    @map("key_prefix")
+  scopes         String[]  @default([])
+  lastUsedAt     DateTime? @map("last_used_at")
+  expiresAt      DateTime? @map("expires_at")
+  isActive       Boolean   @default(true) @map("is_active")
+  createdBy      String    @map("created_by")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId, isActive])
+  @@index([keyPrefix])
+  @@map("api_keys")
+}
+
+model WebhookEvent {
+  id             String             @id @default(uuid())
+  organizationId String             @map("organization_id")
+  source         String
+  eventType      String             @map("event_type")
+  payload        Json
+  receivedAt     DateTime           @map("received_at")
+  processedAt    DateTime?          @map("processed_at")
+  status         WebhookEventStatus @default(received)
+  error          String?
+  createdAt      DateTime           @default(now()) @map("created_at")
+
+  @@index([organizationId, source])
+  @@index([status])
+  @@map("webhook_events")
+}
+
+model ComplianceCheck {
+  id                String    @id @default(uuid())
+  organizationId    String    @map("organization_id")
+  integrationId     String    @map("integration_id")
+  controlId         String    @map("control_id")
+  name              String
+  description       String?
+  checkType         String    @map("check_type")
+  config            Json      @default("{}")
+  isEnabled         Boolean   @default(true) @map("is_enabled")
+  lastRunAt         DateTime? @map("last_run_at")
+  lastResult        String?   @map("last_result")
+  lastResultDetails Json?     @map("last_result_details")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  integration Integration             @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  control     Control                 @relation(fields: [controlId], references: [id])
+  results     ComplianceCheckResult[]
+
+  @@index([integrationId, isEnabled])
+  @@map("compliance_checks")
+}
+
+model ComplianceCheckResult {
+  id               String   @id @default(uuid())
+  checkId          String   @map("check_id")
+  runAt            DateTime @map("run_at")
+  result           String // pass, fail, error
+  details          Json?
+  evidenceId       String?  @map("evidence_id")
+  resourcesChecked Int      @default(0) @map("resources_checked")
+  resourcesPassed  Int      @default(0) @map("resources_passed")
+  resourcesFailed  Int      @default(0) @map("resources_failed")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  // Relations
+  check ComplianceCheck @relation(fields: [checkId], references: [id], onDelete: Cascade)
+
+  @@index([checkId, runAt])
+  @@map("compliance_check_results")
+}
+
+model Alert {
+  id             String      @id @default(uuid())
+  organizationId String      @map("organization_id")
+  type           String // compliance_drift, evidence_expiring, integration_error, review_due, custom
+  severity       String // critical, high, medium, low, info
+  status         AlertStatus @default(open)
+  title          String
+  description    String
+  source         String?
+  sourceId       String?     @map("source_id")
+  acknowledgedBy String?     @map("acknowledged_by")
+  acknowledgedAt DateTime?   @map("acknowledged_at")
+  resolvedBy     String?     @map("resolved_by")
+  resolvedAt     DateTime?   @map("resolved_at")
+  metadata       Json?
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId, status])
+  @@index([organizationId, severity])
+  @@map("alerts")
+}
+
+// ===========================================
+// Audit Logging
+// ===========================================
+
+model AuditLog {
+  id             String   @id @default(uuid())
+  organizationId String   @map("organization_id")
+  userId         String?  @map("user_id")
+  userEmail      String?  @map("user_email")
+  userName       String?  @map("user_name")
+  action         String
+  entityType     String   @map("entity_type")
+  entityId       String   @map("entity_id")
+  entityName     String?  @map("entity_name")
+  description    String
+  changes        Json?
+  metadata       Json?
+  ipAddress      String?  @map("ip_address")
+  userAgent      String?  @map("user_agent")
+  timestamp      DateTime @default(now())
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId, timestamp])
+  @@index([organizationId, entityType, entityId])
+  @@index([organizationId, action])
+  @@map("audit_logs")
+}
+
+// ===========================================
+// Notifications
+// ===========================================
+
+model Notification {
+  id             String    @id @default(uuid())
+  organizationId String    @map("organization_id")
+  userId         String    @map("user_id")
+  type           String // control_status_changed, evidence_expiring, task_assigned, etc.
+  title          String
+  message        String
+  entityType     String?   @map("entity_type") // control, evidence, policy, task, etc.
+  entityId       String?   @map("entity_id")
+  severity       String    @default("info") // info, warning, error, success
+  isRead         Boolean   @default(false) @map("is_read")
+  readAt         DateTime? @map("read_at")
+  emailSent      Boolean   @default(false) @map("email_sent")
+  emailSentAt    DateTime? @map("email_sent_at")
+  metadata       Json?
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation("UserNotifications", fields: [userId], references: [id])
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+  @@index([organizationId, createdAt])
+  @@map("notifications")
+}
+
+model NotificationPreference {
+  id               String   @id @default(uuid())
+  userId           String   @map("user_id")
+  notificationType String   @map("notification_type")
+  inApp            Boolean  @default(true) @map("in_app")
+  email            Boolean  @default(true)
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation("UserNotificationPreferences", fields: [userId], references: [id])
+
+  @@unique([userId, notificationType])
+  @@map("notification_preferences")
+}
+
+// ===========================================
+// Comments & Tasks
+// ===========================================
+
+model Comment {
+  id             String   @id @default(uuid())
+  organizationId String   @map("organization_id")
+  authorId       String   @map("author_id")
+  entityType     String   @map("entity_type") // control, requirement, evidence, policy
+  entityId       String   @map("entity_id")
+  content        String
+  isResolved     Boolean  @default(false) @map("is_resolved")
+  parentId       String?  @map("parent_id") // For threaded replies
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  author  User      @relation("CommentAuthor", fields: [authorId], references: [id])
+  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies Comment[] @relation("CommentReplies")
+
+  @@index([organizationId, entityType, entityId])
+  @@index([authorId])
+  @@map("comments")
+}
+
+model Task {
+  id             String    @id @default(uuid())
+  organizationId String    @map("organization_id")
+  entityType     String    @map("entity_type") // control, requirement, evidence, policy
+  entityId       String    @map("entity_id")
+  title          String
+  description    String?
+  status         String    @default("open") // open, in_progress, completed, cancelled
+  priority       String    @default("medium") // low, medium, high, critical
+  assigneeId     String?   @map("assignee_id")
+  createdById    String    @map("created_by_id")
+  dueDate        DateTime? @map("due_date")
+  completedAt    DateTime? @map("completed_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  assignee  User? @relation("TaskAssigneeNew", fields: [assigneeId], references: [id])
+  createdBy User  @relation("TaskCreator", fields: [createdById], references: [id])
+
+  @@index([organizationId, entityType, entityId])
+  @@index([assigneeId, status])
+  @@index([organizationId, status])
+  @@map("tasks")
+}
+
+// ===========================================
+// RBAC - Role-Based Access Control
+// ===========================================
+
+model PermissionGroup {
+  id             String   @id @default(uuid())
+  organizationId String   @map("organization_id")
+  name           String
+  description    String?
+  permissions    Json // Array of permission objects
+  isSystem       Boolean  @default(false) @map("is_system") // Prevent deletion of system groups
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  members      UserGroupMembership[]
+  organization Organization          @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@map("permission_groups")
+}
+
+model UserGroupMembership {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  groupId   String   @map("group_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user  User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group PermissionGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, groupId])
+  @@index([userId])
+  @@index([groupId])
+  @@map("user_group_memberships")
+}
+
+model UserPermissionOverride {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  permission    String // e.g., "controls:update"
+  resourceScope Json?    @map("resource_scope") // {tags: ["network_security"], categories: ["compliance"]}
+  granted       Boolean  @default(true) // true = grant, false = deny (override group)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, permission])
+  @@index([userId])
+  @@map("user_permission_overrides")
+}
+
+// ===========================================
+// Risk Management Module
+// ===========================================
+
+model Asset {
+  id             String           @id @default(uuid())
+  organizationId String           @map("organization_id")
+  externalId     String?          @map("external_id") // ID from source system
+  source         String // jamf, intune, servicenow, manual
+  name           String
+  type           AssetType        @default(server)
+  category       String? // infrastructure, endpoint, cloud, etc.
+  status         AssetStatus      @default(active)
+  criticality    AssetCriticality @default(medium)
+  owner          String?
+  location       String?
+  department     String?
+  metadata       Json? // Source-specific fields
+  lastSyncAt     DateTime?        @map("last_sync_at")
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+
+  // Relations
+  riskAssets   RiskAsset[]
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, externalId, source])
+  @@index([organizationId, type])
+  @@index([organizationId, status])
+  @@index([organizationId, criticality])
+  @@map("assets")
+}
+
+// Risk Intake - Main risk ticket
+model Risk {
+  id             String @id @default(uuid())
+  organizationId String @map("organization_id")
+  riskId         String @map("risk_id") // e.g., "RISK-001"
+  title          String
+  description    String
+  category       String // operational, strategic, compliance, security, financial, technical, third_party
+
+  // Risk Source (from intake form)
+  source String @default("employee_reporting") // internal_security_reviews, ad_hoc_discovery, external_security_reviews, incident_response, policy_exception, employee_reporting
+
+  // Workflow Status - Risk Intake workflow stages
+  // risk_identified -> not_a_risk (if declined)
+  // risk_identified -> actual_risk (if approved) -> risk_analysis_in_progress -> risk_analyzed
+  status RiskIntakeStatus @default(risk_identified)
+
+  // Initial severity estimate (from reporter)
+  initialSeverity RiskLevel @default(medium) @map("initial_severity")
+
+  // Qualitative scoring (set during assessment)
+  likelihood   RiskLikelihood?
+  impact       RiskImpact?
+  inherentRisk RiskLevel?      @map("inherent_risk")
+  residualRisk RiskLevel?      @map("residual_risk")
+
+  // Quantitative scoring (optional, during assessment)
+  likelihoodPct Float? @map("likelihood_pct") // 0-100
+  impactValue   Float? @map("impact_value") // Dollar amount
+  annualLossExp Float? @map("annual_loss_expectancy") // ALE = likelihood * impact
+
+  // Final treatment outcome
+  treatmentPlan   String? @map("treatment_plan") // accept, mitigate, transfer, avoid
+  treatmentStatus String? @map("treatment_status") // pending, in_progress, completed, cancelled
+  treatmentNotes  String? @map("treatment_notes")
+
+  // Role Assignments
+  reporterId     String? @map("reporter_id") // Who submitted the risk
+  grcSmeId       String? @map("grc_sme_id") // GRC team member managing
+  riskAssessorId String? @map("risk_assessor_id") // SME doing the assessment
+  riskOwnerId    String? @map("risk_owner_id") // Responsible for treatment
+
+  // Review tracking
+  reviewFrequency String    @default("quarterly") @map("review_frequency")
+  lastReviewedAt  DateTime? @map("last_reviewed_at")
+  nextReviewDue   DateTime? @map("next_review_due")
+
+  // Documentation
+  documentation Json? // Supporting documentation/attachments info
+  tags          String[] @default([])
+
+  createdBy String    @map("created_by")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+  deletedBy String?   @map("deleted_by")
+
+  // Relations
+  assets        RiskAsset[]
+  controls      RiskControl[]
+  scenarios     RiskScenario[]
+  history       RiskHistory[]
+  assessment    RiskAssessment?
+  treatment     RiskTreatment?
+  organization  Organization    @relation(fields: [organizationId], references: [id])
+  createdByUser User            @relation("RiskCreatedBy", fields: [createdBy], references: [id])
+  reporter      User?           @relation("RiskReporter", fields: [reporterId], references: [id])
+  grcSme        User?           @relation("RiskGrcSme", fields: [grcSmeId], references: [id])
+  riskAssessor  User?           @relation("RiskAssessor", fields: [riskAssessorId], references: [id])
+  riskOwner     User?           @relation("RiskOwner", fields: [riskOwnerId], references: [id])
+  deletedByUser User?           @relation("RiskDeletedBy", fields: [deletedBy], references: [id])
+
+  @@unique([organizationId, riskId])
+  @@index([organizationId, status])
+  @@index([organizationId, category])
+  @@index([organizationId, inherentRisk])
+  @@index([riskOwnerId])
+  @@index([grcSmeId])
+  @@map("risks")
+}
+
+// Risk Assessment Sub-Ticket
+model RiskAssessment {
+  id     String @id @default(uuid())
+  riskId String @unique @map("risk_id")
+
+  // Assessment workflow status
+  // risk_assessor_analysis -> grc_approval -> done
+  // risk_assessor_analysis -> grc_approval -> grc_revision -> done
+  status RiskAssessmentStatus @default(risk_assessor_analysis)
+
+  // Assignments
+  riskAssessorId String? @map("risk_assessor_id")
+  grcSmeId       String? @map("grc_sme_id")
+
+  // Assessment Form Data
+  threatDescription String? @map("threat_description")
+  // NOTE: Assets and controls are now linked through the parent Risk via RiskAsset and RiskControl junction tables
+  vulnerabilities   String?
+
+  // Likelihood assessment
+  likelihoodScore     String? @map("likelihood_score") // rare, unlikely, possible, likely, almost_certain
+  likelihoodRationale String? @map("likelihood_rationale")
+
+  // Impact assessment
+  impactScore      String? @map("impact_score") // negligible, minor, moderate, major, severe
+  impactRationale  String? @map("impact_rationale")
+  impactCategories Json?   @map("impact_categories") // {financial: 'high', operational: 'medium', reputational: 'low'}
+
+  // Calculated risk score
+  calculatedRiskScore String? @map("calculated_risk_score") // very_low, low, medium, high, very_high
+
+  // Recommended Risk Owner
+  recommendedOwnerId String? @map("recommended_owner_id")
+
+  // Assessment notes and recommendations
+  assessmentNotes         String? @map("assessment_notes")
+  treatmentRecommendation String? @map("treatment_recommendation") // What assessor recommends
+
+  // GRC Review
+  grcReviewNotes    String?   @map("grc_review_notes")
+  grcApprovedAt     DateTime? @map("grc_approved_at")
+  grcDeclinedReason String?   @map("grc_declined_reason")
+
+  // Timestamps
+  assessorSubmittedAt DateTime? @map("assessor_submitted_at")
+  completedAt         DateTime? @map("completed_at")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  risk Risk @relation(fields: [riskId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@map("risk_assessments")
+}
+
+// Risk Treatment Sub-Ticket
+model RiskTreatment {
+  id     String @id @default(uuid())
+  riskId String @unique @map("risk_id")
+
+  // Treatment workflow status
+  // treatment_decision_review -> [routing based on decision + risk level]:
+  //   - risk_mitigation_in_progress (if mitigate)
+  //   - identify_executive_approver (if accept/transfer/avoid + high/very_high risk)
+  //   - risk_accept / risk_transfer / risk_avoid (if medium risk)
+  //   - risk_auto_accept (if low/very_low risk)
+  // identify_executive_approver -> executive_approval -> [routing] or -> treatment_decision_review (if denied)
+  // risk_mitigation_in_progress -> mitigation_status_update -> mitigation_status_routing -> risk_mitigation_complete or still_mitigating
+  status RiskTreatmentStatus @default(treatment_decision_review)
+
+  // Assignments
+  riskOwnerId         String? @map("risk_owner_id")
+  executiveApproverId String? @map("executive_approver_id")
+  grcSmeId            String? @map("grc_sme_id")
+
+  // Treatment Decision Form
+  treatmentDecision      String? @map("treatment_decision") // mitigate, accept, transfer, avoid
+  treatmentJustification String? @map("treatment_justification")
+  treatmentPlan          String? @map("treatment_plan") // Detailed plan for mitigation
+
+  // Mitigation specific fields
+  mitigationDescription String?   @map("mitigation_description")
+  mitigationTargetDate  DateTime? @map("mitigation_target_date")
+  mitigationActualDate  DateTime? @map("mitigation_actual_date")
+
+  // Transfer specific fields
+  transferTo   String? @map("transfer_to") // e.g., insurance provider, third party
+  transferCost Float?  @map("transfer_cost")
+
+  // Avoid specific fields
+  avoidStrategy String? @map("avoid_strategy")
+
+  // Accept specific fields
+  acceptanceRationale String?   @map("acceptance_rationale")
+  acceptanceExpiresAt DateTime? @map("acceptance_expires_at")
+
+  // Executive Approval
+  executiveApprovalRequired Boolean   @default(false) @map("executive_approval_required")
+  executiveApprovalStatus   String?   @map("executive_approval_status") // pending, approved, denied
+  executiveApprovalNotes    String?   @map("executive_approval_notes")
+  executiveApprovedAt       DateTime? @map("executive_approved_at")
+  executiveDeniedReason     String?   @map("executive_denied_reason")
+
+  // Mitigation Progress Tracking
+  mitigationStatus   String?   @map("mitigation_status") // on_track, delayed, cancelled, done
+  mitigationProgress Int       @default(0) @map("mitigation_progress") // 0-100
+  lastProgressUpdate DateTime? @map("last_progress_update")
+  nextReviewDate     DateTime? @map("next_review_date")
+
+  // Residual Risk (after treatment)
+  residualLikelihood String? @map("residual_likelihood")
+  residualImpact     String? @map("residual_impact")
+  residualRiskScore  String? @map("residual_risk_score")
+
+  // Completion
+  completedAt DateTime? @map("completed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  risk    Risk                  @relation(fields: [riskId], references: [id], onDelete: Cascade)
+  updates RiskTreatmentUpdate[]
+
+  @@index([status])
+  @@index([riskOwnerId])
+  @@index([executiveApproverId])
+  @@map("risk_treatments")
+}
+
+// Risk Treatment Status Updates (for mitigation progress tracking)
+model RiskTreatmentUpdate {
+  id          String @id @default(uuid())
+  treatmentId String @map("treatment_id")
+
+  // Update details
+  updateType     String  @map("update_type") // progress, status_change, delay, cancellation, completion
+  previousStatus String? @map("previous_status")
+  newStatus      String? @map("new_status")
+  progress       Int? // 0-100
+  notes          String?
+
+  // If delayed
+  newTargetDate DateTime? @map("new_target_date")
+  delayReason   String?   @map("delay_reason")
+
+  // If cancelled
+  cancellationReason String? @map("cancellation_reason")
+
+  // If completed
+  completionEvidence String? @map("completion_evidence")
+  effectivenessNotes String? @map("effectiveness_notes")
+
+  createdBy String   @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  treatment     RiskTreatment @relation(fields: [treatmentId], references: [id], onDelete: Cascade)
+  createdByUser User          @relation("RiskTreatmentUpdateCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+
+  @@index([treatmentId, createdAt])
+  @@map("risk_treatment_updates")
+}
+
+model RiskAsset {
+  id        String   @id @default(uuid())
+  riskId    String   @map("risk_id")
+  assetId   String   @map("asset_id")
+  notes     String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  risk  Risk  @relation(fields: [riskId], references: [id], onDelete: Cascade)
+  asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@unique([riskId, assetId])
+  @@index([assetId])
+  @@map("risk_assets")
+}
+
+model RiskControl {
+  id            String   @id @default(uuid())
+  riskId        String   @map("risk_id")
+  controlId     String   @map("control_id")
+  effectiveness String   @default("partial") // none, partial, full
+  notes         String?
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relations
+  risk    Risk    @relation(fields: [riskId], references: [id], onDelete: Cascade)
+  control Control @relation(fields: [controlId], references: [id])
+
+  @@unique([riskId, controlId])
+  @@index([controlId])
+  @@map("risk_controls")
+}
+
+model RiskScenario {
+  id           String   @id @default(uuid())
+  riskId       String   @map("risk_id")
+  title        String
+  description  String
+  threatActor  String?  @map("threat_actor") // insider, external, natural
+  attackVector String?  @map("attack_vector")
+  // NOTE: Target assets are linked through the parent Risk via RiskAsset junction table
+  likelihood   String
+  impact       String
+  notes        String?
+  createdBy    String   @map("created_by")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  risk          Risk @relation(fields: [riskId], references: [id], onDelete: Cascade)
+  createdByUser User @relation("RiskScenarioCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+
+  @@index([riskId])
+  @@map("risk_scenarios")
+}
+
+model RiskHistory {
+  id        String   @id @default(uuid())
+  riskId    String   @map("risk_id")
+  action    String // created, updated, status_changed, reviewed, treatment_updated, assessment_submitted, etc.
+  changes   Json?
+  notes     String?
+  changedBy String   @map("changed_by")
+  changedAt DateTime @default(now()) @map("changed_at")
+
+  // Relations
+  risk          Risk @relation(fields: [riskId], references: [id], onDelete: Cascade)
+  changedByUser User @relation("RiskHistoryChangedBy", fields: [changedBy], references: [id], onDelete: Restrict)
+
+  @@index([riskId, changedAt])
+  @@map("risk_history")
+}
+
+// ===========================================
+// Risk Configuration
+// ===========================================
+
+model RiskConfiguration {
+  id             String @id @default(uuid())
+  organizationId String @unique @map("organization_id")
+
+  // Scoring Methodology
+  methodology String @default("qualitative") // qualitative, quantitative, hybrid
+
+  // Likelihood Scale (stored as JSON array)
+  // [{ value: "rare", label: "Rare", description: "<5%", weight: 1 }, ...]
+  likelihoodScale Json @default("[]") @map("likelihood_scale")
+
+  // Impact Scale (stored as JSON array)
+  // [{ value: "negligible", label: "Negligible", description: "Minimal", weight: 1 }, ...]
+  impactScale Json @default("[]") @map("impact_scale")
+
+  // Risk Categories (stored as JSON array)
+  // [{ id: "uuid", name: "Security", description: "...", color: "#ef4444" }, ...]
+  categories Json @default("[]")
+
+  // Risk Level Thresholds (for mapping score to level)
+  // { low: 4, medium: 9, high: 14, critical: 25 }
+  riskLevelThresholds Json @default("{}") @map("risk_level_thresholds")
+
+  // Workflow Settings
+  workflowSettings Json @default("{}") @map("workflow_settings")
+  // {
+  //   requireAssessment: true,
+  //   requireGrcReview: true,
+  //   executiveApprovalThreshold: "high",
+  //   defaultReviewFrequency: "quarterly",
+  //   notifyOnStatusChange: true,
+  //   dueDateReminderDays: 7
+  // }
+
+  // Risk Appetite per Category
+  // [{ category: "Security", level: "low", description: "..." }, ...]
+  riskAppetite Json @default("[]") @map("risk_appetite")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  updatedBy String?  @map("updated_by")
+
+  // Relations
+  updatedByUser User? @relation("RiskConfigurationUpdatedBy", fields: [updatedBy], references: [id], onDelete: Restrict)
+
+  @@map("risk_configurations")
+}
+
+// ===========================================
+// Third Party Risk Management (TPRM)
+// ===========================================
+
+model Vendor {
+  id             String @id @default(uuid())
+  organizationId String @map("organization_id")
+  vendorId       String @map("vendor_id") // e.g., "VND-001"
+
+  // Basic Information
+  name                String
+  legalName           String? @map("legal_name")
+  description         String?
+  website             String?
+  primaryContact      String? @map("primary_contact")
+  primaryContactEmail String? @map("primary_contact_email")
+  primaryContactPhone String? @map("primary_contact_phone")
+
+  // Classification
+  category VendorCategory @default(software_vendor)
+  tier     VendorTier     @default(tier_3)
+  status   VendorStatus   @default(active)
+
+  // Risk Profile
+  inherentRiskScore  VendorRiskScore? @map("inherent_risk_score")
+  residualRiskScore  VendorRiskScore? @map("residual_risk_score")
+  dataClassification String?          @map("data_classification") // public, internal, confidential, restricted
+  hasDataAccess      Boolean          @default(false) @map("has_data_access")
+  accessLevel        String?          @map("access_level") // read_only, read_write, admin
+
+  // Business Context
+  businessOwner      String?          @map("business_owner") // Department/person responsible
+  serviceDescription String?          @map("service_description")
+  criticality        AssetCriticality @default(medium)
+  annualSpend        Float?           @map("annual_spend")
+
+  // Compliance & Certifications
+  certifications   String[]               @default([]) // ["ISO27001", "SOC2", "HIPAA"]
+  complianceStatus VendorComplianceStatus @default(pending_review) @map("compliance_status")
+
+  // Review Tracking
+  lastReviewedAt  DateTime? @map("last_reviewed_at")
+  nextReviewDue   DateTime? @map("next_review_due")
+  reviewFrequency String    @default("annual") @map("review_frequency") // monthly, quarterly, annual
+
+  // Location & Jurisdiction
+  country      String?
+  region       String?
+  dataLocation String? @map("data_location") // Where vendor stores data
+
+  // Metadata
+  tags  String[] @default([])
+  notes String?
+
+  createdBy String    @map("created_by")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+  deletedBy String?   @map("deleted_by")
+
+  // Relations
+  organization  Organization         @relation(fields: [organizationId], references: [id])
+  createdByUser User                 @relation("VendorCreatedBy", fields: [createdBy], references: [id])
+  deletedByUser User?                @relation("VendorDeletedBy", fields: [deletedBy], references: [id])
+  assessments   VendorAssessment[]
+  contracts     VendorContract[]
+  contacts      VendorContact[]
+  documents     VendorDocument[]
+  riskFindings  VendorRiskFinding[]
+  accessReviews VendorAccessReview[]
+
+  @@unique([organizationId, vendorId])
+  @@index([organizationId, status])
+  @@index([organizationId, tier])
+  @@index([organizationId, category])
+  @@map("vendors")
+}
+
+model VendorAssessment {
+  id             String @id @default(uuid())
+  vendorId       String @map("vendor_id")
+  organizationId String @map("organization_id")
+
+  // Assessment Details
+  assessmentType String                 @map("assessment_type") // initial_onboarding, annual_review, continuous_monitoring, incident_triggered, contract_renewal
+  status         VendorAssessmentStatus @default(pending)
+  dueDate        DateTime?              @map("due_date")
+  completedAt    DateTime?              @map("completed_at")
+
+  // Questionnaire
+  questionnaireTemplate String? @map("questionnaire_template") // Reference to template used
+  responses             Json? // Questionnaire responses
+
+  // Risk Scoring
+  inherentRiskScore String? @map("inherent_risk_score") // very_low, low, medium, high, critical
+  residualRiskScore String? @map("residual_risk_score")
+  overallScore      Int?    @map("overall_score") // 0-100
+
+  // Risk Categories Breakdown
+  securityRisk     String? @map("security_risk")
+  complianceRisk   String? @map("compliance_risk")
+  operationalRisk  String? @map("operational_risk")
+  financialRisk    String? @map("financial_risk")
+  reputationalRisk String? @map("reputational_risk")
+
+  // Assessment Outcome
+  outcome      String? // approved, approved_with_conditions, rejected, requires_remediation
+  outcomeNotes String?  @map("outcome_notes")
+  conditions   String[] @default([]) // Conditions if approved with conditions
+
+  // Assignments
+  assessorId String? @map("assessor_id") // Third party analyst
+  reviewerId String? @map("reviewer_id") // GRC team reviewer
+
+  // Documentation
+  findings        Json? // List of findings/issues
+  recommendations String?
+
+  createdBy String   @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  vendor        Vendor                     @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  createdByUser User                       @relation("VendorAssessmentCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+  evidenceLinks VendorAssessmentEvidence[]
+
+  @@index([vendorId, status])
+  @@index([organizationId, assessmentType])
+  @@index([assessorId])
+  @@map("vendor_assessments")
+}
+
+model VendorAssessmentEvidence {
+  id           String   @id @default(uuid())
+  assessmentId String   @map("assessment_id")
+  evidenceId   String   @map("evidence_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  // Relations
+  assessment VendorAssessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  evidence   Evidence         @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+
+  @@unique([assessmentId, evidenceId])
+  @@index([evidenceId])
+  @@map("vendor_assessment_evidence")
+}
+
+model VendorContract {
+  id             String @id @default(uuid())
+  vendorId       String @map("vendor_id")
+  organizationId String @map("organization_id")
+
+  // Contract Details
+  contractNumber String? @map("contract_number")
+  contractType   String  @map("contract_type") // msa, sow, dpa, sla, nda, purchase_order
+  title          String
+  description    String?
+
+  // Financial
+  contractValue Float?  @map("contract_value")
+  currency      String  @default("USD")
+  paymentTerms  String? @map("payment_terms")
+
+  // Dates
+  startDate        DateTime  @map("start_date")
+  endDate          DateTime  @map("end_date")
+  renewalDate      DateTime? @map("renewal_date")
+  noticePeriodDays Int?      @map("notice_period_days") // Days notice required for termination
+
+  // Status
+  status    ContractStatus @default(active)
+  autoRenew Boolean        @default(false) @map("auto_renew")
+
+  // Compliance Requirements
+  requiresSoc2           Boolean @default(false) @map("requires_soc2")
+  requiresIso27001       Boolean @default(false) @map("requires_iso27001")
+  requiresPenTest        Boolean @default(false) @map("requires_pen_test")
+  requiresRightToAudit   Boolean @default(false) @map("requires_right_to_audit")
+  dataProcessingAddendum Boolean @default(false) @map("data_processing_addendum")
+
+  // Notifications
+  notifyDaysBefore     Int       @default(90) @map("notify_days_before") // Notify before expiration
+  lastNotificationSent DateTime? @map("last_notification_sent")
+
+  // Document Storage
+  filename    String?
+  storagePath String? @map("storage_path")
+  mimeType    String? @map("mime_type")
+  size        Int?
+
+  // Ownership
+  contractOwner String? @map("contract_owner")
+  businessOwner String? @map("business_owner")
+
+  notes String?
+  tags  String[] @default([])
+
+  createdBy String   @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  vendor        Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  createdByUser User   @relation("VendorContractCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+
+  @@index([vendorId, status])
+  @@index([organizationId, endDate])
+  @@index([organizationId, status])
+  @@map("vendor_contracts")
+}
+
+model VendorContact {
+  id       String @id @default(uuid())
+  vendorId String @map("vendor_id")
+
+  // Contact Information
+  name        String
+  title       String?
+  email       String?
+  phone       String?
+  isPrimary   Boolean @default(false) @map("is_primary")
+  contactType String  @default("general") // general, technical, security, billing, executive
+
+  // Metadata
+  notes     String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  vendor Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@index([vendorId])
+  @@map("vendor_contacts")
+}
+
+model VendorDocument {
+  id             String @id @default(uuid())
+  vendorId       String @map("vendor_id")
+  organizationId String @map("organization_id")
+
+  // Document Details
+  title        String
+  description  String?
+  documentType String  @map("document_type") // soc2_report, pen_test, security_questionnaire, certification, insurance, other
+
+  // File Information
+  filename    String
+  storagePath String @map("storage_path")
+  mimeType    String @map("mime_type")
+  size        Int
+
+  // Validity
+  issuedDate DateTime? @map("issued_date")
+  expiryDate DateTime? @map("expiry_date")
+  isExpired  Boolean   @default(false) @map("is_expired")
+
+  // Review
+  reviewedBy   String?   @map("reviewed_by")
+  reviewedAt   DateTime? @map("reviewed_at")
+  reviewStatus String    @default("pending") @map("review_status") // pending, approved, rejected
+  reviewNotes  String?   @map("review_notes")
+
+  tags      String[] @default([])
+  createdBy String   @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  vendor         Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  createdByUser  User   @relation("VendorDocumentCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+  reviewedByUser User?  @relation("VendorDocumentReviewedBy", fields: [reviewedBy], references: [id], onDelete: Restrict)
+
+  @@index([vendorId, documentType])
+  @@index([organizationId, expiryDate])
+  @@map("vendor_documents")
+}
+
+model VendorRiskFinding {
+  id             String @id @default(uuid())
+  vendorId       String @map("vendor_id")
+  organizationId String @map("organization_id")
+
+  // Finding Details
+  title       String
+  description String
+  severity    String // critical, high, medium, low
+  category    String // security, compliance, operational, financial
+
+  // Status
+  status String @default("open") // open, acknowledged, mitigated, accepted, closed
+
+  // Remediation
+  remediationPlan  String?   @map("remediation_plan")
+  remediationOwner String?   @map("remediation_owner")
+  targetDate       DateTime? @map("target_date")
+  actualDate       DateTime? @map("actual_date")
+
+  // Discovery
+  discoveredDate DateTime @default(now()) @map("discovered_date")
+  discoveredBy   String   @map("discovered_by")
+  source         String? // assessment, audit, incident, continuous_monitoring
+
+  notes     String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  vendor           Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  discoveredByUser User   @relation("VendorRiskFindingDiscoveredBy", fields: [discoveredBy], references: [id], onDelete: Restrict)
+
+  @@index([vendorId, status])
+  @@index([organizationId, severity])
+  @@map("vendor_risk_findings")
+}
+
+model VendorAccessReview {
+  id             String @id @default(uuid())
+  vendorId       String @map("vendor_id")
+  organizationId String @map("organization_id")
+
+  // Review Details
+  reviewDate DateTime @map("review_date")
+  reviewType String   @map("review_type") // quarterly, annual, ad_hoc, triggered_by_incident
+  status     String   @default("pending") // pending, in_progress, completed
+
+  // Access Details
+  accessLevel     String?  @map("access_level") // read_only, read_write, admin
+  systemsAccessed String[] @default([]) @map("systems_accessed")
+  dataCategories  String[] @default([]) @map("data_categories")
+
+  // Review Outcome
+  outcome     String? // access_confirmed, access_modified, access_revoked
+  changes     String? // What changes were made
+  reviewedBy  String?   @map("reviewed_by")
+  completedAt DateTime? @map("completed_at")
+
+  notes     String?
+  createdBy String   @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  vendor         Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  createdByUser  User   @relation("VendorAccessReviewCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+  reviewedByUser User?  @relation("VendorAccessReviewReviewedBy", fields: [reviewedBy], references: [id], onDelete: Restrict)
+
+  @@index([vendorId, reviewDate])
+  @@index([organizationId, status])
+  @@map("vendor_access_reviews")
+}
+
+// ===========================================
+// Trust Module - Security Questionnaires & Knowledge Base
+// ===========================================
+
+model QuestionnaireRequest {
+  id             String @id @default(uuid())
+  organizationId String @map("organization_id")
+
+  // Requester Information
+  requesterId    String? @map("requester_id") // External requester ID (if tracked)
+  requesterName  String  @map("requester_name")
+  requesterEmail String  @map("requester_email")
+  company        String? // Requester's company
+
+  // Questionnaire Details
+  title       String
+  description String?             @db.Text
+  status      QuestionnaireStatus @default(pending)
+  priority    String              @default("medium") // low, medium, high, urgent
+  dueDate     DateTime?           @map("due_date")
+  completedAt DateTime?           @map("completed_at")
+
+  // Assignment
+  assignedTo String? @map("assigned_to") // Primary assignee user ID
+
+  // Metadata
+  source   String? // email, portal, manual
+  tags     String[] @default([])
+  metadata Json? // Additional custom fields
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy String   @map("created_by")
+
+  // Relations
+  createdByUser  User                    @relation("QuestionnaireRequestCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+  assignedToUser User?                   @relation("QuestionnaireRequestAssignedTo", fields: [assignedTo], references: [id], onDelete: Restrict)
+  questions      QuestionnaireQuestion[]
+
+  @@index([organizationId, status])
+  @@index([organizationId, dueDate])
+  @@index([assignedTo])
+  @@map("questionnaire_requests")
+}
+
+model QuestionnaireQuestion {
+  id              String @id @default(uuid())
+  questionnaireId String @map("questionnaire_id")
+
+  // Question Details
+  questionNumber String? @map("question_number") // e.g., "1.1", "2.3.4"
+  category       String? // security, privacy, technical, operational, compliance
+  questionText   String  @map("question_text") @db.Text
+
+  // Answer
+  answerText String?        @map("answer_text") @db.Text
+  status     QuestionStatus @default(pending)
+
+  // Assignment & Review
+  assignedTo String?   @map("assigned_to")
+  reviewedBy String?   @map("reviewed_by")
+  reviewedAt DateTime? @map("reviewed_at")
+
+  // Knowledge Base Link
+  knowledgeBaseId String? @map("knowledge_base_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  questionnaire  QuestionnaireRequest @relation(fields: [questionnaireId], references: [id], onDelete: Cascade)
+  knowledgeBase  KnowledgeBaseEntry?  @relation(fields: [knowledgeBaseId], references: [id])
+  assignedToUser User?                @relation("QuestionnaireQuestionAssignedTo", fields: [assignedTo], references: [id], onDelete: Restrict)
+  reviewedByUser User?                @relation("QuestionnaireQuestionReviewedBy", fields: [reviewedBy], references: [id], onDelete: Restrict)
+  attachments    QuestionAttachment[]
+
+  @@index([questionnaireId, status])
+  @@index([assignedTo])
+  @@index([category])
+  @@map("questionnaire_questions")
+}
+
+model QuestionAttachment {
+  id         String @id @default(uuid())
+  questionId String @map("question_id")
+
+  // File Details
+  filename    String
+  storagePath String @map("storage_path")
+  mimeType    String @map("mime_type")
+  size        Int // bytes
+
+  uploadedBy String   @map("uploaded_by")
+  uploadedAt DateTime @default(now()) @map("uploaded_at")
+
+  // Relations
+  question       QuestionnaireQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  uploadedByUser User                  @relation("QuestionAttachmentUploadedBy", fields: [uploadedBy], references: [id], onDelete: Restrict)
+
+  @@index([questionId])
+  @@map("question_attachments")
+}
+
+model KnowledgeBaseEntry {
+  id             String @id @default(uuid())
+  organizationId String @map("organization_id")
+
+  // Entry Details
+  category KnowledgeBaseCategory @default(security)
+  title    String
+  question String?               @db.Text // Optional standard question text
+  answer   String                @db.Text // The approved answer
+
+  // Classification
+  tags      String[]            @default([])
+  framework String? // SOC2, ISO27001, NIST, etc.
+  status    KnowledgeBaseStatus @default(draft)
+
+  // Approval
+  approvedBy String?   @map("approved_by")
+  approvedAt DateTime? @map("approved_at")
+
+  // Versioning
+  version Int @default(1)
+
+  // Trust Center
+  isPublic Boolean @default(false) @map("is_public") // Show in public Trust Center
+
+  // Usage tracking
+  usageCount Int       @default(0) @map("usage_count")
+  lastUsedAt DateTime? @map("last_used_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy String   @map("created_by")
+  updatedBy String?  @map("updated_by")
+
+  // Relations
+  createdByUser  User                    @relation("KnowledgeBaseEntryCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+  updatedByUser  User?                   @relation("KnowledgeBaseEntryUpdatedBy", fields: [updatedBy], references: [id], onDelete: Restrict)
+  approvedByUser User?                   @relation("KnowledgeBaseEntryApprovedBy", fields: [approvedBy], references: [id], onDelete: Restrict)
+  attachments    KnowledgeAttachment[]
+  questions      QuestionnaireQuestion[]
+  controlLinks   KnowledgeBaseControl[]
+  evidenceLinks  KnowledgeBaseEvidence[]
+  policyLinks    KnowledgeBasePolicy[]
+
+  @@index([organizationId, category])
+  @@index([organizationId, status])
+  @@index([framework])
+  @@index([isPublic])
+  @@map("knowledge_base_entries")
+}
+
+model KnowledgeBaseControl {
+  id              String   @id @default(uuid())
+  knowledgeBaseId String   @map("knowledge_base_id")
+  controlId       String   @map("control_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  // Relations
+  knowledgeBase KnowledgeBaseEntry @relation(fields: [knowledgeBaseId], references: [id], onDelete: Cascade)
+  control       Control            @relation(fields: [controlId], references: [id], onDelete: Cascade)
+
+  @@unique([knowledgeBaseId, controlId])
+  @@index([controlId])
+  @@map("knowledge_base_controls")
+}
+
+model KnowledgeBaseEvidence {
+  id              String   @id @default(uuid())
+  knowledgeBaseId String   @map("knowledge_base_id")
+  evidenceId      String   @map("evidence_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  // Relations
+  knowledgeBase KnowledgeBaseEntry @relation(fields: [knowledgeBaseId], references: [id], onDelete: Cascade)
+  evidence      Evidence           @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+
+  @@unique([knowledgeBaseId, evidenceId])
+  @@index([evidenceId])
+  @@map("knowledge_base_evidence")
+}
+
+model KnowledgeBasePolicy {
+  id              String   @id @default(uuid())
+  knowledgeBaseId String   @map("knowledge_base_id")
+  policyId        String   @map("policy_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  // Relations
+  knowledgeBase KnowledgeBaseEntry @relation(fields: [knowledgeBaseId], references: [id], onDelete: Cascade)
+  policy        Policy             @relation(fields: [policyId], references: [id], onDelete: Cascade)
+
+  @@unique([knowledgeBaseId, policyId])
+  @@index([policyId])
+  @@map("knowledge_base_policies")
+}
+
+model KnowledgeAttachment {
+  id              String @id @default(uuid())
+  knowledgeBaseId String @map("knowledge_base_id")
+
+  // File Details
+  filename    String
+  storagePath String @map("storage_path")
+  mimeType    String @map("mime_type")
+  size        Int // bytes
+
+  uploadedBy String   @map("uploaded_by")
+  uploadedAt DateTime @default(now()) @map("uploaded_at")
+
+  // Relations
+  knowledgeBase  KnowledgeBaseEntry @relation(fields: [knowledgeBaseId], references: [id], onDelete: Cascade)
+  uploadedByUser User               @relation("KnowledgeAttachmentUploadedBy", fields: [uploadedBy], references: [id], onDelete: Restrict)
+
+  @@index([knowledgeBaseId])
+  @@map("knowledge_attachments")
+}
+
+model TrustCenterConfig {
+  id             String @id @default(uuid())
+  organizationId String @unique @map("organization_id")
+
+  // Basic Settings
+  isEnabled    Boolean @default(false) @map("is_enabled")
+  customDomain String? @map("custom_domain")
+
+  // Branding
+  logoUrl      String? @map("logo_url")
+  companyName  String  @map("company_name")
+  description  String? @db.Text
+  primaryColor String? @map("primary_color") // Hex color
+
+  // Contact
+  securityEmail String? @map("security_email")
+  supportUrl    String? @map("support_url")
+
+  // Content Sections
+  showCertifications   Boolean @default(true) @map("show_certifications")
+  showPolicies         Boolean @default(true) @map("show_policies")
+  showSecurityFeatures Boolean @default(true) @map("show_security_features")
+  showPrivacy          Boolean @default(true) @map("show_privacy")
+  showIncidentResponse Boolean @default(true) @map("show_incident_response")
+
+  // Custom Sections (JSON config)
+  customSections Json? @map("custom_sections")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("trust_center_config")
+}
+
+model TrustCenterContent {
+  id             String @id @default(uuid())
+  organizationId String @map("organization_id")
+
+  // Content Details
+  section String // certifications, security_features, privacy, incident_response, custom
+  title   String
+  content String @db.Text
+  order   Int    @default(0) // Display order within section
+
+  // Publishing
+  isPublished Boolean @default(false) @map("is_published")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy String   @map("created_by")
+
+  // Relations
+  createdByUser User @relation("TrustCenterContentCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+
+  @@index([organizationId, section])
+  @@index([organizationId, isPublished])
+  @@map("trust_center_content")
+}
+
+// ===========================================
+// Audit Module - Internal & External Audits
+// ===========================================
+
+// Main audit entity
+model Audit {
+  id             String @id @default(uuid())
+  organizationId String @map("organization_id")
+  auditId        String @map("audit_id") // e.g., "AUD-001"
+
+  // Audit Type
+  auditType String @map("audit_type") // internal, external, surveillance, certification
+
+  // Scope & Framework
+  name        String
+  description String? @db.Text
+  framework   String? // SOC2, ISO27001, HIPAA, PCI-DSS, custom
+  scope       String? @db.Text // What's being audited
+
+  // Status
+  status AuditStatus @default(planning)
+
+  // Timeline
+  plannedStartDate DateTime? @map("planned_start_date")
+  plannedEndDate   DateTime? @map("planned_end_date")
+  actualStartDate  DateTime? @map("actual_start_date")
+  actualEndDate    DateTime? @map("actual_end_date")
+
+  // Internal Audit Team
+  leadAuditorId String?  @map("lead_auditor_id") // Internal audit lead
+  auditTeam     String[] @default([]) @map("audit_team") // User IDs of internal team
+
+  // External Auditor Information
+  isExternal        Boolean @default(false) @map("is_external")
+  auditFirm         String? @map("audit_firm") // External audit firm name
+  externalLeadName  String? @map("external_lead_name")
+  externalLeadEmail String? @map("external_lead_email")
+
+  // Access Control for External Auditors
+  auditPortalEnabled Boolean   @default(false) @map("audit_portal_enabled")
+  portalAccessCode   String?   @unique @map("portal_access_code") // Unique code for portal access
+  portalExpiresAt    DateTime? @map("portal_expires_at")
+
+  // Documentation
+  objectives  String? @db.Text
+  methodology String? @db.Text
+  notes       String? @db.Text
+
+  // Results
+  overallRating    String? @map("overall_rating") // pass, pass_with_observations, fail
+  findingsCount    Int     @default(0) @map("findings_count")
+  criticalFindings Int     @default(0) @map("critical_findings")
+  highFindings     Int     @default(0) @map("high_findings")
+  mediumFindings   Int     @default(0) @map("medium_findings")
+  lowFindings      Int     @default(0) @map("low_findings")
+
+  // Integration
+  fieldGuideId   String? @unique @map("field_guide_id") // FieldGuide audit ID if integrated
+  fieldGuideData Json?   @map("field_guide_data") // Sync data from FieldGuide
+
+  tags String[] @default([])
+
+  createdBy String   @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  createdByUser User              @relation("AuditCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+  requests      AuditRequest[]
+  findings      AuditFinding[]
+  evidence      AuditEvidence[]
+  testResults   AuditTestResult[]
+  meetings      AuditMeeting[]
+  activities    AuditActivity[]
+
+  @@unique([organizationId, auditId])
+  @@index([organizationId, status])
+  @@index([organizationId, auditType])
+  @@index([isExternal])
+  @@map("audits")
+}
+
+// Evidence/document requests from auditors
+model AuditRequest {
+  id             String @id @default(uuid())
+  auditId        String @map("audit_id")
+  organizationId String @map("organization_id")
+
+  // Request Details
+  requestNumber String @map("request_number") // e.g., "REQ-001"
+  category      String // control_documentation, policy, evidence, interview, access, walkthrough
+  title         String
+  description   String @db.Text
+
+  // Control/Requirement Link
+  controlId      String? @map("control_id")
+  requirementRef String? @map("requirement_ref") // Framework requirement reference
+
+  // Status
+  status   String @default("open") // open, in_progress, submitted, under_review, approved, rejected, clarification_needed
+  priority String @default("medium") // low, medium, high, critical
+
+  // Assignment
+  assignedTo  String? @map("assigned_to") // Internal team member responsible
+  requestedBy String? @map("requested_by") // Auditor who requested
+
+  // Timeline
+  dueDate     DateTime? @map("due_date")
+  submittedAt DateTime? @map("submitted_at")
+  reviewedAt  DateTime? @map("reviewed_at")
+
+  // Response
+  responseNotes String? @map("response_notes") @db.Text
+  reviewerNotes String? @map("reviewer_notes") @db.Text
+
+  tags String[] @default([])
+
+  createdBy String   @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  audit           Audit                 @relation(fields: [auditId], references: [id], onDelete: Cascade)
+  createdByUser   User                  @relation("AuditRequestCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+  assignedToUser  User?                 @relation("AuditRequestAssignedTo", fields: [assignedTo], references: [id], onDelete: Restrict)
+  requestedByUser User?                 @relation("AuditRequestRequestedBy", fields: [requestedBy], references: [id], onDelete: Restrict)
+  evidence        AuditEvidence[]
+  comments        AuditRequestComment[]
+
+  @@index([auditId, status])
+  @@index([organizationId, status])
+  @@index([assignedTo])
+  @@map("audit_requests")
+}
+
+// Evidence submitted for audit
+model AuditEvidence {
+  id             String  @id @default(uuid())
+  auditId        String  @map("audit_id")
+  requestId      String? @map("request_id") // Linked to specific request
+  organizationId String  @map("organization_id")
+
+  // Evidence Details
+  title        String
+  description  String?
+  evidenceType String  @map("evidence_type") // document, screenshot, export, video, interview_notes
+
+  // File Storage
+  filename    String?
+  storagePath String? @map("storage_path")
+  mimeType    String? @map("mime_type")
+  size        Int? // bytes
+
+  // Links to existing evidence
+  linkedEvidenceId String? @map("linked_evidence_id") // Link to existing Evidence record
+  linkedControlId  String? @map("linked_control_id")
+  linkedPolicyId   String? @map("linked_policy_id")
+
+  // Metadata
+  collectedDate DateTime  @default(now()) @map("collected_date")
+  validFrom     DateTime? @map("valid_from")
+  validUntil    DateTime? @map("valid_until")
+
+  // Review Status
+  reviewStatus String    @default("pending") @map("review_status") // pending, accepted, rejected, needs_clarification
+  reviewedBy   String?   @map("reviewed_by")
+  reviewedAt   DateTime? @map("reviewed_at")
+  reviewNotes  String?   @map("review_notes") @db.Text
+
+  tags String[] @default([])
+
+  uploadedBy String   @map("uploaded_by")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  audit          Audit         @relation(fields: [auditId], references: [id], onDelete: Cascade)
+  request        AuditRequest? @relation(fields: [requestId], references: [id])
+  uploadedByUser User          @relation("AuditEvidenceUploadedBy", fields: [uploadedBy], references: [id], onDelete: Restrict)
+  reviewedByUser User?         @relation("AuditEvidenceReviewedBy", fields: [reviewedBy], references: [id], onDelete: Restrict)
+
+  @@index([auditId, reviewStatus])
+  @@index([requestId])
+  @@map("audit_evidence")
+}
+
+// Audit findings/observations
+model AuditFinding {
+  id             String @id @default(uuid())
+  auditId        String @map("audit_id")
+  organizationId String @map("organization_id")
+
+  // Finding Details
+  findingNumber String @map("finding_number") // e.g., "F-001"
+  title         String
+  description   String @db.Text
+
+  // Classification
+  category String // control_deficiency, documentation_gap, process_issue, compliance_gap
+  severity String // critical, high, medium, low, observation
+
+  // Control/Requirement Link
+  controlId      String? @map("control_id")
+  requirementRef String? @map("requirement_ref")
+
+  // Status
+  status String @default("open") // open, acknowledged, remediation_planned, remediation_in_progress, resolved, accepted_risk
+
+  // Remediation
+  remediationPlan  String?   @map("remediation_plan") @db.Text
+  remediationOwner String?   @map("remediation_owner")
+  targetDate       DateTime? @map("target_date")
+  actualDate       DateTime? @map("actual_date")
+
+  // Root Cause
+  rootCause      String? @map("root_cause") @db.Text
+  impact         String? @db.Text
+  recommendation String? @db.Text
+
+  // Management Response
+  managementResponse String?   @map("management_response") @db.Text
+  responseDate       DateTime? @map("response_date")
+
+  tags String[] @default([])
+
+  identifiedBy String   @map("identified_by")
+  identifiedAt DateTime @default(now()) @map("identified_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  audit            Audit @relation(fields: [auditId], references: [id], onDelete: Cascade)
+  identifiedByUser User  @relation("AuditFindingIdentifiedBy", fields: [identifiedBy], references: [id], onDelete: Restrict)
+
+  @@index([auditId, severity])
+  @@index([organizationId, status])
+  @@index([remediationOwner])
+  @@map("audit_findings")
+}
+
+// Control testing results
+model AuditTestResult {
+  id             String @id @default(uuid())
+  auditId        String @map("audit_id")
+  organizationId String @map("organization_id")
+
+  // Test Details
+  controlId     String  @map("control_id")
+  testNumber    String? @map("test_number")
+  testObjective String  @map("test_objective") @db.Text
+  testProcedure String  @map("test_procedure") @db.Text
+
+  // Sample
+  sampleSize     Int?    @map("sample_size")
+  sampleMethod   String? @map("sample_method") // random, judgmental, complete_population
+  populationSize Int?    @map("population_size")
+
+  // Results
+  result         String // pass, fail, not_applicable, not_tested
+  exceptionCount Int     @default(0) @map("exception_count")
+  observations   String? @db.Text
+
+  // Test Evidence
+  evidenceIds String[] @default([]) @map("evidence_ids")
+
+  // Performed By
+  testedBy   String    @map("tested_by")
+  testedAt   DateTime  @default(now()) @map("tested_at")
+  reviewedBy String?   @map("reviewed_by")
+  reviewedAt DateTime? @map("reviewed_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  audit          Audit @relation(fields: [auditId], references: [id], onDelete: Cascade)
+  testedByUser   User  @relation("AuditTestResultTestedBy", fields: [testedBy], references: [id], onDelete: Restrict)
+  reviewedByUser User? @relation("AuditTestResultReviewedBy", fields: [reviewedBy], references: [id], onDelete: Restrict)
+
+  @@index([auditId, controlId])
+  @@index([auditId, result])
+  @@map("audit_test_results")
+}
+
+// Audit meetings/interviews
+model AuditMeeting {
+  id             String @id @default(uuid())
+  auditId        String @map("audit_id")
+  organizationId String @map("organization_id")
+
+  // Meeting Details
+  meetingType String  @map("meeting_type") // kickoff, status_update, interview, walkthrough, closing
+  title       String
+  description String? @db.Text
+
+  // Scheduling
+  scheduledAt DateTime @map("scheduled_at")
+  duration    Int? // minutes
+  location    String? // Physical or meeting link
+
+  // Participants
+  internalAttendees String[] @default([]) @map("internal_attendees") // User IDs
+  externalAttendees String[] @default([]) @map("external_attendees") // Names/emails
+
+  // Status
+  status PolicyTrainingStatus @default(scheduled)
+
+  // Notes
+  agenda      String? @db.Text
+  minutes     String? @db.Text
+  actionItems Json?   @map("action_items")
+
+  // Attachments
+  attachmentIds String[] @default([]) @map("attachment_ids")
+
+  createdBy String   @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  audit         Audit @relation(fields: [auditId], references: [id], onDelete: Cascade)
+  createdByUser User  @relation("AuditMeetingCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+
+  @@index([auditId, scheduledAt])
+  @@index([organizationId, status])
+  @@map("audit_meetings")
+}
+
+// Audit activity log
+model AuditActivity {
+  id             String @id @default(uuid())
+  auditId        String @map("audit_id")
+  organizationId String @map("organization_id")
+
+  // Activity Details
+  activityType String  @map("activity_type") // status_change, request_created, evidence_submitted, finding_created, comment_added, etc.
+  description  String
+  entityType   String? @map("entity_type") // request, evidence, finding, test
+  entityId     String? @map("entity_id")
+
+  // Actor
+  actorType String  @map("actor_type") // internal_user, external_auditor, system
+  actorId   String? @map("actor_id")
+  actorName String  @map("actor_name")
+
+  // Changes
+  changes  Json?
+  metadata Json?
+
+  timestamp DateTime @default(now())
+
+  // Relations
+  audit Audit @relation(fields: [auditId], references: [id], onDelete: Cascade)
+
+  @@index([auditId, timestamp])
+  @@index([organizationId, activityType])
+  @@map("audit_activities")
+}
+
+// Comments on audit requests
+model AuditRequestComment {
+  id        String @id @default(uuid())
+  requestId String @map("request_id")
+
+  // Comment Details
+  content    String  @db.Text
+  isInternal Boolean @default(false) @map("is_internal") // Internal notes vs shared with auditor
+
+  // Author
+  authorType String  @map("author_type") // internal_user, external_auditor
+  authorId   String? @map("author_id")
+  authorName String  @map("author_name")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  request AuditRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([requestId, createdAt])
+  @@map("audit_request_comments")
+}
+
+// External auditor portal users (temporary access)
+model AuditPortalUser {
+  id      String @id @default(uuid())
+  auditId String @map("audit_id")
+
+  // User Details
+  name  String
+  email String
+  role  String // lead_auditor, auditor, reviewer
+
+  // Access
+  accessCode  String    @map("access_code") // Personal access code
+  isActive    Boolean   @default(true) @map("is_active")
+  lastLoginAt DateTime? @map("last_login_at")
+
+  // Permissions
+  canViewAll Boolean @default(true) @map("can_view_all")
+  canUpload  Boolean @default(false) @map("can_upload")
+  canComment Boolean @default(true) @map("can_comment")
+
+  invitedBy String   @map("invited_by")
+  createdAt DateTime @default(now()) @map("created_at")
+  expiresAt DateTime @map("expires_at")
+
+  // Relations
+  invitedByUser User @relation("AuditPortalUserInvitedBy", fields: [invitedBy], references: [id], onDelete: Restrict)
+
+  @@unique([auditId, email])
+  @@index([accessCode])
+  @@map("audit_portal_users")
+}

@@ -1,0 +1,437 @@
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { tasksApi, usersApi } from '@/lib/api';
+import toast from 'react-hot-toast';
+import {
+  ClipboardDocumentListIcon,
+  PlusIcon,
+  CheckIcon,
+  XMarkIcon,
+  CalendarIcon,
+  UserIcon,
+  FlagIcon,
+  TrashIcon,
+} from '@heroicons/react/24/outline';
+import clsx from 'clsx';
+
+interface TasksPanelProps {
+  entityType: string;
+  entityId: string;
+}
+
+const STATUS_OPTIONS = [
+  { value: 'open', label: 'Open', color: 'text-blue-400 bg-blue-400/10' },
+  { value: 'in_progress', label: 'In Progress', color: 'text-yellow-400 bg-yellow-400/10' },
+  { value: 'completed', label: 'Completed', color: 'text-green-400 bg-green-400/10' },
+  { value: 'cancelled', label: 'Cancelled', color: 'text-surface-400 bg-surface-400/10' },
+];
+
+const PRIORITY_OPTIONS = [
+  { value: 'low', label: 'Low', color: 'text-green-400' },
+  { value: 'medium', label: 'Medium', color: 'text-yellow-400' },
+  { value: 'high', label: 'High', color: 'text-orange-400' },
+  { value: 'critical', label: 'Critical', color: 'text-red-400' },
+];
+
+export default function TasksPanel({ entityType, entityId }: TasksPanelProps) {
+  const queryClient = useQueryClient();
+  const [isCreating, setIsCreating] = useState(false);
+  const [editingTask, setEditingTask] = useState<string | null>(null);
+  const [newTask, setNewTask] = useState({
+    title: '',
+    description: '',
+    priority: 'medium',
+    assigneeId: '',
+    dueDate: '',
+  });
+
+  const { data: tasks = [], isLoading } = useQuery({
+    queryKey: ['tasks', entityType, entityId],
+    queryFn: () => tasksApi.list({ entityType, entityId }).then((res) => res.data),
+    enabled: !!entityId,
+  });
+
+  const { data: users = [] } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => usersApi.list().then((res) => res.data),
+  });
+
+  const createMutation = useMutation({
+    mutationFn: (data: any) => tasksApi.create({ entityType, entityId, ...data }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks', entityType, entityId] });
+      setIsCreating(false);
+      setNewTask({ title: '', description: '', priority: 'medium', assigneeId: '', dueDate: '' });
+      toast.success('Task created');
+    },
+    onError: () => {
+      toast.error('Failed to create task');
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, ...data }: any) => tasksApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks', entityType, entityId] });
+      setEditingTask(null);
+    },
+    onError: () => {
+      toast.error('Failed to update task');
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => tasksApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks', entityType, entityId] });
+      toast.success('Task deleted');
+    },
+    onError: () => {
+      toast.error('Failed to delete task');
+    },
+  });
+
+  const handleCreate = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTask.title.trim()) return;
+    createMutation.mutate({
+      title: newTask.title.trim(),
+      description: newTask.description.trim() || undefined,
+      priority: newTask.priority,
+      assigneeId: newTask.assigneeId || undefined,
+      dueDate: newTask.dueDate || undefined,
+    });
+  };
+
+  const openTasks = tasks.filter((t: any) => t.status === 'open' || t.status === 'in_progress');
+  const completedTasks = tasks.filter((t: any) => t.status === 'completed' || t.status === 'cancelled');
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <ClipboardDocumentListIcon className="w-5 h-5 text-surface-400" />
+          <h3 className="text-sm font-semibold text-surface-100">
+            Tasks ({openTasks.length} open)
+          </h3>
+        </div>
+        {!isCreating && (
+          <button
+            onClick={() => setIsCreating(true)}
+            className="btn-outline text-xs px-2 py-1"
+          >
+            <PlusIcon className="w-3 h-3 mr-1" />
+            Add Task
+          </button>
+        )}
+      </div>
+
+      {/* Create Task Form */}
+      {isCreating && (
+        <form onSubmit={handleCreate} className="card p-4 space-y-3">
+          <input
+            type="text"
+            value={newTask.title}
+            onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+            placeholder="Task title..."
+            className="input w-full"
+            autoFocus
+          />
+          <textarea
+            value={newTask.description}
+            onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+            placeholder="Description (optional)"
+            className="input w-full h-16"
+          />
+          <div className="grid grid-cols-3 gap-2">
+            <select
+              value={newTask.priority}
+              onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
+              className="input text-sm"
+            >
+              {PRIORITY_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+            <select
+              value={newTask.assigneeId}
+              onChange={(e) => setNewTask({ ...newTask, assigneeId: e.target.value })}
+              className="input text-sm"
+            >
+              <option value="">Unassigned</option>
+              {users.map((user: any) => (
+                <option key={user.id} value={user.id}>
+                  {user.displayName}
+                </option>
+              ))}
+            </select>
+            <input
+              type="date"
+              value={newTask.dueDate}
+              onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
+              className="input text-sm"
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setIsCreating(false)}
+              className="btn-secondary text-sm"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={!newTask.title.trim() || createMutation.isPending}
+              className="btn-primary text-sm"
+            >
+              {createMutation.isPending ? 'Creating...' : 'Create Task'}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* Tasks List */}
+      {isLoading ? (
+        <div className="text-center py-4 text-surface-500">Loading tasks...</div>
+      ) : tasks.length === 0 ? (
+        <div className="text-center py-4 text-surface-500 text-sm">
+          No tasks yet. Create one to track work items.
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {/* Open Tasks */}
+          {openTasks.map((task: any) => (
+            <TaskCard
+              key={task.id}
+              task={task}
+              users={users}
+              isEditing={editingTask === task.id}
+              onEdit={() => setEditingTask(task.id)}
+              onCancelEdit={() => setEditingTask(null)}
+              onUpdate={(data) => updateMutation.mutate({ id: task.id, ...data })}
+              onDelete={() => deleteMutation.mutate(task.id)}
+              isUpdating={updateMutation.isPending}
+            />
+          ))}
+
+          {/* Completed Tasks (collapsed) */}
+          {completedTasks.length > 0 && (
+            <details className="mt-4">
+              <summary className="text-sm text-surface-500 cursor-pointer hover:text-surface-300">
+                {completedTasks.length} completed task(s)
+              </summary>
+              <div className="mt-2 space-y-2 opacity-60">
+                {completedTasks.map((task: any) => (
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    users={users}
+                    isEditing={false}
+                    onEdit={() => {}}
+                    onCancelEdit={() => {}}
+                    onUpdate={() => {}}
+                    onDelete={() => deleteMutation.mutate(task.id)}
+                    isUpdating={false}
+                  />
+                ))}
+              </div>
+            </details>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TaskCard({
+  task,
+  users,
+  isEditing,
+  onEdit,
+  onCancelEdit,
+  onUpdate,
+  onDelete,
+  isUpdating,
+}: {
+  task: any;
+  users: any[];
+  isEditing: boolean;
+  onEdit: () => void;
+  onCancelEdit: () => void;
+  onUpdate: (data: any) => void;
+  onDelete: () => void;
+  isUpdating: boolean;
+}) {
+  const [editData, setEditData] = useState({
+    title: task.title,
+    description: task.description || '',
+    status: task.status,
+    priority: task.priority,
+    assigneeId: task.assigneeId || '',
+    dueDate: task.dueDate ? task.dueDate.split('T')[0] : '',
+  });
+
+  const statusConfig = STATUS_OPTIONS.find((s) => s.value === task.status) || STATUS_OPTIONS[0];
+  const priorityConfig = PRIORITY_OPTIONS.find((p) => p.value === task.priority) || PRIORITY_OPTIONS[1];
+
+  const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'completed';
+
+  if (isEditing) {
+    return (
+      <div className="card p-3 space-y-2">
+        <input
+          type="text"
+          value={editData.title}
+          onChange={(e) => setEditData({ ...editData, title: e.target.value })}
+          className="input w-full text-sm"
+        />
+        <textarea
+          value={editData.description}
+          onChange={(e) => setEditData({ ...editData, description: e.target.value })}
+          className="input w-full h-16 text-sm"
+          placeholder="Description"
+        />
+        <div className="grid grid-cols-2 gap-2">
+          <select
+            value={editData.status}
+            onChange={(e) => setEditData({ ...editData, status: e.target.value })}
+            className="input text-sm"
+          >
+            {STATUS_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+          <select
+            value={editData.priority}
+            onChange={(e) => setEditData({ ...editData, priority: e.target.value })}
+            className="input text-sm"
+          >
+            {PRIORITY_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+          <select
+            value={editData.assigneeId}
+            onChange={(e) => setEditData({ ...editData, assigneeId: e.target.value })}
+            className="input text-sm"
+          >
+            <option value="">Unassigned</option>
+            {users.map((user: any) => (
+              <option key={user.id} value={user.id}>
+                {user.displayName}
+              </option>
+            ))}
+          </select>
+          <input
+            type="date"
+            value={editData.dueDate}
+            onChange={(e) => setEditData({ ...editData, dueDate: e.target.value })}
+            className="input text-sm"
+          />
+        </div>
+        <div className="flex justify-end gap-2">
+          <button onClick={onCancelEdit} className="btn-secondary text-xs">
+            Cancel
+          </button>
+          <button
+            onClick={() => onUpdate({
+              ...editData,
+              assigneeId: editData.assigneeId || null,
+              dueDate: editData.dueDate || null,
+            })}
+            disabled={isUpdating}
+            className="btn-primary text-xs"
+          >
+            {isUpdating ? 'Saving...' : 'Save'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={clsx(
+        'card p-3 cursor-pointer hover:bg-surface-800 transition-colors',
+        task.status === 'completed' && 'opacity-60'
+      )}
+      onClick={onEdit}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <span className={clsx('badge text-xs', statusConfig.color)}>
+              {statusConfig.label}
+            </span>
+            <span className={clsx('text-xs', priorityConfig.color)}>
+              <FlagIcon className="w-3 h-3 inline" /> {priorityConfig.label}
+            </span>
+          </div>
+          <p className={clsx(
+            'text-sm font-medium text-surface-200',
+            task.status === 'completed' && 'line-through'
+          )}>
+            {task.title}
+          </p>
+          {task.description && (
+            <p className="text-xs text-surface-500 mt-1 line-clamp-2">
+              {task.description}
+            </p>
+          )}
+          <div className="flex items-center gap-3 mt-2 text-xs text-surface-500">
+            {task.assignee && (
+              <span className="flex items-center gap-1">
+                <UserIcon className="w-3 h-3" />
+                {task.assignee.displayName}
+              </span>
+            )}
+            {task.dueDate && (
+              <span className={clsx(
+                'flex items-center gap-1',
+                isOverdue && 'text-red-400'
+              )}>
+                <CalendarIcon className="w-3 h-3" />
+                {new Date(task.dueDate).toLocaleDateString()}
+                {isOverdue && ' (Overdue)'}
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-1">
+          {task.status !== 'completed' && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onUpdate({ status: 'completed' });
+              }}
+              className="p-1 rounded text-surface-500 hover:text-green-400 hover:bg-surface-700 transition-colors"
+              title="Mark complete"
+            >
+              <CheckIcon className="w-4 h-4" />
+            </button>
+          )}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            className="p-1 rounded text-surface-500 hover:text-red-400 hover:bg-surface-700 transition-colors"
+            title="Delete"
+          >
+            <TrashIcon className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+

@@ -1,0 +1,157 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 9 9 11;
+    --foreground: 250 250 250;
+    --card: 24 24 27;
+    --card-foreground: 250 250 250;
+    --primary: 34 197 94;
+    --primary-foreground: 5 46 22;
+    --secondary: 39 39 42;
+    --secondary-foreground: 250 250 250;
+    --muted: 39 39 42;
+    --muted-foreground: 161 161 170;
+    --accent: 39 39 42;
+    --accent-foreground: 250 250 250;
+    --destructive: 239 68 68;
+    --destructive-foreground: 250 250 250;
+    --border: 39 39 42;
+    --input: 39 39 42;
+    --ring: 34 197 94;
+  }
+
+  * {
+    @apply border-surface-800;
+  }
+
+  body {
+    @apply bg-surface-950 text-surface-100 antialiased;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-surface-950 disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+  .btn-primary {
+    @apply btn bg-brand-600 text-white hover:bg-brand-700;
+  }
+
+  .btn-secondary {
+    @apply btn bg-surface-800 text-surface-100 hover:bg-surface-700;
+  }
+
+  .btn-outline {
+    @apply btn border border-surface-700 bg-transparent hover:bg-surface-800;
+  }
+
+  .btn-ghost {
+    @apply btn bg-transparent hover:bg-surface-800;
+  }
+
+  .btn-danger {
+    @apply btn bg-red-600 text-white hover:bg-red-700;
+  }
+
+  .card {
+    @apply bg-surface-900 border border-surface-800 rounded-xl;
+  }
+
+  .input {
+    @apply w-full rounded-lg border border-surface-700 bg-surface-800 px-3 py-2 text-sm text-surface-100 placeholder:text-surface-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent disabled:opacity-50;
+  }
+
+  .label {
+    @apply text-sm font-medium text-surface-300;
+  }
+
+  .badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+
+  .badge-success {
+    @apply badge bg-green-500/20 text-green-400;
+  }
+
+  .badge-warning {
+    @apply badge bg-yellow-500/20 text-yellow-400;
+  }
+
+  .badge-danger {
+    @apply badge bg-red-500/20 text-red-400;
+  }
+
+  .badge-info {
+    @apply badge bg-blue-500/20 text-blue-400;
+  }
+
+  .badge-neutral {
+    @apply badge bg-surface-700 text-surface-300;
+  }
+
+  .stat-card {
+    @apply card p-6 flex flex-col;
+  }
+
+  .stat-value {
+    @apply text-3xl font-bold text-surface-100;
+  }
+
+  .stat-label {
+    @apply text-sm text-surface-400 mt-1;
+  }
+
+  .progress-bar {
+    @apply h-2 bg-surface-800 rounded-full overflow-hidden;
+  }
+
+  .progress-fill {
+    @apply h-full bg-brand-500 rounded-full transition-all duration-300;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-surface-900;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-surface-700 rounded-full hover:bg-surface-600;
+}
+
+/* Table styles */
+.table-container {
+  @apply overflow-x-auto;
+}
+
+table {
+  @apply w-full text-sm;
+}
+
+thead {
+  @apply border-b border-surface-800;
+}
+
+th {
+  @apply px-4 py-3 text-left text-xs font-medium text-surface-400 uppercase tracking-wider;
+}
+
+td {
+  @apply px-4 py-4 text-surface-300;
+}
+
+tbody tr {
+  @apply border-b border-surface-800/50 hover:bg-surface-800/50 transition-colors;
+}
+
+
+

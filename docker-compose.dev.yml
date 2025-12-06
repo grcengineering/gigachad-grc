@@ -1,0 +1,74 @@
+# Development overrides for docker-compose.yml
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+version: '3.8'
+
+services:
+  # Development mode for services with hot reload
+  controls:
+    build:
+      context: ./services/controls
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./services/controls/src:/app/src
+      - ./services/shared:/app/shared
+      - /app/node_modules
+    environment:
+      NODE_ENV: development
+
+  frameworks:
+    build:
+      context: ./services/frameworks
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./services/frameworks/src:/app/src
+      - ./services/shared:/app/shared
+      - /app/node_modules
+    environment:
+      NODE_ENV: development
+
+  integrations:
+    build:
+      context: ./services/integrations
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./services/integrations/src:/app/src
+      - ./services/shared:/app/shared
+      - /app/node_modules
+    environment:
+      NODE_ENV: development
+
+  policies:
+    build:
+      context: ./services/policies
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./services/policies/src:/app/src
+      - ./services/shared:/app/shared
+      - /app/node_modules
+    environment:
+      NODE_ENV: development
+
+  mcp:
+    build:
+      context: ./services/mcp
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./services/mcp/src:/app/src
+      - ./services/shared:/app/shared
+      - /app/node_modules
+    environment:
+      NODE_ENV: development
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./frontend/src:/app/src
+      - /app/node_modules
+    environment:
+      NODE_ENV: development
+
+
+

@@ -1,0 +1,399 @@
+services:
+  # ===========================================
+  # API Gateway - Traefik (Official Docker Image)
+  # ===========================================
+  traefik:
+    image: traefik:v3.0
+    container_name: grc-traefik
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--log.level=INFO"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8090:8080"  # Traefik dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./gateway/traefik.yml:/etc/traefik/traefik.yml:ro
+    networks:
+      - grc-network
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+
+  # ===========================================
+  # Database - PostgreSQL (Official Docker Image)
+  # ===========================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: grc-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-grc}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-grc_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-gigachad_grc}
+    ports:
+      - "5433:5432"  # Using 5433 externally to avoid conflicts
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d
+    networks:
+      - grc-network
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-grc} -d ${POSTGRES_DB:-gigachad_grc}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===========================================
+  # Cache & Message Queue - Redis (Official Docker Image)
+  # ===========================================
+  redis:
+    image: redis:7-alpine
+    container_name: grc-redis
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis_secret}
+    ports:
+      - "6380:6379"  # Using 6380 externally to avoid conflicts
+    volumes:
+      - redis_data:/data
+    networks:
+      - grc-network
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redis_secret}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===========================================
+  # Authentication - Keycloak (Official Keycloak Image)
+  # ===========================================
+  keycloak:
+    image: quay.io/keycloak/keycloak:25.0
+    container_name: grc-keycloak
+    command: start-dev --import-realm
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-gigachad_grc}
+      KC_DB_USERNAME: ${POSTGRES_USER:-grc}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD:-grc_secret}
+      KC_HOSTNAME: ${KEYCLOAK_HOSTNAME:-localhost}
+      KC_HOSTNAME_PORT: ${KEYCLOAK_PORT:-8080}
+      KC_HOSTNAME_STRICT: "false"
+      KC_HTTP_ENABLED: "true"
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./auth/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - grc-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.keycloak.rule=Host(`auth.localhost`)"
+      - "traefik.http.services.keycloak.loadbalancer.server.port=8080"
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+
+  # ===========================================
+  # Object Storage - MinIO (Official MinIO Image)
+  # ===========================================
+  minio:
+    image: minio/minio:latest
+    container_name: grc-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    ports:
+      - "9000:9000"   # API
+      - "9001:9001"   # Console
+    volumes:
+      - minio_data:/data
+    networks:
+      - grc-network
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # ===========================================
+  # Controls Service - Security Controls Management
+  # ===========================================
+  controls:
+    build:
+      context: .
+      dockerfile: services/controls/Dockerfile
+    container_name: grc-controls
+    environment:
+      NODE_ENV: development
+      PORT: 3001
+      DATABASE_URL: postgresql://${POSTGRES_USER:-grc}:${POSTGRES_PASSWORD:-grc_secret}@postgres:5432/${POSTGRES_DB:-gigachad_grc}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_secret}@redis:6379
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_USE_SSL: false
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-grc}
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+      minio:
+        condition: service_healthy
+    networks:
+      - grc-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.controls.rule=PathPrefix(`/api/controls`)"
+      - "traefik.http.routers.controls-evidence.rule=PathPrefix(`/api/evidence`)"
+      - "traefik.http.services.controls.loadbalancer.server.port=3001"
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+
+  # ===========================================
+  # Frameworks Service - Compliance Frameworks & Risk Management
+  # ===========================================
+  frameworks:
+    build:
+      context: .
+      dockerfile: services/frameworks/Dockerfile
+    container_name: grc-frameworks
+    environment:
+      NODE_ENV: development
+      PORT: 3002
+      DATABASE_URL: postgresql://${POSTGRES_USER:-grc}:${POSTGRES_PASSWORD:-grc_secret}@postgres:5432/${POSTGRES_DB:-gigachad_grc}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_secret}@redis:6379
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_USE_SSL: false
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-grc}
+    ports:
+      - "3002:3002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+      minio:
+        condition: service_healthy
+    networks:
+      - grc-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frameworks.rule=PathPrefix(`/api/frameworks`)"
+      - "traefik.http.routers.frameworks-risks.rule=PathPrefix(`/api/risks`)"
+      - "traefik.http.services.frameworks.loadbalancer.server.port=3002"
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+
+  # ===========================================
+  # Policies Service - Policy Center
+  # ===========================================
+  policies:
+    build:
+      context: .
+      dockerfile: services/policies/Dockerfile
+    container_name: grc-policies
+    environment:
+      NODE_ENV: development
+      PORT: 3004
+      DATABASE_URL: postgresql://${POSTGRES_USER:-grc}:${POSTGRES_PASSWORD:-grc_secret}@postgres:5432/${POSTGRES_DB:-gigachad_grc}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_secret}@redis:6379
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_USE_SSL: false
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-grc}
+    ports:
+      - "3004:3004"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+      minio:
+        condition: service_healthy
+    networks:
+      - grc-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.policies.rule=PathPrefix(`/api/policies`)"
+      - "traefik.http.services.policies.loadbalancer.server.port=3004"
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+
+  # ===========================================
+  # TPRM Service - Third Party Risk Management
+  # ===========================================
+  tprm:
+    build:
+      context: .
+      dockerfile: services/tprm/Dockerfile
+    container_name: grc-tprm
+    environment:
+      NODE_ENV: development
+      PORT: 3005
+      DATABASE_URL: postgresql://${POSTGRES_USER:-grc}:${POSTGRES_PASSWORD:-grc_secret}@postgres:5432/${POSTGRES_DB:-gigachad_grc}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_secret}@redis:6379
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_USE_SSL: false
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-grc}
+    ports:
+      - "3005:3005"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+      minio:
+        condition: service_healthy
+    networks:
+      - grc-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.tprm-vendors.rule=PathPrefix(`/api/vendors`)"
+      - "traefik.http.routers.tprm-assessments.rule=PathPrefix(`/api/assessments`)"
+      - "traefik.http.routers.tprm-contracts.rule=PathPrefix(`/api/contracts`)"
+      - "traefik.http.services.tprm.loadbalancer.server.port=3005"
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+
+  # ===========================================
+  # Trust Service - Questionnaires & Knowledge Base
+  # ===========================================
+  trust:
+    build:
+      context: .
+      dockerfile: services/trust/Dockerfile
+    container_name: grc-trust
+    environment:
+      NODE_ENV: development
+      PORT: 3006
+      DATABASE_URL: postgresql://${POSTGRES_USER:-grc}:${POSTGRES_PASSWORD:-grc_secret}@postgres:5432/${POSTGRES_DB:-gigachad_grc}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_secret}@redis:6379
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_USE_SSL: false
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-grc}
+    ports:
+      - "3006:3006"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+      minio:
+        condition: service_healthy
+    networks:
+      - grc-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.trust-questionnaires.rule=PathPrefix(`/api/questionnaires`)"
+      - "traefik.http.routers.trust-knowledge-base.rule=PathPrefix(`/api/knowledge-base`)"
+      - "traefik.http.routers.trust-center.rule=PathPrefix(`/api/trust-center`)"
+      - "traefik.http.services.trust.loadbalancer.server.port=3006"
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+
+  # ===========================================
+  # Audit Service - Internal & External Audits
+  # ===========================================
+  audit:
+    build:
+      context: .
+      dockerfile: services/audit/Dockerfile
+    container_name: grc-audit
+    environment:
+      NODE_ENV: development
+      PORT: 3007
+      DATABASE_URL: postgresql://${POSTGRES_USER:-grc}:${POSTGRES_PASSWORD:-grc_secret}@postgres:5432/${POSTGRES_DB:-gigachad_grc}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_secret}@redis:6379
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_USE_SSL: false
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-grc}
+    ports:
+      - "3007:3007"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+      minio:
+        condition: service_healthy
+    networks:
+      - grc-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.audit-audits.rule=PathPrefix(`/api/audits`)"
+      - "traefik.http.routers.audit-requests.rule=PathPrefix(`/api/audit-requests`)"
+      - "traefik.http.routers.audit-findings.rule=PathPrefix(`/api/audit-findings`)"
+      - "traefik.http.routers.audit-portal.rule=PathPrefix(`/api/audit-portal`)"
+      - "traefik.http.services.audit.loadbalancer.server.port=3007"
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  grc-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:

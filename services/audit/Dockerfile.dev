@@ -1,0 +1,27 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install dependencies
+COPY services/shared/package*.json ./services/shared/
+WORKDIR /app/services/shared
+RUN npm install
+
+COPY services/audit/package*.json ./services/audit/
+WORKDIR /app/services/audit
+RUN npm install
+
+# Copy source code
+WORKDIR /app
+COPY services/shared ./services/shared
+COPY services/audit ./services/audit
+
+# Generate Prisma client
+WORKDIR /app/services/audit
+RUN npx prisma generate --schema=../shared/prisma/schema.prisma
+
+WORKDIR /app/services/audit
+
+EXPOSE 3007
+
+CMD ["npm", "run", "start:dev"]

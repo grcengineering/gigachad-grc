@@ -1,0 +1,813 @@
+version: '3.8'
+
+services:
+  # ===========================================
+  # API Gateway - Traefik (Official Docker Image)
+  # ===========================================
+  traefik:
+    image: traefik:v3.0
+    container_name: grc-traefik
+    command:
+      - "--api.dashboard=false"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      - "--log.level=${TRAEFIK_LOG_LEVEL:-WARN}"
+      - "--log.format=json"
+      - "--accesslog=true"
+      - "--accesslog.format=json"
+      - "--accesslog.filepath=/var/log/traefik/access.log"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik_letsencrypt:/letsencrypt
+      - traefik_logs:/var/log/traefik
+    networks:
+      - grc-network
+      - grc-dmz
+    restart: always
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+  # ===========================================
+  # Database - PostgreSQL (Official Docker Image)
+  # ===========================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: grc-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=en_US.UTF-8"
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - postgres_backups:/backups
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - grc-network
+    restart: always
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /run/postgresql
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    shm_size: 256mb
+
+  # ===========================================
+  # Cache & Message Queue - Redis (Official Docker Image)
+  # ===========================================
+  redis:
+    image: redis:7-alpine
+    container_name: grc-redis
+    command: >
+      redis-server
+      --appendonly yes
+      --requirepass ${REDIS_PASSWORD}
+      --maxmemory ${REDIS_MAX_MEMORY:-512mb}
+      --maxmemory-policy allkeys-lru
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+      --loglevel ${REDIS_LOG_LEVEL:-warning}
+    volumes:
+      - redis_data:/data
+    networks:
+      - grc-network
+    restart: always
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # ===========================================
+  # Authentication - Keycloak (Official Keycloak Image)
+  # ===========================================
+  keycloak:
+    image: quay.io/keycloak/keycloak:25.0
+    container_name: grc-keycloak
+    command: start --optimized --import-realm
+    environment:
+      # Database
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      KC_DB_USERNAME: ${POSTGRES_USER}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      KC_DB_POOL_INITIAL_SIZE: ${KC_DB_POOL_INITIAL_SIZE:-5}
+      KC_DB_POOL_MIN_SIZE: ${KC_DB_POOL_MIN_SIZE:-5}
+      KC_DB_POOL_MAX_SIZE: ${KC_DB_POOL_MAX_SIZE:-20}
+
+      # Hostname
+      KC_HOSTNAME: ${KEYCLOAK_HOSTNAME}
+      KC_HOSTNAME_STRICT: "true"
+      KC_HOSTNAME_STRICT_HTTPS: "true"
+      KC_PROXY: edge
+
+      # HTTP/HTTPS
+      KC_HTTP_ENABLED: "true"
+      KC_HTTPS_CERTIFICATE_FILE: /opt/keycloak/conf/server.crt.pem
+      KC_HTTPS_CERTIFICATE_KEY_FILE: /opt/keycloak/conf/server.key.pem
+
+      # Admin
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+
+      # Performance
+      KC_CACHE: ispn
+      KC_CACHE_STACK: kubernetes
+
+      # Logging
+      KC_LOG_LEVEL: ${KC_LOG_LEVEL:-info}
+      KC_LOG_CONSOLE_OUTPUT: json
+
+      # Features
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
+      KC_HTTP_RELATIVE_PATH: /auth
+    volumes:
+      - ./auth/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+      - keycloak_data:/opt/keycloak/data
+      - keycloak_certs:/opt/keycloak/conf:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - grc-network
+      - grc-dmz
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=grc-dmz"
+      - "traefik.http.routers.keycloak.rule=Host(`${KEYCLOAK_HOSTNAME}`)"
+      - "traefik.http.routers.keycloak.entrypoints=websecure"
+      - "traefik.http.routers.keycloak.tls.certresolver=letsencrypt"
+      - "traefik.http.services.keycloak.loadbalancer.server.port=8080"
+      - "traefik.http.middlewares.keycloak-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
+      - "traefik.http.routers.keycloak.middlewares=keycloak-headers"
+    restart: always
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080 && echo -e 'GET /auth/health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200 OK'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # ===========================================
+  # Object Storage - MinIO (Official MinIO Image)
+  # ===========================================
+  minio:
+    image: minio/minio:latest
+    container_name: grc-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_BROWSER: ${MINIO_BROWSER:-on}
+      MINIO_PROMETHEUS_AUTH_TYPE: public
+      MINIO_UPDATE: "off"
+      MINIO_DOMAIN: ${MINIO_DOMAIN:-storage.${APP_DOMAIN}}
+    volumes:
+      - minio_data:/data
+    networks:
+      - grc-network
+      - grc-dmz
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=grc-dmz"
+      # API
+      - "traefik.http.routers.minio-api.rule=Host(`storage.${APP_DOMAIN}`)"
+      - "traefik.http.routers.minio-api.entrypoints=websecure"
+      - "traefik.http.routers.minio-api.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.minio-api.service=minio-api"
+      - "traefik.http.services.minio-api.loadbalancer.server.port=9000"
+      # Console
+      - "traefik.http.routers.minio-console.rule=Host(`console.storage.${APP_DOMAIN}`)"
+      - "traefik.http.routers.minio-console.entrypoints=websecure"
+      - "traefik.http.routers.minio-console.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.minio-console.service=minio-console"
+      - "traefik.http.services.minio-console.loadbalancer.server.port=9001"
+    restart: always
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # ===========================================
+  # Controls Service - Security Controls Management
+  # ===========================================
+  controls:
+    build:
+      context: .
+      dockerfile: services/controls/Dockerfile
+      args:
+        NODE_ENV: production
+    image: grc-controls:${IMAGE_TAG:-latest}
+    container_name: grc-controls
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_USE_SSL: false
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      KEYCLOAK_URL: http://keycloak:8080/auth
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM}
+      JWT_SECRET: ${JWT_SECRET}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-100}
+      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-60000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - grc-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.controls.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api/controls`)"
+      - "traefik.http.routers.controls-evidence.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api/evidence`)"
+      - "traefik.http.routers.controls.entrypoints=websecure"
+      - "traefik.http.routers.controls.tls.certresolver=letsencrypt"
+      - "traefik.http.services.controls.loadbalancer.server.port=3001"
+      - "traefik.http.middlewares.controls-ratelimit.ratelimit.average=100"
+      - "traefik.http.middlewares.controls-ratelimit.ratelimit.burst=50"
+      - "traefik.http.routers.controls.middlewares=controls-ratelimit"
+    restart: always
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/.npm
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # ===========================================
+  # Frameworks Service - Compliance Frameworks & Risk Management
+  # ===========================================
+  frameworks:
+    build:
+      context: .
+      dockerfile: services/frameworks/Dockerfile
+      args:
+        NODE_ENV: production
+    image: grc-frameworks:${IMAGE_TAG:-latest}
+    container_name: grc-frameworks
+    environment:
+      NODE_ENV: production
+      PORT: 3002
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_USE_SSL: false
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      KEYCLOAK_URL: http://keycloak:8080/auth
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM}
+      JWT_SECRET: ${JWT_SECRET}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-100}
+      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-60000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - grc-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frameworks.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api/frameworks`)"
+      - "traefik.http.routers.frameworks-risks.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api/risks`)"
+      - "traefik.http.routers.frameworks.entrypoints=websecure"
+      - "traefik.http.routers.frameworks.tls.certresolver=letsencrypt"
+      - "traefik.http.services.frameworks.loadbalancer.server.port=3002"
+      - "traefik.http.middlewares.frameworks-ratelimit.ratelimit.average=100"
+      - "traefik.http.middlewares.frameworks-ratelimit.ratelimit.burst=50"
+      - "traefik.http.routers.frameworks.middlewares=frameworks-ratelimit"
+    restart: always
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/.npm
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # ===========================================
+  # Policies Service - Policy Center
+  # ===========================================
+  policies:
+    build:
+      context: .
+      dockerfile: services/policies/Dockerfile
+      args:
+        NODE_ENV: production
+    image: grc-policies:${IMAGE_TAG:-latest}
+    container_name: grc-policies
+    environment:
+      NODE_ENV: production
+      PORT: 3004
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_USE_SSL: false
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      KEYCLOAK_URL: http://keycloak:8080/auth
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM}
+      JWT_SECRET: ${JWT_SECRET}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-100}
+      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-60000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - grc-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.policies.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api/policies`)"
+      - "traefik.http.routers.policies.entrypoints=websecure"
+      - "traefik.http.routers.policies.tls.certresolver=letsencrypt"
+      - "traefik.http.services.policies.loadbalancer.server.port=3004"
+      - "traefik.http.middlewares.policies-ratelimit.ratelimit.average=100"
+      - "traefik.http.middlewares.policies-ratelimit.ratelimit.burst=50"
+      - "traefik.http.routers.policies.middlewares=policies-ratelimit"
+    restart: always
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/.npm
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # ===========================================
+  # TPRM Service - Third Party Risk Management
+  # ===========================================
+  tprm:
+    build:
+      context: .
+      dockerfile: services/tprm/Dockerfile
+      args:
+        NODE_ENV: production
+    image: grc-tprm:${IMAGE_TAG:-latest}
+    container_name: grc-tprm
+    environment:
+      NODE_ENV: production
+      PORT: 3005
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_USE_SSL: false
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      KEYCLOAK_URL: http://keycloak:8080/auth
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM}
+      JWT_SECRET: ${JWT_SECRET}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-100}
+      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-60000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - grc-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.tprm-vendors.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api/vendors`)"
+      - "traefik.http.routers.tprm-assessments.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api/assessments`)"
+      - "traefik.http.routers.tprm-contracts.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api/contracts`)"
+      - "traefik.http.routers.tprm-vendors.entrypoints=websecure"
+      - "traefik.http.routers.tprm-vendors.tls.certresolver=letsencrypt"
+      - "traefik.http.services.tprm.loadbalancer.server.port=3005"
+      - "traefik.http.middlewares.tprm-ratelimit.ratelimit.average=100"
+      - "traefik.http.middlewares.tprm-ratelimit.ratelimit.burst=50"
+      - "traefik.http.routers.tprm-vendors.middlewares=tprm-ratelimit"
+    restart: always
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/.npm
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3005/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # ===========================================
+  # Trust Service - Questionnaires & Knowledge Base
+  # ===========================================
+  trust:
+    build:
+      context: .
+      dockerfile: services/trust/Dockerfile
+      args:
+        NODE_ENV: production
+    image: grc-trust:${IMAGE_TAG:-latest}
+    container_name: grc-trust
+    environment:
+      NODE_ENV: production
+      PORT: 3006
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_USE_SSL: false
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      KEYCLOAK_URL: http://keycloak:8080/auth
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM}
+      JWT_SECRET: ${JWT_SECRET}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-100}
+      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-60000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - grc-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.trust-questionnaires.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api/questionnaires`)"
+      - "traefik.http.routers.trust-knowledge-base.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api/knowledge-base`)"
+      - "traefik.http.routers.trust-center.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api/trust-center`)"
+      - "traefik.http.routers.trust-questionnaires.entrypoints=websecure"
+      - "traefik.http.routers.trust-questionnaires.tls.certresolver=letsencrypt"
+      - "traefik.http.services.trust.loadbalancer.server.port=3006"
+      - "traefik.http.middlewares.trust-ratelimit.ratelimit.average=100"
+      - "traefik.http.middlewares.trust-ratelimit.ratelimit.burst=50"
+      - "traefik.http.routers.trust-questionnaires.middlewares=trust-ratelimit"
+    restart: always
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/.npm
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3006/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # ===========================================
+  # Audit Service - Internal & External Audits
+  # ===========================================
+  audit:
+    build:
+      context: .
+      dockerfile: services/audit/Dockerfile
+      args:
+        NODE_ENV: production
+    image: grc-audit:${IMAGE_TAG:-latest}
+    container_name: grc-audit
+    environment:
+      NODE_ENV: production
+      PORT: 3007
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_USE_SSL: false
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      KEYCLOAK_URL: http://keycloak:8080/auth
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM}
+      JWT_SECRET: ${JWT_SECRET}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-100}
+      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-60000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - grc-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.audit-audits.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api/audits`)"
+      - "traefik.http.routers.audit-requests.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api/audit-requests`)"
+      - "traefik.http.routers.audit-findings.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api/audit-findings`)"
+      - "traefik.http.routers.audit-portal.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api/audit-portal`)"
+      - "traefik.http.routers.audit-audits.entrypoints=websecure"
+      - "traefik.http.routers.audit-audits.tls.certresolver=letsencrypt"
+      - "traefik.http.services.audit.loadbalancer.server.port=3007"
+      - "traefik.http.middlewares.audit-ratelimit.ratelimit.average=100"
+      - "traefik.http.middlewares.audit-ratelimit.ratelimit.burst=50"
+      - "traefik.http.routers.audit-audits.middlewares=audit-ratelimit"
+    restart: always
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/.npm
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3007/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+networks:
+  grc-network:
+    driver: bridge
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+  grc-dmz:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16
+
+volumes:
+  postgres_data:
+    driver: local
+  postgres_backups:
+    driver: local
+  redis_data:
+    driver: local
+  minio_data:
+    driver: local
+  keycloak_data:
+    driver: local
+  keycloak_certs:
+    driver: local
+  traefik_letsencrypt:
+    driver: local
+  traefik_logs:
+    driver: local

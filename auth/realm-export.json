@@ -1,0 +1,286 @@
+{
+  "id": "gigachad-grc",
+  "realm": "gigachad-grc",
+  "displayName": "GigaChad GRC",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "permanentLockout": false,
+  "maxFailureWaitSeconds": 900,
+  "minimumQuickLoginWaitSeconds": 60,
+  "waitIncrementSeconds": 60,
+  "quickLoginCheckMilliSeconds": 1000,
+  "maxDeltaTimeSeconds": 43200,
+  "failureFactor": 5,
+  "roles": {
+    "realm": [
+      {
+        "name": "admin",
+        "description": "Full access to all features and user management",
+        "composite": false
+      },
+      {
+        "name": "compliance_manager",
+        "description": "Manage controls, evidence, policies, and assessments",
+        "composite": false
+      },
+      {
+        "name": "auditor",
+        "description": "Read-only access with export capabilities",
+        "composite": false
+      },
+      {
+        "name": "viewer",
+        "description": "Dashboard and read-only access",
+        "composite": false
+      }
+    ],
+    "client": {
+      "grc-frontend": [],
+      "grc-services": []
+    }
+  },
+  "groups": [
+    {
+      "name": "Administrators",
+      "path": "/Administrators",
+      "realmRoles": ["admin"]
+    },
+    {
+      "name": "Compliance Team",
+      "path": "/Compliance Team",
+      "realmRoles": ["compliance_manager"]
+    },
+    {
+      "name": "Auditors",
+      "path": "/Auditors",
+      "realmRoles": ["auditor"]
+    },
+    {
+      "name": "Viewers",
+      "path": "/Viewers",
+      "realmRoles": ["viewer"]
+    }
+  ],
+  "defaultRoles": ["viewer"],
+  "requiredCredentials": ["password"],
+  "passwordPolicy": "",
+  "clients": [
+    {
+      "clientId": "grc-frontend",
+      "name": "GRC Frontend Application",
+      "description": "React SPA frontend for GRC platform",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "protocol": "openid-connect",
+      "rootUrl": "http://localhost:3000",
+      "baseUrl": "/",
+      "redirectUris": [
+        "http://localhost:3000/*",
+        "http://localhost/*"
+      ],
+      "webOrigins": [
+        "http://localhost:3000",
+        "http://localhost",
+        "+"
+      ],
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:3000/*"
+      },
+      "protocolMappers": [
+        {
+          "name": "realm-roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "multivalued": "true",
+            "userinfo.token.claim": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "roles",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "organization-id",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "organization_id",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "organization_id",
+            "jsonType.label": "String"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "grc-services",
+      "name": "GRC Backend Services",
+      "description": "Confidential client for service-to-service communication",
+      "enabled": true,
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "protocol": "openid-connect",
+      "secret": "grc-services-secret-change-me",
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "email"
+      ],
+      "protocolMappers": [
+        {
+          "name": "realm-roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "multivalued": "true",
+            "userinfo.token.claim": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "roles",
+            "jsonType.label": "String"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "grc-mcp",
+      "name": "GRC MCP Server",
+      "description": "Client for MCP (Model Context Protocol) AI agent access",
+      "enabled": true,
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "protocol": "openid-connect",
+      "secret": "grc-mcp-secret-change-me",
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "email"
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "admin",
+      "email": "admin@gigachad-grc.local",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "System",
+      "lastName": "Administrator",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin",
+          "temporary": true
+        }
+      ],
+      "realmRoles": ["admin"],
+      "attributes": {
+        "organization_id": ["default"]
+      }
+    },
+    {
+      "username": "compliance_manager",
+      "email": "compliance@gigachad-grc.local",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Compliance",
+      "lastName": "Manager",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "compliance",
+          "temporary": true
+        }
+      ],
+      "realmRoles": ["compliance_manager"],
+      "attributes": {
+        "organization_id": ["default"]
+      }
+    },
+    {
+      "username": "auditor",
+      "email": "auditor@gigachad-grc.local",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "External",
+      "lastName": "Auditor",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "auditor",
+          "temporary": true
+        }
+      ],
+      "realmRoles": ["auditor"],
+      "attributes": {
+        "organization_id": ["default"]
+      }
+    }
+  ],
+  "browserSecurityHeaders": {
+    "contentSecurityPolicyReportOnly": "",
+    "xContentTypeOptions": "nosniff",
+    "xRobotsTag": "none",
+    "xFrameOptions": "SAMEORIGIN",
+    "contentSecurityPolicy": "frame-src 'self'; frame-ancestors 'self'; object-src 'none';",
+    "xXSSProtection": "1; mode=block",
+    "strictTransportSecurity": "max-age=31536000; includeSubDomains"
+  },
+  "smtpServer": {},
+  "eventsEnabled": true,
+  "eventsListeners": ["jboss-logging"],
+  "enabledEventTypes": [
+    "LOGIN",
+    "LOGIN_ERROR",
+    "LOGOUT",
+    "LOGOUT_ERROR",
+    "REGISTER",
+    "REGISTER_ERROR",
+    "CODE_TO_TOKEN",
+    "CODE_TO_TOKEN_ERROR",
+    "CLIENT_LOGIN",
+    "CLIENT_LOGIN_ERROR"
+  ],
+  "adminEventsEnabled": true,
+  "adminEventsDetailsEnabled": true
+}
+

@@ -1,0 +1,7 @@
+reference,title,description,guidance,isCategory,order,level
+CC1.1,Control Environment,The entity demonstrates a commitment to integrity and ethical values,Establish and communicate code of conduct policies,false,1,0
+CC1.2,Board Independence,"The board of directors demonstrates independence from management and exercises oversight of the development and performance of internal control",Maintain an independent audit committee with cybersecurity expertise,false,2,0
+CC2.1,Communication and Information,The entity obtains or generates and uses relevant quality information,Implement processes for collecting and analyzing security-relevant information,false,3,0
+A.5,Information Security Policies,Category for policy-related controls,This is a parent category for organizing related requirements,true,4,0
+A.5.1,Management Direction,"Provide management direction and support for information security in accordance with business requirements and relevant laws and regulations",Document policies and review annually with senior management,false,1,1
+A.5.2,Review of Policies,Review information security policies at planned intervals,Conduct annual policy reviews with stakeholder input,false,2,1

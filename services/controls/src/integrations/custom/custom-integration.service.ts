@@ -1,0 +1,828 @@
+import { Injectable, NotFoundException, BadRequestException, Logger, Inject } from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service';
+import { AuditService } from '../../audit/audit.service';
+import { STORAGE_PROVIDER, StorageProvider, generateId } from '@gigachad-grc/shared';
+import {
+  SaveCustomConfigDto,
+  TestEndpointDto,
+  TestResultDto,
+  ValidateCodeResultDto,
+  CODE_TEMPLATE,
+} from './dto/custom-config.dto';
+
+interface ExecutionContext {
+  baseUrl: string;
+  auth: {
+    headers: Record<string, string>;
+    token?: string;
+  };
+  organizationId: string;
+  integrationId: string;
+}
+
+interface EvidenceItem {
+  title: string;
+  description: string;
+  data: any;
+  type?: string;
+}
+
+interface SyncResult {
+  evidence: EvidenceItem[];
+}
+
+@Injectable()
+export class CustomIntegrationService {
+  private readonly logger = new Logger(CustomIntegrationService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private auditService: AuditService,
+    @Inject(STORAGE_PROVIDER) private storage: StorageProvider,
+  ) {}
+
+  /**
+   * Get custom config for an integration
+   */
+  async getConfig(integrationId: string, organizationId: string) {
+    const integration = await this.prisma.integration.findFirst({
+      where: { id: integrationId, organizationId },
+      include: { customConfig: true },
+    });
+
+    if (!integration) {
+      throw new NotFoundException('Integration not found');
+    }
+
+    if (!integration.customConfig) {
+      // Return default empty config
+      return {
+        integrationId,
+        mode: 'visual',
+        baseUrl: '',
+        endpoints: [],
+        authType: null,
+        authConfig: null,
+        responseMapping: null,
+        customCode: CODE_TEMPLATE,
+        lastTestAt: null,
+        lastTestStatus: null,
+        lastTestError: null,
+      };
+    }
+
+    // Mask sensitive auth config values
+    const config = integration.customConfig;
+    const maskedAuthConfig = this.maskAuthConfig(config.authType, config.authConfig as Record<string, any>);
+
+    return {
+      ...config,
+      authConfig: maskedAuthConfig,
+      customCode: config.customCode || CODE_TEMPLATE,
+    };
+  }
+
+  /**
+   * Save custom config for an integration
+   */
+  async saveConfig(
+    integrationId: string,
+    organizationId: string,
+    userId: string,
+    dto: SaveCustomConfigDto,
+  ) {
+    const integration = await this.prisma.integration.findFirst({
+      where: { id: integrationId, organizationId },
+      include: { customConfig: true },
+    });
+
+    if (!integration) {
+      throw new NotFoundException('Integration not found');
+    }
+
+    // Validate code if in code mode
+    if (dto.mode === 'code' && dto.customCode) {
+      const validation = this.validateCode(dto.customCode);
+      if (!validation.valid) {
+        throw new BadRequestException(`Invalid code: ${validation.errors?.join(', ')}`);
+      }
+    }
+
+    const configData = {
+      mode: dto.mode,
+      baseUrl: dto.baseUrl,
+      endpoints: dto.endpoints as any,
+      authType: dto.authType,
+      authConfig: dto.authConfig as any,
+      responseMapping: dto.responseMapping as any,
+      customCode: dto.customCode,
+    };
+
+    let config;
+    if (integration.customConfig) {
+      // Update existing config
+      config = await this.prisma.customIntegrationConfig.update({
+        where: { id: integration.customConfig.id },
+        data: configData,
+      });
+    } else {
+      // Create new config
+      config = await this.prisma.customIntegrationConfig.create({
+        data: {
+          ...configData,
+          integrationId,
+        },
+      });
+    }
+
+    // Audit log
+    await this.auditService.log({
+      organizationId,
+      userId,
+      action: 'updated',
+      entityType: 'integration',
+      entityId: integrationId,
+      entityName: integration.name,
+      description: `Updated custom integration config for "${integration.name}" (${dto.mode} mode)`,
+      metadata: { mode: dto.mode, hasCode: !!dto.customCode, endpointCount: dto.endpoints?.length || 0 },
+    });
+
+    return {
+      ...config,
+      authConfig: this.maskAuthConfig(config.authType, config.authConfig as Record<string, any>),
+    };
+  }
+
+  /**
+   * Test an endpoint configuration
+   */
+  async testEndpoint(
+    integrationId: string,
+    organizationId: string,
+    userId: string,
+    dto: TestEndpointDto,
+  ): Promise<TestResultDto> {
+    const integration = await this.prisma.integration.findFirst({
+      where: { id: integrationId, organizationId },
+      include: { customConfig: true },
+    });
+
+    if (!integration) {
+      throw new NotFoundException('Integration not found');
+    }
+
+    const config = integration.customConfig;
+    if (!config) {
+      throw new BadRequestException('No custom configuration found. Please save a configuration first.');
+    }
+
+    const startTime = Date.now();
+
+    try {
+      let result: TestResultDto;
+
+      if (config.mode === 'code') {
+        // Test code execution
+        result = await this.testCodeExecution(config, organizationId, integrationId);
+      } else {
+        // Test visual endpoint
+        result = await this.testVisualEndpoint(config, dto);
+      }
+
+      // Update test status
+      await this.prisma.customIntegrationConfig.update({
+        where: { id: config.id },
+        data: {
+          lastTestAt: new Date(),
+          lastTestStatus: result.success ? 'success' : 'error',
+          lastTestError: result.success ? null : result.error,
+        },
+      });
+
+      result.responseTime = Date.now() - startTime;
+
+      // Audit log
+      await this.auditService.log({
+        organizationId,
+        userId,
+        action: 'tested',
+        entityType: 'integration',
+        entityId: integrationId,
+        entityName: integration.name,
+        description: `Tested custom integration "${integration.name}" - ${result.success ? 'Success' : 'Failed'}`,
+        metadata: { success: result.success, responseTime: result.responseTime },
+      });
+
+      return result;
+
+    } catch (error: any) {
+      const responseTime = Date.now() - startTime;
+
+      // Update test status
+      await this.prisma.customIntegrationConfig.update({
+        where: { id: config.id },
+        data: {
+          lastTestAt: new Date(),
+          lastTestStatus: 'error',
+          lastTestError: error.message,
+        },
+      });
+
+      return {
+        success: false,
+        message: 'Test failed',
+        error: error.message,
+        responseTime,
+      };
+    }
+  }
+
+  /**
+   * Test visual mode endpoint
+   */
+  private async testVisualEndpoint(
+    config: any,
+    dto: TestEndpointDto,
+  ): Promise<TestResultDto> {
+    const baseUrl = dto.baseUrl || config.baseUrl;
+    if (!baseUrl) {
+      return { success: false, message: 'Base URL is required', error: 'No base URL configured' };
+    }
+
+    const endpoints = config.endpoints as any[];
+    if (!endpoints || endpoints.length === 0) {
+      return { success: false, message: 'No endpoints configured', error: 'Add at least one endpoint' };
+    }
+
+    const endpointIndex = dto.endpointIndex ?? 0;
+    if (endpointIndex >= endpoints.length) {
+      return { success: false, message: 'Invalid endpoint index', error: `Endpoint ${endpointIndex} not found` };
+    }
+
+    const endpoint = endpoints[endpointIndex];
+    const url = `${baseUrl.replace(/\/$/, '')}${endpoint.path}`;
+
+    // Build headers with auth
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...endpoint.headers,
+    };
+
+    // Add authentication
+    const authConfig = dto.authConfig || config.authConfig;
+    if (config.authType && authConfig) {
+      const authHeaders = await this.getAuthHeaders(config.authType, authConfig);
+      Object.assign(headers, authHeaders);
+    }
+
+    // Build fetch options
+    const fetchOptions: RequestInit = {
+      method: endpoint.method,
+      headers,
+    };
+
+    // Add query params
+    let finalUrl = url;
+    if (endpoint.params) {
+      const params = new URLSearchParams(endpoint.params);
+      finalUrl = `${url}?${params.toString()}`;
+    }
+
+    // Add body for POST/PUT/PATCH
+    if (['POST', 'PUT', 'PATCH'].includes(endpoint.method) && endpoint.body) {
+      fetchOptions.body = JSON.stringify(endpoint.body);
+    }
+
+    try {
+      const response = await fetch(finalUrl, fetchOptions);
+      const responseText = await response.text();
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch {
+        data = responseText;
+      }
+
+      if (!response.ok) {
+        return {
+          success: false,
+          message: `HTTP ${response.status}: ${response.statusText}`,
+          statusCode: response.status,
+          error: typeof data === 'string' ? data : JSON.stringify(data),
+        };
+      }
+
+      return {
+        success: true,
+        message: `Successfully connected to ${endpoint.name || endpoint.path}`,
+        statusCode: response.status,
+        data: typeof data === 'object' ? data : { response: data },
+      };
+
+    } catch (error: any) {
+      return {
+        success: false,
+        message: 'Connection failed',
+        error: error.message,
+      };
+    }
+  }
+
+  /**
+   * Test code mode execution
+   */
+  private async testCodeExecution(
+    config: any,
+    organizationId: string,
+    integrationId: string,
+  ): Promise<TestResultDto> {
+    if (!config.customCode) {
+      return { success: false, message: 'No custom code configured', error: 'Add custom code first' };
+    }
+
+    try {
+      const context = await this.buildExecutionContext(config, organizationId, integrationId);
+      const result = await this.executeCode(config.customCode, context);
+
+      return {
+        success: true,
+        message: `Code executed successfully. Found ${result.evidence?.length || 0} evidence items.`,
+        data: {
+          evidenceCount: result.evidence?.length || 0,
+          evidencePreview: result.evidence?.slice(0, 3).map((e: EvidenceItem) => ({
+            title: e.title,
+            type: e.type,
+          })),
+        },
+      };
+
+    } catch (error: any) {
+      return {
+        success: false,
+        message: 'Code execution failed',
+        error: error.message,
+      };
+    }
+  }
+
+  /**
+   * Validate custom code syntax
+   */
+  validateCode(code: string): ValidateCodeResultDto {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+
+    // Basic syntax check
+    try {
+      new Function(code);
+    } catch (syntaxError: any) {
+      errors.push(`Syntax error: ${syntaxError.message}`);
+      return { valid: false, errors, warnings };
+    }
+
+    // Check for required sync function
+    if (!code.includes('function sync') && !code.includes('sync =')) {
+      errors.push('Missing required "sync" function');
+    }
+
+    // Check for module.exports
+    if (!code.includes('module.exports')) {
+      warnings.push('Consider adding module.exports = { sync } at the end');
+    }
+
+    // Check for dangerous operations
+    if (code.includes('eval(') || code.includes('Function(')) {
+      errors.push('eval() and Function() are not allowed for security reasons');
+    }
+
+    if (code.includes('require(') && !code.includes('module.exports')) {
+      warnings.push('require() is limited to approved modules only');
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors: errors.length > 0 ? errors : undefined,
+      warnings: warnings.length > 0 ? warnings : undefined,
+    };
+  }
+
+  /**
+   * Execute a custom integration sync
+   */
+  async executeSync(
+    integrationId: string,
+    organizationId: string,
+    userId: string,
+  ): Promise<{ success: boolean; evidenceCreated: number; message: string; errors?: string[] }> {
+    const integration = await this.prisma.integration.findFirst({
+      where: { id: integrationId, organizationId },
+      include: { customConfig: true },
+    });
+
+    if (!integration) {
+      throw new NotFoundException('Integration not found');
+    }
+
+    const config = integration.customConfig;
+    if (!config) {
+      throw new BadRequestException('No custom configuration found');
+    }
+
+    const errors: string[] = [];
+    let evidenceCreated = 0;
+
+    try {
+      let syncResult: SyncResult;
+
+      if (config.mode === 'code') {
+        // Execute custom code
+        const context = await this.buildExecutionContext(config, organizationId, integrationId);
+        syncResult = await this.executeCode(config.customCode!, context);
+      } else {
+        // Execute visual mode endpoints
+        syncResult = await this.executeVisualSync(config, organizationId, integrationId);
+      }
+
+      // Create evidence from results
+      if (syncResult.evidence && syncResult.evidence.length > 0) {
+        evidenceCreated = await this.createEvidenceFromResults(
+          organizationId,
+          userId,
+          integrationId,
+          integration.name,
+          syncResult.evidence,
+        );
+      }
+
+      return {
+        success: true,
+        evidenceCreated,
+        message: `Sync completed successfully. Created ${evidenceCreated} evidence records.`,
+      };
+
+    } catch (error: any) {
+      this.logger.error(`Custom integration sync failed: ${error.message}`, error.stack);
+      errors.push(error.message);
+
+      return {
+        success: false,
+        evidenceCreated,
+        message: 'Sync failed',
+        errors,
+      };
+    }
+  }
+
+  /**
+   * Execute visual mode sync
+   */
+  private async executeVisualSync(
+    config: any,
+    organizationId: string,
+    integrationId: string,
+  ): Promise<SyncResult> {
+    const evidence: EvidenceItem[] = [];
+    const baseUrl = config.baseUrl;
+    const endpoints = config.endpoints as any[];
+
+    if (!baseUrl || !endpoints || endpoints.length === 0) {
+      return { evidence: [] };
+    }
+
+    // Get auth headers
+    const authHeaders = config.authType && config.authConfig
+      ? await this.getAuthHeaders(config.authType, config.authConfig)
+      : {};
+
+    for (const endpoint of endpoints) {
+      try {
+        const url = `${baseUrl.replace(/\/$/, '')}${endpoint.path}`;
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+          ...endpoint.headers,
+          ...authHeaders,
+        };
+
+        const fetchOptions: RequestInit = {
+          method: endpoint.method,
+          headers,
+        };
+
+        let finalUrl = url;
+        if (endpoint.params) {
+          const params = new URLSearchParams(endpoint.params);
+          finalUrl = `${url}?${params.toString()}`;
+        }
+
+        if (['POST', 'PUT', 'PATCH'].includes(endpoint.method) && endpoint.body) {
+          fetchOptions.body = JSON.stringify(endpoint.body);
+        }
+
+        const response = await fetch(finalUrl, fetchOptions);
+        const data = await response.json();
+
+        if (response.ok) {
+          // Apply response mapping if configured
+          let title = endpoint.name || `${endpoint.method} ${endpoint.path}`;
+          let description = endpoint.description || `Data from ${endpoint.path}`;
+
+          if (endpoint.responseMapping) {
+            // Simple JSONPath-like extraction
+            if (endpoint.responseMapping.title) {
+              title = this.extractValue(data, endpoint.responseMapping.title) || title;
+            }
+            if (endpoint.responseMapping.description) {
+              description = this.extractValue(data, endpoint.responseMapping.description) || description;
+            }
+          }
+
+          evidence.push({
+            title: `${title} - ${new Date().toLocaleDateString()}`,
+            description,
+            data,
+            type: 'automated',
+          });
+        }
+
+      } catch (error: any) {
+        this.logger.warn(`Endpoint ${endpoint.path} failed: ${error.message}`);
+      }
+    }
+
+    return { evidence };
+  }
+
+  /**
+   * Execute custom JavaScript code in a sandbox
+   */
+  private async executeCode(code: string, context: ExecutionContext): Promise<SyncResult> {
+    // Create a safe execution environment
+    // Note: For production, use vm2 or isolated-vm for proper sandboxing
+    const sandbox = {
+      fetch: fetch,
+      console: {
+        log: (...args: any[]) => this.logger.log(`[Custom Code] ${args.join(' ')}`),
+        error: (...args: any[]) => this.logger.error(`[Custom Code] ${args.join(' ')}`),
+        warn: (...args: any[]) => this.logger.warn(`[Custom Code] ${args.join(' ')}`),
+      },
+      context,
+      JSON,
+      Date,
+      Math,
+      Array,
+      Object,
+      String,
+      Number,
+      Boolean,
+      Promise,
+      setTimeout: undefined, // Disabled for safety
+      setInterval: undefined, // Disabled for safety
+    };
+
+    try {
+      // Wrap code to capture the sync function
+      const wrappedCode = `
+        ${code}
+        
+        // Execute sync and return result
+        if (typeof sync === 'function') {
+          return sync(context);
+        } else if (typeof module !== 'undefined' && module.exports && typeof module.exports.sync === 'function') {
+          return module.exports.sync(context);
+        } else {
+          throw new Error('No sync function found');
+        }
+      `;
+
+      // Create function with limited scope
+      const fn = new Function('fetch', 'console', 'context', 'JSON', 'Date', 'Math', 'Array', 'Object', 'String', 'Number', 'Boolean', 'Promise', 'module', wrappedCode);
+
+      const module = { exports: {} };
+      const result = await fn(
+        sandbox.fetch,
+        sandbox.console,
+        sandbox.context,
+        sandbox.JSON,
+        sandbox.Date,
+        sandbox.Math,
+        sandbox.Array,
+        sandbox.Object,
+        sandbox.String,
+        sandbox.Number,
+        sandbox.Boolean,
+        sandbox.Promise,
+        module,
+      );
+
+      return result || { evidence: [] };
+
+    } catch (error: any) {
+      this.logger.error(`Custom code execution error: ${error.message}`);
+      throw new Error(`Code execution failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Build execution context with auth headers
+   */
+  private async buildExecutionContext(
+    config: any,
+    organizationId: string,
+    integrationId: string,
+  ): Promise<ExecutionContext> {
+    const authHeaders = config.authType && config.authConfig
+      ? await this.getAuthHeaders(config.authType, config.authConfig)
+      : {};
+
+    return {
+      baseUrl: config.baseUrl || '',
+      auth: {
+        headers: authHeaders,
+      },
+      organizationId,
+      integrationId,
+    };
+  }
+
+  /**
+   * Get authentication headers based on auth type
+   */
+  private async getAuthHeaders(authType: string, authConfig: Record<string, any>): Promise<Record<string, string>> {
+    const headers: Record<string, string> = {};
+
+    switch (authType) {
+      case 'api_key':
+        if (authConfig.location === 'header') {
+          headers[authConfig.keyName] = authConfig.keyValue;
+        }
+        break;
+
+      case 'oauth2':
+        try {
+          const token = await this.getOAuth2Token(authConfig);
+          headers['Authorization'] = `Bearer ${token}`;
+        } catch (error: any) {
+          this.logger.error(`OAuth2 token fetch failed: ${error.message}`);
+        }
+        break;
+
+      case 'bearer':
+        if (authConfig.token) {
+          headers['Authorization'] = `Bearer ${authConfig.token}`;
+        }
+        break;
+
+      case 'basic':
+        if (authConfig.username && authConfig.password) {
+          const credentials = Buffer.from(`${authConfig.username}:${authConfig.password}`).toString('base64');
+          headers['Authorization'] = `Basic ${credentials}`;
+        }
+        break;
+    }
+
+    return headers;
+  }
+
+  /**
+   * Get OAuth 2.0 access token
+   */
+  private async getOAuth2Token(authConfig: Record<string, any>): Promise<string> {
+    const { tokenUrl, clientId, clientSecret, scope } = authConfig;
+
+    const params = new URLSearchParams({
+      grant_type: 'client_credentials',
+      client_id: clientId,
+      client_secret: clientSecret,
+    });
+
+    if (scope) {
+      params.append('scope', scope);
+    }
+
+    const response = await fetch(tokenUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params.toString(),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`OAuth2 token request failed: ${error}`);
+    }
+
+    const data = await response.json();
+    return data.access_token;
+  }
+
+  /**
+   * Create evidence from sync results
+   */
+  private async createEvidenceFromResults(
+    organizationId: string,
+    userId: string,
+    integrationId: string,
+    integrationName: string,
+    evidenceItems: EvidenceItem[],
+  ): Promise<number> {
+    let created = 0;
+    const timestamp = Date.now();
+
+    for (let i = 0; i < evidenceItems.length; i++) {
+      const item = evidenceItems[i];
+
+      try {
+        const jsonData = JSON.stringify(item.data, null, 2);
+        const storagePath = `integrations/custom/${integrationId}/${timestamp}-${i}.json`;
+
+        // Save to storage
+        await this.storage.upload(
+          Buffer.from(jsonData, 'utf-8'),
+          storagePath,
+          { contentType: 'application/json' },
+        );
+
+        // Create evidence record
+        await this.prisma.evidence.create({
+          data: {
+            organizationId,
+            title: item.title,
+            description: item.description,
+            type: item.type || 'automated',
+            source: 'custom',
+            status: 'approved',
+            filename: `custom-${integrationName.toLowerCase().replace(/\s+/g, '-')}-${timestamp}-${i}.json`,
+            mimeType: 'application/json',
+            size: Buffer.byteLength(jsonData, 'utf-8'),
+            storagePath,
+            metadata: { integrationId, integrationName },
+            collectedAt: new Date(),
+            validFrom: new Date(),
+            createdBy: userId,
+            updatedBy: userId,
+          },
+        });
+
+        created++;
+      } catch (error: any) {
+        this.logger.error(`Failed to create evidence: ${error.message}`);
+      }
+    }
+
+    return created;
+  }
+
+  /**
+   * Simple value extraction from nested object using dot notation
+   */
+  private extractValue(obj: any, path: string): any {
+    if (!path) return undefined;
+    
+    const parts = path.replace(/^\$\.?/, '').split('.');
+    let current = obj;
+
+    for (const part of parts) {
+      if (current === null || current === undefined) return undefined;
+      
+      // Handle array access like [0]
+      const arrayMatch = part.match(/(\w+)\[(\d+)\]/);
+      if (arrayMatch) {
+        current = current[arrayMatch[1]]?.[parseInt(arrayMatch[2])];
+      } else {
+        current = current[part];
+      }
+    }
+
+    return current;
+  }
+
+  /**
+   * Mask sensitive auth config values
+   */
+  private maskAuthConfig(authType: string | null, authConfig: Record<string, any> | null): Record<string, any> | null {
+    if (!authConfig) return null;
+
+    const masked = { ...authConfig };
+
+    // Mask sensitive fields
+    const sensitiveFields = ['keyValue', 'clientSecret', 'password', 'token', 'apiKey'];
+    for (const field of sensitiveFields) {
+      if (masked[field]) {
+        const value = String(masked[field]);
+        masked[field] = value.length > 4 ? '••••••••' + value.slice(-4) : '••••••••';
+      }
+    }
+
+    return masked;
+  }
+
+  /**
+   * Get default code template
+   */
+  getCodeTemplate(): string {
+    return CODE_TEMPLATE;
+  }
+}
+
+
+

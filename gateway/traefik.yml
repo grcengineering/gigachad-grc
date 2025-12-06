@@ -1,0 +1,31 @@
+# Traefik Static Configuration
+api:
+  dashboard: true
+  insecure: true
+
+log:
+  level: INFO
+  format: common
+
+accessLog:
+  format: common
+
+entryPoints:
+  web:
+    address: ":80"
+  websecure:
+    address: ":443"
+
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+    network: grc-network
+    watch: true
+
+# Health check endpoint
+ping:
+  entryPoint: web
+
+
+

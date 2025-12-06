@@ -1,0 +1,57 @@
+# GigaChad GRC Platform - Example Configuration
+# Copy this file to terraform.tfvars and customize for your deployment
+
+# General Configuration
+project_name = "gigachad-grc"
+environment  = "production"
+aws_region   = "us-east-1"
+
+# Network Configuration
+vpc_cidr            = "10.0.0.0/16"
+availability_zones  = ["us-east-1a", "us-east-1b"]
+public_subnet_cidrs  = ["10.0.1.0/24", "10.0.2.0/24"]
+private_subnet_cidrs = ["10.0.10.0/24", "10.0.20.0/24"]
+
+# Enable NAT Gateway for production (set to false for dev to save costs)
+enable_nat_gateway = true
+single_nat_gateway = false  # Use false for HA, true to save costs
+
+# Security - Restrict access to your organization's IPs
+allowed_cidr_blocks = ["0.0.0.0/0"]  # CHANGE THIS IN PRODUCTION!
+
+# SSL/TLS Configuration
+enable_https        = true
+ssl_certificate_arn = "arn:aws:acm:us-east-1:123456789012:certificate/xxxxx"  # Replace with your cert
+
+# Database Configuration (Production sizing)
+rds_instance_class         = "db.t3.large"
+rds_allocated_storage      = 100
+rds_max_allocated_storage  = 500
+database_name              = "gigachad_grc"
+database_username          = "grc_admin"
+database_password          = "CHANGE_ME_STRONG_PASSWORD"  # Use AWS Secrets Manager in production!
+rds_backup_retention_period = 7
+rds_multi_az               = true
+
+# Redis Configuration
+redis_node_type      = "cache.t3.medium"
+redis_num_cache_nodes = 2
+
+# S3 Configuration
+s3_enable_versioning = true
+
+# ECS Configuration (adjust based on load)
+ecs_service_desired_count = 2
+ecs_task_cpu             = 1024
+ecs_task_memory          = 2048
+
+# Container Images
+# Replace with your ECR repository or Docker Hub account
+container_registry = "123456789012.dkr.ecr.us-east-1.amazonaws.com/gigachad-grc"
+image_tag          = "1.0.0"
+
+# Keycloak Configuration
+keycloak_url           = "https://auth.yourdomain.com"
+keycloak_realm         = "grc"
+keycloak_client_id     = "grc-platform"
+keycloak_client_secret = "YOUR_CLIENT_SECRET"  # Use AWS Secrets Manager in production!

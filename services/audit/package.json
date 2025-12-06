@@ -1,0 +1,40 @@
+{
+  "name": "@gigachad-grc/audit",
+  "version": "1.0.0",
+  "description": "Audit module for internal and external compliance audits",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "nest build",
+    "start": "nest start",
+    "start:dev": "nest start --watch",
+    "start:debug": "nest start --debug --watch",
+    "start:prod": "node dist/main",
+    "prisma:generate": "prisma generate --schema=../shared/prisma/schema.prisma",
+    "prisma:migrate": "prisma migrate dev --schema=../shared/prisma/schema.prisma",
+    "prisma:push": "prisma db push --schema=../shared/prisma/schema.prisma"
+  },
+  "dependencies": {
+    "@nestjs/common": "^10.3.0",
+    "@nestjs/core": "^10.3.0",
+    "@nestjs/platform-express": "^10.3.0",
+    "@nestjs/swagger": "^7.2.0",
+    "@nestjs/config": "^3.1.1",
+    "@nestjs/axios": "^3.0.1",
+    "@prisma/client": "^5.8.0",
+    "class-validator": "^0.14.0",
+    "class-transformer": "^0.5.1",
+    "reflect-metadata": "^0.1.13",
+    "rxjs": "^7.8.1",
+    "axios": "^1.6.5",
+    "@gigachad-grc/shared": "file:../shared"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^10.3.0",
+    "@nestjs/schematics": "^10.1.0",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.11.0",
+    "@types/multer": "^1.4.11",
+    "prisma": "^5.8.0",
+    "typescript": "^5.3.3"
+  }
+}

@@ -1,0 +1,56 @@
+[
+  {
+    "reference": "CC1.1",
+    "title": "Control Environment",
+    "description": "The entity demonstrates a commitment to integrity and ethical values",
+    "guidance": "Establish and communicate code of conduct policies",
+    "isCategory": false,
+    "order": 1,
+    "level": 0
+  },
+  {
+    "reference": "CC1.2",
+    "title": "Board Independence",
+    "description": "The board of directors demonstrates independence from management and exercises oversight of the development and performance of internal control",
+    "guidance": "Maintain an independent audit committee with cybersecurity expertise",
+    "isCategory": false,
+    "order": 2,
+    "level": 0
+  },
+  {
+    "reference": "CC2.1",
+    "title": "Communication and Information",
+    "description": "The entity obtains or generates and uses relevant quality information",
+    "guidance": "Implement processes for collecting and analyzing security-relevant information",
+    "isCategory": false,
+    "order": 3,
+    "level": 0
+  },
+  {
+    "reference": "A.5",
+    "title": "Information Security Policies",
+    "description": "Category for policy-related controls",
+    "guidance": "This is a parent category for organizing related requirements",
+    "isCategory": true,
+    "order": 4,
+    "level": 0
+  },
+  {
+    "reference": "A.5.1",
+    "title": "Management Direction",
+    "description": "Provide management direction and support for information security in accordance with business requirements and relevant laws and regulations",
+    "guidance": "Document policies and review annually with senior management",
+    "isCategory": false,
+    "order": 1,
+    "level": 1
+  },
+  {
+    "reference": "A.5.2",
+    "title": "Review of Policies",
+    "description": "Review information security policies at planned intervals",
+    "guidance": "Conduct annual policy reviews with stakeholder input",
+    "isCategory": false,
+    "order": 2,
+    "level": 1
+  }
+]
