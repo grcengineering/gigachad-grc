@@ -833,7 +833,7 @@ Infrastructure Layer:
 ### The Easy Way (Recommended)
 
 ```bash
-git clone https://github.com/your-org/gigachad-grc.git
+git clone https://github.com/grcengineering/gigachad-grc.git
 cd gigachad-grc
 ./init.sh demo
 ```

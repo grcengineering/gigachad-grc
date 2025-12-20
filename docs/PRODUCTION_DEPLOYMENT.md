@@ -795,7 +795,7 @@ For issues or questions:
 
 1. Check the [troubleshooting section](#troubleshooting)
 2. Review logs: `docker compose logs -f`
-3. Check [GitHub Issues](https://github.com/your-org/gigachad-grc/issues)
+3. Check [GitHub Issues](https://github.com/grcengineering/gigachad-grc/issues)
 4. Contact: support@yourcompany.com
 
 ---

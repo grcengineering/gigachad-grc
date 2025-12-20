@@ -61,7 +61,7 @@
 
 ```bash
 # Clone repository
-git clone https://github.com/your-org/gigachad-grc.git
+git clone https://github.com/grcengineering/gigachad-grc.git
 cd gigachad-grc
 
 # Copy environment file

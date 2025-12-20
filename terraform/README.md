@@ -324,7 +324,7 @@ terraform destroy
 
 For issues or questions:
 - **Documentation**: docs/
-- **GitHub Issues**: https://github.com/your-org/gigachad-grc/issues
+- **GitHub Issues**: https://github.com/grcengineering/gigachad-grc/issues
 - **Email**: support@your-domain.com
 
 ## License
