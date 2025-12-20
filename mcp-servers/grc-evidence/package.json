@@ -19,7 +19,7 @@
     "@azure/arm-resources": "^5.0.0",
     "@octokit/rest": "^20.0.0",
     "axios": "^1.6.0",
-    "puppeteer": "^21.0.0",
+    "puppeteer": "^24.34.0",
     "zod": "^3.22.0"
   },
   "devDependencies": {
