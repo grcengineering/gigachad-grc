@@ -23,7 +23,7 @@ You only need **one thing**: [**Docker Desktop**](https://www.docker.com/product
 |----------|----------------|
 | **macOS** | [Download for Mac](https://www.docker.com/products/docker-desktop/) (Apple Silicon or Intel) |
 | **Windows** | [Download for Windows](https://www.docker.com/products/docker-desktop/) (requires WSL 2) |
-| **Linux** | `curl -fsSL https://get.docker.com | sh` |
+| **Linux** | `curl -fsSL https://get.docker.com \| sh` |
 
 > **No Node.js, npm, or other development tools required!**
 
