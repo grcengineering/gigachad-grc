@@ -1,8 +1,8 @@
 # =============================================================================
-# GigaChad GRC Frontend - Multi-stage Docker Build
+# GigaChad GRC Frontend - Development Docker Build
 # =============================================================================
-# This Dockerfile builds the React frontend and serves it via Nginx.
-# Build args are used to configure the frontend at build time.
+# This Dockerfile builds the React frontend in development mode and serves
+# it via Nginx. Used for testing containerized dev builds.
 # =============================================================================
 
 # Build stage
@@ -24,19 +24,13 @@ COPY frontend/ ./
 ARG VITE_API_URL=http://localhost:3001
 ARG VITE_ENABLE_AI_MODULE=true
 ARG VITE_ENABLE_DEV_AUTH=true
-ARG VITE_KEYCLOAK_URL=http://localhost:8080
-ARG VITE_KEYCLOAK_REALM=gigachad-grc
-ARG VITE_KEYCLOAK_CLIENT_ID=grc-frontend
 
 ENV VITE_API_URL=$VITE_API_URL
 ENV VITE_ENABLE_AI_MODULE=$VITE_ENABLE_AI_MODULE
 ENV VITE_ENABLE_DEV_AUTH=$VITE_ENABLE_DEV_AUTH
-ENV VITE_KEYCLOAK_URL=$VITE_KEYCLOAK_URL
-ENV VITE_KEYCLOAK_REALM=$VITE_KEYCLOAK_REALM
-ENV VITE_KEYCLOAK_CLIENT_ID=$VITE_KEYCLOAK_CLIENT_ID
 
-# Build with staging mode to bypass vite.config validation while keeping production optimizations
-RUN npm run build -- --mode staging
+# Build in development mode
+RUN npm run build -- --mode development
 
 # Production stage - Nginx
 FROM nginx:alpine AS production

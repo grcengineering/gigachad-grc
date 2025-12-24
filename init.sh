@@ -385,6 +385,32 @@ install_dependencies() {
 # Frontend
 # ─────────────────────────────────────────────────────────────────────────────
 
+start_frontend_container() {
+    log_step "Starting frontend container..."
+    
+    cd "$PROJECT_ROOT"
+    
+    log_substep "Building and starting frontend container..."
+    docker compose up -d frontend 2>/dev/null || docker-compose up -d frontend
+    
+    # Wait for frontend
+    log_substep "Waiting for frontend to be ready..."
+    local attempts=0
+    local max_attempts=30
+    while [ $attempts -lt $max_attempts ]; do
+        if curl -sf http://localhost:3000 > /dev/null 2>&1; then
+            log_success "Frontend container is ready"
+            break
+        fi
+        attempts=$((attempts + 1))
+        if [ $attempts -eq $max_attempts ]; then
+            log_warning "Frontend not responding yet - container may still be building"
+            log_info "Check logs with: docker compose logs -f frontend"
+        fi
+        sleep 2
+    done
+}
+
 start_frontend() {
     log_step "Starting frontend..."
     
@@ -579,6 +605,7 @@ main() {
             setup_environment
             start_infrastructure
             start_app_services
+            start_frontend_container
             print_success_demo
             ;;
             

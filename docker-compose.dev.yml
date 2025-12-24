@@ -62,11 +62,8 @@ services:
 
   frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile.dev
-    volumes:
-      - ./frontend/src:/app/src
-      - /app/node_modules
+      context: .
+      dockerfile: frontend/Dockerfile.dev
     environment:
       NODE_ENV: development
 

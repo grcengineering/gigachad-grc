@@ -76,7 +76,7 @@ services:
     command: start-dev --import-realm
     environment:
       KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-gigachad_grc}
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
       KC_DB_USERNAME: ${POSTGRES_USER:-grc}
       KC_DB_PASSWORD: ${POSTGRES_PASSWORD:-grc_secret}
       KC_HOSTNAME: ${KEYCLOAK_HOSTNAME:-localhost}
@@ -431,7 +431,8 @@ services:
     ports:
       - "3000:80"
     environment:
-      - VITE_API_URL=http://localhost:3001
+      # Empty VITE_API_URL means requests go to same origin (nginx proxies to backends)
+      - VITE_API_URL=
       - VITE_ENABLE_DEV_AUTH=true
     depends_on:
       - controls
