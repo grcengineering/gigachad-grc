@@ -31,7 +31,8 @@ export class PaginationLimitPipe implements PipeTransform<string | number, numbe
 
   transform(value: string | number | undefined, _metadata: ArgumentMetadata): number {
     // If no value provided, use default
-    if (value === undefined || value === null || value === '') {
+    // Also handle NaN which can occur when enableImplicitConversion converts empty strings
+    if (value === undefined || value === null || value === '' || (typeof value === 'number' && isNaN(value))) {
       return this.defaultLimit;
     }
 
@@ -40,7 +41,7 @@ export class PaginationLimitPipe implements PipeTransform<string | number, numbe
 
     // Validate it's a valid number
     if (isNaN(limit)) {
-      throw new BadRequestException(`Invalid limit value: ${value}. Must be a number.`);
+      return this.defaultLimit; // Return default instead of throwing for better UX
     }
 
     // Enforce minimum
@@ -72,7 +73,8 @@ export class PaginationPagePipe implements PipeTransform<string | number, number
 
   transform(value: string | number | undefined, _metadata: ArgumentMetadata): number {
     // If no value provided, use default
-    if (value === undefined || value === null || value === '') {
+    // Also handle NaN which can occur when enableImplicitConversion converts empty strings
+    if (value === undefined || value === null || value === '' || (typeof value === 'number' && isNaN(value))) {
       return this.defaultPage;
     }
 
@@ -81,7 +83,7 @@ export class PaginationPagePipe implements PipeTransform<string | number, number
 
     // Validate it's a valid number
     if (isNaN(page)) {
-      throw new BadRequestException(`Invalid page value: ${value}. Must be a number.`);
+      return this.defaultPage; // Return default instead of throwing for better UX
     }
 
     // Enforce minimum

@@ -1,4 +1,8 @@
 import { IsString, IsOptional, IsArray, IsEnum, IsNumber, IsDateString, Min, Max, IsBoolean } from 'class-validator';
+import { Transform } from 'class-transformer';
+
+// Helper to transform empty strings to undefined (for optional enum fields in query params)
+const EmptyToUndefined = () => Transform(({ value }) => (value === '' ? undefined : value));
 
 // ===========================
 // Enums
@@ -424,22 +428,27 @@ export class UpdateTreatmentDto {
 export class RiskFilterDto {
   @IsOptional()
   @IsString()
+  @EmptyToUndefined()
   search?: string;
 
   @IsOptional()
   @IsEnum(RiskCategory)
+  @EmptyToUndefined()
   category?: RiskCategory;
 
   @IsOptional()
   @IsString()
+  @EmptyToUndefined()
   status?: string;
 
   @IsOptional()
   @IsEnum(RiskLevel)
+  @EmptyToUndefined()
   riskLevel?: RiskLevel;
 
   @IsOptional()
   @IsString()
+  @EmptyToUndefined()
   ownerId?: string;
 
   @IsOptional()

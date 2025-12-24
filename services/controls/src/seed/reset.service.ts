@@ -356,14 +356,26 @@ export class ResetDataService {
         where: { organizationId },
       });
 
-      // 13. Clear demo data flag
-      await this.prisma.organization.update({
+      // 13. Clear demo data flag (use upsert to handle case where org doesn't exist)
+      await this.prisma.organization.upsert({
         where: { id: organizationId },
-        data: {
+        update: {
           settings: {
             demoDataLoaded: false,
             demoDataLoadedAt: null,
             demoDataLoadedBy: null,
+            lastResetAt: new Date().toISOString(),
+            lastResetBy: userId,
+          },
+        },
+        create: {
+          id: organizationId,
+          name: 'Demo Organization',
+          slug: 'demo-org',
+          description: 'Default organization for GigaChad GRC demo',
+          status: 'active',
+          settings: {
+            demoDataLoaded: false,
             lastResetAt: new Date().toISOString(),
             lastResetBy: userId,
           },
@@ -401,6 +413,7 @@ export class ResetDataService {
       assets,
       integrations,
       audits,
+      frameworks,
     ] = await Promise.all([
       this.prisma.control.count({ where: { organizationId } }),
       this.prisma.evidence.count({ where: { organizationId } }),
@@ -412,6 +425,7 @@ export class ResetDataService {
       this.prisma.asset.count({ where: { organizationId } }),
       this.prisma.integration.count({ where: { organizationId } }),
       this.prisma.audit.count({ where: { organizationId } }),
+      this.prisma.framework.count({ where: { organizationId, deletedAt: null } }),
     ]);
 
     return {
@@ -425,7 +439,8 @@ export class ResetDataService {
       assets,
       integrations,
       audits,
-      total: controls + evidence + policies + risks + riskScenarios + vendors + employees + assets + integrations + audits,
+      frameworks,
+      total: controls + evidence + policies + risks + riskScenarios + vendors + employees + assets + integrations + audits + frameworks,
     };
   }
 
@@ -436,6 +451,17 @@ export class ResetDataService {
     details: any,
   ): Promise<void> {
     try {
+      // Check if organization exists first
+      const orgExists = await this.prisma.organization.findUnique({
+        where: { id: organizationId },
+        select: { id: true },
+      });
+      
+      if (!orgExists) {
+        this.logger.warn(`Skipping audit log - organization ${organizationId} does not exist`);
+        return;
+      }
+      
       await this.prisma.auditLog.create({
         data: {
           organization: { connect: { id: organizationId } },

@@ -76,7 +76,7 @@ services:
     command: start-dev --import-realm
     environment:
       KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-gigachad_grc}
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
       KC_DB_USERNAME: ${POSTGRES_USER:-grc}
       KC_DB_PASSWORD: ${POSTGRES_PASSWORD:-grc_secret}
       KC_HOSTNAME: ${KEYCLOAK_HOSTNAME:-localhost}
@@ -180,11 +180,12 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.controls.rule=PathPrefix(`/api/controls`)"
       - "traefik.http.routers.controls-evidence.rule=PathPrefix(`/api/evidence`)"
+      - "traefik.http.routers.controls-risks.rule=PathPrefix(`/api/risks`)"
       - "traefik.http.services.controls.loadbalancer.server.port=3001"
     restart: unless-stopped
 
   # ===========================================
-  # Frameworks Service - Compliance Frameworks & Risk Management
+  # Frameworks Service - Compliance Frameworks
   # ===========================================
   frameworks:
     build:
@@ -224,7 +225,6 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.frameworks.rule=PathPrefix(`/api/frameworks`)"
-      - "traefik.http.routers.frameworks-risks.rule=PathPrefix(`/api/risks`)"
       - "traefik.http.services.frameworks.loadbalancer.server.port=3002"
     restart: unless-stopped
 
@@ -427,11 +427,15 @@ services:
     build:
       context: .
       dockerfile: frontend/Dockerfile
+      args:
+        # Empty VITE_API_URL means requests go to same origin (nginx proxies to backends)
+        VITE_API_URL: ""
     container_name: grc-frontend
     ports:
       - "3000:80"
     environment:
-      - VITE_API_URL=http://localhost:3001
+      # Empty VITE_API_URL means requests go to same origin (nginx proxies to backends)
+      - VITE_API_URL=
       - VITE_ENABLE_DEV_AUTH=true
     depends_on:
       - controls

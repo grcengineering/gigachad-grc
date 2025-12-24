@@ -37,12 +37,19 @@ const keycloakConfig = {
 
 let keycloak: Keycloak | null = null;
 let initPromise: Promise<boolean> | null = null;
+let initStarted = false;
 
 function getKeycloak(): Keycloak {
   if (!keycloak) {
     keycloak = new Keycloak(keycloakConfig);
   }
   return keycloak;
+}
+
+// Reset keycloak state - useful for fixing stuck states
+function resetKeycloakState() {
+  initPromise = null;
+  initStarted = false;
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -101,62 +108,212 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const initKeycloak = async () => {
-      // Check for dev auth first
-      if (import.meta.env.DEV) {
+      console.log('🚀 Starting Keycloak initialization...');
+      
+      // Check if dev auth is enabled (dev mode OR VITE_ENABLE_DEV_AUTH=true)
+      const isDevAuthEnabled = import.meta.env.DEV || import.meta.env.VITE_ENABLE_DEV_AUTH === 'true';
+      
+      // Check for existing dev auth session first
+      if (isDevAuthEnabled) {
+        console.log('📝 Checking for existing dev auth session...');
         const storedAuth = localStorage.getItem('grc-dev-auth');
         if (storedAuth) {
           try {
             const devUser = JSON.parse(storedAuth) as User;
-            // Suppress dev auth session log
-            // console.log('Restoring dev auth session');
+            console.log('✅ Dev auth found, restoring session');
             setUser(devUser);
             setToken('dev-token-not-for-production');
             setIsAuthenticated(true);
-            // Ensure userId and organizationId are set for API calls
             secureStorage.set(STORAGE_KEYS.USER_ID, devUser.id);
             secureStorage.set(STORAGE_KEYS.ORGANIZATION_ID, devUser.organizationId);
             secureStorage.set(STORAGE_KEYS.TOKEN, 'dev-token-not-for-production');
             setIsLoading(false);
+            console.log('✅ Loading set to false (dev auth)');
             return;
           } catch (e) {
+            console.error('❌ Failed to restore dev auth:', e);
             localStorage.removeItem('grc-dev-auth');
           }
         }
       }
+      
+      // Check for existing SSO session (token stored from previous login)
+      const storedToken = secureStorage.get(STORAGE_KEYS.TOKEN);
+      if (storedToken && storedToken !== 'dev-token-not-for-production') {
+        console.log('📝 Found stored SSO token, attempting to restore session...');
+        try {
+          // Decode token to check if it's still valid
+          const payload = JSON.parse(atob(storedToken.split('.')[1]));
+          const expiresAt = payload.exp * 1000;
+          const now = Date.now();
+          
+          if (expiresAt > now) {
+            console.log('✅ Token still valid, restoring session');
+            // Extract role - check top-level roles array first, then realm_access.roles
+            const roles = payload.roles || payload.realm_access?.roles || [];
+            const role = roles.includes('admin') ? 'admin' : (roles[0] || 'viewer');
+            
+            const user: User = {
+              id: payload.sub,
+              email: payload.email || '',
+              name: payload.name || `${payload.given_name || ''} ${payload.family_name || ''}`.trim() || payload.preferred_username || '',
+              role: role,
+              organizationId: secureStorage.get(STORAGE_KEYS.ORGANIZATION_ID) || 'default-org',
+            };
+            
+            setUser(user);
+            setToken(storedToken);
+            setIsAuthenticated(true);
+            setIsLoading(false);
+            console.log('✅ SSO session restored successfully');
+            return;
+          } else {
+            console.log('⚠️ Stored token expired, clearing...');
+            secureStorage.clearAll();
+          }
+        } catch (e) {
+          console.error('❌ Failed to restore SSO session:', e);
+          secureStorage.clearAll();
+        }
+      }
 
+      // Check if this is a callback from Keycloak (has code in URL params or state in hash)
+      const urlParams = new URLSearchParams(window.location.search);
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const hasCode = urlParams.has('code') || hashParams.has('code');
+      const hasState = hashParams.has('state');
+      const hasAccessToken = hashParams.has('access_token');
+      const hasError = urlParams.has('error') || hashParams.has('error');
+      
+      // If there's an error in the hash, extract and display it
+      if (hashParams.has('error')) {
+        const error = hashParams.get('error');
+        const errorDesc = decodeURIComponent(hashParams.get('error_description') || '');
+        console.error('🔴 Keycloak error from hash:', error, errorDesc);
+        // Clear the hash
+        window.history.replaceState({}, document.title, '/login?error=' + error);
+        setIsLoading(false);
+        return;
+      }
+      
+      // If we have an access_token in the hash (implicit flow), parse it directly
+      if (hasAccessToken) {
+        console.log('🎉 Found access_token in URL, processing implicit flow response...');
+        const accessToken = hashParams.get('access_token');
+        
+        if (accessToken) {
+          // Decode the token to get user info
+          try {
+            const payload = JSON.parse(atob(accessToken.split('.')[1]));
+            console.log('📋 Token payload:', payload);
+            
+            // Extract role - check top-level roles array first, then realm_access.roles
+            const roles = payload.roles || payload.realm_access?.roles || [];
+            const role = roles.includes('admin') ? 'admin' : (roles[0] || 'viewer');
+            
+            const user: User = {
+              id: payload.sub,
+              email: payload.email || '',
+              name: payload.name || `${payload.given_name || ''} ${payload.family_name || ''}`.trim() || payload.preferred_username || '',
+              role: role,
+              organizationId: 'default-org',
+            };
+            
+            setUser(user);
+            setToken(accessToken);
+            setIsAuthenticated(true);
+            
+            // Store in secure storage
+            secureStorage.set(STORAGE_KEYS.USER_ID, user.id);
+            secureStorage.set(STORAGE_KEYS.ORGANIZATION_ID, user.organizationId);
+            secureStorage.set(STORAGE_KEYS.TOKEN, accessToken);
+            
+            // Clean up URL and navigate to dashboard
+            // Use window.location.href to trigger full navigation since we're outside React Router
+            console.log('✅ Implicit flow login successful! Redirecting to dashboard...');
+            setIsLoading(false);
+            
+            // Small delay to ensure state updates propagate before navigation
+            setTimeout(() => {
+              window.location.href = '/dashboard';
+            }, 100);
+            return;
+          } catch (e) {
+            console.error('❌ Failed to parse access token:', e);
+          }
+        }
+      }
+      
+      // Determine if we have an auth callback (code in query OR state in hash from keycloak-js)
+      const hasAuthCallback = hasCode || hasState;
+      
+      console.log('🔍 Auth callback check:', { hasCode, hasState, hasError, url: window.location.href });
+
+      // Initialize Keycloak (required for login to work)
       const kc = getKeycloak();
       
       // Prevent double initialization
-      if (initPromise) {
+      if (initStarted) {
+        console.log('⚠️ Keycloak init already started, waiting...');
+        return;
+      }
+      initStarted = true;
+
+      // If no auth callback, just initialize Keycloak without checking session
+      if (!hasAuthCallback && !hasError) {
+        console.log('📋 No auth callback, initializing Keycloak for login...');
         try {
-          const authenticated = await initPromise;
-          setIsAuthenticated(authenticated);
-          if (authenticated) {
-            await loadUserProfile(kc);
-          }
+          await kc.init({
+            checkLoginIframe: false,
+            flow: 'implicit', // Use implicit flow to avoid PKCE sessionStorage issues
+          });
+          console.log('✅ Keycloak ready for login');
         } catch (e) {
-          console.error('Keycloak init promise failed:', e);
-        } finally {
-          setIsLoading(false);
+          console.error('❌ Keycloak init failed:', e);
         }
+        setIsLoading(false);
         return;
       }
 
+      // We have an auth callback - need to process it with Keycloak
+      console.log('🔄 Processing auth callback...');
+      // Set a timeout to prevent infinite loading
+      const timeoutId = setTimeout(() => {
+        console.error('⏱️ Keycloak initialization timeout!');
+        setIsLoading(false);
+        resetKeycloakState();
+        window.history.replaceState({}, document.title, '/login?error=timeout');
+      }, 10000);
+
       try {
-        console.log('Initializing Keycloak...');
+        console.log('🚀 Processing auth callback with Keycloak...');
         
+        // Debug: Check what's in sessionStorage for PKCE
+        const kcCsrfToken = sessionStorage.getItem('kc-csrf-token');
+        console.log('📦 Session storage kc-csrf-token:', kcCsrfToken);
+        console.log('📦 All sessionStorage keys:', Object.keys(sessionStorage));
+        
+        // Set up error handler before init
+        kc.onAuthError = (errorData) => {
+          console.error('🔴 Keycloak onAuthError:', errorData);
+        };
+        
+        // Initialize Keycloak to process the token from URL fragment
         initPromise = kc.init({
-          onLoad: 'check-sso',
-          checkLoginIframe: false, // Disable iframe check which can cause issues
-          pkceMethod: 'S256',
-          redirectUri: window.location.origin + '/',
+          checkLoginIframe: false,
+          flow: 'implicit', // Use implicit flow to avoid PKCE sessionStorage issues
         });
 
         const authenticated = await initPromise;
-        console.log('Keycloak initialized, authenticated:', authenticated);
-
+        clearTimeout(timeoutId);
+        console.log('✅ Keycloak initialized, authenticated:', authenticated);
+        
+        // Clean up URL after successful auth
         if (authenticated) {
+          window.history.replaceState({}, document.title, '/dashboard');
           await loadUserProfile(kc);
+        } else {
+          window.history.replaceState({}, document.title, '/login?error=auth_failed');
         }
 
         setIsAuthenticated(authenticated);
@@ -189,10 +346,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
 
       } catch (error) {
+        clearTimeout(timeoutId);
         console.error('Keycloak initialization failed:', error);
-        initPromise = null;
+        resetKeycloakState();
       } finally {
         setIsLoading(false);
+        console.log('✅ Loading set to false (finally block)');
       }
     };
 
@@ -201,7 +360,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(() => {
     const kc = getKeycloak();
-    console.log('Logging in...');
+    console.log('🔐 Login clicked, Keycloak instance:', kc);
+    console.log('🔐 Redirecting to Keycloak...');
     // Redirect back to root so Keycloak can process the callback
     kc.login({
       redirectUri: window.location.origin + '/',
@@ -231,9 +391,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Dev login bypass - only available in development
+  // Dev login bypass - available when VITE_ENABLE_DEV_AUTH is true (dev or staging mode)
+  const isDevAuthEnabled = import.meta.env.DEV || import.meta.env.VITE_ENABLE_DEV_AUTH === 'true';
+  
   const devLogin = useCallback(() => {
-    if (import.meta.env.DEV) {
+    if (isDevAuthEnabled) {
       console.log('Dev login activated');
       const devUser: User = {
         id: '8f88a42b-e799-455c-b68a-308d7d2e9aa4', // John Doe - seeded user
@@ -250,7 +412,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('userId', devUser.id);
       localStorage.setItem('organizationId', devUser.organizationId);
     }
-  }, []);
+  }, [isDevAuthEnabled]);
 
   const hasRole = (role: string): boolean => {
     if (!user) return false;
@@ -290,7 +452,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         token,
         login,
         logout,
-        devLogin: import.meta.env.DEV ? devLogin : undefined,
+        devLogin: isDevAuthEnabled ? devLogin : undefined,
         hasRole,
         hasPermission,
       }}

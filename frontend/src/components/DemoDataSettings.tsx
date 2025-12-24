@@ -22,6 +22,7 @@ interface DataSummary {
   assets: number;
   integrations: number;
   audits: number;
+  frameworks: number;
   total: number;
 }
 
@@ -158,6 +159,7 @@ export default function DemoDataSettings() {
               <DataCard label="Assets" count={status.dataSummary.assets} />
               <DataCard label="Integrations" count={status.dataSummary.integrations} />
               <DataCard label="Audits" count={status.dataSummary.audits} />
+              <DataCard label="Frameworks" count={status.dataSummary.frameworks} />
             </div>
             <p className="text-xs text-muted-foreground">
               Total: {status.dataSummary.total} records
