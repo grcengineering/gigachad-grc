@@ -7,6 +7,7 @@ import Loading from './components/Loading';
 // Lazy load pages for code splitting
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Controls = lazy(() => import('./pages/Controls'));
+const ControlNew = lazy(() => import('./pages/ControlNew'));
 const ControlDetail = lazy(() => import('./pages/ControlDetail'));
 const Evidence = lazy(() => import('./pages/Evidence'));
 const EvidenceDetail = lazy(() => import('./pages/EvidenceDetail'));
@@ -90,9 +91,19 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
 
-  // Check if this is an OAuth callback (has code or error in URL)
+  // Check if this is an OAuth callback (has code/state/error in URL or hash)
+  // Note: access_token in hash is handled by AuthContext, so we don't check for it here
   const searchParams = new URLSearchParams(location.search);
-  const hasAuthCallback = searchParams.has('code') || searchParams.has('error') || searchParams.has('session_state');
+  // Only check hash if it has content (not just # or empty)
+  const hash = location.hash.substring(1);
+  const hashParams = hash ? new URLSearchParams(hash) : null;
+  
+  // Don't consider access_token as a callback that needs waiting - AuthContext handles it
+  const hasAuthCallback = 
+    searchParams.has('code') || 
+    searchParams.has('error') || 
+    searchParams.has('session_state') ||
+    (hashParams && (hashParams.has('state') || hashParams.has('code') || hashParams.has('error')) && !hashParams.has('access_token'));
 
   // Prevent redirect loops
   const isOnLogin = location.pathname === '/login';
@@ -144,9 +155,15 @@ function RootRedirect() {
   const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
 
-  // Check for OAuth callback params
+  // Check for OAuth callback params in both query string and hash
   const searchParams = new URLSearchParams(location.search);
-  const hasAuthCallback = searchParams.has('code') || searchParams.has('session_state');
+  // Only check hash if it has content (not just # or empty)
+  const hash = location.hash.substring(1);
+  const hashParams = hash ? new URLSearchParams(hash) : null;
+  const hasAuthCallback = 
+    searchParams.has('code') || 
+    searchParams.has('session_state') ||
+    (hashParams && (hashParams.has('state') || hashParams.has('code') || hashParams.has('error')));
 
   // Prevent redirect loops by checking current path
   const currentPath = location.pathname;
@@ -201,6 +218,7 @@ export default function App() {
           <Route path="dashboards" element={<ModuleRoute module="tools"><Suspense fallback={<PageLoader />}><CustomDashboards /></Suspense></ModuleRoute>} />
           {/* Compliance Module */}
           <Route path="controls" element={<ModuleRoute module="compliance"><Suspense fallback={<PageLoader />}><Controls /></Suspense></ModuleRoute>} />
+          <Route path="controls/new" element={<ModuleRoute module="compliance"><Suspense fallback={<PageLoader />}><ControlNew /></Suspense></ModuleRoute>} />
           <Route path="controls/:id" element={<ModuleRoute module="compliance"><Suspense fallback={<PageLoader />}><ControlDetail /></Suspense></ModuleRoute>} />
           <Route path="evidence" element={<ModuleRoute module="compliance"><Suspense fallback={<PageLoader />}><Evidence /></Suspense></ModuleRoute>} />
           <Route path="evidence/:id" element={<ModuleRoute module="compliance"><Suspense fallback={<PageLoader />}><EvidenceDetail /></Suspense></ModuleRoute>} />

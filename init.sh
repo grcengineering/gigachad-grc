@@ -13,7 +13,14 @@
 #   ./init.sh demo         # Start demo mode (Docker + frontend)
 #   ./init.sh dev          # Set up local development environment
 #   ./init.sh docker       # Start all services via Docker
+#   ./init.sh s3           # Start with LocalStack S3 (no RustFS)
+#   ./init.sh s3-dev       # Dev setup with LocalStack S3 (no RustFS)
 #   ./init.sh reset        # Reset everything and start fresh
+#
+# S3 MODE REQUIREMENTS:
+#   - LocalStack must be running: docker run -d -p 4566:4566 localstack/localstack
+#   - AWS CLI must be installed
+#   - Uses AWS profile: localstack
 #
 # ============================================================================
 
@@ -39,6 +46,11 @@ NC='\033[0m'
 # Services to manage
 SERVICES=(shared controls frameworks policies tprm trust audit)
 INFRASTRUCTURE=(postgres redis keycloak rustfs)
+INFRASTRUCTURE_S3=(postgres redis keycloak)  # Without rustfs, uses LocalStack S3
+
+# S3/LocalStack configuration
+AWS_PROFILE_LOCALSTACK="localstack"
+S3_BUCKETS=("grc-storage" "grc-backups" "grc-evidence")
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Helper Functions
@@ -133,6 +145,41 @@ check_prerequisites() {
     if [ ${#missing[@]} -gt 0 ]; then
         echo ""
         log_error "Missing required tools:"
+        for tool in "${missing[@]}"; do
+            echo -e "       ${RED}•${NC} $tool"
+        done
+        echo ""
+        exit 1
+    fi
+}
+
+check_s3_prerequisites() {
+    log_step "Checking S3/LocalStack prerequisites..."
+    
+    local missing=()
+    
+    # Check AWS CLI
+    if command -v aws &> /dev/null; then
+        log_success "AWS CLI $(aws --version | cut -d' ' -f1 | cut -d'/' -f2)"
+        
+        # Check if localstack profile exists
+        if aws configure list --profile "$AWS_PROFILE_LOCALSTACK" &> /dev/null 2>&1; then
+            log_success "AWS profile '$AWS_PROFILE_LOCALSTACK' configured"
+        else
+            log_warning "AWS profile '$AWS_PROFILE_LOCALSTACK' not found"
+            log_info "Creating LocalStack profile with default settings..."
+            aws configure set aws_access_key_id test --profile "$AWS_PROFILE_LOCALSTACK"
+            aws configure set aws_secret_access_key test --profile "$AWS_PROFILE_LOCALSTACK"
+            aws configure set region us-east-1 --profile "$AWS_PROFILE_LOCALSTACK"
+            log_success "Created AWS profile '$AWS_PROFILE_LOCALSTACK'"
+        fi
+    else
+        missing+=("AWS CLI (https://aws.amazon.com/cli/)")
+    fi
+    
+    if [ ${#missing[@]} -gt 0 ]; then
+        echo ""
+        log_error "Missing required tools for S3 mode:"
         for tool in "${missing[@]}"; do
             echo -e "       ${RED}•${NC} $tool"
         done
@@ -240,6 +287,230 @@ EOF
     log_success "Created .env with secure secrets"
 }
 
+setup_environment_s3() {
+    log_step "Setting up environment for S3/LocalStack mode..."
+    
+    cd "$PROJECT_ROOT"
+    
+    if [ -f ".env" ]; then
+        log_success ".env file exists (using existing credentials)"
+        # Source the existing .env to get passwords for health checks
+        set -a
+        source .env 2>/dev/null || true
+        set +a
+        return 0
+    fi
+    
+    # Check if PostgreSQL volume already exists with data
+    if docker volume inspect gigachad-grc_postgres_data > /dev/null 2>&1; then
+        log_warning "PostgreSQL volume exists but no .env file found!"
+        log_info "This may cause authentication issues."
+        log_info "Run './init.sh reset' first, or restore your .env file."
+        echo ""
+        read -p "Continue anyway? (y/n) " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            log_info "Aborted. Run './init.sh reset' to start fresh."
+            exit 1
+        fi
+    fi
+    
+    log_substep "Generating secure secrets..."
+    
+    # Generate secrets
+    ENCRYPTION_KEY=$(openssl rand -hex 32 2>/dev/null || head -c 32 /dev/urandom | xxd -p | tr -d '\n')
+    JWT_SECRET=$(openssl rand -base64 48 2>/dev/null || head -c 48 /dev/urandom | base64 | tr -d '\n')
+    SESSION_SECRET=$(openssl rand -base64 48 2>/dev/null || head -c 48 /dev/urandom | base64 | tr -d '\n')
+    POSTGRES_PASSWORD=$(openssl rand -base64 24 2>/dev/null | tr -d '\n' | tr '+/' '-_' || head -c 24 /dev/urandom | base64 | tr '+/' '-_')
+    REDIS_PASSWORD=$(openssl rand -base64 24 2>/dev/null | tr -d '\n' | tr '+/' '-_' || head -c 24 /dev/urandom | base64 | tr '+/' '-_')
+    
+    cat > ".env" << EOF
+# ============================================================================
+# GigaChad GRC - Environment Configuration (S3/LocalStack Mode)
+# Generated: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+# ============================================================================
+
+NODE_ENV=development
+
+# Storage Mode
+STORAGE_MODE=s3
+
+# Security Secrets (auto-generated)
+ENCRYPTION_KEY=${ENCRYPTION_KEY}
+JWT_SECRET=${JWT_SECRET}
+SESSION_SECRET=${SESSION_SECRET}
+
+# Database
+POSTGRES_USER=grc
+POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+POSTGRES_DB=gigachad_grc
+DATABASE_URL=postgresql://grc:${POSTGRES_PASSWORD}@localhost:5433/gigachad_grc
+
+# Redis
+REDIS_PASSWORD=${REDIS_PASSWORD}
+REDIS_URL=redis://:${REDIS_PASSWORD}@localhost:6380
+
+# S3 Storage (LocalStack)
+# Using AWS S3-compatible API via LocalStack
+STORAGE_TYPE=s3
+S3_ENDPOINT=localhost
+S3_PORT=4566
+S3_USE_SSL=false
+S3_ACCESS_KEY=test
+S3_SECRET_KEY=test
+S3_BUCKET=grc-storage
+AWS_REGION=us-east-1
+
+# Legacy MinIO vars (for backwards compatibility - pointing to LocalStack)
+MINIO_ENDPOINT=localhost
+MINIO_PORT=4566
+MINIO_USE_SSL=false
+MINIO_ACCESS_KEY=test
+MINIO_SECRET_KEY=test
+MINIO_BUCKET=grc-storage
+
+# Authentication
+KEYCLOAK_ADMIN=admin
+KEYCLOAK_ADMIN_PASSWORD=admin
+KEYCLOAK_REALM=grc
+USE_DEV_AUTH=true
+
+# CORS
+CORS_ORIGINS=http://localhost:3000,http://localhost:5173,http://localhost:5174
+
+# Rate Limiting
+RATE_LIMIT_ENABLED=true
+RATE_LIMIT_WINDOW_MS=60000
+RATE_LIMIT_MAX_REQUESTS=1000
+
+# Logging
+LOG_LEVEL=debug
+
+# Frontend
+VITE_API_URL=http://localhost:3001
+VITE_ENABLE_DEV_AUTH=true
+VITE_ENABLE_AI_MODULE=true
+EOF
+
+    chmod 600 ".env"
+    log_success "Created .env with S3/LocalStack configuration"
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# LocalStack S3 Setup
+# ─────────────────────────────────────────────────────────────────────────────
+
+check_localstack() {
+    log_step "Checking LocalStack status..."
+    
+    # Check if LocalStack is running by hitting the health endpoint
+    if curl -sf http://localhost:4566/_localstack/health > /dev/null 2>&1; then
+        log_success "LocalStack is running"
+        return 0
+    else
+        log_error "LocalStack is not running!"
+        log_info "Please start LocalStack first:"
+        echo ""
+        echo -e "   ${CYAN}# Using Docker:${NC}"
+        echo -e "   docker run -d --name localstack -p 4566:4566 localstack/localstack"
+        echo ""
+        echo -e "   ${CYAN}# Or using LocalStack CLI:${NC}"
+        echo -e "   pip install localstack"
+        echo -e "   localstack start -d"
+        echo ""
+        exit 1
+    fi
+}
+
+wait_for_localstack() {
+    log_substep "Waiting for LocalStack to be ready..."
+    local attempts=0
+    local max_attempts=30
+    
+    while [ $attempts -lt $max_attempts ]; do
+        if curl -sf http://localhost:4566/_localstack/health > /dev/null 2>&1; then
+            log_success "LocalStack is ready"
+            return 0
+        fi
+        attempts=$((attempts + 1))
+        sleep 2
+    done
+    
+    log_error "LocalStack failed to become ready"
+    return 1
+}
+
+create_s3_buckets() {
+    log_step "Creating S3 buckets on LocalStack..."
+    
+    local endpoint_url="http://localhost:4566"
+    
+    for bucket in "${S3_BUCKETS[@]}"; do
+        log_substep "Creating bucket: $bucket"
+        
+        # Check if bucket exists
+        if aws s3api head-bucket --bucket "$bucket" --endpoint-url "$endpoint_url" --profile "$AWS_PROFILE_LOCALSTACK" 2>/dev/null; then
+            log_success "Bucket '$bucket' already exists"
+        else
+            # Create the bucket
+            if aws s3api create-bucket --bucket "$bucket" --endpoint-url "$endpoint_url" --profile "$AWS_PROFILE_LOCALSTACK" 2>/dev/null; then
+                log_success "Created bucket '$bucket'"
+            else
+                log_error "Failed to create bucket '$bucket'"
+                return 1
+            fi
+        fi
+    done
+    
+    log_success "All S3 buckets ready"
+}
+
+start_infrastructure_s3() {
+    log_step "Starting infrastructure services (S3 mode - no RustFS)..."
+    
+    cd "$PROJECT_ROOT"
+    
+    # Check LocalStack first
+    check_localstack
+    
+    log_substep "Starting PostgreSQL, Redis, Keycloak..."
+    docker compose up -d postgres redis keycloak 2>/dev/null || docker-compose up -d postgres redis keycloak
+    
+    # Wait for database
+    log_substep "Waiting for PostgreSQL to be ready..."
+    local attempts=0
+    local max_attempts=30
+    while [ $attempts -lt $max_attempts ]; do
+        if docker compose exec -T postgres pg_isready -U grc > /dev/null 2>&1; then
+            log_success "PostgreSQL is ready"
+            break
+        fi
+        attempts=$((attempts + 1))
+        if [ $attempts -eq $max_attempts ]; then
+            log_error "PostgreSQL failed to start"
+            exit 1
+        fi
+        sleep 2
+    done
+    
+    # Wait for Redis
+    log_substep "Waiting for Redis to be ready..."
+    attempts=0
+    while [ $attempts -lt $max_attempts ]; do
+        if docker compose exec -T redis redis-cli -a "${REDIS_PASSWORD:-redis_secret}" ping > /dev/null 2>&1; then
+            log_success "Redis is ready"
+            break
+        fi
+        attempts=$((attempts + 1))
+        sleep 1
+    done
+    
+    # Create S3 buckets on LocalStack
+    create_s3_buckets
+    
+    log_success "All infrastructure services running (S3 mode)"
+}
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Docker Infrastructure
 # ─────────────────────────────────────────────────────────────────────────────
@@ -322,6 +593,33 @@ start_app_services() {
     done
 }
 
+start_app_services_s3() {
+    log_step "Starting application services (S3 mode)..."
+    
+    cd "$PROJECT_ROOT"
+    
+    log_substep "Building and starting services with S3/LocalStack config..."
+    docker compose -f docker-compose.yml -f docker-compose.s3.yml up -d controls frameworks policies tprm trust audit 2>/dev/null || \
+        docker-compose -f docker-compose.yml -f docker-compose.s3.yml up -d controls frameworks policies tprm trust audit
+    
+    # Wait for Controls API (primary service)
+    log_substep "Waiting for API to be ready..."
+    local attempts=0
+    local max_attempts=60
+    while [ $attempts -lt $max_attempts ]; do
+        if curl -sf http://localhost:3001/health > /dev/null 2>&1; then
+            log_success "API services are ready (S3 mode)"
+            break
+        fi
+        attempts=$((attempts + 1))
+        if [ $attempts -eq $max_attempts ]; then
+            log_warning "API not responding yet - services may still be building"
+            log_info "Check logs with: docker compose -f docker-compose.yml -f docker-compose.s3.yml logs -f controls"
+        fi
+        sleep 2
+    done
+}
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Local Development Setup
 # ─────────────────────────────────────────────────────────────────────────────
@@ -384,6 +682,32 @@ install_dependencies() {
 # ─────────────────────────────────────────────────────────────────────────────
 # Frontend
 # ─────────────────────────────────────────────────────────────────────────────
+
+start_frontend_container() {
+    log_step "Starting frontend container..."
+    
+    cd "$PROJECT_ROOT"
+    
+    log_substep "Building and starting frontend container..."
+    docker compose up -d frontend 2>/dev/null || docker-compose up -d frontend
+    
+    # Wait for frontend
+    log_substep "Waiting for frontend to be ready..."
+    local attempts=0
+    local max_attempts=30
+    while [ $attempts -lt $max_attempts ]; do
+        if curl -sf http://localhost:3000 > /dev/null 2>&1; then
+            log_success "Frontend container is ready"
+            break
+        fi
+        attempts=$((attempts + 1))
+        if [ $attempts -eq $max_attempts ]; then
+            log_warning "Frontend not responding yet - container may still be building"
+            log_info "Check logs with: docker compose logs -f frontend"
+        fi
+        sleep 2
+    done
+}
 
 start_frontend() {
     log_step "Starting frontend..."
@@ -503,6 +827,72 @@ print_success_dev() {
     echo ""
 }
 
+print_success_s3() {
+    echo ""
+    echo -e "${GREEN}╔═══════════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${GREEN}║                                                                   ║${NC}"
+    echo -e "${GREEN}║   ${BOLD}🪣 GigaChad GRC is Ready! (S3/LocalStack Mode)${NC}${GREEN}                 ║${NC}"
+    echo -e "${GREEN}║                                                                   ║${NC}"
+    echo -e "${GREEN}╚═══════════════════════════════════════════════════════════════════╝${NC}"
+    echo ""
+    echo -e "${BOLD}Access Points:${NC}"
+    echo -e "   ${CYAN}Frontend${NC}        http://localhost:3000 (or :5173)"
+    echo -e "   ${CYAN}API Docs${NC}        http://localhost:3001/api/docs"
+    echo -e "   ${CYAN}Keycloak${NC}        http://localhost:8080 (admin/admin)"
+    echo -e "   ${CYAN}LocalStack${NC}      http://localhost:4566"
+    echo -e "   ${CYAN}Grafana${NC}         http://localhost:3003 (admin/admin)"
+    echo ""
+    echo -e "${BOLD}S3 Buckets (LocalStack):${NC}"
+    for bucket in "${S3_BUCKETS[@]}"; do
+        echo -e "   ${CYAN}•${NC} $bucket"
+    done
+    echo ""
+    echo -e "${BOLD}AWS CLI Commands (using profile):${NC}"
+    echo -e "   ${CYAN}aws s3 ls --endpoint-url http://localhost:4566 --profile $AWS_PROFILE_LOCALSTACK${NC}"
+    echo -e "   ${CYAN}aws s3 ls s3://grc-storage --endpoint-url http://localhost:4566 --profile $AWS_PROFILE_LOCALSTACK${NC}"
+    echo ""
+    echo -e "${BOLD}Quick Login:${NC}"
+    echo -e "   Click the ${CYAN}\"Dev Login\"${NC} button - no password needed!"
+    echo ""
+    echo -e "${BOLD}Stop Everything:${NC}"
+    echo -e "   ${CYAN}docker compose down${NC}"
+    echo ""
+}
+
+print_success_s3_dev() {
+    echo ""
+    echo -e "${GREEN}╔═══════════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${GREEN}║                                                                   ║${NC}"
+    echo -e "${GREEN}║   ${BOLD}🛠️  Development Environment Ready! (S3/LocalStack)${NC}${GREEN}             ║${NC}"
+    echo -e "${GREEN}║                                                                   ║${NC}"
+    echo -e "${GREEN}╚═══════════════════════════════════════════════════════════════════╝${NC}"
+    echo ""
+    echo -e "${BOLD}Infrastructure Running:${NC}"
+    echo "   PostgreSQL:5433, Redis:6380, Keycloak:8080"
+    echo "   LocalStack S3:4566 (external)"
+    echo ""
+    echo -e "${BOLD}S3 Buckets Created:${NC}"
+    for bucket in "${S3_BUCKETS[@]}"; do
+        echo -e "   ${CYAN}•${NC} $bucket"
+    done
+    echo ""
+    echo -e "${BOLD}Start Services:${NC}"
+    echo "   ${CYAN}# Terminal 1 - Backend${NC}"
+    echo "   cd services/controls && npm run start:dev"
+    echo ""
+    echo "   ${CYAN}# Terminal 2 - Frontend${NC}"
+    echo "   cd frontend && npm run dev"
+    echo ""
+    echo -e "${BOLD}AWS CLI Commands:${NC}"
+    echo "   aws s3 ls --endpoint-url http://localhost:4566 --profile $AWS_PROFILE_LOCALSTACK"
+    echo ""
+    echo -e "${BOLD}Or use the Makefile:${NC}"
+    echo "   ${CYAN}make dev${NC}        # Start everything"
+    echo "   ${CYAN}make logs${NC}       # View Docker logs"
+    echo "   ${CYAN}make clean${NC}      # Stop and clean up"
+    echo ""
+}
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Mode Selection
 # ─────────────────────────────────────────────────────────────────────────────
@@ -513,15 +903,19 @@ interactive_mode() {
     echo -e "  ${CYAN}1)${NC} ${BOLD}Demo Mode${NC}     - One-click demo, everything in Docker + frontend"
     echo -e "  ${CYAN}2)${NC} ${BOLD}Dev Mode${NC}      - Set up for local development (install deps, start infra)"
     echo -e "  ${CYAN}3)${NC} ${BOLD}Docker Only${NC}   - Start all services in Docker"
-    echo -e "  ${CYAN}4)${NC} ${BOLD}Reset${NC}         - Clean slate (remove containers, deps, .env)"
+    echo -e "  ${CYAN}4)${NC} ${BOLD}S3 Mode${NC}       - Use LocalStack S3 instead of RustFS"
+    echo -e "  ${CYAN}5)${NC} ${BOLD}S3 Dev Mode${NC}   - Dev setup with LocalStack S3 (no RustFS)"
+    echo -e "  ${CYAN}6)${NC} ${BOLD}Reset${NC}         - Clean slate (remove containers, deps, .env)"
     echo ""
-    read -p "Enter choice [1-4]: " choice
+    read -p "Enter choice [1-6]: " choice
     
     case $choice in
         1) MODE="demo" ;;
         2) MODE="dev" ;;
         3) MODE="docker" ;;
-        4) MODE="reset" ;;
+        4) MODE="s3" ;;
+        5) MODE="s3-dev" ;;
+        6) MODE="reset" ;;
         *)
             log_error "Invalid choice"
             exit 1
@@ -579,7 +973,39 @@ main() {
             setup_environment
             start_infrastructure
             start_app_services
+            start_frontend_container
             print_success_demo
+            ;;
+        
+        s3)
+            check_prerequisites
+            check_s3_prerequisites
+            setup_environment_s3
+            start_infrastructure_s3
+            start_app_services_s3
+            start_frontend
+            print_success_s3
+            
+            echo -e "${YELLOW}Press Ctrl+C to stop...${NC}"
+            
+            # Open browser
+            if [[ "$OSTYPE" == "darwin"* ]]; then
+                sleep 1 && open http://localhost:3000 2>/dev/null &
+            elif command -v xdg-open &> /dev/null; then
+                sleep 1 && xdg-open http://localhost:3000 2>/dev/null &
+            fi
+            
+            # Wait for frontend process
+            wait $FRONTEND_PID 2>/dev/null || true
+            ;;
+        
+        s3-dev)
+            check_prerequisites
+            check_s3_prerequisites
+            setup_environment_s3
+            install_dependencies
+            start_infrastructure_s3
+            print_success_s3_dev
             ;;
             
         reset)
@@ -587,13 +1013,20 @@ main() {
             ;;
             
         *)
-            echo "Usage: ./init.sh [demo|dev|docker|reset]"
+            echo "Usage: ./init.sh [demo|dev|docker|s3|s3-dev|reset]"
             echo ""
             echo "Modes:"
-            echo "  demo    Start demo (Docker services + frontend)"
-            echo "  dev     Set up local development environment"
-            echo "  docker  Start all services via Docker"
-            echo "  reset   Remove containers, volumes, and dependencies"
+            echo "  demo     Start demo (Docker services + frontend)"
+            echo "  dev      Set up local development environment"
+            echo "  docker   Start all services via Docker"
+            echo "  s3       Start with LocalStack S3 (no RustFS container)"
+            echo "  s3-dev   Dev setup with LocalStack S3 (no RustFS)"
+            echo "  reset    Remove containers, volumes, and dependencies"
+            echo ""
+            echo "S3 Mode Requirements:"
+            echo "  - LocalStack must be running (docker run -d -p 4566:4566 localstack/localstack)"
+            echo "  - AWS CLI must be installed"
+            echo "  - Uses AWS profile: $AWS_PROFILE_LOCALSTACK"
             exit 1
             ;;
     esac

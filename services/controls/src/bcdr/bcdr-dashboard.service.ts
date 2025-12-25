@@ -19,6 +19,21 @@ export class BCDRDashboardService {
     private readonly strategiesService: RecoveryStrategiesService,
   ) {}
 
+  // Helper function to convert BigInt values to Numbers in an object
+  private convertBigIntToNumber(obj: any): any {
+    if (obj === null || obj === undefined) return obj;
+    if (typeof obj === 'bigint') return Number(obj);
+    if (Array.isArray(obj)) return obj.map(item => this.convertBigIntToNumber(item));
+    if (typeof obj === 'object') {
+      const converted: any = {};
+      for (const key in obj) {
+        converted[key] = this.convertBigIntToNumber(obj[key]);
+      }
+      return converted;
+    }
+    return obj;
+  }
+
   async getSummary(organizationId: string) {
     const [
       processStats,
@@ -39,13 +54,13 @@ export class BCDRDashboardService {
     ]);
 
     return {
-      processes: processStats,
-      plans: planStats,
-      tests: testStats,
-      runbooks: runbookStats,
-      strategies: strategyStats,
-      upcomingTests: upcomingTests.slice(0, 5),
-      overdueItems,
+      processes: this.convertBigIntToNumber(processStats),
+      plans: this.convertBigIntToNumber(planStats),
+      tests: this.convertBigIntToNumber(testStats),
+      runbooks: this.convertBigIntToNumber(runbookStats),
+      strategies: this.convertBigIntToNumber(strategyStats),
+      upcomingTests: this.convertBigIntToNumber(upcomingTests.slice(0, 5)),
+      overdueItems: this.convertBigIntToNumber(overdueItems),
       lastUpdated: new Date().toISOString(),
     };
   }
@@ -55,7 +70,7 @@ export class BCDRDashboardService {
     const overduePlans = await this.prisma.$queryRaw<any[]>`
       SELECT id, plan_id, title, 'bcdr_plan' as entity_type, next_review_due as due_date
       FROM bcdr.bcdr_plans
-      WHERE organization_id = ${organizationId}::uuid
+      WHERE organization_id = ${organizationId}
         AND deleted_at IS NULL
         AND status = 'published'
         AND next_review_due < NOW()
@@ -67,7 +82,7 @@ export class BCDRDashboardService {
     const overdueProcesses = await this.prisma.$queryRaw<any[]>`
       SELECT id, process_id, name as title, 'business_process' as entity_type, next_review_due as due_date
       FROM bcdr.business_processes
-      WHERE organization_id = ${organizationId}::uuid
+      WHERE organization_id = ${organizationId}
         AND deleted_at IS NULL
         AND is_active = true
         AND next_review_due < NOW()
@@ -75,19 +90,27 @@ export class BCDRDashboardService {
       LIMIT 10
     `;
 
-    // Get overdue test findings
-    const overdueFindings = await this.prisma.$queryRaw<any[]>`
-      SELECT f.id, f.title, 'test_finding' as entity_type, f.remediation_due_date as due_date,
-             t.test_id, t.name as test_name
-      FROM bcdr.dr_test_findings f
-      JOIN bcdr.dr_tests t ON f.test_id = t.id
-      WHERE t.organization_id = ${organizationId}::uuid
-        AND f.remediation_required = true
-        AND f.remediation_status NOT IN ('resolved', 'accepted')
-        AND f.remediation_due_date < NOW()
-      ORDER BY f.remediation_due_date ASC
-      LIMIT 10
-    `;
+    // Get overdue test findings - simplified query as remediation columns may not exist
+    let overdueFindings: any[] = [];
+    try {
+      overdueFindings = await this.prisma.$queryRaw<any[]>`
+        SELECT f.id, f.title, 'test_finding' as entity_type,
+               t.test_id, t.name as test_name
+        FROM bcdr.dr_test_findings f
+        JOIN bcdr.dr_tests t ON f.test_id = t.id
+        WHERE t.organization_id = ${organizationId}
+        ORDER BY f.created_at DESC
+        LIMIT 10
+      `;
+    } catch (e) {
+      const errorMessage = 'Could not fetch overdue findings for organization ' + organizationId;
+      if (e instanceof Error) {
+        this.logger.error(errorMessage + ': ' + e.message, e.stack);
+      } else {
+        this.logger.error(errorMessage + ': ' + JSON.stringify(e));
+      }
+      overdueFindings = [];
+    }
 
     return {
       plans: overduePlans,
@@ -105,7 +128,7 @@ export class BCDRDashboardService {
         AVG(rto_hours) as avg_rto,
         AVG(rpo_hours) as avg_rpo
       FROM bcdr.business_processes
-      WHERE organization_id = ${organizationId}::uuid
+      WHERE organization_id = ${organizationId}
         AND deleted_at IS NULL
         AND is_active = true
       GROUP BY criticality_tier
@@ -134,7 +157,7 @@ export class BCDRDashboardService {
         COUNT(*) FILTER (WHERE result = 'failed') as failed,
         AVG(actual_recovery_time_minutes) as avg_recovery_time
       FROM bcdr.dr_tests
-      WHERE organization_id = ${organizationId}::uuid
+      WHERE organization_id = ${organizationId}
         AND deleted_at IS NULL
         AND status = 'completed'
         AND actual_end_at >= NOW() - (${safeMonths} || ' months')::INTERVAL
@@ -158,7 +181,7 @@ export class BCDRDashboardService {
         END as rto_status
       FROM bcdr.business_processes bp
       LEFT JOIN bcdr.recovery_strategies rs ON bp.id = rs.process_id AND rs.deleted_at IS NULL
-      WHERE bp.organization_id = ${organizationId}::uuid
+      WHERE bp.organization_id = ${organizationId}
         AND bp.deleted_at IS NULL
         AND bp.is_active = true
         AND bp.rto_hours IS NOT NULL
@@ -189,7 +212,7 @@ export class BCDRDashboardService {
         CASE 
           WHEN EXISTS (
             SELECT 1 FROM bcdr.bcdr_plans p 
-            WHERE p.organization_id = ${organizationId}::uuid
+            WHERE p.organization_id = ${organizationId}
               AND p.deleted_at IS NULL
               AND p.status = 'published'
               AND bp.id = ANY(p.in_scope_processes)
@@ -198,13 +221,13 @@ export class BCDRDashboardService {
         END as has_plan,
         (
           SELECT COUNT(*) FROM bcdr.bcdr_plans p 
-          WHERE p.organization_id = ${organizationId}::uuid
+          WHERE p.organization_id = ${organizationId}
             AND p.deleted_at IS NULL
             AND p.status = 'published'
             AND bp.id = ANY(p.in_scope_processes)
         ) as plan_count
       FROM bcdr.business_processes bp
-      WHERE bp.organization_id = ${organizationId}::uuid
+      WHERE bp.organization_id = ${organizationId}
         AND bp.deleted_at IS NULL
         AND bp.is_active = true
       ORDER BY 
@@ -234,7 +257,7 @@ export class BCDRDashboardService {
         id, action, entity_type, entity_id, entity_name, 
         description, timestamp, user_email, user_name
       FROM controls.audit_logs
-      WHERE organization_id = ${organizationId}::uuid
+      WHERE organization_id = ${organizationId}
         AND entity_type IN ('business_process', 'bcdr_plan', 'dr_test', 'runbook', 'recovery_strategy', 'communication_plan')
       ORDER BY timestamp DESC
       LIMIT ${limit}

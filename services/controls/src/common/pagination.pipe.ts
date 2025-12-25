@@ -1,4 +1,4 @@
-import { PipeTransform, Injectable, ArgumentMetadata, BadRequestException } from '@nestjs/common';
+import { PipeTransform, Injectable, ArgumentMetadata, BadRequestException, Logger } from '@nestjs/common';
 
 /**
  * Maximum allowed limit for any pagination request.
@@ -19,6 +19,7 @@ export const DEFAULT_PAGINATION_LIMIT = 25;
  */
 @Injectable()
 export class PaginationLimitPipe implements PipeTransform<string | number, number> {
+  private static readonly logger = new Logger(PaginationLimitPipe.name);
   private readonly defaultLimit: number;
   private readonly maxLimit: number;
   private readonly minLimit: number;
@@ -31,7 +32,14 @@ export class PaginationLimitPipe implements PipeTransform<string | number, numbe
 
   transform(value: string | number | undefined, _metadata: ArgumentMetadata): number {
     // If no value provided, use default
-    if (value === undefined || value === null || value === '') {
+    if (value === undefined || value === null) {
+      return this.defaultLimit;
+    }
+
+    // Handle empty strings and NaN which can occur when enableImplicitConversion converts invalid input
+    if (value === '' || (typeof value === 'number' && isNaN(value))) {
+      const displayValue = value === '' ? 'empty string' : 'NaN';
+      PaginationLimitPipe.logger.warn(`Invalid pagination limit provided: ${displayValue}. Using default: ${this.defaultLimit}`);
       return this.defaultLimit;
     }
 
@@ -40,16 +48,19 @@ export class PaginationLimitPipe implements PipeTransform<string | number, numbe
 
     // Validate it's a valid number
     if (isNaN(limit)) {
-      throw new BadRequestException(`Invalid limit value: ${value}. Must be a number.`);
+      PaginationLimitPipe.logger.warn(`Invalid limit value provided: "${value}". Falling back to default: ${this.defaultLimit}`);
+      return this.defaultLimit; // Return default instead of throwing for better UX
     }
 
     // Enforce minimum
     if (limit < this.minLimit) {
+      PaginationLimitPipe.logger.warn(`Limit value ${limit} is below minimum ${this.minLimit}. Clamping to minimum.`);
       return this.minLimit;
     }
 
     // Enforce maximum
     if (limit > this.maxLimit) {
+      PaginationLimitPipe.logger.warn(`Limit value ${limit} exceeds maximum ${this.maxLimit}. Clamping to maximum.`);
       return this.maxLimit;
     }
 
@@ -62,6 +73,7 @@ export class PaginationLimitPipe implements PipeTransform<string | number, numbe
  */
 @Injectable()
 export class PaginationPagePipe implements PipeTransform<string | number, number> {
+  private static readonly logger = new Logger(PaginationPagePipe.name);
   private readonly defaultPage: number;
   private readonly minPage: number;
 
@@ -72,7 +84,14 @@ export class PaginationPagePipe implements PipeTransform<string | number, number
 
   transform(value: string | number | undefined, _metadata: ArgumentMetadata): number {
     // If no value provided, use default
-    if (value === undefined || value === null || value === '') {
+    if (value === undefined || value === null) {
+      return this.defaultPage;
+    }
+
+    // Handle empty strings and NaN which can occur when enableImplicitConversion converts invalid input
+    if (value === '' || (typeof value === 'number' && isNaN(value))) {
+      const displayValue = value === '' ? 'empty string' : 'NaN';
+      PaginationPagePipe.logger.warn(`Invalid pagination page provided: ${displayValue}. Using default: ${this.defaultPage}`);
       return this.defaultPage;
     }
 
@@ -81,11 +100,13 @@ export class PaginationPagePipe implements PipeTransform<string | number, number
 
     // Validate it's a valid number
     if (isNaN(page)) {
-      throw new BadRequestException(`Invalid page value: ${value}. Must be a number.`);
+      PaginationPagePipe.logger.warn(`Invalid page value provided: "${value}". Falling back to default: ${this.defaultPage}`);
+      return this.defaultPage; // Return default instead of throwing for better UX
     }
 
     // Enforce minimum
     if (page < this.minPage) {
+      PaginationPagePipe.logger.warn(`Page value ${page} is below minimum ${this.minPage}. Clamping to minimum.`);
       return this.minPage;
     }
 

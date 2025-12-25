@@ -14,6 +14,8 @@ import {
   MinusCircleIcon,
   ArrowUpTrayIcon,
   TrashIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
 } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
@@ -78,6 +80,7 @@ export default function Controls() {
   const selectedCategory = searchParams.get('category') || '';
   const selectedStatus = searchParams.get('status') || '';
   const selectedFramework = searchParams.get('framework') || '';
+  const currentPage = parseInt(searchParams.get('page') || '1', 10);
 
   // Local state for search input with debouncing
   const [searchInput, setSearchInput] = useState(searchParams.get('search') || '');
@@ -90,6 +93,10 @@ export default function Controls() {
       newParams.set(key, value);
     } else {
       newParams.delete(key);
+    }
+    // Reset to page 1 when any filter changes (except page itself)
+    if (key !== 'page') {
+      newParams.delete('page');
     }
     setSearchParams(newParams, { replace: true });
   }, [searchParams, setSearchParams]);
@@ -108,7 +115,7 @@ export default function Controls() {
   }, [debouncedSearch, updateFilter, searchParams]);
 
   const { data: controlsData, isLoading } = useQuery({
-    queryKey: ['controls', debouncedSearch, selectedCategory, selectedStatus, selectedFramework],
+    queryKey: ['controls', debouncedSearch, selectedCategory, selectedStatus, selectedFramework, currentPage],
     queryFn: () =>
       controlsApi.list({
         search: debouncedSearch || undefined,
@@ -116,6 +123,7 @@ export default function Controls() {
         status: selectedStatus ? [selectedStatus] : undefined,
         frameworkId: selectedFramework || undefined,
         limit: 25, // Reduced from 50 for faster initial load
+        page: currentPage,
       }).then((res) => res.data),
     staleTime: 30 * 1000, // 30 second cache
   });
@@ -443,15 +451,33 @@ export default function Controls() {
         )}
       </div>
 
-      {/* Pagination info */}
-      {controlsData?.meta && (
-        <div className="flex items-center justify-between text-sm text-surface-500">
-          <span>
-            Showing {controls.length} of {controlsData.meta.total} controls
-          </span>
-          <span>
-            Page {controlsData.meta.page} of {controlsData.meta.totalPages}
-          </span>
+      {/* Pagination */}
+      {controlsData?.meta && controlsData.meta.totalPages > 1 && (
+        <div className="card px-4 py-3 flex items-center justify-between">
+          <div className="text-sm text-surface-500">
+            Showing {((controlsData.meta.page - 1) * 25) + 1} to{' '}
+            {Math.min(controlsData.meta.page * 25, controlsData.meta.total)} of{' '}
+            {controlsData.meta.total.toLocaleString()} controls
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => updateFilter('page', String(currentPage - 1))}
+              disabled={currentPage <= 1}
+              className="btn-secondary p-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronLeftIcon className="w-4 h-4" />
+            </button>
+            <span className="text-sm text-surface-400">
+              Page {controlsData.meta.page} of {controlsData.meta.totalPages}
+            </span>
+            <button
+              onClick={() => updateFilter('page', String(currentPage + 1))}
+              disabled={currentPage >= controlsData.meta.totalPages}
+              className="btn-secondary p-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronRightIcon className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       )}
     </div>

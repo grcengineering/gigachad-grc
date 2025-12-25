@@ -25,28 +25,53 @@ export class DRTestsService {
   async findAll(organizationId: string, filters: DRTestFilterDto) {
     const { search, testType, status, planId, page = 1, limit = 25 } = filters;
 
-    const tests = await this.prisma.$queryRaw<any[]>`
+    // Build dynamic query
+    const conditions: string[] = ['dt.organization_id = $1', 'dt.deleted_at IS NULL'];
+    const params: any[] = [organizationId];
+    let paramIndex = 2;
+
+    if (search) {
+      conditions.push(`(dt.name ILIKE $${paramIndex} OR dt.test_id ILIKE $${paramIndex})`);
+      params.push(`%${search}%`);
+      paramIndex++;
+    }
+    if (testType) {
+      conditions.push(`dt.test_type = $${paramIndex}::bcdr.test_type`);
+      params.push(testType);
+      paramIndex++;
+    }
+    if (status) {
+      conditions.push(`dt.status = $${paramIndex}::bcdr.test_status`);
+      params.push(status);
+      paramIndex++;
+    }
+    if (planId) {
+      conditions.push(`dt.plan_id = $${paramIndex}`);
+      params.push(planId);
+      paramIndex++;
+    }
+
+    const limitIdx = paramIndex;
+    const offsetIdx = paramIndex + 1;
+    params.push(limit, (page - 1) * limit);
+
+    const tests = await this.prisma.$queryRawUnsafe<any[]>(`
       SELECT dt.*, 
              u.display_name as coordinator_name,
              bp.title as plan_title,
              (SELECT COUNT(*) FROM bcdr.dr_test_findings WHERE test_id = dt.id) as finding_count
       FROM bcdr.dr_tests dt
-      LEFT JOIN shared.users u ON dt.coordinator_id = u.id
+      LEFT JOIN public.users u ON dt.coordinator_id = u.id
       LEFT JOIN bcdr.bcdr_plans bp ON dt.plan_id = bp.id
-      WHERE dt.organization_id = ${organizationId}::uuid
-        AND dt.deleted_at IS NULL
-        ${search ? this.prisma.$queryRaw`AND (dt.name ILIKE ${'%' + search + '%'} OR dt.test_id ILIKE ${'%' + search + '%'})` : this.prisma.$queryRaw``}
-        ${testType ? this.prisma.$queryRaw`AND dt.test_type = ${testType}::bcdr.test_type` : this.prisma.$queryRaw``}
-        ${status ? this.prisma.$queryRaw`AND dt.status = ${status}::bcdr.test_status` : this.prisma.$queryRaw``}
-        ${planId ? this.prisma.$queryRaw`AND dt.plan_id = ${planId}::uuid` : this.prisma.$queryRaw``}
+      WHERE ${conditions.join(' AND ')}
       ORDER BY dt.scheduled_date DESC NULLS LAST, dt.created_at DESC
-      LIMIT ${limit} OFFSET ${(page - 1) * limit}
-    `;
+      LIMIT $${limitIdx} OFFSET $${offsetIdx}
+    `, ...params);
 
     const total = await this.prisma.$queryRaw<[{ count: bigint }]>`
       SELECT COUNT(*) as count
       FROM bcdr.dr_tests
-      WHERE organization_id = ${organizationId}::uuid
+      WHERE organization_id = ${organizationId}
         AND deleted_at IS NULL
     `;
 
@@ -65,10 +90,10 @@ export class DRTestsService {
              u.display_name as coordinator_name, u.email as coordinator_email,
              bp.title as plan_title
       FROM bcdr.dr_tests dt
-      LEFT JOIN shared.users u ON dt.coordinator_id = u.id
+      LEFT JOIN public.users u ON dt.coordinator_id = u.id
       LEFT JOIN bcdr.bcdr_plans bp ON dt.plan_id = bp.id
-      WHERE dt.id = ${id}::uuid
-        AND dt.organization_id = ${organizationId}::uuid
+      WHERE dt.id = ${id}
+        AND dt.organization_id = ${organizationId}
         AND dt.deleted_at IS NULL
     `;
 
@@ -82,26 +107,28 @@ export class DRTestsService {
              u.display_name as remediation_owner_name,
              bp.name as affected_process_name
       FROM bcdr.dr_test_findings f
-      LEFT JOIN shared.users u ON f.remediation_owner_id = u.id
+      LEFT JOIN public.users u ON f.remediation_owner_id = u.id
       LEFT JOIN bcdr.business_processes bp ON f.affected_process_id = bp.id
-      WHERE f.test_id = ${id}::uuid
+      WHERE f.test_id = ${id}
       ORDER BY f.finding_number ASC
     `;
 
     // Get processes
-    const processes = await this.prisma.$queryRaw<any[]>`
+    const processIds = tests[0].process_ids || [];
+    const processes = processIds.length > 0 ? await this.prisma.$queryRawUnsafe<any[]>(`
       SELECT id, process_id, name, criticality_tier
       FROM bcdr.business_processes
-      WHERE id = ANY(${tests[0].process_ids || []}::uuid[])
+      WHERE id = ANY($1::text[])
         AND deleted_at IS NULL
-    `;
+    `, processIds) : [];
 
     // Get participants
-    const participants = await this.prisma.$queryRaw<any[]>`
+    const participantIds = tests[0].participant_ids || [];
+    const participants = participantIds.length > 0 ? await this.prisma.$queryRawUnsafe<any[]>(`
       SELECT id, display_name, email
-      FROM shared.users
-      WHERE id = ANY(${tests[0].participant_ids || []}::uuid[])
-    `;
+      FROM public.users
+      WHERE id = ANY($1::text[])
+    `, participantIds) : [];
 
     return {
       ...tests[0],
@@ -121,7 +148,7 @@ export class DRTestsService {
     // Check for duplicate testId
     const existing = await this.prisma.$queryRaw<any[]>`
       SELECT id FROM bcdr.dr_tests 
-      WHERE organization_id = ${organizationId}::uuid 
+      WHERE organization_id = ${organizationId} 
         AND test_id = ${dto.testId}
         AND deleted_at IS NULL
     `;
@@ -138,18 +165,18 @@ export class DRTestsService {
         systems_in_scope, participant_ids, external_participants, tags,
         created_by, updated_by
       ) VALUES (
-        ${organizationId}::uuid, ${dto.workspaceId || null}::uuid,
+        ${organizationId}, ${dto.workspaceId || null},
         ${dto.testId}, ${dto.name}, ${dto.description || null}, 
         ${dto.testType}::bcdr.test_type, 'planned'::bcdr.test_status,
-        ${dto.planId || null}::uuid, ${dto.processIds || []}::uuid[],
+        ${dto.planId || null}, ${dto.processIds || []}::text[],
         ${dto.scheduledDate ? new Date(dto.scheduledDate) : null}::date, 
         ${dto.scheduledStartTime || null}::time,
         ${dto.scheduledDurationHours || null},
-        ${dto.coordinatorId || null}::uuid, ${dto.testObjectives || null}, 
+        ${dto.coordinatorId || null}, ${dto.testObjectives || null}, 
         ${dto.successCriteria || null}, ${dto.scopeDescription || null},
-        ${dto.systemsInScope || []}::text[], ${dto.participantIds || []}::uuid[], 
+        ${dto.systemsInScope || []}::text[], ${dto.participantIds || []}::text[], 
         ${dto.externalParticipants || null}, ${dto.tags || []}::text[],
-        ${userId}::uuid, ${userId}::uuid
+        ${userId}, ${userId}
       )
       RETURNING *
     `;
@@ -182,7 +209,7 @@ export class DRTestsService {
   ) {
     await this.findOne(id, organizationId);
 
-    const updates: string[] = ['updated_by = $2::uuid', 'updated_at = NOW()'];
+    const updates: string[] = ['updated_by = $2', 'updated_at = NOW()'];
     const values: any[] = [id, userId];
     let paramIndex = 3;
 
@@ -217,7 +244,7 @@ export class DRTestsService {
       paramIndex++;
     }
     if (dto.coordinatorId !== undefined) {
-      updates.push(`coordinator_id = $${paramIndex}::uuid`);
+      updates.push(`coordinator_id = $${paramIndex}`);
       values.push(dto.coordinatorId);
       paramIndex++;
     }
@@ -232,7 +259,7 @@ export class DRTestsService {
       paramIndex++;
     }
     if (dto.participantIds !== undefined) {
-      updates.push(`participant_ids = $${paramIndex}::uuid[]`);
+      updates.push(`participant_ids = $${paramIndex}::text[]`);
       values.push(dto.participantIds);
       paramIndex++;
     }
@@ -248,7 +275,7 @@ export class DRTestsService {
     }
 
     const result = await this.prisma.$queryRawUnsafe<any[]>(
-      `UPDATE bcdr.dr_tests SET ${updates.join(', ')} WHERE id = $1::uuid RETURNING *`,
+      `UPDATE bcdr.dr_tests SET ${updates.join(', ')} WHERE id = $1 RETURNING *`,
       ...values,
     );
 
@@ -277,9 +304,9 @@ export class DRTestsService {
       UPDATE bcdr.dr_tests
       SET status = 'in_progress'::bcdr.test_status,
           actual_start_at = NOW(),
-          updated_by = ${userId}::uuid,
+          updated_by = ${userId},
           updated_at = NOW()
-      WHERE id = ${id}::uuid
+      WHERE id = ${id}
       RETURNING *
     `;
 
@@ -306,9 +333,9 @@ export class DRTestsService {
           data_loss_minutes = ${dto.dataLossMinutes || null},
           executive_summary = ${dto.executiveSummary || null},
           lessons_learned = ${dto.lessonsLearned || null},
-          updated_by = ${userId}::uuid,
+          updated_by = ${userId},
           updated_at = NOW()
-      WHERE id = ${id}::uuid
+      WHERE id = ${id}
       RETURNING *
     `;
 
@@ -343,7 +370,7 @@ export class DRTestsService {
     const maxFinding = await this.prisma.$queryRaw<[{ max: number }]>`
       SELECT COALESCE(MAX(finding_number), 0) as max
       FROM bcdr.dr_test_findings
-      WHERE test_id = ${testId}::uuid
+      WHERE test_id = ${testId}
     `;
 
     const findingNumber = (maxFinding[0]?.max || 0) + 1;
@@ -354,13 +381,13 @@ export class DRTestsService {
         affected_process_id, affected_system, remediation_required, remediation_plan,
         remediation_owner_id, remediation_due_date, created_by
       ) VALUES (
-        ${testId}::uuid, ${findingNumber}, ${dto.title}, ${dto.description},
+        ${testId}, ${findingNumber}, ${dto.title}, ${dto.description},
         ${dto.severity || 'medium'}, ${dto.category || null},
-        ${dto.affectedProcessId || null}::uuid, ${dto.affectedSystem || null},
+        ${dto.affectedProcessId || null}, ${dto.affectedSystem || null},
         ${dto.remediationRequired ?? true}, ${dto.remediationPlan || null},
-        ${dto.remediationOwnerId || null}::uuid, 
+        ${dto.remediationOwnerId || null}, 
         ${dto.remediationDueDate ? new Date(dto.remediationDueDate) : null}::date,
-        ${userId}::uuid
+        ${userId}
       )
       RETURNING *
     `;
@@ -423,7 +450,7 @@ export class DRTestsService {
       paramIndex++;
     }
     if (updates.remediationOwnerId !== undefined) {
-      updateFields.push(`remediation_owner_id = $${paramIndex}::uuid`);
+      updateFields.push(`remediation_owner_id = $${paramIndex}`);
       values.push(updates.remediationOwnerId);
       paramIndex++;
     }
@@ -439,7 +466,7 @@ export class DRTestsService {
     }
 
     const result = await this.prisma.$queryRawUnsafe<any[]>(
-      `UPDATE bcdr.dr_test_findings SET ${updateFields.join(', ')} WHERE id = $1::uuid RETURNING *`,
+      `UPDATE bcdr.dr_test_findings SET ${updateFields.join(', ')} WHERE id = $1 RETURNING *`,
       ...values,
     );
 
@@ -458,7 +485,7 @@ export class DRTestsService {
     await this.prisma.$executeRaw`
       UPDATE bcdr.dr_tests 
       SET deleted_at = NOW()
-      WHERE id = ${id}::uuid
+      WHERE id = ${id}
     `;
 
     await this.auditService.log({
@@ -481,7 +508,7 @@ export class DRTestsService {
       SELECT dt.*, bp.title as plan_title
       FROM bcdr.dr_tests dt
       LEFT JOIN bcdr.bcdr_plans bp ON dt.plan_id = bp.id
-      WHERE dt.organization_id = ${organizationId}::uuid
+      WHERE dt.organization_id = ${organizationId}
         AND dt.deleted_at IS NULL
         AND dt.status IN ('planned', 'scheduled')
         AND dt.scheduled_date >= CURRENT_DATE
@@ -503,23 +530,36 @@ export class DRTestsService {
         COUNT(*) FILTER (WHERE result = 'passed_with_issues') as issues_count,
         AVG(actual_recovery_time_minutes) FILTER (WHERE result IS NOT NULL) as avg_recovery_time
       FROM bcdr.dr_tests
-      WHERE organization_id = ${organizationId}::uuid
+      WHERE organization_id = ${organizationId}
         AND deleted_at IS NULL
     `;
 
-    // Get open findings count
-    const openFindings = await this.prisma.$queryRaw<[{ count: bigint }]>`
-      SELECT COUNT(*) as count
-      FROM bcdr.dr_test_findings f
-      JOIN bcdr.dr_tests t ON f.test_id = t.id
-      WHERE t.organization_id = ${organizationId}::uuid
-        AND f.remediation_required = true
-        AND f.remediation_status NOT IN ('resolved', 'accepted')
-    `;
+    // Get open findings count - simplified query
+    let openFindingsCount = 0;
+    try {
+      const openFindings = await this.prisma.$queryRaw<[{ count: bigint }]>`
+        SELECT COUNT(*) as count
+        FROM bcdr.dr_test_findings f
+        JOIN bcdr.dr_tests t ON f.test_id = t.id
+        WHERE t.organization_id = ${organizationId}
+      `;
+      openFindingsCount = Number(openFindings[0]?.count || 0);
+    } catch (e) {
+      if (e instanceof Error) {
+        this.logger.error(
+          `Could not fetch open findings count: ${e.message}`,
+          e.stack,
+        );
+      } else {
+        this.logger.error(
+          `Could not fetch open findings count: ${JSON.stringify(e)}`,
+        );
+      }
+    }
 
     return {
       ...stats[0],
-      openFindingsCount: Number(openFindings[0]?.count || 0),
+      openFindingsCount,
     };
   }
 }

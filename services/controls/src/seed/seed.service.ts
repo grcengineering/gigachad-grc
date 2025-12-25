@@ -47,16 +47,73 @@ export class SeedDataService {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
+   * Ensure the organization exists, creating it if necessary
+   * This is needed because the dev auth guard uses a hardcoded org ID
+   */
+  private async ensureOrganizationExists(organizationId: string): Promise<void> {
+    const existing = await this.prisma.organization.findUnique({
+      where: { id: organizationId },
+    });
+    
+    if (!existing) {
+      this.logger.log(`Creating organization ${organizationId}...`);
+      await this.prisma.organization.create({
+        data: {
+          id: organizationId,
+          name: 'Demo Organization',
+          slug: 'demo-org',
+          description: 'Default organization for GigaChad GRC demo',
+          status: 'active',
+          settings: {
+            timezone: 'UTC',
+            dateFormat: 'YYYY-MM-DD',
+          },
+        },
+      });
+      this.logger.log(`Organization ${organizationId} created successfully`);
+    }
+  }
+
+  /**
+   * Ensure a User record exists in the database
+   * This is necessary because dev auth guard creates a virtual user that may not exist in DB
+   */
+  private async ensureUserExists(organizationId: string, userId: string): Promise<void> {
+    const existingUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+    
+    if (!existingUser) {
+      this.logger.log(`Creating user ${userId}...`);
+      await this.prisma.user.create({
+        data: {
+          id: userId,
+          keycloakId: `demo-${userId}`,
+          email: 'admin@demo.local',
+          firstName: 'Demo',
+          lastName: 'Admin',
+          displayName: 'Demo Admin',
+          organizationId: organizationId,
+          role: 'admin',
+          status: 'active',
+        },
+      });
+      this.logger.log(`User ${userId} created successfully`);
+    }
+  }
+
+  /**
    * Check if organization already has data
    */
   async hasExistingData(organizationId: string): Promise<boolean> {
-    const [controls, vendors, employees] = await Promise.all([
+    const [controls, vendors, employees, frameworks] = await Promise.all([
       this.prisma.control.count({ where: { organizationId } }),
       this.prisma.vendor.count({ where: { organizationId } }),
       this.prisma.correlatedEmployee.count({ where: { organizationId } }),
+      this.prisma.framework.count({ where: { organizationId, deletedAt: null } }),
     ]);
     
-    return controls > 0 || vendors > 0 || employees > 0;
+    return controls > 0 || vendors > 0 || employees > 0 || frameworks > 0;
   }
 
   /**
@@ -77,6 +134,12 @@ export class SeedDataService {
    */
   async loadDemoData(organizationId: string, userId: string): Promise<SeedResult> {
     this.logger.log(`Loading demo data for organization ${organizationId}`);
+    
+    // Ensure the organization exists (create if not)
+    await this.ensureOrganizationExists(organizationId);
+    
+    // Ensure the user exists (create if not) - required for foreign key constraints
+    await this.ensureUserExists(organizationId, userId);
     
     // Check if demo data already loaded
     if (await this.isDemoDataLoaded(organizationId)) {
@@ -203,6 +266,27 @@ export class SeedDataService {
       const catalogFramework = getCatalogFramework(catalogId);
       if (!catalogFramework) {
         this.logger.warn(`Catalog framework not found: ${catalogId}`);
+        continue;
+      }
+      
+      // Check if this framework is already activated for the organization
+      const existingFramework = await this.prisma.framework.findFirst({
+        where: {
+          organizationId,
+          type: catalogId,
+          deletedAt: null,
+        },
+      });
+      
+      if (existingFramework) {
+        this.logger.log(`Framework '${catalogFramework.name}' already exists, skipping...`);
+        frameworkIds.push(existingFramework.id);
+        // Get existing requirement IDs for mapping later
+        const existingReqs = await this.prisma.frameworkRequirement.findMany({
+          where: { frameworkId: existingFramework.id },
+          select: { id: true },
+        });
+        requirementIds.push(...existingReqs.map(r => r.id));
         continue;
       }
       

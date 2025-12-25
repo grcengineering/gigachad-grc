@@ -19,7 +19,10 @@ import * as serviceWorker from './lib/serviceWorker';
 import './index.css';
 
 // Hard guardrail: dev auth must never be enabled in production builds
-if (import.meta.env.PROD && import.meta.env.VITE_ENABLE_DEV_AUTH === 'true') {
+// Allow in staging mode for containerized dev/demo environments
+if (import.meta.env.PROD && 
+    import.meta.env.MODE !== 'staging' && 
+    import.meta.env.VITE_ENABLE_DEV_AUTH === 'true') {
   // Fail fast so misconfigured builds don't silently ship
   // eslint-disable-next-line no-console
   console.error('VITE_ENABLE_DEV_AUTH is enabled in a production build. This is not allowed.');

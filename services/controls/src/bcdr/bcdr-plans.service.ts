@@ -44,24 +44,24 @@ export class BCDRPlansService {
     }
 
     const [plans, total] = await Promise.all([
-      this.prisma.$queryRaw<any[]>`
+      this.prisma.$queryRawUnsafe<any[]>(`
         SELECT bp.*, 
                u.display_name as owner_name,
                (SELECT COUNT(*) FROM bcdr.plan_controls WHERE plan_id = bp.id) as control_count
         FROM bcdr.bcdr_plans bp
-        LEFT JOIN shared.users u ON bp.owner_id = u.id
-        WHERE bp.organization_id = ${organizationId}::uuid
+        LEFT JOIN public.users u ON bp.owner_id = u.id
+        WHERE bp.organization_id = $1
           AND bp.deleted_at IS NULL
-          ${search ? this.prisma.$queryRaw`AND (bp.title ILIKE ${'%' + search + '%'} OR bp.plan_id ILIKE ${'%' + search + '%'})` : this.prisma.$queryRaw``}
-          ${planType ? this.prisma.$queryRaw`AND bp.plan_type = ${planType}::bcdr.plan_type` : this.prisma.$queryRaw``}
-          ${status ? this.prisma.$queryRaw`AND bp.status = ${status}::bcdr.plan_status` : this.prisma.$queryRaw``}
+          ${search ? `AND (bp.title ILIKE $2 OR bp.plan_id ILIKE $2)` : ''}
+          ${planType ? `AND bp.plan_type = $${search ? 3 : 2}::bcdr.plan_type` : ''}
+          ${status ? `AND bp.status = $${(search ? 3 : 2) + (planType ? 1 : 0)}::bcdr.plan_status` : ''}
         ORDER BY bp.updated_at DESC
-        LIMIT ${limit} OFFSET ${(page - 1) * limit}
-      `,
+        LIMIT $${(search ? 3 : 2) + (planType ? 1 : 0) + (status ? 1 : 0)} OFFSET $${(search ? 4 : 3) + (planType ? 1 : 0) + (status ? 1 : 0)}
+      `, ...[organizationId, ...(search ? [`%${search}%`] : []), ...(planType ? [planType] : []), ...(status ? [status] : []), limit, (page - 1) * limit].filter((_, i) => i === 0 || (i === 1 && search) || (i === 2 && planType && search) || (i === 2 && !search && planType) || (i === 3 && status && search && planType) || (i === 3 && status && !planType && search) || (i === 3 && status && planType && !search) || (i === 2 && status && !search && !planType) || i >= (search ? 2 : 1) + (planType ? 1 : 0) + (status ? 1 : 0))),
       this.prisma.$queryRaw<[{ count: bigint }]>`
         SELECT COUNT(*) as count
         FROM bcdr.bcdr_plans
-        WHERE organization_id = ${organizationId}::uuid
+        WHERE organization_id = ${organizationId}
           AND deleted_at IS NULL
       `,
     ]);
@@ -81,10 +81,10 @@ export class BCDRPlansService {
              u.display_name as owner_name,
              a.display_name as approver_name
       FROM bcdr.bcdr_plans bp
-      LEFT JOIN shared.users u ON bp.owner_id = u.id
-      LEFT JOIN shared.users a ON bp.approver_id = a.id
-      WHERE bp.id = ${id}::uuid
-        AND bp.organization_id = ${organizationId}::uuid
+      LEFT JOIN public.users u ON bp.owner_id = u.id
+      LEFT JOIN public.users a ON bp.approver_id = a.id
+      WHERE bp.id = ${id}
+        AND bp.organization_id = ${organizationId}
         AND bp.deleted_at IS NULL
     `;
 
@@ -96,8 +96,8 @@ export class BCDRPlansService {
     const versions = await this.prisma.$queryRaw<any[]>`
       SELECT pv.*, u.display_name as created_by_name
       FROM bcdr.plan_versions pv
-      LEFT JOIN shared.users u ON pv.created_by = u.id
-      WHERE pv.plan_id = ${id}::uuid
+      LEFT JOIN public.users u ON pv.created_by = u.id
+      WHERE pv.plan_id = ${id}
       ORDER BY pv.created_at DESC
     `;
 
@@ -106,16 +106,17 @@ export class BCDRPlansService {
       SELECT pc.*, c.control_id, c.title, c.category
       FROM bcdr.plan_controls pc
       JOIN controls.controls c ON pc.control_id = c.id
-      WHERE pc.plan_id = ${id}::uuid
+      WHERE pc.plan_id = ${id}
     `;
 
     // Get in-scope processes
-    const processes = await this.prisma.$queryRaw<any[]>`
+    const inScopeIds = plans[0].in_scope_processes || [];
+    const processes = inScopeIds.length > 0 ? await this.prisma.$queryRawUnsafe<any[]>(`
       SELECT id, process_id, name, criticality_tier
       FROM bcdr.business_processes
-      WHERE id = ANY(${plans[0].in_scope_processes || []}::uuid[])
+      WHERE id = ANY($1::text[])
         AND deleted_at IS NULL
-    `;
+    `, inScopeIds) : [];
 
     return {
       ...plans[0],
@@ -135,7 +136,7 @@ export class BCDRPlansService {
     // Check for duplicate planId
     const existing = await this.prisma.$queryRaw<any[]>`
       SELECT id FROM bcdr.bcdr_plans 
-      WHERE organization_id = ${organizationId}::uuid 
+      WHERE organization_id = ${organizationId} 
         AND plan_id = ${dto.planId}
         AND deleted_at IS NULL
     `;
@@ -157,17 +158,17 @@ export class BCDRPlansService {
         review_frequency_months, next_review_due, tags,
         created_by, updated_by
       ) VALUES (
-        ${organizationId}::uuid, ${dto.workspaceId || null}::uuid, 
+        ${organizationId}, ${dto.workspaceId || null}, 
         ${dto.planId}, ${dto.title}, ${dto.description || null}, 
         ${dto.planType}::bcdr.plan_type, 'draft'::bcdr.plan_status,
-        ${dto.version || '1.0'}, ${dto.ownerId || null}::uuid,
+        ${dto.version || '1.0'}, ${dto.ownerId || null},
         ${dto.effectiveDate ? new Date(dto.effectiveDate) : null}::date,
         ${dto.expiryDate ? new Date(dto.expiryDate) : null}::date,
-        ${dto.scopeDescription || null}, ${dto.inScopeProcesses || []}::uuid[], 
+        ${dto.scopeDescription || null}, ${dto.inScopeProcesses || []}::text[], 
         ${dto.outOfScope || null},
         ${dto.activationCriteria || null}, ${dto.activationAuthority || null},
         ${dto.reviewFrequencyMonths || 12}, ${nextReviewDue}, ${dto.tags || []}::text[],
-        ${userId}::uuid, ${userId}::uuid
+        ${userId}, ${userId}
       )
       RETURNING *
     `;
@@ -200,7 +201,7 @@ export class BCDRPlansService {
   ) {
     const existing = await this.findOne(id, organizationId);
 
-    const updates: string[] = ['updated_by = $2::uuid', 'updated_at = NOW()'];
+    const updates: string[] = ['updated_by = $2', 'updated_at = NOW()'];
     const values: any[] = [id, userId];
     let paramIndex = 3;
 
@@ -238,12 +239,12 @@ export class BCDRPlansService {
       paramIndex++;
     }
     if (dto.ownerId !== undefined) {
-      updates.push(`owner_id = $${paramIndex}::uuid`);
+      updates.push(`owner_id = $${paramIndex}`);
       values.push(dto.ownerId);
       paramIndex++;
     }
     if (dto.approverId !== undefined) {
-      updates.push(`approver_id = $${paramIndex}::uuid`);
+      updates.push(`approver_id = $${paramIndex}`);
       values.push(dto.approverId);
       paramIndex++;
     }
@@ -263,7 +264,7 @@ export class BCDRPlansService {
       paramIndex++;
     }
     if (dto.inScopeProcesses !== undefined) {
-      updates.push(`in_scope_processes = $${paramIndex}::uuid[]`);
+      updates.push(`in_scope_processes = $${paramIndex}::text[]`);
       values.push(dto.inScopeProcesses);
       paramIndex++;
     }
@@ -294,7 +295,7 @@ export class BCDRPlansService {
     }
 
     const result = await this.prisma.$queryRawUnsafe<any[]>(
-      `UPDATE bcdr.bcdr_plans SET ${updates.join(', ')} WHERE id = $1::uuid RETURNING *`,
+      `UPDATE bcdr.bcdr_plans SET ${updates.join(', ')} WHERE id = $1 RETURNING *`,
       ...values,
     );
 
@@ -327,8 +328,8 @@ export class BCDRPlansService {
 
     await this.prisma.$executeRaw`
       UPDATE bcdr.bcdr_plans 
-      SET deleted_at = NOW(), deleted_by = ${userId}::uuid
-      WHERE id = ${id}::uuid
+      SET deleted_at = NOW(), deleted_by = ${userId}
+      WHERE id = ${id}
     `;
 
     await this.auditService.log({
@@ -363,7 +364,7 @@ export class BCDRPlansService {
     // Create version record
     await this.prisma.$executeRaw`
       INSERT INTO bcdr.plan_versions (plan_id, version, filename, storage_path, file_size, created_by)
-      VALUES (${id}::uuid, ${versionNumber || plan.version}, ${file.originalname}, ${storagePath}, ${file.size}, ${userId}::uuid)
+      VALUES (${id}, ${versionNumber || plan.version}, ${file.originalname}, ${storagePath}, ${file.size}, ${userId})
     `;
 
     // Update plan
@@ -373,9 +374,9 @@ export class BCDRPlansService {
           storage_path = ${storagePath},
           mime_type = ${file.mimetype},
           file_size = ${file.size},
-          updated_by = ${userId}::uuid,
+          updated_by = ${userId},
           updated_at = NOW()
-      WHERE id = ${id}::uuid
+      WHERE id = ${id}
       RETURNING *
     `;
 
@@ -385,7 +386,7 @@ export class BCDRPlansService {
   async linkControl(planId: string, controlId: string, userId: string, notes?: string) {
     const result = await this.prisma.$queryRaw<any[]>`
       INSERT INTO bcdr.plan_controls (plan_id, control_id, mapping_notes, created_by)
-      VALUES (${planId}::uuid, ${controlId}::uuid, ${notes || null}, ${userId}::uuid)
+      VALUES (${planId}, ${controlId}, ${notes || null}, ${userId})
       ON CONFLICT (plan_id, control_id) DO UPDATE
       SET mapping_notes = EXCLUDED.mapping_notes
       RETURNING *
@@ -397,7 +398,7 @@ export class BCDRPlansService {
   async unlinkControl(planId: string, controlId: string) {
     await this.prisma.$executeRaw`
       DELETE FROM bcdr.plan_controls 
-      WHERE plan_id = ${planId}::uuid AND control_id = ${controlId}::uuid
+      WHERE plan_id = ${planId} AND control_id = ${controlId}
     `;
 
     return { success: true };
@@ -414,7 +415,7 @@ export class BCDRPlansService {
         COUNT(*) FILTER (WHERE next_review_due < NOW()) as overdue_review_count,
         COUNT(*) FILTER (WHERE expiry_date < NOW() AND status = 'published') as expired_count
       FROM bcdr.bcdr_plans
-      WHERE organization_id = ${organizationId}::uuid
+      WHERE organization_id = ${organizationId}
         AND deleted_at IS NULL
     `;
 

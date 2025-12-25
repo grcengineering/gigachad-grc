@@ -38,114 +38,20 @@ export default defineConfig(({ mode }) => {
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          // Vendor chunks - split large dependencies for optimal caching
+          // Simplified chunking strategy to avoid React duplication issues
           if (id.includes('node_modules')) {
-            // Core React dependencies - rarely changes
-            if (id.includes('react-dom')) {
-              return 'vendor-react-dom';
-            }
-            if (id.includes('react-router')) {
-              return 'vendor-react-router';
-            }
-            if (id.includes('react') && !id.includes('react-')) {
-              return 'vendor-react-core';
-            }
-            
-            // Query/State management
-            if (id.includes('@tanstack/react-query')) {
-              return 'vendor-react-query';
-            }
-            
-            // Charts and visualization - large, load on demand
-            if (id.includes('recharts')) {
-              return 'vendor-charts-recharts';
-            }
-            if (id.includes('d3')) {
-              return 'vendor-charts-d3';
-            }
-            
-            // UI components
-            if (id.includes('@headlessui')) {
-              return 'vendor-ui-headless';
-            }
-            if (id.includes('@heroicons')) {
-              return 'vendor-ui-icons';
-            }
-            if (id.includes('lucide')) {
-              return 'vendor-ui-lucide';
-            }
-            
-            // Form handling
-            if (id.includes('react-hook-form') || id.includes('@hookform')) {
-              return 'vendor-forms';
-            }
-            if (id.includes('zod')) {
-              return 'vendor-zod';
-            }
-            
-            // Date utilities
-            if (id.includes('date-fns')) {
-              return 'vendor-date';
-            }
-            
-            // Excel/file handling - only load when needed
-            if (id.includes('xlsx')) {
-              return 'vendor-xlsx';
-            }
-            if (id.includes('mammoth')) {
-              return 'vendor-docx';
-            }
-            
-            // Internationalization
-            if (id.includes('i18next')) {
-              return 'vendor-i18n';
-            }
-            
-            // Monaco editor (code editing) - very large
+            // Monaco editor - very large, separate chunk
             if (id.includes('monaco')) {
               return 'vendor-monaco';
             }
             
-            // Grid layout
-            if (id.includes('react-grid-layout')) {
-              return 'vendor-grid';
+            // Charts and visualization - large libraries
+            if (id.includes('recharts') || id.includes('d3')) {
+              return 'vendor-charts';
             }
             
-            // Authentication
-            if (id.includes('@okta')) {
-              return 'vendor-auth-okta';
-            }
-            if (id.includes('keycloak')) {
-              return 'vendor-auth-keycloak';
-            }
-            
-            // Error tracking
-            if (id.includes('@sentry')) {
-              return 'vendor-sentry';
-            }
-            
-            // Markdown rendering
-            if (id.includes('react-markdown') || id.includes('remark') || id.includes('rehype')) {
-              return 'vendor-markdown';
-            }
-            
-            // HTTP clients
-            if (id.includes('axios')) {
-              return 'vendor-http';
-            }
-            
-            // Utilities (clsx, etc.)
-            if (id.includes('clsx') || id.includes('class-variance-authority') || id.includes('tailwind-merge')) {
-              return 'vendor-css-utils';
-            }
-            
-            // Toast notifications
-            if (id.includes('react-hot-toast') || id.includes('sonner')) {
-              return 'vendor-toast';
-            }
-            
-            // Everything else in node_modules
-            return 'vendor-misc';
+            // Everything else stays together to avoid initialization issues
+            return 'vendor';
           }
         },
       },
@@ -160,10 +66,11 @@ export default defineConfig(({ mode }) => {
     minify: 'terser',
     terserOptions: {
       compress: {
-        drop_console: true, // Remove console.logs in production
+        // Only strip console.logs in production mode, keep them in staging for debugging
+        drop_console: mode === 'production',
         drop_debugger: true,
-        // Additional optimizations
-        pure_funcs: ['console.log', 'console.info', 'console.debug'],
+        // Additional optimizations - only in production
+        pure_funcs: mode === 'production' ? ['console.log', 'console.info', 'console.debug'] : [],
       },
       mangle: {
         safari10: true, // Safari 10 compatibility
