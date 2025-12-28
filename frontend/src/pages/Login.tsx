@@ -31,7 +31,8 @@ export default function Login() {
     );
   }
 
-  const isDev = import.meta.env.DEV;
+  // Allow dev login in dev mode OR when VITE_ENABLE_DEV_AUTH is enabled (staging/demo)
+  const isDevAuthEnabled = import.meta.env.DEV || import.meta.env.VITE_ENABLE_DEV_AUTH === 'true';
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-surface-950 px-4">
@@ -73,7 +74,7 @@ export default function Login() {
           </button>
 
           {/* Dev login option */}
-          {isDev && devLogin && (
+          {isDevAuthEnabled && devLogin && (
             <>
               <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">

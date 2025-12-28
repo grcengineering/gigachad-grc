@@ -15,18 +15,35 @@ export class RecoveryStrategiesService {
   async findAll(organizationId: string, filters?: { search?: string; strategyType?: string; processId?: string }) {
     const { search, strategyType, processId } = filters || {};
 
-    const strategies = await this.prisma.$queryRaw<any[]>`
+    // Build dynamic query
+    const conditions: string[] = ['rs.organization_id = $1', 'rs.deleted_at IS NULL'];
+    const params: any[] = [organizationId];
+    let paramIndex = 2;
+
+    if (search) {
+      conditions.push(`rs.name ILIKE $${paramIndex}`);
+      params.push(`%${search}%`);
+      paramIndex++;
+    }
+    if (strategyType) {
+      conditions.push(`rs.strategy_type = $${paramIndex}`);
+      params.push(strategyType);
+      paramIndex++;
+    }
+    if (processId) {
+      conditions.push(`rs.process_id = $${paramIndex}`);
+      params.push(processId);
+      paramIndex++;
+    }
+
+    const strategies = await this.prisma.$queryRawUnsafe<any[]>(`
       SELECT rs.*, 
              bp.process_id, bp.name as process_name
       FROM bcdr.recovery_strategies rs
       LEFT JOIN bcdr.business_processes bp ON rs.process_id = bp.id
-      WHERE rs.organization_id = ${organizationId}::uuid
-        AND rs.deleted_at IS NULL
-        ${search ? this.prisma.$queryRaw`AND rs.name ILIKE ${'%' + search + '%'}` : this.prisma.$queryRaw``}
-        ${strategyType ? this.prisma.$queryRaw`AND rs.strategy_type = ${strategyType}` : this.prisma.$queryRaw``}
-        ${processId ? this.prisma.$queryRaw`AND rs.process_id = ${processId}::uuid` : this.prisma.$queryRaw``}
+      WHERE ${conditions.join(' AND ')}
       ORDER BY rs.name ASC
-    `;
+    `, ...params);
 
     return strategies;
   }
@@ -37,8 +54,8 @@ export class RecoveryStrategiesService {
              bp.process_id, bp.name as process_name, bp.criticality_tier
       FROM bcdr.recovery_strategies rs
       LEFT JOIN bcdr.business_processes bp ON rs.process_id = bp.id
-      WHERE rs.id = ${id}::uuid
-        AND rs.organization_id = ${organizationId}::uuid
+      WHERE rs.id = ${id}
+        AND rs.organization_id = ${organizationId}
         AND rs.deleted_at IS NULL
     `;
 
@@ -50,15 +67,15 @@ export class RecoveryStrategiesService {
     const runbooks = await this.prisma.$queryRaw<any[]>`
       SELECT id, runbook_id, title, status
       FROM bcdr.runbooks
-      WHERE recovery_strategy_id = ${id}::uuid
+      WHERE recovery_strategy_id = ${id}
         AND deleted_at IS NULL
     `;
 
     // Get linked assets
     const assets = await this.prisma.$queryRaw<any[]>`
       SELECT id, name, type, status
-      FROM controls.assets
-      WHERE recovery_strategy_id = ${id}::uuid
+      FROM public.assets
+      WHERE recovery_strategy_id = ${id}
         AND deleted_at IS NULL
     `;
 
@@ -84,14 +101,14 @@ export class RecoveryStrategiesService {
         vendor_name, vendor_contact, contract_reference, tags,
         created_by, updated_by
       ) VALUES (
-        ${organizationId}::uuid, ${dto.name}, ${dto.description || null},
-        ${dto.strategyType || null}, ${dto.processId || null}::uuid,
+        ${organizationId}, ${dto.name}, ${dto.description || null},
+        ${dto.strategyType || null}, ${dto.processId || null},
         ${dto.recoveryLocation || null}, ${dto.recoveryProcedure || null},
         ${dto.estimatedRecoveryTimeHours || null}, ${dto.estimatedCost || null},
         ${dto.requiredPersonnel || null}, ${dto.requiredEquipment || null},
         ${dto.requiredData || null}, ${dto.vendorName || null},
         ${dto.vendorContact || null}, ${dto.contractReference || null},
-        ${dto.tags || []}::text[], ${userId}::uuid, ${userId}::uuid
+        ${dto.tags || []}::text[], ${userId}, ${userId}
       )
       RETURNING *
     `;
@@ -123,7 +140,7 @@ export class RecoveryStrategiesService {
   ) {
     await this.findOne(id, organizationId);
 
-    const updates: string[] = ['updated_by = $2::uuid', 'updated_at = NOW()'];
+    const updates: string[] = ['updated_by = $2', 'updated_at = NOW()'];
     const values: any[] = [id, userId];
     let paramIndex = 3;
 
@@ -143,7 +160,7 @@ export class RecoveryStrategiesService {
       paramIndex++;
     }
     if (dto.processId !== undefined) {
-      updates.push(`process_id = $${paramIndex}::uuid`);
+      updates.push(`process_id = $${paramIndex}`);
       values.push(dto.processId);
       paramIndex++;
     }
@@ -204,7 +221,7 @@ export class RecoveryStrategiesService {
     }
 
     const result = await this.prisma.$queryRawUnsafe<any[]>(
-      `UPDATE bcdr.recovery_strategies SET ${updates.join(', ')} WHERE id = $1::uuid RETURNING *`,
+      `UPDATE bcdr.recovery_strategies SET ${updates.join(', ')} WHERE id = $1 RETURNING *`,
       ...values,
     );
 
@@ -238,7 +255,7 @@ export class RecoveryStrategiesService {
     await this.prisma.$executeRaw`
       UPDATE bcdr.recovery_strategies 
       SET deleted_at = NOW()
-      WHERE id = ${id}::uuid
+      WHERE id = ${id}
     `;
 
     await this.auditService.log({
@@ -264,9 +281,9 @@ export class RecoveryStrategiesService {
       SET is_tested = true,
           last_tested_at = NOW(),
           test_result = ${result}::bcdr.test_result,
-          updated_by = ${userId}::uuid,
+          updated_by = ${userId},
           updated_at = NOW()
-      WHERE id = ${id}::uuid
+      WHERE id = ${id}
       RETURNING *
     `;
 
@@ -284,7 +301,7 @@ export class RecoveryStrategiesService {
         AVG(estimated_recovery_time_hours) as avg_recovery_time,
         COUNT(DISTINCT strategy_type) as strategy_type_count
       FROM bcdr.recovery_strategies
-      WHERE organization_id = ${organizationId}::uuid
+      WHERE organization_id = ${organizationId}
         AND deleted_at IS NULL
     `;
 

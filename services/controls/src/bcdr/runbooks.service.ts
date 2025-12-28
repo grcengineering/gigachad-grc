@@ -17,22 +17,43 @@ export class RunbooksService {
   async findAll(organizationId: string, filters?: { search?: string; category?: string; status?: RunbookStatus; processId?: string }) {
     const { search, category, status, processId } = filters || {};
 
-    const runbooks = await this.prisma.$queryRaw<any[]>`
+    // Build dynamic query
+    const conditions: string[] = ['r.organization_id = $1', 'r.deleted_at IS NULL'];
+    const params: any[] = [organizationId];
+    let paramIndex = 2;
+
+    if (search) {
+      conditions.push(`(r.title ILIKE $${paramIndex} OR r.runbook_id ILIKE $${paramIndex})`);
+      params.push(`%${search}%`);
+      paramIndex++;
+    }
+    if (category) {
+      conditions.push(`r.category = $${paramIndex}`);
+      params.push(category);
+      paramIndex++;
+    }
+    if (status) {
+      conditions.push(`r.status = $${paramIndex}::bcdr.runbook_status`);
+      params.push(status);
+      paramIndex++;
+    }
+    if (processId) {
+      conditions.push(`r.process_id = $${paramIndex}`);
+      params.push(processId);
+      paramIndex++;
+    }
+
+    const runbooks = await this.prisma.$queryRawUnsafe<any[]>(`
       SELECT r.*, 
              u.display_name as owner_name,
              bp.name as process_name,
              (SELECT COUNT(*) FROM bcdr.runbook_steps WHERE runbook_id = r.id) as step_count
       FROM bcdr.runbooks r
-      LEFT JOIN shared.users u ON r.owner_id = u.id
+      LEFT JOIN public.users u ON r.owner_id = u.id
       LEFT JOIN bcdr.business_processes bp ON r.process_id = bp.id
-      WHERE r.organization_id = ${organizationId}::uuid
-        AND r.deleted_at IS NULL
-        ${search ? this.prisma.$queryRaw`AND (r.title ILIKE ${'%' + search + '%'} OR r.runbook_id ILIKE ${'%' + search + '%'})` : this.prisma.$queryRaw``}
-        ${category ? this.prisma.$queryRaw`AND r.category = ${category}` : this.prisma.$queryRaw``}
-        ${status ? this.prisma.$queryRaw`AND r.status = ${status}::bcdr.runbook_status` : this.prisma.$queryRaw``}
-        ${processId ? this.prisma.$queryRaw`AND r.process_id = ${processId}::uuid` : this.prisma.$queryRaw``}
+      WHERE ${conditions.join(' AND ')}
       ORDER BY r.title ASC
-    `;
+    `, ...params);
 
     return runbooks;
   }
@@ -44,11 +65,11 @@ export class RunbooksService {
              bp.name as process_name,
              rs.name as strategy_name
       FROM bcdr.runbooks r
-      LEFT JOIN shared.users u ON r.owner_id = u.id
+      LEFT JOIN public.users u ON r.owner_id = u.id
       LEFT JOIN bcdr.business_processes bp ON r.process_id = bp.id
       LEFT JOIN bcdr.recovery_strategies rs ON r.recovery_strategy_id = rs.id
-      WHERE r.id = ${id}::uuid
-        AND r.organization_id = ${organizationId}::uuid
+      WHERE r.id = ${id}
+        AND r.organization_id = ${organizationId}
         AND r.deleted_at IS NULL
     `;
 
@@ -60,7 +81,7 @@ export class RunbooksService {
     const steps = await this.prisma.$queryRaw<any[]>`
       SELECT *
       FROM bcdr.runbook_steps
-      WHERE runbook_id = ${id}::uuid
+      WHERE runbook_id = ${id}
       ORDER BY step_number ASC
     `;
 
@@ -80,7 +101,7 @@ export class RunbooksService {
     // Check for duplicate runbookId
     const existing = await this.prisma.$queryRaw<any[]>`
       SELECT id FROM bcdr.runbooks 
-      WHERE organization_id = ${organizationId}::uuid 
+      WHERE organization_id = ${organizationId} 
         AND runbook_id = ${dto.runbookId}
         AND deleted_at IS NULL
     `;
@@ -96,13 +117,13 @@ export class RunbooksService {
         estimated_duration_minutes, required_access_level, prerequisites, tags,
         created_by, updated_by
       ) VALUES (
-        ${organizationId}::uuid, ${dto.runbookId}, ${dto.title}, ${dto.description || null},
+        ${organizationId}, ${dto.runbookId}, ${dto.title}, ${dto.description || null},
         'draft'::bcdr.runbook_status, ${dto.category || null}, ${dto.systemName || null},
-        ${dto.processId || null}::uuid, ${dto.recoveryStrategyId || null}::uuid,
-        ${dto.content || null}, ${dto.version || '1.0'}, ${dto.ownerId || null}::uuid,
+        ${dto.processId || null}, ${dto.recoveryStrategyId || null},
+        ${dto.content || null}, ${dto.version || '1.0'}, ${dto.ownerId || null},
         ${dto.estimatedDurationMinutes || null}, ${dto.requiredAccessLevel || null},
         ${dto.prerequisites || null}, ${dto.tags || []}::text[],
-        ${userId}::uuid, ${userId}::uuid
+        ${userId}, ${userId}
       )
       RETURNING *
     `;
@@ -134,7 +155,7 @@ export class RunbooksService {
   ) {
     await this.findOne(id, organizationId);
 
-    const updates: string[] = ['updated_by = $2::uuid', 'updated_at = NOW()'];
+    const updates: string[] = ['updated_by = $2', 'updated_at = NOW()'];
     const values: any[] = [id, userId];
     let paramIndex = 3;
 
@@ -164,7 +185,7 @@ export class RunbooksService {
       paramIndex++;
     }
     if (dto.processId !== undefined) {
-      updates.push(`process_id = $${paramIndex}::uuid`);
+      updates.push(`process_id = $${paramIndex}`);
       values.push(dto.processId);
       paramIndex++;
     }
@@ -179,7 +200,7 @@ export class RunbooksService {
       paramIndex++;
     }
     if (dto.ownerId !== undefined) {
-      updates.push(`owner_id = $${paramIndex}::uuid`);
+      updates.push(`owner_id = $${paramIndex}`);
       values.push(dto.ownerId);
       paramIndex++;
     }
@@ -205,7 +226,7 @@ export class RunbooksService {
     }
 
     const result = await this.prisma.$queryRawUnsafe<any[]>(
-      `UPDATE bcdr.runbooks SET ${updates.join(', ')} WHERE id = $1::uuid RETURNING *`,
+      `UPDATE bcdr.runbooks SET ${updates.join(', ')} WHERE id = $1 RETURNING *`,
       ...values,
     );
 
@@ -239,7 +260,7 @@ export class RunbooksService {
     await this.prisma.$executeRaw`
       UPDATE bcdr.runbooks 
       SET deleted_at = NOW()
-      WHERE id = ${id}::uuid
+      WHERE id = ${id}
     `;
 
     await this.auditService.log({
@@ -265,7 +286,7 @@ export class RunbooksService {
         estimated_duration_minutes, requires_approval, approval_role,
         verification_steps, rollback_steps, warnings, notes
       ) VALUES (
-        ${runbookId}::uuid, ${dto.stepNumber}, ${dto.title}, ${dto.description || null},
+        ${runbookId}, ${dto.stepNumber}, ${dto.title}, ${dto.description || null},
         ${dto.instructions}, ${dto.estimatedDurationMinutes || null},
         ${dto.requiresApproval || false}, ${dto.approvalRole || null},
         ${dto.verificationSteps || null}, ${dto.rollbackSteps || null},
@@ -342,7 +363,7 @@ export class RunbooksService {
 
     const result = await this.prisma.$queryRawUnsafe<any[]>(
       `UPDATE bcdr.runbook_steps SET ${updateFields.join(', ')} 
-       WHERE runbook_id = $1::uuid AND step_number = $2 RETURNING *`,
+       WHERE runbook_id = $1 AND step_number = $2 RETURNING *`,
       ...values,
     );
 
@@ -352,7 +373,7 @@ export class RunbooksService {
   async deleteStep(runbookId: string, stepNumber: number) {
     await this.prisma.$executeRaw`
       DELETE FROM bcdr.runbook_steps
-      WHERE runbook_id = ${runbookId}::uuid AND step_number = ${stepNumber}
+      WHERE runbook_id = ${runbookId} AND step_number = ${stepNumber}
     `;
 
     // Renumber remaining steps
@@ -360,7 +381,7 @@ export class RunbooksService {
       WITH numbered AS (
         SELECT id, ROW_NUMBER() OVER (ORDER BY step_number) as new_number
         FROM bcdr.runbook_steps
-        WHERE runbook_id = ${runbookId}::uuid
+        WHERE runbook_id = ${runbookId}
       )
       UPDATE bcdr.runbook_steps s
       SET step_number = n.new_number
@@ -376,7 +397,7 @@ export class RunbooksService {
       await this.prisma.$executeRaw`
         UPDATE bcdr.runbook_steps
         SET step_number = ${i + 1}
-        WHERE id = ${stepIds[i]}::uuid AND runbook_id = ${runbookId}::uuid
+        WHERE id = ${stepIds[i]} AND runbook_id = ${runbookId}
       `;
     }
 
@@ -392,7 +413,7 @@ export class RunbooksService {
         COUNT(*) FILTER (WHERE status = 'needs_review') as needs_review_count,
         COUNT(DISTINCT category) as category_count
       FROM bcdr.runbooks
-      WHERE organization_id = ${organizationId}::uuid
+      WHERE organization_id = ${organizationId}
         AND deleted_at IS NULL
     `;
 

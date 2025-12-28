@@ -21,52 +21,66 @@ export class BusinessProcessesService {
 
   async findAll(organizationId: string, filters: BusinessProcessFilterDto) {
     const { search, criticalityTier, department, ownerId, isActive, page = 1, limit = 25 } = filters;
+    const pageNum = Number(page) || 1;
+    const limitNum = Number(limit) || 25;
+    const offset = (pageNum - 1) * limitNum;
 
-    const where: any = {
-      organizationId,
-      deletedAt: null,
-    };
+    // Build dynamic WHERE conditions
+    const conditions: string[] = [
+      'bp.organization_id = $1',
+      'bp.deleted_at IS NULL',
+    ];
+    const params: any[] = [organizationId];
+    let paramIndex = 2;
 
     if (search) {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { processId: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
-      ];
+      conditions.push(`(bp.name ILIKE $${paramIndex} OR bp.process_id ILIKE $${paramIndex})`);
+      params.push(`%${search}%`);
+      paramIndex++;
     }
 
     if (criticalityTier) {
-      where.criticalityTier = criticalityTier;
+      conditions.push(`bp.criticality_tier = $${paramIndex}::bcdr.criticality_tier`);
+      params.push(criticalityTier);
+      paramIndex++;
     }
 
     if (department) {
-      where.department = department;
+      conditions.push(`bp.department = $${paramIndex}`);
+      params.push(department);
+      paramIndex++;
     }
 
     if (ownerId) {
-      where.ownerId = ownerId;
+      conditions.push(`bp.owner_id = $${paramIndex}`);
+      params.push(ownerId);
+      paramIndex++;
     }
 
     if (isActive !== undefined) {
-      where.isActive = isActive;
+      conditions.push(`bp.is_active = $${paramIndex}`);
+      params.push(isActive);
+      paramIndex++;
     }
 
-    const [processes, total] = await Promise.all([
-      this.prisma.$queryRaw`
+    const whereClause = conditions.join(' AND ');
+    const limitParamIdx = paramIndex;
+    const offsetParamIdx = paramIndex + 1;
+
+    // Add pagination params as integers
+    params.push(limitNum);
+    params.push(offset);
+
+    try {
+      const processes = await this.prisma.$queryRawUnsafe<any[]>(`
         SELECT bp.*, 
                u.display_name as owner_name, 
                u.email as owner_email,
                (SELECT COUNT(*) FROM bcdr.process_dependencies WHERE dependent_process_id = bp.id) as dependency_count,
                (SELECT COUNT(*) FROM bcdr.process_assets WHERE process_id = bp.id) as asset_count
         FROM bcdr.business_processes bp
-        LEFT JOIN shared.users u ON bp.owner_id = u.id
-        WHERE bp.organization_id = ${organizationId}::uuid
-          AND bp.deleted_at IS NULL
-          ${search ? this.prisma.$queryRaw`AND (bp.name ILIKE ${'%' + search + '%'} OR bp.process_id ILIKE ${'%' + search + '%'})` : this.prisma.$queryRaw``}
-          ${criticalityTier ? this.prisma.$queryRaw`AND bp.criticality_tier = ${criticalityTier}` : this.prisma.$queryRaw``}
-          ${department ? this.prisma.$queryRaw`AND bp.department = ${department}` : this.prisma.$queryRaw``}
-          ${ownerId ? this.prisma.$queryRaw`AND bp.owner_id = ${ownerId}::uuid` : this.prisma.$queryRaw``}
-          ${isActive !== undefined ? this.prisma.$queryRaw`AND bp.is_active = ${isActive}` : this.prisma.$queryRaw``}
+        LEFT JOIN public.users u ON bp.owner_id = u.id
+        WHERE ${whereClause}
         ORDER BY 
           CASE bp.criticality_tier 
             WHEN 'tier_1_critical' THEN 1 
@@ -75,76 +89,91 @@ export class BusinessProcessesService {
             ELSE 4 
           END,
           bp.name ASC
-        LIMIT ${limit} OFFSET ${(page - 1) * limit}
-      `,
-      this.prisma.$queryRaw<[{ count: bigint }]>`
-        SELECT COUNT(*) as count
-        FROM bcdr.business_processes
-        WHERE organization_id = ${organizationId}::uuid
-          AND deleted_at IS NULL
-      `,
-    ]);
+        LIMIT $${limitParamIdx}::integer OFFSET $${offsetParamIdx}::integer
+      `, ...params);
 
-    return {
-      data: processes,
-      total: Number(total[0]?.count || 0),
-      page,
-      limit,
-      totalPages: Math.ceil(Number(total[0]?.count || 0) / limit),
-    };
+      const totalResult = await this.prisma.$queryRawUnsafe<[{ count: bigint }]>(`
+        SELECT COUNT(*) as count
+        FROM bcdr.business_processes bp
+        WHERE ${whereClause}
+      `, ...params.slice(0, -2)); // Exclude limit/offset params
+
+      const total = Number(totalResult[0]?.count || 0);
+
+      return {
+        data: processes,
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(total / limitNum),
+      };
+    } catch (error) {
+      this.logger.error(`Error fetching business processes: ${error.message}`, error.stack);
+      throw error;
+    }
   }
 
   async findOne(id: string, organizationId: string) {
-    const process = await this.prisma.$queryRaw<any[]>`
+    const process = await this.prisma.$queryRawUnsafe<any[]>(`
       SELECT bp.*, 
              u.display_name as owner_name, 
              u.email as owner_email
       FROM bcdr.business_processes bp
-      LEFT JOIN shared.users u ON bp.owner_id = u.id
-      WHERE bp.id = ${id}::uuid
-        AND bp.organization_id = ${organizationId}::uuid
+      LEFT JOIN public.users u ON bp.owner_id = u.id
+      WHERE bp.id = $1
+        AND bp.organization_id = $2
         AND bp.deleted_at IS NULL
-    `;
+    `, id, organizationId);
 
     if (!process || process.length === 0) {
       throw new NotFoundException(`Business process ${id} not found`);
     }
 
     // Get dependencies
-    const dependencies = await this.prisma.$queryRaw<any[]>`
+    const dependencies = await this.prisma.$queryRawUnsafe<any[]>(`
       SELECT pd.*, 
              bp.process_id, bp.name, bp.criticality_tier
       FROM bcdr.process_dependencies pd
       JOIN bcdr.business_processes bp ON pd.dependency_process_id = bp.id
-      WHERE pd.dependent_process_id = ${id}::uuid
-    `;
+      WHERE pd.dependent_process_id = $1
+    `, id);
 
     // Get dependents (processes that depend on this one)
-    const dependents = await this.prisma.$queryRaw<any[]>`
+    const dependents = await this.prisma.$queryRawUnsafe<any[]>(`
       SELECT pd.*, 
              bp.process_id, bp.name, bp.criticality_tier
       FROM bcdr.process_dependencies pd
       JOIN bcdr.business_processes bp ON pd.dependent_process_id = bp.id
-      WHERE pd.dependency_process_id = ${id}::uuid
-    `;
+      WHERE pd.dependency_process_id = $1
+    `, id);
 
     // Get linked assets
-    const assets = await this.prisma.$queryRaw<any[]>`
+    const assets = await this.prisma.$queryRawUnsafe<any[]>(`
       SELECT pa.*, 
              a.name, a.type, a.status
       FROM bcdr.process_assets pa
-      JOIN controls.assets a ON pa.asset_id = a.id
-      WHERE pa.process_id = ${id}::uuid
-    `;
+      JOIN public.assets a ON pa.asset_id = a.id
+      WHERE pa.process_id = $1
+    `, id);
 
-    // Get linked risks
-    const risks = await this.prisma.$queryRaw<any[]>`
-      SELECT br.*, 
-             r.risk_id, r.title, r.inherent_risk_level
-      FROM bcdr.bia_risks br
-      JOIN controls.risks r ON br.risk_id = r.id
-      WHERE br.process_id = ${id}::uuid
-    `;
+    // Get linked risks (handle case where bia_risks table may not exist)
+    let risks: any[] = [];
+    try {
+      risks = await this.prisma.$queryRawUnsafe<any[]>(`
+        SELECT br.*
+        FROM bcdr.bia_risks br
+        WHERE br.process_id = $1
+      `, id);
+    } catch (error: any) {
+      // PostgreSQL undefined_table error code is 42P01
+      if (error?.code === '42P01') {
+        const logger = new Logger(BusinessProcessesService.name);
+        logger.warn('bia_risks table not found; returning empty risks array for process ' + id);
+        risks = [];
+      } else {
+        throw error;
+      }
+    }
 
     return {
       ...process[0],
@@ -165,7 +194,7 @@ export class BusinessProcessesService {
     // Check for duplicate processId
     const existing = await this.prisma.$queryRaw<any[]>`
       SELECT id FROM bcdr.business_processes 
-      WHERE organization_id = ${organizationId}::uuid 
+      WHERE organization_id = ${organizationId} 
         AND process_id = ${dto.processId}
         AND deleted_at IS NULL
     `;
@@ -188,9 +217,9 @@ export class BusinessProcessesService {
         review_frequency_months, next_review_due, tags,
         created_by, updated_by
       ) VALUES (
-        ${organizationId}::uuid, ${dto.workspaceId || null}::uuid, ${dto.processId}, ${dto.name}, 
+        ${organizationId}, ${dto.workspaceId || null}, ${dto.processId}, ${dto.name}, 
         ${dto.description || null}, ${dto.department || null},
-        ${dto.ownerId || null}::uuid, ${dto.criticalityTier}::bcdr.criticality_tier, 
+        ${dto.ownerId || null}, ${dto.criticalityTier}::bcdr.criticality_tier, 
         ${dto.businessCriticalityScore || null},
         ${dto.rtoHours || null}, ${dto.rpoHours || null}, ${dto.mtpdHours || null},
         ${dto.financialImpact || null}::bcdr.impact_level, 
@@ -201,7 +230,7 @@ export class BusinessProcessesService {
         ${dto.recoveryCostEstimate || null},
         ${dto.reviewFrequencyMonths || 12}, ${nextReviewDue}, 
         ${dto.tags || []}::text[],
-        ${userId}::uuid, ${userId}::uuid
+        ${userId}, ${userId}
       )
       RETURNING *
     `;
@@ -239,7 +268,7 @@ export class BusinessProcessesService {
     await this.findOne(id, organizationId);
 
     // Build dynamic update query
-    const updates: string[] = ['updated_by = $2::uuid', 'updated_at = NOW()'];
+    const updates: string[] = ['updated_by = $2', 'updated_at = NOW()'];
     const values: any[] = [id, userId];
     let paramIndex = 3;
 
@@ -259,7 +288,7 @@ export class BusinessProcessesService {
       paramIndex++;
     }
     if (dto.ownerId !== undefined) {
-      updates.push(`owner_id = $${paramIndex}::uuid`);
+      updates.push(`owner_id = $${paramIndex}`);
       values.push(dto.ownerId);
       paramIndex++;
     }
@@ -340,7 +369,7 @@ export class BusinessProcessesService {
     }
 
     const result = await this.prisma.$queryRawUnsafe<any[]>(
-      `UPDATE bcdr.business_processes SET ${updates.join(', ')} WHERE id = $1::uuid RETURNING *`,
+      `UPDATE bcdr.business_processes SET ${updates.join(', ')} WHERE id = $1 RETURNING *`,
       ...values,
     );
 
@@ -373,8 +402,8 @@ export class BusinessProcessesService {
 
     await this.prisma.$executeRaw`
       UPDATE bcdr.business_processes 
-      SET deleted_at = NOW(), deleted_by = ${userId}::uuid
-      WHERE id = ${id}::uuid
+      SET deleted_at = NOW(), deleted_by = ${userId}
+      WHERE id = ${id}
     `;
 
     await this.auditService.log({
@@ -399,9 +428,9 @@ export class BusinessProcessesService {
       UPDATE bcdr.business_processes 
       SET last_reviewed_at = NOW(),
           next_review_due = NOW() + (review_frequency_months || ' months')::interval,
-          updated_by = ${userId}::uuid,
+          updated_by = ${userId},
           updated_at = NOW()
-      WHERE id = ${id}::uuid
+      WHERE id = ${id}
       RETURNING *
     `;
 
@@ -423,7 +452,7 @@ export class BusinessProcessesService {
         organization_id, dependent_process_id, dependency_process_id, 
         dependency_type, description
       ) VALUES (
-        ${organizationId}::uuid, ${processId}::uuid, ${dto.dependencyProcessId}::uuid,
+        ${organizationId}, ${processId}, ${dto.dependencyProcessId},
         ${dto.dependencyType || 'required'}, ${dto.description || null}
       )
       ON CONFLICT (dependent_process_id, dependency_process_id) DO UPDATE
@@ -437,8 +466,8 @@ export class BusinessProcessesService {
   async removeDependency(processId: string, dependencyId: string) {
     await this.prisma.$executeRaw`
       DELETE FROM bcdr.process_dependencies 
-      WHERE dependent_process_id = ${processId}::uuid 
-        AND dependency_process_id = ${dependencyId}::uuid
+      WHERE dependent_process_id = ${processId} 
+        AND dependency_process_id = ${dependencyId}
     `;
 
     return { success: true };
@@ -449,7 +478,7 @@ export class BusinessProcessesService {
     const processes = await this.prisma.$queryRaw<any[]>`
       SELECT id, process_id, name, criticality_tier
       FROM bcdr.business_processes
-      WHERE organization_id = ${organizationId}::uuid
+      WHERE organization_id = ${organizationId}
         AND deleted_at IS NULL
         AND is_active = true
     `;
@@ -458,7 +487,7 @@ export class BusinessProcessesService {
       SELECT pd.dependent_process_id as source, pd.dependency_process_id as target, pd.dependency_type
       FROM bcdr.process_dependencies pd
       JOIN bcdr.business_processes bp ON pd.dependent_process_id = bp.id
-      WHERE bp.organization_id = ${organizationId}::uuid
+      WHERE bp.organization_id = ${organizationId}
     `;
 
     return {
@@ -484,8 +513,8 @@ export class BusinessProcessesService {
       INSERT INTO bcdr.process_assets (
         process_id, asset_id, relationship_type, notes, created_by
       ) VALUES (
-        ${processId}::uuid, ${dto.assetId}::uuid, 
-        ${dto.relationshipType || 'supports'}, ${dto.notes || null}, ${userId}::uuid
+        ${processId}, ${dto.assetId}, 
+        ${dto.relationshipType || 'supports'}, ${dto.notes || null}, ${userId}
       )
       ON CONFLICT (process_id, asset_id) DO UPDATE
       SET relationship_type = EXCLUDED.relationship_type, notes = EXCLUDED.notes
@@ -498,7 +527,7 @@ export class BusinessProcessesService {
   async unlinkAsset(processId: string, assetId: string) {
     await this.prisma.$executeRaw`
       DELETE FROM bcdr.process_assets 
-      WHERE process_id = ${processId}::uuid AND asset_id = ${assetId}::uuid
+      WHERE process_id = ${processId} AND asset_id = ${assetId}
     `;
 
     return { success: true };
@@ -508,7 +537,7 @@ export class BusinessProcessesService {
   async linkRisk(processId: string, riskId: string, userId: string, notes?: string) {
     const result = await this.prisma.$queryRaw<any[]>`
       INSERT INTO bcdr.bia_risks (process_id, risk_id, relationship_notes, created_by)
-      VALUES (${processId}::uuid, ${riskId}::uuid, ${notes || null}, ${userId}::uuid)
+      VALUES (${processId}, ${riskId}, ${notes || null}, ${userId})
       ON CONFLICT (process_id, risk_id) DO UPDATE
       SET relationship_notes = EXCLUDED.relationship_notes
       RETURNING *
@@ -520,7 +549,7 @@ export class BusinessProcessesService {
   async unlinkRisk(processId: string, riskId: string) {
     await this.prisma.$executeRaw`
       DELETE FROM bcdr.bia_risks 
-      WHERE process_id = ${processId}::uuid AND risk_id = ${riskId}::uuid
+      WHERE process_id = ${processId} AND risk_id = ${riskId}
     `;
 
     return { success: true };
@@ -528,7 +557,7 @@ export class BusinessProcessesService {
 
   // Summary stats
   async getStats(organizationId: string) {
-    const stats = await this.prisma.$queryRaw<any[]>`
+    const stats = await this.prisma.$queryRawUnsafe<any[]>(`
       SELECT 
         COUNT(*) as total,
         COUNT(*) FILTER (WHERE criticality_tier = 'tier_1_critical') as tier_1_count,
@@ -540,9 +569,9 @@ export class BusinessProcessesService {
         AVG(rto_hours) as avg_rto,
         AVG(rpo_hours) as avg_rpo
       FROM bcdr.business_processes
-      WHERE organization_id = ${organizationId}::uuid
+      WHERE organization_id = $1
         AND deleted_at IS NULL
-    `;
+    `, organizationId);
 
     return stats[0];
   }

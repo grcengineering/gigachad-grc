@@ -65,6 +65,18 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // CRITICAL: Never cache navigation requests (HTML documents)
+  // This ensures auth flows work correctly
+  if (request.mode === 'navigate') {
+    return;
+  }
+
+  // IMPORTANT: Skip caching for auth callbacks (code, state, session_state in URL)
+  // This ensures Keycloak redirects are handled fresh
+  if (url.searchParams.has('code') || url.searchParams.has('state') || url.searchParams.has('session_state') || url.searchParams.has('error')) {
+    return;
+  }
+
   // Handle API requests
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(handleApiRequest(request));
