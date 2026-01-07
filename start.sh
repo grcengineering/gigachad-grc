@@ -58,10 +58,85 @@ check_docker() {
     fi
 }
 
+setup_env() {
+    # Check if .env exists
+    if [ -f ".env" ]; then
+        echo -e "${GREEN}✓${NC} Using existing .env file"
+        return 0
+    fi
+
+    echo -e "${YELLOW}⚠${NC} No .env file found - generating secure secrets..."
+
+    # Generate secrets
+    ENCRYPTION_KEY=$(openssl rand -hex 32 2>/dev/null || head -c 32 /dev/urandom | xxd -p | tr -d '\n')
+    JWT_SECRET=$(openssl rand -base64 48 2>/dev/null || head -c 48 /dev/urandom | base64 | tr -d '\n')
+    SESSION_SECRET=$(openssl rand -base64 48 2>/dev/null || head -c 48 /dev/urandom | base64 | tr -d '\n')
+    POSTGRES_PASSWORD=$(openssl rand -base64 24 2>/dev/null | tr -d '\n' | tr '+/' '-_' || head -c 24 /dev/urandom | base64 | tr '+/' '-_')
+    REDIS_PASSWORD=$(openssl rand -base64 24 2>/dev/null | tr -d '\n' | tr '+/' '-_' || head -c 24 /dev/urandom | base64 | tr '+/' '-_')
+    MINIO_PASSWORD=$(openssl rand -base64 20 2>/dev/null | tr -d '\n' | tr '+/' '-_' || head -c 20 /dev/urandom | base64 | tr '+/' '-_')
+
+    cat > ".env" << EOF
+# ============================================================================
+# GigaChad GRC - Environment Configuration
+# Generated: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+# ============================================================================
+
+NODE_ENV=development
+
+# Security Secrets (auto-generated)
+ENCRYPTION_KEY=${ENCRYPTION_KEY}
+JWT_SECRET=${JWT_SECRET}
+SESSION_SECRET=${SESSION_SECRET}
+
+# Database
+POSTGRES_USER=grc
+POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+POSTGRES_DB=gigachad_grc
+DATABASE_URL=postgresql://grc:${POSTGRES_PASSWORD}@localhost:5433/gigachad_grc
+
+# Redis
+REDIS_PASSWORD=${REDIS_PASSWORD}
+REDIS_URL=redis://:${REDIS_PASSWORD}@localhost:6380
+
+# RustFS (S3-Compatible Object Storage)
+MINIO_ROOT_USER=rustfsadmin
+MINIO_ROOT_PASSWORD=${MINIO_PASSWORD}
+MINIO_ENDPOINT=localhost
+MINIO_PORT=9000
+
+# Authentication
+KEYCLOAK_ADMIN=admin
+KEYCLOAK_ADMIN_PASSWORD=admin
+KEYCLOAK_REALM=gigachad-grc
+USE_DEV_AUTH=true
+
+# CORS
+CORS_ORIGINS=http://localhost:3000,http://localhost:5173,http://localhost:5174
+
+# Rate Limiting
+RATE_LIMIT_ENABLED=true
+RATE_LIMIT_WINDOW_MS=60000
+RATE_LIMIT_MAX_REQUESTS=1000
+
+# Logging
+LOG_LEVEL=debug
+
+# Frontend
+VITE_API_URL=http://localhost:3001
+VITE_ENABLE_DEV_AUTH=true
+VITE_ENABLE_AI_MODULE=true
+EOF
+
+    chmod 600 ".env"
+    echo -e "${GREEN}✓${NC} Created .env with secure secrets"
+}
+
 start_services() {
     print_banner
     check_docker
+    setup_env
 
+    echo ""
     echo -e "${BLUE}Starting GigaChad GRC...${NC}"
     echo ""
     echo "This may take a few minutes on first run while Docker builds the images."
