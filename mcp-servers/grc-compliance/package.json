@@ -10,7 +10,7 @@
     "dev": "tsx src/index.ts"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.25.1",
+    "@modelcontextprotocol/sdk": "^1.25.2",
     "axios": "^1.6.0",
     "zod": "^3.22.0"
   },
