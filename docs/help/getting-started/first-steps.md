@@ -9,6 +9,16 @@ Ensure you have:
 - Your assigned role and permissions
 - Access to the modules relevant to your work
 
+## Try Demo Data (Optional)
+
+New to the platform? Load demo data to explore features with realistic sample records:
+
+1. Click your profile icon → **Settings** → **Organization**
+2. Scroll to **Demo Data** and click **"Load Demo Data"**
+3. In seconds, you'll have 50+ controls, 20 vendors, 25 risks, and more
+
+This is perfect for evaluation or training. See the [Demo Data Guide](demo-data.md) for full details.
+
 ## Step 1: Explore the Dashboard (2 minutes)
 
 After logging in, you'll land on the **Dashboard**. This provides:

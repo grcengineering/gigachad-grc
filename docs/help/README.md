@@ -8,6 +8,7 @@ Welcome to the GigaChad GRC Help Center. This documentation provides comprehensi
 - [Platform Overview](getting-started/README.md) - Introduction to GigaChad GRC
 - [First Steps Guide](getting-started/first-steps.md) - Your first 30 minutes on the platform
 - [Navigation Guide](getting-started/navigation.md) - Understanding the interface
+- [Demo Data Guide](getting-started/demo-data.md) - Load sample data to explore the platform
 
 ### Compliance Module
 - [Controls Management](compliance/controls.md) - Managing security controls
