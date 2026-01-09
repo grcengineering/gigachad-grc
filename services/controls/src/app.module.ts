@@ -43,6 +43,8 @@ import { ExportsModule } from './exports/exports.module';
 import { CustomFieldsModule } from './custom-fields/custom-fields.module';
 import { DelegationModule } from './delegation/delegation.module';
 import { RetentionModule } from './retention/retention.module';
+import { ScimModule } from './scim/scim.module';
+import { WorkflowsModule } from './workflows/workflows.module';
 import { ModulesController } from './modules/modules.controller';
 import { CustomThrottlerGuard } from './auth/throttler.guard';
 import { CorrelationIdMiddleware } from './common/correlation-id.middleware';
@@ -126,6 +128,8 @@ import {
     CustomFieldsModule,
     DelegationModule,
     RetentionModule,
+    ScimModule,
+    WorkflowsModule,
   ],
   controllers: [ModulesController],
   providers: [
