@@ -60,7 +60,7 @@ ENCRYPTION_KEY=your-32-byte-hex-key
 
 1. Clone and configure:
 ```bash
-git clone https://github.com/your-org/gigachad-grc.git
+git clone https://github.com/grcengineering/gigachad-grc.git
 cd gigachad-grc
 cp env.example .env
 ```

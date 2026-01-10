@@ -526,7 +526,7 @@ function DeploymentDocs() {
         <h3 className="text-xl font-bold text-surface-100 mb-4">Quick Start with Docker Compose</h3>
         <CodeBlock 
           code={`# Clone the repository
-git clone https://github.com/your-org/gigachad-grc.git
+git clone https://github.com/grcengineering/gigachad-grc.git
 cd gigachad-grc
 
 # Copy environment template
@@ -640,7 +640,7 @@ function DevelopmentDocs() {
         <h3 className="text-xl font-bold text-surface-100 mb-4">Quick Start</h3>
         <CodeBlock 
           code={`# Clone the repository
-git clone https://github.com/your-org/gigachad-grc.git
+git clone https://github.com/grcengineering/gigachad-grc.git
 cd gigachad-grc
 
 # Install dependencies

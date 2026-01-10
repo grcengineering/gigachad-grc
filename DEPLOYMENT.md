@@ -57,7 +57,7 @@ Lightweight deployment for:
 **Quick Start**:
 ```bash
 # Clone repository
-git clone https://github.com/your-org/gigachad-grc.git
+git clone https://github.com/grcengineering/gigachad-grc.git
 cd gigachad-grc
 
 # Configure environment
@@ -271,7 +271,7 @@ Run smoke tests and monitor logs for errors.
 
 ### Support Channels
 - **Email**: support@example.com
-- **GitHub Issues**: github.com/your-org/gigachad-grc/issues
+- **GitHub Issues**: github.com/grcengineering/gigachad-grc/issues
 - **Community Slack**: gigachad-grc.slack.com
 
 ### Professional Services
