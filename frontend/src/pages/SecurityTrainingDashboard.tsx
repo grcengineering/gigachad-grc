@@ -136,7 +136,7 @@ export default function SecurityTrainingDashboard() {
     queryKey: ['training-org-stats'],
     queryFn: async () => {
       const response = await trainingApi.getOrgStats();
-      return response.data as TrainingOrgStats;
+      return response.data;
     },
     retry: 1,
     staleTime: 60000,
@@ -155,23 +155,32 @@ export default function SecurityTrainingDashboard() {
 
   const isLoading = isLoadingOrgStats || isLoadingCompliance;
 
-  // Merge data from both sources with fallback
-  const stats: TrainingOrgStats = orgStatsData || {
+  // Merge data from both sources with fallback - handle different API response formats
+  const stats: TrainingOrgStats = {
     ...FALLBACK_STATS,
+    // From training API (different field names)
+    totalAssignments: orgStatsData?.totalAssignments || 0,
+    completedAssignments: orgStatsData?.completedAssignments || 0,
+    overdueAssignments: orgStatsData?.overdueAssignments || complianceData?.issueBreakdown?.overdueTrainings || 0,
+    inProgressAssignments: (orgStatsData?.totalAssignments || 0) - (orgStatsData?.completedAssignments || 0) - (orgStatsData?.overdueAssignments || 0),
+    completionRate: orgStatsData?.completionRate || orgStatsData?.assignmentCompletionRate || 0,
+    averageScore: orgStatsData?.averageScore || 0,
+    // From compliance API
     totalEmployees: complianceData?.totalEmployees || 0,
-    overdueAssignments: complianceData?.issueBreakdown?.overdueTrainings || 0,
     departmentStats: (complianceData?.departmentStats || []).map((d: any) => ({
-      department: d.department,
-      employeeCount: d.employeeCount,
+      department: d.department || 'Unknown',
+      employeeCount: d.employeeCount || 0,
       completionRate: d.averageScore || 0,
       overdueCount: 0,
     })),
     upcomingDue: (complianceData?.upcomingDeadlines?.overdueTrainings || []).map((t: any) => ({
-      employeeName: t.employeeName,
-      employeeEmail: t.employeeEmail,
+      employeeName: t.employeeName || '',
+      employeeEmail: t.employeeEmail || '',
       courseName: t.details?.courseName || 'Security Training',
-      dueDate: t.deadline,
+      dueDate: t.deadline || '',
     })),
+    courseStats: orgStatsData?.courseStats || [],
+    recentCompletions: orgStatsData?.recentCompletions || [],
   };
 
   const pendingCount = stats.totalAssignments - stats.completedAssignments - stats.overdueAssignments;
