@@ -7,7 +7,7 @@
 [![Node.js 20+](https://img.shields.io/badge/Node.js-20%2B-green.svg)](https://nodejs.org/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
-[![Open in Gitpod](https://img.shields.io/badge/Gitpod-Try%20Demo-orange.svg)](https://gitpod.io/#https://github.com/YOUR_ORG/gigachad-grc)
+[![Open in Gitpod](https://img.shields.io/badge/Gitpod-Try%20Demo-orange.svg)](https://gitpod.io/#https://github.com/grcengineering/gigachad-grc)
 
 A comprehensive, modular, containerized Governance, Risk, and Compliance (GRC) platform built with modern technologies. Manage your entire security program from compliance tracking to risk management, third-party assessments, and external audits.
 
@@ -23,14 +23,14 @@ You only need **one thing**: [**Docker Desktop**](https://www.docker.com/product
 |----------|----------------|
 | **macOS** | [Download for Mac](https://www.docker.com/products/docker-desktop/) (Apple Silicon or Intel) |
 | **Windows** | [Download for Windows](https://www.docker.com/products/docker-desktop/) (requires WSL 2) |
-| **Linux** | `curl -fsSL https://get.docker.com | sh` |
+| **Linux** | `curl -fsSL https://get.docker.com \| sh` |
 
 > **No Node.js, npm, or other development tools required!**
 
 ### Start in 3 Commands
 
 ```bash
-git clone https://github.com/YOUR_ORG/gigachad-grc.git
+git clone https://github.com/grcengineering/gigachad-grc.git
 cd gigachad-grc
 ./start.sh
 ```
@@ -71,7 +71,7 @@ make help         # See all Makefile commands
 
 **Try in your browser** (no installation):
 
-[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/YOUR_ORG/gigachad-grc)
+[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/grcengineering/gigachad-grc)
 
 ➡️ See the **[Demo & Sandbox Guide](docs/DEMO.md)** for detailed walkthrough with sample data.
 
