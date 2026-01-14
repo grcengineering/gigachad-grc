@@ -297,7 +297,7 @@ If you've forked GigaChad GRC, follow these steps for a clean demo data experien
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/YOUR_ORG/gigachad-grc.git
+git clone https://github.com/grcengineering/gigachad-grc.git
 cd gigachad-grc
 
 # 2. Start infrastructure first

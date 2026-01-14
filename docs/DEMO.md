@@ -84,7 +84,7 @@ The fastest way to see GigaChad GRC in action on your local machine.
 ### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/YOUR_ORG/gigachad-grc.git
+git clone https://github.com/grcengineering/gigachad-grc.git
 cd gigachad-grc
 ```
 
@@ -156,7 +156,7 @@ Try GigaChad GRC instantly in your browser—no installation required.
 
 Click this button or the badge in the README:
 
-[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/YOUR_ORG/gigachad-grc)
+[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/grcengineering/gigachad-grc)
 
 ### Step 2: Wait for Environment
 
@@ -232,7 +232,7 @@ For users who want more control over the setup process.
 
 ```bash
 # Clone repository
-git clone https://github.com/YOUR_ORG/gigachad-grc.git
+git clone https://github.com/grcengineering/gigachad-grc.git
 cd gigachad-grc
 
 # Install root dependencies

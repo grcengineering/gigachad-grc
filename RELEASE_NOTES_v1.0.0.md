@@ -84,7 +84,7 @@ See `docs/SECURITY_DEEP_DIVE_AUDIT.md` for the full security audit report.
 
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_ORG/gigachad-grc.git
+git clone https://github.com/grcengineering/gigachad-grc.git
 cd gigachad-grc
 
 # Start the demo
@@ -171,8 +171,8 @@ Thank you to everyone who contributed to this release!
 
 ## 📣 Feedback
 
-- **Issues:** [GitHub Issues](https://github.com/YOUR_ORG/gigachad-grc/issues)
-- **Discussions:** [GitHub Discussions](https://github.com/YOUR_ORG/gigachad-grc/discussions)
+- **Issues:** [GitHub Issues](https://github.com/grcengineering/gigachad-grc/issues)
+- **Discussions:** [GitHub Discussions](https://github.com/grcengineering/gigachad-grc/discussions)
 - **Security:** See [SECURITY.md](docs/SECURITY_MODEL.md) for reporting vulnerabilities
 
 ---

@@ -7,7 +7,7 @@ Get up and running with GigaChad GRC in **one command**.
 ## 🚀 Just Want to Try It?
 
 ```bash
-git clone https://github.com/YOUR_ORG/gigachad-grc.git
+git clone https://github.com/grcengineering/gigachad-grc.git
 cd gigachad-grc
 ./init.sh demo
 ```
@@ -16,7 +16,7 @@ That's it! The script handles everything: environment setup, Docker containers, 
 
 **Or try it in your browser** (no install required):
 
-[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/YOUR_ORG/gigachad-grc)
+[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/grcengineering/gigachad-grc)
 
 ---
 

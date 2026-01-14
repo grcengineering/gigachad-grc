@@ -71,7 +71,7 @@ Open Terminal and run:
 
 ```bash
 # Download the project
-git clone https://github.com/YOUR_ORG/gigachad-grc.git
+git clone https://github.com/grcengineering/gigachad-grc.git
 
 # Go into the folder
 cd gigachad-grc
@@ -86,7 +86,7 @@ Open Command Prompt or PowerShell and run:
 
 ```cmd
 # Download the project
-git clone https://github.com/YOUR_ORG/gigachad-grc.git
+git clone https://github.com/grcengineering/gigachad-grc.git
 
 # Go into the folder
 cd gigachad-grc
@@ -300,8 +300,8 @@ docker rmi $(docker images 'gigachad-grc-*' -q) 2>/dev/null
 
 ### Community Support
 
-- [GitHub Issues](https://github.com/YOUR_ORG/gigachad-grc/issues) - Report bugs
-- [Discussions](https://github.com/YOUR_ORG/gigachad-grc/discussions) - Ask questions
+- [GitHub Issues](https://github.com/grcengineering/gigachad-grc/issues) - Report bugs
+- [Discussions](https://github.com/grcengineering/gigachad-grc/discussions) - Ask questions
 
 ---
 
