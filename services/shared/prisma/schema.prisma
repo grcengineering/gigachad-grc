@@ -656,6 +656,7 @@ model Organization {
   trainingProgress          TrainingProgress[]         @relation("OrgTrainingProgress")
   trainingAssignments       TrainingAssignment[]       @relation("OrgTrainingAssignments")
   trainingCampaigns         TrainingCampaign[]         @relation("OrgTrainingCampaigns")
+  customTrainingModules     CustomTrainingModule[]     @relation("OrgCustomTrainingModules")
   configFiles               ConfigFile[]               @relation("OrgConfigFiles")
   workspaces                Workspace[]
   audits                    Audit[]
@@ -902,6 +903,7 @@ model User {
   trainingAssignments      TrainingAssignment[] @relation("UserTrainingAssignments")
   trainingAssigned         TrainingAssignment[] @relation("TrainingAssigner")
   trainingCampaignsCreated TrainingCampaign[]   @relation("TrainingCampaignCreator")
+  customTrainingModulesCreated CustomTrainingModule[] @relation("CustomTrainingModuleCreator")
   configFilesCreated       ConfigFile[]        @relation("ConfigFileCreator")
   configFilesUpdated       ConfigFile[]        @relation("ConfigFileUpdater")
   configFilesDeleted       ConfigFile[]        @relation("ConfigFileDeleter")
@@ -4415,6 +4417,34 @@ model TrainingCampaign {
   @@index([isActive])
   @@index([startDate])
   @@map("training_campaigns")
+}
+
+// Custom training modules (SCORM uploads)
+model CustomTrainingModule {
+  id             String    @id @default(uuid())
+  organizationId String    @map("organization_id")
+  name           String
+  description    String?
+  category       String    @default("custom") // social-engineering, privacy, secure-coding, general, custom
+  duration       Int       @default(30) // Estimated minutes
+  difficulty     String    @default("beginner") // beginner, intermediate, advanced
+  scormPath      String?   @map("scorm_path") // Path to extracted SCORM package
+  originalFileName String? @map("original_file_name")
+  iconType       String    @default("security") // For UI display
+  topics         Json      @default("[]") // Array of topic strings
+  isActive       Boolean   @default(true) @map("is_active")
+  createdBy      String    @map("created_by")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  organization Organization @relation("OrgCustomTrainingModules", fields: [organizationId], references: [id], onDelete: Cascade)
+  creator      User         @relation("CustomTrainingModuleCreator", fields: [createdBy], references: [id])
+
+  @@index([organizationId])
+  @@index([isActive])
+  @@index([category])
+  @@map("custom_training_modules")
 }
 
 // ===========================================

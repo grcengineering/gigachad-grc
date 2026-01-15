@@ -2049,6 +2049,45 @@ export const trainingApi = {
     isActive?: boolean;
   }) => api.put(`/api/training/campaigns/${id}`, data),
   deleteCampaign: (id: string) => api.delete(`/api/training/campaigns/${id}`),
+  launchCampaign: (id: string) => api.post(`/api/training/campaigns/${id}/launch`),
+
+  // All Modules (built-in + custom)
+  getAllModules: () => api.get('/api/training/modules'),
+
+  // Custom Modules
+  getCustomModules: () => api.get('/api/training/modules/custom'),
+  getCustomModule: (id: string) => api.get(`/api/training/modules/custom/${id}`),
+  createCustomModule: (data: {
+    name: string;
+    description?: string;
+    category?: string;
+    duration?: number;
+    difficulty?: string;
+    iconType?: string;
+    topics?: string[];
+  }) => api.post('/api/training/modules/custom', data),
+  updateCustomModule: (id: string, data: {
+    name?: string;
+    description?: string;
+    category?: string;
+    duration?: number;
+    difficulty?: string;
+    iconType?: string;
+    topics?: string[];
+    isActive?: boolean;
+  }) => api.put(`/api/training/modules/custom/${id}`, data),
+  deleteCustomModule: (id: string) => api.delete(`/api/training/modules/custom/${id}`),
+  uploadScormPackage: (id: string, file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post(`/api/training/modules/custom/${id}/upload`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+
+  // User Role Targeting
+  getUsersByRole: (roles: string[]) => 
+    api.get('/api/training/users/by-role', { params: { roles } }),
 };
 
 // ===========================================

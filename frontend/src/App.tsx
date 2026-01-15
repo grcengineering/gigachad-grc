@@ -29,6 +29,7 @@ const TrustConfiguration = lazy(() => import('./pages/TrustConfiguration'));
 const AnswerTemplates = lazy(() => import('./pages/AnswerTemplates'));
 const TrustAnalytics = lazy(() => import('./pages/TrustAnalytics'));
 const AwarenessTraining = lazy(() => import('./pages/AwarenessTraining'));
+const TrainingAdmin = lazy(() => import('./pages/TrainingAdmin'));
 const SecurityTrainingDashboard = lazy(() => import('./pages/SecurityTrainingDashboard'));
 const Assets = lazy(() => import('./pages/Assets'));
 const AssetDetail = lazy(() => import('./pages/AssetDetail'));
@@ -279,6 +280,7 @@ export default function App() {
           <Route path="account" element={<Suspense fallback={<PageLoader />}><AccountSettings /></Suspense>} />
           {/* People Module */}
           <Route path="tools/awareness" element={<ModuleRoute module="people"><Suspense fallback={<PageLoader />}><AwarenessTraining /></Suspense></ModuleRoute>} />
+          <Route path="settings/training" element={<Suspense fallback={<PageLoader />}><TrainingAdmin /></Suspense>} />
           <Route path="people/training" element={<ModuleRoute module="people"><Suspense fallback={<PageLoader />}><SecurityTrainingDashboard /></Suspense></ModuleRoute>} />
           {/* /people/training shows enterprise-level training dashboard, /tools/awareness is for individual user training */}
           <Route path="users" element={<Suspense fallback={<PageLoader />}><UserManagement /></Suspense>} />

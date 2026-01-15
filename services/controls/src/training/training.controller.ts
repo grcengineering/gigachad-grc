@@ -8,8 +8,12 @@ import {
   Param,
   Query,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 import { CurrentUser } from '../auth/decorators/require-permission.decorator';
 import { TrainingService } from './training.service';
@@ -22,6 +26,8 @@ import {
   UpdateAssignmentDto,
   CreateCampaignDto,
   UpdateCampaignDto,
+  CreateCustomModuleDto,
+  UpdateCustomModuleDto,
 } from './dto/training.dto';
 
 interface AuthUser {
@@ -244,6 +250,133 @@ export class TrainingController {
       user.organizationId,
       campaignId,
     );
+  }
+
+  @Post('campaigns/:id/launch')
+  @ApiOperation({ summary: 'Launch a campaign - create assignments for target users' })
+  async launchCampaign(
+    @CurrentUser() user: AuthUser,
+    @Param('id') campaignId: string,
+  ) {
+    return this.trainingService.launchCampaign(
+      user.organizationId,
+      campaignId,
+      user.userId,
+    );
+  }
+
+  // ==========================================
+  // Custom Module Endpoints
+  // ==========================================
+
+  @Get('modules')
+  @ApiOperation({ summary: 'Get all modules (built-in + custom) for campaign selection' })
+  async getAllModules(@CurrentUser() user: AuthUser) {
+    return this.trainingService.getAllModules(user.organizationId);
+  }
+
+  @Get('modules/custom')
+  @ApiOperation({ summary: 'Get all custom training modules' })
+  async getCustomModules(@CurrentUser() user: AuthUser) {
+    return this.trainingService.getCustomModules(user.organizationId);
+  }
+
+  @Get('modules/custom/:id')
+  @ApiOperation({ summary: 'Get a specific custom training module' })
+  async getCustomModule(
+    @CurrentUser() user: AuthUser,
+    @Param('id') moduleId: string,
+  ) {
+    return this.trainingService.getCustomModule(user.organizationId, moduleId);
+  }
+
+  @Post('modules/custom')
+  @ApiOperation({ summary: 'Create a custom training module' })
+  async createCustomModule(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: CreateCustomModuleDto,
+  ) {
+    return this.trainingService.createCustomModule(
+      user.organizationId,
+      user.userId,
+      dto,
+    );
+  }
+
+  @Put('modules/custom/:id')
+  @ApiOperation({ summary: 'Update a custom training module' })
+  async updateCustomModule(
+    @CurrentUser() user: AuthUser,
+    @Param('id') moduleId: string,
+    @Body() dto: UpdateCustomModuleDto,
+  ) {
+    return this.trainingService.updateCustomModule(
+      user.organizationId,
+      moduleId,
+      dto,
+    );
+  }
+
+  @Delete('modules/custom/:id')
+  @ApiOperation({ summary: 'Delete a custom training module' })
+  async deleteCustomModule(
+    @CurrentUser() user: AuthUser,
+    @Param('id') moduleId: string,
+  ) {
+    return this.trainingService.deleteCustomModule(
+      user.organizationId,
+      moduleId,
+    );
+  }
+
+  @Post('modules/custom/:id/upload')
+  @ApiOperation({ summary: 'Upload SCORM package for a custom module' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadScormPackage(
+    @CurrentUser() user: AuthUser,
+    @Param('id') moduleId: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+
+    if (!file.originalname.endsWith('.zip')) {
+      throw new BadRequestException('File must be a ZIP archive');
+    }
+
+    return this.trainingService.uploadScormPackage(
+      user.organizationId,
+      moduleId,
+      { buffer: file.buffer, originalname: file.originalname },
+    );
+  }
+
+  // ==========================================
+  // User Role Targeting
+  // ==========================================
+
+  @Get('users/by-role')
+  @ApiOperation({ summary: 'Get users by role for campaign targeting' })
+  @ApiQuery({ name: 'roles', required: true, type: [String] })
+  async getUsersByRole(
+    @CurrentUser() user: AuthUser,
+    @Query('roles') roles: string | string[],
+  ) {
+    const roleArray = Array.isArray(roles) ? roles : [roles];
+    return this.trainingService.getUsersByRole(user.organizationId, roleArray);
   }
 }
 

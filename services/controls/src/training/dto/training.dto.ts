@@ -142,12 +142,16 @@ export class CreateCampaignDto {
   @IsString()
   description?: string;
 
-  @ApiProperty({ description: 'Training module IDs to include', type: [String] })
+  @ApiProperty({ description: 'Training module IDs to include (built-in or custom)', type: [String] })
   @IsArray()
   @IsString({ each: true })
   moduleIds: string[];
 
-  @ApiProperty({ description: 'Target groups (department names or "all")', type: [String] })
+  @ApiProperty({ 
+    description: 'Target groups: user roles (admin, compliance_manager, auditor, viewer) or "all"', 
+    type: [String],
+    example: ['admin', 'compliance_manager']
+  })
   @IsArray()
   @IsString({ each: true })
   targetGroups: string[];
@@ -156,7 +160,7 @@ export class CreateCampaignDto {
   @IsDateString()
   startDate: string;
 
-  @ApiPropertyOptional({ description: 'Campaign end date' })
+  @ApiPropertyOptional({ description: 'Campaign end date (used as due date for assignments)' })
   @IsOptional()
   @IsDateString()
   endDate?: string;
@@ -202,8 +206,111 @@ export class UpdateCampaignDto {
 }
 
 // ==========================================
+// Custom Module DTOs
+// ==========================================
+
+export class CreateCustomModuleDto {
+  @ApiProperty({ description: 'Module name' })
+  @IsString()
+  name: string;
+
+  @ApiPropertyOptional({ description: 'Module description' })
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @ApiPropertyOptional({ description: 'Category', default: 'custom' })
+  @IsOptional()
+  @IsString()
+  category?: string;
+
+  @ApiPropertyOptional({ description: 'Estimated duration in minutes', default: 30 })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  duration?: number;
+
+  @ApiPropertyOptional({ description: 'Difficulty level', default: 'beginner' })
+  @IsOptional()
+  @IsString()
+  difficulty?: string;
+
+  @ApiPropertyOptional({ description: 'Icon type for UI', default: 'security' })
+  @IsOptional()
+  @IsString()
+  iconType?: string;
+
+  @ApiPropertyOptional({ description: 'Topics covered', type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  topics?: string[];
+}
+
+export class UpdateCustomModuleDto {
+  @ApiPropertyOptional({ description: 'Module name' })
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @ApiPropertyOptional({ description: 'Module description' })
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @ApiPropertyOptional({ description: 'Category' })
+  @IsOptional()
+  @IsString()
+  category?: string;
+
+  @ApiPropertyOptional({ description: 'Estimated duration in minutes' })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  duration?: number;
+
+  @ApiPropertyOptional({ description: 'Difficulty level' })
+  @IsOptional()
+  @IsString()
+  difficulty?: string;
+
+  @ApiPropertyOptional({ description: 'Icon type for UI' })
+  @IsOptional()
+  @IsString()
+  iconType?: string;
+
+  @ApiPropertyOptional({ description: 'Topics covered', type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  topics?: string[];
+
+  @ApiPropertyOptional({ description: 'Whether module is active' })
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+}
+
+// ==========================================
 // Response Types
 // ==========================================
+
+export class CustomModuleResponse {
+  id: string;
+  name: string;
+  description?: string;
+  category: string;
+  duration: number;
+  difficulty: string;
+  scormPath?: string;
+  originalFileName?: string;
+  iconType: string;
+  topics: string[];
+  isActive: boolean;
+  createdBy: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 export class TrainingProgressResponse {
   id: string;

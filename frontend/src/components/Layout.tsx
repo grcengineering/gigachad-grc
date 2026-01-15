@@ -113,7 +113,8 @@ const navSections: NavSection[] = [
     items: [
       { name: 'Employee Compliance', href: '/people', icon: UsersIcon },
       { name: 'Compliance Dashboard', href: '/people/dashboard', icon: ChartBarIcon },
-      { name: 'Security Training', href: '/people/training', icon: AcademicCapIcon },
+      { name: 'Training Dashboard', href: '/people/training', icon: AcademicCapIcon },
+      { name: 'Awareness & Training', href: '/tools/awareness', icon: AcademicCapIcon },
     ],
   },
   {
@@ -158,7 +159,6 @@ const navSections: NavSection[] = [
     name: 'Tools',
     icon: WrenchScrewdriverIcon,
     items: [
-      { name: 'Awareness & Training', href: '/tools/awareness', icon: AcademicCapIcon },
       { name: 'Scheduled Reports', href: '/scheduled-reports', icon: ClockIcon },
       { name: 'Dashboard Templates', href: '/settings/dashboard-templates', icon: Squares2X2Icon },
       { name: 'Audit Log', href: '/audit', icon: ClipboardDocumentListIcon },
@@ -171,6 +171,7 @@ const navSections: NavSection[] = [
       { name: 'Risk Configuration', href: '/settings/risk', icon: ExclamationTriangleIcon },
       { name: 'TPRM Configuration', href: '/settings/tprm', icon: BuildingOfficeIcon },
       { name: 'Trust Configuration', href: '/settings/trust', icon: ChatBubbleLeftRightIcon },
+      { name: 'Training Configuration', href: '/settings/training', icon: AcademicCapIcon },
       { name: 'Employee Compliance Configuration', href: '/settings/employee-compliance', icon: UserGroupIcon },
       { name: 'Module Configuration', href: '/settings/modules', icon: CubeIcon },
       { name: 'Configuration as Code', href: '/settings/config-as-code', icon: CodeBracketIcon },

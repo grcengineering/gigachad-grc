@@ -10,10 +10,15 @@ import {
   UpdateAssignmentDto,
   CreateCampaignDto,
   UpdateCampaignDto,
+  CreateCustomModuleDto,
+  UpdateCustomModuleDto,
   TrainingStatsResponse,
   TrainingStatus,
   AssignmentStatus,
 } from './dto/training.dto';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as crypto from 'crypto';
 
 // Static module IDs from frontend catalog
 const VALID_MODULE_IDS = [
@@ -566,6 +571,319 @@ export class TrainingService {
         ? Math.round((completedAssignments / totalAssignments) * 100) 
         : 0,
       activeCampaigns,
+    };
+  }
+
+  // ==========================================
+  // Custom Module Management
+  // ==========================================
+
+  async getCustomModules(organizationId: string) {
+    return this.prisma.customTrainingModule.findMany({
+      where: { organizationId },
+      include: {
+        creator: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async getCustomModule(organizationId: string, moduleId: string) {
+    const module = await this.prisma.customTrainingModule.findFirst({
+      where: { id: moduleId, organizationId },
+      include: {
+        creator: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+    });
+
+    if (!module) {
+      throw new NotFoundException(`Custom module ${moduleId} not found`);
+    }
+
+    return module;
+  }
+
+  async createCustomModule(organizationId: string, createdBy: string, dto: CreateCustomModuleDto) {
+    return this.prisma.customTrainingModule.create({
+      data: {
+        organizationId,
+        name: dto.name,
+        description: dto.description,
+        category: dto.category || 'custom',
+        duration: dto.duration || 30,
+        difficulty: dto.difficulty || 'beginner',
+        iconType: dto.iconType || 'security',
+        topics: dto.topics || [],
+        createdBy,
+      },
+      include: {
+        creator: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+    });
+  }
+
+  async updateCustomModule(organizationId: string, moduleId: string, dto: UpdateCustomModuleDto) {
+    const module = await this.prisma.customTrainingModule.findFirst({
+      where: { id: moduleId, organizationId },
+    });
+
+    if (!module) {
+      throw new NotFoundException(`Custom module ${moduleId} not found`);
+    }
+
+    const updateData: any = {};
+    if (dto.name !== undefined) updateData.name = dto.name;
+    if (dto.description !== undefined) updateData.description = dto.description;
+    if (dto.category !== undefined) updateData.category = dto.category;
+    if (dto.duration !== undefined) updateData.duration = dto.duration;
+    if (dto.difficulty !== undefined) updateData.difficulty = dto.difficulty;
+    if (dto.iconType !== undefined) updateData.iconType = dto.iconType;
+    if (dto.topics !== undefined) updateData.topics = dto.topics;
+    if (dto.isActive !== undefined) updateData.isActive = dto.isActive;
+
+    return this.prisma.customTrainingModule.update({
+      where: { id: moduleId },
+      data: updateData,
+      include: {
+        creator: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+    });
+  }
+
+  async deleteCustomModule(organizationId: string, moduleId: string) {
+    const module = await this.prisma.customTrainingModule.findFirst({
+      where: { id: moduleId, organizationId },
+    });
+
+    if (!module) {
+      throw new NotFoundException(`Custom module ${moduleId} not found`);
+    }
+
+    // Delete the SCORM files if they exist
+    if (module.scormPath) {
+      const scormDir = path.join(process.cwd(), 'uploads', 'training', module.scormPath);
+      if (fs.existsSync(scormDir)) {
+        fs.rmSync(scormDir, { recursive: true, force: true });
+      }
+    }
+
+    return this.prisma.customTrainingModule.delete({
+      where: { id: moduleId },
+    });
+  }
+
+  /**
+   * Handle SCORM file upload for a custom module
+   */
+  async uploadScormPackage(
+    organizationId: string,
+    moduleId: string,
+    file: { buffer: Buffer; originalname: string },
+  ) {
+    const module = await this.prisma.customTrainingModule.findFirst({
+      where: { id: moduleId, organizationId },
+    });
+
+    if (!module) {
+      throw new NotFoundException(`Custom module ${moduleId} not found`);
+    }
+
+    // Generate unique folder name
+    const folderName = `${moduleId}-${crypto.randomBytes(4).toString('hex')}`;
+    const uploadDir = path.join(process.cwd(), 'uploads', 'training', folderName);
+
+    // Create upload directory
+    fs.mkdirSync(uploadDir, { recursive: true });
+
+    // Save the zip file
+    const zipPath = path.join(uploadDir, file.originalname);
+    fs.writeFileSync(zipPath, file.buffer);
+
+    // For now, just store the zip - extraction would require a zip library
+    // In production, you'd extract the SCORM package and parse imsmanifest.xml
+
+    // Update the module with the SCORM path
+    const updated = await this.prisma.customTrainingModule.update({
+      where: { id: moduleId },
+      data: {
+        scormPath: folderName,
+        originalFileName: file.originalname,
+      },
+      include: {
+        creator: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+    });
+
+    this.logger.log(`SCORM package uploaded for module ${moduleId}: ${file.originalname}`);
+
+    return updated;
+  }
+
+  /**
+   * Get all modules (built-in + custom) for campaign selection
+   */
+  async getAllModules(organizationId: string) {
+    const customModules = await this.prisma.customTrainingModule.findMany({
+      where: { organizationId, isActive: true },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        category: true,
+        duration: true,
+        difficulty: true,
+        iconType: true,
+        topics: true,
+        scormPath: true,
+      },
+    });
+
+    // Built-in modules
+    const builtInModules = VALID_MODULE_IDS.map(id => ({
+      id,
+      name: this.getModuleName(id),
+      description: '',
+      category: this.getModuleCategory(id),
+      duration: 15,
+      difficulty: 'beginner',
+      iconType: 'security',
+      topics: [],
+      isBuiltIn: true,
+    }));
+
+    return {
+      builtIn: builtInModules,
+      custom: customModules.map(m => ({
+        ...m,
+        isBuiltIn: false,
+      })),
+    };
+  }
+
+  private getModuleName(moduleId: string): string {
+    const names: Record<string, string> = {
+      'phishing-smishing-vishing': 'Phishing, Smishing & Vishing',
+      'ceo-executive-fraud': 'CEO/Executive Fraud Prevention',
+      'watering-hole-attacks': 'Watering Hole Attack Awareness',
+      'general-cybersecurity': 'General Cybersecurity Awareness',
+      'privacy-awareness': 'Privacy & Data Protection Awareness',
+      'secure-coding': 'Secure Coding Practices',
+      'combined-training': 'Comprehensive Security Awareness',
+    };
+    return names[moduleId] || moduleId;
+  }
+
+  private getModuleCategory(moduleId: string): string {
+    const categories: Record<string, string> = {
+      'phishing-smishing-vishing': 'social-engineering',
+      'ceo-executive-fraud': 'social-engineering',
+      'watering-hole-attacks': 'social-engineering',
+      'general-cybersecurity': 'general',
+      'privacy-awareness': 'privacy',
+      'secure-coding': 'secure-coding',
+      'combined-training': 'general',
+    };
+    return categories[moduleId] || 'general';
+  }
+
+  /**
+   * Get users by role for campaign targeting
+   */
+  async getUsersByRole(organizationId: string, roles: string[]) {
+    return this.prisma.user.findMany({
+      where: {
+        organizationId,
+        role: { in: roles as any },
+        status: 'active',
+      },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+      },
+    });
+  }
+
+  /**
+   * Launch a campaign - create assignments for target users
+   */
+  async launchCampaign(organizationId: string, campaignId: string, assignedBy: string) {
+    const campaign = await this.getCampaign(organizationId, campaignId);
+    
+    const moduleIds = campaign.moduleIds as string[];
+    const targetGroups = campaign.targetGroups as string[];
+    
+    // Get target users based on roles
+    let users: { id: string }[];
+    if (targetGroups.includes('all')) {
+      users = await this.prisma.user.findMany({
+        where: { organizationId, status: 'active' },
+        select: { id: true },
+      });
+    } else {
+      users = await this.prisma.user.findMany({
+        where: {
+          organizationId,
+          role: { in: targetGroups as any },
+          status: 'active',
+        },
+        select: { id: true },
+      });
+    }
+
+    // Create assignments
+    const userIds = users.map(u => u.id);
+    const result = await this.bulkAssign(organizationId, assignedBy, {
+      userIds,
+      moduleIds,
+      dueDate: campaign.endDate?.toISOString(),
+      isRequired: true,
+    });
+
+    this.logger.log(`Campaign ${campaignId} launched: ${result.count} assignments created`);
+
+    return {
+      campaignId,
+      usersTargeted: userIds.length,
+      modulesAssigned: moduleIds.length,
+      assignmentsCreated: result.count,
     };
   }
 
