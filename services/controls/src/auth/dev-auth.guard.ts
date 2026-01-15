@@ -83,6 +83,8 @@ export class DevAuthGuard implements CanActivate {
         'bcdr:delete',
         'permissions:read',
         'permissions:write',
+        'reports:read',
+        'reports:export',
       ],
       // Optional display name for audit/logging
       name: 'John Doe',
