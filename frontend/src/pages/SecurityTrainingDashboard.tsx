@@ -282,7 +282,7 @@ export default function SecurityTrainingDashboard() {
           <h2 className="text-lg font-semibold text-foreground mb-4">Course Completion Rates</h2>
           {isLoading ? (
             <SkeletonTable rows={4} />
-          ) : stats.courseStats.length === 0 ? (
+          ) : !stats.courseStats?.length ? (
             <div className="text-center py-8 text-surface-400">
               <AcademicCapIcon className="w-10 h-10 mx-auto mb-2 opacity-50" />
               <p>No course data available</p>
@@ -290,7 +290,7 @@ export default function SecurityTrainingDashboard() {
             </div>
           ) : (
             <div className="space-y-4">
-              {stats.courseStats.slice(0, 5).map((course) => (
+              {(stats.courseStats || []).slice(0, 5).map((course) => (
                 <div key={course.courseId}>
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-surface-300 text-sm">{course.courseName}</span>
