@@ -40,6 +40,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 #### Vulnerability Scanning
 - **Enhanced Fallback**: Vulnerability scanner returns detailed mock data with `toolsRequired` hints when scanning tools are not installed
 
+#### BC/DR Module Enhancements
+- **BIA Questionnaire Wizard**: Guided 5-step wizard for conducting business impact analysis with plain-language questions that map to technical BIA fields (RTO, RPO, criticality tier, impact levels)
+- **Plan Owner Attestation**: Formal sign-off workflow for BC/DR plan owners to confirm plans are accurate and current, with attestation history and audit trail
+- **Exercise Template Library**: Pre-built tabletop exercise scenarios (Ransomware, Data Center Failure, Vendor Outage, Natural Disaster, Pandemic, Data Breach) with discussion questions, injects, and facilitator notes
+- **Recovery Team Roster**: Define and manage recovery teams with roles (Team Lead, Alternate, Technical Lead, etc.), primary/alternate assignments, and plan linkage
+- **Vendor BC/DR Dependencies**: Link critical vendors to business processes, track vendor RTO/RPO capabilities, and surface gaps where vendor recovery time exceeds process requirements
+- **Incident Activation Workflow**: Declare BC/DR incidents, activate plans and teams, maintain incident timeline, and capture post-incident review data including lessons learned
+- **Enhanced Dashboard**: Active incident banner, pending attestations widget, and vendor recovery gaps widget on BC/DR dashboard
+
 ### Changed
 
 #### API Clients

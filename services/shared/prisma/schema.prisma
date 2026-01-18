@@ -5650,3 +5650,259 @@ model ScheduledJob {
   @@index([isEnabled, nextRunAt])
   @@map("scheduled_jobs")
 }
+
+// ===========================================
+// BC/DR Enhanced Features
+// ===========================================
+
+// Plan attestations - formal sign-off from plan owners
+model BCDRPlanAttestation {
+  id             String    @id @default(uuid())
+  planId         String    @map("plan_id")
+  attesterId     String    @map("attester_id")
+  organizationId String    @map("organization_id")
+
+  // Attestation details
+  attestationType String   @map("attestation_type") // annual_review, post_update, post_incident
+  status          String   @default("pending") // pending, attested, declined
+  attestedAt      DateTime? @map("attested_at")
+  declinedAt      DateTime? @map("declined_at")
+  declineReason   String?   @map("decline_reason")
+  comments        String?
+  validUntil      DateTime? @map("valid_until")
+
+  // Request tracking
+  requestedBy String?   @map("requested_by")
+  requestedAt DateTime  @default(now()) @map("requested_at")
+  message     String?   // Optional message to attester
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([planId])
+  @@index([attesterId])
+  @@index([organizationId])
+  @@index([status])
+  @@map("bcdr_plan_attestations")
+}
+
+// Exercise templates - pre-built tabletop scenarios
+model ExerciseTemplate {
+  id             String  @id @default(uuid())
+  organizationId String? @map("organization_id") // null = global template
+
+  templateId  String  @unique @map("template_id")
+  title       String
+  description String?
+  category    String // ransomware, natural_disaster, vendor_outage, data_breach, pandemic, infrastructure
+  scenarioType String @map("scenario_type") // tabletop, walkthrough, simulation
+
+  // Scenario content
+  scenarioNarrative   String @map("scenario_narrative") @db.Text
+  discussionQuestions Json   @map("discussion_questions") // Array of question objects
+  injects             Json?  // Timed scenario injects
+  expectedDecisions   Json?  @map("expected_decisions")
+  facilitatorNotes    String? @map("facilitator_notes") @db.Text
+  estimatedDuration   Int?   @map("estimated_duration_minutes")
+  participantRoles    Json?  @map("participant_roles")
+
+  // Metadata
+  isGlobal   Boolean @default(false) @map("is_global")
+  isActive   Boolean @default(true) @map("is_active")
+  usageCount Int     @default(0) @map("usage_count")
+
+  tags      String[]
+  createdBy String?  @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([organizationId])
+  @@index([category])
+  @@index([isGlobal])
+  @@map("bcdr_exercise_templates")
+}
+
+// Recovery teams - define teams for incident response
+model RecoveryTeam {
+  id             String @id @default(uuid())
+  organizationId String @map("organization_id")
+
+  name        String
+  description String?
+  teamType    String  @map("team_type") // crisis_management, it_recovery, business_recovery, communications, executive
+
+  // Activation details
+  activationCriteria   String? @map("activation_criteria")
+  assemblyLocation     String? @map("assembly_location")
+  communicationChannel String? @map("communication_channel") // Slack channel, Teams, etc.
+
+  isActive Boolean @default(true) @map("is_active")
+
+  // Relations
+  members   RecoveryTeamMember[]
+  planLinks RecoveryTeamPlanLink[]
+
+  createdBy String?   @map("created_by")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  @@index([organizationId])
+  @@index([teamType])
+  @@map("bcdr_recovery_teams")
+}
+
+// Recovery team members
+model RecoveryTeamMember {
+  id     String @id @default(uuid())
+  teamId String @map("team_id")
+
+  // Role in team
+  role             String // team_lead, alternate_lead, technical_lead, coordinator, member
+  responsibilities String?
+
+  // User reference (if internal user)
+  userId String? @map("user_id")
+
+  // External contact details (if not in user system)
+  externalName  String? @map("external_name")
+  externalEmail String? @map("external_email")
+  externalPhone String? @map("external_phone")
+
+  // Primary/alternate tracking
+  isPrimary    Boolean @default(true) @map("is_primary")
+  alternateFor String? @map("alternate_for") // member_id this person backs up
+  sortOrder    Int     @default(0) @map("sort_order")
+
+  // Relations
+  team RecoveryTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([teamId])
+  @@index([userId])
+  @@map("bcdr_recovery_team_members")
+}
+
+// Link recovery teams to BC/DR plans
+model RecoveryTeamPlanLink {
+  id        String @id @default(uuid())
+  teamId    String @map("team_id")
+  planId    String @map("plan_id")
+  roleInPlan String? @map("role_in_plan") // Description of team's role in this plan
+
+  team RecoveryTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([teamId, planId])
+  @@index([planId])
+  @@map("bcdr_recovery_team_plan_links")
+}
+
+// Vendor BC/DR dependencies - link vendors to business processes
+model ProcessVendorDependency {
+  id             String @id @default(uuid())
+  processId      String @map("process_id")
+  vendorId       String @map("vendor_id")
+  organizationId String @map("organization_id")
+
+  // Dependency classification
+  dependencyType String @map("dependency_type") // critical, important, supporting
+
+  // Vendor's recovery capabilities
+  vendorRtoHours    Int?      @map("vendor_rto_hours")
+  vendorRpoHours    Int?      @map("vendor_rpo_hours")
+  vendorHasBCP      Boolean?  @map("vendor_has_bcp")
+  vendorBCPReviewed DateTime? @map("vendor_bcp_reviewed")
+
+  // Gap analysis
+  gapAnalysis    String? @map("gap_analysis") @db.Text
+  mitigationPlan String? @map("mitigation_plan") @db.Text
+
+  notes String?
+
+  createdBy String?  @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([processId, vendorId])
+  @@index([processId])
+  @@index([vendorId])
+  @@index([organizationId])
+  @@map("bcdr_process_vendor_dependencies")
+}
+
+// BC/DR Incidents - track actual incidents and plan activations
+model BCDRIncident {
+  id             String @id @default(uuid())
+  organizationId String @map("organization_id")
+
+  incidentId  String @unique @map("incident_id")
+  title       String
+  description String? @db.Text
+
+  // Classification
+  incidentType String @map("incident_type") // disaster, major_incident, drill, near_miss
+  severity     String // critical, major, moderate, minor
+  status       String @default("active") // active, recovering, resolved, closed
+
+  // Declaration
+  declaredAt DateTime @map("declared_at")
+  declaredBy String   @map("declared_by")
+
+  // Activated plans and teams (stored as JSON arrays of IDs)
+  activatedPlans Json @default("[]") @map("activated_plans")
+  activatedTeams Json @default("[]") @map("activated_teams")
+
+  // Resolution tracking
+  recoveryStartedAt DateTime? @map("recovery_started_at")
+  operationalAt     DateTime? @map("operational_at") // Service restored
+  resolvedAt        DateTime? @map("resolved_at")
+  closedAt          DateTime? @map("closed_at")
+  closedBy          String?   @map("closed_by")
+
+  // Impact metrics
+  actualDowntimeMinutes Int?     @map("actual_downtime_minutes")
+  dataLossMinutes       Int?     @map("data_loss_minutes")
+  financialImpact       Decimal? @map("financial_impact") @db.Decimal(15, 2)
+
+  // Post-incident review
+  rootCause              String?   @map("root_cause") @db.Text
+  lessonsLearned         String?   @map("lessons_learned") @db.Text
+  improvementActions     Json?     @map("improvement_actions")
+  postIncidentReviewDate DateTime? @map("post_incident_review_date")
+  postIncidentReviewBy   String?   @map("post_incident_review_by")
+
+  // Relations
+  timeline BCDRIncidentTimelineEntry[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([organizationId])
+  @@index([status])
+  @@index([incidentType])
+  @@index([declaredAt])
+  @@map("bcdr_incidents")
+}
+
+// Incident timeline entries
+model BCDRIncidentTimelineEntry {
+  id         String @id @default(uuid())
+  incidentId String @map("incident_id")
+
+  timestamp   DateTime @default(now())
+  entryType   String   @map("entry_type") // status_change, plan_activated, team_activated, note, action_taken
+  description String   @db.Text
+  createdBy   String   @map("created_by")
+  metadata    Json?    // Additional structured data
+
+  // Relations
+  incident BCDRIncident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
+  @@index([incidentId])
+  @@index([timestamp])
+  @@map("bcdr_incident_timeline")
+}

@@ -839,4 +839,3 @@ function FeatureSettingsTab({
     </div>
   );
 }
-

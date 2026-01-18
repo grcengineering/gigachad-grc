@@ -87,6 +87,11 @@ const DRTests = lazy(() => import('./pages/DRTests'));
 const DRTestDetail = lazy(() => import('./pages/DRTestDetail'));
 const Runbooks = lazy(() => import('./pages/Runbooks'));
 const CommunicationPlans = lazy(() => import('./pages/CommunicationPlans'));
+const ExerciseTemplates = lazy(() => import('./pages/ExerciseTemplates'));
+const RecoveryTeams = lazy(() => import('./pages/RecoveryTeams'));
+const RecoveryTeamDetail = lazy(() => import('./pages/RecoveryTeamDetail'));
+const BCDRIncidents = lazy(() => import('./pages/BCDRIncidents'));
+const BCDRIncidentDetail = lazy(() => import('./pages/BCDRIncidentDetail'));
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -304,6 +309,11 @@ export default function App() {
           <Route path="bcdr/runbooks/:id" element={<ModuleRoute module="bcdr"><Suspense fallback={<PageLoader />}><Runbooks /></Suspense></ModuleRoute>} />
           <Route path="bcdr/communication" element={<ModuleRoute module="bcdr"><Suspense fallback={<PageLoader />}><CommunicationPlans /></Suspense></ModuleRoute>} />
           <Route path="bcdr/communication/:id" element={<ModuleRoute module="bcdr"><Suspense fallback={<PageLoader />}><CommunicationPlans /></Suspense></ModuleRoute>} />
+          <Route path="bcdr/exercise-templates" element={<ModuleRoute module="bcdr"><Suspense fallback={<PageLoader />}><ExerciseTemplates /></Suspense></ModuleRoute>} />
+          <Route path="bcdr/recovery-teams" element={<ModuleRoute module="bcdr"><Suspense fallback={<PageLoader />}><RecoveryTeams /></Suspense></ModuleRoute>} />
+          <Route path="bcdr/recovery-teams/:id" element={<ModuleRoute module="bcdr"><Suspense fallback={<PageLoader />}><RecoveryTeamDetail /></Suspense></ModuleRoute>} />
+          <Route path="bcdr/incidents" element={<ModuleRoute module="bcdr"><Suspense fallback={<PageLoader />}><BCDRIncidents /></Suspense></ModuleRoute>} />
+          <Route path="bcdr/incidents/:id" element={<ModuleRoute module="bcdr"><Suspense fallback={<PageLoader />}><BCDRIncidentDetail /></Suspense></ModuleRoute>} />
         </Route>
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>

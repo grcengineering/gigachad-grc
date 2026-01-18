@@ -370,6 +370,31 @@ export const CommunicationPlans = lazyLoad(
   { fallback: PageLoadingFallback }
 );
 
+export const ExerciseTemplates = lazyLoad(
+  () => import('@/pages/ExerciseTemplates'),
+  { fallback: PageLoadingFallback }
+);
+
+export const RecoveryTeams = lazyLoad(
+  () => import('@/pages/RecoveryTeams'),
+  { fallback: PageLoadingFallback }
+);
+
+export const RecoveryTeamDetail = lazyLoad(
+  () => import('@/pages/RecoveryTeamDetail'),
+  { fallback: PageLoadingFallback }
+);
+
+export const BCDRIncidents = lazyLoad(
+  () => import('@/pages/BCDRIncidents'),
+  { fallback: PageLoadingFallback }
+);
+
+export const BCDRIncidentDetail = lazyLoad(
+  () => import('@/pages/BCDRIncidentDetail'),
+  { fallback: PageLoadingFallback }
+);
+
 // ============================================
 // AUDITOR PORTAL PAGES (External Access)
 // ============================================
@@ -415,5 +440,5 @@ export const auditPages = [Audits, AuditFindings, AuditRequests, Evidence, Evide
 /**
  * BC/DR pages to preload when BC/DR section is accessed
  */
-export const bcdrPages = [BCDRDashboard, BusinessProcesses, BCDRPlans, DRTests, Runbooks, CommunicationPlans];
+export const bcdrPages = [BCDRDashboard, BusinessProcesses, BCDRPlans, DRTests, Runbooks, CommunicationPlans, ExerciseTemplates, RecoveryTeams, BCDRIncidents];
 

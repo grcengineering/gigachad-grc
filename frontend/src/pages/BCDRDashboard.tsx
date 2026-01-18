@@ -10,6 +10,10 @@ import {
   ClockIcon,
   CheckCircleIcon,
   XCircleIcon,
+  ClipboardDocumentCheckIcon,
+  UserGroupIcon,
+  BuildingOfficeIcon,
+  PlayIcon,
 } from '@heroicons/react/24/outline';
 import api from '@/lib/api';
 import clsx from 'clsx';
@@ -152,8 +156,63 @@ export default function BCDRDashboard() {
       ? 'text-yellow-400' 
       : 'text-red-400';
 
+  // Fetch additional data for new widgets
+  const { data: activeIncidents } = useQuery({
+    queryKey: ['bcdr-active-incidents'],
+    queryFn: async () => {
+      const res = await api.get('/api/bcdr/incidents/active');
+      return res.data || [];
+    },
+    staleTime: 10000,
+  });
+
+  const { data: pendingAttestations } = useQuery({
+    queryKey: ['bcdr-pending-attestations'],
+    queryFn: async () => {
+      const res = await api.get('/api/bcdr/attestations/pending');
+      return res.data || [];
+    },
+    staleTime: 30000,
+  });
+
+  const { data: vendorGaps } = useQuery({
+    queryKey: ['bcdr-vendor-gaps'],
+    queryFn: async () => {
+      const res = await api.get('/api/bcdr/dashboard/vendor-gaps');
+      return res.data || [];
+    },
+    staleTime: 60000,
+  });
+
   return (
     <div className="p-6 space-y-6">
+      {/* Active Incidents Banner */}
+      {activeIncidents && activeIncidents.length > 0 && (
+        <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <ExclamationTriangleIcon className="h-6 w-6 text-red-400 animate-pulse" />
+              <div>
+                <h3 className="text-lg font-medium text-red-400">
+                  {activeIncidents.length} Active Incident{activeIncidents.length > 1 ? 's' : ''}
+                </h3>
+                <p className="text-sm text-red-300">
+                  {activeIncidents.slice(0, 2).map((i: any) => i.title).join(', ')}
+                  {activeIncidents.length > 2 && ` and ${activeIncidents.length - 2} more`}
+                </p>
+              </div>
+            </div>
+            <Link
+              to={`/bcdr/incidents/${activeIncidents[0].id}`}
+              className="flex items-center gap-2 px-4 py-2 bg-red-500/30 hover:bg-red-500/40 rounded-lg text-red-200 transition-colors"
+            >
+              <PlayIcon className="h-4 w-4" />
+              View Active
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -163,6 +222,9 @@ export default function BCDRDashboard() {
           </p>
         </div>
         <div className="flex gap-3">
+          <Link to="/bcdr/incidents" className="btn btn-secondary">
+            Incidents
+          </Link>
           <Link to="/bcdr/processes/new" className="btn btn-primary">
             Add Process
           </Link>
@@ -380,10 +442,101 @@ export default function BCDRDashboard() {
         </div>
       </div>
 
+      {/* New Widgets Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Pending Attestations */}
+        <div className="card p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-surface-100 flex items-center gap-2">
+              <ClipboardDocumentCheckIcon className="w-5 h-5 text-surface-400" />
+              Pending Attestations
+            </h2>
+            {pendingAttestations && pendingAttestations.length > 0 && (
+              <span className="px-2 py-1 rounded-full bg-yellow-500/20 text-yellow-400 text-xs font-medium">
+                {pendingAttestations.length} pending
+              </span>
+            )}
+          </div>
+          {!pendingAttestations || pendingAttestations.length === 0 ? (
+            <div className="text-center py-8 text-surface-400">
+              <CheckCircleIcon className="w-12 h-12 mx-auto mb-2 text-green-400 opacity-50" />
+              <p className="text-green-400">All attestations complete!</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {pendingAttestations.slice(0, 3).map((attestation: any) => (
+                <Link
+                  key={attestation.id}
+                  to={`/bcdr/plans/${attestation.plan_id}`}
+                  className="flex items-center gap-3 p-3 rounded-lg bg-yellow-500/10 hover:bg-yellow-500/20 transition-colors"
+                >
+                  <ClipboardDocumentCheckIcon className="w-5 h-5 text-yellow-400 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-surface-100 truncate">{attestation.plan_title}</p>
+                    <p className="text-yellow-400 text-xs capitalize">
+                      {attestation.attestation_type?.replace('_', ' ')} attestation
+                    </p>
+                  </div>
+                </Link>
+              ))}
+              {pendingAttestations.length > 3 && (
+                <Link to="/bcdr/attestations" className="text-brand-400 text-sm hover:text-brand-300 block text-center">
+                  View all {pendingAttestations.length} pending →
+                </Link>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Vendor Recovery Gaps */}
+        <div className="card p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-surface-100 flex items-center gap-2">
+              <BuildingOfficeIcon className="w-5 h-5 text-surface-400" />
+              Vendor Recovery Gaps
+            </h2>
+            {vendorGaps && vendorGaps.length > 0 && (
+              <span className="px-2 py-1 rounded-full bg-red-500/20 text-red-400 text-xs font-medium">
+                {vendorGaps.length} gaps
+              </span>
+            )}
+          </div>
+          {!vendorGaps || vendorGaps.length === 0 ? (
+            <div className="text-center py-8 text-surface-400">
+              <CheckCircleIcon className="w-12 h-12 mx-auto mb-2 text-green-400 opacity-50" />
+              <p className="text-green-400">No vendor recovery gaps!</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {vendorGaps.slice(0, 3).map((gap: any) => (
+                <Link
+                  key={gap.id}
+                  to={`/bcdr/processes/${gap.process_id}`}
+                  className="flex items-center gap-3 p-3 rounded-lg bg-red-500/10 hover:bg-red-500/20 transition-colors"
+                >
+                  <BuildingOfficeIcon className="w-5 h-5 text-red-400 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-surface-100 truncate">{gap.vendor_name}</p>
+                    <p className="text-red-400 text-xs">
+                      RTO gap: {gap.rto_gap_hours}h for {gap.process_name}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+              {vendorGaps.length > 3 && (
+                <p className="text-surface-400 text-sm text-center">
+                  +{vendorGaps.length - 3} more gaps
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Quick Links */}
       <div className="card p-6">
         <h2 className="text-lg font-semibold text-surface-100 mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <Link
             to="/bcdr/processes/new"
             className="p-4 rounded-lg bg-surface-800/50 hover:bg-surface-700/50 transition-colors text-center"
@@ -411,6 +564,13 @@ export default function BCDRDashboard() {
           >
             <BookOpenIcon className="w-8 h-8 mx-auto mb-2 text-teal-400" />
             <span className="text-surface-200 text-sm">Create Runbook</span>
+          </Link>
+          <Link
+            to="/bcdr/recovery-teams"
+            className="p-4 rounded-lg bg-surface-800/50 hover:bg-surface-700/50 transition-colors text-center"
+          >
+            <UserGroupIcon className="w-8 h-8 mx-auto mb-2 text-green-400" />
+            <span className="text-surface-200 text-sm">Recovery Teams</span>
           </Link>
         </div>
       </div>

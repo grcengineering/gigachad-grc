@@ -7,6 +7,8 @@ import {
   BusinessProcessFilterDto,
   AddProcessDependencyDto,
   LinkProcessAssetDto,
+  CreateVendorDependencyDto,
+  UpdateVendorDependencyDto,
 } from './dto/bcdr.dto';
 import { addMonths } from 'date-fns';
 import { Prisma } from '@prisma/client';
@@ -544,6 +546,338 @@ export class BusinessProcessesService {
     `;
 
     return stats[0];
+  }
+
+  // ===========================================
+  // VENDOR DEPENDENCY METHODS
+  // ===========================================
+
+  /**
+   * Link a vendor to a business process as a BC/DR dependency.
+   */
+  async linkVendor(
+    processId: string,
+    organizationId: string,
+    userId: string,
+    dto: CreateVendorDependencyDto,
+    userEmail?: string,
+    userName?: string,
+  ) {
+    // Verify process exists
+    const process = await this.findOne(processId, organizationId);
+
+    const result = await this.prisma.$queryRaw<any[]>`
+      INSERT INTO bcdr_process_vendor_dependencies (
+        process_id, vendor_id, organization_id,
+        dependency_type, vendor_rto_hours, vendor_rpo_hours,
+        vendor_has_bcp, vendor_bcp_reviewed,
+        gap_analysis, mitigation_plan, notes, created_by
+      ) VALUES (
+        ${processId}::uuid, ${dto.vendorId}::uuid, ${organizationId}::uuid,
+        ${dto.dependencyType}, ${dto.vendorRtoHours || null}, ${dto.vendorRpoHours || null},
+        ${dto.vendorHasBCP ?? null}, ${dto.vendorBCPReviewed ? new Date(dto.vendorBCPReviewed) : null},
+        ${dto.gapAnalysis || null}, ${dto.mitigationPlan || null},
+        ${dto.notes || null}, ${userId}::uuid
+      )
+      RETURNING *
+    `;
+
+    await this.auditService.log({
+      organizationId,
+      userId,
+      userEmail,
+      userName,
+      action: 'vendor_linked',
+      entityType: 'business_process',
+      entityId: processId,
+      entityName: process.name,
+      description: `Linked vendor to business process "${process.name}"`,
+      metadata: { vendorId: dto.vendorId, dependencyType: dto.dependencyType },
+    });
+
+    return result[0];
+  }
+
+  /**
+   * Update a vendor dependency.
+   */
+  async updateVendorDependency(
+    processId: string,
+    dependencyId: string,
+    organizationId: string,
+    dto: UpdateVendorDependencyDto,
+  ) {
+    const updates: string[] = ['updated_at = NOW()'];
+
+    if (dto.dependencyType !== undefined) updates.push(`dependency_type = '${dto.dependencyType}'`);
+    if (dto.vendorRtoHours !== undefined) updates.push(`vendor_rto_hours = ${dto.vendorRtoHours}`);
+    if (dto.vendorRpoHours !== undefined) updates.push(`vendor_rpo_hours = ${dto.vendorRpoHours}`);
+    if (dto.vendorHasBCP !== undefined) updates.push(`vendor_has_bcp = ${dto.vendorHasBCP}`);
+    if (dto.gapAnalysis !== undefined) updates.push(`gap_analysis = '${(dto.gapAnalysis || '').replace(/'/g, "''")}'`);
+    if (dto.mitigationPlan !== undefined) updates.push(`mitigation_plan = '${(dto.mitigationPlan || '').replace(/'/g, "''")}'`);
+    if (dto.notes !== undefined) updates.push(`notes = '${(dto.notes || '').replace(/'/g, "''")}'`);
+
+    const result = await this.prisma.$queryRawUnsafe<any[]>(`
+      UPDATE bcdr_process_vendor_dependencies
+      SET ${updates.join(', ')}
+      WHERE id = '${dependencyId}'::uuid
+        AND process_id = '${processId}'::uuid
+        AND organization_id = '${organizationId}'::uuid
+      RETURNING *
+    `);
+
+    return result[0];
+  }
+
+  /**
+   * Unlink a vendor from a process.
+   */
+  async unlinkVendor(
+    processId: string,
+    vendorId: string,
+    organizationId: string,
+    userId: string,
+    userEmail?: string,
+    userName?: string,
+  ) {
+    await this.prisma.$executeRaw`
+      DELETE FROM bcdr_process_vendor_dependencies
+      WHERE process_id = ${processId}::uuid
+        AND vendor_id = ${vendorId}::uuid
+        AND organization_id = ${organizationId}::uuid
+    `;
+
+    await this.auditService.log({
+      organizationId,
+      userId,
+      userEmail,
+      userName,
+      action: 'vendor_unlinked',
+      entityType: 'business_process',
+      entityId: processId,
+      description: `Unlinked vendor from business process`,
+      metadata: { vendorId },
+    });
+
+    return { success: true };
+  }
+
+  /**
+   * Get all vendor dependencies for a process.
+   */
+  async getVendorDependencies(processId: string, organizationId: string) {
+    const dependencies = await this.prisma.$queryRaw<any[]>`
+      SELECT d.*,
+             v.name as vendor_name,
+             v.vendor_id as vendor_code,
+             bp.rto_hours as process_rto_hours,
+             bp.rpo_hours as process_rpo_hours,
+             CASE 
+               WHEN d.vendor_rto_hours IS NOT NULL AND bp.rto_hours IS NOT NULL 
+                 AND d.vendor_rto_hours > bp.rto_hours 
+               THEN true 
+               ELSE false 
+             END as has_rto_gap,
+             CASE 
+               WHEN d.vendor_rpo_hours IS NOT NULL AND bp.rpo_hours IS NOT NULL 
+                 AND d.vendor_rpo_hours > bp.rpo_hours 
+               THEN true 
+               ELSE false 
+             END as has_rpo_gap
+      FROM bcdr_process_vendor_dependencies d
+      JOIN tprm.vendors v ON d.vendor_id::text = v.id::text
+      JOIN bcdr.business_processes bp ON d.process_id = bp.id
+      WHERE d.process_id = ${processId}::uuid
+        AND d.organization_id = ${organizationId}::uuid
+      ORDER BY 
+        CASE d.dependency_type 
+          WHEN 'critical' THEN 1 
+          WHEN 'important' THEN 2 
+          ELSE 3 
+        END,
+        v.name ASC
+    `;
+
+    return dependencies;
+  }
+
+  /**
+   * Get all vendor BC/DR gaps across the organization.
+   * Returns vendors where vendor RTO/RPO exceeds process requirements.
+   */
+  async getVendorGaps(organizationId: string) {
+    const gaps = await this.prisma.$queryRaw<any[]>`
+      SELECT 
+        d.*,
+        v.name as vendor_name,
+        bp.name as process_name,
+        bp.criticality_tier,
+        bp.rto_hours as process_rto_hours,
+        bp.rpo_hours as process_rpo_hours,
+        (d.vendor_rto_hours - bp.rto_hours) as rto_gap_hours,
+        (d.vendor_rpo_hours - bp.rpo_hours) as rpo_gap_hours
+      FROM bcdr_process_vendor_dependencies d
+      JOIN tprm.vendors v ON d.vendor_id::text = v.id::text
+      JOIN bcdr.business_processes bp ON d.process_id = bp.id
+      WHERE d.organization_id = ${organizationId}::uuid
+        AND bp.deleted_at IS NULL
+        AND (
+          (d.vendor_rto_hours IS NOT NULL AND bp.rto_hours IS NOT NULL AND d.vendor_rto_hours > bp.rto_hours)
+          OR (d.vendor_rpo_hours IS NOT NULL AND bp.rpo_hours IS NOT NULL AND d.vendor_rpo_hours > bp.rpo_hours)
+          OR (d.vendor_has_bcp = false AND d.dependency_type = 'critical')
+        )
+      ORDER BY 
+        bp.criticality_tier ASC,
+        d.dependency_type ASC
+    `;
+
+    return gaps;
+  }
+
+  // ===========================================
+  // BIA WIZARD METHOD
+  // ===========================================
+
+  /**
+   * Create a business process from BIA wizard responses.
+   * Maps user-friendly question responses to technical BIA fields.
+   */
+  async createFromBIAWizard(
+    organizationId: string,
+    userId: string,
+    wizardData: {
+      // Step 1: Process Identification
+      name: string;
+      description?: string;
+      department: string;
+      ownerId?: string;
+      
+      // Step 2: Impact Assessment (plain language mapped to levels)
+      financialImpact: string; // 'none', 'minor', 'moderate', 'major', 'severe'
+      operationalImpact: string;
+      reputationalImpact: string;
+      legalImpact: string;
+      
+      // Step 3: Recovery Requirements
+      maxDowntimeHours: number; // maps to RTO
+      maxDataLossHours: number; // maps to RPO
+      
+      // Step 4: Dependencies
+      upstreamProcessIds?: string[];
+      assetIds?: string[];
+      
+      // Step 5: Additional info
+      peakPeriods?: string[];
+      keyStakeholders?: string;
+    },
+    userEmail?: string,
+    userName?: string,
+  ) {
+    // Map impact levels
+    const impactMap: Record<string, string> = {
+      'none': 'negligible',
+      'minor': 'minor',
+      'moderate': 'moderate',
+      'major': 'major',
+      'severe': 'catastrophic',
+    };
+
+    // Calculate criticality tier based on impacts and recovery requirements
+    const impacts = [
+      wizardData.financialImpact,
+      wizardData.operationalImpact,
+      wizardData.reputationalImpact,
+      wizardData.legalImpact,
+    ];
+    
+    const hasSevere = impacts.includes('severe');
+    const hasMajor = impacts.includes('major');
+    const hasModerate = impacts.includes('moderate');
+    
+    let criticalityTier = 'tier_4_standard';
+    if (hasSevere || wizardData.maxDowntimeHours <= 4) {
+      criticalityTier = 'tier_1_critical';
+    } else if (hasMajor || wizardData.maxDowntimeHours <= 24) {
+      criticalityTier = 'tier_2_essential';
+    } else if (hasModerate || wizardData.maxDowntimeHours <= 72) {
+      criticalityTier = 'tier_3_important';
+    }
+
+    // Generate process ID
+    const processId = `BIA-${Date.now().toString(36).toUpperCase()}`;
+
+    // Create the process
+    const result = await this.prisma.$queryRaw<any[]>`
+      INSERT INTO bcdr.business_processes (
+        organization_id, process_id, name, description, department, owner_id,
+        criticality_tier, financial_impact_level, operational_impact_level,
+        reputational_impact_level, legal_impact_level,
+        rto_hours, rpo_hours, mtpd_hours,
+        peak_periods, key_stakeholders,
+        is_active, created_by, next_review_due
+      ) VALUES (
+        ${organizationId}::uuid, ${processId}, ${wizardData.name},
+        ${wizardData.description || null}, ${wizardData.department},
+        ${wizardData.ownerId || userId}::uuid,
+        ${criticalityTier},
+        ${impactMap[wizardData.financialImpact] || 'moderate'},
+        ${impactMap[wizardData.operationalImpact] || 'moderate'},
+        ${impactMap[wizardData.reputationalImpact] || 'moderate'},
+        ${impactMap[wizardData.legalImpact] || 'moderate'},
+        ${wizardData.maxDowntimeHours}, ${wizardData.maxDataLossHours},
+        ${Math.ceil(wizardData.maxDowntimeHours * 1.5)},
+        ${wizardData.peakPeriods || []}::text[],
+        ${wizardData.keyStakeholders || null},
+        true, ${userId}::uuid, NOW() + INTERVAL '1 year'
+      )
+      RETURNING *
+    `;
+
+    const process = result[0];
+
+    // Add dependencies if provided
+    if (wizardData.upstreamProcessIds && wizardData.upstreamProcessIds.length > 0) {
+      for (const depId of wizardData.upstreamProcessIds) {
+        try {
+          await this.addDependency(process.id, {
+            dependsOnProcessId: depId,
+            dependencyType: 'upstream',
+            isCritical: true,
+          });
+        } catch (e) {
+          this.logger.warn(`Failed to add dependency ${depId}: ${e}`);
+        }
+      }
+    }
+
+    // Link assets if provided
+    if (wizardData.assetIds && wizardData.assetIds.length > 0) {
+      for (const assetId of wizardData.assetIds) {
+        try {
+          await this.linkAsset(process.id, organizationId, {
+            assetId,
+            isCritical: true,
+          });
+        } catch (e) {
+          this.logger.warn(`Failed to link asset ${assetId}: ${e}`);
+        }
+      }
+    }
+
+    await this.auditService.log({
+      organizationId,
+      userId,
+      userEmail,
+      userName,
+      action: 'created',
+      entityType: 'business_process',
+      entityId: process.id,
+      entityName: process.name,
+      description: `Created business process "${process.name}" via BIA Wizard`,
+      metadata: { criticalityTier, source: 'bia_wizard' },
+    });
+
+    return process;
   }
 }
 

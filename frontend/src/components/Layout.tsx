@@ -153,6 +153,9 @@ const navSections: NavSection[] = [
       { name: 'DR Tests', href: '/bcdr/tests', icon: BeakerIcon },
       { name: 'Runbooks', href: '/bcdr/runbooks', icon: BookOpenIcon },
       { name: 'Communication Plans', href: '/bcdr/communication', icon: MegaphoneIcon },
+      { name: 'Exercise Templates', href: '/bcdr/exercise-templates', icon: DocumentTextIcon },
+      { name: 'Recovery Teams', href: '/bcdr/recovery-teams', icon: UserGroupIcon },
+      { name: 'Incidents', href: '/bcdr/incidents', icon: ExclamationTriangleIcon },
     ],
   },
   {

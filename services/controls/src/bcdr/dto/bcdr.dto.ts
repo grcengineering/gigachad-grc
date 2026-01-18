@@ -1327,3 +1327,633 @@ export class DRTestFilterDto {
   limit?: number;
 }
 
+// ===========================================
+// PLAN ATTESTATION DTOs
+// ===========================================
+
+export enum AttestationType {
+  ANNUAL_REVIEW = 'annual_review',
+  POST_UPDATE = 'post_update',
+  POST_INCIDENT = 'post_incident',
+}
+
+export enum AttestationStatus {
+  PENDING = 'pending',
+  ATTESTED = 'attested',
+  DECLINED = 'declined',
+}
+
+/**
+ * DTO for requesting an attestation from a plan owner.
+ */
+export class RequestAttestationDto {
+  @ApiProperty({ enum: AttestationType, description: 'Type of attestation being requested' })
+  @IsEnum(AttestationType)
+  attestationType: AttestationType;
+
+  @ApiPropertyOptional({ description: 'Optional message to the attester' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  message?: string;
+
+  @ApiPropertyOptional({ description: 'Date until which the attestation is valid' })
+  @IsOptional()
+  @IsDateString()
+  validUntil?: string;
+}
+
+/**
+ * DTO for submitting an attestation response.
+ */
+export class SubmitAttestationDto {
+  @ApiProperty({ enum: ['attested', 'declined'], description: 'Attestation response status' })
+  @IsString()
+  status: 'attested' | 'declined';
+
+  @ApiPropertyOptional({ description: 'Comments from the attester' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  comments?: string;
+
+  @ApiPropertyOptional({ description: 'Reason for declining (required if status is declined)' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  declineReason?: string;
+}
+
+export class AttestationFilterDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  planId?: string;
+
+  @ApiPropertyOptional({ enum: AttestationStatus })
+  @IsOptional()
+  @IsEnum(AttestationStatus)
+  status?: AttestationStatus;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  page?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  limit?: number;
+}
+
+// ===========================================
+// EXERCISE TEMPLATE DTOs
+// ===========================================
+
+export enum ExerciseCategory {
+  RANSOMWARE = 'ransomware',
+  NATURAL_DISASTER = 'natural_disaster',
+  VENDOR_OUTAGE = 'vendor_outage',
+  DATA_BREACH = 'data_breach',
+  PANDEMIC = 'pandemic',
+  INFRASTRUCTURE = 'infrastructure',
+}
+
+export enum ScenarioType {
+  TABLETOP = 'tabletop',
+  WALKTHROUGH = 'walkthrough',
+  SIMULATION = 'simulation',
+}
+
+export class CreateExerciseTemplateDto {
+  @ApiProperty()
+  @IsString()
+  @MaxLength(50)
+  templateId: string;
+
+  @ApiProperty()
+  @IsString()
+  @MaxLength(255)
+  title: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @ApiProperty({ enum: ExerciseCategory })
+  @IsEnum(ExerciseCategory)
+  category: ExerciseCategory;
+
+  @ApiProperty({ enum: ScenarioType })
+  @IsEnum(ScenarioType)
+  scenarioType: ScenarioType;
+
+  @ApiProperty()
+  @IsString()
+  scenarioNarrative: string;
+
+  @ApiProperty({ type: 'array', items: { type: 'object' } })
+  @IsArray()
+  discussionQuestions: any[];
+
+  @ApiPropertyOptional({ type: 'array', items: { type: 'object' } })
+  @IsOptional()
+  @IsArray()
+  injects?: any[];
+
+  @ApiPropertyOptional({ type: 'array', items: { type: 'object' } })
+  @IsOptional()
+  @IsArray()
+  expectedDecisions?: any[];
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  facilitatorNotes?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  @Min(15)
+  estimatedDuration?: number;
+
+  @ApiPropertyOptional({ type: 'array', items: { type: 'object' } })
+  @IsOptional()
+  @IsArray()
+  participantRoles?: any[];
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  tags?: string[];
+}
+
+export class ExerciseTemplateFilterDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  search?: string;
+
+  @ApiPropertyOptional({ enum: ExerciseCategory })
+  @IsOptional()
+  @IsEnum(ExerciseCategory)
+  category?: ExerciseCategory;
+
+  @ApiPropertyOptional({ enum: ScenarioType })
+  @IsOptional()
+  @IsEnum(ScenarioType)
+  scenarioType?: ScenarioType;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  includeGlobal?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  page?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  limit?: number;
+}
+
+// ===========================================
+// RECOVERY TEAM DTOs
+// ===========================================
+
+export enum TeamType {
+  CRISIS_MANAGEMENT = 'crisis_management',
+  IT_RECOVERY = 'it_recovery',
+  BUSINESS_RECOVERY = 'business_recovery',
+  COMMUNICATIONS = 'communications',
+  EXECUTIVE = 'executive',
+}
+
+export enum TeamMemberRole {
+  TEAM_LEAD = 'team_lead',
+  ALTERNATE_LEAD = 'alternate_lead',
+  TECHNICAL_LEAD = 'technical_lead',
+  COORDINATOR = 'coordinator',
+  MEMBER = 'member',
+}
+
+export class CreateRecoveryTeamDto {
+  @ApiProperty()
+  @IsString()
+  @MaxLength(255)
+  name: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @ApiProperty({ enum: TeamType })
+  @IsEnum(TeamType)
+  teamType: TeamType;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  activationCriteria?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  assemblyLocation?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  communicationChannel?: string;
+}
+
+export class UpdateRecoveryTeamDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  name?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @ApiPropertyOptional({ enum: TeamType })
+  @IsOptional()
+  @IsEnum(TeamType)
+  teamType?: TeamType;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  activationCriteria?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  assemblyLocation?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  communicationChannel?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+}
+
+export class AddTeamMemberDto {
+  @ApiProperty({ enum: TeamMemberRole })
+  @IsEnum(TeamMemberRole)
+  role: TeamMemberRole;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  userId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  externalName?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  externalEmail?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  externalPhone?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  responsibilities?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  isPrimary?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  alternateFor?: string;
+}
+
+export class LinkTeamToPlanDto {
+  @ApiProperty()
+  @IsUUID()
+  planId: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  roleInPlan?: string;
+}
+
+export class RecoveryTeamFilterDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  search?: string;
+
+  @ApiPropertyOptional({ enum: TeamType })
+  @IsOptional()
+  @IsEnum(TeamType)
+  teamType?: TeamType;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  page?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  limit?: number;
+}
+
+// ===========================================
+// VENDOR DEPENDENCY DTOs
+// ===========================================
+
+export enum VendorDependencyType {
+  CRITICAL = 'critical',
+  IMPORTANT = 'important',
+  SUPPORTING = 'supporting',
+}
+
+export class CreateVendorDependencyDto {
+  @ApiProperty()
+  @IsUUID()
+  vendorId: string;
+
+  @ApiProperty({ enum: VendorDependencyType })
+  @IsEnum(VendorDependencyType)
+  dependencyType: VendorDependencyType;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  vendorRtoHours?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  vendorRpoHours?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  vendorHasBCP?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsDateString()
+  vendorBCPReviewed?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  gapAnalysis?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  mitigationPlan?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  notes?: string;
+}
+
+export class UpdateVendorDependencyDto {
+  @ApiPropertyOptional({ enum: VendorDependencyType })
+  @IsOptional()
+  @IsEnum(VendorDependencyType)
+  dependencyType?: VendorDependencyType;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  vendorRtoHours?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  vendorRpoHours?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  vendorHasBCP?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsDateString()
+  vendorBCPReviewed?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  gapAnalysis?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  mitigationPlan?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  notes?: string;
+}
+
+// ===========================================
+// INCIDENT DTOs
+// ===========================================
+
+export enum IncidentType {
+  DISASTER = 'disaster',
+  MAJOR_INCIDENT = 'major_incident',
+  DRILL = 'drill',
+  NEAR_MISS = 'near_miss',
+}
+
+export enum IncidentSeverity {
+  CRITICAL = 'critical',
+  MAJOR = 'major',
+  MODERATE = 'moderate',
+  MINOR = 'minor',
+}
+
+export enum IncidentStatus {
+  ACTIVE = 'active',
+  RECOVERING = 'recovering',
+  RESOLVED = 'resolved',
+  CLOSED = 'closed',
+}
+
+export enum TimelineEntryType {
+  STATUS_CHANGE = 'status_change',
+  PLAN_ACTIVATED = 'plan_activated',
+  TEAM_ACTIVATED = 'team_activated',
+  NOTE = 'note',
+  ACTION_TAKEN = 'action_taken',
+}
+
+export class DeclareIncidentDto {
+  @ApiProperty()
+  @IsString()
+  @MaxLength(255)
+  title: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @ApiProperty({ enum: IncidentType })
+  @IsEnum(IncidentType)
+  incidentType: IncidentType;
+
+  @ApiProperty({ enum: IncidentSeverity })
+  @IsEnum(IncidentSeverity)
+  severity: IncidentSeverity;
+}
+
+export class UpdateIncidentStatusDto {
+  @ApiProperty({ enum: IncidentStatus })
+  @IsEnum(IncidentStatus)
+  status: IncidentStatus;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  notes?: string;
+}
+
+export class AddTimelineEntryDto {
+  @ApiProperty({ enum: TimelineEntryType })
+  @IsEnum(TimelineEntryType)
+  entryType: TimelineEntryType;
+
+  @ApiProperty()
+  @IsString()
+  description: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  metadata?: any;
+}
+
+export class ActivatePlanDto {
+  @ApiProperty()
+  @IsUUID()
+  planId: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  notes?: string;
+}
+
+export class ActivateTeamDto {
+  @ApiProperty()
+  @IsUUID()
+  teamId: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  notes?: string;
+}
+
+export class CloseIncidentDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  rootCause?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  lessonsLearned?: string;
+
+  @ApiPropertyOptional({ type: 'array', items: { type: 'object' } })
+  @IsOptional()
+  @IsArray()
+  improvementActions?: any[];
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  actualDowntimeMinutes?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  dataLossMinutes?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  financialImpact?: number;
+}
+
+export class IncidentFilterDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  search?: string;
+
+  @ApiPropertyOptional({ enum: IncidentType })
+  @IsOptional()
+  @IsEnum(IncidentType)
+  incidentType?: IncidentType;
+
+  @ApiPropertyOptional({ enum: IncidentStatus })
+  @IsOptional()
+  @IsEnum(IncidentStatus)
+  status?: IncidentStatus;
+
+  @ApiPropertyOptional({ enum: IncidentSeverity })
+  @IsOptional()
+  @IsEnum(IncidentSeverity)
+  severity?: IncidentSeverity;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  page?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  limit?: number;
+}
+
