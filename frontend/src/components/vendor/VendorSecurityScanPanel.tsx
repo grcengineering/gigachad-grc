@@ -133,6 +133,7 @@ interface SecurityScanResult {
     title?: string;
     hasContactInfo: boolean;
     hasPrivacyPolicy: boolean;
+    privacyPolicyUrl?: string;
   };
   compliance: {
     hasTrustPortal: boolean;
@@ -140,9 +141,16 @@ interface SecurityScanResult {
     trustPortalProvider?: string;
     hasSOC2: boolean;
     soc2Type?: string;
+    soc2Url?: string;
     hasISO27001: boolean;
+    iso27001Url?: string;
     certifications: string[];
     hasBugBounty: boolean;
+    bugBountyUrl?: string;
+    hasPrivacyPolicy?: boolean;
+    privacyPolicyUrl?: string;
+    hasSecurityWhitepaper?: boolean;
+    securityWhitepaperUrl?: string;
   };
   subdomains?: SubdomainScanResult;
   categoryScores: {
@@ -238,6 +246,49 @@ function StatusBadge({ status, label }: { status: boolean; label: string }) {
       <span className={clsx('text-sm', status ? 'text-surface-300' : 'text-surface-500')}>{label}</span>
     </div>
   );
+}
+
+/**
+ * Status badge with optional clickable link for artifacts
+ */
+function StatusBadgeWithLink({ 
+  status, 
+  label, 
+  url 
+}: { 
+  status: boolean; 
+  label: string; 
+  url?: string;
+}) {
+  const content = (
+    <div className="flex items-center gap-2">
+      {status ? (
+        <CheckCircleIcon className="w-4 h-4 text-green-400" />
+      ) : (
+        <XCircleIcon className="w-4 h-4 text-red-400" />
+      )}
+      <span className={clsx('text-sm', status ? 'text-surface-300' : 'text-surface-500')}>{label}</span>
+      {status && url && (
+        <ArrowTopRightOnSquareIcon className="w-3 h-3 text-brand-400" />
+      )}
+    </div>
+  );
+
+  if (status && url) {
+    return (
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="hover:bg-surface-800 rounded px-1 -mx-1 transition-colors group"
+        title={`Open ${label}`}
+      >
+        {content}
+      </a>
+    );
+  }
+
+  return content;
 }
 
 // Sensitive subdomains that may indicate security concerns
@@ -1032,22 +1083,78 @@ export function VendorSecurityScanPanel({
             <Tooltip content={ITEM_TOOLTIPS.accessible} position="right" />
           </div>
           <div className="flex items-center gap-1">
-            <StatusBadge status={result.webPresence.hasPrivacyPolicy} label="Privacy Policy" />
+            <StatusBadgeWithLink 
+              status={result.webPresence.hasPrivacyPolicy} 
+              label="Privacy Policy" 
+              url={result.webPresence.privacyPolicyUrl || result.compliance.privacyPolicyUrl}
+            />
             <Tooltip content={ITEM_TOOLTIPS.privacyPolicy} position="right" />
           </div>
         </div>
         <div>
           <h5 className="text-xs font-medium text-surface-500 mb-2">Compliance</h5>
           <div className="flex items-center gap-1">
-            <StatusBadge status={result.compliance.hasSOC2} label={result.compliance.hasSOC2 ? `SOC 2 ${result.compliance.soc2Type || ''}` : 'SOC 2'} />
+            <StatusBadgeWithLink 
+              status={result.compliance.hasSOC2} 
+              label={result.compliance.hasSOC2 ? `SOC 2 ${result.compliance.soc2Type || ''}` : 'SOC 2'} 
+              url={result.compliance.soc2Url}
+            />
             <Tooltip content={ITEM_TOOLTIPS.soc2} position="left" />
           </div>
           <div className="flex items-center gap-1">
-            <StatusBadge status={result.compliance.hasTrustPortal} label="Trust Portal" />
+            <StatusBadgeWithLink 
+              status={result.compliance.hasTrustPortal} 
+              label="Trust Portal" 
+              url={result.compliance.trustPortalUrl}
+            />
             <Tooltip content={ITEM_TOOLTIPS.trustPortal} position="left" />
           </div>
         </div>
       </div>
+
+      {/* Additional Compliance Artifacts with Links */}
+      {(result.compliance.hasBugBounty || result.compliance.hasISO27001 || result.compliance.hasSecurityWhitepaper || result.compliance.certifications.length > 2) && (
+        <div className="px-4 pb-4 border-b border-surface-800">
+          <h5 className="text-xs font-medium text-surface-500 mb-2">Additional Compliance</h5>
+          <div className="flex flex-wrap gap-3">
+            {result.compliance.hasBugBounty && (
+              <div className="flex items-center gap-1">
+                <StatusBadgeWithLink 
+                  status={true} 
+                  label="Bug Bounty Program" 
+                  url={result.compliance.bugBountyUrl}
+                />
+              </div>
+            )}
+            {result.compliance.hasISO27001 && (
+              <div className="flex items-center gap-1">
+                <StatusBadgeWithLink 
+                  status={true} 
+                  label="ISO 27001" 
+                  url={result.compliance.iso27001Url}
+                />
+              </div>
+            )}
+            {result.compliance.hasSecurityWhitepaper && (
+              <div className="flex items-center gap-1">
+                <StatusBadgeWithLink 
+                  status={true} 
+                  label="Security Whitepaper" 
+                  url={result.compliance.securityWhitepaperUrl}
+                />
+              </div>
+            )}
+            {result.compliance.certifications
+              .filter(cert => !['SOC 2', 'SOC 2 Type I', 'SOC 2 Type II', 'ISO 27001'].includes(cert))
+              .map((cert, idx) => (
+                <div key={idx} className="flex items-center gap-1">
+                  <StatusBadge status={true} label={cert} />
+                </div>
+              ))
+            }
+          </div>
+        </div>
+      )}
 
       {/* Subdomains - conditionally shown based on feature settings */}
       {showSubdomains && result.subdomains && result.subdomains.discovered.length > 0 && (
