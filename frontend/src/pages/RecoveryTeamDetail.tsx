@@ -5,7 +5,6 @@ import {
   UserGroupIcon,
   PlusIcon,
   TrashIcon,
-  PencilIcon,
   LinkIcon,
   UserIcon,
   PhoneIcon,

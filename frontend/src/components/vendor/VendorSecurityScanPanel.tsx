@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
   ShieldCheckIcon,
-  ShieldExclamationIcon,
   ExclamationTriangleIcon,
   CheckCircleIcon,
   XCircleIcon,

@@ -100,9 +100,12 @@ export default function BCDRIncidents() {
   const loadActiveIncidents = async () => {
     try {
       const response = await api.get('/bcdr/incidents/active');
-      setActiveIncidents(response.data || []);
+      const data = response.data;
+      // Handle both array response and { data: [] } response format
+      setActiveIncidents(Array.isArray(data) ? data : (data?.data || []));
     } catch (error) {
       console.error('Failed to load active incidents:', error);
+      setActiveIncidents([]);
     }
   };
 
@@ -120,26 +123,29 @@ export default function BCDRIncidents() {
     navigate(`/bcdr/incidents/${incidentId}`);
   };
 
+  // Ensure activeIncidents is always an array for safe iteration
+  const safeActiveIncidents = Array.isArray(activeIncidents) ? activeIncidents : [];
+
   return (
     <div className="space-y-6">
       {/* Active Incidents Banner */}
-      {activeIncidents.length > 0 && (
+      {safeActiveIncidents.length > 0 && (
         <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <ExclamationTriangleIcon className="h-6 w-6 text-red-400 animate-pulse" />
               <div>
                 <h3 className="text-lg font-medium text-red-400">
-                  {activeIncidents.length} Active Incident{activeIncidents.length > 1 ? 's' : ''}
+                  {safeActiveIncidents.length} Active Incident{safeActiveIncidents.length > 1 ? 's' : ''}
                 </h3>
                 <p className="text-sm text-red-300">
-                  {activeIncidents.map((i) => i.title).join(', ')}
+                  {safeActiveIncidents.map((i) => i.title).join(', ')}
                 </p>
               </div>
             </div>
             <Button
               variant="secondary"
-              onClick={() => navigate(`/bcdr/incidents/${activeIncidents[0].id}`)}
+              onClick={() => navigate(`/bcdr/incidents/${safeActiveIncidents[0].id}`)}
             >
               <PlayIcon className="h-4 w-4 mr-1" />
               View Active

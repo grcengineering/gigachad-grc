@@ -92,9 +92,12 @@ export default function ExerciseTemplates() {
   const loadCategories = async () => {
     try {
       const response = await api.get('/bcdr/exercise-templates/categories');
-      setCategories(response.data || []);
+      const data = response.data;
+      // Handle both array response and { data: [] } response format
+      setCategories(Array.isArray(data) ? data : (data?.data || []));
     } catch (error) {
       console.error('Failed to load categories:', error);
+      setCategories([]);
     }
   };
 
@@ -107,6 +110,9 @@ export default function ExerciseTemplates() {
       console.error('Failed to clone template:', error);
     }
   };
+
+  // Ensure categories is always an array
+  const safeCategories = Array.isArray(categories) ? categories : [];
 
   return (
     <div className="space-y-6">
@@ -152,9 +158,9 @@ export default function ExerciseTemplates() {
       </div>
 
       {/* Category Stats */}
-      {categories.length > 0 && (
+      {safeCategories.length > 0 && (
         <div className="flex flex-wrap gap-3">
-          {categories.map((cat) => (
+          {safeCategories.map((cat) => (
             <button
               key={cat.category}
               onClick={() => setCategory(cat.category === category ? '' : cat.category)}

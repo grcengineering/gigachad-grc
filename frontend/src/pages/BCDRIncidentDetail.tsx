@@ -4,7 +4,6 @@ import {
   ArrowLeftIcon,
   ExclamationTriangleIcon,
   ClockIcon,
-  PlayIcon,
   CheckCircleIcon,
   PlusIcon,
   DocumentTextIcon,
@@ -14,7 +13,7 @@ import { Button } from '@/components/Button';
 import { PostIncidentReviewForm } from '@/components/bcdr/PostIncidentReviewForm';
 import { api } from '@/lib/api';
 import clsx from 'clsx';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format } from 'date-fns';
 
 // ============================================
 // Types
