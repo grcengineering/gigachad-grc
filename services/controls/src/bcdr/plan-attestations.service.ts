@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException, Logger } from '@nes
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../notifications/dto/notification.dto';
 import {
   RequestAttestationDto,
   SubmitAttestationDto,
@@ -115,7 +116,7 @@ export class PlanAttestationsService {
       await this.notificationsService.sendNotification({
         organizationId,
         userId: attesterId,
-        type: 'bcdr_attestation_requested',
+        type: NotificationType.BCDR_ATTESTATION_REQUESTED,
         title: 'Plan Attestation Requested',
         message: `You have been requested to attest BC/DR plan "${plan.title}"`,
         metadata: {

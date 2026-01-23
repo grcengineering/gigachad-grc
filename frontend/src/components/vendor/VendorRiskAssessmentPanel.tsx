@@ -101,7 +101,7 @@ function RiskBadge({ level }: { level: string }) {
 
 export function VendorRiskAssessmentPanel({
   vendorId,
-  vendorName,
+  vendorName: _vendorName,
   onStartAssessment,
 }: VendorRiskAssessmentPanelProps) {
   const [loading, setLoading] = useState(true);

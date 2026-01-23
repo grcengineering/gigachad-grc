@@ -839,10 +839,9 @@ export class BusinessProcessesService {
     if (wizardData.upstreamProcessIds && wizardData.upstreamProcessIds.length > 0) {
       for (const depId of wizardData.upstreamProcessIds) {
         try {
-          await this.addDependency(process.id, {
-            dependsOnProcessId: depId,
+          await this.addDependency(process.id, organizationId, userId, {
+            dependencyProcessId: depId,
             dependencyType: 'upstream',
-            isCritical: true,
           });
         } catch (e) {
           this.logger.warn(`Failed to add dependency ${depId}: ${e}`);
@@ -854,9 +853,9 @@ export class BusinessProcessesService {
     if (wizardData.assetIds && wizardData.assetIds.length > 0) {
       for (const assetId of wizardData.assetIds) {
         try {
-          await this.linkAsset(process.id, organizationId, {
+          await this.linkAsset(process.id, organizationId, userId, {
             assetId,
-            isCritical: true,
+            relationshipType: 'critical',
           });
         } catch (e) {
           this.logger.warn(`Failed to link asset ${assetId}: ${e}`);

@@ -7,10 +7,8 @@ import {
   ClipboardDocumentListIcon,
   CheckCircleIcon,
   ClockIcon,
-  ExclamationTriangleIcon,
   XCircleIcon,
   PlayIcon,
-  ArrowPathIcon,
   UserIcon,
   PlusIcon,
 } from '@heroicons/react/24/outline';
@@ -62,7 +60,7 @@ const StatusIcon: React.FC<{ status: string }> = ({ status }) => {
 export default function RiskTasksPanel({ riskId, onTaskAction }: RiskTasksPanelProps) {
   const queryClient = useQueryClient();
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<RiskWorkflowTask | null>(null);
+  const [_selectedTask, _setSelectedTask] = useState<RiskWorkflowTask | null>(null);
 
   const { data: tasks, isLoading, error } = useQuery({
     queryKey: ['risk-tasks', riskId],

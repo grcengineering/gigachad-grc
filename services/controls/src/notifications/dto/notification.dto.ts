@@ -48,6 +48,14 @@ export enum NotificationType {
   COMMENT_MENTION = 'comment_mention',
   COMMENT_REPLY = 'comment_reply',
   
+  // BC/DR notifications
+  BCDR_ATTESTATION_REQUESTED = 'bcdr_attestation_requested',
+  BCDR_INCIDENT_DECLARED = 'bcdr_incident_declared',
+  BCDR_PLAN_ACTIVATED = 'bcdr_plan_activated',
+  BCDR_EXERCISE_SCHEDULED = 'bcdr_exercise_scheduled',
+  BCDR_EXERCISE_COMPLETED = 'bcdr_exercise_completed',
+  BCDR_RECOVERY_TEAM_ASSIGNED = 'bcdr_recovery_team_assigned',
+  
   // General
   SYSTEM_ANNOUNCEMENT = 'system_announcement',
 }

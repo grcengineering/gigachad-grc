@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { riskTasksApi, usersApi, CreateRiskWorkflowTaskData } from '../../lib/api';
+import { User } from '../../lib/apiTypes';
 import toast from 'react-hot-toast';
 import {
   XMarkIcon,
@@ -59,13 +60,13 @@ export default function CreateTaskModal({ riskId, onClose, onSuccess }: CreateTa
     queryFn: () => usersApi.list({ limit: 100 }),
   });
 
-  const users = usersData?.data || [];
-  const filteredUsers = users.filter(u => 
+  const users = usersData?.data?.data || [];
+  const filteredUsers = users.filter((u: { firstName: string; lastName: string; email: string }) => 
     userSearch === '' || 
     `${u.firstName} ${u.lastName} ${u.email}`.toLowerCase().includes(userSearch.toLowerCase())
   );
 
-  const selectedUser = users.find(u => u.id === formData.assigneeId);
+  const selectedUser = users.find((u: { id: string }) => u.id === formData.assigneeId);
 
   const createMutation = useMutation({
     mutationFn: (data: CreateRiskWorkflowTaskData) => riskTasksApi.create(riskId, data),
@@ -221,7 +222,7 @@ export default function CreateTaskModal({ riskId, onClose, onSuccess }: CreateTa
                       {filteredUsers.length === 0 ? (
                         <div className="p-2 text-sm text-gray-500">No users found</div>
                       ) : (
-                        filteredUsers.slice(0, 10).map(user => (
+                        filteredUsers.slice(0, 10).map((user: User) => (
                           <button
                             key={user.id}
                             type="button"

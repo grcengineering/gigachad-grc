@@ -36,6 +36,8 @@
   "overrides": {
     "broadcast-channel": {
       "@babel/runtime": "^7.26.10"
-    }
+    },
+    "minipass": "^7.1.2",
+    "@isaacs/brace-expansion": "^5.0.0"
   }
 }

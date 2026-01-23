@@ -5,8 +5,6 @@ import {
   ChevronRightIcon,
   CheckCircleIcon,
   ShieldExclamationIcon,
-  ExclamationTriangleIcon,
-  InformationCircleIcon,
 } from '@heroicons/react/24/outline';
 import { Button } from '@/components/Button';
 import { vendorsApi } from '@/lib/api';
@@ -581,7 +579,7 @@ export function VendorRiskAssessmentWizard({
         {/* Progress */}
         <div className="px-4 py-3 border-b border-surface-800 bg-surface-800/30">
           <div className="flex items-center gap-2">
-            {steps.map((s, i) => (
+            {steps.map((_, i) => (
               <div key={i} className="flex items-center">
                 <div
                   className={clsx(
@@ -632,7 +630,7 @@ export function VendorRiskAssessmentWizard({
           ) : (
             <Button
               onClick={handleSubmit}
-              loading={submitting}
+              isLoading={submitting}
               leftIcon={<CheckCircleIcon className="w-4 h-4" />}
             >
               Submit Assessment

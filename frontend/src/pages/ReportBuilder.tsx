@@ -130,7 +130,7 @@ export default function ReportBuilderPage() {
     return (
       <div className="h-[calc(100vh-64px)]">
         <ReportBuilder
-          initialConfig={editingReport || undefined}
+          initialConfig={editingReport as ReportConfig | undefined}
           onSave={config => saveMutation.mutate(config)}
         />
       </div>

@@ -12,7 +12,6 @@ import {
   ArrowRightIcon,
   PlayIcon,
   ClipboardDocumentListIcon,
-  XCircleIcon,
 } from '@heroicons/react/24/outline';
 
 type QueueTab = 'tasks' | 'assessments' | 'treatments' | 'approvals' | 'reviews';

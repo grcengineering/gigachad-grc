@@ -10,7 +10,6 @@ import {
   SparklesIcon,
   DocumentTextIcon,
   ShieldExclamationIcon,
-  GlobeAltIcon,
 } from '@heroicons/react/24/outline';
 import { vendorsApi, tprmConfigApi, TprmFeatureSettings } from '../lib/api';
 import { Vendor } from '../lib/apiTypes';

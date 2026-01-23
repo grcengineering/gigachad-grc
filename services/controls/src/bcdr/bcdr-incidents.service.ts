@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException, Logger } from '@nes
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../notifications/dto/notification.dto';
 import {
   DeclareIncidentDto,
   UpdateIncidentStatusDto,
@@ -87,7 +88,7 @@ export class BCDRIncidentsService {
     try {
       await this.notificationsService.sendNotification({
         organizationId,
-        type: 'bcdr_incident_declared',
+        type: NotificationType.BCDR_INCIDENT_DECLARED,
         title: `BC/DR Incident: ${dto.title}`,
         message: `A ${dto.severity} ${dto.incidentType} incident has been declared`,
         metadata: { incidentId: incident.id, severity: dto.severity },

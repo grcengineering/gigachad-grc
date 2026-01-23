@@ -121,6 +121,36 @@ const NOTIFICATION_TYPE_METADATA: Record<string, { name: string; category: strin
     category: 'Collaboration',
     description: 'When someone replies to your comment',
   },
+  [NotificationType.BCDR_ATTESTATION_REQUESTED]: {
+    name: 'BC/DR Attestation Requested',
+    category: 'BC/DR',
+    description: 'When you are requested to attest a BC/DR plan',
+  },
+  [NotificationType.BCDR_INCIDENT_DECLARED]: {
+    name: 'BC/DR Incident Declared',
+    category: 'BC/DR',
+    description: 'When a business continuity or disaster recovery incident is declared',
+  },
+  [NotificationType.BCDR_PLAN_ACTIVATED]: {
+    name: 'BC/DR Plan Activated',
+    category: 'BC/DR',
+    description: 'When a BC/DR plan is activated for an incident',
+  },
+  [NotificationType.BCDR_EXERCISE_SCHEDULED]: {
+    name: 'BC/DR Exercise Scheduled',
+    category: 'BC/DR',
+    description: 'When a BC/DR exercise is scheduled',
+  },
+  [NotificationType.BCDR_EXERCISE_COMPLETED]: {
+    name: 'BC/DR Exercise Completed',
+    category: 'BC/DR',
+    description: 'When a BC/DR exercise is completed',
+  },
+  [NotificationType.BCDR_RECOVERY_TEAM_ASSIGNED]: {
+    name: 'Recovery Team Assigned',
+    category: 'BC/DR',
+    description: 'When you are assigned to a BC/DR recovery team',
+  },
   [NotificationType.SYSTEM_ANNOUNCEMENT]: {
     name: 'System Announcement',
     category: 'System',
@@ -494,6 +524,53 @@ export class NotificationsService {
     } catch (error) {
       this.logger.error(`Error sending email to user ${userId}:`, error.message);
     }
+  }
+
+  // ===========================
+  // Convenience Method
+  // ===========================
+
+  /**
+   * Send a notification (convenience wrapper around create).
+   * Accepts a flexible params object for easier usage from other services.
+   */
+  async sendNotification(params: {
+    organizationId: string;
+    userId?: string;
+    type: NotificationType;
+    title: string;
+    message: string;
+    severity?: NotificationSeverity;
+    entityType?: string;
+    entityId?: string;
+    metadata?: Record<string, any>;
+  }): Promise<{ id: string }> {
+    // If no specific userId, this is an org-wide notification
+    if (!params.userId) {
+      await this.notifyOrganization({
+        organizationId: params.organizationId,
+        type: params.type,
+        title: params.title,
+        message: params.message,
+        entityType: params.entityType,
+        entityId: params.entityId,
+        severity: params.severity,
+        metadata: params.metadata,
+      });
+      return { id: '' };
+    }
+
+    return this.create({
+      organizationId: params.organizationId,
+      userId: params.userId,
+      type: params.type,
+      title: params.title,
+      message: params.message,
+      severity: params.severity,
+      entityType: params.entityType,
+      entityId: params.entityId,
+      metadata: params.metadata,
+    });
   }
 
   // ===========================

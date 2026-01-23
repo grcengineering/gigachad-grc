@@ -5,13 +5,10 @@ import {
   ArrowLeftIcon,
   PencilIcon,
   TrashIcon,
-  CalendarDaysIcon,
   ClipboardDocumentListIcon,
   DocumentTextIcon,
   ExclamationTriangleIcon,
   CheckCircleIcon,
-  ClockIcon,
-  UserIcon,
 } from '@heroicons/react/24/outline';
 import { auditsApi, auditFindingsApi, auditRequestsApi } from '../lib/api';
 import { Button } from '@/components/Button';
@@ -393,8 +390,8 @@ export default function AuditDetail() {
         onConfirm={() => deleteMutation.mutate()}
         title="Delete Audit"
         message={`Are you sure you want to delete "${audit.name}"? This action cannot be undone.`}
-        confirmLabel="Delete"
-        variant="danger"
+        confirmText="Delete"
+        confirmVariant="danger"
         isLoading={deleteMutation.isPending}
       />
     </div>
