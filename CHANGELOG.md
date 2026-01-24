@@ -61,6 +61,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Fixed
 
+- Fixed Framework Library returning 404 in Docker deployment - added missing `/api/frameworks/catalog` nginx route to proxy to controls service (port 3001) instead of frameworks service (port 3002)
 - Fixed TypeScript compilation errors in retention service (incorrect field names for Prisma schema)
 - Fixed AWS connector dynamic imports to use runtime `require()` for optional SDK packages
 - Fixed Azure evidence collector dynamic imports
