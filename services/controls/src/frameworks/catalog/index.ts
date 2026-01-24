@@ -133,7 +133,7 @@ export {
   hipaa,
   hitrustCsf,
   gdpr,
-  pciDss401 as pciDss4,
+  pciDss401,
   cisControlsV8,
   nist80053r5,
   nist800171r2,
