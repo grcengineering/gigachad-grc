@@ -25,7 +25,7 @@ export interface PolicySection {
  */
 export function getFrameworkRequirements(frameworks: string[]): string {
   const frameworkText: string[] = [];
-  
+
   if (frameworks.includes('SOC 2') || frameworks.includes('soc2')) {
     frameworkText.push('**SOC 2 Trust Services Criteria**: This policy addresses the Security, Availability, Processing Integrity, Confidentiality, and Privacy criteria as applicable.');
   }
@@ -36,7 +36,7 @@ export function getFrameworkRequirements(frameworks: string[]): string {
     frameworkText.push('**HIPAA**: This policy addresses the Security Rule and Privacy Rule requirements for protecting Protected Health Information (PHI).');
   }
   if (frameworks.includes('PCI DSS') || frameworks.includes('pci-dss')) {
-    frameworkText.push('**PCI DSS 4.0**: This policy supports compliance with requirements for protecting cardholder data.');
+    frameworkText.push('**PCI DSS 4.0.1**: This policy supports compliance with requirements for protecting cardholder data.');
   }
   if (frameworks.includes('GDPR') || frameworks.includes('gdpr')) {
     frameworkText.push('**GDPR**: This policy addresses requirements for processing personal data of EU residents.');
@@ -47,8 +47,8 @@ export function getFrameworkRequirements(frameworks: string[]): string {
   if (frameworks.includes('HITRUST') || frameworks.includes('hitrust')) {
     frameworkText.push('**HITRUST CSF**: This policy supports compliance with the HITRUST Common Security Framework controls.');
   }
-  
-  return frameworkText.length > 0 
+
+  return frameworkText.length > 0
     ? '\n\n## Framework Compliance\n\n' + frameworkText.join('\n\n')
     : '';
 }
@@ -1344,7 +1344,7 @@ Multi-factor authentication is required for:
 export function getPolicyTemplate(policyType: string): PolicyTemplate | undefined {
   return POLICY_TEMPLATES.find(
     t => t.type.toLowerCase().includes(policyType.toLowerCase()) ||
-         policyType.toLowerCase().includes(t.type.toLowerCase().split(' ')[0])
+      policyType.toLowerCase().includes(t.type.toLowerCase().split(' ')[0])
   );
 }
 

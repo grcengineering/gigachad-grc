@@ -9,7 +9,7 @@ import nistCsf2 from './nist-csf-2.json';
 import hipaa from './hipaa.json';
 import hitrustCsf from './hitrust-csf.json';
 import gdpr from './gdpr.json';
-import pciDss4 from './pci-dss-4.json';
+import pciDss401 from './pci-dss-4-0-1.json';
 import cisControlsV8 from './cis-controls-v8.json';
 import nist80053r5 from './nist-800-53-r5.json';
 import nist800171r2 from './nist-800-171-r2.json';
@@ -58,19 +58,19 @@ export function flattenRequirements(
   parentId?: string
 ): Array<Omit<CatalogRequirement, 'children'> & { parentReference?: string }> {
   const result: Array<Omit<CatalogRequirement, 'children'> & { parentReference?: string }> = [];
-  
+
   for (const req of requirements) {
     const { children, ...reqWithoutChildren } = req;
     result.push({
       ...reqWithoutChildren,
       parentReference: parentId,
     });
-    
+
     if (children) {
       result.push(...flattenRequirements(children, req.reference));
     }
   }
-  
+
   return result;
 }
 
@@ -82,7 +82,7 @@ export const CATALOG_FRAMEWORKS: CatalogFramework[] = [
   hipaa as CatalogFramework,
   hitrustCsf as CatalogFramework,
   gdpr as CatalogFramework,
-  pciDss4 as CatalogFramework,
+  pciDss401 as CatalogFramework,
   cisControlsV8 as CatalogFramework,
   nist80053r5 as CatalogFramework,
   nist800171r2 as CatalogFramework,
@@ -133,7 +133,7 @@ export {
   hipaa,
   hitrustCsf,
   gdpr,
-  pciDss4,
+  pciDss401 as pciDss4,
   cisControlsV8,
   nist80053r5,
   nist800171r2,

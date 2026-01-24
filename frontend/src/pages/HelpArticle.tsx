@@ -44,10 +44,10 @@ function TrustCenterCustomDomainArticle() {
       <section className="mb-8">
         <h2 className="text-2xl font-bold text-surface-100 mb-4">Summary</h2>
         <p className="text-surface-300">
-          Custom domain URLs allow you to use your own branded domain (like <code className="bg-surface-800 px-1.5 py-0.5 rounded text-brand-400">trust.yourcompany.com</code>) 
+          Custom domain URLs allow you to use your own branded domain (like <code className="bg-surface-800 px-1.5 py-0.5 rounded text-brand-400">trust.yourcompany.com</code>)
           instead of the default GigaChad GRC URL when sharing your Trust Center with prospects, customers, and partners.
         </p>
-        
+
         <div className="bg-surface-800/50 border border-surface-700 rounded-lg p-4 mt-4">
           <h4 className="font-semibold text-surface-200 mb-2">Benefits of using a custom domain:</h4>
           <ul className="text-surface-400 space-y-1 text-sm list-disc list-inside">
@@ -166,7 +166,7 @@ function TrustCenterCustomDomainArticle() {
         {/* DNS Provider Instructions */}
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-surface-200">Provider-Specific Instructions</h3>
-          
+
           {/* Cloudflare */}
           <details className="bg-surface-800/50 border border-surface-700 rounded-lg">
             <summary className="px-4 py-3 cursor-pointer text-surface-200 font-medium hover:bg-surface-800 rounded-lg">
@@ -268,7 +268,7 @@ function TrustCenterCustomDomainArticle() {
         <p className="text-surface-300 mb-4">
           DNS changes can take anywhere from a few minutes to 48 hours to propagate (most take under 30 minutes).
         </p>
-        
+
         <h3 className="text-lg font-semibold text-surface-200 mb-3">How to Check DNS Propagation</h3>
         <ul className="space-y-3 text-surface-300 mb-4">
           <li className="flex gap-3">
@@ -371,11 +371,11 @@ function TrustCenterGettingStartedArticle() {
       <section className="mb-8">
         <h2 className="text-2xl font-bold text-surface-100 mb-4">Overview</h2>
         <p className="text-surface-300">
-          Your Trust Center is a public-facing security portal that showcases your organization's security posture, 
-          compliance certifications, and security documentation to prospects, customers, and partners. It serves as 
+          Your Trust Center is a public-facing security portal that showcases your organization's security posture,
+          compliance certifications, and security documentation to prospects, customers, and partners. It serves as
           a central hub for security information, reducing the need for repetitive security questionnaires.
         </p>
-        
+
         <div className="bg-surface-800/50 border border-surface-700 rounded-lg p-4 mt-4">
           <h4 className="font-semibold text-surface-200 mb-2">What you can showcase:</h4>
           <ul className="text-surface-400 space-y-1 text-sm list-disc list-inside">
@@ -562,11 +562,11 @@ function IntegrationsOverviewArticle() {
       <section className="mb-8">
         <h2 className="text-2xl font-bold text-surface-100 mb-4">Overview</h2>
         <p className="text-surface-300">
-          Integrations connect GigaChad GRC to your existing tools and systems to automate evidence collection, 
-          sync compliance data, and streamline your security workflows. Instead of manually gathering screenshots 
+          Integrations connect GigaChad GRC to your existing tools and systems to automate evidence collection,
+          sync compliance data, and streamline your security workflows. Instead of manually gathering screenshots
           and documents, integrations pull data directly from your systems.
         </p>
-        
+
         <div className="bg-surface-800/50 border border-surface-700 rounded-lg p-4 mt-4">
           <h4 className="font-semibold text-surface-200 mb-2">Integration categories:</h4>
           <ul className="text-surface-400 space-y-1 text-sm list-disc list-inside">
@@ -603,7 +603,7 @@ function IntegrationsOverviewArticle() {
         <p className="text-surface-300 mb-4">
           GigaChad GRC offers three ways to configure integrations:
         </p>
-        
+
         <div className="space-y-4">
           <div className="bg-surface-800/50 border border-surface-700 rounded-lg p-4">
             <h4 className="font-semibold text-surface-200 mb-2">Quick Setup (No-Code)</h4>
@@ -617,7 +617,7 @@ function IntegrationsOverviewArticle() {
               <li>Test connection and save</li>
             </ul>
           </div>
-          
+
           <div className="bg-surface-800/50 border border-surface-700 rounded-lg p-4">
             <h4 className="font-semibold text-surface-200 mb-2">Advanced Builder (Low-Code)</h4>
             <p className="text-surface-400 text-sm mb-2">
@@ -630,7 +630,7 @@ function IntegrationsOverviewArticle() {
               <li>Test and preview responses</li>
             </ul>
           </div>
-          
+
           <div className="bg-surface-800/50 border border-surface-700 rounded-lg p-4">
             <h4 className="font-semibold text-surface-200 mb-2">Raw API (Code)</h4>
             <p className="text-surface-400 text-sm mb-2">
@@ -768,11 +768,11 @@ function ComplianceFrameworksArticle() {
       <section className="mb-8">
         <h2 className="text-2xl font-bold text-surface-100 mb-4">Overview</h2>
         <p className="text-surface-300">
-          Compliance frameworks in GigaChad GRC help you track and manage your organization's adherence to 
-          security standards and regulations. Whether you're pursuing SOC 2, ISO 27001, HIPAA, or multiple 
+          Compliance frameworks in GigaChad GRC help you track and manage your organization's adherence to
+          security standards and regulations. Whether you're pursuing SOC 2, ISO 27001, HIPAA, or multiple
           frameworks simultaneously, the platform maps your controls to framework requirements.
         </p>
-        
+
         <div className="bg-surface-800/50 border border-surface-700 rounded-lg p-4 mt-4">
           <h4 className="font-semibold text-surface-200 mb-2">Supported frameworks include:</h4>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-surface-400 text-sm">
@@ -780,7 +780,7 @@ function ComplianceFrameworksArticle() {
             <span>• ISO 27001:2022</span>
             <span>• HIPAA</span>
             <span>• GDPR</span>
-            <span>• PCI DSS 4.0</span>
+            <span>• PCI DSS 4.0.1</span>
             <span>• NIST CSF</span>
             <span>• NIST 800-53</span>
             <span>• CIS Controls</span>
@@ -838,7 +838,7 @@ function ComplianceFrameworksArticle() {
             <span>One control can satisfy multiple requirements (cross-framework mapping)</span>
           </li>
         </ol>
-        
+
         <div className="bg-surface-800/50 border border-surface-700 rounded-lg p-4 mt-4">
           <h4 className="font-semibold text-surface-200 mb-2">Control mapping example:</h4>
           <p className="text-surface-400 text-sm">
@@ -944,11 +944,11 @@ function VendorManagementArticle() {
       <section className="mb-8">
         <h2 className="text-2xl font-bold text-surface-100 mb-4">Overview</h2>
         <p className="text-surface-300">
-          Third-Party Risk Management (TPRM) helps you assess, monitor, and manage the security risks introduced 
-          by your vendors, suppliers, and service providers. A single vendor breach can impact your organization, 
+          Third-Party Risk Management (TPRM) helps you assess, monitor, and manage the security risks introduced
+          by your vendors, suppliers, and service providers. A single vendor breach can impact your organization,
           making vendor security a critical component of your overall security program.
         </p>
-        
+
         <div className="bg-surface-800/50 border border-surface-700 rounded-lg p-4 mt-4">
           <h4 className="font-semibold text-surface-200 mb-2">Key TPRM capabilities:</h4>
           <ul className="text-surface-400 space-y-1 text-sm list-disc list-inside">
@@ -1140,11 +1140,11 @@ function AuditManagementArticle() {
       <section className="mb-8">
         <h2 className="text-2xl font-bold text-surface-100 mb-4">Overview</h2>
         <p className="text-surface-300">
-          The Audit module helps you manage internal and external audits from planning through remediation. 
-          Track evidence requests, coordinate with auditors, document findings, and ensure timely remediation 
+          The Audit module helps you manage internal and external audits from planning through remediation.
+          Track evidence requests, coordinate with auditors, document findings, and ensure timely remediation
           of identified issues.
         </p>
-        
+
         <div className="bg-surface-800/50 border border-surface-700 rounded-lg p-4 mt-4">
           <h4 className="font-semibold text-surface-200 mb-2">Audit management features:</h4>
           <ul className="text-surface-400 space-y-1 text-sm list-disc list-inside">
@@ -1342,10 +1342,10 @@ function CloudDeploymentArticle() {
       <section className="mb-8">
         <h2 className="text-2xl font-bold text-surface-100 mb-4">Overview</h2>
         <p className="text-surface-300">
-          GigaChad GRC can be deployed to the cloud using Supabase for database/storage and Vercel for hosting. 
+          GigaChad GRC can be deployed to the cloud using Supabase for database/storage and Vercel for hosting.
           This guide covers the deployment process and configuration options.
         </p>
-        
+
         <div className="bg-brand-500/10 border border-brand-500/30 rounded-lg p-4 mt-4">
           <p className="text-brand-400 text-sm">
             <strong>Estimated Monthly Cost:</strong> ~$45/month (Vercel Pro $20 + Supabase Pro $25)
@@ -1532,7 +1532,7 @@ function SupabaseVercelMigrationArticle() {
       <section className="mb-8">
         <h2 className="text-2xl font-bold text-surface-100 mb-4">Overview</h2>
         <p className="text-surface-300">
-          This guide covers migrating GigaChad GRC from the Docker-based microservices architecture to 
+          This guide covers migrating GigaChad GRC from the Docker-based microservices architecture to
           Supabase (database/storage) + Vercel (frontend/serverless API) with Okta SSO authentication.
         </p>
 
@@ -1731,11 +1731,11 @@ function MCPQuickStartArticle() {
       <section className="mb-8">
         <h2 className="text-2xl font-bold text-surface-100 mb-4">Overview</h2>
         <p className="text-surface-300">
-          Model Context Protocol (MCP) servers automate GRC workflows by connecting to external services to 
-          collect compliance evidence, run automated compliance checks, and provide AI-powered analysis. 
+          Model Context Protocol (MCP) servers automate GRC workflows by connecting to external services to
+          collect compliance evidence, run automated compliance checks, and provide AI-powered analysis.
           This guide walks you through setting up your first MCP server.
         </p>
-        
+
         <div className="bg-surface-800/50 border border-surface-700 rounded-lg p-4 mt-4">
           <h4 className="font-semibold text-surface-200 mb-2">Available MCP Server Types:</h4>
           <ul className="text-surface-400 space-y-1 text-sm list-disc list-inside">
@@ -1931,10 +1931,10 @@ function MCPCredentialSecurityArticle() {
       <section className="mb-8">
         <h2 className="text-2xl font-bold text-surface-100 mb-4">Overview</h2>
         <p className="text-surface-300">
-          MCP server credentials (API keys, tokens, secrets) are protected using industry-standard encryption. 
+          MCP server credentials (API keys, tokens, secrets) are protected using industry-standard encryption.
           This document explains the security architecture and provides recommendations for production deployments.
         </p>
-        
+
         <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4 mt-4">
           <h4 className="font-semibold text-green-300 mb-2">Security Highlights</h4>
           <ul className="text-green-400 space-y-1 text-sm list-disc list-inside">
@@ -2148,7 +2148,7 @@ export default function HelpArticle() {
         component: <MCPQuickStartArticle />,
       };
     }
-    
+
     if (category === 'mcp' && article === 'credential-security') {
       return {
         title: 'MCP Credential Security',
@@ -2156,7 +2156,7 @@ export default function HelpArticle() {
         component: <MCPCredentialSecurityArticle />,
       };
     }
-    
+
     if (category === 'mcp' && article === 'evidence-collection') {
       return {
         title: 'Automated Evidence Collection',
@@ -2180,7 +2180,7 @@ export default function HelpArticle() {
         component: <TrustCenterCustomDomainArticle />,
       };
     }
-    
+
     if (category === 'trust-center' && article === 'getting-started') {
       return {
         title: 'Getting Started with Trust Center',
@@ -2188,7 +2188,7 @@ export default function HelpArticle() {
         component: <TrustCenterGettingStartedArticle />,
       };
     }
-    
+
     if (category === 'integrations' && article === 'overview') {
       return {
         title: 'Connecting Integrations',
@@ -2196,7 +2196,7 @@ export default function HelpArticle() {
         component: <IntegrationsOverviewArticle />,
       };
     }
-    
+
     if (category === 'compliance' && article === 'frameworks') {
       return {
         title: 'Managing Compliance Frameworks',
@@ -2204,7 +2204,7 @@ export default function HelpArticle() {
         component: <ComplianceFrameworksArticle />,
       };
     }
-    
+
     if (category === 'tprm' && article === 'vendors') {
       return {
         title: 'Third-Party Vendor Management',
@@ -2212,7 +2212,7 @@ export default function HelpArticle() {
         component: <VendorManagementArticle />,
       };
     }
-    
+
     if (category === 'audit' && article === 'management') {
       return {
         title: 'Managing Audits and Evidence Requests',
