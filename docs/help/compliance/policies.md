@@ -55,17 +55,16 @@ Navigate to **Data → Policies** to see all policies:
    - **Next Review Date**: When to review
 5. Click **Save as Draft** or **Publish**
 
-### From Template
-1. Click **Create Policy**
-2. Select **Use Template**
-3. Choose from pre-built templates:
-   - Information Security Policy
-   - Acceptable Use Policy
-   - Data Classification Policy
-   - Incident Response Policy
-   - Access Control Policy
-4. Customize the template for your organization
-5. Save and publish
+### From Template (via AI Assistant)
+Policy templates are available through the AI Assistant:
+1. Open the AI Assistant
+2. Ask to draft a policy (e.g., "Draft an Information Security Policy")
+3. The AI uses pre-built templates to generate content
+4. Review and customize the generated content
+5. Copy into a new policy
+6. Save and publish
+
+> **Note**: A direct "Use Template" button in the policy creation UI is planned for a future release. Currently, templates are accessed via the AI Assistant.
 
 ## Policy Lifecycle
 
@@ -147,13 +146,13 @@ Configure approval chains:
 ## Policy Distribution
 
 ### Acknowledgment
-Require employees to acknowledge policies:
+Track employee policy acknowledgments:
 1. Open policy detail
-2. Go to **Acknowledgment** tab
-3. Click **Require Acknowledgment**
-4. Select recipients
-5. Send for acknowledgment
-6. Track completion status
+2. View acknowledgment status in the **Acknowledgment** section
+3. See which employees have acknowledged
+4. Track completion rates
+
+> **Note**: The ability to send acknowledgment requests directly from the policy page is planned for a future release. Currently, acknowledgment tracking is managed through the Employee Compliance module.
 
 ### Employee Access
 Employees can view published policies:
@@ -192,10 +191,9 @@ GigaChad GRC includes templates for:
 - Vendor Management Policy
 
 ### Custom Templates
-Create your own templates:
-1. Write a policy as usual
-2. Click **Save as Template**
-3. Template available for future use
+Custom template creation is planned for a future release. Currently, you can:
+- Use pre-built templates via the AI Assistant
+- Copy existing policies as a starting point for new ones
 
 ## Search and Export
 

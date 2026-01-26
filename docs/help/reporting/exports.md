@@ -16,8 +16,9 @@ Export capabilities allow you to:
 | Format | Description | Best For |
 |--------|-------------|----------|
 | **CSV** | Comma-separated values | Data analysis, Excel import |
-| **Excel** | Native Excel format | Reporting, analysis |
+| **Excel** | Native Excel format (.xlsx) | Reporting, analysis |
 | **PDF** | Formatted document | Sharing, printing, audits |
+| **PowerPoint** | Presentation slides (.pptx) | Executive summaries, board meetings |
 | **JSON** | Structured data | System integration, backup |
 | **Word** | Editable document | Policy documents |
 
