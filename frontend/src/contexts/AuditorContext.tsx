@@ -10,9 +10,15 @@ export interface AuditorSession {
   auditName: string;
   auditorName: string;
   auditorEmail: string;
+  role: string;
   organizationName: string;
+  portalUserId: string;
   expiresAt: Date;
   permissions: {
+    canViewAll: boolean;
+    canUpload: boolean;
+    canComment: boolean;
+    // Legacy aliases for backwards compatibility
     canViewRequests: boolean;
     canDownloadEvidence: boolean;
     canSubmitComments: boolean;
@@ -118,19 +124,29 @@ export function AuditorProvider({ children }: AuditorProviderProps) {
 
       const data = await response.json();
       
+      // Map backend permissions to frontend format
+      const permissions = data.permissions || {};
+      
       const newSession: AuditorSession = {
         accessCode,
         auditId: data.auditId,
         auditName: data.auditName,
         auditorName: data.auditorName,
         auditorEmail: data.auditorEmail,
+        role: data.role || 'auditor',
         organizationName: data.organizationName,
+        portalUserId: data.portalUserId,
         expiresAt: new Date(data.expiresAt),
-        permissions: data.permissions || {
-          canViewRequests: true,
-          canDownloadEvidence: true,
-          canSubmitComments: true,
-          canMarkReviewed: false,
+        permissions: {
+          // New permission structure from backend
+          canViewAll: permissions.canViewAll ?? true,
+          canUpload: permissions.canUpload ?? false,
+          canComment: permissions.canComment ?? true,
+          // Legacy aliases for backwards compatibility
+          canViewRequests: permissions.canViewAll ?? true,
+          canDownloadEvidence: permissions.canViewAll ?? true,
+          canSubmitComments: permissions.canComment ?? true,
+          canMarkReviewed: data.role === 'lead_auditor',
         },
       };
 
@@ -160,8 +176,8 @@ export function AuditorProvider({ children }: AuditorProviderProps) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Portal-Access-Code': session.accessCode,
         },
+        body: JSON.stringify({ accessCode: session.accessCode }),
       });
 
       if (!response.ok) {
@@ -169,9 +185,20 @@ export function AuditorProvider({ children }: AuditorProviderProps) {
       }
 
       const data = await response.json();
-      const updatedSession = {
+      const permissions = data.permissions || {};
+      
+      const updatedSession: AuditorSession = {
         ...session,
         expiresAt: new Date(data.expiresAt),
+        permissions: {
+          canViewAll: permissions.canViewAll ?? true,
+          canUpload: permissions.canUpload ?? false,
+          canComment: permissions.canComment ?? true,
+          canViewRequests: permissions.canViewAll ?? true,
+          canDownloadEvidence: permissions.canViewAll ?? true,
+          canSubmitComments: permissions.canComment ?? true,
+          canMarkReviewed: data.role === 'lead_auditor',
+        },
       };
 
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(updatedSession));

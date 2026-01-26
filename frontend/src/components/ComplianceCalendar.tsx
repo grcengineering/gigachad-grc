@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { policiesApi, auditsApi, controlsApi, contractsApi } from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { policiesApi, auditsApi, controlsApi, contractsApi, calendarApi, type CalendarEvent as ApiCalendarEvent, type CreateCalendarEventData } from '@/lib/api';
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -9,8 +9,17 @@ import {
   ClipboardDocumentListIcon,
   ShieldCheckIcon,
   DocumentIcon,
+  CalendarIcon,
+  Bars3Icon,
+  PlusIcon,
+  ArrowDownTrayIcon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
+import toast from 'react-hot-toast';
+
+// View mode types
+type ViewMode = 'month' | 'week' | 'list';
 
 // ===========================================
 // Types
@@ -65,6 +74,13 @@ const EVENT_CONFIG = {
     textColor: 'text-orange-400',
     path: '/contracts',
   },
+  custom: {
+    label: 'Custom Event',
+    icon: CalendarIcon,
+    color: 'bg-cyan-500',
+    textColor: 'text-cyan-400',
+    path: '#',
+  },
 };
 
 // ===========================================
@@ -105,10 +121,76 @@ const formatDate = (date: Date) => {
 
 export function ComplianceCalendar({ className, showFilters = true }: ComplianceCalendarProps) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const today = new Date();
   const [currentDate, setCurrentDate] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [visibleTypes, setVisibleTypes] = useState<Set<string>>(new Set(['policy_review', 'audit', 'control_review', 'contract_expiration']));
+  const [visibleTypes, setVisibleTypes] = useState<Set<string>>(new Set(['policy_review', 'audit', 'control_review', 'contract_expiration', 'custom']));
+  const [viewMode, setViewMode] = useState<ViewMode>('month');
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newEventTitle, setNewEventTitle] = useState('');
+  const [newEventDescription, setNewEventDescription] = useState('');
+  const [newEventDate, setNewEventDate] = useState('');
+  const [newEventPriority, setNewEventPriority] = useState('medium');
+
+  // Create custom event mutation
+  const createEventMutation = useMutation({
+    mutationFn: (data: CreateCalendarEventData) => calendarApi.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['calendar-events'] });
+      setShowCreateModal(false);
+      setNewEventTitle('');
+      setNewEventDescription('');
+      setNewEventDate('');
+      setNewEventPriority('medium');
+      toast.success('Event created');
+    },
+    onError: () => toast.error('Failed to create event'),
+  });
+
+  // Fetch custom calendar events from backend
+  const { data: customEventsData } = useQuery({
+    queryKey: ['calendar-events', currentDate.getFullYear(), currentDate.getMonth()],
+    queryFn: () => {
+      const startDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1).toISOString();
+      const endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 2, 0).toISOString();
+      return calendarApi.list({ startDate, endDate, includeAutomated: false }).then((res) => res.data);
+    },
+  });
+  const customEvents = customEventsData?.events || [];
+
+  // iCal export handler
+  const handleExportIcal = useCallback(async () => {
+    try {
+      const response = await calendarApi.exportIcal();
+      const blob = new Blob([response.data], { type: 'text/calendar' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'compliance-calendar.ics';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success('Calendar exported');
+    } catch {
+      toast.error('Failed to export calendar');
+    }
+  }, []);
+
+  // Handle create event
+  const handleCreateEvent = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newEventTitle.trim() || !newEventDate) return;
+    createEventMutation.mutate({
+      title: newEventTitle.trim(),
+      description: newEventDescription.trim() || undefined,
+      startDate: new Date(newEventDate).toISOString(),
+      eventType: 'custom',
+      priority: newEventPriority,
+      allDay: true,
+    });
+  }, [newEventTitle, newEventDescription, newEventDate, newEventPriority, createEventMutation]);
 
   // Fetch data from various sources
   const { data: policiesData } = useQuery({
@@ -215,8 +297,22 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
       }
     });
 
+    // Custom events from backend
+    (customEvents || []).forEach((event: ApiCalendarEvent) => {
+      eventList.push({
+        id: event.id,
+        title: event.title,
+        date: new Date(event.startDate),
+        type: 'custom' as any,
+        entityId: event.id,
+        entityType: 'custom',
+        status: event.status,
+        priority: event.priority as 'low' | 'medium' | 'high' | 'critical',
+      });
+    });
+
     return eventList.filter((e) => visibleTypes.has(e.type));
-  }, [policies, audits, controls, contracts, visibleTypes, today]);
+  }, [policies, audits, controls, contracts, customEvents, visibleTypes, today]);
 
   // Get events for a specific date
   const getEventsForDate = (date: Date) => {
@@ -273,6 +369,61 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
 
   return (
     <div className={clsx('space-y-6', className)}>
+      {/* View Mode Toggle and Actions */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 bg-surface-800 rounded-lg p-1">
+          <button
+            onClick={() => setViewMode('month')}
+            className={clsx(
+              'px-3 py-1.5 rounded text-sm flex items-center gap-1',
+              viewMode === 'month' ? 'bg-brand-500 text-white' : 'text-surface-400 hover:text-surface-200'
+            )}
+          >
+            <CalendarIcon className="w-4 h-4" />
+            Month
+          </button>
+          <button
+            onClick={() => setViewMode('week')}
+            className={clsx(
+              'px-3 py-1.5 rounded text-sm flex items-center gap-1',
+              viewMode === 'week' ? 'bg-brand-500 text-white' : 'text-surface-400 hover:text-surface-200'
+            )}
+          >
+            <CalendarIcon className="w-4 h-4" />
+            Week
+          </button>
+          <button
+            onClick={() => setViewMode('list')}
+            className={clsx(
+              'px-3 py-1.5 rounded text-sm flex items-center gap-1',
+              viewMode === 'list' ? 'bg-brand-500 text-white' : 'text-surface-400 hover:text-surface-200'
+            )}
+          >
+            <Bars3Icon className="w-4 h-4" />
+            List
+          </button>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleExportIcal}
+            className="px-3 py-1.5 text-sm text-surface-400 hover:text-surface-200 flex items-center gap-1"
+          >
+            <ArrowDownTrayIcon className="w-4 h-4" />
+            Export iCal
+          </button>
+          <button
+            onClick={() => {
+              setNewEventDate(new Date().toISOString().split('T')[0]);
+              setShowCreateModal(true);
+            }}
+            className="px-3 py-1.5 bg-brand-500 text-white rounded-lg text-sm flex items-center gap-1 hover:bg-brand-600"
+          >
+            <PlusIcon className="w-4 h-4" />
+            Add Event
+          </button>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Calendar Grid */}
         <div className="lg:col-span-2 bg-surface-800 rounded-xl border border-surface-700 p-6">
@@ -477,6 +628,85 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
           </div>
         </div>
       </div>
+
+      {/* Create Event Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-surface-900 rounded-lg p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-white">Create Event</h3>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="text-surface-400 hover:text-surface-200"
+              >
+                <XMarkIcon className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleCreateEvent} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-surface-300 mb-1">Title</label>
+                <input
+                  type="text"
+                  value={newEventTitle}
+                  onChange={(e) => setNewEventTitle(e.target.value)}
+                  className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-white placeholder-surface-500 focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                  placeholder="Event title"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-surface-300 mb-1">Description</label>
+                <textarea
+                  value={newEventDescription}
+                  onChange={(e) => setNewEventDescription(e.target.value)}
+                  className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-white placeholder-surface-500 focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                  placeholder="Optional description"
+                  rows={2}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-surface-300 mb-1">Date</label>
+                <input
+                  type="date"
+                  value={newEventDate}
+                  onChange={(e) => setNewEventDate(e.target.value)}
+                  className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-surface-300 mb-1">Priority</label>
+                <select
+                  value={newEventPriority}
+                  onChange={(e) => setNewEventPriority(e.target.value)}
+                  className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                >
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                  <option value="critical">Critical</option>
+                </select>
+              </div>
+              <div className="flex justify-end gap-2 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(false)}
+                  className="px-4 py-2 text-surface-400 hover:text-surface-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={createEventMutation.isPending || !newEventTitle.trim() || !newEventDate}
+                  className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 disabled:opacity-50"
+                >
+                  {createEventMutation.isPending ? 'Creating...' : 'Create Event'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

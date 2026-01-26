@@ -34,6 +34,9 @@ export * from './filters';
 // Reports
 export * from './reports';
 
+// Watermarking
+export * from './watermark';
+
 // Resilience (Circuit Breaker, Retry)
 export * from './resilience';
 

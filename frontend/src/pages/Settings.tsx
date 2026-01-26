@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useBranding } from '@/contexts/BrandingContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { notificationsConfigApi, customDashboardsApi, employeeComplianceApi } from '@/lib/api';
+import { notificationsConfigApi, customDashboardsApi, employeeComplianceApi, apiKeysApi, type ApiKey, type ApiKeyWithSecret } from '@/lib/api';
 import { Navigate, Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
@@ -991,10 +991,86 @@ function CommunicationsSettings() {
 }
 
 function ApiSettings() {
-  const [keys] = useState([
-    { id: '1', name: 'Production API Key', prefix: 'grc_prod_', created: '2025-01-15', lastUsed: '2025-12-01' },
-    { id: '2', name: 'Development Key', prefix: 'grc_dev_', created: '2025-06-10', lastUsed: 'Never' },
-  ]);
+  const queryClient = useQueryClient();
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showNewKeyModal, setShowNewKeyModal] = useState(false);
+  const [newKey, setNewKey] = useState<ApiKeyWithSecret | null>(null);
+  const [newKeyName, setNewKeyName] = useState('');
+  const [newKeyDescription, setNewKeyDescription] = useState('');
+  const [newKeyScopes, setNewKeyScopes] = useState<string[]>(['all']);
+  const [confirmingRevoke, setConfirmingRevoke] = useState<string | null>(null);
+  const [confirmingRegenerate, setConfirmingRegenerate] = useState<string | null>(null);
+
+  const { data: keysResponse, isLoading } = useQuery({
+    queryKey: ['api-keys'],
+    queryFn: () => apiKeysApi.list().then((res) => res.data),
+  });
+
+  const { data: scopesResponse } = useQuery({
+    queryKey: ['api-key-scopes'],
+    queryFn: () => apiKeysApi.getScopes().then((res) => res.data),
+  });
+
+  const createMutation = useMutation({
+    mutationFn: (data: { name: string; description?: string; scopes?: string[] }) =>
+      apiKeysApi.create(data),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ['api-keys'] });
+      setNewKey(response.data);
+      setShowCreateModal(false);
+      setShowNewKeyModal(true);
+      setNewKeyName('');
+      setNewKeyDescription('');
+      setNewKeyScopes(['all']);
+      toast.success('API key created');
+    },
+    onError: () => toast.error('Failed to create API key'),
+  });
+
+  const revokeMutation = useMutation({
+    mutationFn: (id: string) => apiKeysApi.revoke(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['api-keys'] });
+      setConfirmingRevoke(null);
+      toast.success('API key revoked');
+    },
+    onError: () => toast.error('Failed to revoke API key'),
+  });
+
+  const regenerateMutation = useMutation({
+    mutationFn: (id: string) => apiKeysApi.regenerate(id),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ['api-keys'] });
+      setNewKey(response.data);
+      setConfirmingRegenerate(null);
+      setShowNewKeyModal(true);
+      toast.success('API key regenerated');
+    },
+    onError: () => toast.error('Failed to regenerate API key'),
+  });
+
+  const handleCreate = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newKeyName.trim()) return;
+    createMutation.mutate({
+      name: newKeyName.trim(),
+      description: newKeyDescription.trim() || undefined,
+      scopes: newKeyScopes,
+    });
+  };
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'Never';
+    return new Date(dateString).toLocaleDateString();
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success('Copied to clipboard');
+  };
+
+  const keys = keysResponse?.keys || [];
+  const availableScopes = scopesResponse?.scopes || ['all', 'controls:read', 'controls:write', 'evidence:read', 'evidence:write'];
 
   return (
     <div className="card p-6 space-y-6">
@@ -1003,26 +1079,103 @@ function ApiSettings() {
           <h2 className="text-lg font-semibold text-surface-100">API Keys</h2>
           <p className="text-surface-400 text-sm mt-1">Manage API keys for programmatic access</p>
         </div>
-        <button className="btn-primary">Generate New Key</button>
+        <button className="btn-primary" onClick={() => setShowCreateModal(true)}>
+          <PlusIcon className="w-4 h-4 mr-2" />
+          Generate New Key
+        </button>
       </div>
 
-      <div className="space-y-3">
-        {keys.map((key) => (
-          <div key={key.id} className="flex items-center justify-between p-4 bg-surface-800/50 rounded-lg">
-            <div>
-              <p className="text-surface-100 font-medium">{key.name}</p>
-              <p className="text-surface-500 text-sm font-mono">{key.prefix}••••••••</p>
-              <p className="text-surface-600 text-xs mt-1">
-                Created {key.created} • Last used {key.lastUsed}
-              </p>
+      {isLoading ? (
+        <div className="flex justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
+        </div>
+      ) : keys.length === 0 ? (
+        <div className="text-center py-8 text-surface-400">
+          <p>No API keys yet. Create one to get started.</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {keys.map((key: ApiKey) => (
+            <div key={key.id} className="flex items-center justify-between p-4 bg-surface-800/50 rounded-lg">
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="text-surface-100 font-medium">{key.name}</p>
+                  {!key.isActive && (
+                    <span className="px-2 py-0.5 text-xs bg-red-500/20 text-red-400 rounded">Revoked</span>
+                  )}
+                </div>
+                <p className="text-surface-500 text-sm font-mono">grc_{key.keyPrefix}••••••••</p>
+                <p className="text-surface-600 text-xs mt-1">
+                  Created {formatDate(key.createdAt)} • Last used {formatDate(key.lastUsedAt)}
+                </p>
+                {key.scopes.length > 0 && (
+                  <p className="text-surface-500 text-xs mt-1">
+                    Scopes: {key.scopes.join(', ')}
+                  </p>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {key.isActive ? (
+                  <>
+                    {confirmingRegenerate === key.id ? (
+                      <div className="flex items-center gap-2">
+                        <span className="text-surface-400 text-sm">Regenerate?</span>
+                        <button
+                          className="btn-primary text-sm"
+                          onClick={() => regenerateMutation.mutate(key.id)}
+                          disabled={regenerateMutation.isPending}
+                        >
+                          Yes
+                        </button>
+                        <button
+                          className="btn-secondary text-sm"
+                          onClick={() => setConfirmingRegenerate(null)}
+                        >
+                          No
+                        </button>
+                      </div>
+                    ) : confirmingRevoke === key.id ? (
+                      <div className="flex items-center gap-2">
+                        <span className="text-surface-400 text-sm">Revoke?</span>
+                        <button
+                          className="btn-danger text-sm"
+                          onClick={() => revokeMutation.mutate(key.id)}
+                          disabled={revokeMutation.isPending}
+                        >
+                          Yes
+                        </button>
+                        <button
+                          className="btn-secondary text-sm"
+                          onClick={() => setConfirmingRevoke(null)}
+                        >
+                          No
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <button
+                          className="btn-secondary text-sm"
+                          onClick={() => setConfirmingRegenerate(key.id)}
+                        >
+                          Regenerate
+                        </button>
+                        <button
+                          className="btn-danger text-sm"
+                          onClick={() => setConfirmingRevoke(key.id)}
+                        >
+                          Revoke
+                        </button>
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <span className="text-surface-500 text-sm">Inactive</span>
+                )}
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <button className="btn-secondary text-sm">Regenerate</button>
-              <button className="btn-danger text-sm">Revoke</button>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
         <div className="flex items-start gap-3">
@@ -1030,11 +1183,120 @@ function ApiSettings() {
           <div>
             <p className="text-amber-400 font-medium">API Key Security</p>
             <p className="text-surface-400 text-sm mt-1">
-              API keys grant full access to your organization's data. Keep them secure and rotate them regularly.
+              API keys grant access to your organization's data based on their scopes. Keep them secure and rotate them regularly.
             </p>
           </div>
         </div>
       </div>
+
+      {/* Create Key Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-surface-900 rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold text-surface-100 mb-4">Create API Key</h3>
+            <form onSubmit={handleCreate} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-surface-300 mb-1">Name</label>
+                <input
+                  type="text"
+                  value={newKeyName}
+                  onChange={(e) => setNewKeyName(e.target.value)}
+                  className="input w-full"
+                  placeholder="e.g., Production API Key"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-surface-300 mb-1">Description (optional)</label>
+                <input
+                  type="text"
+                  value={newKeyDescription}
+                  onChange={(e) => setNewKeyDescription(e.target.value)}
+                  className="input w-full"
+                  placeholder="e.g., Used for CI/CD pipeline"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-surface-300 mb-1">Scopes</label>
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {availableScopes.map((scope) => (
+                    <label key={scope} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={newKeyScopes.includes(scope)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setNewKeyScopes([...newKeyScopes, scope]);
+                          } else {
+                            setNewKeyScopes(newKeyScopes.filter((s) => s !== scope));
+                          }
+                        }}
+                        className="rounded border-surface-600 bg-surface-800 text-primary-500"
+                      />
+                      <span className="text-surface-300 text-sm">{scope}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-4">
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => setShowCreateModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn-primary"
+                  disabled={createMutation.isPending || !newKeyName.trim()}
+                >
+                  {createMutation.isPending ? 'Creating...' : 'Create Key'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* New Key Display Modal */}
+      {showNewKeyModal && newKey && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-surface-900 rounded-lg p-6 w-full max-w-lg">
+            <div className="flex items-center gap-2 mb-4">
+              <CheckCircleIcon className="w-6 h-6 text-green-400" />
+              <h3 className="text-lg font-semibold text-surface-100">API Key Created</h3>
+            </div>
+            <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg mb-4">
+              <p className="text-amber-400 text-sm">
+                Copy this key now. You won't be able to see it again!
+              </p>
+            </div>
+            <div className="bg-surface-800 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <code className="text-green-400 text-sm break-all">{newKey.key}</code>
+                <button
+                  className="btn-secondary text-sm ml-2 flex-shrink-0"
+                  onClick={() => copyToClipboard(newKey.key)}
+                >
+                  Copy
+                </button>
+              </div>
+            </div>
+            <div className="flex justify-end mt-4">
+              <button
+                className="btn-primary"
+                onClick={() => {
+                  setShowNewKeyModal(false);
+                  setNewKey(null);
+                }}
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

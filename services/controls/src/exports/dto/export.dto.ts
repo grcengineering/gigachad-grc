@@ -7,6 +7,7 @@ export enum ExportFormat {
   CSV = 'csv',
   PDF = 'pdf',
   XLSX = 'xlsx',
+  PPTX = 'pptx',
 }
 
 export enum ExportEntityType {

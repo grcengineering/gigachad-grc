@@ -2858,5 +2858,251 @@ export const scheduledReportsApi = {
   },
 };
 
+// ============================================
+// API Keys API
+// ============================================
+
+export interface ApiKey {
+  id: string;
+  name: string;
+  description?: string;
+  keyPrefix: string;
+  scopes: string[];
+  lastUsedAt?: string;
+  expiresAt?: string;
+  isActive: boolean;
+  createdBy: string;
+  createdAt: string;
+}
+
+export interface ApiKeyWithSecret extends ApiKey {
+  key: string;
+}
+
+export interface CreateApiKeyData {
+  name: string;
+  description?: string;
+  scopes?: string[];
+  expiresAt?: string;
+}
+
+export interface UpdateApiKeyData {
+  name?: string;
+  description?: string;
+  scopes?: string[];
+  expiresAt?: string;
+  isActive?: boolean;
+}
+
+export interface ApiKeyListResponse {
+  keys: ApiKey[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface ApiKeyStats {
+  total: number;
+  active: number;
+  inactive: number;
+  expired: number;
+  recentlyUsed: number;
+}
+
+export const apiKeysApi = {
+  list: (params?: { search?: string; isActive?: boolean; page?: number; limit?: number }): Promise<AxiosResponse<ApiKeyListResponse>> =>
+    api.get('/api/api-keys', { params }),
+  get: (id: string): Promise<AxiosResponse<ApiKey>> =>
+    api.get(`/api/api-keys/${id}`),
+  getStats: (): Promise<AxiosResponse<ApiKeyStats>> =>
+    api.get('/api/api-keys/stats'),
+  getScopes: (): Promise<AxiosResponse<{ scopes: string[] }>> =>
+    api.get('/api/api-keys/scopes'),
+  create: (data: CreateApiKeyData): Promise<AxiosResponse<ApiKeyWithSecret>> =>
+    api.post('/api/api-keys', data),
+  update: (id: string, data: UpdateApiKeyData): Promise<AxiosResponse<ApiKey>> =>
+    api.put(`/api/api-keys/${id}`, data),
+  revoke: (id: string): Promise<AxiosResponse<void>> =>
+    api.post(`/api/api-keys/${id}/revoke`),
+  regenerate: (id: string): Promise<AxiosResponse<ApiKeyWithSecret>> =>
+    api.post(`/api/api-keys/${id}/regenerate`),
+  delete: (id: string): Promise<AxiosResponse<void>> =>
+    api.delete(`/api/api-keys/${id}`),
+};
+
+// ============================================
+// Calendar API
+// ============================================
+
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  description?: string;
+  eventType: string;
+  startDate: string;
+  endDate?: string;
+  allDay: boolean;
+  isRecurring: boolean;
+  recurrenceRule?: string;
+  entityId?: string;
+  entityType?: string;
+  assigneeId?: string;
+  priority: string;
+  status: string;
+  color?: string;
+  reminders?: Array<{ type: string; before: number }>;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateCalendarEventData {
+  title: string;
+  description?: string;
+  eventType?: string;
+  startDate: string;
+  endDate?: string;
+  allDay?: boolean;
+  isRecurring?: boolean;
+  recurrenceRule?: string;
+  entityId?: string;
+  entityType?: string;
+  assigneeId?: string;
+  priority?: string;
+  color?: string;
+  reminders?: Array<{ type: string; before: number }>;
+}
+
+export interface CalendarEventListResponse {
+  events: CalendarEvent[];
+  total: number;
+}
+
+export const calendarApi = {
+  list: (params?: {
+    startDate?: string;
+    endDate?: string;
+    eventType?: string;
+    status?: string;
+    assigneeId?: string;
+    includeAutomated?: boolean;
+  }): Promise<AxiosResponse<CalendarEventListResponse>> =>
+    api.get('/api/calendar/events', { params }),
+  get: (id: string): Promise<AxiosResponse<CalendarEvent>> =>
+    api.get(`/api/calendar/events/${id}`),
+  create: (data: CreateCalendarEventData): Promise<AxiosResponse<CalendarEvent>> =>
+    api.post('/api/calendar/events', data),
+  update: (id: string, data: Partial<CreateCalendarEventData>): Promise<AxiosResponse<CalendarEvent>> =>
+    api.put(`/api/calendar/events/${id}`, data),
+  delete: (id: string): Promise<AxiosResponse<void>> =>
+    api.delete(`/api/calendar/events/${id}`),
+  exportIcal: (params?: {
+    startDate?: string;
+    endDate?: string;
+    eventType?: string;
+  }): Promise<AxiosResponse<Blob>> =>
+    api.get('/api/calendar/events/export/ical', {
+      params,
+      responseType: 'blob',
+    }),
+  getFeedUrl: (): Promise<AxiosResponse<{ feedUrl: string; instructions: string }>> =>
+    api.get('/api/calendar/feed'),
+};
+
+// ============================================
+// Audit Portal API
+// ============================================
+
+export interface PortalSession {
+  auditId: string;
+  auditName: string;
+  auditorName: string;
+  auditorEmail: string;
+  role: string;
+  organizationName: string;
+  expiresAt: string;
+  permissions: {
+    canViewAll: boolean;
+    canUpload: boolean;
+    canComment: boolean;
+  };
+  portalUserId: string;
+}
+
+export interface PortalUser {
+  id: string;
+  auditId: string;
+  name: string;
+  email: string;
+  role: string;
+  accessCode: string;
+  isActive: boolean;
+  lastLoginAt?: string;
+  canViewAll: boolean;
+  canUpload: boolean;
+  canComment: boolean;
+  allowedIpRanges: string[];
+  enforceIpRestriction: boolean;
+  downloadLimit?: number;
+  downloadsUsed: number;
+  enableWatermark: boolean;
+  watermarkText?: string;
+  expiresAt: string;
+  createdAt: string;
+}
+
+export interface CreatePortalUserData {
+  name: string;
+  email: string;
+  role: string;
+  canViewAll?: boolean;
+  canUpload?: boolean;
+  canComment?: boolean;
+  allowedIpRanges?: string[];
+  enforceIpRestriction?: boolean;
+  downloadLimit?: number;
+  enableWatermark?: boolean;
+  watermarkText?: string;
+  expiresAt?: string;
+}
+
+export const auditPortalApi = {
+  // Public authentication
+  authenticate: (accessCode: string): Promise<AxiosResponse<PortalSession>> =>
+    api.post('/api/audit-portal/auth', { accessCode }),
+  refreshSession: (accessCode: string): Promise<AxiosResponse<PortalSession>> =>
+    api.post('/api/audit-portal/auth/refresh', { accessCode }),
+
+  // Admin: Portal user management
+  listUsers: (auditId: string): Promise<AxiosResponse<PortalUser[]>> =>
+    api.get(`/api/audits/${auditId}/portal/users`),
+  createUser: (auditId: string, data: CreatePortalUserData): Promise<AxiosResponse<PortalUser>> =>
+    api.post(`/api/audits/${auditId}/portal/users`, data),
+  updateUser: (auditId: string, userId: string, data: Partial<CreatePortalUserData>): Promise<AxiosResponse<PortalUser>> =>
+    api.put(`/api/audits/${auditId}/portal/users/${userId}`, data),
+  deleteUser: (auditId: string, userId: string): Promise<AxiosResponse<void>> =>
+    api.delete(`/api/audits/${auditId}/portal/users/${userId}`),
+  bulkCreateUsers: (auditId: string, users: CreatePortalUserData[]): Promise<AxiosResponse<{
+    created: number;
+    failed: number;
+    results: Array<{ success: boolean; user?: PortalUser; email?: string; error?: string }>;
+  }>> =>
+    api.post(`/api/audits/${auditId}/portal/users/bulk`, users),
+  getAccessLogs: (auditId: string, limit?: number): Promise<AxiosResponse<Array<{
+    id: string;
+    action: string;
+    entityType?: string;
+    entityId?: string;
+    entityName?: string;
+    ipAddress: string;
+    userAgent?: string;
+    success: boolean;
+    failureReason?: string;
+    timestamp: string;
+    portalUser?: { id: string; name: string; email: string };
+  }>>> =>
+    api.get(`/api/audits/${auditId}/portal/logs`, { params: { limit } }),
+};
+
 export default api;
 

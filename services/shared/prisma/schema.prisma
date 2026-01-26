@@ -667,6 +667,7 @@ model Organization {
   jiraConnection            JiraConnection?
   serviceNowConnection      ServiceNowConnection?
   departments               Department[]
+  calendarEvents            CalendarEvent[]
 
   @@map("organizations")
 }
@@ -3471,6 +3472,7 @@ model Audit {
   workpapers     AuditWorkpaper[]
   testProcedures AuditTestProcedure[]
   planEntries    AuditPlanEntry[]     @relation("LinkedAuditPlan")
+  portalUsers    AuditPortalUser[]
 
   @@unique([organizationId, auditId])
   @@index([organizationId, status])
@@ -3817,16 +3819,65 @@ model AuditPortalUser {
   canUpload  Boolean @default(false) @map("can_upload")
   canComment Boolean @default(true) @map("can_comment")
 
+  // IP Restrictions
+  allowedIpRanges String[] @default([]) @map("allowed_ip_ranges") // e.g., ["192.168.1.0/24", "10.0.0.0/8"]
+  enforceIpRestriction Boolean @default(false) @map("enforce_ip_restriction")
+
+  // Download Limits
+  downloadLimit      Int?      @map("download_limit") // Max downloads allowed (null = unlimited)
+  downloadsUsed      Int       @default(0) @map("downloads_used")
+  downloadLimitResetAt DateTime? @map("download_limit_reset_at") // When to reset counter
+
+  // Watermarking
+  enableWatermark Boolean @default(true) @map("enable_watermark")
+  watermarkText   String? @map("watermark_text") // Custom watermark text, defaults to name/email
+
   invitedBy String   @map("invited_by")
   createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
   expiresAt DateTime @map("expires_at")
 
   // Relations
-  invitedByUser User @relation("AuditPortalUserInvitedBy", fields: [invitedBy], references: [id], onDelete: Restrict)
+  invitedByUser    User                   @relation("AuditPortalUserInvitedBy", fields: [invitedBy], references: [id], onDelete: Restrict)
+  audit            Audit                  @relation(fields: [auditId], references: [id], onDelete: Cascade)
+  accessLogs       AuditPortalAccessLog[]
 
   @@unique([auditId, email])
   @@index([accessCode])
   @@map("audit_portal_users")
+}
+
+// Audit Portal Access Logs
+model AuditPortalAccessLog {
+  id           String   @id @default(uuid())
+  auditId      String   @map("audit_id")
+  portalUserId String?  @map("portal_user_id")
+  accessCode   String   @map("access_code")
+
+  // Action Details
+  action       String   // login, logout, view_request, download_evidence, view_evidence, comment, upload
+  entityType   String?  @map("entity_type") // request, evidence, finding
+  entityId     String?  @map("entity_id")
+  entityName   String?  @map("entity_name")
+
+  // Request Details
+  ipAddress    String   @map("ip_address")
+  userAgent    String?  @map("user_agent")
+  
+  // Additional Context
+  success      Boolean  @default(true)
+  failureReason String? @map("failure_reason")
+  metadata     Json?    // Additional context like file size, etc.
+  
+  timestamp    DateTime @default(now())
+
+  // Relations
+  portalUser AuditPortalUser? @relation(fields: [portalUserId], references: [id], onDelete: SetNull)
+
+  @@index([auditId, timestamp])
+  @@index([portalUserId])
+  @@index([accessCode])
+  @@map("audit_portal_access_logs")
 }
 
 // ===========================================
@@ -4070,6 +4121,43 @@ model ApiKeyScope {
 
   @@unique([apiKeyId, scope])
   @@map("api_key_scopes")
+}
+
+// Calendar Events for Compliance Calendar
+model CalendarEvent {
+  id             String    @id @default(uuid())
+  organizationId String    @map("organization_id")
+  workspaceId    String?   @map("workspace_id")
+  title          String
+  description    String?   @db.Text
+  eventType      String    @map("event_type") // custom, policy_review, audit, control_review, contract_expiration
+  startDate      DateTime  @map("start_date")
+  endDate        DateTime? @map("end_date")
+  allDay         Boolean   @default(true) @map("all_day")
+  isRecurring    Boolean   @default(false) @map("is_recurring")
+  recurrenceRule String?   @map("recurrence_rule") // RRULE format (RFC 5545)
+  parentEventId  String?   @map("parent_event_id") // For recurring event instances
+  entityId       String?   @map("entity_id") // For automated events linked to policies, audits, etc.
+  entityType     String?   @map("entity_type") // policy, audit, control, contract
+  assigneeId     String?   @map("assignee_id")
+  priority       String    @default("medium") // critical, high, medium, low
+  status         String    @default("scheduled") // scheduled, completed, cancelled
+  color          String?   // Custom color for the event
+  reminders      Json?     // Array of reminder configs [{type: 'email', before: 86400}]
+  metadata       Json?     // Additional event metadata
+  createdBy      String    @map("created_by")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  parentEvent  CalendarEvent?  @relation("RecurringEvents", fields: [parentEventId], references: [id])
+  childEvents  CalendarEvent[] @relation("RecurringEvents")
+
+  @@index([organizationId, startDate])
+  @@index([organizationId, eventType])
+  @@index([entityId, entityType])
+  @@index([parentEventId])
+  @@map("calendar_events")
 }
 
 // Vendor Assessment Conditions (replaces VendorAssessment.conditions String[])

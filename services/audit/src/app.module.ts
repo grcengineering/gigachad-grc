@@ -13,6 +13,7 @@ import { RemediationModule } from './remediation/remediation.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { PlanningModule } from './planning/planning.module';
 import { ReportsModule } from './reports/reports.module';
+import { PortalModule } from './portal/portal.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { ReportsModule } from './reports/reports.module';
     AnalyticsModule,
     PlanningModule,
     ReportsModule,
+    PortalModule,
   ],
 })
 export class AppModule {}
