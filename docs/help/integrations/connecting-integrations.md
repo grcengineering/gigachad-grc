@@ -4,7 +4,7 @@ Integrations are the backbone of automated compliance. Connect your existing too
 
 ## Overview
 
-GigaChad GRC supports 200+ integrations across these categories:
+GigaChad GRC supports 175+ integrations across these categories:
 
 | Category | Examples | Evidence Collected |
 |----------|----------|-------------------|
