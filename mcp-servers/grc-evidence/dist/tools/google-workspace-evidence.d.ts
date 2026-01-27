@@ -14,6 +14,9 @@ interface EvidenceResult {
         criticalFindings: number;
         warnings: number;
     };
+    isMockMode?: boolean;
+    mockModeReason?: string;
+    requiredCredentials?: string[];
 }
 export declare function collectGoogleWorkspaceEvidence(params: GoogleWorkspaceEvidenceParams): Promise<EvidenceResult>;
 export {};

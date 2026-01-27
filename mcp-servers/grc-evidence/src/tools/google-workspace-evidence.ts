@@ -105,22 +105,8 @@ interface DriveFile {
   webViewLink?: string;
 }
 
-let googleAPIs: {
-  google: {
-    auth: {
-      GoogleAuth: new (config: {
-        credentials: unknown;
-        scopes: string[];
-        clientOptions?: { subject: string };
-      }) => GoogleAuth;
-    };
-    admin: (config: { version: string; auth: unknown }) => {
-      reports: AdminReportsAPI;
-      directory: DirectoryAPI;
-    };
-    drive: (config: { version: string; auth: unknown }) => DriveAPI;
-  };
-} | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let googleAPIs: { google: any } | null = null;
 
 async function loadGoogleAPIs(): Promise<typeof googleAPIs> {
   if (googleAPIs) return googleAPIs;

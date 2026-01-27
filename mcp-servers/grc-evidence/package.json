@@ -17,7 +17,7 @@
     "@aws-sdk/client-config-service": "^3.400.0",
     "@azure/identity": "^4.0.0",
     "@azure/arm-resources": "^5.0.0",
-    "@azure/arm-security": "^6.0.0",
+    "@azure/arm-security": "^5.0.0",
     "@azure/arm-keyvault": "^3.0.0",
     "@azure/arm-network": "^33.0.0",
     "@azure/arm-storage": "^18.0.0",
