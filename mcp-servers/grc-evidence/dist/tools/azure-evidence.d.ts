@@ -12,6 +12,9 @@ interface EvidenceResult {
         compliantResources: number;
         nonCompliantResources: number;
     };
+    isMockMode?: boolean;
+    mockModeReason?: string;
+    requiredCredentials?: string[];
 }
 export declare function collectAzureEvidence(params: AzureEvidenceParams): Promise<EvidenceResult>;
 export {};

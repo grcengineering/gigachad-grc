@@ -26,25 +26,30 @@ export async function collectAzureEvidence(params) {
         // Collect resources by type
         for (const resourceType of resourceTypes) {
             try {
+                let result;
                 switch (resourceType.toLowerCase()) {
                     case 'security-center':
-                        findings.push(await collectSecurityCenterEvidence(subscriptionId));
+                        result = await collectSecurityCenterEvidence(credential, subscriptionId);
                         break;
                     case 'key-vault':
-                        findings.push(await collectKeyVaultEvidence(resourceClient));
+                        result = await collectKeyVaultEvidence(credential, resourceClient, subscriptionId);
                         break;
                     case 'network':
-                        findings.push(await collectNetworkEvidence(resourceClient));
+                        result = await collectNetworkEvidence(credential, resourceClient, subscriptionId);
                         break;
                     case 'storage':
-                        findings.push(await collectStorageEvidence(resourceClient));
+                        result = await collectStorageEvidence(credential, resourceClient, subscriptionId);
                         break;
                     default:
-                        findings.push({
-                            type: resourceType,
-                            error: `Unsupported resource type: ${resourceType}`,
-                        });
+                        result = {
+                            finding: { type: resourceType, error: `Unsupported resource type: ${resourceType}` },
+                            compliant: 0,
+                            nonCompliant: 0,
+                        };
                 }
+                findings.push(result.finding);
+                compliantCount += result.compliant;
+                nonCompliantCount += result.nonCompliant;
             }
             catch (error) {
                 findings.push({
@@ -75,40 +80,148 @@ export async function collectAzureEvidence(params) {
         };
     }
     catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        const isAuthError = errorMessage.includes('credential') ||
+            errorMessage.includes('authentication') ||
+            errorMessage.includes('AZURE_');
+        console.warn(`Azure evidence collection failed: ${errorMessage}`);
         return {
             service: 'azure',
             collectedAt: new Date().toISOString(),
             subscriptionId,
-            findings: [{ error: error instanceof Error ? error.message : 'Unknown error' }],
+            findings: [],
             summary: {
                 totalResources: 0,
                 compliantResources: 0,
                 nonCompliantResources: 0,
             },
+            isMockMode: true,
+            mockModeReason: isAuthError
+                ? 'Azure credentials not configured. Set AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, and AZURE_TENANT_ID environment variables, or run on Azure with managed identity.'
+                : `Azure evidence collection failed: ${errorMessage}`,
+            requiredCredentials: isAuthError
+                ? ['AZURE_CLIENT_ID', 'AZURE_CLIENT_SECRET', 'AZURE_TENANT_ID']
+                : undefined,
         };
     }
 }
-async function collectSecurityCenterEvidence(subscriptionId) {
-    // Note: In a real implementation, you would use @azure/arm-security
-    // This is a placeholder that shows the structure
-    return {
-        type: 'security_center',
-        subscriptionId,
-        collectedAt: new Date().toISOString(),
-        findings: {
-            secureScore: {
-                current: 0,
-                max: 100,
-                percentage: 0,
+async function collectSecurityCenterEvidence(credential, subscriptionId) {
+    let compliant = 0;
+    let nonCompliant = 0;
+    try {
+        // Dynamic import to handle missing SDK gracefully
+        const { SecurityCenter } = await import('@azure/arm-security');
+        const client = new SecurityCenter(credential, subscriptionId);
+        // Collect secure score
+        const secureScores = [];
+        for await (const score of client.secureScores.list()) {
+            secureScores.push({
+                name: score.displayName,
+                current: score.current,
+                max: score.max,
+                percentage: score.percentage,
+            });
+            // Score above 70% is considered compliant
+            if ((score.percentage || 0) >= 0.7)
+                compliant++;
+            else
+                nonCompliant++;
+        }
+        // Collect security assessments
+        const assessments = [];
+        try {
+            for await (const assessment of client.assessments.list(`/subscriptions/${subscriptionId}`)) {
+                const status = assessment.status?.code;
+                assessments.push({
+                    name: assessment.displayName,
+                    status,
+                    resourceId: assessment.resourceDetails,
+                    description: assessment.status?.description,
+                });
+                if (status === 'Healthy')
+                    compliant++;
+                else if (status === 'Unhealthy')
+                    nonCompliant++;
+            }
+        }
+        catch {
+            // Assessments API may not be available in all subscriptions
+        }
+        // Collect alerts
+        const alerts = [];
+        try {
+            for await (const alert of client.alerts.list()) {
+                alerts.push({
+                    name: alert.alertDisplayName,
+                    severity: alert.severity,
+                    status: alert.status,
+                    timeGenerated: alert.timeGeneratedUtc,
+                    description: alert.description,
+                });
+                if (alert.status === 'Active' && (alert.severity === 'High' || alert.severity === 'Medium')) {
+                    nonCompliant++;
+                }
+            }
+        }
+        catch {
+            // Alerts API may require additional permissions
+        }
+        return {
+            finding: {
+                type: 'security_center',
+                subscriptionId,
+                collectedAt: new Date().toISOString(),
+                count: secureScores.length + assessments.length,
+                findings: {
+                    secureScores,
+                    assessments: assessments.slice(0, 100),
+                    assessmentCount: assessments.length,
+                    alerts: alerts.slice(0, 50),
+                    alertCount: alerts.length,
+                },
+                compliance: {
+                    overallScore: secureScores[0] ? secureScores[0].percentage * 100 : 0,
+                    healthyAssessments: assessments.filter((a) => a.status === 'Healthy').length,
+                    unhealthyAssessments: assessments.filter((a) => a.status === 'Unhealthy').length,
+                    activeAlerts: alerts.filter((a) => a.status === 'Active').length,
+                },
             },
-            recommendations: [],
-            alerts: [],
-            note: 'Azure Security Center evidence collection requires @azure/arm-security SDK',
-        },
-    };
+            compliant,
+            nonCompliant,
+        };
+    }
+    catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        const err = error;
+        const isModuleError = err.code === 'MODULE_NOT_FOUND' ||
+            errorMessage.includes('Cannot find module');
+        console.warn(`Security Center evidence collection: ${isModuleError ? 'SDK not installed' : errorMessage}`);
+        return {
+            finding: {
+                type: 'security_center',
+                subscriptionId,
+                collectedAt: new Date().toISOString(),
+                count: 0,
+                findings: {
+                    secureScore: { current: 0, max: 100, percentage: 0 },
+                    recommendations: [],
+                    alerts: [],
+                },
+                isMockMode: true,
+                mockModeReason: isModuleError
+                    ? 'Install @azure/arm-security SDK: npm install @azure/arm-security'
+                    : `Security Center collection failed: ${errorMessage}`,
+            },
+            compliant: 0,
+            nonCompliant: 0,
+        };
+    }
 }
-async function collectKeyVaultEvidence(resourceClient) {
+async function collectKeyVaultEvidence(credential, resourceClient, subscriptionId) {
     const keyVaults = [];
+    const complianceChecks = [];
+    let compliant = 0;
+    let nonCompliant = 0;
     // List all Key Vault resources
     for await (const resource of resourceClient.resources.list({
         filter: "resourceType eq 'Microsoft.KeyVault/vaults'",
@@ -121,26 +234,129 @@ async function collectKeyVaultEvidence(resourceClient) {
             sku: resource.sku,
         });
     }
+    // Try to get detailed Key Vault information
+    try {
+        const { KeyVaultManagementClient } = await import('@azure/arm-keyvault');
+        const kvClient = new KeyVaultManagementClient(credential, subscriptionId);
+        for await (const vault of kvClient.vaults.list()) {
+            const vaultName = vault.name || 'unknown';
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const properties = vault.properties;
+            // Check soft delete
+            if (properties?.enableSoftDelete) {
+                complianceChecks.push({
+                    name: 'Soft Delete Enabled',
+                    status: 'pass',
+                    description: `Soft delete is enabled for ${vaultName}`,
+                    resourceId: vault.id,
+                });
+                compliant++;
+            }
+            else {
+                complianceChecks.push({
+                    name: 'Soft Delete Enabled',
+                    status: 'fail',
+                    description: `Soft delete is NOT enabled for ${vaultName}`,
+                    resourceId: vault.id,
+                });
+                nonCompliant++;
+            }
+            // Check purge protection
+            if (properties?.enablePurgeProtection) {
+                complianceChecks.push({
+                    name: 'Purge Protection Enabled',
+                    status: 'pass',
+                    description: `Purge protection is enabled for ${vaultName}`,
+                    resourceId: vault.id,
+                });
+                compliant++;
+            }
+            else {
+                complianceChecks.push({
+                    name: 'Purge Protection Enabled',
+                    status: 'fail',
+                    description: `Purge protection is NOT enabled for ${vaultName}`,
+                    resourceId: vault.id,
+                });
+                nonCompliant++;
+            }
+            // Check network rules
+            const networkRules = properties?.networkAcls;
+            if (networkRules?.defaultAction === 'Deny') {
+                complianceChecks.push({
+                    name: 'Network Restrictions',
+                    status: 'pass',
+                    description: `Network access is restricted for ${vaultName}`,
+                    resourceId: vault.id,
+                });
+                compliant++;
+            }
+            else {
+                complianceChecks.push({
+                    name: 'Network Restrictions',
+                    status: 'warning',
+                    description: `Network access is open for ${vaultName}`,
+                    resourceId: vault.id,
+                });
+                nonCompliant++;
+            }
+            // Check RBAC authorization
+            if (properties?.enableRbacAuthorization) {
+                complianceChecks.push({
+                    name: 'RBAC Authorization',
+                    status: 'pass',
+                    description: `RBAC authorization is enabled for ${vaultName}`,
+                    resourceId: vault.id,
+                });
+                compliant++;
+            }
+            else {
+                complianceChecks.push({
+                    name: 'RBAC Authorization',
+                    status: 'warning',
+                    description: `Using access policies instead of RBAC for ${vaultName}`,
+                    resourceId: vault.id,
+                });
+            }
+        }
+    }
+    catch (error) {
+        const err = error;
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        if (err.code !== 'MODULE_NOT_FOUND' && !errorMessage.includes('Cannot find module')) {
+            console.warn(`Key Vault detailed check failed: ${errorMessage}`);
+        }
+        complianceChecks.push({
+            name: 'Detailed Compliance Checks',
+            status: 'unknown',
+            description: 'Install @azure/arm-keyvault for detailed compliance checks',
+        });
+    }
     return {
-        type: 'key_vault',
-        count: keyVaults.length,
-        vaults: keyVaults,
-        compliance: {
-            // In a real implementation, you would check:
-            // - Soft delete enabled
-            // - Purge protection enabled
-            // - Network rules configured
-            // - Access policies properly configured
-            note: 'Detailed Key Vault compliance checks require additional API calls',
+        finding: {
+            type: 'key_vault',
+            count: keyVaults.length,
+            vaults: keyVaults,
+            complianceChecks,
+            summary: {
+                compliant,
+                nonCompliant,
+                total: keyVaults.length,
+            },
         },
+        compliant,
+        nonCompliant,
     };
 }
-async function collectNetworkEvidence(resourceClient) {
+async function collectNetworkEvidence(credential, resourceClient, subscriptionId) {
     const networkResources = {
         virtualNetworks: [],
         networkSecurityGroups: [],
         publicIpAddresses: [],
     };
+    const complianceChecks = [];
+    let compliant = 0;
+    let nonCompliant = 0;
     // List Virtual Networks
     for await (const resource of resourceClient.resources.list({
         filter: "resourceType eq 'Microsoft.Network/virtualNetworks'",
@@ -171,19 +387,103 @@ async function collectNetworkEvidence(resourceClient) {
             id: resource.id,
         });
     }
+    // Try to get detailed NSG rules
+    try {
+        const { NetworkManagementClient } = await import('@azure/arm-network');
+        const networkClient = new NetworkManagementClient(credential, subscriptionId);
+        for await (const nsg of networkClient.networkSecurityGroups.listAll()) {
+            const nsgName = nsg.name || 'unknown';
+            const rules = nsg.securityRules || [];
+            // Check for overly permissive rules
+            for (const rule of rules) {
+                if (rule.access === 'Allow' && rule.direction === 'Inbound') {
+                    const isOverlyPermissive = rule.sourceAddressPrefix === '*' ||
+                        rule.sourceAddressPrefix === 'Internet' ||
+                        rule.sourceAddressPrefix === '0.0.0.0/0';
+                    const isSensitivePort = rule.destinationPortRange === '*' ||
+                        rule.destinationPortRange === '22' ||
+                        rule.destinationPortRange === '3389' ||
+                        rule.destinationPortRange === '3306' ||
+                        rule.destinationPortRange === '1433';
+                    if (isOverlyPermissive && isSensitivePort) {
+                        complianceChecks.push({
+                            name: 'Overly Permissive Inbound Rule',
+                            status: 'fail',
+                            description: `NSG ${nsgName} allows ${rule.destinationPortRange} from ${rule.sourceAddressPrefix}`,
+                            resourceId: nsg.id,
+                        });
+                        nonCompliant++;
+                    }
+                }
+            }
+            // Check for SSH/RDP from internet
+            const hasSshFromInternet = rules.some(r => r.access === 'Allow' &&
+                r.direction === 'Inbound' &&
+                (r.sourceAddressPrefix === '*' || r.sourceAddressPrefix === 'Internet') &&
+                r.destinationPortRange === '22');
+            const hasRdpFromInternet = rules.some(r => r.access === 'Allow' &&
+                r.direction === 'Inbound' &&
+                (r.sourceAddressPrefix === '*' || r.sourceAddressPrefix === 'Internet') &&
+                r.destinationPortRange === '3389');
+            if (!hasSshFromInternet && !hasRdpFromInternet) {
+                complianceChecks.push({
+                    name: 'Management Ports Protected',
+                    status: 'pass',
+                    description: `NSG ${nsgName} restricts SSH/RDP from internet`,
+                    resourceId: nsg.id,
+                });
+                compliant++;
+            }
+        }
+        // Check for unused public IPs (potential cost/security issue)
+        for await (const pip of networkClient.publicIPAddresses.listAll()) {
+            if (!pip.ipConfiguration) {
+                complianceChecks.push({
+                    name: 'Unused Public IP',
+                    status: 'warning',
+                    description: `Public IP ${pip.name} is not associated with any resource`,
+                    resourceId: pip.id,
+                });
+            }
+        }
+    }
+    catch (error) {
+        const err = error;
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        if (err.code !== 'MODULE_NOT_FOUND' && !errorMessage.includes('Cannot find module')) {
+            console.warn(`Network detailed check failed: ${errorMessage}`);
+        }
+        complianceChecks.push({
+            name: 'Detailed Network Checks',
+            status: 'unknown',
+            description: 'Install @azure/arm-network for detailed NSG rule analysis',
+        });
+    }
     return {
-        type: 'network',
-        count: networkResources.virtualNetworks.length +
-            networkResources.networkSecurityGroups.length +
-            networkResources.publicIpAddresses.length,
-        resources: networkResources,
-        compliance: {
-            note: 'Detailed network compliance checks require examining NSG rules, VNet peering, etc.',
+        finding: {
+            type: 'network',
+            count: networkResources.virtualNetworks.length +
+                networkResources.networkSecurityGroups.length +
+                networkResources.publicIpAddresses.length,
+            resources: networkResources,
+            complianceChecks,
+            summary: {
+                compliant,
+                nonCompliant,
+                virtualNetworks: networkResources.virtualNetworks.length,
+                networkSecurityGroups: networkResources.networkSecurityGroups.length,
+                publicIpAddresses: networkResources.publicIpAddresses.length,
+            },
         },
+        compliant,
+        nonCompliant,
     };
 }
-async function collectStorageEvidence(resourceClient) {
+async function collectStorageEvidence(credential, resourceClient, subscriptionId) {
     const storageAccounts = [];
+    const complianceChecks = [];
+    let compliant = 0;
+    let nonCompliant = 0;
     // List Storage Accounts
     for await (const resource of resourceClient.resources.list({
         filter: "resourceType eq 'Microsoft.Storage/storageAccounts'",
@@ -196,18 +496,135 @@ async function collectStorageEvidence(resourceClient) {
             kind: resource.kind,
         });
     }
+    // Try to get detailed storage account information
+    try {
+        const { StorageManagementClient } = await import('@azure/arm-storage');
+        const storageClient = new StorageManagementClient(credential, subscriptionId);
+        for await (const account of storageClient.storageAccounts.list()) {
+            const accountName = account.name || 'unknown';
+            // Check HTTPS only
+            if (account.enableHttpsTrafficOnly) {
+                complianceChecks.push({
+                    name: 'HTTPS Only',
+                    status: 'pass',
+                    description: `HTTPS-only traffic is enforced for ${accountName}`,
+                    resourceId: account.id,
+                });
+                compliant++;
+            }
+            else {
+                complianceChecks.push({
+                    name: 'HTTPS Only',
+                    status: 'fail',
+                    description: `HTTP traffic is allowed for ${accountName}`,
+                    resourceId: account.id,
+                });
+                nonCompliant++;
+            }
+            // Check encryption
+            if (account.encryption?.services?.blob?.enabled) {
+                complianceChecks.push({
+                    name: 'Blob Encryption',
+                    status: 'pass',
+                    description: `Blob encryption is enabled for ${accountName}`,
+                    resourceId: account.id,
+                });
+                compliant++;
+            }
+            else {
+                complianceChecks.push({
+                    name: 'Blob Encryption',
+                    status: 'fail',
+                    description: `Blob encryption is NOT enabled for ${accountName}`,
+                    resourceId: account.id,
+                });
+                nonCompliant++;
+            }
+            // Check public blob access
+            if (account.allowBlobPublicAccess === false) {
+                complianceChecks.push({
+                    name: 'Public Blob Access Disabled',
+                    status: 'pass',
+                    description: `Public blob access is disabled for ${accountName}`,
+                    resourceId: account.id,
+                });
+                compliant++;
+            }
+            else {
+                complianceChecks.push({
+                    name: 'Public Blob Access Disabled',
+                    status: 'warning',
+                    description: `Public blob access is allowed for ${accountName}`,
+                    resourceId: account.id,
+                });
+                nonCompliant++;
+            }
+            // Check network rules
+            const networkRules = account.networkRuleSet;
+            if (networkRules?.defaultAction === 'Deny') {
+                complianceChecks.push({
+                    name: 'Network Restrictions',
+                    status: 'pass',
+                    description: `Network access is restricted for ${accountName}`,
+                    resourceId: account.id,
+                });
+                compliant++;
+            }
+            else {
+                complianceChecks.push({
+                    name: 'Network Restrictions',
+                    status: 'warning',
+                    description: `Network access is open for ${accountName}`,
+                    resourceId: account.id,
+                });
+            }
+            // Check minimum TLS version
+            if (account.minimumTlsVersion === 'TLS1_2') {
+                complianceChecks.push({
+                    name: 'Minimum TLS Version',
+                    status: 'pass',
+                    description: `TLS 1.2 is enforced for ${accountName}`,
+                    resourceId: account.id,
+                });
+                compliant++;
+            }
+            else {
+                complianceChecks.push({
+                    name: 'Minimum TLS Version',
+                    status: 'warning',
+                    description: `TLS version lower than 1.2 is allowed for ${accountName}`,
+                    resourceId: account.id,
+                });
+                nonCompliant++;
+            }
+        }
+    }
+    catch (error) {
+        const err = error;
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        if (err.code !== 'MODULE_NOT_FOUND' && !errorMessage.includes('Cannot find module')) {
+            console.warn(`Storage detailed check failed: ${errorMessage}`);
+        }
+        complianceChecks.push({
+            name: 'Detailed Storage Checks',
+            status: 'unknown',
+            description: 'Install @azure/arm-storage for detailed compliance checks: npm install @azure/arm-storage',
+        });
+    }
     return {
-        type: 'storage',
-        count: storageAccounts.length,
-        accounts: storageAccounts,
-        compliance: {
-            // In a real implementation, you would check:
-            // - HTTPS only
-            // - Encryption at rest
-            // - Public blob access disabled
-            // - Network rules configured
-            note: 'Detailed storage compliance checks require @azure/arm-storage SDK',
+        finding: {
+            type: 'storage',
+            count: storageAccounts.length,
+            accounts: storageAccounts,
+            complianceChecks,
+            summary: {
+                compliant,
+                nonCompliant,
+                total: storageAccounts.length,
+            },
         },
+        compliant,
+        nonCompliant,
     };
 }
 //# sourceMappingURL=azure-evidence.js.map
