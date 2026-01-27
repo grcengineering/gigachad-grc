@@ -50,6 +50,20 @@ export default [
     },
   },
 
+  // Playwright e2e test configuration
+  {
+    files: ['e2e/**/*.spec.ts'],
+    languageOptions: {
+      globals: {
+        test: 'readonly',
+        expect: 'readonly',
+        page: 'readonly',
+        browser: 'readonly',
+        context: 'readonly',
+      },
+    },
+  },
+
   // Disable rules that conflict with Prettier
   eslintConfigPrettier,
 ];

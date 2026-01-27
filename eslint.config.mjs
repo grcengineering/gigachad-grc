@@ -15,7 +15,6 @@ export default [
       '**/test-results/**',
       '**/prisma/client/**',
       '**/*.generated.ts',
-      'scripts/**',
       // Frontend has its own config
       'frontend/**',
     ],
@@ -46,6 +45,23 @@ export default [
       ],
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/explicit-function-return-type': 'off',
+    },
+  },
+
+  // Test file configuration (Jest globals)
+  {
+    files: ['**/*.spec.ts', '**/*.test.ts'],
+    languageOptions: {
+      globals: {
+        describe: 'readonly',
+        it: 'readonly',
+        expect: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
+        jest: 'readonly',
+      },
     },
   },
 
