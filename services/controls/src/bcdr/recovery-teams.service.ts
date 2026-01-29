@@ -132,14 +132,14 @@ export class RecoveryTeamsService {
   ) {
     const result = await this.prisma.$queryRaw<any[]>`
       INSERT INTO bcdr_recovery_teams (
-        organization_id, name, description, team_type,
+        id, organization_id, name, description, team_type,
         activation_criteria, assembly_location, communication_channel,
-        created_by
+        created_by, updated_at
       ) VALUES (
-        ${organizationId}::uuid, ${dto.name}, ${dto.description || null},
+        gen_random_uuid()::text, ${organizationId}, ${dto.name}, ${dto.description || null},
         ${dto.teamType}, ${dto.activationCriteria || null},
         ${dto.assemblyLocation || null}, ${dto.communicationChannel || null},
-        ${userId}::uuid
+        ${userId}, NOW()
       )
       RETURNING *
     `;

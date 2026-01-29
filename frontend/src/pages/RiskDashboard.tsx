@@ -1,7 +1,7 @@
-import { useState, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useCallback, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { risksApi } from '../lib/api';
+import { risksApi, customDashboardsApi } from '../lib/api';
 import {
   ExclamationTriangleIcon,
   CheckCircleIcon,
@@ -93,18 +93,110 @@ const DEFAULT_WIDGET_CONFIG: WidgetConfig = {
 };
 
 const STORAGE_KEY = 'risk-dashboard-config';
+const DASHBOARD_NAME = 'Risk Dashboard';
+
+// Convert WidgetConfig to backend format
+function widgetConfigToBackendFormat(config: WidgetConfig) {
+  return Object.entries(config).map(([key, enabled]) => ({
+    widgetType: key,
+    title: key.replace(/([A-Z])/g, ' $1').trim(),
+    config: { enabled },
+    position: { x: 0, y: 0, w: 4, h: 2 },
+  }));
+}
+
+// Convert backend format to WidgetConfig
+function backendToWidgetConfig(widgets: any[]): WidgetConfig {
+  const config = { ...DEFAULT_WIDGET_CONFIG };
+  if (widgets && Array.isArray(widgets)) {
+    widgets.forEach((widget: any) => {
+      const key = widget.widgetType as keyof WidgetConfig;
+      if (key in config && widget.config?.enabled !== undefined) {
+        config[key] = widget.config.enabled;
+      }
+    });
+  }
+  return config;
+}
 
 export default function RiskDashboard() {
+  const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
-  const [widgetConfig, setWidgetConfig] = useState<WidgetConfig>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      return saved ? { ...DEFAULT_WIDGET_CONFIG, ...JSON.parse(saved) } : DEFAULT_WIDGET_CONFIG;
-    } catch {
-      return DEFAULT_WIDGET_CONFIG;
-    }
-  });
+  const [dashboardId, setDashboardId] = useState<string | null>(null);
+  const [widgetConfig, setWidgetConfig] = useState<WidgetConfig>(DEFAULT_WIDGET_CONFIG);
   const [tempConfig, setTempConfig] = useState<WidgetConfig>(widgetConfig);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Fetch user's dashboards to find Risk Dashboard
+  const { data: dashboardsData } = useQuery({
+    queryKey: ['user-dashboards'],
+    queryFn: async () => {
+      try {
+        const response = await customDashboardsApi.list();
+        return response.data;
+      } catch {
+        return { data: [] };
+      }
+    },
+    staleTime: 30000,
+  });
+
+  // Initialize dashboard config from backend or localStorage
+  useEffect(() => {
+    if (isInitialized) return;
+    
+    const dashboards = dashboardsData?.data || [];
+    const riskDashboard = dashboards.find((d: any) => d.name === DASHBOARD_NAME);
+    
+    if (riskDashboard) {
+      // Found existing backend dashboard
+      setDashboardId(riskDashboard.id);
+      const config = backendToWidgetConfig(riskDashboard.widgets || []);
+      setWidgetConfig(config);
+      setTempConfig(config);
+      setIsInitialized(true);
+    } else if (dashboardsData !== undefined) {
+      // No backend dashboard, try localStorage
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        const config = saved ? { ...DEFAULT_WIDGET_CONFIG, ...JSON.parse(saved) } : DEFAULT_WIDGET_CONFIG;
+        setWidgetConfig(config);
+        setTempConfig(config);
+      } catch {
+        // Use default
+      }
+      setIsInitialized(true);
+    }
+  }, [dashboardsData, isInitialized]);
+
+  // Mutation to save dashboard
+  const saveMutation = useMutation({
+    mutationFn: async (config: WidgetConfig) => {
+      const widgets = widgetConfigToBackendFormat(config);
+      
+      if (dashboardId) {
+        // Update existing
+        return customDashboardsApi.update(dashboardId, { widgets });
+      } else {
+        // Create new
+        return customDashboardsApi.create({
+          name: DASHBOARD_NAME,
+          description: 'Risk management dashboard widget configuration',
+          widgets,
+        });
+      }
+    },
+    onSuccess: (response: any) => {
+      if (!dashboardId && response.data?.data?.id) {
+        setDashboardId(response.data.data.id);
+      }
+      queryClient.invalidateQueries({ queryKey: ['user-dashboards'] });
+    },
+    onError: () => {
+      // Fallback to localStorage on error
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tempConfig));
+    },
+  });
 
   const handleToggleEdit = useCallback(() => {
     if (isEditing) {
@@ -117,12 +209,15 @@ export default function RiskDashboard() {
     setIsEditing(!isEditing);
   }, [isEditing, widgetConfig]);
 
-  const handleSaveLayout = useCallback(() => {
+  const handleSaveLayout = useCallback(async () => {
     setWidgetConfig(tempConfig);
+    // Also save to localStorage as backup
     localStorage.setItem(STORAGE_KEY, JSON.stringify(tempConfig));
+    // Save to backend
+    saveMutation.mutate(tempConfig);
     setIsEditing(false);
     toast.success('Dashboard layout saved');
-  }, [tempConfig]);
+  }, [tempConfig, saveMutation]);
 
   const handleResetLayout = useCallback(() => {
     setTempConfig(DEFAULT_WIDGET_CONFIG);
@@ -208,7 +303,7 @@ export default function RiskDashboard() {
             onToggle={handleToggleEdit}
             onSave={handleSaveLayout}
             onReset={handleResetLayout}
-            isSaving={false}
+            isSaving={saveMutation.isPending}
           />
           <Link
             to="/risks"
@@ -373,7 +468,7 @@ export default function RiskDashboard() {
                       <p className="text-gray-500 dark:text-surface-400 text-sm truncate">{risk.riskId}</p>
                     </div>
                     <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(risk.status)}`}>
-                      {risk.status.replace(/_/g, ' ')}
+                      {risk.status?.replace(/_/g, ' ') || 'Unknown'}
                     </span>
                   </Link>
                 ))}

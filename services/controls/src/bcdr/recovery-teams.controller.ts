@@ -7,9 +7,9 @@ import {
   Body,
   Param,
   Query,
-  Req,
   UseGuards,
 } from '@nestjs/common';
+import { CurrentUser, UserContext } from '@gigachad-grc/shared';
 import {
   ApiTags,
   ApiOperation,
@@ -25,8 +25,7 @@ import {
   LinkTeamToPlanDto,
   RecoveryTeamFilterDto,
 } from './dto/bcdr.dto';
-import { AuthGuard } from '../auth/auth.guard';
-import { TenantScopeGuard } from '../common/tenant-scope.guard';
+import { DevAuthGuard } from '../auth/dev-auth.guard';
 
 /**
  * Controller for BC/DR recovery team endpoints.
@@ -36,8 +35,8 @@ import { TenantScopeGuard } from '../common/tenant-scope.guard';
  */
 @ApiTags('BC/DR Recovery Teams')
 @ApiBearerAuth()
-@Controller('bcdr/recovery-teams')
-@UseGuards(AuthGuard, TenantScopeGuard)
+@Controller('api/bcdr/recovery-teams')
+@UseGuards(DevAuthGuard)
 export class RecoveryTeamsController {
   constructor(private readonly teamsService: RecoveryTeamsService) {}
 
@@ -49,9 +48,9 @@ export class RecoveryTeamsController {
   @ApiResponse({ status: 200, description: 'Paginated team list' })
   async listTeams(
     @Query() filters: RecoveryTeamFilterDto,
-    @Req() req: any,
+    @CurrentUser() user: UserContext,
   ) {
-    return this.teamsService.findAll(req.organizationId, filters);
+    return this.teamsService.findAll(user.organizationId, filters);
   }
 
   /**
@@ -60,8 +59,8 @@ export class RecoveryTeamsController {
   @Get('stats')
   @ApiOperation({ summary: 'Get team statistics' })
   @ApiResponse({ status: 200, description: 'Team statistics' })
-  async getStats(@Req() req: any) {
-    return this.teamsService.getStats(req.organizationId);
+  async getStats(@CurrentUser() user: UserContext) {
+    return this.teamsService.getStats(user.organizationId);
   }
 
   /**
@@ -74,9 +73,9 @@ export class RecoveryTeamsController {
   @ApiResponse({ status: 404, description: 'Team not found' })
   async getTeam(
     @Param('id') id: string,
-    @Req() req: any,
+    @CurrentUser() user: UserContext,
   ) {
-    return this.teamsService.findOne(id, req.organizationId);
+    return this.teamsService.findOne(id, user.organizationId);
   }
 
   /**
@@ -87,14 +86,14 @@ export class RecoveryTeamsController {
   @ApiResponse({ status: 201, description: 'Created team' })
   async createTeam(
     @Body() dto: CreateRecoveryTeamDto,
-    @Req() req: any,
+    @CurrentUser() user: UserContext,
   ) {
     return this.teamsService.create(
-      req.organizationId,
-      req.userId,
+      user.organizationId,
+      user.userId,
       dto,
-      req.userEmail,
-      req.userName,
+      user.email,
+      user.name,
     );
   }
 
@@ -108,15 +107,15 @@ export class RecoveryTeamsController {
   async updateTeam(
     @Param('id') id: string,
     @Body() dto: UpdateRecoveryTeamDto,
-    @Req() req: any,
+    @CurrentUser() user: UserContext,
   ) {
     return this.teamsService.update(
       id,
-      req.organizationId,
-      req.userId,
+      user.organizationId,
+      user.userId,
       dto,
-      req.userEmail,
-      req.userName,
+      user.email,
+      user.name,
     );
   }
 
@@ -129,14 +128,14 @@ export class RecoveryTeamsController {
   @ApiResponse({ status: 200, description: 'Team deleted' })
   async deleteTeam(
     @Param('id') id: string,
-    @Req() req: any,
+    @CurrentUser() user: UserContext,
   ) {
     return this.teamsService.delete(
       id,
-      req.organizationId,
-      req.userId,
-      req.userEmail,
-      req.userName,
+      user.organizationId,
+      user.userId,
+      user.email,
+      user.name,
     );
   }
 
@@ -150,15 +149,15 @@ export class RecoveryTeamsController {
   async addMember(
     @Param('id') id: string,
     @Body() dto: AddTeamMemberDto,
-    @Req() req: any,
+    @CurrentUser() user: UserContext,
   ) {
     return this.teamsService.addMember(
       id,
-      req.organizationId,
-      req.userId,
+      user.organizationId,
+      user.userId,
       dto,
-      req.userEmail,
-      req.userName,
+      user.email,
+      user.name,
     );
   }
 
@@ -174,12 +173,12 @@ export class RecoveryTeamsController {
     @Param('id') id: string,
     @Param('memberId') memberId: string,
     @Body() dto: Partial<AddTeamMemberDto>,
-    @Req() req: any,
+    @CurrentUser() user: UserContext,
   ) {
     return this.teamsService.updateMember(
       id,
       memberId,
-      req.organizationId,
+      user.organizationId,
       dto,
     );
   }
@@ -195,15 +194,15 @@ export class RecoveryTeamsController {
   async removeMember(
     @Param('id') id: string,
     @Param('memberId') memberId: string,
-    @Req() req: any,
+    @CurrentUser() user: UserContext,
   ) {
     return this.teamsService.removeMember(
       id,
       memberId,
-      req.organizationId,
-      req.userId,
-      req.userEmail,
-      req.userName,
+      user.organizationId,
+      user.userId,
+      user.email,
+      user.name,
     );
   }
 
@@ -218,15 +217,15 @@ export class RecoveryTeamsController {
   async linkToPlan(
     @Param('id') id: string,
     @Body() dto: LinkTeamToPlanDto,
-    @Req() req: any,
+    @CurrentUser() user: UserContext,
   ) {
     return this.teamsService.linkToPlan(
       id,
-      req.organizationId,
-      req.userId,
+      user.organizationId,
+      user.userId,
       dto,
-      req.userEmail,
-      req.userName,
+      user.email,
+      user.name,
     );
   }
 
@@ -241,15 +240,15 @@ export class RecoveryTeamsController {
   async unlinkFromPlan(
     @Param('id') id: string,
     @Param('planId') planId: string,
-    @Req() req: any,
+    @CurrentUser() user: UserContext,
   ) {
     return this.teamsService.unlinkFromPlan(
       id,
       planId,
-      req.organizationId,
-      req.userId,
-      req.userEmail,
-      req.userName,
+      user.organizationId,
+      user.userId,
+      user.email,
+      user.name,
     );
   }
 
@@ -262,8 +261,8 @@ export class RecoveryTeamsController {
   @ApiResponse({ status: 200, description: 'Teams linked to plan' })
   async getTeamsForPlan(
     @Param('planId') planId: string,
-    @Req() req: any,
+    @CurrentUser() user: UserContext,
   ) {
-    return this.teamsService.getTeamsForPlan(planId, req.organizationId);
+    return this.teamsService.getTeamsForPlan(planId, user.organizationId);
   }
 }

@@ -7,6 +7,7 @@ import {
   CheckCircleIcon,
   ClockIcon,
   XCircleIcon,
+  XMarkIcon,
   PaperAirplaneIcon,
 } from '@heroicons/react/24/outline';
 import { Button } from '@/components/Button';
@@ -45,6 +46,12 @@ export default function AuditWorkpapers() {
   const queryClient = useQueryClient();
   const toast = useToast();
   const [_selectedWorkpaper, _setSelectedWorkpaper] = useState<Workpaper | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    title: '',
+    workpaperType: 'procedure',
+    content: '',
+  });
 
   const { data: workpapers = [], isLoading } = useQuery<Workpaper[]>({
     queryKey: ['workpapers', auditId],
@@ -101,6 +108,33 @@ export default function AuditWorkpapers() {
     },
   });
 
+  const createMutation = useMutation({
+    mutationFn: async (data: typeof createForm) => {
+      const res = await fetch('/api/audit/workpapers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...data, auditId: auditId || undefined }),
+      });
+      if (!res.ok) throw new Error('Failed to create workpaper');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workpapers'] });
+      toast.success('Workpaper created');
+      setShowCreateModal(false);
+      setCreateForm({ title: '', workpaperType: 'procedure', content: '' });
+    },
+    onError: () => {
+      toast.error('Failed to create workpaper');
+    },
+  });
+
+  const handleCreateSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!createForm.title.trim()) return;
+    createMutation.mutate(createForm);
+  };
+
   const handleReview = (id: string, approved: boolean) => {
     const notes = prompt(approved ? 'Review notes (optional):' : 'Rejection reason:');
     if (notes !== null) {
@@ -125,7 +159,7 @@ export default function AuditWorkpapers() {
             Formal documentation with version control and review workflow
           </p>
         </div>
-        <Button>
+        <Button onClick={() => setShowCreateModal(true)}>
           <PlusIcon className="h-4 w-4 mr-2" />
           New Workpaper
         </Button>
@@ -254,6 +288,83 @@ export default function AuditWorkpapers() {
               </p>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Create Workpaper Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-surface-800 rounded-lg p-6 w-full max-w-lg border border-surface-700">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-white">Create Workpaper</h2>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="p-1 hover:bg-surface-700 rounded"
+              >
+                <XMarkIcon className="h-5 w-5 text-surface-400" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-surface-300 mb-1">
+                  Title *
+                </label>
+                <input
+                  type="text"
+                  value={createForm.title}
+                  onChange={(e) => setCreateForm(prev => ({ ...prev, title: e.target.value }))}
+                  className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+                  placeholder="Workpaper title"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-surface-300 mb-1">
+                  Type
+                </label>
+                <select
+                  value={createForm.workpaperType}
+                  onChange={(e) => setCreateForm(prev => ({ ...prev, workpaperType: e.target.value }))}
+                  className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+                >
+                  <option value="procedure">Procedure</option>
+                  <option value="walkthrough">Walkthrough</option>
+                  <option value="testing">Testing</option>
+                  <option value="analysis">Analysis</option>
+                  <option value="summary">Summary</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-surface-300 mb-1">
+                  Content
+                </label>
+                <textarea
+                  value={createForm.content}
+                  onChange={(e) => setCreateForm(prev => ({ ...prev, content: e.target.value }))}
+                  className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white h-32"
+                  placeholder="Workpaper content..."
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setShowCreateModal(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={createMutation.isPending || !createForm.title.trim()}
+                >
+                  {createMutation.isPending ? 'Creating...' : 'Create Workpaper'}
+                </Button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

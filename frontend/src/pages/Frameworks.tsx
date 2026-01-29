@@ -262,8 +262,9 @@ function FrameworkCard({
       {/* Delete Button */}
       <button
         onClick={handleDelete}
-        className="absolute top-4 right-4 p-2 bg-red-600/0 text-surface-500 rounded-lg hover:bg-red-600/20 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+        className="absolute top-4 right-4 z-10 p-2 bg-red-600/10 text-surface-500 rounded-lg hover:bg-red-600/20 hover:text-red-400 transition-colors"
         title="Delete framework"
+        aria-label="Delete framework"
       >
         <TrashIcon className="w-4 h-4" />
       </button>

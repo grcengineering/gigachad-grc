@@ -67,8 +67,14 @@ export class BCDRPlansService {
       `),
     ]);
 
+    // Convert BigInt fields to numbers for JSON serialization
+    const serializedPlans = plans.map(plan => ({
+      ...plan,
+      control_count: plan.control_count ? Number(plan.control_count) : 0,
+    }));
+
     return {
-      data: plans,
+      data: serializedPlans,
       total: Number(total[0]?.count || 0),
       page,
       limit,
@@ -82,8 +88,8 @@ export class BCDRPlansService {
              u.display_name as owner_name,
              a.display_name as approver_name
       FROM bcdr.bcdr_plans bp
-      LEFT JOIN shared.users u ON bp.owner_id = u.id
-      LEFT JOIN shared.users a ON bp.approver_id = a.id
+      LEFT JOIN public.users u ON bp.owner_id::text = u.id
+      LEFT JOIN public.users a ON bp.approver_id::text = a.id
       WHERE bp.id = ${id}::uuid
         AND bp.organization_id = ${organizationId}::uuid
         AND bp.deleted_at IS NULL
@@ -97,16 +103,16 @@ export class BCDRPlansService {
     const versions = await this.prisma.$queryRaw<any[]>`
       SELECT pv.*, u.display_name as created_by_name
       FROM bcdr.plan_versions pv
-      LEFT JOIN shared.users u ON pv.created_by = u.id
+      LEFT JOIN public.users u ON pv.created_by::text = u.id
       WHERE pv.plan_id = ${id}::uuid
       ORDER BY pv.created_at DESC
     `;
 
     // Get linked controls
     const controls = await this.prisma.$queryRaw<any[]>`
-      SELECT pc.*, c.control_id, c.title, c.category
+      SELECT pc.*, c.control_id as ctrl_id, c.title, c.category
       FROM bcdr.plan_controls pc
-      JOIN controls.controls c ON pc.control_id = c.id
+      JOIN public.controls c ON pc.control_id::text = c.id
       WHERE pc.plan_id = ${id}::uuid
     `;
 
@@ -136,7 +142,7 @@ export class BCDRPlansService {
     // Check for duplicate planId
     const existing = await this.prisma.$queryRaw<any[]>`
       SELECT id FROM bcdr.bcdr_plans 
-      WHERE organization_id = ${organizationId} 
+      WHERE organization_id = ${organizationId}::uuid 
         AND plan_id = ${dto.planId}
         AND deleted_at IS NULL
     `;
@@ -158,7 +164,7 @@ export class BCDRPlansService {
         review_frequency_months, next_review_due, tags,
         created_by, updated_by
       ) VALUES (
-        ${organizationId}, ${dto.workspaceId || null}::uuid, 
+        ${organizationId}::uuid, ${dto.workspaceId || null}::uuid, 
         ${dto.planId}, ${dto.title}, ${dto.description || null}, 
         ${dto.planType}::bcdr.plan_type, 'draft'::bcdr.plan_status,
         ${dto.version || '1.0'}, ${dto.ownerId || null}::uuid,
@@ -276,6 +282,26 @@ export class BCDRPlansService {
     if (dto.activationCriteria !== undefined) {
       updates.push(`activation_criteria = $${paramIndex}`);
       values.push(dto.activationCriteria);
+      paramIndex++;
+    }
+    if (dto.deactivationCriteria !== undefined) {
+      updates.push(`deactivation_criteria = $${paramIndex}`);
+      values.push(dto.deactivationCriteria);
+      paramIndex++;
+    }
+    if (dto.objectives !== undefined) {
+      updates.push(`objectives = $${paramIndex}`);
+      values.push(dto.objectives);
+      paramIndex++;
+    }
+    if (dto.assumptions !== undefined) {
+      updates.push(`assumptions = $${paramIndex}`);
+      values.push(dto.assumptions);
+      paramIndex++;
+    }
+    if (dto.planType !== undefined) {
+      updates.push(`plan_type = $${paramIndex}::bcdr.plan_type`);
+      values.push(dto.planType);
       paramIndex++;
     }
     if (dto.activationAuthority !== undefined) {

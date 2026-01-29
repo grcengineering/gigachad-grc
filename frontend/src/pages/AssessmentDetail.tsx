@@ -14,17 +14,21 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [formData, setFormData] = useState<Partial<VendorAssessment>>({
     vendorId: assessment?.vendorId || '',
-    assessmentType: assessment?.assessmentType || 'security_review',
+    assessmentType: assessment?.assessmentType || 'initial_onboarding',
     status: assessment?.status || 'pending',
     dueDate: assessment?.dueDate ? new Date(assessment.dueDate).toISOString().split('T')[0] : '',
     completedAt: assessment?.completedAt ? new Date(assessment.completedAt).toISOString().split('T')[0] : '',
+    inherentRiskScore: assessment?.inherentRiskScore || '',
+    residualRiskScore: assessment?.residualRiskScore || '',
     overallScore: assessment?.overallScore,
-    securityScore: assessment?.securityScore,
-    privacyScore: assessment?.privacyScore,
-    complianceScore: assessment?.complianceScore,
-    findings: assessment?.findings || '',
+    securityRisk: assessment?.securityRisk || '',
+    complianceRisk: assessment?.complianceRisk || '',
+    operationalRisk: assessment?.operationalRisk || '',
+    financialRisk: assessment?.financialRisk || '',
+    outcome: assessment?.outcome || '',
+    outcomeNotes: assessment?.outcomeNotes || '',
+    findings: typeof assessment?.findings === 'string' ? assessment.findings : '',
     recommendations: assessment?.recommendations || '',
-    assessor: assessment?.assessor || '',
   });
 
   useEffect(() => {
@@ -80,12 +84,11 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
                 className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
                 required
               >
-                <option value="security_review">Security Review</option>
-                <option value="privacy_assessment">Privacy Assessment</option>
-                <option value="compliance_audit">Compliance Audit</option>
-                <option value="vendor_questionnaire">Vendor Questionnaire</option>
-                <option value="on_site_audit">On-site Audit</option>
-                <option value="penetration_test">Penetration Test</option>
+                <option value="initial_onboarding">Initial Onboarding</option>
+                <option value="annual_review">Annual Review</option>
+                <option value="continuous_monitoring">Continuous Monitoring</option>
+                <option value="incident_triggered">Incident Triggered</option>
+                <option value="contract_renewal">Contract Renewal</option>
               </select>
             </div>
             <div>
@@ -106,14 +109,20 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
             </div>
             <div>
               <label className="block text-sm font-medium text-surface-400 mb-1">
-                Assessor
+                Inherent Risk
               </label>
-              <input
-                type="text"
-                value={formData.assessor || ''}
-                onChange={(e) => setFormData({ ...formData, assessor: e.target.value })}
+              <select
+                value={formData.inherentRiskScore || ''}
+                onChange={(e) => setFormData({ ...formData, inherentRiskScore: e.target.value })}
                 className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
-              />
+              >
+                <option value="">Select risk level...</option>
+                <option value="very_low">Very Low</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="critical">Critical</option>
+              </select>
             </div>
           </div>
         </div>
@@ -147,9 +156,9 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
           </div>
         </div>
 
-        {/* Scores */}
+        {/* Risk Assessment */}
         <div>
-          <h3 className="text-lg font-medium text-surface-100 mb-4">Assessment Scores</h3>
+          <h3 className="text-lg font-medium text-surface-100 mb-4">Risk Assessment</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-surface-400 mb-1">
@@ -166,41 +175,122 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
             </div>
             <div>
               <label className="block text-sm font-medium text-surface-400 mb-1">
-                Security Score (0-100)
+                Residual Risk
               </label>
-              <input
-                type="number"
-                min="0"
-                max="100"
-                value={formData.securityScore || ''}
-                onChange={(e) => setFormData({ ...formData, securityScore: parseInt(e.target.value) || undefined })}
+              <select
+                value={formData.residualRiskScore || ''}
+                onChange={(e) => setFormData({ ...formData, residualRiskScore: e.target.value })}
                 className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
-              />
+              >
+                <option value="">Select risk level...</option>
+                <option value="very_low">Very Low</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="critical">Critical</option>
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-surface-400 mb-1">
-                Privacy Score (0-100)
+                Security Risk
               </label>
-              <input
-                type="number"
-                min="0"
-                max="100"
-                value={formData.privacyScore || ''}
-                onChange={(e) => setFormData({ ...formData, privacyScore: parseInt(e.target.value) || undefined })}
+              <select
+                value={formData.securityRisk || ''}
+                onChange={(e) => setFormData({ ...formData, securityRisk: e.target.value })}
                 className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
-              />
+              >
+                <option value="">Select risk level...</option>
+                <option value="very_low">Very Low</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="critical">Critical</option>
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-surface-400 mb-1">
-                Compliance Score (0-100)
+                Compliance Risk
+              </label>
+              <select
+                value={formData.complianceRisk || ''}
+                onChange={(e) => setFormData({ ...formData, complianceRisk: e.target.value })}
+                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+              >
+                <option value="">Select risk level...</option>
+                <option value="very_low">Very Low</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="critical">Critical</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-surface-400 mb-1">
+                Operational Risk
+              </label>
+              <select
+                value={formData.operationalRisk || ''}
+                onChange={(e) => setFormData({ ...formData, operationalRisk: e.target.value })}
+                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+              >
+                <option value="">Select risk level...</option>
+                <option value="very_low">Very Low</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="critical">Critical</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-surface-400 mb-1">
+                Financial Risk
+              </label>
+              <select
+                value={formData.financialRisk || ''}
+                onChange={(e) => setFormData({ ...formData, financialRisk: e.target.value })}
+                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+              >
+                <option value="">Select risk level...</option>
+                <option value="very_low">Very Low</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="critical">Critical</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Outcome */}
+        <div>
+          <h3 className="text-lg font-medium text-surface-100 mb-4">Assessment Outcome</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-surface-400 mb-1">
+                Outcome
+              </label>
+              <select
+                value={formData.outcome || ''}
+                onChange={(e) => setFormData({ ...formData, outcome: e.target.value })}
+                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+              >
+                <option value="">Select outcome...</option>
+                <option value="approved">Approved</option>
+                <option value="approved_with_conditions">Approved with Conditions</option>
+                <option value="rejected">Rejected</option>
+                <option value="requires_remediation">Requires Remediation</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-surface-400 mb-1">
+                Outcome Notes
               </label>
               <input
-                type="number"
-                min="0"
-                max="100"
-                value={formData.complianceScore || ''}
-                onChange={(e) => setFormData({ ...formData, complianceScore: parseInt(e.target.value) || undefined })}
+                type="text"
+                value={formData.outcomeNotes || ''}
+                onChange={(e) => setFormData({ ...formData, outcomeNotes: e.target.value })}
                 className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+                placeholder="Additional notes about the outcome..."
               />
             </div>
           </div>
@@ -212,7 +302,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
             Findings
           </label>
           <textarea
-            value={formData.findings || ''}
+            value={typeof formData.findings === 'string' ? formData.findings : ''}
             onChange={(e) => setFormData({ ...formData, findings: e.target.value })}
             rows={4}
             className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
@@ -310,10 +400,10 @@ function AssessmentView({ assessment, onEdit, onDelete }: { assessment: VendorAs
                 </span>
               </dd>
             </div>
-            {assessment.assessor && (
+            {assessment.inherentRiskScore && (
               <div>
-                <dt className="text-sm font-medium text-surface-400 mb-1">Assessor</dt>
-                <dd className="text-sm text-surface-100">{assessment.assessor}</dd>
+                <dt className="text-sm font-medium text-surface-400 mb-1">Inherent Risk</dt>
+                <dd className="text-sm text-surface-100 capitalize">{assessment.inherentRiskScore.replace('_', ' ')}</dd>
               </div>
             )}
           </div>
@@ -342,10 +432,10 @@ function AssessmentView({ assessment, onEdit, onDelete }: { assessment: VendorAs
           </div>
         </div>
 
-        {/* Scores */}
-        {(assessment.overallScore || assessment.securityScore || assessment.privacyScore || assessment.complianceScore) && (
+        {/* Risk Assessment */}
+        {(assessment.overallScore || assessment.securityRisk || assessment.complianceRisk || assessment.operationalRisk || assessment.residualRiskScore) && (
           <div>
-            <h3 className="text-lg font-medium text-surface-100 mb-4">Assessment Scores</h3>
+            <h3 className="text-lg font-medium text-surface-100 mb-4">Risk Assessment</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {assessment.overallScore !== null && assessment.overallScore !== undefined && (
                 <div>
@@ -365,58 +455,102 @@ function AssessmentView({ assessment, onEdit, onDelete }: { assessment: VendorAs
                   </dd>
                 </div>
               )}
-              {assessment.securityScore !== null && assessment.securityScore !== undefined && (
+              {assessment.residualRiskScore && (
                 <div>
-                  <dt className="text-sm font-medium text-surface-400 mb-2">Security Score</dt>
-                  <dd className="flex items-center gap-3">
-                    <span className="text-2xl font-bold text-surface-100">{assessment.securityScore}</span>
-                    <div className="flex-1 h-3 bg-surface-700 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full ${
-                          assessment.securityScore >= 80 ? 'bg-green-500' :
-                          assessment.securityScore >= 60 ? 'bg-yellow-500' :
-                          'bg-red-500'
-                        }`}
-                        style={{ width: `${assessment.securityScore}%` }}
-                      />
-                    </div>
+                  <dt className="text-sm font-medium text-surface-400 mb-1">Residual Risk</dt>
+                  <dd className={`inline-flex px-2 py-1 text-xs font-medium rounded-full capitalize ${
+                    assessment.residualRiskScore === 'critical' ? 'bg-red-500/20 text-red-400' :
+                    assessment.residualRiskScore === 'high' ? 'bg-orange-500/20 text-orange-400' :
+                    assessment.residualRiskScore === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                    assessment.residualRiskScore === 'low' ? 'bg-blue-500/20 text-blue-400' :
+                    'bg-green-500/20 text-green-400'
+                  }`}>
+                    {assessment.residualRiskScore.replace('_', ' ')}
                   </dd>
                 </div>
               )}
-              {assessment.privacyScore !== null && assessment.privacyScore !== undefined && (
+              {assessment.securityRisk && (
                 <div>
-                  <dt className="text-sm font-medium text-surface-400 mb-2">Privacy Score</dt>
-                  <dd className="flex items-center gap-3">
-                    <span className="text-2xl font-bold text-surface-100">{assessment.privacyScore}</span>
-                    <div className="flex-1 h-3 bg-surface-700 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full ${
-                          assessment.privacyScore >= 80 ? 'bg-green-500' :
-                          assessment.privacyScore >= 60 ? 'bg-yellow-500' :
-                          'bg-red-500'
-                        }`}
-                        style={{ width: `${assessment.privacyScore}%` }}
-                      />
-                    </div>
+                  <dt className="text-sm font-medium text-surface-400 mb-1">Security Risk</dt>
+                  <dd className={`inline-flex px-2 py-1 text-xs font-medium rounded-full capitalize ${
+                    assessment.securityRisk === 'critical' ? 'bg-red-500/20 text-red-400' :
+                    assessment.securityRisk === 'high' ? 'bg-orange-500/20 text-orange-400' :
+                    assessment.securityRisk === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                    assessment.securityRisk === 'low' ? 'bg-blue-500/20 text-blue-400' :
+                    'bg-green-500/20 text-green-400'
+                  }`}>
+                    {assessment.securityRisk.replace('_', ' ')}
                   </dd>
                 </div>
               )}
-              {assessment.complianceScore !== null && assessment.complianceScore !== undefined && (
+              {assessment.complianceRisk && (
                 <div>
-                  <dt className="text-sm font-medium text-surface-400 mb-2">Compliance Score</dt>
-                  <dd className="flex items-center gap-3">
-                    <span className="text-2xl font-bold text-surface-100">{assessment.complianceScore}</span>
-                    <div className="flex-1 h-3 bg-surface-700 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full ${
-                          assessment.complianceScore >= 80 ? 'bg-green-500' :
-                          assessment.complianceScore >= 60 ? 'bg-yellow-500' :
-                          'bg-red-500'
-                        }`}
-                        style={{ width: `${assessment.complianceScore}%` }}
-                      />
-                    </div>
+                  <dt className="text-sm font-medium text-surface-400 mb-1">Compliance Risk</dt>
+                  <dd className={`inline-flex px-2 py-1 text-xs font-medium rounded-full capitalize ${
+                    assessment.complianceRisk === 'critical' ? 'bg-red-500/20 text-red-400' :
+                    assessment.complianceRisk === 'high' ? 'bg-orange-500/20 text-orange-400' :
+                    assessment.complianceRisk === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                    assessment.complianceRisk === 'low' ? 'bg-blue-500/20 text-blue-400' :
+                    'bg-green-500/20 text-green-400'
+                  }`}>
+                    {assessment.complianceRisk.replace('_', ' ')}
                   </dd>
+                </div>
+              )}
+              {assessment.operationalRisk && (
+                <div>
+                  <dt className="text-sm font-medium text-surface-400 mb-1">Operational Risk</dt>
+                  <dd className={`inline-flex px-2 py-1 text-xs font-medium rounded-full capitalize ${
+                    assessment.operationalRisk === 'critical' ? 'bg-red-500/20 text-red-400' :
+                    assessment.operationalRisk === 'high' ? 'bg-orange-500/20 text-orange-400' :
+                    assessment.operationalRisk === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                    assessment.operationalRisk === 'low' ? 'bg-blue-500/20 text-blue-400' :
+                    'bg-green-500/20 text-green-400'
+                  }`}>
+                    {assessment.operationalRisk.replace('_', ' ')}
+                  </dd>
+                </div>
+              )}
+              {assessment.financialRisk && (
+                <div>
+                  <dt className="text-sm font-medium text-surface-400 mb-1">Financial Risk</dt>
+                  <dd className={`inline-flex px-2 py-1 text-xs font-medium rounded-full capitalize ${
+                    assessment.financialRisk === 'critical' ? 'bg-red-500/20 text-red-400' :
+                    assessment.financialRisk === 'high' ? 'bg-orange-500/20 text-orange-400' :
+                    assessment.financialRisk === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                    assessment.financialRisk === 'low' ? 'bg-blue-500/20 text-blue-400' :
+                    'bg-green-500/20 text-green-400'
+                  }`}>
+                    {assessment.financialRisk.replace('_', ' ')}
+                  </dd>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Outcome */}
+        {(assessment.outcome || assessment.outcomeNotes) && (
+          <div>
+            <h3 className="text-lg font-medium text-surface-100 mb-4">Outcome</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {assessment.outcome && (
+                <div>
+                  <dt className="text-sm font-medium text-surface-400 mb-1">Decision</dt>
+                  <dd className={`inline-flex px-2 py-1 text-xs font-medium rounded-full capitalize ${
+                    assessment.outcome === 'approved' ? 'bg-green-500/20 text-green-400' :
+                    assessment.outcome === 'approved_with_conditions' ? 'bg-yellow-500/20 text-yellow-400' :
+                    assessment.outcome === 'rejected' ? 'bg-red-500/20 text-red-400' :
+                    'bg-orange-500/20 text-orange-400'
+                  }`}>
+                    {assessment.outcome.replace(/_/g, ' ')}
+                  </dd>
+                </div>
+              )}
+              {assessment.outcomeNotes && (
+                <div>
+                  <dt className="text-sm font-medium text-surface-400 mb-1">Notes</dt>
+                  <dd className="text-sm text-surface-100">{assessment.outcomeNotes}</dd>
                 </div>
               )}
             </div>
@@ -427,7 +561,11 @@ function AssessmentView({ assessment, onEdit, onDelete }: { assessment: VendorAs
         {assessment.findings && (
           <div>
             <h3 className="text-lg font-medium text-surface-100 mb-4">Findings</h3>
-            <div className="text-sm text-surface-300 whitespace-pre-wrap">{assessment.findings}</div>
+            <div className="text-sm text-surface-300 whitespace-pre-wrap">
+              {typeof assessment.findings === 'string' 
+                ? assessment.findings 
+                : JSON.stringify(assessment.findings, null, 2)}
+            </div>
           </div>
         )}
 
@@ -472,22 +610,44 @@ export default function AssessmentDetail() {
 
   const handleSave = async (formData: Partial<VendorAssessment>) => {
     try {
-      const organizationId = localStorage.getItem('organizationId');
-      const dataToSave = {
-        ...formData,
+      // Get organizationId from localStorage with fallback to default org
+      const organizationId = localStorage.getItem('organizationId') || '8924f0c1-7bb1-4be8-84ee-ad8725c712bf';
+      
+      // Clean up form data - remove empty strings and undefined values for optional fields
+      const cleanedData: Record<string, unknown> = {
         organizationId,
+        vendorId: formData.vendorId,
+        assessmentType: formData.assessmentType,
+        status: formData.status || 'pending',
       };
+      
+      // Add optional fields only if they have values
+      if (formData.dueDate) cleanedData.dueDate = formData.dueDate;
+      if (formData.completedAt) cleanedData.completedAt = formData.completedAt;
+      if (formData.inherentRiskScore) cleanedData.inherentRiskScore = formData.inherentRiskScore;
+      if (formData.residualRiskScore) cleanedData.residualRiskScore = formData.residualRiskScore;
+      if (formData.overallScore !== undefined && formData.overallScore !== null) cleanedData.overallScore = formData.overallScore;
+      if (formData.securityRisk) cleanedData.securityRisk = formData.securityRisk;
+      if (formData.complianceRisk) cleanedData.complianceRisk = formData.complianceRisk;
+      if (formData.operationalRisk) cleanedData.operationalRisk = formData.operationalRisk;
+      if (formData.financialRisk) cleanedData.financialRisk = formData.financialRisk;
+      if (formData.outcome) cleanedData.outcome = formData.outcome;
+      if (formData.outcomeNotes) cleanedData.outcomeNotes = formData.outcomeNotes;
+      if (formData.findings) cleanedData.findings = formData.findings;
+      if (formData.recommendations) cleanedData.recommendations = formData.recommendations;
 
       if (id === 'new') {
-        const response = await assessmentsApi.create(dataToSave);
+        const response = await assessmentsApi.create(cleanedData);
         navigate(`/assessments/${response.data.id}`);
       } else {
-        const response = await assessmentsApi.update(id!, dataToSave);
+        const response = await assessmentsApi.update(id!, cleanedData);
         setAssessment(response.data);
         setEditing(false);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error saving assessment:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      alert(`Failed to save assessment: ${errorMessage}`);
     }
   };
 

@@ -78,28 +78,49 @@ export default function AuditDetail() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState<Partial<Audit>>({});
+  const isNewAudit = id === 'new';
+  const [isEditing, setIsEditing] = useState(isNewAudit);
+  const [editForm, setEditForm] = useState<Partial<Audit>>(isNewAudit ? {
+    name: '',
+    auditType: 'internal',
+    status: 'planning',
+    description: '',
+    auditFirm: '',
+    framework: '',
+  } : {});
 
-  // Fetch audit details
+  // Fetch audit details (skip if creating new)
   const { data: audit, isLoading, error } = useQuery({
     queryKey: ['audit', id],
     queryFn: () => auditsApi.get(id!).then(res => res.data as unknown as Audit),
-    enabled: !!id,
+    enabled: !!id && !isNewAudit,
   });
 
-  // Fetch related findings
+  // Fetch related findings (skip if creating new)
   const { data: findings } = useQuery({
     queryKey: ['audit-findings', id],
     queryFn: () => auditFindingsApi.list({ auditId: id }).then(res => (res.data || []) as unknown as Finding[]),
-    enabled: !!id,
+    enabled: !!id && !isNewAudit,
   });
 
-  // Fetch related requests
+  // Fetch related requests (skip if creating new)
   const { data: requests } = useQuery({
     queryKey: ['audit-requests', id],
     queryFn: () => auditRequestsApi.list({ auditId: id }).then(res => (res.data || []) as unknown as AuditRequest[]),
-    enabled: !!id,
+    enabled: !!id && !isNewAudit,
+  });
+
+  // Create mutation
+  const createMutation = useMutation({
+    mutationFn: (data: Partial<Audit>) => auditsApi.create(data as any),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ['audits'] });
+      toast.success('Audit created successfully');
+      navigate(`/audits/${response.data.id}`);
+    },
+    onError: () => {
+      toast.error('Failed to create audit');
+    },
   });
 
   // Update mutation
@@ -142,10 +163,14 @@ export default function AuditDetail() {
   }, [audit]);
 
   const handleSave = () => {
-    updateMutation.mutate(editForm);
+    if (isNewAudit) {
+      createMutation.mutate(editForm);
+    } else {
+      updateMutation.mutate(editForm);
+    }
   };
 
-  if (isLoading) {
+  if (isLoading && !isNewAudit) {
     return (
       <div className="space-y-6">
         <SkeletonDetailHeader />
@@ -155,7 +180,7 @@ export default function AuditDetail() {
     );
   }
 
-  if (error || !audit) {
+  if ((error || !audit) && !isNewAudit) {
     return (
       <div className="text-center py-12">
         <ExclamationTriangleIcon className="w-12 h-12 mx-auto text-red-400 mb-4" />
@@ -166,7 +191,7 @@ export default function AuditDetail() {
     );
   }
 
-  const statusConfig = STATUS_CONFIG[audit.status] || STATUS_CONFIG.planning;
+  const statusConfig = STATUS_CONFIG[audit?.status || 'planning'] || STATUS_CONFIG.planning;
   const findingsArray = Array.isArray(findings) ? findings : [];
   const requestsArray = Array.isArray(requests) ? requests : [];
 
@@ -183,25 +208,34 @@ export default function AuditDetail() {
           </button>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-semibold text-white">{audit.name}</h1>
-              <span className="text-surface-500 font-mono">#{audit.auditId}</span>
-              {audit.isExternal && (
+              <h1 className="text-2xl font-semibold text-white">
+                {isNewAudit ? 'New Audit' : audit?.name}
+              </h1>
+              {!isNewAudit && audit?.auditId && (
+                <span className="text-surface-500 font-mono">#{audit.auditId}</span>
+              )}
+              {!isNewAudit && audit?.isExternal && (
                 <span className="px-2 py-1 bg-purple-600/20 text-purple-400 rounded text-xs font-medium">
                   External
                 </span>
               )}
             </div>
-            <p className="text-surface-400 mt-1">
-              {TYPE_LABELS[audit.auditType] || audit.auditType}
-              {audit.framework && <span> • {audit.framework}</span>}
-              {audit.auditFirm && <span> • {audit.auditFirm}</span>}
-            </p>
+            {!isNewAudit && audit && (
+              <p className="text-surface-400 mt-1">
+                {TYPE_LABELS[audit.auditType] || audit.auditType}
+                {audit.framework && <span> • {audit.framework}</span>}
+                {audit.auditFirm && <span> • {audit.auditFirm}</span>}
+              </p>
+            )}
+            {isNewAudit && (
+              <p className="text-surface-400 mt-1">Create a new audit</p>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2">
           {isEditing ? (
             <>
-              <Button variant="secondary" onClick={() => setIsEditing(false)}>
+              <Button variant="secondary" onClick={() => isNewAudit ? navigate('/audits') : setIsEditing(false)}>
                 Cancel
               </Button>
               <Button onClick={handleSave} isLoading={updateMutation.isPending}>
@@ -252,23 +286,23 @@ export default function AuditDetail() {
         <div className="bg-surface-800 rounded-lg border border-surface-700 p-4">
           <p className="text-surface-400 text-sm mb-1">Start Date</p>
           <p className="text-white font-medium">
-            {audit.plannedStartDate ? new Date(audit.plannedStartDate).toLocaleDateString() : '—'}
+            {audit?.plannedStartDate ? new Date(audit.plannedStartDate).toLocaleDateString() : '—'}
           </p>
         </div>
         <div className="bg-surface-800 rounded-lg border border-surface-700 p-4">
           <p className="text-surface-400 text-sm mb-1">End Date</p>
           <p className="text-white font-medium">
-            {audit.plannedEndDate ? new Date(audit.plannedEndDate).toLocaleDateString() : '—'}
+            {audit?.plannedEndDate ? new Date(audit.plannedEndDate).toLocaleDateString() : '—'}
           </p>
         </div>
         <div className="bg-surface-800 rounded-lg border border-surface-700 p-4">
           <p className="text-surface-400 text-sm mb-1">Findings</p>
-          <p className="text-white font-medium">{audit._count?.findings || findingsArray.length}</p>
+          <p className="text-white font-medium">{audit?._count?.findings || findingsArray.length}</p>
         </div>
       </div>
 
       {/* Description */}
-      {(audit.description || isEditing) && (
+      {(audit?.description || isEditing) && (
         <div className="bg-surface-800 rounded-lg border border-surface-700 p-6">
           <h2 className="text-lg font-semibold text-white mb-4">Description</h2>
           {isEditing ? (
@@ -280,7 +314,7 @@ export default function AuditDetail() {
               placeholder="Audit description..."
             />
           ) : (
-            <p className="text-surface-300">{audit.description || 'No description provided.'}</p>
+            <p className="text-surface-300">{audit?.description || 'No description provided.'}</p>
           )}
         </div>
       )}
@@ -359,41 +393,45 @@ export default function AuditDetail() {
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-surface-800 rounded-lg border border-surface-700 p-4 text-center">
-          <ClipboardDocumentListIcon className="w-8 h-8 mx-auto mb-2 text-blue-400" />
-          <p className="text-2xl font-bold text-white">{audit._count?.requests || requestsArray.length}</p>
-          <p className="text-surface-400 text-sm">Requests</p>
+      {/* Stats Grid - only show for existing audits */}
+      {!isNewAudit && audit && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-surface-800 rounded-lg border border-surface-700 p-4 text-center">
+            <ClipboardDocumentListIcon className="w-8 h-8 mx-auto mb-2 text-blue-400" />
+            <p className="text-2xl font-bold text-white">{audit._count?.requests || requestsArray.length}</p>
+            <p className="text-surface-400 text-sm">Requests</p>
+          </div>
+          <div className="bg-surface-800 rounded-lg border border-surface-700 p-4 text-center">
+            <DocumentTextIcon className="w-8 h-8 mx-auto mb-2 text-purple-400" />
+            <p className="text-2xl font-bold text-white">{audit._count?.evidence || 0}</p>
+            <p className="text-surface-400 text-sm">Evidence</p>
+          </div>
+          <div className="bg-surface-800 rounded-lg border border-surface-700 p-4 text-center">
+            <CheckCircleIcon className="w-8 h-8 mx-auto mb-2 text-green-400" />
+            <p className="text-2xl font-bold text-white">{audit._count?.testResults || 0}</p>
+            <p className="text-surface-400 text-sm">Tests</p>
+          </div>
+          <div className="bg-surface-800 rounded-lg border border-surface-700 p-4 text-center">
+            <ExclamationTriangleIcon className="w-8 h-8 mx-auto mb-2 text-orange-400" />
+            <p className="text-2xl font-bold text-white">{audit._count?.findings || findingsArray.length}</p>
+            <p className="text-surface-400 text-sm">Findings</p>
+          </div>
         </div>
-        <div className="bg-surface-800 rounded-lg border border-surface-700 p-4 text-center">
-          <DocumentTextIcon className="w-8 h-8 mx-auto mb-2 text-purple-400" />
-          <p className="text-2xl font-bold text-white">{audit._count?.evidence || 0}</p>
-          <p className="text-surface-400 text-sm">Evidence</p>
-        </div>
-        <div className="bg-surface-800 rounded-lg border border-surface-700 p-4 text-center">
-          <CheckCircleIcon className="w-8 h-8 mx-auto mb-2 text-green-400" />
-          <p className="text-2xl font-bold text-white">{audit._count?.testResults || 0}</p>
-          <p className="text-surface-400 text-sm">Tests</p>
-        </div>
-        <div className="bg-surface-800 rounded-lg border border-surface-700 p-4 text-center">
-          <ExclamationTriangleIcon className="w-8 h-8 mx-auto mb-2 text-orange-400" />
-          <p className="text-2xl font-bold text-white">{audit._count?.findings || findingsArray.length}</p>
-          <p className="text-surface-400 text-sm">Findings</p>
-        </div>
-      </div>
+      )}
 
-      {/* Delete Confirmation Modal */}
-      <ConfirmModal
-        isOpen={showDeleteConfirm}
-        onClose={() => setShowDeleteConfirm(false)}
-        onConfirm={() => deleteMutation.mutate()}
-        title="Delete Audit"
-        message={`Are you sure you want to delete "${audit.name}"? This action cannot be undone.`}
-        confirmText="Delete"
-        confirmVariant="danger"
-        isLoading={deleteMutation.isPending}
-      />
+      {/* Delete Confirmation Modal - only for existing audits */}
+      {!isNewAudit && audit && (
+        <ConfirmModal
+          isOpen={showDeleteConfirm}
+          onClose={() => setShowDeleteConfirm(false)}
+          onConfirm={() => deleteMutation.mutate()}
+          title="Delete Audit"
+          message={`Are you sure you want to delete "${audit.name}"? This action cannot be undone.`}
+          confirmText="Delete"
+          confirmVariant="danger"
+          isLoading={deleteMutation.isPending}
+        />
+      )}
     </div>
   );
 }

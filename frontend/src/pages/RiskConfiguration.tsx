@@ -711,20 +711,20 @@ function RiskCategories({
           <input
             type="text"
             placeholder="Category name"
-            value={newCategory.name}
+            value={newCategory.name ?? ''}
             onChange={e => setNewCategory(prev => ({ ...prev, name: e.target.value }))}
             className="flex-1 px-4 py-2 bg-gray-50 dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white"
           />
           <input
             type="text"
             placeholder="Description"
-            value={newCategory.description}
+            value={newCategory.description ?? ''}
             onChange={e => setNewCategory(prev => ({ ...prev, description: e.target.value }))}
             className="flex-1 px-4 py-2 bg-gray-50 dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white"
           />
           <input
             type="color"
-            value={newCategory.color}
+            value={newCategory.color ?? '#6366f1'}
             onChange={e => setNewCategory(prev => ({ ...prev, color: e.target.value }))}
             className="w-12 h-10 rounded cursor-pointer"
           />

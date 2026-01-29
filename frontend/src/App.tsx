@@ -41,6 +41,7 @@ const NotificationSettings = lazy(() => import('./pages/NotificationSettings'));
 const UserManagement = lazy(() => import('./pages/UserManagement'));
 const PermissionGroups = lazy(() => import('./pages/PermissionGroups'));
 const Vendors = lazy(() => import('./pages/Vendors'));
+const VendorNew = lazy(() => import('./pages/VendorNew'));
 const VendorDetail = lazy(() => import('./pages/VendorDetail'));
 const Assessments = lazy(() => import('./pages/Assessments'));
 const AssessmentDetail = lazy(() => import('./pages/AssessmentDetail'));
@@ -53,6 +54,7 @@ const KnowledgeBaseDetail = lazy(() => import('./pages/KnowledgeBaseDetail'));
 const TrustCenter = lazy(() => import('./pages/TrustCenter'));
 const TrustCenterSettings = lazy(() => import('./pages/TrustCenterSettings'));
 const Audits = lazy(() => import('./pages/Audits'));
+const AuditNew = lazy(() => import('./pages/AuditNew'));
 const AuditDetail = lazy(() => import('./pages/AuditDetail'));
 const AuditRequests = lazy(() => import('./pages/AuditRequests'));
 const AuditFindings = lazy(() => import('./pages/AuditFindings'));
@@ -86,7 +88,9 @@ const BCDRPlanDetail = lazy(() => import('./pages/BCDRPlanDetail'));
 const DRTests = lazy(() => import('./pages/DRTests'));
 const DRTestDetail = lazy(() => import('./pages/DRTestDetail'));
 const Runbooks = lazy(() => import('./pages/Runbooks'));
+const RunbookDetail = lazy(() => import('./pages/RunbookDetail'));
 const CommunicationPlans = lazy(() => import('./pages/CommunicationPlans'));
+const CommunicationPlanDetail = lazy(() => import('./pages/CommunicationPlanDetail'));
 const ExerciseTemplates = lazy(() => import('./pages/ExerciseTemplates'));
 const RecoveryTeams = lazy(() => import('./pages/RecoveryTeams'));
 const RecoveryTeamDetail = lazy(() => import('./pages/RecoveryTeamDetail'));
@@ -235,6 +239,7 @@ export default function App() {
           
           {/* TPRM Module */}
           <Route path="vendors" element={<ModuleRoute module="tprm"><Suspense fallback={<PageLoader />}><Vendors /></Suspense></ModuleRoute>} />
+          <Route path="vendors/new" element={<ModuleRoute module="tprm"><Suspense fallback={<PageLoader />}><VendorNew /></Suspense></ModuleRoute>} />
           <Route path="vendors/:id" element={<ModuleRoute module="tprm"><Suspense fallback={<PageLoader />}><VendorDetail /></Suspense></ModuleRoute>} />
           <Route path="assessments" element={<ModuleRoute module="tprm"><Suspense fallback={<PageLoader />}><Assessments /></Suspense></ModuleRoute>} />
           <Route path="assessments/:id" element={<ModuleRoute module="tprm"><Suspense fallback={<PageLoader />}><AssessmentDetail /></Suspense></ModuleRoute>} />
@@ -253,8 +258,10 @@ export default function App() {
           
           {/* Audit Module */}
           <Route path="audits" element={<ModuleRoute module="audit"><Suspense fallback={<PageLoader />}><Audits /></Suspense></ModuleRoute>} />
+          <Route path="audits/new" element={<ModuleRoute module="audit"><Suspense fallback={<PageLoader />}><AuditNew /></Suspense></ModuleRoute>} />
           <Route path="audits/:id" element={<ModuleRoute module="audit"><Suspense fallback={<PageLoader />}><AuditDetail /></Suspense></ModuleRoute>} />
           <Route path="audit-requests" element={<ModuleRoute module="audit"><Suspense fallback={<PageLoader />}><AuditRequests /></Suspense></ModuleRoute>} />
+          <Route path="audit-requests/:id" element={<ModuleRoute module="audit"><Suspense fallback={<PageLoader />}><AuditRequests /></Suspense></ModuleRoute>} />
           <Route path="audit-findings" element={<ModuleRoute module="audit"><Suspense fallback={<PageLoader />}><AuditFindings /></Suspense></ModuleRoute>} />
           <Route path="audit-templates" element={<ModuleRoute module="audit"><Suspense fallback={<PageLoader />}><AuditTemplates /></Suspense></ModuleRoute>} />
           <Route path="audit-workpapers" element={<ModuleRoute module="audit"><Suspense fallback={<PageLoader />}><AuditWorkpapers /></Suspense></ModuleRoute>} />
@@ -306,10 +313,11 @@ export default function App() {
           <Route path="bcdr/tests" element={<ModuleRoute module="bcdr"><Suspense fallback={<PageLoader />}><DRTests /></Suspense></ModuleRoute>} />
           <Route path="bcdr/tests/:id" element={<ModuleRoute module="bcdr"><Suspense fallback={<PageLoader />}><DRTestDetail /></Suspense></ModuleRoute>} />
           <Route path="bcdr/runbooks" element={<ModuleRoute module="bcdr"><Suspense fallback={<PageLoader />}><Runbooks /></Suspense></ModuleRoute>} />
-          <Route path="bcdr/runbooks/:id" element={<ModuleRoute module="bcdr"><Suspense fallback={<PageLoader />}><Runbooks /></Suspense></ModuleRoute>} />
+          <Route path="bcdr/runbooks/:id" element={<ModuleRoute module="bcdr"><Suspense fallback={<PageLoader />}><RunbookDetail /></Suspense></ModuleRoute>} />
           <Route path="bcdr/communication" element={<ModuleRoute module="bcdr"><Suspense fallback={<PageLoader />}><CommunicationPlans /></Suspense></ModuleRoute>} />
-          <Route path="bcdr/communication/:id" element={<ModuleRoute module="bcdr"><Suspense fallback={<PageLoader />}><CommunicationPlans /></Suspense></ModuleRoute>} />
+          <Route path="bcdr/communication/:id" element={<ModuleRoute module="bcdr"><Suspense fallback={<PageLoader />}><CommunicationPlanDetail /></Suspense></ModuleRoute>} />
           <Route path="bcdr/exercise-templates" element={<ModuleRoute module="bcdr"><Suspense fallback={<PageLoader />}><ExerciseTemplates /></Suspense></ModuleRoute>} />
+          <Route path="bcdr/exercise-templates/:id" element={<ModuleRoute module="bcdr"><Suspense fallback={<PageLoader />}><ExerciseTemplates /></Suspense></ModuleRoute>} />
           <Route path="bcdr/recovery-teams" element={<ModuleRoute module="bcdr"><Suspense fallback={<PageLoader />}><RecoveryTeams /></Suspense></ModuleRoute>} />
           <Route path="bcdr/recovery-teams/:id" element={<ModuleRoute module="bcdr"><Suspense fallback={<PageLoader />}><RecoveryTeamDetail /></Suspense></ModuleRoute>} />
           <Route path="bcdr/incidents" element={<ModuleRoute module="bcdr"><Suspense fallback={<PageLoader />}><BCDRIncidents /></Suspense></ModuleRoute>} />

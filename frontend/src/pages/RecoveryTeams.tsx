@@ -259,7 +259,7 @@ export default function RecoveryTeams() {
                 </label>
                 <input
                   type="text"
-                  value={newTeamName}
+                  value={newTeamName ?? ''}
                   onChange={(e) => setNewTeamName(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
                   placeholder="e.g., Crisis Management Team"
@@ -288,7 +288,7 @@ export default function RecoveryTeams() {
                   Description
                 </label>
                 <textarea
-                  value={newTeamDescription}
+                  value={newTeamDescription ?? ''}
                   onChange={(e) => setNewTeamDescription(e.target.value)}
                   rows={3}
                   className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"

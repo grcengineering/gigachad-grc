@@ -100,7 +100,8 @@ export default function DRTestDetail() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const [showEditModal, setShowEditModal] = useState(false);
+  const isNewTest = id === 'new';
+  const [showEditModal, setShowEditModal] = useState(isNewTest);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'findings' | 'participants'>('overview');
@@ -112,6 +113,7 @@ export default function DRTestDetail() {
     status: 'planned',
     objectives: '',
     scope: '',
+    scheduled_date: new Date().toISOString().split('T')[0],
   });
 
   const [completeForm, setCompleteForm] = useState({
@@ -126,7 +128,24 @@ export default function DRTestDetail() {
       const res = await api.get(`/api/bcdr/tests/${id}`);
       return res.data;
     },
-    enabled: !!id,
+    enabled: !!id && !isNewTest,
+  });
+
+  // Create mutation for new tests
+  const createMutation = useMutation({
+    mutationFn: async (data: typeof editForm) => {
+      const res = await api.post('/api/bcdr/tests', data);
+      return res.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['dr-tests'] });
+      toast.success('DR test created successfully');
+      navigate(`/bcdr/tests/${data.id}`);
+    },
+    onError: (err: Error) => {
+      console.error('Failed to create DR test:', err);
+      toast.error('Failed to create DR test');
+    },
   });
 
   useEffect(() => {
@@ -138,6 +157,7 @@ export default function DRTestDetail() {
         status: test.status || 'planned',
         objectives: test.objectives || '',
         scope: test.scope || '',
+        scheduled_date: test.scheduled_date || '',
       });
     }
   }, [test]);
@@ -204,7 +224,7 @@ export default function DRTestDetail() {
     return TEST_TYPES.find(t => t.value === type)?.label || type;
   };
 
-  if (isLoading) {
+  if (isLoading && !isNewTest) {
     return (
       <div className="p-6 space-y-6">
         <SkeletonDetailHeader />
@@ -216,7 +236,7 @@ export default function DRTestDetail() {
     );
   }
 
-  if (error || !test) {
+  if (!isNewTest && (error || !test)) {
     return (
       <div className="p-6">
         <div className="card p-8 text-center">
@@ -228,6 +248,124 @@ export default function DRTestDetail() {
       </div>
     );
   }
+
+  // For new tests, show the create form
+  if (isNewTest) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="flex items-start gap-4">
+          <button
+            onClick={() => navigate('/bcdr/tests')}
+            className="p-2 hover:bg-surface-700 rounded-lg text-surface-400 mt-1"
+          >
+            <ArrowLeftIcon className="w-5 h-5" />
+          </button>
+          <div>
+            <h1 className="text-2xl font-bold text-surface-100">Schedule New DR Test</h1>
+            <p className="text-surface-400 mt-1">Create a new disaster recovery test</p>
+          </div>
+        </div>
+
+        <div className="card p-6">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              createMutation.mutate(editForm);
+            }}
+            className="space-y-4"
+          >
+            <div>
+              <label className="block text-sm font-medium text-surface-300 mb-2">Test Name *</label>
+              <input
+                type="text"
+                value={editForm.name}
+                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-surface-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="e.g., Q1 2026 Disaster Recovery Test"
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-surface-300 mb-2">Test Type</label>
+                <select
+                  value={editForm.test_type}
+                  onChange={(e) => setEditForm({ ...editForm, test_type: e.target.value })}
+                  className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-surface-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                >
+                  {TEST_TYPES.map((type) => (
+                    <option key={type.value} value={type.value}>{type.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-surface-300 mb-2">Scheduled Date</label>
+                <input
+                  type="date"
+                  value={editForm.scheduled_date}
+                  onChange={(e) => setEditForm({ ...editForm, scheduled_date: e.target.value })}
+                  className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-surface-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-surface-300 mb-2">Description</label>
+              <textarea
+                value={editForm.description}
+                onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                rows={3}
+                className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-surface-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="Describe the test purpose and scope..."
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-surface-300 mb-2">Objectives</label>
+              <textarea
+                value={editForm.objectives}
+                onChange={(e) => setEditForm({ ...editForm, objectives: e.target.value })}
+                rows={2}
+                className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-surface-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="What are the key objectives of this test?"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-surface-300 mb-2">Scope</label>
+              <textarea
+                value={editForm.scope}
+                onChange={(e) => setEditForm({ ...editForm, scope: e.target.value })}
+                rows={2}
+                className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-surface-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="Define the scope and systems involved..."
+              />
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => navigate('/bcdr/tests')}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={createMutation.isPending || !editForm.name}
+              >
+                {createMutation.isPending ? 'Creating...' : 'Schedule Test'}
+              </Button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  // TypeScript guard - test is guaranteed to exist at this point
+  if (!test) return null;
 
   const statusConfig = getStatusConfig(test.status);
   const resultConfig = test.result ? getResultConfig(test.result) : null;

@@ -280,10 +280,29 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// Default context value for when provider is not available
+const defaultWorkspaceContext: WorkspaceContextType = {
+  isMultiWorkspaceEnabled: false,
+  isLoading: true,
+  workspaces: [],
+  currentWorkspace: null,
+  setCurrentWorkspace: () => {},
+  refreshWorkspaces: async () => {},
+  createWorkspace: async () => { throw new Error('WorkspaceProvider not available'); },
+  updateWorkspace: async () => { throw new Error('WorkspaceProvider not available'); },
+  deleteWorkspace: async () => {},
+  enableMultiWorkspace: async () => {},
+  disableMultiWorkspace: async () => {},
+  getWorkspaceFilterParam: () => undefined,
+  canManageWorkspaces: false,
+};
+
 export function useWorkspace() {
   const context = useContext(WorkspaceContext);
+  // Return default context instead of throwing - safer for lazy-loaded components
   if (context === undefined) {
-    throw new Error('useWorkspace must be used within a WorkspaceProvider');
+    console.warn('useWorkspace called outside of WorkspaceProvider - using defaults');
+    return defaultWorkspaceContext;
   }
   return context;
 }

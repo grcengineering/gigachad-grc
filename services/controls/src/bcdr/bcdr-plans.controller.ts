@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Put,
+  Patch,
   Delete,
   Body,
   Param,
@@ -83,10 +84,29 @@ export class BCDRPlansController {
   }
 
   @Put(':id')
-  @ApiOperation({ summary: 'Update a BC/DR plan' })
+  @ApiOperation({ summary: 'Update a BC/DR plan (PUT)' })
   @ApiParam({ name: 'id', description: 'Plan ID' })
   @RequirePermission(Resource.BCDR, Action.UPDATE)
   async update(
+    @Param('id') id: string,
+    @CurrentUser() user: UserContext,
+    @Body() dto: UpdateBCDRPlanDto,
+  ) {
+    return this.plansService.update(
+      id,
+      user.organizationId,
+      user.userId,
+      dto,
+      user.email,
+      user.name,
+    );
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update a BC/DR plan (PATCH)' })
+  @ApiParam({ name: 'id', description: 'Plan ID' })
+  @RequirePermission(Resource.BCDR, Action.UPDATE)
+  async partialUpdate(
     @Param('id') id: string,
     @CurrentUser() user: UserContext,
     @Body() dto: UpdateBCDRPlanDto,

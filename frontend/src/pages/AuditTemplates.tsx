@@ -7,6 +7,7 @@ import {
   TrashIcon,
   ClipboardDocumentListIcon,
   CheckCircleIcon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline';
 import { Button } from '@/components/Button';
 import { useToast } from '@/hooks/useToast';
@@ -36,7 +37,13 @@ export default function AuditTemplates() {
   const queryClient = useQueryClient();
   const toast = useToast();
   const [selectedType, setSelectedType] = useState('');
-  const [_showCreateModal, setShowCreateModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    name: '',
+    description: '',
+    auditType: 'internal',
+    framework: '',
+  });
 
   const { data: templates = [], isLoading } = useQuery({
     queryKey: ['audit-templates', selectedType],
@@ -77,11 +84,45 @@ export default function AuditTemplates() {
     },
   });
 
+  const createMutation = useMutation({
+    mutationFn: async (data: typeof createForm) => {
+      const res = await fetch('/api/audit/templates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...data,
+          checklistItems: [],
+          requestTemplates: [],
+        }),
+      });
+      if (!res.ok) throw new Error('Failed to create template');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['audit-templates'] });
+      toast.success('Template created successfully');
+      setShowCreateModal(false);
+      setCreateForm({ name: '', description: '', auditType: 'internal', framework: '' });
+    },
+    onError: () => {
+      toast.error('Failed to create template');
+    },
+  });
+
   const handleClone = (template: AuditTemplate) => {
     const name = prompt('Enter name for the new template:', `${template.name} (Copy)`);
     if (name) {
       cloneMutation.mutate({ id: template.id, name });
     }
+  };
+
+  const handleCreateSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!createForm.name.trim()) {
+      toast.error('Please enter a template name');
+      return;
+    }
+    createMutation.mutate(createForm);
   };
 
   return (
@@ -210,6 +251,97 @@ export default function AuditTemplates() {
           <p className="text-surface-400 mt-2">
             Create a new template or check back later for system templates.
           </p>
+        </div>
+      )}
+
+      {/* Create Template Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-surface-800 rounded-lg p-6 w-full max-w-lg border border-surface-700">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-white">Create Audit Template</h2>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="p-1 hover:bg-surface-700 rounded"
+              >
+                <XMarkIcon className="h-5 w-5 text-surface-400" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-surface-300 mb-1">
+                  Template Name *
+                </label>
+                <input
+                  type="text"
+                  value={createForm.name}
+                  onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
+                  className="w-full bg-surface-700 border border-surface-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  placeholder="e.g., SOC 2 Annual Audit"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-surface-300 mb-1">
+                  Description
+                </label>
+                <textarea
+                  value={createForm.description}
+                  onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
+                  rows={3}
+                  className="w-full bg-surface-700 border border-surface-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  placeholder="Describe the purpose of this template..."
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-surface-300 mb-1">
+                    Audit Type
+                  </label>
+                  <select
+                    value={createForm.auditType}
+                    onChange={(e) => setCreateForm({ ...createForm, auditType: e.target.value })}
+                    className="w-full bg-surface-700 border border-surface-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  >
+                    {Object.entries(auditTypeLabels).map(([value, label]) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-surface-300 mb-1">
+                    Framework
+                  </label>
+                  <input
+                    type="text"
+                    value={createForm.framework}
+                    onChange={(e) => setCreateForm({ ...createForm, framework: e.target.value })}
+                    className="w-full bg-surface-700 border border-surface-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    placeholder="e.g., SOC 2, ISO 27001"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setShowCreateModal(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={createMutation.isPending || !createForm.name.trim()}
+                >
+                  {createMutation.isPending ? 'Creating...' : 'Create Template'}
+                </Button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

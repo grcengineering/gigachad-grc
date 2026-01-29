@@ -243,6 +243,52 @@ Export portal activity:
 3. Confirm upload completed
 4. Contact internal team
 
+## Portal API
+
+The Auditor Portal provides REST API endpoints for programmatic access:
+
+### Authentication
+- `POST /api/audit-portal/auth` - Authenticate with access code
+- `POST /api/audit-portal/auth/refresh` - Refresh session
+
+### Request Access
+All portal data endpoints require the `x-portal-access-code` header:
+
+```
+GET /api/audit-portal/requests
+x-portal-access-code: ABC123
+```
+
+### Available Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/audit-portal/requests` | GET | List all requests for the audit |
+| `/api/audit-portal/requests/:id` | GET | Get request details with evidence and comments |
+| `/api/audit-portal/requests/:id/evidence` | GET | List evidence for a request |
+| `/api/audit-portal/requests/:id/comments` | GET | List comments on a request |
+| `/api/audit-portal/requests/:id/comments` | POST | Add a comment (if permitted) |
+
+### Response Format
+
+All endpoints return JSON with this structure:
+
+```json
+{
+  "success": true,
+  "data": { ... }
+}
+```
+
+### Access Logging
+
+All API access is automatically logged with:
+- Timestamp
+- IP address
+- User agent
+- Action type
+- Success/failure status
+
 ## Related Topics
 
 - [Audit Management](audits.md)

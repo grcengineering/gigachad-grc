@@ -672,24 +672,24 @@ export const tasksApi = {
 
 export const assessmentsApi = {
   list: (frameworkId?: string): Promise<AxiosResponse<VendorAssessment[]>> => 
-    api.get('/api/assessments', { params: { frameworkId } }),
+    api.get('/api/vendor-assessments', { params: { frameworkId } }),
   get: (id: string): Promise<AxiosResponse<VendorAssessment>> => 
-    api.get(`/api/assessments/${id}`),
+    api.get(`/api/vendor-assessments/${id}`),
   create: (data: CreateVendorAssessmentData | Record<string, unknown>): Promise<AxiosResponse<VendorAssessment>> => 
-    api.post('/api/assessments', data),
+    api.post('/api/vendor-assessments', data),
   update: (id: string, data: UpdateVendorAssessmentData | Record<string, unknown>): Promise<AxiosResponse<VendorAssessment>> => 
-    api.patch(`/api/assessments/${id}`, data),
+    api.patch(`/api/vendor-assessments/${id}`, data),
   delete: (id: string): Promise<AxiosResponse<void>> => 
-    api.delete(`/api/assessments/${id}`),
+    api.delete(`/api/vendor-assessments/${id}`),
   updateRequirementStatus: (id: string, requirementId: string, data: AssessmentRequirementUpdate) =>
-    api.put(`/api/assessments/${id}/requirements/${requirementId}`, data),
-  getGaps: (id: string) => api.get(`/api/assessments/${id}/gaps`),
-  createGap: (id: string, data: CreateGapData) => api.post(`/api/assessments/${id}/gaps`, data),
-  generateGaps: (id: string) => api.post(`/api/assessments/${id}/gaps/generate`),
-  createRemediation: (id: string, data: CreateRemediationData) => api.post(`/api/assessments/${id}/remediation`, data),
+    api.put(`/api/vendor-assessments/${id}/requirements/${requirementId}`, data),
+  getGaps: (id: string) => api.get(`/api/vendor-assessments/${id}/gaps`),
+  createGap: (id: string, data: CreateGapData) => api.post(`/api/vendor-assessments/${id}/gaps`, data),
+  generateGaps: (id: string) => api.post(`/api/vendor-assessments/${id}/gaps/generate`),
+  createRemediation: (id: string, data: CreateRemediationData) => api.post(`/api/vendor-assessments/${id}/remediation`, data),
   updateRemediation: (id: string, taskId: string, data: UpdateRemediationData) =>
-    api.put(`/api/assessments/${id}/remediation/${taskId}`, data),
-  complete: (id: string) => api.post(`/api/assessments/${id}/complete`),
+    api.put(`/api/vendor-assessments/${id}/remediation/${taskId}`, data),
+  complete: (id: string) => api.post(`/api/vendor-assessments/${id}/complete`),
 };
 
 export const mappingsApi = {
@@ -2770,10 +2770,23 @@ export const scheduledReportsApi = {
       createdAt: new Date().toISOString(),
     };
 
+    // Flatten the schedule object for the backend API
+    const backendPayload = {
+      name: report.name,
+      reportType: report.reportType,
+      format: report.format,
+      frequency: report.schedule.frequency,
+      dayOfWeek: report.schedule.dayOfWeek,
+      dayOfMonth: report.schedule.dayOfMonth,
+      time: report.schedule.time,
+      recipients: report.recipients,
+      enabled: report.enabled,
+    };
+
     try {
       const response = await api.post<{ success: boolean; data: ScheduledReport }>(
         '/api/scheduled-reports',
-        newReport
+        backendPayload
       );
       return response.data.data;
     } catch (error: any) {
@@ -2792,10 +2805,20 @@ export const scheduledReportsApi = {
    * Update a scheduled report
    */
   update: async (id: string, updates: Partial<ScheduledReport>): Promise<ScheduledReport> => {
+    // Flatten the schedule object for the backend API if present
+    const backendPayload: Record<string, unknown> = { ...updates };
+    if (updates.schedule) {
+      backendPayload.frequency = updates.schedule.frequency;
+      backendPayload.dayOfWeek = updates.schedule.dayOfWeek;
+      backendPayload.dayOfMonth = updates.schedule.dayOfMonth;
+      backendPayload.time = updates.schedule.time;
+      delete backendPayload.schedule;
+    }
+
     try {
       const response = await api.put<{ success: boolean; data: ScheduledReport }>(
         `/api/scheduled-reports/${id}`,
-        updates
+        backendPayload
       );
       return response.data.data;
     } catch (error: any) {

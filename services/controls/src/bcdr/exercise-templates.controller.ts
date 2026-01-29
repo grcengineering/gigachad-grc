@@ -7,9 +7,9 @@ import {
   Body,
   Param,
   Query,
-  Req,
   UseGuards,
 } from '@nestjs/common';
+import { CurrentUser, UserContext } from '@gigachad-grc/shared';
 import {
   ApiTags,
   ApiOperation,
@@ -22,8 +22,7 @@ import {
   CreateExerciseTemplateDto,
   ExerciseTemplateFilterDto,
 } from './dto/bcdr.dto';
-import { AuthGuard } from '../auth/auth.guard';
-import { TenantScopeGuard } from '../common/tenant-scope.guard';
+import { DevAuthGuard } from '../auth/dev-auth.guard';
 
 /**
  * Controller for BC/DR exercise template endpoints.
@@ -33,8 +32,8 @@ import { TenantScopeGuard } from '../common/tenant-scope.guard';
  */
 @ApiTags('BC/DR Exercise Templates')
 @ApiBearerAuth()
-@Controller('bcdr/exercise-templates')
-@UseGuards(AuthGuard, TenantScopeGuard)
+@Controller('api/bcdr/exercise-templates')
+@UseGuards(DevAuthGuard)
 export class ExerciseTemplatesController {
   constructor(private readonly templatesService: ExerciseTemplatesService) {}
 
@@ -46,9 +45,9 @@ export class ExerciseTemplatesController {
   @ApiResponse({ status: 200, description: 'Paginated template list' })
   async listTemplates(
     @Query() filters: ExerciseTemplateFilterDto,
-    @Req() req: any,
+    @CurrentUser() user: UserContext,
   ) {
-    return this.templatesService.findAll(req.organizationId, filters);
+    return this.templatesService.findAll(user.organizationId, filters);
   }
 
   /**
@@ -57,8 +56,8 @@ export class ExerciseTemplatesController {
   @Get('categories')
   @ApiOperation({ summary: 'Get template categories' })
   @ApiResponse({ status: 200, description: 'Category list with counts' })
-  async getCategories(@Req() req: any) {
-    return this.templatesService.getCategories(req.organizationId);
+  async getCategories(@CurrentUser() user: UserContext) {
+    return this.templatesService.getCategories(user.organizationId);
   }
 
   /**
@@ -82,14 +81,14 @@ export class ExerciseTemplatesController {
   @ApiResponse({ status: 201, description: 'Cloned template' })
   async cloneTemplate(
     @Param('id') id: string,
-    @Req() req: any,
+    @CurrentUser() user: UserContext,
   ) {
     return this.templatesService.cloneToOrganization(
       id,
-      req.organizationId,
-      req.userId,
-      req.userEmail,
-      req.userName,
+      user.organizationId,
+      user.userId,
+      user.email,
+      user.name,
     );
   }
 
@@ -101,14 +100,14 @@ export class ExerciseTemplatesController {
   @ApiResponse({ status: 201, description: 'Created template' })
   async createTemplate(
     @Body() dto: CreateExerciseTemplateDto,
-    @Req() req: any,
+    @CurrentUser() user: UserContext,
   ) {
     return this.templatesService.create(
-      req.organizationId,
-      req.userId,
+      user.organizationId,
+      user.userId,
       dto,
-      req.userEmail,
-      req.userName,
+      user.email,
+      user.name,
     );
   }
 
@@ -122,15 +121,15 @@ export class ExerciseTemplatesController {
   async createFromTest(
     @Param('testId') testId: string,
     @Body('title') title: string,
-    @Req() req: any,
+    @CurrentUser() user: UserContext,
   ) {
     return this.templatesService.createFromTest(
       testId,
-      req.organizationId,
-      req.userId,
+      user.organizationId,
+      user.userId,
       title,
-      req.userEmail,
-      req.userName,
+      user.email,
+      user.name,
     );
   }
 
@@ -145,15 +144,15 @@ export class ExerciseTemplatesController {
   async updateTemplate(
     @Param('id') id: string,
     @Body() dto: Partial<CreateExerciseTemplateDto>,
-    @Req() req: any,
+    @CurrentUser() user: UserContext,
   ) {
     return this.templatesService.update(
       id,
-      req.organizationId,
-      req.userId,
+      user.organizationId,
+      user.userId,
       dto,
-      req.userEmail,
-      req.userName,
+      user.email,
+      user.name,
     );
   }
 
@@ -167,14 +166,14 @@ export class ExerciseTemplatesController {
   @ApiResponse({ status: 409, description: 'Cannot delete global template' })
   async deleteTemplate(
     @Param('id') id: string,
-    @Req() req: any,
+    @CurrentUser() user: UserContext,
   ) {
     return this.templatesService.delete(
       id,
-      req.organizationId,
-      req.userId,
-      req.userEmail,
-      req.userName,
+      user.organizationId,
+      user.userId,
+      user.email,
+      user.name,
     );
   }
 

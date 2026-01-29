@@ -89,7 +89,8 @@ export default function BCDRPlanDetail() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const [showEditModal, setShowEditModal] = useState(false);
+  const isNewPlan = id === 'new';
+  const [showEditModal, setShowEditModal] = useState(isNewPlan);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'processes' | 'tests' | 'controls'>('overview');
   const [editForm, setEditForm] = useState({
@@ -110,7 +111,7 @@ export default function BCDRPlanDetail() {
       const res = await api.get(`/api/bcdr/plans/${id}`);
       return res.data;
     },
-    enabled: !!id,
+    enabled: !!id && !isNewPlan,
   });
 
   useEffect(() => {
@@ -129,9 +130,41 @@ export default function BCDRPlanDetail() {
     }
   }, [plan]);
 
+  const createMutation = useMutation({
+    mutationFn: async (data: typeof editForm) => {
+      const res = await api.post('/api/bcdr/plans', {
+        ...data,
+        planId: `BCDR-${Date.now()}`,
+        planType: data.plan_type,
+      });
+      return res.data;
+    },
+    onSuccess: (newPlan) => {
+      queryClient.invalidateQueries({ queryKey: ['bcdr-plans'] });
+      setShowEditModal(false);
+      toast.success('BC/DR plan created successfully');
+      navigate(`/bcdr/plans/${newPlan.id}`);
+    },
+    onError: () => {
+      toast.error('Failed to create BC/DR plan');
+    },
+  });
+
   const updateMutation = useMutation({
     mutationFn: async (data: typeof editForm) => {
-      const res = await api.patch(`/api/bcdr/plans/${id}`, data);
+      // Transform snake_case to camelCase for backend DTO
+      const payload = {
+        title: data.title,
+        description: data.description,
+        status: data.status,
+        planType: data.plan_type,
+        scopeDescription: data.scope,
+        activationCriteria: data.activation_criteria,
+        deactivationCriteria: data.deactivation_criteria,
+        objectives: data.objectives,
+        assumptions: data.assumptions,
+      };
+      const res = await api.patch(`/api/bcdr/plans/${id}`, payload);
       return res.data;
     },
     onSuccess: () => {
@@ -167,7 +200,7 @@ export default function BCDRPlanDetail() {
     return PLAN_TYPES.find(t => t.value === type)?.label || type;
   };
 
-  if (isLoading) {
+  if (isLoading && !isNewPlan) {
     return (
       <div className="p-6 space-y-6">
         <SkeletonDetailHeader />
@@ -179,7 +212,7 @@ export default function BCDRPlanDetail() {
     );
   }
 
-  if (error || !plan) {
+  if (!isNewPlan && (error || !plan)) {
     return (
       <div className="p-6">
         <div className="card p-8 text-center">
@@ -187,6 +220,89 @@ export default function BCDRPlanDetail() {
           <h2 className="text-lg font-semibold text-surface-100 mb-2">BC/DR Plan Not Found</h2>
           <p className="text-surface-400 mb-4">The requested plan could not be loaded.</p>
           <Button onClick={() => navigate('/bcdr/plans')}>Back to Plans</Button>
+        </div>
+      </div>
+    );
+  }
+
+  // For new plans, show the create form modal immediately
+  if (isNewPlan) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="flex items-start gap-4">
+          <button
+            onClick={() => navigate('/bcdr/plans')}
+            className="p-2 hover:bg-surface-700 rounded-lg text-surface-400 mt-1"
+          >
+            <ArrowLeftIcon className="w-5 h-5" />
+          </button>
+          <div>
+            <h1 className="text-2xl font-bold text-surface-100">Create New BC/DR Plan</h1>
+            <p className="text-surface-400">Fill out the form below to create a new plan</p>
+          </div>
+        </div>
+
+        <div className="card p-6">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              createMutation.mutate(editForm);
+            }}
+            className="space-y-4"
+          >
+            <div>
+              <label className="label">Title *</label>
+              <input
+                type="text"
+                value={editForm.title}
+                onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
+                className="input mt-1"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="label">Plan Type</label>
+              <select
+                value={editForm.plan_type}
+                onChange={(e) => setEditForm(prev => ({ ...prev, plan_type: e.target.value }))}
+                className="input mt-1"
+              >
+                {PLAN_TYPES.map(type => (
+                  <option key={type.value} value={type.value}>{type.label}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="label">Description</label>
+              <textarea
+                value={editForm.description}
+                onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
+                rows={3}
+                className="input mt-1"
+              />
+            </div>
+
+            <div>
+              <label className="label">Objectives</label>
+              <textarea
+                value={editForm.objectives}
+                onChange={(e) => setEditForm(prev => ({ ...prev, objectives: e.target.value }))}
+                rows={3}
+                className="input mt-1"
+              />
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4">
+              <Button type="button" variant="secondary" onClick={() => navigate('/bcdr/plans')}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={createMutation.isPending}>
+                {createMutation.isPending ? 'Creating...' : 'Create Plan'}
+              </Button>
+            </div>
+          </form>
         </div>
       </div>
     );
@@ -490,7 +606,11 @@ export default function BCDRPlanDetail() {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                updateMutation.mutate(editForm);
+                if (isNewPlan) {
+                  createMutation.mutate(editForm);
+                } else {
+                  updateMutation.mutate(editForm);
+                }
               }}
               className="p-6 space-y-4"
             >

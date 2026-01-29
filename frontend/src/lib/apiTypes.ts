@@ -77,17 +77,20 @@ export interface UserListParams extends PaginationParams {
 // Control Types
 // ===========================================
 
+// Must match backend ControlCategory enum exactly
 export type ControlCategory = 
   | 'access_control'
   | 'data_protection'
-  | 'security_operations'
   | 'network_security'
-  | 'application_security'
-  | 'physical_security'
   | 'incident_response'
   | 'business_continuity'
+  | 'change_management'
+  | 'risk_management'
+  | 'vendor_management'
+  | 'physical_security'
+  | 'human_resources'
   | 'compliance'
-  | 'governance';
+  | 'other';
 
 export interface Control {
   id: string;
@@ -993,49 +996,78 @@ export interface VendorListParams extends PaginationParams {
 // ===========================================
 
 export type VendorAssessmentStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled';
-export type VendorAssessmentType = 'security_review' | 'privacy_review' | 'compliance_review' | 'annual_review' | 'onboarding';
+export type VendorAssessmentType = 'initial_onboarding' | 'annual_review' | 'continuous_monitoring' | 'incident_triggered' | 'contract_renewal' | 'security_review' | 'privacy_assessment' | 'compliance_audit' | 'vendor_questionnaire' | 'on_site_audit' | 'penetration_test';
+export type VendorRiskLevel = 'very_low' | 'low' | 'medium' | 'high' | 'critical';
+export type AssessmentOutcome = 'approved' | 'approved_with_conditions' | 'rejected' | 'requires_remediation';
 
 export interface VendorAssessment {
   id: string;
   vendorId: string;
+  organizationId?: string;
   vendor?: {
     id: string;
     name: string;
+    tier?: string;
   };
   assessmentType: VendorAssessmentType | string;
   status: VendorAssessmentStatus | string;
   dueDate?: string;
   completedAt?: string;
+  questionnaireTemplate?: string;
+  responses?: Record<string, unknown>;
+  // Risk scores
+  inherentRiskScore?: VendorRiskLevel | string;
+  residualRiskScore?: VendorRiskLevel | string;
   overallScore?: number;
-  securityScore?: number;
-  privacyScore?: number;
-  complianceScore?: number;
-  findings?: string;
+  // Risk categories
+  securityRisk?: VendorRiskLevel | string;
+  complianceRisk?: VendorRiskLevel | string;
+  operationalRisk?: VendorRiskLevel | string;
+  financialRisk?: VendorRiskLevel | string;
+  reputationalRisk?: VendorRiskLevel | string;
+  // Outcome
+  outcome?: AssessmentOutcome | string;
+  outcomeNotes?: string;
+  conditions?: string[];
+  // People
+  assessorId?: string;
+  reviewerId?: string;
+  createdBy?: string;
+  // Notes
+  findings?: string | Record<string, unknown>;
   recommendations?: string;
-  assessor?: string;
-  organizationId?: string;
   createdAt: string;
   updatedAt?: string;
 }
 
 export interface CreateVendorAssessmentData {
+  organizationId: string;
   vendorId: string;
   assessmentType: VendorAssessmentType | string;
+  status?: VendorAssessmentStatus | string;
   dueDate?: string;
-  assessor?: string;
+  inherentRiskScore?: VendorRiskLevel | string;
+  assessorId?: string;
 }
 
 export interface UpdateVendorAssessmentData {
   status?: VendorAssessmentStatus | string;
   dueDate?: string;
   completedAt?: string;
+  inherentRiskScore?: VendorRiskLevel | string;
+  residualRiskScore?: VendorRiskLevel | string;
   overallScore?: number;
-  securityScore?: number;
-  privacyScore?: number;
-  complianceScore?: number;
-  findings?: string;
+  securityRisk?: VendorRiskLevel | string;
+  complianceRisk?: VendorRiskLevel | string;
+  operationalRisk?: VendorRiskLevel | string;
+  financialRisk?: VendorRiskLevel | string;
+  reputationalRisk?: VendorRiskLevel | string;
+  outcome?: AssessmentOutcome | string;
+  outcomeNotes?: string;
+  findings?: string | Record<string, unknown>;
   recommendations?: string;
-  assessor?: string;
+  assessorId?: string;
+  reviewerId?: string;
   [key: string]: unknown;
 }
 

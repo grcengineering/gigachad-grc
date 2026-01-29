@@ -1434,7 +1434,7 @@ export class TrainingService {
 // Types
 // ==========================================
 
-interface QuizQuestion {
+export interface QuizQuestion {
   id: string;
   question: string;
   options: string[];
@@ -1450,7 +1450,7 @@ interface QuizAnswerResult {
   explanation: string;
 }
 
-interface QuizResult {
+export interface QuizResult {
   moduleId: string;
   totalQuestions: number;
   correctAnswers: number;
@@ -1461,7 +1461,7 @@ interface QuizResult {
   completedAt: Date;
 }
 
-interface Certificate {
+export interface Certificate {
   id: string;
   recipientName: string;
   recipientEmail: string;

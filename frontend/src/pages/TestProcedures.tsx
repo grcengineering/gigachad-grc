@@ -6,6 +6,7 @@ import {
   BeakerIcon,
   CheckCircleIcon,
   XCircleIcon,
+  XMarkIcon,
   ClockIcon,
   PlayIcon,
 } from '@heroicons/react/24/outline';
@@ -55,6 +56,14 @@ export default function TestProcedures() {
   const queryClient = useQueryClient();
   const toast = useToast();
   const [recordingId, setRecordingId] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    title: '',
+    testType: 'inspection',
+    testMethod: '',
+    sampleSize: 25,
+    controlId: '',
+  });
   const [resultForm, setResultForm] = useState({
     actualResult: '',
     deviationsNoted: '',
@@ -108,6 +117,34 @@ export default function TestProcedures() {
     },
   });
 
+  const createMutation = useMutation({
+    mutationFn: async (data: typeof createForm) => {
+      const res = await fetch('/api/audit/test-procedures', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...data, auditId: auditId || undefined }),
+      });
+      if (!res.ok) throw new Error('Failed to create test procedure');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['test-procedures'] });
+      queryClient.invalidateQueries({ queryKey: ['test-procedures-stats'] });
+      toast.success('Test procedure created');
+      setShowCreateModal(false);
+      setCreateForm({ title: '', testType: 'inspection', testMethod: '', sampleSize: 25, controlId: '' });
+    },
+    onError: () => {
+      toast.error('Failed to create test procedure');
+    },
+  });
+
+  const handleCreateSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!createForm.title.trim()) return;
+    createMutation.mutate(createForm);
+  };
+
   const handleRecordResult = (id: string) => {
     recordResultMutation.mutate({ id, data: resultForm });
   };
@@ -122,7 +159,7 @@ export default function TestProcedures() {
             Control testing with sampling and effectiveness assessment
           </p>
         </div>
-        <Button>
+        <Button onClick={() => setShowCreateModal(true)}>
           <PlusIcon className="h-4 w-4 mr-2" />
           New Procedure
         </Button>
@@ -292,6 +329,97 @@ export default function TestProcedures() {
               </p>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Create Test Procedure Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-surface-800 rounded-lg p-6 w-full max-w-lg border border-surface-700">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-white">Create Test Procedure</h2>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="p-1 hover:bg-surface-700 rounded"
+              >
+                <XMarkIcon className="h-5 w-5 text-surface-400" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-surface-300 mb-1">
+                  Title *
+                </label>
+                <input
+                  type="text"
+                  value={createForm.title}
+                  onChange={(e) => setCreateForm(prev => ({ ...prev, title: e.target.value }))}
+                  className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+                  placeholder="Procedure title"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-surface-300 mb-1">
+                    Test Type
+                  </label>
+                  <select
+                    value={createForm.testType}
+                    onChange={(e) => setCreateForm(prev => ({ ...prev, testType: e.target.value }))}
+                    className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+                  >
+                    <option value="inquiry">Inquiry</option>
+                    <option value="observation">Observation</option>
+                    <option value="inspection">Inspection</option>
+                    <option value="reperformance">Reperformance</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-surface-300 mb-1">
+                    Sample Size
+                  </label>
+                  <input
+                    type="number"
+                    value={createForm.sampleSize}
+                    onChange={(e) => setCreateForm(prev => ({ ...prev, sampleSize: parseInt(e.target.value) || 0 }))}
+                    className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+                    min="1"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-surface-300 mb-1">
+                  Test Method
+                </label>
+                <textarea
+                  value={createForm.testMethod}
+                  onChange={(e) => setCreateForm(prev => ({ ...prev, testMethod: e.target.value }))}
+                  className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white h-24"
+                  placeholder="Describe the testing methodology..."
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setShowCreateModal(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={createMutation.isPending || !createForm.title.trim()}
+                >
+                  {createMutation.isPending ? 'Creating...' : 'Create Procedure'}
+                </Button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

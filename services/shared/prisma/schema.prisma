@@ -652,6 +652,8 @@ model Organization {
   correlatedEmployees       CorrelatedEmployee[]
   dashboards                Dashboard[]                @relation("OrgDashboards")
   dashboardDataSources      DashboardDataSource[]      @relation("OrgDataSources")
+  customReports             CustomReport[]             @relation("OrgCustomReports")
+  scheduledReports          ScheduledReport[]          @relation("OrgScheduledReports")
   riskScenarioTemplates     RiskScenarioTemplate[]
   trainingProgress          TrainingProgress[]         @relation("OrgTrainingProgress")
   trainingAssignments       TrainingAssignment[]       @relation("OrgTrainingAssignments")
@@ -898,6 +900,10 @@ model User {
   dashboards                  Dashboard[]           @relation("UserDashboards")
   dashboardsCreated           Dashboard[]           @relation("DashboardCreator")
   dashboardDataSourcesCreated DashboardDataSource[] @relation("DataSourceCreator")
+
+  // Custom & Scheduled Reports
+  customReports               CustomReport[]        @relation("UserCustomReports")
+  scheduledReports            ScheduledReport[]     @relation("UserScheduledReports")
 
   // Training
   trainingProgress             TrainingProgress[]     @relation("UserTrainingProgress")
@@ -4510,6 +4516,93 @@ model DashboardDataSource {
   @@index([organizationId])
   @@index([type])
   @@map("dashboard_data_sources")
+}
+
+// ===========================================
+// Custom Reports
+// ===========================================
+
+// Custom report configuration saved by users
+model CustomReport {
+  id             String   @id @default(uuid())
+  organizationId String   @map("organization_id")
+  userId         String   @map("user_id")
+  name           String
+  description    String?
+  reportType     String   @map("report_type")
+  sections       Json     @default("[]") // Array of section configurations
+  filters        Json     @default("{}") // Filter settings
+  chartConfigs   Json     @default("[]") @map("chart_configs") // Chart configurations
+  includeCharts  Boolean  @default(true) @map("include_charts")
+  includeTables  Boolean  @default(true) @map("include_tables")
+  isShared       Boolean  @default(false) @map("is_shared") // Shared with org
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  organization Organization @relation("OrgCustomReports", fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation("UserCustomReports", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([reportType])
+  @@map("custom_reports")
+}
+
+// Scheduled report for automatic generation and delivery
+model ScheduledReport {
+  id             String    @id @default(uuid())
+  organizationId String    @map("organization_id")
+  userId         String    @map("user_id")
+  name           String
+  reportType     String    @map("report_type")
+  format         String    @default("pdf") // pdf, csv, xlsx
+  frequency      String    // daily, weekly, monthly, quarterly
+  dayOfWeek      Int?      @map("day_of_week") // 0-6 for Sunday-Saturday
+  dayOfMonth     Int?      @map("day_of_month") // 1-31
+  time           String    @default("09:00") // HH:mm format
+  timezone       String    @default("UTC")
+  recipients     String[]  // Email addresses
+  filters        Json      @default("{}") // Report filters
+  isEnabled      Boolean   @default(true) @map("is_enabled")
+  lastRunAt      DateTime? @map("last_run_at")
+  lastRunStatus  String?   @map("last_run_status") // success, failed
+  lastRunError   String?   @map("last_run_error") @db.Text
+  nextRunAt      DateTime? @map("next_run_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  organization Organization        @relation("OrgScheduledReports", fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User                @relation("UserScheduledReports", fields: [userId], references: [id], onDelete: Cascade)
+  executions   ScheduledReportExecution[]
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([isEnabled])
+  @@index([nextRunAt])
+  @@map("scheduled_reports")
+}
+
+// Execution history for scheduled reports
+model ScheduledReportExecution {
+  id                String   @id @default(uuid())
+  scheduledReportId String   @map("scheduled_report_id")
+  status            String   // pending, running, success, failed
+  startedAt         DateTime @default(now()) @map("started_at")
+  completedAt       DateTime? @map("completed_at")
+  error             String?  @db.Text
+  recipientCount    Int      @default(0) @map("recipient_count")
+  filePath          String?  @map("file_path") // S3 path to generated report
+  fileSize          Int?     @map("file_size") // bytes
+
+  // Relations
+  scheduledReport ScheduledReport @relation(fields: [scheduledReportId], references: [id], onDelete: Cascade)
+
+  @@index([scheduledReportId])
+  @@index([status])
+  @@index([startedAt])
+  @@map("scheduled_report_executions")
 }
 
 // ===========================================

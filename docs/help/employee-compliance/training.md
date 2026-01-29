@@ -110,26 +110,46 @@ Automatic reminders:
 4. Set passing score
 5. Save
 
+### Taking Quizzes
+Each training module includes a quiz to test comprehension:
+1. Complete the module content
+2. Click **Take Quiz**
+3. Answer questions (randomized from question bank)
+4. Submit answers
+5. View results and explanations
+
 ### Quiz Results
 Track quiz performance:
-- Pass/fail rate
+- Pass/fail rate (70% required to pass)
 - Average score
 - Common wrong answers
 - Retake statistics
+
+### Quiz API
+Quizzes are available via API:
+- `GET /api/training/modules/:moduleId/quiz` - Get randomized quiz questions
+- `POST /api/training/modules/:moduleId/quiz/submit` - Submit answers and get results
 
 ## Certificates
 
 ### Certificate Generation
 Upon completion:
-- Automatic certificate
-- Customizable template
-- Digital signature
-- Unique certificate ID
+- Automatic certificate generation
+- Customizable template with organization branding
+- Unique certificate ID for verification
+- Valid for configurable period (default: 1 year)
 
 ### Certificate Management
-- View all certificates
-- Download for records
-- Verify authenticity
+- View all certificates: `GET /api/training/certificates`
+- Download as PDF: `GET /api/training/certificates/:id/pdf`
+- Verify authenticity: `GET /api/training/certificates/:id/verify`
+
+### Certificate API
+Full certificate management available via API:
+- `GET /api/training/modules/:moduleId/certificate` - Generate/retrieve certificate for completed module
+- `GET /api/training/certificates` - List all user certificates
+- `GET /api/training/certificates/:id/verify` - Verify certificate authenticity
+- `GET /api/training/certificates/:id/pdf` - Download certificate as PDF
 
 ## Reporting
 

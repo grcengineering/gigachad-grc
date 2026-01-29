@@ -36,7 +36,12 @@ export class AuditsController {
   @ApiOperation({ summary: 'Create a new audit' })
   @ApiResponse({ status: 201, description: 'Audit created successfully' })
   create(@Body() createAuditDto: CreateAuditDto, @Req() req: AuthenticatedRequest) {
-    return this.auditsService.create(createAuditDto, req.user.userId);
+    // Inject organizationId from authenticated user context
+    const dtoWithOrg = {
+      ...createAuditDto,
+      organizationId: req.user.organizationId,
+    };
+    return this.auditsService.create(dtoWithOrg, req.user.userId);
   }
 
   @Get()

@@ -7,17 +7,20 @@ import toast from 'react-hot-toast';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/Button';
 
+// Categories must match backend ControlCategory enum exactly
 const CATEGORY_OPTIONS: { value: ControlCategory; label: string }[] = [
   { value: 'access_control', label: 'Access Control' },
   { value: 'data_protection', label: 'Data Protection' },
-  { value: 'security_operations', label: 'Security Operations' },
   { value: 'network_security', label: 'Network Security' },
-  { value: 'application_security', label: 'Application Security' },
-  { value: 'physical_security', label: 'Physical Security' },
   { value: 'incident_response', label: 'Incident Response' },
   { value: 'business_continuity', label: 'Business Continuity' },
+  { value: 'change_management', label: 'Change Management' },
+  { value: 'risk_management', label: 'Risk Management' },
+  { value: 'vendor_management', label: 'Vendor Management' },
+  { value: 'physical_security', label: 'Physical Security' },
+  { value: 'human_resources', label: 'Human Resources' },
   { value: 'compliance', label: 'Compliance' },
-  { value: 'governance', label: 'Governance' },
+  { value: 'other', label: 'Other' },
 ];
 
 export default function ControlNew() {
@@ -35,15 +38,24 @@ export default function ControlNew() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const createMutation = useMutation({
-    mutationFn: (data: CreateControlData) => controlsApi.create(data),
+    mutationFn: (data: CreateControlData) => {
+      console.log('[ControlNew] Creating control with data:', JSON.stringify(data, null, 2));
+      return controlsApi.create(data);
+    },
     onSuccess: (response) => {
+      console.log('[ControlNew] Control created successfully:', response.data);
       queryClient.invalidateQueries({ queryKey: ['controls'] });
       toast.success('Control created successfully');
       navigate(`/controls/${response.data.id}`);
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || 'Failed to create control';
-      toast.error(message);
+      console.error('[ControlNew] Error creating control:', {
+        message: error?.message,
+        status: error?.response?.status,
+        data: error?.response?.data,
+      });
+      const message = error.response?.data?.message || error?.message || 'Failed to create control';
+      toast.error(Array.isArray(message) ? message.join(', ') : message);
     },
   });
 

@@ -416,7 +416,7 @@ export class ControlsService {
       where: { id },
       data: {
         deletedAt: new Date(),
-        deletedBy: userId || 'system',
+        deletedBy: userId || null, // Use null instead of 'system' to satisfy FK constraint
       },
     });
 

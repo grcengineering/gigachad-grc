@@ -52,8 +52,8 @@ vi.mock('@/lib/api', () => ({
       data: [
         { category: 'access_control', count: 10 },
         { category: 'data_protection', count: 5 },
-        { category: 'security_operations', count: 8 },
-        { category: 'network_security', count: 3 },
+        { category: 'network_security', count: 8 },
+        { category: 'compliance', count: 3 },
       ],
     }),
     getTags: vi.fn().mockResolvedValue({

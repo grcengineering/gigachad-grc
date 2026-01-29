@@ -469,6 +469,13 @@ export class PoliciesService {
 
   async streamFile(id: string, organizationId: string) {
     const policy = await this.findOne(id, organizationId);
+    
+    // Check if file exists before attempting to stream
+    const fileExists = await this.storage.exists(policy.storagePath);
+    if (!fileExists) {
+      throw new NotFoundException(`Policy file not found. The file may not have been uploaded yet.`);
+    }
+    
     const stream = await this.storage.download(policy.storagePath);
     return { stream, mimetype: policy.mimeType, filename: policy.filename };
   }

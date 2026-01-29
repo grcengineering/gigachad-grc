@@ -45,7 +45,7 @@ export class RunbooksService {
       SELECT r.*, 
              u.display_name as owner_name,
              bp.name as process_name,
-             (SELECT COUNT(*) FROM bcdr.runbook_steps WHERE runbook_id = r.id) as step_count
+             (SELECT COUNT(*)::integer FROM bcdr.runbook_steps WHERE runbook_id = r.id) as step_count
       FROM bcdr.runbooks r
       LEFT JOIN public.users u ON r.owner_id::text = u.id
       LEFT JOIN bcdr.business_processes bp ON r.process_id = bp.id
@@ -53,7 +53,11 @@ export class RunbooksService {
       ORDER BY r.title ASC
     `);
 
-    return runbooks;
+    // Convert any BigInt values to numbers for JSON serialization
+    return runbooks.map(r => ({
+      ...r,
+      step_count: Number(r.step_count || 0),
+    }));
   }
 
   async findOne(id: string, organizationId: string) {
@@ -99,7 +103,7 @@ export class RunbooksService {
     // Check for duplicate runbookId
     const existing = await this.prisma.$queryRaw<any[]>`
       SELECT id FROM bcdr.runbooks 
-      WHERE organization_id = ${organizationId} 
+      WHERE organization_id = ${organizationId}::uuid 
         AND runbook_id = ${dto.runbookId}
         AND deleted_at IS NULL
     `;
@@ -115,7 +119,7 @@ export class RunbooksService {
         estimated_duration_minutes, required_access_level, prerequisites, tags,
         created_by, updated_by
       ) VALUES (
-        ${organizationId}, ${dto.runbookId}, ${dto.title}, ${dto.description || null},
+        ${organizationId}::uuid, ${dto.runbookId}, ${dto.title}, ${dto.description || null},
         'draft'::bcdr.runbook_status, ${dto.category || null}, ${dto.systemName || null},
         ${dto.processId || null}::uuid, ${dto.recoveryStrategyId || null}::uuid,
         ${dto.content || null}, ${dto.version || '1.0'}, ${dto.ownerId || null}::uuid,

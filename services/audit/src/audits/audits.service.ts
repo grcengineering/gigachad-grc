@@ -7,8 +7,8 @@ import { UpdateAuditDto } from './dto/update-audit.dto';
 export class AuditsService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createAuditDto: CreateAuditDto, createdBy: string) {
-    const { organizationId } = createAuditDto;
+  async create(createAuditDto: CreateAuditDto & { organizationId: string }, createdBy: string) {
+    const { organizationId, ...restDto } = createAuditDto;
 
     // Generate audit ID if not provided
     const auditCount = await this.prisma.audit.count({
@@ -24,7 +24,8 @@ export class AuditsService {
 
     return this.prisma.audit.create({
       data: {
-        ...createAuditDto,
+        ...restDto,
+        organizationId,
         auditId,
         portalAccessCode,
         createdBy,

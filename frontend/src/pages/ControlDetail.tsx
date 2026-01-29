@@ -804,9 +804,14 @@ export default function ControlDetail() {
                     await controlsApi.delete(id!);
                     toast.success('Control deleted successfully');
                     navigate('/controls');
-                  } catch (error) {
-                    console.error('Error deleting control:', error);
-                    toast.error('Failed to delete control');
+                  } catch (error: any) {
+                    console.error('Error deleting control:', {
+                      message: error?.message,
+                      status: error?.response?.status,
+                      data: error?.response?.data,
+                    });
+                    const message = error?.response?.data?.message || error?.message || 'Failed to delete control';
+                    toast.error(Array.isArray(message) ? message.join(', ') : message);
                   }
                 }}
               >

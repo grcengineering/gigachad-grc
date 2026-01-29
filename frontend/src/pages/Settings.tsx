@@ -40,10 +40,19 @@ const SECTION_TITLES: Record<string, { title: string; description: string }> = {
 };
 
 export default function Settings({ section }: SettingsProps) {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
 
   // Check if user is admin
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
+
+  // Wait for auth to load before making redirect decision
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-surface-400">Loading...</div>
+      </div>
+    );
+  }
 
   // Redirect non-admins
   if (!isAdmin) {
@@ -81,20 +90,71 @@ export default function Settings({ section }: SettingsProps) {
   );
 }
 
+// Organization settings storage key
+const ORG_SETTINGS_KEY = 'grc-org-settings';
+
+interface OrgSettings {
+  organizationName: string;
+  description: string;
+  primaryEmail: string;
+  timezone: string;
+  industry: string;
+}
+
+const DEFAULT_ORG_SETTINGS: OrgSettings = {
+  organizationName: 'Default Organization',
+  description: "Your organization's GRC platform",
+  primaryEmail: '',
+  timezone: 'UTC',
+  industry: '',
+};
+
 function OrganizationSettings() {
   const { branding, updateBranding } = useBranding();
   const [platformName, setPlatformName] = useState(branding.platformName);
   const [logoUrl, setLogoUrl] = useState(branding.logoUrl);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSavingOrg, setIsSavingOrg] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Organization settings state
+  const [orgSettings, setOrgSettings] = useState<OrgSettings>(() => {
+    const stored = localStorage.getItem(ORG_SETTINGS_KEY);
+    if (stored) {
+      try {
+        return { ...DEFAULT_ORG_SETTINGS, ...JSON.parse(stored) };
+      } catch {
+        return DEFAULT_ORG_SETTINGS;
+      }
+    }
+    return DEFAULT_ORG_SETTINGS;
+  });
 
   // Update local state when branding changes
   useEffect(() => {
     setPlatformName(branding.platformName);
     setLogoUrl(branding.logoUrl);
   }, [branding]);
+
+  // Handle organization settings save
+  const handleSaveOrganization = async () => {
+    setIsSavingOrg(true);
+    try {
+      localStorage.setItem(ORG_SETTINGS_KEY, JSON.stringify(orgSettings));
+      toast.success('Organization settings saved');
+    } catch {
+      toast.error('Failed to save organization settings');
+    } finally {
+      setIsSavingOrg(false);
+    }
+  };
+
+  // Update organization setting field
+  const updateOrgSetting = (field: keyof OrgSettings, value: string) => {
+    setOrgSettings(prev => ({ ...prev, [field]: value }));
+  };
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -334,14 +394,16 @@ function OrganizationSettings() {
           <label className="label">Organization Name</label>
           <input
             type="text"
-            defaultValue="Default Organization"
+            value={orgSettings.organizationName}
+            onChange={(e) => updateOrgSetting('organizationName', e.target.value)}
             className="input mt-1"
           />
         </div>
         <div>
           <label className="label">Description</label>
           <textarea
-            defaultValue="Your organization's GRC platform"
+            value={orgSettings.description}
+            onChange={(e) => updateOrgSetting('description', e.target.value)}
             className="input mt-1"
             rows={3}
           />
@@ -349,11 +411,21 @@ function OrganizationSettings() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="label">Primary Contact Email</label>
-            <input type="email" className="input mt-1" placeholder="admin@company.com" />
+            <input
+              type="email"
+              value={orgSettings.primaryEmail}
+              onChange={(e) => updateOrgSetting('primaryEmail', e.target.value)}
+              className="input mt-1"
+              placeholder="admin@company.com"
+            />
           </div>
           <div>
             <label className="label">Timezone</label>
-            <select className="input mt-1">
+            <select
+              value={orgSettings.timezone}
+              onChange={(e) => updateOrgSetting('timezone', e.target.value)}
+              className="input mt-1"
+            >
               <option value="UTC">UTC</option>
               <option value="America/New_York">Eastern Time</option>
               <option value="America/Los_Angeles">Pacific Time</option>
@@ -363,7 +435,11 @@ function OrganizationSettings() {
         </div>
         <div>
           <label className="label">Industry</label>
-          <select className="input mt-1">
+          <select
+            value={orgSettings.industry}
+            onChange={(e) => updateOrgSetting('industry', e.target.value)}
+            className="input mt-1"
+          >
             <option value="">Select industry...</option>
             <option value="technology">Technology</option>
             <option value="finance">Finance & Banking</option>
@@ -377,7 +453,13 @@ function OrganizationSettings() {
       </div>
 
         <div className="flex justify-end pt-4 border-t border-surface-800">
-          <button className="btn-primary">Save Organization</button>
+          <button
+            className="btn-primary"
+            onClick={handleSaveOrganization}
+            disabled={isSavingOrg}
+          >
+            {isSavingOrg ? 'Saving...' : 'Save Organization'}
+          </button>
         </div>
       </div>
 

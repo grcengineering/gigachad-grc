@@ -1,8 +1,10 @@
 import { IsString, IsOptional, IsBoolean, IsArray, IsDateString, IsEnum } from 'class-validator';
 
 export class CreateAuditDto {
+  // organizationId is injected by controller from user context, so it's optional in request
   @IsString()
-  organizationId: string;
+  @IsOptional()
+  organizationId?: string;
 
   @IsString()
   @IsOptional()

@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   MagnifyingGlassIcon,
   FunnelIcon,
   DocumentDuplicateIcon,
   ClockIcon,
   UserGroupIcon,
+  ArrowLeftIcon,
 } from '@heroicons/react/24/outline';
 import { Button } from '@/components/Button';
 import { ExerciseTemplatePreview } from '@/components/bcdr/ExerciseTemplatePreview';
 import { api } from '@/lib/api';
 import clsx from 'clsx';
+import toast from 'react-hot-toast';
 
 // ============================================
 // Types
@@ -59,18 +61,59 @@ const CATEGORY_COLORS: Record<string, string> = {
 // ============================================
 
 export default function ExerciseTemplates() {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const isNewTemplate = id === 'new';
+
   const [templates, setTemplates] = useState<ExerciseTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState<ExerciseTemplate | null>(null);
   const [categories, setCategories] = useState<{ category: string; count: number }[]>([]);
+  const [isCreating, setIsCreating] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    title: '',
+    description: '',
+    category: 'ransomware',
+    scenarioType: 'tabletop',
+    scenarioNarrative: '',
+    estimatedDuration: 60,
+    facilitatorNotes: '',
+  });
 
   useEffect(() => {
-    loadTemplates();
-    loadCategories();
-  }, [search, category]);
+    if (!isNewTemplate) {
+      loadTemplates();
+      loadCategories();
+    }
+  }, [search, category, isNewTemplate]);
+
+  const handleCreateTemplate = async () => {
+    if (!createForm.title.trim()) {
+      toast.error('Please enter a template title');
+      return;
+    }
+    setIsCreating(true);
+    try {
+      await api.post('/api/bcdr/exercise-templates', {
+        ...createForm,
+        templateId: `tpl-${Date.now()}`,
+        discussionQuestions: [],
+        injects: [],
+        expectedDecisions: [],
+        participantRoles: [],
+        tags: [],
+      });
+      toast.success('Template created successfully');
+      navigate(`/bcdr/exercise-templates`);
+    } catch (error) {
+      console.error('Failed to create template:', error);
+      toast.error('Failed to create template');
+    } finally {
+      setIsCreating(false);
+    }
+  };
 
   const loadTemplates = async () => {
     setIsLoading(true);
@@ -113,6 +156,111 @@ export default function ExerciseTemplates() {
 
   // Ensure categories is always an array
   const safeCategories = Array.isArray(categories) ? categories : [];
+
+  // Create form for new templates
+  if (isNewTemplate) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-start gap-4">
+          <button
+            onClick={() => navigate('/bcdr/exercise-templates')}
+            className="p-2 hover:bg-slate-700 rounded-lg text-slate-400 mt-1"
+          >
+            <ArrowLeftIcon className="w-5 h-5" />
+          </button>
+          <div>
+            <h1 className="text-2xl font-bold text-white">Create Exercise Template</h1>
+            <p className="text-slate-400 mt-1">
+              Create a custom tabletop exercise scenario template
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Template Title *</label>
+            <input
+              type="text"
+              value={createForm.title}
+              onChange={(e) => setCreateForm({ ...createForm, title: e.target.value })}
+              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              placeholder="e.g., Ransomware Attack Scenario"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">Category</label>
+              <select
+                value={createForm.category}
+                onChange={(e) => setCreateForm({ ...createForm, category: e.target.value })}
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              >
+                {CATEGORY_OPTIONS.filter(opt => opt.value).map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">Estimated Duration (minutes)</label>
+              <input
+                type="number"
+                value={createForm.estimatedDuration}
+                onChange={(e) => setCreateForm({ ...createForm, estimatedDuration: parseInt(e.target.value) || 60 })}
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Description</label>
+            <textarea
+              value={createForm.description}
+              onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
+              rows={2}
+              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              placeholder="Brief description of the exercise template..."
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Scenario Narrative</label>
+            <textarea
+              value={createForm.scenarioNarrative}
+              onChange={(e) => setCreateForm({ ...createForm, scenarioNarrative: e.target.value })}
+              rows={4}
+              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              placeholder="Describe the scenario in detail for participants..."
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Facilitator Notes</label>
+            <textarea
+              value={createForm.facilitatorNotes}
+              onChange={(e) => setCreateForm({ ...createForm, facilitatorNotes: e.target.value })}
+              rows={2}
+              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              placeholder="Notes for the exercise facilitator..."
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <Button variant="secondary" onClick={() => navigate('/bcdr/exercise-templates')}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleCreateTemplate}
+              disabled={isCreating || !createForm.title.trim()}
+            >
+              {isCreating ? 'Creating...' : 'Create Template'}
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

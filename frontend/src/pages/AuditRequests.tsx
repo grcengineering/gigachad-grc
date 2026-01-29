@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   PlusIcon,
   MagnifyingGlassIcon,
   DocumentTextIcon,
   ExclamationTriangleIcon,
+  ArrowLeftIcon,
 } from '@heroicons/react/24/outline';
 import { Button } from '@/components/Button';
 import { SkeletonGrid } from '@/components/Skeleton';
@@ -61,17 +62,80 @@ const categoryLabels: Record<string, string> = {
 };
 
 export default function AuditRequests() {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const isNewRequest = id === 'new';
+
   const [requests, setRequests] = useState<AuditRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [auditFilter] = useState('');
   const [priorityFilter, setPriorityFilter] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
+  const [audits, setAudits] = useState<{ id: string; name: string }[]>([]);
+  const [createForm, setCreateForm] = useState({
+    title: '',
+    category: 'evidence',
+    priority: 'medium',
+    auditId: '',
+    description: '',
+    dueDate: '',
+  });
 
   useEffect(() => {
-    fetchRequests();
-  }, [statusFilter, auditFilter, priorityFilter]);
+    if (!isNewRequest) {
+      fetchRequests();
+    }
+    fetchAudits();
+  }, [statusFilter, auditFilter, priorityFilter, isNewRequest]);
+
+  const fetchAudits = async () => {
+    try {
+      const response = await fetch('/api/audits', {
+        headers: {
+          'x-organization-id': 'default-org',
+          'x-user-id': 'system',
+        },
+      });
+      const data = await response.json();
+      setAudits(Array.isArray(data) ? data : data.data || []);
+    } catch (error) {
+      console.error('Error fetching audits:', error);
+    }
+  };
+
+  const handleCreateRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!createForm.title.trim()) {
+      toast.error('Please enter a request title');
+      return;
+    }
+    if (!createForm.auditId) {
+      toast.error('Please select an audit');
+      return;
+    }
+    setIsCreating(true);
+    try {
+      const response = await fetch('/api/audit-requests', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-organization-id': 'default-org',
+          'x-user-id': 'system',
+        },
+        body: JSON.stringify(createForm),
+      });
+      if (!response.ok) throw new Error('Failed to create request');
+      toast.success('Audit request created successfully');
+      navigate('/audit-requests');
+    } catch (error) {
+      console.error('Error creating request:', error);
+      toast.error('Failed to create audit request');
+    } finally {
+      setIsCreating(false);
+    }
+  };
 
   const fetchRequests = async () => {
     try {
@@ -106,6 +170,138 @@ export default function AuditRequests() {
     if (!dueDate) return false;
     return new Date(dueDate) < new Date();
   };
+
+  // Create form for new requests
+  if (isNewRequest) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-start gap-4">
+          <button
+            onClick={() => navigate('/audit-requests')}
+            className="p-2 hover:bg-surface-700 rounded-lg text-surface-400 mt-1"
+          >
+            <ArrowLeftIcon className="w-5 h-5" />
+          </button>
+          <div>
+            <h1 className="text-2xl font-semibold text-surface-100">Create Audit Request</h1>
+            <p className="text-surface-400 mt-1">Create a new evidence or documentation request</p>
+          </div>
+        </div>
+
+        <div className="bg-surface-800 border border-surface-700 rounded-lg p-6">
+          <form onSubmit={handleCreateRequest} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-surface-300 mb-1">
+                Request Title *
+              </label>
+              <input
+                type="text"
+                value={createForm.title}
+                onChange={(e) => setCreateForm({ ...createForm, title: e.target.value })}
+                className="w-full bg-surface-700 border border-surface-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                placeholder="e.g., SOC 2 Evidence - Access Control Logs"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-surface-300 mb-1">
+                Associated Audit *
+              </label>
+              <select
+                value={createForm.auditId}
+                onChange={(e) => setCreateForm({ ...createForm, auditId: e.target.value })}
+                className="w-full bg-surface-700 border border-surface-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+              >
+                <option value="">Select an audit...</option>
+                {audits.map((audit) => (
+                  <option key={audit.id} value={audit.id}>{audit.name}</option>
+                ))}
+              </select>
+              {audits.length === 0 && (
+                <p className="text-sm text-yellow-400 mt-1">
+                  No audits found. Please create an audit first.
+                </p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-surface-300 mb-1">
+                  Category
+                </label>
+                <select
+                  value={createForm.category}
+                  onChange={(e) => setCreateForm({ ...createForm, category: e.target.value })}
+                  className="w-full bg-surface-700 border border-surface-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                >
+                  {Object.entries(categoryLabels).map(([value, label]) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-surface-300 mb-1">
+                  Priority
+                </label>
+                <select
+                  value={createForm.priority}
+                  onChange={(e) => setCreateForm({ ...createForm, priority: e.target.value })}
+                  className="w-full bg-surface-700 border border-surface-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                >
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                  <option value="critical">Critical</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-surface-300 mb-1">
+                  Due Date
+                </label>
+                <input
+                  type="date"
+                  value={createForm.dueDate}
+                  onChange={(e) => setCreateForm({ ...createForm, dueDate: e.target.value })}
+                  className="w-full bg-surface-700 border border-surface-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-surface-300 mb-1">
+                Description
+              </label>
+              <textarea
+                value={createForm.description}
+                onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
+                rows={3}
+                className="w-full bg-surface-700 border border-surface-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                placeholder="Describe what evidence or documentation is needed..."
+              />
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => navigate('/audit-requests')}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={isCreating || !createForm.title.trim() || !createForm.auditId}
+              >
+                {isCreating ? 'Creating...' : 'Create Request'}
+              </Button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

@@ -30,6 +30,7 @@
     "@nestjs/throttler": "^6.5.0",
     "@prisma/client": "^5.22.0",
     "@types/nodemailer": "^7.0.4",
+    "@types/pdfkit": "^0.13.9",
     "@willsoto/nestjs-prometheus": "^6.0.0",
     "axios": "^1.13.2",
     "bullmq": "^5.65.1",
@@ -37,8 +38,10 @@
     "class-validator": "^0.14.0",
     "compression": "^1.7.4",
     "date-fns": "^4.1.0",
+    "exceljs": "^4.4.0",
     "helmet": "^7.1.0",
     "nodemailer": "^7.0.11",
+    "pdfkit": "^0.15.2",
     "prom-client": "^15.1.3",
     "reflect-metadata": "^0.1.14",
     "rxjs": "^7.8.1"

@@ -185,6 +185,8 @@ services:
       - "traefik.http.routers.controls-risks.rule=PathPrefix(`/api/risks`)"
       - "traefik.http.routers.controls-risk-config.rule=PathPrefix(`/api/risk-config`)"
       - "traefik.http.routers.controls-risk-tasks.rule=PathPrefix(`/api/risk-tasks`)"
+      # BC/DR module is also in controls service
+      - "traefik.http.routers.controls-bcdr.rule=PathPrefix(`/api/bcdr`)"
       - "traefik.http.services.controls.loadbalancer.server.port=3001"
     restart: unless-stopped
 

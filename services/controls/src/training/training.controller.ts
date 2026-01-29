@@ -378,6 +378,74 @@ export class TrainingController {
     const roleArray = Array.isArray(roles) ? roles : [roles];
     return this.trainingService.getUsersByRole(user.organizationId, roleArray);
   }
+
+  // ==========================================
+  // Quiz Endpoints
+  // ==========================================
+
+  @Get('modules/:moduleId/quiz')
+  @ApiOperation({ summary: 'Get quiz questions for a module' })
+  @ApiQuery({ name: 'count', required: false, type: Number, description: 'Number of questions (default: 10)' })
+  async getQuizQuestions(
+    @Param('moduleId') moduleId: string,
+    @Query('count') count?: string,
+  ) {
+    const questionCount = count ? parseInt(count, 10) : 10;
+    return this.trainingService.getQuizQuestions(moduleId, questionCount);
+  }
+
+  @Post('modules/:moduleId/quiz/submit')
+  @ApiOperation({ summary: 'Submit quiz answers and get results' })
+  async submitQuiz(
+    @CurrentUser() user: AuthUser,
+    @Param('moduleId') moduleId: string,
+    @Body() body: { answers: { questionId: string; selectedOption: number }[] },
+  ) {
+    return this.trainingService.submitQuiz(
+      user.organizationId,
+      user.userId,
+      moduleId,
+      body.answers,
+    );
+  }
+
+  // ==========================================
+  // Certificate Endpoints
+  // ==========================================
+
+  @Get('modules/:moduleId/certificate')
+  @ApiOperation({ summary: 'Generate/get certificate for a completed module' })
+  async getCertificate(
+    @CurrentUser() user: AuthUser,
+    @Param('moduleId') moduleId: string,
+  ) {
+    return this.trainingService.generateCertificate(
+      user.organizationId,
+      user.userId,
+      moduleId,
+    );
+  }
+
+  @Get('certificates')
+  @ApiOperation({ summary: 'Get all certificates for the current user' })
+  async getMyCertificates(@CurrentUser() user: AuthUser) {
+    return this.trainingService.getUserCertificates(
+      user.organizationId,
+      user.userId,
+    );
+  }
+
+  @Get('certificates/:certificateId/verify')
+  @ApiOperation({ summary: 'Verify a certificate' })
+  async verifyCertificate(@Param('certificateId') certificateId: string) {
+    return this.trainingService.verifyCertificate(certificateId);
+  }
+
+  @Get('certificates/:certificateId/pdf')
+  @ApiOperation({ summary: 'Get certificate PDF data' })
+  async getCertificatePDF(@Param('certificateId') certificateId: string) {
+    return this.trainingService.getCertificatePDFData(certificateId);
+  }
 }
 
 

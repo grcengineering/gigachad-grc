@@ -62,6 +62,7 @@ export default function PolicyDetail() {
   });
   const [statusChangeNotes, setStatusChangeNotes] = useState('');
   const [activeTab, setActiveTab] = useState<TabType>('status');
+  const [previewError, setPreviewError] = useState(false);
 
   const { data: policy, isLoading } = useQuery({
     queryKey: ['policy', id],
@@ -199,17 +200,29 @@ export default function PolicyDetail() {
           <div className="card p-6">
             <h2 className="text-lg font-semibold text-surface-100 mb-4">Preview</h2>
             <div className="border border-surface-800 rounded-lg overflow-hidden bg-surface-950">
-              {policy.mimeType === 'application/pdf' ? (
+              {previewError ? (
+                <div className="flex flex-col items-center justify-center py-16 text-surface-500">
+                  <DocumentTextIcon className="w-16 h-16 mb-4" />
+                  <p className="text-center">File preview not available</p>
+                  <p className="text-sm text-surface-400 mt-2">The policy file may not have been uploaded yet.</p>
+                  <button onClick={handleDownload} className="btn-outline mt-4">
+                    <ArrowDownTrayIcon className="w-4 h-4 mr-2" />
+                    Try Download
+                  </button>
+                </div>
+              ) : policy.mimeType === 'application/pdf' ? (
                 <iframe
                   src={policiesApi.getPreviewUrl(id!)}
                   className="w-full h-[800px]"
                   title={policy.title}
+                  onError={() => setPreviewError(true)}
                 />
               ) : policy.mimeType?.startsWith('image/') ? (
                 <img
                   src={policiesApi.getPreviewUrl(id!)}
                   alt={policy.title}
                   className="max-w-full h-auto mx-auto"
+                  onError={() => setPreviewError(true)}
                 />
               ) : (
                 <div className="flex flex-col items-center justify-center py-16 text-surface-500">

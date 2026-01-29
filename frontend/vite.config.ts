@@ -188,7 +188,15 @@ export default defineConfig(({ mode }) => {
         target: 'http://localhost:3001',
         changeOrigin: true,
       },
+      '/api/api-keys': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
       '/api/risks': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/api/calendar': {
         target: 'http://localhost:3001',
         changeOrigin: true,
       },
@@ -245,6 +253,16 @@ export default defineConfig(({ mode }) => {
         changeOrigin: true,
       },
       '/api/config-as-code': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      // BC/DR service (business continuity, disaster recovery plans)
+      '/api/bcdr': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      // Scheduled Reports service
+      '/api/scheduled-reports': {
         target: 'http://localhost:3001',
         changeOrigin: true,
       },

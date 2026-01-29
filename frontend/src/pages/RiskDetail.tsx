@@ -277,7 +277,7 @@ export default function RiskDetail() {
             <div className="flex items-center gap-3">
               <span className="text-brand-400 font-mono">{risk.riskId}</span>
               <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(risk.status)}`}>
-                {risk.status.replace('_', ' ')}
+                {risk.status?.replace('_', ' ') || 'Unknown'}
               </span>
             </div>
             <h1 className="text-2xl font-semibold text-white mt-1">{risk.title}</h1>

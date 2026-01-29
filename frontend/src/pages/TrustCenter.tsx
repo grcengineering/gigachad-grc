@@ -21,7 +21,7 @@ import {
 type SectionType = 'overview' | 'certifications' | 'controls' | 'policies' | 'updates' | 'contact';
 
 export default function TrustCenter() {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [config, setConfig] = useState<TrustCenterConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<SectionType>('overview');
@@ -33,11 +33,20 @@ export default function TrustCenter() {
   const organizationId = user?.organizationId || '';
 
   useEffect(() => {
-    if (organizationId) {
+    if (organizationId && !authLoading) {
       fetchConfig();
       fetchContents();
     }
-  }, [organizationId]);
+  }, [organizationId, authLoading]);
+
+  // Wait for auth to load before rendering
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-surface-400">Loading...</div>
+      </div>
+    );
+  }
 
   const fetchConfig = async () => {
     try {

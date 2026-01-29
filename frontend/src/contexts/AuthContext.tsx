@@ -302,10 +302,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// Default context for cases when useAuth is called outside the provider (e.g., lazy-loaded components)
+const defaultAuthContext: AuthContextType = {
+  isAuthenticated: false,
+  isLoading: true,
+  user: null,
+  token: null,
+  login: () => {},
+  logout: () => {},
+  hasRole: () => false,
+  hasPermission: () => false,
+};
+
 export function useAuth() {
   const context = useContext(AuthContext);
+  // Return default context instead of throwing - safer for lazy-loaded components
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    console.warn('useAuth called outside of AuthProvider - using defaults');
+    return defaultAuthContext;
   }
   return context;
 }
