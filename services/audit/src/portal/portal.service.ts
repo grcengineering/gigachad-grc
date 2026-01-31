@@ -1,5 +1,6 @@
 import { Injectable, UnauthorizedException, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { AuditPortalUser } from '@prisma/client';
 import * as crypto from 'crypto';
 import {
   PortalLoginDto,
@@ -444,7 +445,7 @@ export class PortalService {
   /**
    * Convert to response DTO
    */
-  private toPortalUserResponseDto(user: any, includeAccessCode: boolean = true): PortalUserResponseDto {
+  private toPortalUserResponseDto(user: AuditPortalUser, includeAccessCode: boolean = true): PortalUserResponseDto {
     return {
       id: user.id,
       auditId: user.auditId,

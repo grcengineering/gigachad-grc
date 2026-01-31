@@ -104,9 +104,10 @@ export class BulkOperationsService {
       this.logger.log(
         `Bulk deleted ${deleteResult.count} risks for org ${organizationId}`,
       );
-    } catch (error: any) {
-      this.logger.error(`Bulk delete risks failed: ${error.message}`);
-      result.errors.push(error.message);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Bulk delete risks failed: ${message}`);
+      result.errors.push(message);
     }
 
     return result;
@@ -155,9 +156,10 @@ export class BulkOperationsService {
       this.logger.log(
         `Bulk updated ${updateResult.count} risks to status ${status} for org ${organizationId}`,
       );
-    } catch (error: any) {
-      this.logger.error(`Bulk update risk status failed: ${error.message}`);
-      result.errors.push(error.message);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Bulk update risk status failed: ${message}`);
+      result.errors.push(message);
     }
 
     return result;
@@ -201,9 +203,10 @@ export class BulkOperationsService {
       this.logger.log(
         `Bulk deleted ${deleteResult.count} control implementations for org ${organizationId}`,
       );
-    } catch (error: any) {
-      this.logger.error(`Bulk delete controls failed: ${error.message}`);
-      result.errors.push(error.message);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Bulk delete controls failed: ${message}`);
+      result.errors.push(message);
     }
 
     return result;
@@ -251,9 +254,10 @@ export class BulkOperationsService {
       this.logger.log(
         `Bulk updated ${updateResult.count} control implementations to status ${status} for org ${organizationId}`,
       );
-    } catch (error: any) {
-      this.logger.error(`Bulk update control status failed: ${error.message}`);
-      result.errors.push(error.message);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Bulk update control status failed: ${message}`);
+      result.errors.push(message);
     }
 
     return result;
@@ -301,9 +305,10 @@ export class BulkOperationsService {
       this.logger.log(
         `Bulk deleted ${deleteResult.count} evidence items for org ${organizationId}`,
       );
-    } catch (error: any) {
-      this.logger.error(`Bulk delete evidence failed: ${error.message}`);
-      result.errors.push(error.message);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Bulk delete evidence failed: ${message}`);
+      result.errors.push(message);
     }
 
     return result;
@@ -365,9 +370,10 @@ export class BulkOperationsService {
       this.logger.log(
         `Bulk assigned owner to ${updateResult.count} ${entityType} items for org ${organizationId}`,
       );
-    } catch (error: any) {
-      this.logger.error(`Bulk assign owner failed: ${error.message}`);
-      result.errors.push(error.message);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Bulk assign owner failed: ${message}`);
+      result.errors.push(message);
     }
 
     return result;

@@ -1,3 +1,4 @@
+ 
 import { Module, Global } from '@nestjs/common';
 import { makeCounterProvider } from '@willsoto/nestjs-prometheus';
 import { NotificationsService } from './notifications.service';

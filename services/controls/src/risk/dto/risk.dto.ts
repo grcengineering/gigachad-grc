@@ -138,7 +138,7 @@ export class CreateRiskDto {
 
   @IsOptional()
   @IsArray()
-  documentation?: any[]; // Attachments info
+  documentation?: Record<string, unknown>[]; // Attachments info
 
   @IsOptional()
   @IsArray()
@@ -686,7 +686,7 @@ export class ScenarioSummaryDto {
 export class RiskHistoryDto {
   id: string;
   action: string;
-  changes?: any;
+  changes?: Record<string, unknown>;
   notes?: string;
   changedBy: string;
   changedByName?: string;
@@ -706,7 +706,7 @@ export class RiskAssessmentDto {
   likelihoodRationale?: string;
   impactScore?: string;
   impactRationale?: string;
-  impactCategories?: any;
+  impactCategories?: Record<string, unknown>;
   calculatedRiskScore?: string;
   recommendedOwnerId?: string;
   assessmentNotes?: string;

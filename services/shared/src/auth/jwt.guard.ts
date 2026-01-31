@@ -6,6 +6,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { Request } from 'express';
 import * as jwt from 'jsonwebtoken';
 import jwksRsa from 'jwks-rsa';
 import { UserContext, UserRole, RolePermissions } from '../types';
@@ -81,7 +82,7 @@ export class JwtAuthGuard implements CanActivate {
     }
   }
 
-  private extractToken(request: any): string | null {
+  private extractToken(request: Request): string | null {
     const authHeader = request.headers.authorization;
     if (!authHeader) {
       return null;

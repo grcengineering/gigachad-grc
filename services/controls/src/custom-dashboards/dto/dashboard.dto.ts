@@ -75,7 +75,7 @@ export class QueryFilter {
   operator: FilterOperator;
 
   @ApiProperty()
-  value: any;
+  value: unknown;
 }
 
 // Aggregation definition
@@ -371,7 +371,7 @@ export class CreateDashboardDto {
   @ApiPropertyOptional({ description: 'Grid layout configuration' })
   @IsOptional()
   @IsObject()
-  layout?: Record<string, any>;
+  layout?: Record<string, unknown>;
 
   @ApiPropertyOptional({ type: [CreateWidgetDto] })
   @IsOptional()
@@ -401,7 +401,7 @@ export class UpdateDashboardDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsObject()
-  layout?: Record<string, any>;
+  layout?: Record<string, unknown>;
 
   @ApiPropertyOptional({ type: [CreateWidgetDto], description: 'Replace all widgets' })
   @IsOptional()
@@ -431,7 +431,7 @@ export class DashboardResponseDto {
   description: string | null;
   isTemplate: boolean;
   isDefault: boolean;
-  layout: any;
+  layout: Record<string, unknown>;
   createdBy: string;
   createdAt: Date;
   updatedAt: Date;
@@ -443,9 +443,9 @@ export class WidgetResponseDto {
   id: string;
   widgetType: string;
   title: string;
-  config: any;
-  dataSource: any;
-  position: any;
+  config: Record<string, unknown>;
+  dataSource: Record<string, unknown>;
+  position: Record<string, unknown>;
   refreshRate: number | null;
   createdAt: Date;
   updatedAt: Date;

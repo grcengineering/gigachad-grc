@@ -34,11 +34,10 @@ export class YamlExporter implements Exporter {
     for (const [key, value] of Object.entries(data)) {
       if (value !== null && value !== undefined) {
         if (Array.isArray(value)) {
-          cleaned[key as keyof ResourceData] = value.map(item => 
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (cleaned as any)[key] = value.map(item => 
             this.removeNullFields(item)
           );
-        } else {
-          cleaned[key as keyof ResourceData] = this.removeNullFields(value);
         }
       }
     }
@@ -46,7 +45,7 @@ export class YamlExporter implements Exporter {
     return cleaned;
   }
 
-  private removeNullFields(obj: any): any {
+  private removeNullFields(obj: unknown): unknown {
     if (obj === null || obj === undefined) {
       return obj;
     }
@@ -56,8 +55,8 @@ export class YamlExporter implements Exporter {
     }
 
     if (typeof obj === 'object') {
-      const cleaned: any = {};
-      for (const [key, value] of Object.entries(obj)) {
+      const cleaned: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
         if (value !== null && value !== undefined) {
           // Skip internal fields
           if (key.startsWith('_') || key === 'deletedAt' || key === 'deletedBy') {

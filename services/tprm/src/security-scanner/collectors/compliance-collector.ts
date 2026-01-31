@@ -92,8 +92,14 @@ export class ComplianceCollector {
     // Check for certifications
     for (const { pattern, cert, key, type } of this.CERTIFICATION_PATTERNS) {
       if (pattern.test(content)) {
-        if (key && key in result) {
-          (result as any)[key] = true;
+        if (key) {
+          switch (key) {
+            case 'hasSOC2': result.hasSOC2 = true; break;
+            case 'hasISO27001': result.hasISO27001 = true; break;
+            case 'hasGDPR': result.hasGDPR = true; break;
+            case 'hasHIPAA': result.hasHIPAA = true; break;
+            case 'hasPCIDSS': result.hasPCIDSS = true; break;
+          }
         }
         if (type && key === 'hasSOC2') {
           result.soc2Type = type as 'Type I' | 'Type II';

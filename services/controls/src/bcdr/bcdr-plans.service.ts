@@ -9,6 +9,15 @@ import {
   PlanStatus,
 } from './dto/bcdr.dto';
 import { addMonths } from 'date-fns';
+import {
+  BCDRPlanRecord,
+  PlanVersionRecord,
+  PlanControlRecord,
+  BusinessProcessRecord,
+  PlanStatsRecord,
+  CountRecord,
+  IdRecord,
+} from './types/bcdr-query.types';
 
 @Injectable()
 export class BCDRPlansService {
@@ -48,7 +57,7 @@ export class BCDRPlansService {
     const whereClause = whereClauses.join(' AND ');
 
     const [plans, total] = await Promise.all([
-      this.prisma.$queryRawUnsafe<any[]>(`
+      this.prisma.$queryRawUnsafe<BCDRPlanRecord[]>(`
         SELECT bp.*, 
                u.display_name as owner_name,
                (SELECT COUNT(*) FROM bcdr.plan_controls WHERE plan_id = bp.id) as control_count
@@ -58,7 +67,7 @@ export class BCDRPlansService {
         ORDER BY bp.updated_at DESC
         LIMIT ${limit} OFFSET ${offset}
       `),
-      this.prisma.$queryRawUnsafe<[{ count: bigint }]>(`
+      this.prisma.$queryRawUnsafe<[CountRecord]>(`
         SELECT COUNT(*) as count
         FROM bcdr.bcdr_plans
         WHERE organization_id = '${organizationId}'::uuid
@@ -82,7 +91,7 @@ export class BCDRPlansService {
   }
 
   async findOne(id: string, organizationId: string) {
-    const plans = await this.prisma.$queryRaw<any[]>`
+    const plans = await this.prisma.$queryRaw<BCDRPlanRecord[]>`
       SELECT bp.*, 
              u.display_name as owner_name,
              a.display_name as approver_name
@@ -99,7 +108,7 @@ export class BCDRPlansService {
     }
 
     // Get versions
-    const versions = await this.prisma.$queryRaw<any[]>`
+    const versions = await this.prisma.$queryRaw<PlanVersionRecord[]>`
       SELECT pv.*, u.display_name as created_by_name
       FROM bcdr.plan_versions pv
       LEFT JOIN public.users u ON pv.created_by::text = u.id
@@ -108,7 +117,7 @@ export class BCDRPlansService {
     `;
 
     // Get linked controls
-    const controls = await this.prisma.$queryRaw<any[]>`
+    const controls = await this.prisma.$queryRaw<PlanControlRecord[]>`
       SELECT pc.*, c.control_id as ctrl_id, c.title, c.category
       FROM bcdr.plan_controls pc
       JOIN public.controls c ON pc.control_id::text = c.id
@@ -116,7 +125,7 @@ export class BCDRPlansService {
     `;
 
     // Get in-scope processes
-    const processes = await this.prisma.$queryRaw<any[]>`
+    const processes = await this.prisma.$queryRaw<BusinessProcessRecord[]>`
       SELECT id, process_id, name, criticality_tier
       FROM bcdr.business_processes
       WHERE id = ANY(${plans[0].in_scope_processes || []}::uuid[])
@@ -139,7 +148,7 @@ export class BCDRPlansService {
     userName?: string,
   ) {
     // Check for duplicate planId
-    const existing = await this.prisma.$queryRaw<any[]>`
+    const existing = await this.prisma.$queryRaw<IdRecord[]>`
       SELECT id FROM bcdr.bcdr_plans 
       WHERE organization_id = ${organizationId}::uuid 
         AND plan_id = ${dto.planId}
@@ -154,7 +163,7 @@ export class BCDRPlansService {
       ? addMonths(new Date(), dto.reviewFrequencyMonths)
       : addMonths(new Date(), 12);
 
-    const result = await this.prisma.$queryRaw<any[]>`
+    const result = await this.prisma.$queryRaw<BCDRPlanRecord[]>`
       INSERT INTO bcdr.bcdr_plans (
         organization_id, workspace_id, plan_id, title, description, plan_type, status,
         version, owner_id, effective_date, expiry_date, 
@@ -207,7 +216,7 @@ export class BCDRPlansService {
     const _existing = await this.findOne(id, organizationId);
 
     const updates: string[] = ['updated_by = $2::uuid', 'updated_at = NOW()'];
-    const values: any[] = [id, userId];
+    const values: (string | number | boolean | Date | string[] | null)[] = [id, userId];
     let paramIndex = 3;
 
     if (dto.title !== undefined) {
@@ -319,7 +328,7 @@ export class BCDRPlansService {
       paramIndex++;
     }
 
-    const result = await this.prisma.$queryRawUnsafe<any[]>(
+    const result = await this.prisma.$queryRawUnsafe<BCDRPlanRecord[]>(
       `UPDATE bcdr.bcdr_plans SET ${updates.join(', ')} WHERE id = $1::uuid RETURNING *`,
       ...values,
     );
@@ -393,7 +402,7 @@ export class BCDRPlansService {
     `;
 
     // Update plan
-    const result = await this.prisma.$queryRaw<any[]>`
+    const result = await this.prisma.$queryRaw<BCDRPlanRecord[]>`
       UPDATE bcdr.bcdr_plans
       SET filename = ${file.originalname},
           storage_path = ${storagePath},
@@ -409,7 +418,7 @@ export class BCDRPlansService {
   }
 
   async linkControl(planId: string, controlId: string, userId: string, notes?: string) {
-    const result = await this.prisma.$queryRaw<any[]>`
+    const result = await this.prisma.$queryRaw<PlanControlRecord[]>`
       INSERT INTO bcdr.plan_controls (plan_id, control_id, mapping_notes, created_by)
       VALUES (${planId}::uuid, ${controlId}::uuid, ${notes || null}, ${userId}::uuid)
       ON CONFLICT (plan_id, control_id) DO UPDATE
@@ -430,7 +439,7 @@ export class BCDRPlansService {
   }
 
   async getStats(organizationId: string) {
-    const stats = await this.prisma.$queryRaw<any[]>`
+    const stats = await this.prisma.$queryRaw<PlanStatsRecord[]>`
       SELECT 
         COUNT(*) as total,
         COUNT(*) FILTER (WHERE status = 'draft') as draft_count,

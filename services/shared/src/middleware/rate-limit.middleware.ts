@@ -14,19 +14,23 @@ export class CustomThrottlerGuard extends ThrottlerGuard {
   /**
    * Get a unique identifier for the requesting client
    */
-  protected async getTracker(req: Record<string, any>): Promise<string> {
+  protected async getTracker(req: Record<string, unknown>): Promise<string> {
     // Extract IP address
-    const ip = req.ip || 
-               req.headers['x-forwarded-for']?.split(',')[0]?.trim() || 
-               req.headers['x-real-ip'] ||
-               req.connection?.remoteAddress ||
+    const headers = req.headers as Record<string, string | string[] | undefined>;
+    const connection = req.connection as { remoteAddress?: string } | undefined;
+    const forwardedFor = headers['x-forwarded-for'];
+    const ip = (req.ip as string) || 
+               (typeof forwardedFor === 'string' ? forwardedFor.split(',')[0]?.trim() : undefined) || 
+               (headers['x-real-ip'] as string) ||
+               connection?.remoteAddress ||
                'unknown';
 
     // If authenticated, include user ID for per-user limiting
-    const userId = req.user?.userId || req.headers['x-user-id'];
+    const user = req.user as { userId?: string } | undefined;
+    const userId = user?.userId || (headers['x-user-id'] as string);
     
     // If API key, use API key hash
-    const apiKey = req.headers['x-api-key'];
+    const apiKey = headers['x-api-key'] as string | undefined;
     
     if (apiKey) {
       // Hash the API key for the tracker (don't store raw key)
@@ -62,7 +66,7 @@ export class CustomThrottlerGuard extends ThrottlerGuard {
    */
   protected async throwThrottlingException(
     context: ExecutionContext,
-    _throttlerLimitDetail: any,
+    _throttlerLimitDetail: { limit: number; ttl: number; key: string; tracker: string; totalHits: number; timeToExpire: number },
   ): Promise<void> {
     const req = context.switchToHttp().getRequest();
     const tracker = await this.getTracker(req);
@@ -134,7 +138,7 @@ export const RateLimitPresets = {
 export function RateLimit(preset: keyof typeof RateLimitPresets | { ttl: number; limit: number }) {
   const config = typeof preset === 'string' ? RateLimitPresets[preset] : preset;
   
-  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+  return function (target: object, propertyKey: string, descriptor: PropertyDescriptor) {
     // Store rate limit config as metadata
     Reflect.defineMetadata('rateLimit', config, target, propertyKey);
     return descriptor;

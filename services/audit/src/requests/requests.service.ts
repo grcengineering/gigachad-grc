@@ -36,7 +36,7 @@ export class RequestsService {
     assignedTo?: string;
     category?: string;
   }) {
-    const where: any = { organizationId, deletedAt: null };
+    const where: Record<string, unknown> = { organizationId, deletedAt: null };
 
     if (filters?.auditId) {
       where.auditId = filters.auditId;
@@ -87,7 +87,7 @@ export class RequestsService {
   }
 
   async update(id: string, organizationId: string, updateRequestDto: UpdateAuditRequestDto) {
-    const updates: any = { ...updateRequestDto };
+    const updates: Record<string, unknown> = { ...updateRequestDto };
 
     // Update timestamps based on status changes
     if (updateRequestDto.status === 'submitted' && !updates.submittedAt) {
@@ -99,7 +99,7 @@ export class RequestsService {
 
     // Convert date string to Date
     if (updates.dueDate) {
-      updates.dueDate = new Date(updates.dueDate);
+      updates.dueDate = new Date(updates.dueDate as string);
     }
 
     return this.prisma.auditRequest.update({

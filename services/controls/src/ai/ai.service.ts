@@ -262,8 +262,9 @@ Provide your assessment with:
 
       this.logger.log(`Risk analysis completed for org ${organizationId}`);
       return result;
-    } catch (error) {
-      this.logger.error(`Risk analysis failed: ${error.message}`);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Risk analysis failed: ${message}`);
       throw error;
     }
   }
@@ -328,8 +329,9 @@ Provide:
 
       this.logger.log(`Categorization completed for org ${organizationId}`);
       return result;
-    } catch (error) {
-      this.logger.error(`Categorization failed: ${error.message}`);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Categorization failed: ${message}`);
       throw error;
     }
   }
@@ -423,8 +425,9 @@ For each result, explain why it's relevant and provide a relevance score (0-100)
 
       this.logger.log(`Smart search completed for org ${organizationId}`);
       return result;
-    } catch (error) {
-      this.logger.error(`Smart search failed: ${error.message}`);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Smart search failed: ${message}`);
       throw error;
     }
   }
@@ -560,8 +563,9 @@ Create a comprehensive policy with:
 
       this.logger.log(`Policy draft completed for org ${organizationId}`);
       return result;
-    } catch (error) {
-      this.logger.error(`Policy drafting failed: ${error.message}`);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Policy drafting failed: ${message}`);
       throw error;
     }
   }
@@ -644,8 +648,9 @@ Provide:
 
       this.logger.log(`Control suggestions completed for org ${organizationId}`);
       return result;
-    } catch (error) {
-      this.logger.error(`Control suggestion failed: ${error.message}`);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Control suggestion failed: ${message}`);
       throw error;
     }
   }

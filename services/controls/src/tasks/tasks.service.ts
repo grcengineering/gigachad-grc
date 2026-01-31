@@ -39,7 +39,7 @@ export class TasksService {
   }
 
   async findByAssignee(organizationId: string, assigneeId: string, status?: string) {
-    const where: any = {
+    const where: { organizationId: string; assigneeId: string; status?: string } = {
       organizationId,
       assigneeId,
     };
@@ -66,7 +66,7 @@ export class TasksService {
   }
 
   async findAll(organizationId: string, filters?: { status?: string; priority?: string }) {
-    const where: any = { organizationId };
+    const where: { organizationId: string; status?: string; priority?: string } = { organizationId };
     if (filters?.status) where.status = filters.status;
     if (filters?.priority) where.priority = filters.priority;
 
@@ -169,7 +169,15 @@ export class TasksService {
       throw new NotFoundException('Task not found');
     }
 
-    const updateData: any = {};
+    const updateData: {
+      title?: string;
+      description?: string;
+      status?: string;
+      completedAt?: Date;
+      priority?: string;
+      assigneeId?: string | null;
+      dueDate?: Date | null;
+    } = {};
     if (data.title !== undefined) updateData.title = data.title;
     if (data.description !== undefined) updateData.description = data.description;
     if (data.status !== undefined) {

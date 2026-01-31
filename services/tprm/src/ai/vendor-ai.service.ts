@@ -1,6 +1,27 @@
 import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma.service';
 import { AuditService } from '../common/audit.service';
+import { VendorDocument, Vendor, VendorAssessment } from '@prisma/client';
+
+// Type for vendor document with vendor relation
+interface VendorDocumentWithVendor extends VendorDocument {
+  vendor: Pick<Vendor, 'id' | 'name' | 'organizationId'>;
+}
+
+// Type for AI service response
+interface AIServiceResponse {
+  reportPeriod?: { startDate: string; endDate: string };
+  serviceOrganization?: string;
+  auditor?: string;
+  opinionType?: string;
+  exceptions?: SOC2Exception[];
+  cuecs?: CUEC[];
+  subserviceOrganizations?: SubserviceOrg[];
+  controlGaps?: ControlGap[];
+  suggestedRiskScore?: string;
+  summary?: string;
+  confidence?: number;
+}
 
 // ============================================
 // Types for SOC 2 Analysis
@@ -157,7 +178,7 @@ export class VendorAIService {
   /**
    * Build the AI prompt for SOC 2 analysis
    */
-  private buildSOC2AnalysisPrompt(document: any): string {
+  private buildSOC2AnalysisPrompt(document: VendorDocumentWithVendor): string {
     return `You are a SOC 2 Type II report analyst. Analyze the following SOC 2 report and extract key information.
 
 Document Title: ${document.title}
@@ -201,7 +222,7 @@ Respond in JSON format with this structure:
   /**
    * Call the AI service for analysis
    */
-  private async callAIService(prompt: string, organizationId: string): Promise<any> {
+  private async callAIService(prompt: string, organizationId: string): Promise<AIServiceResponse | null> {
     // Try to call the controls service AI endpoint using native fetch
     try {
       const controller = new AbortController();
@@ -229,9 +250,10 @@ Respond in JSON format with this structure:
         throw new Error(`AI service returned ${response.status}`);
       }
 
-      return await response.json();
-    } catch (error: any) {
-      this.logger.warn(`AI service call failed, using mock mode: ${error.message}`);
+      return await response.json() as AIServiceResponse;
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.warn(`AI service call failed, using mock mode: ${message}`);
       return null;
     }
   }
@@ -240,7 +262,7 @@ Respond in JSON format with this structure:
    * Parse the AI response into structured format
    */
   private parseAIResponse(
-    aiResponse: any,
+    aiResponse: AIServiceResponse | string | null,
     documentId: string,
     vendorId: string,
   ): SOC2AnalysisResult {
@@ -249,7 +271,7 @@ Respond in JSON format with this structure:
     }
 
     try {
-      const parsed = typeof aiResponse === 'string' ? JSON.parse(aiResponse) : aiResponse;
+      const parsed: AIServiceResponse = typeof aiResponse === 'string' ? JSON.parse(aiResponse) : aiResponse;
       
       return {
         documentId,
@@ -267,8 +289,9 @@ Respond in JSON format with this structure:
         summary: parsed.summary || 'Analysis completed',
         confidence: parsed.confidence || 75,
       };
-    } catch (error) {
-      this.logger.warn(`Failed to parse AI response: ${error.message}`);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.warn(`Failed to parse AI response: ${message}`);
       return this.generateMockAnalysis(documentId, vendorId, 'SOC 2 Report');
     }
   }
@@ -411,7 +434,7 @@ Respond in JSON format with this structure:
     analysis: SOC2AnalysisResult,
     userId: string,
     organizationId: string,
-  ): Promise<any> {
+  ): Promise<VendorAssessment> {
     // Get vendor name for audit log
     const vendor = await this.prisma.vendor.findUnique({
       where: { id: vendorId },

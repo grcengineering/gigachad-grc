@@ -31,7 +31,7 @@ export class UsersService {
     page: number = 1,
     limit: number = 50,
   ): Promise<UserListResponseDto> {
-    const where: any = { organizationId };
+    const where: Record<string, unknown> = { organizationId };
 
     if (filters.search) {
       where.OR = [
@@ -182,8 +182,9 @@ export class UsersService {
         if (defaultGroup) {
           await this.groupsService.addMember(defaultGroup.id, user.id, organizationId);
         }
-      } catch (error) {
-        this.logger.warn(`Failed to assign default group for user ${user.email}: ${error.message}`);
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        this.logger.warn(`Failed to assign default group for user ${user.email}: ${errorMessage}`);
       }
 
       this.logger.log(`Created new user from Keycloak: ${user.email}`);
@@ -237,7 +238,7 @@ export class UsersService {
         firstName: dto.firstName,
         lastName: dto.lastName,
         displayName: displayName,
-        role: ((dto.role) || UserRole.viewer) as any,
+        role: (dto.role || UserRole.viewer) as UserRole,
       },
     });
 
@@ -404,23 +405,27 @@ export class UsersService {
   /**
    * Convert user entity to response DTO
    */
-  private toResponseDto(user: any): UserResponseDto {
+  private toResponseDto(user: Record<string, unknown>): UserResponseDto {
+    const groupMemberships = user.groupMemberships as Array<Record<string, unknown>> | undefined;
     return {
-      id: user.id,
-      keycloakId: user.keycloakId,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      displayName: user.displayName,
-      role: user.role,
-      status: user.status,
-      lastLoginAt: user.lastLoginAt || undefined,
-      groups: user.groupMemberships?.map((m: any) => ({
-        id: m.group.id,
-        name: m.group.name,
-      })) || [],
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
+      id: user.id as string,
+      keycloakId: user.keycloakId as string,
+      email: user.email as string,
+      firstName: user.firstName as string,
+      lastName: user.lastName as string,
+      displayName: user.displayName as string,
+      role: user.role as string,
+      status: user.status as string,
+      lastLoginAt: (user.lastLoginAt as Date) || undefined,
+      groups: groupMemberships?.map((m) => {
+        const group = m.group as Record<string, unknown>;
+        return {
+          id: group.id as string,
+          name: group.name as string,
+        };
+      }) || [],
+      createdAt: user.createdAt as Date,
+      updatedAt: user.updatedAt as Date,
     };
   }
 }

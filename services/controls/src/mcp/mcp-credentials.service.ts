@@ -358,8 +358,9 @@ export class MCPCredentialsService {
 
           credentialsRotated++;
           this.logger.log(`Rotated credentials for server: ${credential.serverId}`);
-        } catch (error: any) {
-          errors.push(`Failed to rotate ${credential.serverId}: ${error.message}`);
+        } catch (error: unknown) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          errors.push(`Failed to rotate ${credential.serverId}: ${errorMessage}`);
           this.logger.error(`Failed to rotate credentials for ${credential.serverId}`, error);
         }
       }
@@ -382,9 +383,10 @@ export class MCPCredentialsService {
         credentialsRotated,
         errors,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error('Key rotation failed', error);
-      throw new Error(`Key rotation failed: ${error.message}`);
+      throw new Error(`Key rotation failed: ${errorMessage}`);
     }
   }
 

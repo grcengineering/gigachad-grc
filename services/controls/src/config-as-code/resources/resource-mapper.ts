@@ -1,7 +1,20 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ResourceType } from '../dto/export-config.dto';
-import { ResourceData } from '../exporters/exporter.interface';
+import { 
+  ResourceData, 
+  ControlItem, 
+  FrameworkItem, 
+  PolicyItem, 
+  RiskItem, 
+  EvidenceItem, 
+  VendorItem 
+} from '../exporters/exporter.interface';
+
+// Workspace filter type for queries
+interface WorkspaceFilter {
+  workspaceId?: string;
+}
 
 // Cache for exported resources to avoid repeated database queries
 interface CacheEntry {
@@ -46,8 +59,11 @@ export class ResourceMapper {
         const filtered: ResourceData = {};
         for (const type of resourceTypes) {
           const key = type.toLowerCase() as keyof ResourceData;
-          if (this.cache.data[key]) {
-            filtered[key] = this.cache.data[key];
+          const cachedData = this.cache.data[key];
+          if (cachedData) {
+            // Use type assertion to handle the union type assignment
+             
+            (filtered as Record<string, unknown>)[key] = cachedData;
           }
         }
         return filtered;
@@ -60,7 +76,7 @@ export class ResourceMapper {
     const workspaceFilter = workspaceId ? { workspaceId } : {};
 
     // Create an array of promises for parallel execution
-    const fetchPromises: Array<{ type: ResourceType; promise: Promise<any[]> }> = [];
+    const fetchPromises: Array<{ type: ResourceType; promise: Promise<unknown[]> }> = [];
 
     for (const resourceType of resourceTypes) {
       switch (resourceType) {
@@ -115,22 +131,22 @@ export class ResourceMapper {
     for (const { type, result } of results) {
       switch (type) {
         case ResourceType.CONTROLS:
-          data.controls = result;
+          data.controls = result as ControlItem[];
           break;
         case ResourceType.FRAMEWORKS:
-          data.frameworks = result;
+          data.frameworks = result as FrameworkItem[];
           break;
         case ResourceType.POLICIES:
-          data.policies = result;
+          data.policies = result as PolicyItem[];
           break;
         case ResourceType.RISKS:
-          data.risks = result;
+          data.risks = result as RiskItem[];
           break;
         case ResourceType.EVIDENCE:
-          data.evidence = result;
+          data.evidence = result as EvidenceItem[];
           break;
         case ResourceType.VENDORS:
-          data.vendors = result;
+          data.vendors = result as VendorItem[];
           break;
       }
     }
@@ -157,7 +173,7 @@ export class ResourceMapper {
     this.logger.log('Resource cache cleared');
   }
 
-  private async mapControls(organizationId: string, workspaceFilter: any): Promise<any[]> {
+  private async mapControls(organizationId: string, workspaceFilter: WorkspaceFilter): Promise<ControlItem[]> {
     const startTime = Date.now();
     
     // Use a more efficient query - select only needed fields and limit the join
@@ -251,7 +267,7 @@ export class ResourceMapper {
     }));
   }
 
-  private async mapPolicies(organizationId: string, workspaceFilter: any): Promise<any[]> {
+  private async mapPolicies(organizationId: string, workspaceFilter: WorkspaceFilter): Promise<PolicyItem[]> {
     const startTime = Date.now();
     
     const policies = await this.prisma.policy.findMany({
@@ -286,7 +302,7 @@ export class ResourceMapper {
     }));
   }
 
-  private async mapRisks(organizationId: string, workspaceFilter: any): Promise<any[]> {
+  private async mapRisks(organizationId: string, workspaceFilter: WorkspaceFilter): Promise<RiskItem[]> {
     const startTime = Date.now();
     
     const risks = await this.prisma.risk.findMany({
@@ -337,7 +353,7 @@ export class ResourceMapper {
     }));
   }
 
-  private async mapEvidence(organizationId: string, workspaceFilter: any): Promise<any[]> {
+  private async mapEvidence(organizationId: string, workspaceFilter: WorkspaceFilter): Promise<EvidenceItem[]> {
     const startTime = Date.now();
     
     const evidence = await this.prisma.evidence.findMany({

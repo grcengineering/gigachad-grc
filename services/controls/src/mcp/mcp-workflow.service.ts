@@ -469,7 +469,7 @@ export class MCPWorkflowService {
     const maxDelayMs = 10000;
 
     let attempt = 0;
-    let lastError: any;
+    let lastError: unknown;
 
     while (attempt < maxAttempts) {
       try {
@@ -483,7 +483,7 @@ export class MCPWorkflowService {
         const delay = Math.min(baseDelayMs * Math.pow(2, attempt), maxDelayMs);
         this.logger.warn(
           `MCP workflow step "${step.id}" failed (attempt ${attempt + 1}/${maxAttempts}): ${
-            (error as any)?.message || error
+            error instanceof Error ? error.message : String(error)
           } – retrying in ${delay}ms`,
         );
         await new Promise((resolve) => setTimeout(resolve, delay));

@@ -170,8 +170,9 @@ export class AzureBlobStorage implements StorageProvider {
         etag: properties.etag,
         metadata: properties.metadata as Record<string, string>,
       };
-    } catch (error: any) {
-      if (error.statusCode === 404) {
+    } catch (error: unknown) {
+      const blobError = error as { statusCode?: number };
+      if (blobError.statusCode === 404) {
         return null;
       }
       throw error;

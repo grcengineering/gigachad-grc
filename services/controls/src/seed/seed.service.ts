@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Injectable, Logger, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
@@ -131,7 +132,7 @@ export class SeedDataService {
       select: { settings: true },
     });
     
-    const settings = org?.settings as any;
+    const settings = org?.settings as Record<string, unknown> | null;
     return settings?.demoDataLoaded === true;
   }
 
@@ -275,7 +276,7 @@ export class SeedDataService {
       this.logger.log(`Demo data loaded successfully. Total records: ${result.totalRecords}`);
       
       // Create audit log entry
-      await this.createAuditLogEntry(organizationId, userId, 'demo_data_loaded', result);
+      await this.createAuditLogEntry(organizationId, userId, 'demo_data_loaded', JSON.parse(JSON.stringify(result)));
 
       return result;
     } catch (error) {
@@ -370,12 +371,12 @@ export class SeedDataService {
       controlIds.push(created.id);
       
       // Create implementation record with varied status
-      const status = statusDistribution[i % statusDistribution.length];
+      const status = statusDistribution[i % statusDistribution.length] as 'implemented' | 'in_progress' | 'not_started' | 'not_applicable';
       const implementation = await this.prisma.controlImplementation.create({
         data: {
           controlId: created.id,
           organizationId,
-          status: status as any,
+          status,
           ownerId: userId,
           implementationNotes: status === 'implemented' 
             ? `${control.title} has been fully implemented and tested.`
@@ -1223,7 +1224,7 @@ export class SeedDataService {
   private async seedTrustConfiguration(organizationId: string): Promise<void> {
     try {
       // Check if trust config already exists
-      const existing = await this.prisma.$queryRaw<any[]>`
+      const existing = await this.prisma.$queryRaw<Array<{ id: string }>>`
         SELECT id FROM trust.trust_config WHERE organization_id = ${organizationId} LIMIT 1
       `;
       
@@ -1256,7 +1257,7 @@ export class SeedDataService {
     organizationId: string,
     userId: string,
     action: string,
-    details: any,
+    details: Record<string, unknown>,
   ): Promise<void> {
     await this.prisma.auditLog.create({
       data: {
@@ -1265,8 +1266,8 @@ export class SeedDataService {
         action,
         entityType: 'organization',
         entityId: organizationId,
-        description: `Demo data loaded: ${details.totalRecords} records created`,
-        changes: details,
+        description: `Demo data loaded: ${(details.totalRecords as number) || 0} records created`,
+        changes: JSON.parse(JSON.stringify(details)),
         ipAddress: '127.0.0.1',
         userAgent: 'System',
       },

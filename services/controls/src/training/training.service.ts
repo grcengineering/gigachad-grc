@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Prisma } from '@prisma/client';
+import { Prisma, UserRole } from '@prisma/client';
 import {
   UpdateProgressDto,
   StartModuleDto,
@@ -118,7 +118,13 @@ export class TrainingService {
       });
     }
 
-    const updateData: any = {
+    const updateData: {
+      lastAccessedAt: Date;
+      status?: string;
+      score?: number;
+      slideProgress?: number;
+      timeSpent?: number;
+    } = {
       lastAccessedAt: new Date(),
     };
 
@@ -242,7 +248,7 @@ export class TrainingService {
   // ==========================================
 
   async getAssignments(organizationId: string, userId?: string) {
-    const where: any = { organizationId };
+    const where: { organizationId: string; userId?: string } = { organizationId };
     if (userId) {
       where.userId = userId;
     }
@@ -354,7 +360,12 @@ export class TrainingService {
       throw new NotFoundException(`Assignment ${assignmentId} not found`);
     }
 
-    const updateData: any = {};
+    const updateData: {
+      status?: string;
+      dueDate?: Date | null;
+      isRequired?: boolean;
+      completedAt?: Date;
+    } = {};
     if (dto.status) updateData.status = dto.status;
     if (dto.dueDate !== undefined) updateData.dueDate = dto.dueDate ? new Date(dto.dueDate) : null;
     if (dto.isRequired !== undefined) updateData.isRequired = dto.isRequired;
@@ -491,7 +502,14 @@ export class TrainingService {
       }
     }
 
-    const updateData: any = {};
+    const updateData: {
+      name?: string;
+      description?: string | null;
+      moduleIds?: string[];
+      targetGroups?: string[];
+      endDate?: Date | null;
+      isActive?: boolean;
+    } = {};
     if (dto.name) updateData.name = dto.name;
     if (dto.description !== undefined) updateData.description = dto.description;
     if (dto.moduleIds) updateData.moduleIds = dto.moduleIds;
@@ -652,7 +670,16 @@ export class TrainingService {
       throw new NotFoundException(`Custom module ${moduleId} not found`);
     }
 
-    const updateData: any = {};
+    const updateData: {
+      name?: string;
+      description?: string;
+      category?: string;
+      duration?: number;
+      difficulty?: string;
+      iconType?: string;
+      topics?: string[];
+      isActive?: boolean;
+    } = {};
     if (dto.name !== undefined) updateData.name = dto.name;
     if (dto.description !== undefined) updateData.description = dto.description;
     if (dto.category !== undefined) updateData.category = dto.category;
@@ -828,7 +855,7 @@ export class TrainingService {
     return this.prisma.user.findMany({
       where: {
         organizationId,
-        role: { in: roles as any },
+        role: { in: roles as UserRole[] },
         status: 'active',
       },
       select: {
@@ -861,7 +888,7 @@ export class TrainingService {
       users = await this.prisma.user.findMany({
         where: {
           organizationId,
-          role: { in: targetGroups as any },
+          role: { in: targetGroups as UserRole[] },
           status: 'active',
         },
         select: { id: true },

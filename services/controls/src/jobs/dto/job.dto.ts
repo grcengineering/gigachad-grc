@@ -139,7 +139,7 @@ export class CreateJobDto {
 
   @ApiProperty({ description: 'Job data/payload' })
   @IsObject()
-  data: Record<string, any>;
+  data: Record<string, unknown>;
 
   @ApiPropertyOptional({ description: 'Job priority (higher = more important)' })
   @IsOptional()
@@ -164,7 +164,7 @@ export class JobDto {
   name: string;
 
   @ApiProperty()
-  data: Record<string, any>;
+  data: Record<string, unknown>;
 
   @ApiProperty({ enum: JobStatus })
   status: JobStatus;
@@ -182,7 +182,7 @@ export class JobDto {
   progress: number;
 
   @ApiPropertyOptional()
-  result?: any;
+  result?: unknown;
 
   @ApiPropertyOptional()
   error?: string;
@@ -262,7 +262,7 @@ export class CreateScheduledJobDto {
   @ApiPropertyOptional({ description: 'Job data/payload' })
   @IsOptional()
   @IsObject()
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
 }
 
 export class UpdateScheduledJobDto {
@@ -284,7 +284,7 @@ export class UpdateScheduledJobDto {
   @ApiPropertyOptional({ description: 'Job data/payload' })
   @IsOptional()
   @IsObject()
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
 
   @ApiPropertyOptional({ description: 'Enable/disable job' })
   @IsOptional()
@@ -312,7 +312,7 @@ export class ScheduledJobDto {
   timezone: string;
 
   @ApiPropertyOptional()
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
 
   @ApiProperty()
   isEnabled: boolean;

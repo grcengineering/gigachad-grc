@@ -4,6 +4,7 @@ import { AuditService } from '../common/audit.service';
 import { UpdateTrustCenterConfigDto } from './dto/update-config.dto';
 import { CreateTrustCenterContentDto } from './dto/create-content.dto';
 import { UpdateTrustCenterContentDto } from './dto/update-content.dto';
+import { Prisma, TrustCenterContent } from '@prisma/client';
 
 @Injectable()
 export class TrustCenterService {
@@ -33,13 +34,18 @@ export class TrustCenterService {
   }
 
   async updateConfig(organizationId: string, updateConfigDto: UpdateTrustCenterConfigDto, userId: string) {
+    const { customSections, ...restDto } = updateConfigDto;
     const config = await this.prisma.trustCenterConfig.upsert({
       where: { organizationId },
-      update: updateConfigDto,
+      update: {
+        ...restDto,
+        customSections: customSections as Prisma.InputJsonValue | undefined,
+      },
       create: {
         organizationId,
         companyName: updateConfigDto.companyName || 'Your Company',
-        ...updateConfigDto,
+        ...restDto,
+        customSections: customSections as Prisma.InputJsonValue | undefined,
       },
     });
 
@@ -51,7 +57,7 @@ export class TrustCenterService {
       entityId: config.id,
       entityName: 'Trust Center Configuration',
       description: 'Updated Trust Center configuration',
-      changes: updateConfigDto,
+      changes: updateConfigDto as unknown as Prisma.InputJsonValue,
     });
 
     return config;
@@ -83,7 +89,7 @@ export class TrustCenterService {
   }
 
   async getContent(organizationId: string, section?: string, publishedOnly = false) {
-    const where: any = { organizationId };
+    const where: Prisma.TrustCenterContentWhereInput = { organizationId };
 
     if (section) {
       where.section = section;
@@ -129,7 +135,7 @@ export class TrustCenterService {
       entityId: id,
       entityName: updated.title,
       description: `Updated Trust Center content: ${updated.title}`,
-      changes: updateContentDto,
+      changes: updateContentDto as unknown as Prisma.InputJsonValue,
     });
 
     return updated;
@@ -173,7 +179,7 @@ export class TrustCenterService {
       }
       acc[item.section].push(item);
       return acc;
-    }, {} as Record<string, any[]>);
+    }, {} as Record<string, TrustCenterContent[]>);
 
     return {
       config: {

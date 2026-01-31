@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { Prisma } from '@prisma/client';
 
 /**
  * Security event types for comprehensive audit logging
@@ -86,7 +87,7 @@ export interface SecurityEventParams {
   resourceType?: string;
   resourceId?: string;
   description: string;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
   success?: boolean;
 }
 
@@ -448,7 +449,7 @@ export class SecurityAuditService {
     action: string;
     targetType: string;
     targetId: string;
-    changes?: Record<string, any>;
+    changes?: Record<string, unknown>;
     ipAddress?: string;
   }): Promise<void> {
     await this.logSecurityEvent({
@@ -466,8 +467,8 @@ export class SecurityAuditService {
     userId: string;
     organizationId: string;
     settingName: string;
-    oldValue?: any;
-    newValue?: any;
+    oldValue?: unknown;
+    newValue?: unknown;
     ipAddress?: string;
   }): Promise<void> {
     await this.logSecurityEvent({
@@ -504,7 +505,7 @@ export class SecurityAuditService {
       offset?: number;
     } = {},
   ) {
-    const where: any = { organizationId };
+    const where: Prisma.AuditLogWhereInput = { organizationId };
 
     if (filters.eventTypes?.length) {
       where.action = { in: filters.eventTypes };
@@ -515,9 +516,9 @@ export class SecurityAuditService {
     }
 
     if (filters.startDate || filters.endDate) {
-      where.createdAt = {};
-      if (filters.startDate) where.createdAt.gte = filters.startDate;
-      if (filters.endDate) where.createdAt.lte = filters.endDate;
+      where.timestamp = {};
+      if (filters.startDate) where.timestamp.gte = filters.startDate;
+      if (filters.endDate) where.timestamp.lte = filters.endDate;
     }
 
     // Filter by severity if provided (stored in details.severity)

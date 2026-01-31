@@ -193,7 +193,7 @@ export class RetentionService {
   private async findEvidenceForPolicy(
     organizationId: string,
     policy: RetentionPolicy,
-  ): Promise<any[]> {
+  ): Promise<Array<{ id: string; title: string; type: string; category: string | null; storagePath: string; createdAt: Date; createdBy: string; deletedAt: Date | null }>> {
     const where: Prisma.EvidenceWhereInput = {
       organizationId,
       deletedAt: null,
@@ -235,7 +235,7 @@ export class RetentionService {
    * Send notification about upcoming expiration
    */
   private async sendExpirationNotification(
-    evidence: any,
+    evidence: { id: string; title: string; createdBy: string },
     daysUntilExpiry: number,
     organizationId: string,
   ): Promise<void> {
@@ -258,7 +258,7 @@ export class RetentionService {
    * Soft delete evidence (mark as deleted but don't remove)
    */
   private async softDeleteEvidence(
-    evidence: any,
+    evidence: { id: string; title: string; storagePath: string },
     organizationId: string,
   ): Promise<void> {
     await this.prisma.evidence.update({
@@ -287,7 +287,7 @@ export class RetentionService {
    * Permanently delete evidence and its file
    */
   private async permanentlyDelete(
-    evidence: any,
+    evidence: { id: string; title: string; storagePath: string },
     organizationId: string,
   ): Promise<void> {
     // Delete from database
@@ -474,7 +474,7 @@ export class RetentionService {
   async getExpiringEvidence(
     organizationId: string,
     daysAhead: number = 30,
-  ): Promise<any[]> {
+  ) {
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + daysAhead);
 

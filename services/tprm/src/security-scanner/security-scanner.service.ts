@@ -14,6 +14,32 @@ import {
   scoreToRiskLevel,
   riskLevelToInherentScore,
 } from './dto/security-scan.dto';
+import { VendorAssessment, VendorRiskScore } from '@prisma/client';
+
+// Valid risk score values
+const VALID_RISK_SCORES: VendorRiskScore[] = ['very_low', 'low', 'medium', 'high', 'critical'];
+
+function toVendorRiskScore(value: string): VendorRiskScore {
+  return VALID_RISK_SCORES.includes(value as VendorRiskScore) ? value as VendorRiskScore : 'medium';
+}
+
+// Interface for security scan findings stored in assessment
+interface SecurityScanFindings {
+  targetUrl: string;
+  ssl: SecurityScanResult['ssl'];
+  securityHeaders: SecurityScanResult['securityHeaders'];
+  missingHeaders: SecurityScanResult['missingHeaders'];
+  dns: SecurityScanResult['dns'];
+  webPresence: SecurityScanResult['webPresence'];
+  compliance: SecurityScanResult['compliance'];
+  subdomains: SecurityScanResult['subdomains'];
+  categoryScores: SecurityScanResult['categoryScores'];
+  overallScore: number;
+  riskLevel: SecurityScanResult['riskLevel'];
+  findingsList: SecurityScanResult['findings'];
+  keyRisks: SecurityScanResult['keyRisks'];
+  recommendations: SecurityScanResult['recommendations'];
+}
 
 @Injectable()
 export class SecurityScannerService {
@@ -136,7 +162,7 @@ export class SecurityScannerService {
       await this.prisma.vendor.update({
         where: { id: vendorId },
         data: {
-          inherentRiskScore: riskLevelToInherentScore(riskLevel) as any,
+          inherentRiskScore: toVendorRiskScore(riskLevelToInherentScore(riskLevel)),
         },
       });
 
@@ -261,19 +287,19 @@ export class SecurityScannerService {
       .filter((r): r is SecurityScanResult => r !== null);
   }
 
-  private assessmentToScanResult(assessment: any): SecurityScanResult | null {
+  private assessmentToScanResult(assessment: VendorAssessment): SecurityScanResult | null {
     // Parse findings - handle both string and object cases
-    let findings: any = null;
+    let findings: SecurityScanFindings | null = null;
     if (assessment.findings) {
       if (typeof assessment.findings === 'string') {
         try {
-          findings = JSON.parse(assessment.findings);
+          findings = JSON.parse(assessment.findings) as SecurityScanFindings;
         } catch {
           this.logger.warn(`Failed to parse findings JSON for assessment ${assessment.id}`);
           return null;
         }
       } else {
-        findings = assessment.findings;
+        findings = assessment.findings as unknown as SecurityScanFindings;
       }
     }
 

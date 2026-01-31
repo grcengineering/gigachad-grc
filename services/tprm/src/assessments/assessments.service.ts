@@ -4,6 +4,23 @@ import { AuditService } from '../common/audit.service';
 import { CreateAssessmentDto } from './dto/create-assessment.dto';
 import { UpdateAssessmentDto } from './dto/update-assessment.dto';
 import { calculateNextReviewDate } from '../vendors/vendors.service';
+import { Prisma, VendorAssessment, Vendor, VendorAssessmentStatus } from '@prisma/client';
+
+// Type for assessment with vendor relation
+type AssessmentWithVendor = VendorAssessment & {
+  vendor: Pick<Vendor, 'id' | 'name'>;
+};
+
+// Type for assessment with full vendor and review frequency
+type AssessmentWithVendorFrequency = VendorAssessment & {
+  vendor: Pick<Vendor, 'id' | 'name' | 'reviewFrequency'>;
+};
+
+// Helper to convert string to VendorAssessmentStatus
+function toAssessmentStatus(status: string | undefined, defaultValue: VendorAssessmentStatus = 'pending'): VendorAssessmentStatus {
+  const validStatuses: VendorAssessmentStatus[] = ['pending', 'in_progress', 'completed'];
+  return validStatuses.includes(status as VendorAssessmentStatus) ? status as VendorAssessmentStatus : defaultValue;
+}
 
 @Injectable()
 export class AssessmentsService {
@@ -13,16 +30,15 @@ export class AssessmentsService {
   ) {}
 
   async create(createAssessmentDto: CreateAssessmentDto, userId: string) {
+    const { status, dueDate, completedAt, responses, findings, ...rest } = createAssessmentDto;
     const assessment = await this.prisma.vendorAssessment.create({
       data: {
-        ...createAssessmentDto,
-        status: (createAssessmentDto.status || 'pending') as any,
-        dueDate: createAssessmentDto.dueDate
-          ? new Date(createAssessmentDto.dueDate)
-          : undefined,
-        completedAt: createAssessmentDto.completedAt
-          ? new Date(createAssessmentDto.completedAt)
-          : undefined,
+        ...rest,
+        status: toAssessmentStatus(status),
+        dueDate: dueDate ? new Date(dueDate) : undefined,
+        completedAt: completedAt ? new Date(completedAt) : undefined,
+        responses: responses as Prisma.InputJsonValue,
+        findings: findings as Prisma.InputJsonValue,
         createdBy: userId,
       },
       include: {
@@ -35,14 +51,16 @@ export class AssessmentsService {
       },
     });
 
+    const assessmentWithVendor = assessment as AssessmentWithVendor;
+
     await this.audit.log({
       organizationId: assessment.organizationId,
       userId,
       action: 'CREATE_ASSESSMENT',
       entityType: 'assessment',
       entityId: assessment.id,
-      entityName: `${(assessment as any).vendor.name} - ${assessment.assessmentType}`,
-      description: `Created ${assessment.assessmentType} assessment for ${(assessment as any).vendor.name}`,
+      entityName: `${assessmentWithVendor.vendor.name} - ${assessment.assessmentType}`,
+      description: `Created ${assessment.assessmentType} assessment for ${assessmentWithVendor.vendor.name}`,
       metadata: {
         vendorId: assessment.vendorId,
         assessmentType: assessment.assessmentType,
@@ -57,7 +75,7 @@ export class AssessmentsService {
     assessmentType?: string;
     status?: string;
   }) {
-    const where: any = {};
+    const where: Prisma.VendorAssessmentWhereInput = {};
 
     if (filters?.vendorId) {
       where.vendorId = filters.vendorId;
@@ -68,7 +86,7 @@ export class AssessmentsService {
     }
 
     if (filters?.status) {
-      where.status = filters.status;
+      where.status = toAssessmentStatus(filters.status);
     }
 
     return this.prisma.vendorAssessment.findMany({
@@ -107,18 +125,31 @@ export class AssessmentsService {
     // Get current assessment to check status change
     const currentAssessment = await this.findOne(id);
     
-    const data: any = { ...updateAssessmentDto };
+    const { status, dueDate, completedAt, responses, findings, ...rest } = updateAssessmentDto;
+    const data: Prisma.VendorAssessmentUpdateInput = { ...rest };
 
-    if (updateAssessmentDto.dueDate) {
-      data.dueDate = new Date(updateAssessmentDto.dueDate);
+    if (status) {
+      data.status = toAssessmentStatus(status);
     }
 
-    if (updateAssessmentDto.completedAt) {
-      data.completedAt = new Date(updateAssessmentDto.completedAt);
+    if (dueDate) {
+      data.dueDate = new Date(dueDate);
+    }
+
+    if (completedAt) {
+      data.completedAt = new Date(completedAt);
+    }
+
+    if (responses !== undefined) {
+      data.responses = responses as Prisma.InputJsonValue;
+    }
+
+    if (findings !== undefined) {
+      data.findings = findings as Prisma.InputJsonValue;
     }
 
     // If status is being changed to 'completed', set completedAt if not provided
-    if (updateAssessmentDto.status === 'completed' && !data.completedAt) {
+    if (status === 'completed' && !data.completedAt) {
       data.completedAt = new Date();
     }
 
@@ -142,7 +173,8 @@ export class AssessmentsService {
       currentAssessment.status !== 'completed'
     ) {
       const now = new Date();
-      const reviewFrequency = (assessment.vendor as any).reviewFrequency || 'annual';
+      const assessmentWithFrequency = assessment as AssessmentWithVendorFrequency;
+      const reviewFrequency = assessmentWithFrequency.vendor.reviewFrequency || 'annual';
       const nextReviewDue = calculateNextReviewDate(now, reviewFrequency);
 
       await this.prisma.vendor.update({
@@ -177,7 +209,7 @@ export class AssessmentsService {
       entityId: assessment.id,
       entityName: `${assessment.vendor.name} - ${assessment.assessmentType}`,
       description: `Updated ${assessment.assessmentType} assessment for ${assessment.vendor.name}`,
-      changes: updateAssessmentDto,
+      changes: updateAssessmentDto as unknown as Prisma.InputJsonValue,
     });
 
     return assessment;
@@ -230,7 +262,7 @@ export class AssessmentsService {
     const oneMonthFromNow = new Date();
     oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
 
-    const baseWhere: any = {
+    const baseWhere: Prisma.VendorAssessmentWhereInput = {
       status: { in: ['pending', 'in_progress'] },
     };
 
@@ -283,7 +315,7 @@ export class AssessmentsService {
   async getOverdueAssessments(organizationId?: string) {
     const now = new Date();
 
-    const where: any = {
+    const where: Prisma.VendorAssessmentWhereInput = {
       status: { in: ['pending', 'in_progress'] },
       dueDate: { lt: now },
     };
@@ -317,7 +349,7 @@ export class AssessmentsService {
   async getAssessmentStats(organizationId?: string) {
     const now = new Date();
 
-    const where: any = {};
+    const where: Prisma.VendorAssessmentWhereInput = {};
     if (organizationId) {
       where.organizationId = organizationId;
     }

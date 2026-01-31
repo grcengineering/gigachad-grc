@@ -74,7 +74,7 @@ export class TestProceduresService {
   }
 
   async findAll(organizationId: string, auditId?: string, controlId?: string) {
-    const where: any = { organizationId };
+    const where: Record<string, unknown> = { organizationId };
     if (auditId) where.auditId = auditId;
     if (controlId) where.controlId = controlId;
 
@@ -147,7 +147,7 @@ export class TestProceduresService {
   }
 
   async getStats(organizationId: string, auditId?: string) {
-    const where: any = { organizationId };
+    const where: Record<string, unknown> = { organizationId };
     if (auditId) where.auditId = auditId;
 
     const [total, byConclusion, byStatus, byType] = await Promise.all([

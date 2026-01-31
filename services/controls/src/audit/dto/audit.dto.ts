@@ -26,11 +26,11 @@ export class CreateAuditLogDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  changes?: Record<string, any>;
+  changes?: Record<string, unknown>;
 
   @ApiPropertyOptional()
   @IsOptional()
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export class AuditLogFilterDto {
@@ -128,10 +128,10 @@ export class AuditLogResponseDto {
   description: string;
 
   @ApiPropertyOptional()
-  changes?: Record<string, any>;
+  changes?: Record<string, unknown>;
 
   @ApiPropertyOptional()
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 
   @ApiPropertyOptional()
   ipAddress?: string;

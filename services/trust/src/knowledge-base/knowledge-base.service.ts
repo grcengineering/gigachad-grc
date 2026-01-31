@@ -3,7 +3,15 @@ import { PrismaService } from '../common/prisma.service';
 import { AuditService } from '../common/audit.service';
 import { CreateKnowledgeBaseDto } from './dto/create-knowledge-base.dto';
 import { UpdateKnowledgeBaseDto } from './dto/update-knowledge-base.dto';
-import { KnowledgeBaseStatus } from '@prisma/client';
+import { KnowledgeBaseStatus, Prisma, KnowledgeBaseCategory } from '@prisma/client';
+
+interface KnowledgeBaseFilters {
+  category?: string;
+  status?: string;
+  framework?: string;
+  isPublic?: string;
+  search?: string;
+}
 
 @Injectable()
 export class KnowledgeBaseService {
@@ -18,7 +26,7 @@ export class KnowledgeBaseService {
     const entry = await this.prisma.knowledgeBaseEntry.create({
       data: {
         ...createData,
-        category: category as any, // KnowledgeBaseCategory enum
+        category: category as KnowledgeBaseCategory,
         status: (status as KnowledgeBaseStatus) || KnowledgeBaseStatus.draft,
         createdBy: userId,
       },
@@ -99,14 +107,14 @@ export class KnowledgeBaseService {
     };
   }
 
-  async findAll(organizationId: string, filters?: any) {
-    const where: any = { organizationId, deletedAt: null };
+  async findAll(organizationId: string, filters?: KnowledgeBaseFilters) {
+    const where: Prisma.KnowledgeBaseEntryWhereInput = { organizationId, deletedAt: null };
 
     if (filters?.category) {
-      where.category = filters.category;
+      where.category = filters.category as KnowledgeBaseCategory;
     }
     if (filters?.status) {
-      where.status = filters.status;
+      where.status = filters.status as KnowledgeBaseStatus;
     }
     if (filters?.framework) {
       where.framework = filters.framework;
@@ -169,17 +177,18 @@ export class KnowledgeBaseService {
   async update(id: string, updateKnowledgeBaseDto: UpdateKnowledgeBaseDto, userId: string) {
     const _entry = await this.findOne(id);
 
-    const { linkedControls, linkedEvidence, linkedPolicies, approvedBy, status, ...updateData } = updateKnowledgeBaseDto;
+    const { linkedControls, linkedEvidence, linkedPolicies, approvedBy, status, category, ...updateData } = updateKnowledgeBaseDto;
 
     const updated = await this.prisma.knowledgeBaseEntry.update({
       where: { id },
       data: {
         ...updateData,
+        category: category as KnowledgeBaseCategory | undefined,
         status: status as KnowledgeBaseStatus | undefined,
         approvedAt: updateKnowledgeBaseDto.approvedAt ? new Date(updateKnowledgeBaseDto.approvedAt) : undefined,
-        updatedBy: userId,
-        approvedBy: approvedBy || undefined,
-      } as any, // TODO: Fix Prisma type compatibility
+        ...(userId && { updatedByUser: { connect: { id: userId } } }),
+        ...(approvedBy && { approvedByUser: { connect: { id: approvedBy } } }),
+      },
       include: {
         attachments: true,
       },
@@ -250,7 +259,7 @@ export class KnowledgeBaseService {
       entityId: id,
       entityName: updated.title,
       description: `Updated knowledge base entry ${updated.title}`,
-      changes: updateKnowledgeBaseDto,
+      changes: updateKnowledgeBaseDto as unknown as Prisma.InputJsonValue,
     });
 
     return updated;
@@ -394,14 +403,14 @@ export class KnowledgeBaseService {
 
   // Get public entries for Trust Center
   async getPublicEntries(organizationId: string, category?: string) {
-    const where: any = {
+    const where: Prisma.KnowledgeBaseEntryWhereInput = {
       organizationId,
       isPublic: true,
       status: 'approved',
     };
 
     if (category) {
-      where.category = category;
+      where.category = category as KnowledgeBaseCategory;
     }
 
     return this.prisma.knowledgeBaseEntry.findMany({

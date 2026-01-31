@@ -9,18 +9,27 @@ export interface SearchResult {
   path: string;
 }
 
+// Prisma model delegate interface for search operations
+interface PrismaModelDelegate {
+  findMany: (args: { 
+    where?: Record<string, unknown>; 
+    take?: number; 
+    select?: Record<string, boolean>; 
+  }) => Promise<Record<string, unknown>[]>;
+}
+
 // PrismaService type - each service provides their own implementation
 export interface IPrismaService {
-  control?: any;
-  framework?: any;
-  policy?: any;
-  evidence?: any;
-  integration?: any;
-  risk?: any;
-  vendor?: any;
-  audit?: any;
-  user?: any;
-  asset?: any;
+  control?: PrismaModelDelegate;
+  framework?: PrismaModelDelegate;
+  policy?: PrismaModelDelegate;
+  evidence?: PrismaModelDelegate;
+  integration?: PrismaModelDelegate;
+  risk?: PrismaModelDelegate;
+  vendor?: PrismaModelDelegate;
+  audit?: PrismaModelDelegate;
+  user?: PrismaModelDelegate;
+  asset?: PrismaModelDelegate;
 }
 
 @Injectable()
@@ -60,11 +69,11 @@ export class SearchService {
         });
 
         results.push(
-          ...controls.map((c: any) => ({
+          ...controls.map((c) => ({
             type: 'control' as const,
-            id: c.id,
+            id: c.id as string,
             title: `${c.controlId}: ${c.title}`,
-            subtitle: c.description?.substring(0, 100),
+            subtitle: (c.description as string | undefined)?.substring(0, 100),
             path: `/controls/${c.id}`,
           }))
         );
@@ -84,11 +93,11 @@ export class SearchService {
         });
 
         results.push(
-          ...frameworks.map((f: any) => ({
+          ...frameworks.map((f) => ({
             type: 'framework' as const,
-            id: f.id,
-            title: f.name,
-            subtitle: f.version ? `Version ${f.version}` : f.description?.substring(0, 100),
+            id: f.id as string,
+            title: f.name as string,
+            subtitle: f.version ? `Version ${f.version}` : (f.description as string | undefined)?.substring(0, 100),
             path: `/frameworks/${f.id}`,
           }))
         );
@@ -109,11 +118,11 @@ export class SearchService {
         });
 
         results.push(
-          ...policies.map((p: any) => ({
+          ...policies.map((p) => ({
             type: 'policy' as const,
-            id: p.id,
-            title: p.title,
-            subtitle: p.status,
+            id: p.id as string,
+            title: p.title as string,
+            subtitle: p.status as string | undefined,
             path: `/policies`,
           }))
         );
@@ -134,11 +143,11 @@ export class SearchService {
         });
 
         results.push(
-          ...evidence.map((e: any) => ({
+          ...evidence.map((e) => ({
             type: 'evidence' as const,
-            id: e.id,
-            title: e.name,
-            subtitle: e.fileType || e.description?.substring(0, 100),
+            id: e.id as string,
+            title: e.name as string,
+            subtitle: (e.fileType as string | undefined) || (e.description as string | undefined)?.substring(0, 100),
             path: `/evidence`,
           }))
         );
@@ -158,10 +167,10 @@ export class SearchService {
         });
 
         results.push(
-          ...integrations.map((i: any) => ({
+          ...integrations.map((i) => ({
             type: 'integration' as const,
-            id: i.id,
-            title: i.name,
+            id: i.id as string,
+            title: i.name as string,
             subtitle: `${i.type} - ${i.status}`,
             path: `/integrations`,
           }))
@@ -183,10 +192,10 @@ export class SearchService {
         });
 
         results.push(
-          ...risks.map((r: any) => ({
+          ...risks.map((r) => ({
             type: 'risk' as const,
-            id: r.id,
-            title: r.title,
+            id: r.id as string,
+            title: r.title as string,
             subtitle: `${r.riskLevel} risk`,
             path: `/risks/${r.id}`,
           }))
@@ -208,11 +217,11 @@ export class SearchService {
         });
 
         results.push(
-          ...vendors.map((v: any) => ({
+          ...vendors.map((v) => ({
             type: 'vendor' as const,
-            id: v.id,
-            title: v.name,
-            subtitle: v.tier ? `Tier ${v.tier}` : v.description?.substring(0, 100),
+            id: v.id as string,
+            title: v.name as string,
+            subtitle: v.tier ? `Tier ${v.tier}` : (v.description as string | undefined)?.substring(0, 100),
             path: `/vendors/${v.id}`,
           }))
         );
@@ -232,11 +241,11 @@ export class SearchService {
         });
 
         results.push(
-          ...audits.map((a: any) => ({
+          ...audits.map((a) => ({
             type: 'audit' as const,
-            id: a.id,
-            title: a.title,
-            subtitle: a.status,
+            id: a.id as string,
+            title: a.title as string,
+            subtitle: a.status as string | undefined,
             path: `/audits/${a.id}`,
           }))
         );
@@ -256,11 +265,11 @@ export class SearchService {
         });
 
         results.push(
-          ...users.map((u: any) => ({
+          ...users.map((u) => ({
             type: 'user' as const,
-            id: u.id,
-            title: u.name,
-            subtitle: u.email,
+            id: u.id as string,
+            title: u.name as string,
+            subtitle: u.email as string | undefined,
             path: `/users`,
           }))
         );
@@ -280,11 +289,11 @@ export class SearchService {
         });
 
         results.push(
-          ...assets.map((a: any) => ({
+          ...assets.map((a) => ({
             type: 'asset' as const,
-            id: a.id,
-            title: a.name,
-            subtitle: a.type || a.description?.substring(0, 100),
+            id: a.id as string,
+            title: a.name as string,
+            subtitle: (a.type as string | undefined) || (a.description as string | undefined)?.substring(0, 100),
             path: `/assets`,
           }))
         );

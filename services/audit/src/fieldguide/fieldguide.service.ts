@@ -64,7 +64,7 @@ export class FieldGuideService {
       await this.prisma.organization.update({
         where: { id: organizationId },
         data: {
-          settings: { ...settings, ...fieldGuideSettings },
+          settings: JSON.parse(JSON.stringify({ ...settings, ...fieldGuideSettings })),
         },
       });
 
@@ -73,12 +73,13 @@ export class FieldGuideService {
       return {
         isConnected: true,
         connectedAt: new Date(),
-        fieldGuideOrgName: testResponse.name,
+        fieldGuideOrgName: String(testResponse.name || ''),
         syncStatus: 'idle',
       };
-    } catch (error) {
-      this.logger.error(`FieldGuide connection failed: ${error.message}`);
-      throw new BadRequestException(`Failed to connect to FieldGuide: ${error.message}`);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`FieldGuide connection failed: ${message}`);
+      throw new BadRequestException(`Failed to connect to FieldGuide: ${message}`);
     }
   }
 
@@ -91,11 +92,11 @@ export class FieldGuideService {
     const settings = (existing?.settings as Record<string, unknown>) || {};
     
     // Remove FieldGuide settings
-    delete (settings as any).fieldGuide;
+    delete (settings as Record<string, unknown>).fieldGuide;
 
     await this.prisma.organization.update({
       where: { id: organizationId },
-      data: { settings: settings as any },
+      data: { settings: JSON.parse(JSON.stringify(settings)) },
     });
 
     this.logger.log(`FieldGuide disconnected for org ${organizationId}`);
@@ -217,14 +218,15 @@ export class FieldGuideService {
 
       this.logger.log(`Sync completed for org ${organizationId}, syncId: ${syncId}`);
 
-    } catch (error) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
       result.status = 'failed';
-      result.errorMessage = error.message;
+      result.errorMessage = message;
       result.completedAt = new Date();
 
-      await this.updateSyncStatus(organizationId, 'error', undefined, error.message);
+      await this.updateSyncStatus(organizationId, 'error', undefined, message);
 
-      this.logger.error(`Sync failed for org ${organizationId}: ${error.message}`);
+      this.logger.error(`Sync failed for org ${organizationId}: ${message}`);
     }
 
     return result;
@@ -262,15 +264,18 @@ export class FieldGuideService {
       },
     });
 
-    return audits.map(audit => ({
-      grcAuditId: audit.id,
-      fieldGuideAuditId: audit.fieldGuideId!,
-      name: audit.name,
-      syncStatus: 'synced',
-      lastSyncedAt: (audit.fieldGuideData as any)?.lastSyncedAt 
-        ? new Date((audit.fieldGuideData as any).lastSyncedAt) 
-        : undefined,
-    }));
+    return audits.map(audit => {
+      const fieldGuideData = audit.fieldGuideData as Record<string, unknown> | null;
+      return {
+        grcAuditId: audit.id,
+        fieldGuideAuditId: audit.fieldGuideId!,
+        name: audit.name,
+        syncStatus: 'synced',
+        lastSyncedAt: fieldGuideData?.lastSyncedAt 
+          ? new Date(fieldGuideData.lastSyncedAt as string) 
+          : undefined,
+      };
+    });
   }
 
   async linkAudit(organizationId: string, dto: LinkAuditDto): Promise<FieldGuideAuditMappingDto> {
@@ -405,7 +410,7 @@ export class FieldGuideService {
     method: string,
     endpoint: string,
     body?: unknown
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     const response = await fetch(`${baseUrl}${endpoint}`, {
       method,
       headers: {
@@ -444,7 +449,7 @@ export class FieldGuideService {
 
     await this.prisma.organization.update({
       where: { id: organizationId },
-      data: { settings: { ...settings, fieldGuide } as any },
+      data: { settings: JSON.parse(JSON.stringify({ ...settings, fieldGuide })) },
     });
   }
 
@@ -484,7 +489,7 @@ export class FieldGuideService {
 
     await this.prisma.organization.update({
       where: { id: organizationId },
-      data: { settings: { ...settings, fieldGuide } as any },
+      data: { settings: JSON.parse(JSON.stringify({ ...settings, fieldGuide })) },
     });
   }
 
@@ -533,11 +538,11 @@ export class FieldGuideService {
               name: fgAudit.name,
               description: fgAudit.description,
               status: this.mapFieldGuideStatus(fgAudit.status),
-              fieldGuideData: {
-                ...((existingAudit.fieldGuideData as object) || {}),
+              fieldGuideData: JSON.parse(JSON.stringify({
+                ...((existingAudit.fieldGuideData as Record<string, unknown>) || {}),
                 lastSyncedAt: new Date().toISOString(),
-                rawData: fgAudit as any,
-              } as any,
+                rawData: fgAudit,
+              })),
             },
           });
           updated++;
@@ -596,9 +601,10 @@ export class FieldGuideService {
         'GET',
         '/audits'
       );
-      return response.data || [];
-    } catch (error) {
-      this.logger.error(`Failed to fetch FieldGuide audits: ${error.message}`);
+      return (response.data as FieldGuideAudit[]) || [];
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Failed to fetch FieldGuide audits: ${message}`);
       return [];
     }
   }
@@ -608,12 +614,13 @@ export class FieldGuideService {
     auditId: string
   ): Promise<FieldGuideAudit | null> {
     try {
-      return await this.makeFieldGuideRequest(
+      const response = await this.makeFieldGuideRequest(
         config.instanceUrl,
         config.apiKey,
         'GET',
         `/audits/${auditId}`
       );
+      return response as unknown as FieldGuideAudit;
     } catch {
       return null;
     }
@@ -651,11 +658,11 @@ export class FieldGuideService {
           name: data.name as string || audit.name,
           description: data.description as string || audit.description,
           status: this.mapFieldGuideStatus(data.status as string || 'planning'),
-          fieldGuideData: {
-            ...((audit.fieldGuideData as object) || {}),
+          fieldGuideData: JSON.parse(JSON.stringify({
+            ...((audit.fieldGuideData as Record<string, unknown>) || {}),
             lastSyncedAt: new Date().toISOString(),
-            rawData: data as any,
-          } as any,
+            rawData: data,
+          })),
         },
       });
       this.logger.log(`Updated audit ${audit.id} from webhook`);

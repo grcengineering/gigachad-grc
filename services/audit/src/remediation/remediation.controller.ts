@@ -1,8 +1,15 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Req, Res } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { RemediationService, CreateRemediationPlanDto, CreateMilestoneDto, UpdateMilestoneDto } from './remediation.service';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
+
+interface AuthenticatedRequest extends Request {
+  user: {
+    userId: string;
+    organizationId: string;
+  };
+}
 
 @ApiTags('Remediation Plans')
 @ApiBearerAuth()
@@ -13,25 +20,25 @@ export class RemediationController {
 
   @Post()
   @ApiOperation({ summary: 'Create a remediation plan' })
-  createPlan(@Body() dto: CreateRemediationPlanDto, @Req() req: any) {
+  createPlan(@Body() dto: CreateRemediationPlanDto, @Req() req: AuthenticatedRequest) {
     return this.remediationService.createPlan(req.user.organizationId, dto, req.user.userId);
   }
 
   @Get()
   @ApiOperation({ summary: 'List remediation plans' })
-  findAllPlans(@Query('status') status: string, @Req() req: any) {
+  findAllPlans(@Query('status') status: string, @Req() req: AuthenticatedRequest) {
     return this.remediationService.findAllPlans(req.user.organizationId, status);
   }
 
   @Get('stats')
   @ApiOperation({ summary: 'Get remediation statistics' })
-  getStats(@Req() req: any) {
+  getStats(@Req() req: AuthenticatedRequest) {
     return this.remediationService.getStats(req.user.organizationId);
   }
 
   @Get('export')
   @ApiOperation({ summary: 'Export POA&M' })
-  async exportPOAM(@Query('format') format: 'json' | 'csv', @Req() req: any, @Res() res: Response) {
+  async exportPOAM(@Query('format') format: 'json' | 'csv', @Req() req: AuthenticatedRequest, @Res() res: Response) {
     const data = await this.remediationService.exportPOAM(req.user.organizationId, format || 'json');
     
     if (format === 'csv') {
@@ -45,37 +52,37 @@ export class RemediationController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a remediation plan' })
-  findOnePlan(@Param('id') id: string, @Req() req: any) {
+  findOnePlan(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
     return this.remediationService.findOnePlan(id, req.user.organizationId);
   }
 
   @Put(':id')
   @ApiOperation({ summary: 'Update a remediation plan' })
-  updatePlan(@Param('id') id: string, @Body() dto: Partial<CreateRemediationPlanDto>, @Req() req: any) {
+  updatePlan(@Param('id') id: string, @Body() dto: Partial<CreateRemediationPlanDto>, @Req() req: AuthenticatedRequest) {
     return this.remediationService.updatePlan(id, req.user.organizationId, dto);
   }
 
   @Post(':id/complete')
   @ApiOperation({ summary: 'Complete a remediation plan' })
-  completePlan(@Param('id') id: string, @Req() req: any) {
+  completePlan(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
     return this.remediationService.completePlan(id, req.user.organizationId, req.user.userId);
   }
 
   @Post(':planId/milestones')
   @ApiOperation({ summary: 'Add a milestone' })
-  addMilestone(@Param('planId') planId: string, @Body() dto: CreateMilestoneDto, @Req() req: any) {
+  addMilestone(@Param('planId') planId: string, @Body() dto: CreateMilestoneDto, @Req() req: AuthenticatedRequest) {
     return this.remediationService.addMilestone(planId, req.user.organizationId, dto);
   }
 
   @Put('milestones/:id')
   @ApiOperation({ summary: 'Update a milestone' })
-  updateMilestone(@Param('id') id: string, @Body() dto: UpdateMilestoneDto, @Req() req: any) {
+  updateMilestone(@Param('id') id: string, @Body() dto: UpdateMilestoneDto, @Req() req: AuthenticatedRequest) {
     return this.remediationService.updateMilestone(id, req.user.organizationId, dto);
   }
 
   @Delete('milestones/:id')
   @ApiOperation({ summary: 'Delete a milestone' })
-  deleteMilestone(@Param('id') id: string, @Req() req: any) {
+  deleteMilestone(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
     return this.remediationService.deleteMilestone(id, req.user.organizationId);
   }
 }

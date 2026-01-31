@@ -1,6 +1,22 @@
 import { Injectable, ExecutionContext, Logger } from '@nestjs/common';
-import { ThrottlerGuard, ThrottlerException } from '@nestjs/throttler';
+import { ThrottlerGuard, ThrottlerException, ThrottlerLimitDetail } from '@nestjs/throttler';
 import { createHash } from 'crypto';
+
+/**
+ * Request structure for rate limiting
+ */
+interface ThrottlerRequest {
+  headers?: Record<string, string | string[] | undefined>;
+  user?: {
+    userId?: string;
+  };
+  ip?: string;
+  connection?: {
+    remoteAddress?: string;
+  };
+  url?: string;
+  path?: string;
+}
 
 /**
  * Custom throttler guard that extracts client identifier for rate limiting
@@ -17,19 +33,21 @@ export class CustomThrottlerGuard extends ThrottlerGuard {
   /**
    * Get a unique identifier for the requesting client
    */
-  protected async getTracker(req: Record<string, any>): Promise<string> {
+  protected async getTracker(req: ThrottlerRequest): Promise<string> {
     // Extract IP address from various possible headers
     const ip = this.getClientIp(req);
 
     // If API key provided, use API key hash as tracker
-    const apiKey = req.headers?.['x-api-key'];
+    const apiKeyHeader = req.headers?.['x-api-key'];
+    const apiKey = Array.isArray(apiKeyHeader) ? apiKeyHeader[0] : apiKeyHeader;
     if (apiKey) {
       const keyHash = createHash('sha256').update(apiKey).digest('hex').substring(0, 16);
       return `api:${keyHash}`;
     }
 
     // If authenticated, include user ID for per-user limiting
-    const userId = req.user?.userId || req.headers?.['x-user-id'];
+    const userIdHeader = req.headers?.['x-user-id'];
+    const userId = req.user?.userId || (Array.isArray(userIdHeader) ? userIdHeader[0] : userIdHeader);
     if (userId) {
       return `user:${userId}:${ip}`;
     }
@@ -40,7 +58,7 @@ export class CustomThrottlerGuard extends ThrottlerGuard {
   /**
    * Extract client IP from request
    */
-  private getClientIp(req: Record<string, any>): string {
+  private getClientIp(req: ThrottlerRequest): string {
     // Check X-Forwarded-For header (from proxies/load balancers)
     const forwarded = req.headers?.['x-forwarded-for'];
     if (forwarded) {
@@ -63,7 +81,7 @@ export class CustomThrottlerGuard extends ThrottlerGuard {
    */
   protected async throwThrottlingException(
     context: ExecutionContext,
-    throttlerLimitDetail: any,
+    throttlerLimitDetail: ThrottlerLimitDetail,
   ): Promise<void> {
     const req = context.switchToHttp().getRequest();
     const tracker = await this.getTracker(req);

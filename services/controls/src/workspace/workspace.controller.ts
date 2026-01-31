@@ -8,11 +8,26 @@ import {
   Param,
   Query,
   UseGuards,
-  Request,
+  Req,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import { Request } from 'express';
+import { UserRole } from '@prisma/client';
 import { WorkspaceService } from './workspace.service';
+
+/**
+ * Request with workspace-specific user context
+ */
+interface WorkspaceRequest extends Request {
+  user: {
+    userId: string;
+    organizationId: string;
+    email?: string;
+    id?: string;
+    role?: UserRole;
+  };
+}
 import {
   CreateWorkspaceDto,
   UpdateWorkspaceDto,
@@ -35,7 +50,7 @@ export class WorkspaceController {
    * Check if multi-workspace mode is enabled for the organization
    */
   @Get('status')
-  async getMultiWorkspaceStatus(@Request() req: any) {
+  async getMultiWorkspaceStatus(@Req() req: WorkspaceRequest) {
     const enabled = await this.workspaceService.isMultiWorkspaceEnabled(req.user.organizationId);
     return { enabled };
   }
@@ -45,11 +60,11 @@ export class WorkspaceController {
    */
   @Post('toggle')
   @RequirePermission(Resource.WORKSPACES, Action.UPDATE)
-  async toggleMultiWorkspace(@Request() req: any, @Body() dto: EnableMultiWorkspaceDto) {
+  async toggleMultiWorkspace(@Req() req: WorkspaceRequest, @Body() dto: EnableMultiWorkspaceDto) {
     return this.workspaceService.toggleMultiWorkspace(
       req.user.organizationId,
       dto.enabled,
-      req.user.id
+      req.user.id || req.user.userId
     );
   }
 
@@ -57,10 +72,10 @@ export class WorkspaceController {
    * List all workspaces (filtered by user access for non-admins)
    */
   @Get()
-  async findAll(@Request() req: any, @Query() filters: WorkspaceFilterDto) {
+  async findAll(@Req() req: WorkspaceRequest, @Query() filters: WorkspaceFilterDto) {
     return this.workspaceService.findAll(
       req.user.organizationId,
-      req.user.id,
+      req.user.id || req.user.userId,
       req.user.role,
       filters
     );
@@ -71,7 +86,7 @@ export class WorkspaceController {
    */
   @Get('org/dashboard')
   @RequirePermission(Resource.WORKSPACES, Action.READ)
-  async getOrgDashboard(@Request() req: any) {
+  async getOrgDashboard(@Req() req: WorkspaceRequest) {
     return this.workspaceService.getOrgDashboard(req.user.organizationId);
   }
 
@@ -79,19 +94,19 @@ export class WorkspaceController {
    * Get a single workspace by ID
    */
   @Get(':id')
-  async findOne(@Param('id') id: string, @Request() req: any) {
-    return this.workspaceService.findOne(id, req.user.organizationId, req.user.id, req.user.role);
+  async findOne(@Param('id') id: string, @Req() req: WorkspaceRequest) {
+    return this.workspaceService.findOne(id, req.user.organizationId, req.user.id || req.user.userId, req.user.role);
   }
 
   /**
    * Get workspace dashboard
    */
   @Get(':id/dashboard')
-  async getDashboard(@Param('id') id: string, @Request() req: any) {
+  async getDashboard(@Param('id') id: string, @Req() req: WorkspaceRequest) {
     return this.workspaceService.getDashboard(
       id,
       req.user.organizationId,
-      req.user.id,
+      req.user.id || req.user.userId,
       req.user.role
     );
   }
@@ -101,8 +116,8 @@ export class WorkspaceController {
    */
   @Post()
   @RequirePermission(Resource.WORKSPACES, Action.CREATE)
-  async create(@Request() req: any, @Body() dto: CreateWorkspaceDto) {
-    return this.workspaceService.create(req.user.organizationId, req.user.id, dto);
+  async create(@Req() req: WorkspaceRequest, @Body() dto: CreateWorkspaceDto) {
+    return this.workspaceService.create(req.user.organizationId, req.user.id || req.user.userId, dto);
   }
 
   /**
@@ -110,7 +125,7 @@ export class WorkspaceController {
    */
   @Put(':id')
   @RequirePermission(Resource.WORKSPACES, Action.UPDATE)
-  async update(@Param('id') id: string, @Request() req: any, @Body() dto: UpdateWorkspaceDto) {
+  async update(@Param('id') id: string, @Req() req: WorkspaceRequest, @Body() dto: UpdateWorkspaceDto) {
     return this.workspaceService.update(id, req.user.organizationId, dto);
   }
 
@@ -120,7 +135,7 @@ export class WorkspaceController {
   @Delete(':id')
   @RequirePermission(Resource.WORKSPACES, Action.DELETE)
   @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@Param('id') id: string, @Request() req: any) {
+  async remove(@Param('id') id: string, @Req() req: WorkspaceRequest) {
     await this.workspaceService.remove(id, req.user.organizationId);
   }
 
@@ -128,11 +143,11 @@ export class WorkspaceController {
    * List workspace members
    */
   @Get(':id/members')
-  async listMembers(@Param('id') id: string, @Request() req: any) {
+  async listMembers(@Param('id') id: string, @Req() req: WorkspaceRequest) {
     const workspace = await this.workspaceService.findOne(
       id,
       req.user.organizationId,
-      req.user.id,
+      req.user.id || req.user.userId,
       req.user.role
     );
     return workspace.members;
@@ -145,7 +160,7 @@ export class WorkspaceController {
   @RequirePermission(Resource.WORKSPACES, Action.ASSIGN)
   async addMember(
     @Param('id') id: string,
-    @Request() req: any,
+    @Req() req: WorkspaceRequest,
     @Body() dto: AddWorkspaceMemberDto
   ) {
     return this.workspaceService.addMember(id, req.user.organizationId, dto);
@@ -159,7 +174,7 @@ export class WorkspaceController {
   async updateMember(
     @Param('id') id: string,
     @Param('userId') userId: string,
-    @Request() req: any,
+    @Req() req: WorkspaceRequest,
     @Body() dto: UpdateWorkspaceMemberDto
   ) {
     return this.workspaceService.updateMember(id, userId, req.user.organizationId, dto);
@@ -174,7 +189,7 @@ export class WorkspaceController {
   async removeMember(
     @Param('id') id: string,
     @Param('userId') userId: string,
-    @Request() req: any
+    @Req() req: WorkspaceRequest
   ) {
     await this.workspaceService.removeMember(id, userId, req.user.organizationId);
   }

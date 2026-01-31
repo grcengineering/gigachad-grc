@@ -8,6 +8,24 @@ import {
 import { Request } from 'express';
 
 /**
+ * Authenticated user context attached to requests
+ */
+interface AuthenticatedUser {
+  userId: string;
+  organizationId: string;
+  email?: string;
+  role?: string;
+  permissions: string[];
+}
+
+/**
+ * Request with authenticated user
+ */
+interface AuthenticatedRequest extends Request {
+  user: AuthenticatedUser;
+}
+
+/**
  * Authentication guard that validates requests.
  * 
  * In production, this expects an authentication proxy (e.g., Keycloak, Auth0)
@@ -20,10 +38,10 @@ export class AuthGuard implements CanActivate {
   private readonly logger = new Logger(AuthGuard.name);
 
   canActivate(context: ExecutionContext): boolean {
-    const request = context.switchToHttp().getRequest<Request>();
+    const request = context.switchToHttp().getRequest<Request & { user?: AuthenticatedUser }>();
     
     // Check for user context (set by DevAuthGuard in dev, or auth proxy in prod)
-    if ((request as any).user?.userId) {
+    if (request.user?.userId) {
       return true;
     }
     
@@ -42,11 +60,11 @@ export class AuthGuard implements CanActivate {
     }
     
     // Populate user context from headers for downstream handlers
-    (request as any).user = {
+    const authRequest = request as AuthenticatedRequest;
+    authRequest.user = {
       userId: userId as string,
       organizationId: organizationId as string,
       email: request.headers['x-user-email'] as string || '',
-      role: request.headers['x-user-role'] as string || 'user',
       permissions: [],
     };
     

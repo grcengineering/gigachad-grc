@@ -10,6 +10,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import { Request } from 'express';
 import {
   ApiTags,
   ApiOperation,
@@ -25,6 +26,21 @@ import {
 } from './dto/bcdr.dto';
 import { AuthGuard } from '../auth/auth.guard';
 import { TenantScopeGuard } from '../common/tenant-scope.guard';
+
+/**
+ * Request with BCDR-specific user context
+ */
+interface BCDRRequest extends Request {
+  user: {
+    userId: string;
+    organizationId: string;
+    email?: string;
+  };
+  organizationId: string;
+  userId: string;
+  userEmail?: string;
+  userName?: string;
+}
 
 /**
  * Controller for BC/DR plan attestation endpoints.
@@ -52,7 +68,7 @@ export class PlanAttestationsController {
   async requestAttestation(
     @Param('planId') planId: string,
     @Body() dto: RequestAttestationDto,
-    @Req() req: any,
+    @Req() req: BCDRRequest,
   ) {
     return this.attestationsService.requestAttestation(
       req.organizationId,
@@ -77,7 +93,7 @@ export class PlanAttestationsController {
   async submitAttestation(
     @Param('id') id: string,
     @Body() dto: SubmitAttestationDto,
-    @Req() req: any,
+    @Req() req: BCDRRequest,
   ) {
     return this.attestationsService.submitAttestation(
       id,
@@ -97,7 +113,7 @@ export class PlanAttestationsController {
   @ApiResponse({ status: 200, description: 'Attestation history' })
   async getAttestationHistory(
     @Param('planId') planId: string,
-    @Req() req: any,
+    @Req() req: BCDRRequest,
   ) {
     return this.attestationsService.getAttestationHistory(
       planId,
@@ -111,7 +127,7 @@ export class PlanAttestationsController {
   @Get('attestations/pending')
   @ApiOperation({ summary: 'Get pending attestations for current user' })
   @ApiResponse({ status: 200, description: 'List of pending attestations' })
-  async getPendingAttestations(@Req() req: any) {
+  async getPendingAttestations(@Req() req: BCDRRequest) {
     return this.attestationsService.getPendingAttestations(
       req.userId,
       req.organizationId,
@@ -138,7 +154,7 @@ export class PlanAttestationsController {
   @ApiResponse({ status: 200, description: 'Paginated attestation list' })
   async listAttestations(
     @Query() filters: AttestationFilterDto,
-    @Req() req: any,
+    @Req() req: BCDRRequest,
   ) {
     return this.attestationsService.findAll(req.organizationId, filters);
   }
@@ -149,7 +165,7 @@ export class PlanAttestationsController {
   @Get('attestations/stats')
   @ApiOperation({ summary: 'Get attestation statistics' })
   @ApiResponse({ status: 200, description: 'Attestation statistics' })
-  async getAttestationStats(@Req() req: any) {
+  async getAttestationStats(@Req() req: BCDRRequest) {
     return this.attestationsService.getStats(req.organizationId);
   }
 }

@@ -9,8 +9,13 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 import { FrameworkCatalogService } from './catalog.service';
+
+interface AuthenticatedRequest extends Request {
+  user: { userId: string; organizationId: string; email?: string };
+}
 
 @Controller('api/frameworks/catalog')
 @UseGuards(DevAuthGuard)
@@ -29,7 +34,7 @@ export class FrameworkCatalogController {
    * Get catalog status - which frameworks are activated for the organization
    */
   @Get('status')
-  async getCatalogStatus(@Req() req: any) {
+  async getCatalogStatus(@Req() req: AuthenticatedRequest) {
     const organizationId = req.user?.organizationId || 'default-org';
     return this.catalogService.getCatalogStatus(organizationId);
   }
@@ -49,10 +54,10 @@ export class FrameworkCatalogController {
   @HttpCode(HttpStatus.CREATED)
   async activateFramework(
     @Param('catalogId') catalogId: string,
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
   ) {
     const organizationId = req.user?.organizationId || 'default-org';
-    const userId = req.user?.id || req.user?.sub || 'system';
+    const userId = req.user?.userId || 'system';
     
     return this.catalogService.activateFramework(organizationId, catalogId, userId);
   }
@@ -61,7 +66,7 @@ export class FrameworkCatalogController {
    * Get all activated frameworks for the organization
    */
   @Get('activated/list')
-  async getActivatedFrameworks(@Req() req: any) {
+  async getActivatedFrameworks(@Req() req: AuthenticatedRequest) {
     const organizationId = req.user?.organizationId || 'default-org';
     return this.catalogService.getActivatedFrameworks(organizationId);
   }
@@ -72,7 +77,7 @@ export class FrameworkCatalogController {
   @Get(':catalogId/status')
   async isFrameworkActivated(
     @Param('catalogId') catalogId: string,
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
   ) {
     const organizationId = req.user?.organizationId || 'default-org';
     const isActivated = await this.catalogService.isFrameworkActivated(organizationId, catalogId);
@@ -85,10 +90,10 @@ export class FrameworkCatalogController {
   @Delete(':frameworkId/deactivate')
   async deactivateFramework(
     @Param('frameworkId') frameworkId: string,
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
   ) {
     const organizationId = req.user?.organizationId || 'default-org';
-    const userId = req.user?.id || req.user?.sub || 'system';
+    const userId = req.user?.userId || 'system';
     
     return this.catalogService.deactivateFramework(organizationId, frameworkId, userId);
   }

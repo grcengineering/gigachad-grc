@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Injectable, NotFoundException, BadRequestException, Logger, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
@@ -103,7 +104,7 @@ export interface CreateRiskIntakeDto {
   source: string; // internal_security_reviews, ad_hoc_discovery, external_security_reviews, incident_response, policy_exception, employee_reporting
   category?: string;
   initialSeverity: string; // very_low, low, medium, high, very_high
-  documentation?: any;
+  documentation?: Record<string, unknown>;
   suggestedSmeId?: string;
   tags?: string[];
 }
@@ -216,9 +217,11 @@ export class RiskWorkflowService {
         description: dto.description,
         source: dto.source,
         category: dto.category || 'security',
+         
         status: RiskIntakeStatus.RISK_IDENTIFIED as any,
+         
         initialSeverity: dto.initialSeverity as any,
-        documentation: dto.documentation,
+        documentation: dto.documentation ? JSON.parse(JSON.stringify(dto.documentation)) : undefined,
         reporterId,
         riskAssessorId: dto.suggestedSmeId, // Store suggested SME
         tags: dto.tags || [],
@@ -279,6 +282,7 @@ export class RiskWorkflowService {
     const updated = await this.prisma.risk.update({
       where: { id: riskId },
       data: {
+         
         status: newStatus as any,
         grcSmeId: dto.grcSmeId,
       },
@@ -333,8 +337,8 @@ export class RiskWorkflowService {
           dto.grcSmeId, // GRC SME will assign the assessor
           userId,
         );
-      } catch (error) {
-        this.logger.error(`Failed to auto-create task for risk validation: ${error.message}`);
+      } catch (error: unknown) {
+        this.logger.error(`Failed to auto-create task for risk validation: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
 
@@ -363,6 +367,7 @@ export class RiskWorkflowService {
     const assessment = await this.prisma.riskAssessment.create({
       data: {
         riskId,
+         
         status: RiskAssessmentStatus.RISK_ASSESSOR_ANALYSIS as any,
         riskAssessorId: dto.riskAssessorId,
         grcSmeId: risk.grcSmeId,
@@ -373,6 +378,7 @@ export class RiskWorkflowService {
     const updated = await this.prisma.risk.update({
       where: { id: riskId },
       data: {
+         
         status: RiskIntakeStatus.RISK_ANALYSIS_IN_PROGRESS as any,
         riskAssessorId: dto.riskAssessorId,
       },
@@ -453,14 +459,18 @@ export class RiskWorkflowService {
     const assessment = await this.prisma.riskAssessment.update({
       where: { id: risk.assessment.id },
       data: {
+         
         status: RiskAssessmentStatus.GRC_APPROVAL as any,
         threatDescription: dto.threatDescription,
         vulnerabilities: dto.vulnerabilities,
+         
         likelihoodScore: dto.likelihoodScore as any,
         likelihoodRationale: dto.likelihoodRationale,
+         
         impactScore: dto.impactScore as any,
         impactRationale: dto.impactRationale,
         impactCategories: dto.impactCategories,
+         
         calculatedRiskScore: calculatedRiskScore as any,
         recommendedOwnerId: dto.recommendedOwnerId,
         assessmentNotes: dto.assessmentNotes,
@@ -502,8 +512,11 @@ export class RiskWorkflowService {
     await this.prisma.risk.update({
       where: { id: riskId },
       data: {
+         
         likelihood: dto.likelihoodScore as any,
+         
         impact: dto.impactScore as any,
+         
         inherentRisk: calculatedRiskScore as any,
       },
     });
@@ -557,8 +570,8 @@ export class RiskWorkflowService {
           risk.grcSmeId,
           userId,
         );
-      } catch (error) {
-        this.logger.error(`Failed to auto-create task for assessment review: ${error.message}`);
+      } catch (error: unknown) {
+        this.logger.error(`Failed to auto-create task for assessment review: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
 
@@ -593,6 +606,7 @@ export class RiskWorkflowService {
       const assessment = await this.prisma.riskAssessment.update({
         where: { id: risk.assessment.id },
         data: {
+           
           status: RiskAssessmentStatus.DONE as any,
           grcReviewNotes: dto.notes,
           grcApprovedAt: new Date(),
@@ -604,6 +618,7 @@ export class RiskWorkflowService {
       await this.prisma.risk.update({
         where: { id: riskId },
         data: {
+           
           status: RiskIntakeStatus.RISK_ANALYZED as any,
           riskOwnerId: risk.assessment.recommendedOwnerId,
         },
@@ -613,6 +628,7 @@ export class RiskWorkflowService {
       const treatment = await this.prisma.riskTreatment.create({
         data: {
           riskId,
+           
           status: RiskTreatmentStatus.TREATMENT_DECISION_REVIEW as any,
           riskOwnerId: risk.assessment.recommendedOwnerId,
           grcSmeId: risk.grcSmeId,
@@ -651,8 +667,8 @@ export class RiskWorkflowService {
             risk.assessment.recommendedOwnerId,
             userId,
           );
-        } catch (error) {
-          this.logger.error(`Failed to auto-create task for treatment decision: ${error.message}`);
+        } catch (error: unknown) {
+          this.logger.error(`Failed to auto-create task for treatment decision: ${error instanceof Error ? error.message : String(error)}`);
         }
       }
 
@@ -662,6 +678,7 @@ export class RiskWorkflowService {
       const assessment = await this.prisma.riskAssessment.update({
         where: { id: risk.assessment.id },
         data: {
+           
           status: RiskAssessmentStatus.GRC_REVISION as any,
           grcReviewNotes: dto.notes,
           grcDeclinedReason: dto.notes,
@@ -715,14 +732,18 @@ export class RiskWorkflowService {
     const assessment = await this.prisma.riskAssessment.update({
       where: { id: risk.assessment.id },
       data: {
+         
         status: RiskAssessmentStatus.DONE as any,
         threatDescription: dto.threatDescription,
         vulnerabilities: dto.vulnerabilities,
+         
         likelihoodScore: dto.likelihoodScore as any,
         likelihoodRationale: dto.likelihoodRationale,
+         
         impactScore: dto.impactScore as any,
         impactRationale: dto.impactRationale,
         impactCategories: dto.impactCategories,
+         
         calculatedRiskScore: calculatedRiskScore as any,
         recommendedOwnerId: dto.recommendedOwnerId,
         assessmentNotes: dto.assessmentNotes,
@@ -764,9 +785,13 @@ export class RiskWorkflowService {
     await this.prisma.risk.update({
       where: { id: riskId },
       data: {
+         
         status: RiskIntakeStatus.RISK_ANALYZED as any,
+         
         likelihood: dto.likelihoodScore as any,
+         
         impact: dto.impactScore as any,
+         
         inherentRisk: calculatedRiskScore as any,
         riskOwnerId: dto.recommendedOwnerId,
       },
@@ -776,6 +801,7 @@ export class RiskWorkflowService {
     const treatment = await this.prisma.riskTreatment.create({
       data: {
         riskId,
+         
         status: RiskTreatmentStatus.TREATMENT_DECISION_REVIEW as any,
         riskOwnerId: dto.recommendedOwnerId,
         grcSmeId: risk.grcSmeId,
@@ -852,7 +878,9 @@ export class RiskWorkflowService {
     const treatment = await this.prisma.riskTreatment.update({
       where: { id: risk.treatment.id },
       data: {
+         
         status: nextStatus as any,
+         
         treatmentDecision: dto.treatmentDecision as any,
         treatmentJustification: dto.justification,
         treatmentPlan: dto.mitigationDescription,
@@ -871,6 +899,7 @@ export class RiskWorkflowService {
     await this.prisma.risk.update({
       where: { id: riskId },
       data: {
+         
         treatmentPlan: dto.treatmentDecision as any,
         treatmentStatus: 'pending',
         treatmentNotes: dto.justification,
@@ -948,8 +977,10 @@ export class RiskWorkflowService {
     const treatment = await this.prisma.riskTreatment.update({
       where: { id: risk.treatment.id },
       data: {
+         
         status: RiskTreatmentStatus.EXECUTIVE_APPROVAL as any,
         executiveApproverId: dto.executiveApproverId,
+         
         executiveApprovalStatus: 'pending' as any,
       },
     });
@@ -985,8 +1016,8 @@ export class RiskWorkflowService {
         dto.executiveApproverId,
         userId,
       );
-    } catch (error) {
-      this.logger.error(`Failed to auto-create task for executive approval: ${error.message}`);
+    } catch (error: unknown) {
+      this.logger.error(`Failed to auto-create task for executive approval: ${error instanceof Error ? error.message : String(error)}`);
     }
 
     return treatment;
@@ -1038,7 +1069,9 @@ export class RiskWorkflowService {
       const treatment = await this.prisma.riskTreatment.update({
         where: { id: risk.treatment.id },
         data: {
+           
           status: nextStatus as any,
+           
           executiveApprovalStatus: 'approved' as any,
           executiveApprovalNotes: dto.notes,
           executiveApprovedAt: new Date(),
@@ -1087,8 +1120,8 @@ export class RiskWorkflowService {
               risk.riskOwnerId,
               userId,
             );
-          } catch (error) {
-            this.logger.error(`Failed to auto-create task for mitigation: ${error.message}`);
+          } catch (error: unknown) {
+            this.logger.error(`Failed to auto-create task for mitigation: ${error instanceof Error ? error.message : String(error)}`);
           }
         }
       }
@@ -1099,7 +1132,9 @@ export class RiskWorkflowService {
       const treatment = await this.prisma.riskTreatment.update({
         where: { id: risk.treatment.id },
         data: {
+           
           status: RiskTreatmentStatus.TREATMENT_DECISION_REVIEW as any,
+           
           executiveApprovalStatus: 'denied' as any,
           executiveDeniedReason: dto.notes,
           treatmentDecision: null, // Clear previous decision
@@ -1158,6 +1193,7 @@ export class RiskWorkflowService {
       RiskTreatmentStatus.MITIGATION_STATUS_UPDATE,
     ];
 
+     
     if (!allowedStatuses.includes(risk.treatment.status as any)) {
       throw new BadRequestException('Treatment is not in a mitigation status');
     }
@@ -1195,14 +1231,19 @@ export class RiskWorkflowService {
     const treatment = await this.prisma.riskTreatment.update({
       where: { id: risk.treatment.id },
       data: {
+         
         status: nextStatus as any,
+         
         mitigationStatus: dto.status as any,
         mitigationProgress: dto.progress ?? risk.treatment.mitigationProgress,
         lastProgressUpdate: new Date(),
         mitigationTargetDate: dto.newTargetDate ? new Date(dto.newTargetDate) : risk.treatment.mitigationTargetDate,
         mitigationActualDate: dto.status === 'done' ? new Date() : undefined,
+         
         residualLikelihood: dto.residualLikelihood as any,
+         
         residualImpact: dto.residualImpact as any,
+         
         residualRiskScore: residualRiskScore as any,
         completedAt: dto.status === 'done' ? new Date() : undefined,
       },
@@ -1215,8 +1256,10 @@ export class RiskWorkflowService {
         updateType: dto.status === 'done' ? 'completion' :
                     dto.status === 'delayed' ? 'delay' :
                     dto.status === 'cancelled' ? 'cancellation' : 'progress',
-        previousStatus: risk.treatment.mitigationStatus as any,
-        newStatus: dto.status as any,
+           
+          previousStatus: risk.treatment.mitigationStatus as any,
+           
+          newStatus: dto.status as any,
         progress: dto.progress,
         notes: dto.notes,
         newTargetDate: dto.newTargetDate ? new Date(dto.newTargetDate) : undefined,
@@ -1234,6 +1277,7 @@ export class RiskWorkflowService {
         where: { id: riskId },
         data: {
           treatmentStatus: 'completed',
+           
           residualRisk: residualRiskScore as any,
         },
       });
@@ -1365,7 +1409,8 @@ export class RiskWorkflowService {
   /**
    * Determine current workflow stage for display
    */
-  private determineCurrentStage(risk: any): string {
+   
+  private determineCurrentStage(risk: Record<string, any>): string {
     // Check treatment status first
     if (risk.treatment) {
       const treatmentStatus = risk.treatment.status;
@@ -1424,7 +1469,8 @@ export class RiskWorkflowService {
   /**
    * Get available actions based on current workflow state
    */
-  private getAvailableActions(risk: any): string[] {
+   
+  private getAvailableActions(risk: Record<string, any>): string[] {
     const actions: string[] = [];
 
     // Treatment actions

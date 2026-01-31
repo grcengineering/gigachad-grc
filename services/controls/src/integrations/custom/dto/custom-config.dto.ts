@@ -26,7 +26,7 @@ export class EndpointConfigDto {
   @ApiPropertyOptional({ description: 'Request body (for POST/PUT/PATCH)' })
   @IsOptional()
   @IsObject()
-  body?: Record<string, any>;
+  body?: Record<string, unknown>;
 
   @ApiPropertyOptional({ description: 'JSONPath expressions to extract data from response' })
   @IsOptional()
@@ -113,12 +113,12 @@ export class SaveCustomConfigDto {
   @ApiPropertyOptional({ description: 'Authentication configuration' })
   @IsOptional()
   @IsObject()
-  authConfig?: ApiKeyAuthConfigDto | OAuth2AuthConfigDto | Record<string, any>;
+  authConfig?: ApiKeyAuthConfigDto | OAuth2AuthConfigDto | Record<string, unknown>;
 
   @ApiPropertyOptional({ description: 'Global response mapping configuration' })
   @IsOptional()
   @IsObject()
-  responseMapping?: Record<string, any>;
+  responseMapping?: Record<string, unknown>;
 
   // Code mode fields
   @ApiPropertyOptional({ description: 'Custom JavaScript code for advanced integrations' })
@@ -141,7 +141,7 @@ export class TestEndpointDto {
   @ApiPropertyOptional({ description: 'Override auth config for testing' })
   @IsOptional()
   @IsObject()
-  authConfig?: Record<string, any>;
+  authConfig?: Record<string, unknown>;
 }
 
 // Response DTOs
@@ -165,10 +165,10 @@ export class CustomConfigResponseDto {
   authType?: string;
 
   @ApiPropertyOptional()
-  authConfig?: Record<string, any>; // Masked for security
+  authConfig?: Record<string, unknown>; // Masked for security
 
   @ApiPropertyOptional()
-  responseMapping?: Record<string, any>;
+  responseMapping?: Record<string, unknown>;
 
   @ApiPropertyOptional()
   customCode?: string;
@@ -203,7 +203,7 @@ export class TestResultDto {
   responseTime?: number;
 
   @ApiPropertyOptional()
-  data?: any;
+  data?: unknown;
 
   @ApiPropertyOptional()
   error?: string;

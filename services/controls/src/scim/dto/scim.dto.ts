@@ -176,7 +176,7 @@ export class PatchScimOperation {
   path?: string;
 
   @ApiPropertyOptional()
-  value?: any;
+  value?: unknown;
 }
 
 export class PatchScimDto {

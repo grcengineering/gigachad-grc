@@ -5,10 +5,15 @@ import {
   Post,
   Body,
   UseGuards,
-  Request,
+  Req,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import { Request } from 'express';
+
+interface AuthenticatedRequest extends Request {
+  user: { userId: string; organizationId: string; email?: string };
+}
 import {
   ApiTags,
   ApiBearerAuth,
@@ -53,7 +58,7 @@ export class AIController {
   @ApiOperation({ summary: 'Get AI configuration for the organization' })
   @ApiResponse({ status: 200, description: 'AI configuration', type: AIConfigDto })
   @RequirePermission(Resource.AI, Action.READ)
-  async getConfig(@Request() req: any): Promise<AIConfigDto> {
+  async getConfig(@Req() req: AuthenticatedRequest): Promise<AIConfigDto> {
     return this.aiService.getConfig(req.user.organizationId);
   }
 
@@ -63,7 +68,7 @@ export class AIController {
   @ApiBody({ type: UpdateAIConfigDto })
   @RequirePermission(Resource.AI, Action.UPDATE)
   async updateConfig(
-    @Request() req: any,
+    @Req() req: AuthenticatedRequest,
     @Body() dto: UpdateAIConfigDto
   ): Promise<AIConfigDto> {
     return this.aiService.updateConfig(req.user.organizationId, dto);
@@ -91,7 +96,7 @@ export class AIController {
     },
   })
   @RequirePermission(Resource.AI, Action.READ)
-  async getStatus(@Request() req: any) {
+  async getStatus(@Req() req: AuthenticatedRequest) {
     const [providerStatus, config] = await Promise.all([
       this.aiService.getProviderStatus(req.user.organizationId),
       this.aiService.getConfig(req.user.organizationId),
@@ -122,7 +127,7 @@ export class AIController {
   @ApiBody({ type: RiskScoringRequestDto })
   @RequirePermission(Resource.AI, Action.CREATE)
   async analyzeRisk(
-    @Request() req: any,
+    @Req() req: AuthenticatedRequest,
     @Body() dto: RiskScoringRequestDto
   ): Promise<RiskScoringResponseDto> {
     return this.aiService.analyzeRisk(req.user.organizationId, dto);
@@ -142,7 +147,7 @@ export class AIController {
   @ApiBody({ type: CategorizationRequestDto })
   @RequirePermission(Resource.AI, Action.CREATE)
   async categorize(
-    @Request() req: any,
+    @Req() req: AuthenticatedRequest,
     @Body() dto: CategorizationRequestDto
   ): Promise<CategorizationResponseDto> {
     return this.aiService.categorize(req.user.organizationId, dto);
@@ -162,7 +167,7 @@ export class AIController {
   @ApiBody({ type: SmartSearchRequestDto })
   @RequirePermission(Resource.AI, Action.READ)
   async smartSearch(
-    @Request() req: any,
+    @Req() req: AuthenticatedRequest,
     @Body() dto: SmartSearchRequestDto
   ): Promise<SmartSearchResponseDto> {
     return this.aiService.smartSearch(req.user.organizationId, dto);
@@ -182,7 +187,7 @@ export class AIController {
   @ApiBody({ type: PolicyDraftRequestDto })
   @RequirePermission(Resource.AI, Action.CREATE)
   async draftPolicy(
-    @Request() req: any,
+    @Req() req: AuthenticatedRequest,
     @Body() dto: PolicyDraftRequestDto
   ): Promise<PolicyDraftResponseDto> {
     return this.aiService.draftPolicy(req.user.organizationId, dto);
@@ -202,7 +207,7 @@ export class AIController {
   @ApiBody({ type: ControlSuggestionRequestDto })
   @RequirePermission(Resource.AI, Action.CREATE)
   async suggestControls(
-    @Request() req: any,
+    @Req() req: AuthenticatedRequest,
     @Body() dto: ControlSuggestionRequestDto
   ): Promise<ControlSuggestionResponseDto> {
     return this.aiService.suggestControls(req.user.organizationId, dto);
@@ -222,7 +227,7 @@ export class AIController {
   @ApiBody({ type: AICompletionRequestDto })
   @RequirePermission(Resource.AI, Action.CREATE)
   async complete(
-    @Request() req: any,
+    @Req() req: AuthenticatedRequest,
     @Body() dto: AICompletionRequestDto
   ): Promise<AICompletionResponseDto> {
     const startTime = Date.now();

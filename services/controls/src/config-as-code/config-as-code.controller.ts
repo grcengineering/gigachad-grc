@@ -3,10 +3,11 @@ import {
   Post,
   Body,
   UseGuards,
-  Request,
+  Req,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import { Request } from 'express';
 import {
   ApiTags,
   ApiBearerAuth,
@@ -18,6 +19,10 @@ import { PermissionGuard } from '../auth/permission.guard';
 import { RequirePermission } from '../auth/decorators/require-permission.decorator';
 import { Resource, Action } from '../permissions/dto/permission.dto';
 import { ConfigAsCodeService } from './config-as-code.service';
+
+interface AuthenticatedRequest extends Request {
+  user: { userId: string; organizationId: string; email?: string };
+}
 import {
   ExportConfigDto,
   ExportConfigResponseDto,
@@ -45,7 +50,7 @@ export class ConfigAsCodeController {
   @ApiResponse({ status: 400, description: 'Invalid request' })
   @RequirePermission(Resource.SETTINGS, Action.UPDATE)
   async exportConfig(
-    @Request() req: any,
+    @Req() req: AuthenticatedRequest,
     @Body() dto: ExportConfigDto,
   ): Promise<ExportConfigResponseDto> {
     return this.configAsCodeService.exportConfig(
@@ -66,7 +71,7 @@ export class ConfigAsCodeController {
   @ApiResponse({ status: 400, description: 'Invalid configuration format' })
   @RequirePermission(Resource.SETTINGS, Action.UPDATE)
   async importConfig(
-    @Request() req: any,
+    @Req() req: AuthenticatedRequest,
     @Body() dto: ImportConfigDto,
   ): Promise<ImportConfigResponseDto> {
     return this.configAsCodeService.importConfig(

@@ -6,6 +6,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { Request } from 'express';
 import { PermissionsService } from '../permissions/permissions.service';
 import {
   PERMISSION_KEY,
@@ -13,6 +14,16 @@ import {
   RequiredPermission,
 } from './decorators/require-permission.decorator';
 import { Resource } from '../permissions/dto/permission.dto';
+
+/**
+ * Request with optional user and params for permission checking
+ */
+interface PermissionCheckRequest extends Request {
+  user?: {
+    userId?: string;
+    permissions?: string[];
+  };
+}
 
 @Injectable()
 export class PermissionGuard implements CanActivate {
@@ -72,7 +83,7 @@ export class PermissionGuard implements CanActivate {
   private async checkPermission(
     permission: RequiredPermission,
     userId: string,
-    request: any,
+    request: PermissionCheckRequest,
   ): Promise<boolean> {
     const { resource, action, resourceIdParam } = permission;
 
@@ -89,7 +100,9 @@ export class PermissionGuard implements CanActivate {
     // Get resource ID if specified
     let resourceId: string | undefined;
     if (resourceIdParam) {
-      resourceId = request.params?.[resourceIdParam] || request.body?.[resourceIdParam];
+      const body = request.body as Record<string, unknown> | undefined;
+      const bodyValue = body?.[resourceIdParam];
+      resourceId = request.params?.[resourceIdParam] || (typeof bodyValue === 'string' ? bodyValue : undefined);
     }
 
     // Check permission based on resource type

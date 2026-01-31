@@ -11,6 +11,84 @@ import {
   UpdateVendorDependencyDto,
 } from './dto/bcdr.dto';
 import { addMonths } from 'date-fns';
+import {
+  BusinessProcessRecord,
+  ProcessDependencyRecord,
+  ProcessStatsRecord,
+  CountRecord,
+  IdRecord,
+} from './types/bcdr-query.types';
+
+/**
+ * Asset link record from raw query
+ */
+export interface ProcessAssetRecord {
+  id: string;
+  process_id: string;
+  asset_id: string;
+  relationship_type: string;
+  notes: string | null;
+  name?: string;
+  type?: string;
+  status?: string;
+}
+
+/**
+ * BIA risk record from raw query
+ */
+export interface BIARiskRecord {
+  id: string;
+  process_id: string;
+  risk_id: string;
+  relationship_notes: string | null;
+  risk_id_code?: string;
+  title?: string;
+  inherent_risk_level?: string;
+}
+
+/**
+ * Vendor dependency record
+ */
+interface VendorDependencyRecord {
+  id: string;
+  process_id: string;
+  vendor_id: string;
+  organization_id: string;
+  dependency_type: string;
+  vendor_rto_hours: number | null;
+  vendor_rpo_hours: number | null;
+  vendor_has_bcp: boolean | null;
+  vendor_bcp_reviewed: Date | null;
+  gap_analysis: string | null;
+  mitigation_plan: string | null;
+  notes: string | null;
+  vendor_name?: string;
+  vendor_code?: string;
+  process_name?: string;
+  process_rto_hours?: number | null;
+  process_rpo_hours?: number | null;
+  has_rto_gap?: boolean;
+  has_rpo_gap?: boolean;
+  criticality_tier?: string;
+  rto_gap_hours?: number | null;
+  rpo_gap_hours?: number | null;
+}
+
+/**
+ * Dependency graph types
+ */
+interface DependencyGraphNode {
+  id: string;
+  process_id: string;
+  name: string;
+  criticality_tier: string;
+}
+
+interface DependencyGraphEdge {
+  source: string;
+  target: string;
+  dependency_type: string;
+}
 
 @Injectable()
 export class BusinessProcessesService {
@@ -58,7 +136,7 @@ export class BusinessProcessesService {
     const whereClause = whereClauses.join(' AND ');
 
     const [processes, total] = await Promise.all([
-      this.prisma.$queryRawUnsafe<any[]>(`
+      this.prisma.$queryRawUnsafe<BusinessProcessRecord[]>(`
         SELECT bp.*, 
                u.display_name as owner_name, 
                u.email as owner_email,
@@ -77,7 +155,7 @@ export class BusinessProcessesService {
           bp.name ASC
         LIMIT ${limit} OFFSET ${offset}
       `),
-      this.prisma.$queryRawUnsafe<[{ count: bigint }]>(`
+      this.prisma.$queryRawUnsafe<[CountRecord]>(`
         SELECT COUNT(*) as count
         FROM bcdr.business_processes
         WHERE organization_id = '${organizationId}'::uuid
@@ -95,7 +173,7 @@ export class BusinessProcessesService {
   }
 
   async findOne(id: string, organizationId: string) {
-    const process = await this.prisma.$queryRaw<any[]>`
+    const process = await this.prisma.$queryRaw<BusinessProcessRecord[]>`
       SELECT bp.*, 
              u.display_name as owner_name, 
              u.email as owner_email
@@ -111,7 +189,7 @@ export class BusinessProcessesService {
     }
 
     // Get dependencies
-    const dependencies = await this.prisma.$queryRaw<any[]>`
+    const dependencies = await this.prisma.$queryRaw<ProcessDependencyRecord[]>`
       SELECT pd.*, 
              bp.process_id, bp.name, bp.criticality_tier
       FROM bcdr.process_dependencies pd
@@ -120,7 +198,7 @@ export class BusinessProcessesService {
     `;
 
     // Get dependents (processes that depend on this one)
-    const dependents = await this.prisma.$queryRaw<any[]>`
+    const dependents = await this.prisma.$queryRaw<ProcessDependencyRecord[]>`
       SELECT pd.*, 
              bp.process_id, bp.name, bp.criticality_tier
       FROM bcdr.process_dependencies pd
@@ -129,7 +207,7 @@ export class BusinessProcessesService {
     `;
 
     // Get linked assets
-    const assets = await this.prisma.$queryRaw<any[]>`
+    const assets = await this.prisma.$queryRaw<ProcessAssetRecord[]>`
       SELECT pa.*, 
              a.name, a.type, a.status
       FROM bcdr.process_assets pa
@@ -138,7 +216,7 @@ export class BusinessProcessesService {
     `;
 
     // Get linked risks
-    const risks = await this.prisma.$queryRaw<any[]>`
+    const risks = await this.prisma.$queryRaw<BIARiskRecord[]>`
       SELECT br.*, 
              r.risk_id, r.title, r.inherent_risk_level
       FROM bcdr.bia_risks br
@@ -163,7 +241,7 @@ export class BusinessProcessesService {
     userName?: string,
   ) {
     // Check for duplicate processId
-    const existing = await this.prisma.$queryRaw<any[]>`
+    const existing = await this.prisma.$queryRaw<IdRecord[]>`
       SELECT id FROM bcdr.business_processes 
       WHERE organization_id = ${organizationId} 
         AND process_id = ${dto.processId}
@@ -178,7 +256,7 @@ export class BusinessProcessesService {
       ? addMonths(new Date(), dto.reviewFrequencyMonths)
       : addMonths(new Date(), 12);
 
-    const result = await this.prisma.$queryRaw<any[]>`
+    const result = await this.prisma.$queryRaw<BusinessProcessRecord[]>`
       INSERT INTO bcdr.business_processes (
         organization_id, workspace_id, process_id, name, description, department,
         owner_id, criticality_tier, business_criticality_score,
@@ -240,7 +318,7 @@ export class BusinessProcessesService {
 
     // Build dynamic update query
     const updates: string[] = ['updated_by = $2::uuid', 'updated_at = NOW()'];
-    const values: any[] = [id, userId];
+    const values: (string | number | boolean | string[] | null)[] = [id, userId];
     let paramIndex = 3;
 
     if (dto.name !== undefined) {
@@ -339,12 +417,12 @@ export class BusinessProcessesService {
       paramIndex++;
     }
 
-    const result = await this.prisma.$queryRawUnsafe<any[]>(
+    const result = await this.prisma.$queryRawUnsafe<BusinessProcessRecord[]>(
       `UPDATE bcdr.business_processes SET ${updates.join(', ')} WHERE id = $1::uuid RETURNING *`,
       ...values,
     );
 
-    const process = result[0];
+    const processRecord = result[0];
 
     await this.auditService.log({
       organizationId,
@@ -354,12 +432,12 @@ export class BusinessProcessesService {
       action: 'updated',
       entityType: 'business_process',
       entityId: id,
-      entityName: process.name,
-      description: `Updated business process "${process.name}"`,
+      entityName: processRecord.name,
+      description: `Updated business process "${processRecord.name}"`,
       changes: dto,
     });
 
-    return process;
+    return processRecord;
   }
 
   async delete(
@@ -395,7 +473,7 @@ export class BusinessProcessesService {
   async markReviewed(id: string, organizationId: string, userId: string) {
     await this.findOne(id, organizationId);
 
-    const result = await this.prisma.$queryRaw<any[]>`
+    const result = await this.prisma.$queryRaw<BusinessProcessRecord[]>`
       UPDATE bcdr.business_processes 
       SET last_reviewed_at = NOW(),
           next_review_due = NOW() + (review_frequency_months || ' months')::interval,
@@ -418,7 +496,7 @@ export class BusinessProcessesService {
     await this.findOne(processId, organizationId);
     await this.findOne(dto.dependencyProcessId, organizationId);
 
-    const result = await this.prisma.$queryRaw<any[]>`
+    const result = await this.prisma.$queryRaw<ProcessDependencyRecord[]>`
       INSERT INTO bcdr.process_dependencies (
         organization_id, dependent_process_id, dependency_process_id, 
         dependency_type, description
@@ -446,7 +524,7 @@ export class BusinessProcessesService {
 
   async getDependencyGraph(organizationId: string) {
     // Get all processes and their dependencies for visualization
-    const processes = await this.prisma.$queryRaw<any[]>`
+    const processes = await this.prisma.$queryRaw<DependencyGraphNode[]>`
       SELECT id, process_id, name, criticality_tier
       FROM bcdr.business_processes
       WHERE organization_id = ${organizationId}::uuid
@@ -454,7 +532,7 @@ export class BusinessProcessesService {
         AND is_active = true
     `;
 
-    const dependencies = await this.prisma.$queryRaw<any[]>`
+    const dependencies = await this.prisma.$queryRaw<DependencyGraphEdge[]>`
       SELECT pd.dependent_process_id as source, pd.dependency_process_id as target, pd.dependency_type
       FROM bcdr.process_dependencies pd
       JOIN bcdr.business_processes bp ON pd.dependent_process_id = bp.id
@@ -480,7 +558,7 @@ export class BusinessProcessesService {
   async linkAsset(processId: string, organizationId: string, userId: string, dto: LinkProcessAssetDto) {
     await this.findOne(processId, organizationId);
 
-    const result = await this.prisma.$queryRaw<any[]>`
+    const result = await this.prisma.$queryRaw<ProcessAssetRecord[]>`
       INSERT INTO bcdr.process_assets (
         process_id, asset_id, relationship_type, notes, created_by
       ) VALUES (
@@ -506,7 +584,7 @@ export class BusinessProcessesService {
 
   // Risk Links
   async linkRisk(processId: string, riskId: string, userId: string, notes?: string) {
-    const result = await this.prisma.$queryRaw<any[]>`
+    const result = await this.prisma.$queryRaw<BIARiskRecord[]>`
       INSERT INTO bcdr.bia_risks (process_id, risk_id, relationship_notes, created_by)
       VALUES (${processId}::uuid, ${riskId}::uuid, ${notes || null}, ${userId}::uuid)
       ON CONFLICT (process_id, risk_id) DO UPDATE
@@ -528,7 +606,7 @@ export class BusinessProcessesService {
 
   // Summary stats
   async getStats(organizationId: string) {
-    const stats = await this.prisma.$queryRaw<any[]>`
+    const stats = await this.prisma.$queryRaw<ProcessStatsRecord[]>`
       SELECT 
         COUNT(*) as total,
         COUNT(*) FILTER (WHERE criticality_tier = 'tier_1_critical') as tier_1_count,
@@ -565,7 +643,7 @@ export class BusinessProcessesService {
     // Verify process exists
     const process = await this.findOne(processId, organizationId);
 
-    const result = await this.prisma.$queryRaw<any[]>`
+    const result = await this.prisma.$queryRaw<VendorDependencyRecord[]>`
       INSERT INTO bcdr_process_vendor_dependencies (
         process_id, vendor_id, organization_id,
         dependency_type, vendor_rto_hours, vendor_rpo_hours,
@@ -616,7 +694,7 @@ export class BusinessProcessesService {
     if (dto.mitigationPlan !== undefined) updates.push(`mitigation_plan = '${(dto.mitigationPlan || '').replace(/'/g, "''")}'`);
     if (dto.notes !== undefined) updates.push(`notes = '${(dto.notes || '').replace(/'/g, "''")}'`);
 
-    const result = await this.prisma.$queryRawUnsafe<any[]>(`
+    const result = await this.prisma.$queryRawUnsafe<VendorDependencyRecord[]>(`
       UPDATE bcdr_process_vendor_dependencies
       SET ${updates.join(', ')}
       WHERE id = '${dependencyId}'::uuid
@@ -665,7 +743,7 @@ export class BusinessProcessesService {
    * Get all vendor dependencies for a process.
    */
   async getVendorDependencies(processId: string, organizationId: string) {
-    const dependencies = await this.prisma.$queryRaw<any[]>`
+    const dependencies = await this.prisma.$queryRaw<VendorDependencyRecord[]>`
       SELECT d.*,
              v.name as vendor_name,
              v.vendor_id as vendor_code,
@@ -705,7 +783,7 @@ export class BusinessProcessesService {
    * Returns vendors where vendor RTO/RPO exceeds process requirements.
    */
   async getVendorGaps(organizationId: string) {
-    const gaps = await this.prisma.$queryRaw<any[]>`
+    const gaps = await this.prisma.$queryRaw<VendorDependencyRecord[]>`
       SELECT 
         d.*,
         v.name as vendor_name,
@@ -806,7 +884,7 @@ export class BusinessProcessesService {
     const processId = `BIA-${Date.now().toString(36).toUpperCase()}`;
 
     // Create the process
-    const result = await this.prisma.$queryRaw<any[]>`
+    const result = await this.prisma.$queryRaw<BusinessProcessRecord[]>`
       INSERT INTO bcdr.business_processes (
         organization_id, process_id, name, description, department, owner_id,
         criticality_tier, financial_impact_level, operational_impact_level,

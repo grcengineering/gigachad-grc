@@ -1,3 +1,4 @@
+ 
 import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
 
@@ -15,9 +16,9 @@ export interface SlackBlock {
     text: string;
     emoji?: boolean;
   };
-  elements?: any[];
-  accessory?: any;
-  fields?: any[];
+  elements?: Array<Record<string, unknown>>;
+  accessory?: Record<string, unknown>;
+  fields?: Array<Record<string, unknown>>;
 }
 
 export interface TaskSlackNotification {
@@ -182,7 +183,7 @@ export class SlackService {
       const channelId = openResponse.data.channel.id;
 
       // Send the message
-      const messagePayload: any = {
+      const messagePayload: { channel: string; text: string; blocks?: SlackBlock[] } = {
         channel: channelId,
         text: message.text,
       };
@@ -209,8 +210,9 @@ export class SlackService {
 
       this.logger.log(`Slack DM sent to user ${message.userId}`);
       return true;
-    } catch (error: any) {
-      this.logger.error(`Slack API error: ${error.message}`);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Slack API error: ${errorMessage}`);
       return false;
     }
   }
@@ -224,7 +226,7 @@ export class SlackService {
     }
 
     try {
-      const payload: any = { text };
+      const payload: { text: string; blocks?: SlackBlock[] } = { text };
       if (blocks) {
         payload.blocks = blocks;
       }
@@ -232,8 +234,9 @@ export class SlackService {
       await axios.post(this.webhookUrl, payload);
       this.logger.log('Slack webhook message sent');
       return true;
-    } catch (error: any) {
-      this.logger.error(`Slack webhook error: ${error.message}`);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Slack webhook error: ${errorMessage}`);
       return false;
     }
   }

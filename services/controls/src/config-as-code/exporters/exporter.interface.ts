@@ -1,12 +1,76 @@
 import { ConfigFormat } from '../dto/export-config.dto';
 
+// Resource item types for exporter
+export interface ControlItem {
+  id?: string;
+  controlId: string;
+  title: string;
+  description?: string | null;
+  category?: string | null;
+  subcategory?: string | null;
+  tags?: string[];
+  status?: string;
+  [key: string]: unknown;
+}
+
+export interface FrameworkItem {
+  id?: string;
+  name: string;
+  type?: string;
+  version?: string;
+  description?: string | null;
+  isActive?: boolean;
+  [key: string]: unknown;
+}
+
+export interface PolicyItem {
+  id?: string;
+  title: string;
+  description?: string | null;
+  category?: string | null;
+  status?: string;
+  version?: string;
+  tags?: string[];
+  [key: string]: unknown;
+}
+
+export interface RiskItem {
+  id?: string;
+  riskId?: string;
+  title: string;
+  description?: string | null;
+  category?: string | null;
+  likelihood?: number | string | null;
+  impact?: number | string | null;
+  status?: string;
+  tags?: string[];
+  [key: string]: unknown;
+}
+
+export interface VendorItem {
+  id?: string;
+  vendorId?: string;
+  name: string;
+  description?: string | null;
+  category?: string | null;
+  status?: string;
+  tags?: string[];
+  [key: string]: unknown;
+}
+
+export interface EvidenceItem {
+  id?: string;
+  title: string;
+  [key: string]: unknown;
+}
+
 export interface ResourceData {
-  controls?: any[];
-  frameworks?: any[];
-  policies?: any[];
-  risks?: any[];
-  evidence?: any[];
-  vendors?: any[];
+  controls?: ControlItem[];
+  frameworks?: FrameworkItem[];
+  policies?: PolicyItem[];
+  risks?: RiskItem[];
+  evidence?: EvidenceItem[];
+  vendors?: VendorItem[];
 }
 
 export interface Exporter {

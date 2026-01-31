@@ -132,7 +132,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       const response = exception.getResponse();
       const message = typeof response === 'string' 
         ? response 
-        : (response as any).message || exception.message;
+        : (response as { message?: string | string[] }).message || exception.message;
 
       return {
         status: exception.getStatus(),
@@ -144,7 +144,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     if (exception instanceof Error) {
       // Prisma errors
       if (exception.name === 'PrismaClientKnownRequestError') {
-        return this.handlePrismaError(exception as any);
+        return this.handlePrismaError(exception as Error & { code?: string });
       }
 
       return {
@@ -164,7 +164,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
   /**
    * Handle Prisma-specific errors
    */
-  private handlePrismaError(error: any): {
+  private handlePrismaError(error: Error & { code?: string }): {
     status: number;
     message: string;
     error: string;
@@ -250,8 +250,9 @@ export class GlobalExceptionFilter implements ExceptionFilter {
    * Log the error with context
    */
   private logError(exception: unknown, request: Request, status: number): void {
-    const userId = (request as any).user?.userId || 'anonymous';
-    const orgId = (request as any).user?.organizationId || 'unknown';
+    const authenticatedRequest = request as Request & { user?: { userId?: string; organizationId?: string } };
+    const userId = authenticatedRequest.user?.userId || 'anonymous';
+    const orgId = authenticatedRequest.user?.organizationId || 'unknown';
     const method = request.method;
     const url = request.url;
     const ip = request.ip || request.headers['x-forwarded-for'];

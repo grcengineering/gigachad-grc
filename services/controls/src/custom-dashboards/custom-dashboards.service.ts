@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   CreateDashboardDto,
@@ -169,7 +170,7 @@ export class CustomDashboardsService {
         description: dto.description,
         isTemplate: dto.isTemplate || false,
         isDefault: dto.isDefault || false,
-        layout: dto.layout || {},
+        layout: (dto.layout || {}) as Prisma.InputJsonValue,
         createdBy: userId,
         widgets: dto.widgets
           ? {
@@ -230,7 +231,7 @@ export class CustomDashboardsService {
         name: dto.name,
         description: dto.description,
         isDefault: dto.isDefault,
-        layout: dto.layout,
+        layout: dto.layout as Prisma.InputJsonValue,
         widgets: dto.widgets
           ? {
               create: dto.widgets.map((w) => ({
@@ -480,8 +481,8 @@ export class CustomDashboardsService {
     }
   }
 
-  private buildPrismaWhere(filters: DataQueryDto['filters'], organizationId: string): any {
-    const where: any = { organizationId };
+  private buildPrismaWhere(filters: DataQueryDto['filters'], organizationId: string): Record<string, unknown> {
+    const where: Record<string, unknown> = { organizationId };
 
     if (!filters || filters.length === 0) return where;
 
@@ -559,7 +560,7 @@ export class CustomDashboardsService {
       take: limit,
     });
 
-    return data.map((d: any) => ({
+    return data.map((d) => ({
       id: d.id,
       controlId: d.control?.controlId,
       title: d.control?.title,
@@ -766,7 +767,7 @@ export class CustomDashboardsService {
       take: limit,
     });
 
-    return frameworks.map((f: any) => ({
+    return frameworks.map((f) => ({
       id: f.id,
       name: f.name,
       version: f.version,

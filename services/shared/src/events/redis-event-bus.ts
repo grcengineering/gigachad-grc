@@ -1,4 +1,4 @@
-import Redis from 'ioredis';
+import Redis, { RedisOptions } from 'ioredis';
 import { Logger } from '@nestjs/common';
 import { EventBus, GrcEvent } from './event-bus.interface';
 
@@ -24,7 +24,7 @@ export class RedisEventBus implements EventBus {
   private readonly logger = new Logger(RedisEventBus.name);
   private publisher: Redis;
   private subscriber: Redis;
-  private handlers: Map<string, Set<(event: any) => void | Promise<void>>>;
+  private handlers: Map<string, Set<(event: unknown) => void | Promise<void>>>;
   private isConnected = false;
   private subscribedChannels: Set<string> = new Set();
 
@@ -32,7 +32,7 @@ export class RedisEventBus implements EventBus {
     const url = redisUrl || process.env.REDIS_URL || 'redis://localhost:6379';
     const password = process.env.REDIS_PASSWORD;
 
-    const baseOptions: any = {
+    const baseOptions: RedisOptions = {
       password: password || undefined,
       // Resilience options
       maxRetriesPerRequest: 3,
@@ -186,7 +186,7 @@ export class RedisEventBus implements EventBus {
       await this.subscriber.subscribe(channel);
     }
 
-    this.handlers.get(channel)!.add(handler);
+    this.handlers.get(channel)!.add(handler as (event: unknown) => void | Promise<void>);
   }
 
   async unsubscribe(channel: string): Promise<void> {

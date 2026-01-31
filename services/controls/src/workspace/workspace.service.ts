@@ -286,9 +286,14 @@ export class WorkspaceService {
       throw new NotFoundException('Workspace not found');
     }
 
+    // Extract settings and handle JSON serialization
+    const { settings, ...restDto } = dto;
     return this.prisma.workspace.update({
       where: { id },
-      data: dto,
+      data: {
+        ...restDto,
+        ...(settings !== undefined && { settings: JSON.parse(JSON.stringify(settings)) }),
+      },
     });
   }
 

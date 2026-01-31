@@ -195,7 +195,7 @@ export class AnalyticsService {
   }
 
   async getCoverageMetrics(organizationId: string, auditId?: string) {
-    const where: any = { organizationId };
+    const where: Record<string, unknown> = { organizationId };
     if (auditId) where.auditId = auditId;
 
     const [totalTests, passedTests, testsByType] = await Promise.all([

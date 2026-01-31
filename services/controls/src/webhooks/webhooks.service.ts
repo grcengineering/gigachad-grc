@@ -196,7 +196,7 @@ export class WebhooksService {
   async triggerEvent(
     organizationId: string,
     eventType: WebhookEventType,
-    payload: Record<string, any>,
+    payload: Record<string, unknown>,
   ): Promise<void> {
     const webhooks = Array.from(webhookStore.values())
       .filter(w => 
@@ -216,7 +216,7 @@ export class WebhooksService {
   private async sendWebhook(
     webhook: WebhookRecord,
     eventType: WebhookEventType,
-    payload: Record<string, any>,
+    payload: Record<string, unknown>,
   ): Promise<TestWebhookResultDto> {
     const startTime = Date.now();
     const deliveryId = crypto.randomUUID();
@@ -301,12 +301,13 @@ export class WebhooksService {
         response: success ? 'OK' : await response.text().catch(() => 'Unable to read response'),
         duration,
       };
-    } catch (error) {
+    } catch (error: unknown) {
       const duration = Date.now() - startTime;
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
       webhook.lastTriggeredAt = new Date();
       webhook.failureCount++;
-      webhook.lastError = error.message;
+      webhook.lastError = errorMessage;
       if (webhook.failureCount > 10) {
         webhook.status = WebhookStatus.FAILED;
       }
@@ -321,7 +322,7 @@ export class WebhooksService {
         payload,
         statusCode: 0,
         success: false,
-        error: error.message,
+        error: errorMessage,
         duration,
         createdAt: new Date(),
       };
@@ -330,7 +331,7 @@ export class WebhooksService {
       return {
         success: false,
         statusCode: 0,
-        error: error.message,
+        error: errorMessage,
         duration,
       };
     }

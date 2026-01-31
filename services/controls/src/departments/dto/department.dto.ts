@@ -47,7 +47,7 @@ export class CreateDepartmentDto {
 
   @ApiPropertyOptional({ description: 'Additional metadata' })
   @IsOptional()
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export class UpdateDepartmentDto {
@@ -78,7 +78,7 @@ export class UpdateDepartmentDto {
 
   @ApiPropertyOptional({ description: 'Additional metadata' })
   @IsOptional()
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export class DepartmentDto {
@@ -107,7 +107,7 @@ export class DepartmentDto {
   isActive: boolean;
 
   @ApiPropertyOptional()
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 
   @ApiProperty()
   createdAt: Date;
@@ -298,7 +298,7 @@ export class EnhancedPermissionGroupDto {
   description?: string;
 
   @ApiProperty()
-  permissions: any[];
+  permissions: Record<string, unknown>[];
 
   @ApiProperty()
   isSystem: boolean;
@@ -320,7 +320,7 @@ export class EnhancedPermissionGroupDto {
   departmentScopes?: GroupDepartmentScopeDto[];
 
   @ApiPropertyOptional({ description: 'Effective permissions after inheritance' })
-  effectivePermissions?: any[];
+  effectivePermissions?: Record<string, unknown>[];
 
   @ApiPropertyOptional({ description: 'Number of members' })
   memberCount?: number;

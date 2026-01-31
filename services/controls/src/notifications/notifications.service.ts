@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
@@ -200,10 +201,11 @@ export class NotificationsService {
     if (inApp) {
       const notification = await this.prisma.notification.create({
         data: {
-          userId,
+          user: { connect: { id: userId } },
           type,
           severity,
           ...rest,
+          metadata: rest.metadata ? JSON.parse(JSON.stringify(rest.metadata)) : undefined,
         },
       });
       notificationId = notification.id;
@@ -245,7 +247,13 @@ export class NotificationsService {
   async findAll(userId: string, filters: NotificationFilterDto) {
     const { unreadOnly, types, severities, startDate, endDate, limit = 20, offset = 0 } = filters;
 
-    const where: any = { userId };
+    const where: {
+      userId: string;
+      isRead?: boolean;
+      type?: { in: string[] };
+      severity?: { in: string[] };
+      createdAt?: { gte?: Date; lte?: Date };
+    } = { userId };
 
     if (unreadOnly) {
       where.isRead = false;
@@ -308,7 +316,7 @@ export class NotificationsService {
       return this.prisma.notification.count({
         where: { userId, isRead: false },
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.logger.error('Error getting unread count:', error);
       // Return 0 instead of throwing to prevent frontend errors
       return 0;
@@ -359,7 +367,7 @@ export class NotificationsService {
   async markAsRead(userId: string, dto: MarkReadDto): Promise<{ updated: number }> {
     const { notificationIds, markAll } = dto;
 
-    const where: any = { userId };
+    const where: { userId: string; isRead?: boolean; id?: { in: string[] } } = { userId };
 
     if (markAll) {
       where.isRead = false;
@@ -485,7 +493,7 @@ export class NotificationsService {
     title: string,
     message: string,
     severity: NotificationSeverity,
-    metadata?: Record<string, any>,
+    metadata?: Record<string, unknown>,
   ): Promise<void> {
     try {
       // 1. Look up user's email from the User table

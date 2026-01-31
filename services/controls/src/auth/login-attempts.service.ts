@@ -343,13 +343,17 @@ export class LoginAttemptsService {
   }
 }
 
+import { Request, Response, NextFunction } from 'express';
+
 /**
  * Middleware to apply brute force protection
  */
 export function bruteForceProtection(loginAttemptsService: LoginAttemptsService) {
-  return async (req: any, res: any, next: any) => {
-    const identifier = req.body?.email || req.body?.username || 'unknown';
-    const ip = req.ip || req.headers['x-forwarded-for']?.split(',')[0] || 'unknown';
+  return async (req: Request, res: Response, next: NextFunction) => {
+    const body = req.body as { email?: string; username?: string } | undefined;
+    const identifier = body?.email || body?.username || 'unknown';
+    const forwardedFor = req.headers['x-forwarded-for'];
+    const ip = req.ip || (typeof forwardedFor === 'string' ? forwardedFor.split(',')[0] : undefined) || 'unknown';
     
     const status = await loginAttemptsService.getStatus(identifier, ip);
     

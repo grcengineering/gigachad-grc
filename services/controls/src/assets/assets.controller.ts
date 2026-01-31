@@ -8,10 +8,15 @@ import {
   Param,
   Query,
   UseGuards,
-  Request,
+  Req,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import { Request } from 'express';
+
+interface AuthenticatedRequest extends Request {
+  user: { userId: string; organizationId: string; email?: string };
+}
 import {
   ApiTags,
   ApiBearerAuth,
@@ -47,7 +52,7 @@ export class AssetsController {
   @ApiResponse({ status: 200, description: 'List of assets' })
   @RequirePermission(Resource.CONTROLS, Action.READ)
   async findAll(
-    @Request() req: any,
+    @Req() req: AuthenticatedRequest,
     @Query() filters: AssetFilterDto
   ) {
     return this.assetsService.findAll(req.user.organizationId, filters);
@@ -57,7 +62,7 @@ export class AssetsController {
   @ApiOperation({ summary: 'Get asset summary statistics' })
   @ApiResponse({ status: 200, description: 'Asset summary' })
   @RequirePermission(Resource.CONTROLS, Action.READ)
-  async getSummary(@Request() req: any) {
+  async getSummary(@Req() req: AuthenticatedRequest) {
     return this.assetsService.getSummary(req.user.organizationId);
   }
 
@@ -68,7 +73,7 @@ export class AssetsController {
   @ApiResponse({ status: 404, description: 'Asset not found' })
   @RequirePermission(Resource.CONTROLS, Action.READ)
   async findOne(
-    @Request() req: any,
+    @Req() req: AuthenticatedRequest,
     @Param('id') id: string
   ) {
     return this.assetsService.findOne(req.user.organizationId, id);
@@ -79,7 +84,7 @@ export class AssetsController {
   @ApiResponse({ status: 201, description: 'Asset created' })
   @RequirePermission(Resource.CONTROLS, Action.CREATE)
   async create(
-    @Request() req: any,
+    @Req() req: AuthenticatedRequest,
     @Body() dto: CreateAssetDto
   ) {
     return this.assetsService.create(
@@ -96,7 +101,7 @@ export class AssetsController {
   @ApiResponse({ status: 404, description: 'Asset not found' })
   @RequirePermission(Resource.CONTROLS, Action.UPDATE)
   async update(
-    @Request() req: any,
+    @Req() req: AuthenticatedRequest,
     @Param('id') id: string,
     @Body() dto: UpdateAssetDto
   ) {
@@ -116,7 +121,7 @@ export class AssetsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @RequirePermission(Resource.CONTROLS, Action.DELETE)
   async delete(
-    @Request() req: any,
+    @Req() req: AuthenticatedRequest,
     @Param('id') id: string
   ) {
     return this.assetsService.delete(
@@ -136,7 +141,7 @@ export class AssetsController {
   @ApiResponse({ status: 201, description: 'Asset linked to risk' })
   @RequirePermission(Resource.CONTROLS, Action.UPDATE)
   async linkToRisk(
-    @Request() req: any,
+    @Req() req: AuthenticatedRequest,
     @Param('id') assetId: string,
     @Body() dto: LinkAssetToRiskDto
   ) {
@@ -157,7 +162,7 @@ export class AssetsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @RequirePermission(Resource.CONTROLS, Action.UPDATE)
   async unlinkFromRisk(
-    @Request() req: any,
+    @Req() req: AuthenticatedRequest,
     @Param('id') assetId: string,
     @Param('riskId') riskId: string
   ) {

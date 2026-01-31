@@ -163,8 +163,9 @@ export class PortalController {
       try {
         const created = await this.portalService.createPortalUser(auditId, orgId, user, actorId);
         results.push({ success: true, user: created });
-      } catch (error: any) {
-        results.push({ success: false, email: user.email, error: error.message });
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        results.push({ success: false, email: user.email, error: message });
       }
     }
     return {
@@ -272,7 +273,7 @@ export class PortalController {
           orderBy: { createdAt: 'desc' },
         },
       },
-    }) as any;
+    });
 
     if (!request) {
       throw new UnauthorizedException('Request not found');
@@ -288,6 +289,21 @@ export class PortalController {
       true,
       `Viewed request: ${request.title}`,
     );
+
+    interface EvidenceItem {
+      id: string;
+      title: string;
+      filename?: string;
+      size?: number;
+      createdAt?: Date;
+      reviewStatus?: string;
+    }
+    interface CommentItem {
+      id: string;
+      content: string;
+      createdAt?: Date;
+      authorName?: string;
+    }
 
     return {
       success: true,
@@ -305,7 +321,7 @@ export class PortalController {
           name: request.assignedToUser.displayName,
           email: request.assignedToUser.email,
         } : null,
-        evidence: (request.evidence || []).map((e: any) => ({
+        evidence: ((request.evidence || []) as EvidenceItem[]).map((e) => ({
           id: e.id,
           title: e.title,
           fileName: e.filename,
@@ -313,7 +329,7 @@ export class PortalController {
           uploadedAt: e.createdAt?.toISOString(),
           status: e.reviewStatus,
         })),
-        comments: (request.comments || []).map((c: any) => ({
+        comments: ((request.comments || []) as CommentItem[]).map((c) => ({
           id: c.id,
           content: c.content,
           createdAt: c.createdAt?.toISOString(),
@@ -341,7 +357,7 @@ export class PortalController {
       include: {
         evidence: true,
       },
-    }) as any;
+    });
 
     if (!request) {
       throw new UnauthorizedException('Request not found');
@@ -357,9 +373,21 @@ export class PortalController {
       true,
     );
 
+    interface EvidenceRecord {
+      id: string;
+      title: string;
+      description?: string;
+      filename?: string;
+      size?: number;
+      mimeType?: string;
+      reviewStatus?: string;
+      createdAt?: Date;
+      uploadedBy?: string;
+    }
+
     return {
       success: true,
-      data: (request.evidence || []).map((e: any) => ({
+      data: ((request.evidence || []) as EvidenceRecord[]).map((e) => ({
         id: e.id,
         title: e.title,
         description: e.description,
@@ -458,7 +486,7 @@ export class PortalController {
           orderBy: { createdAt: 'asc' },
         },
       },
-    }) as any;
+    });
 
     if (!request) {
       throw new UnauthorizedException('Request not found');
@@ -474,9 +502,16 @@ export class PortalController {
       true,
     );
 
+    interface CommentRecord {
+      id: string;
+      content: string;
+      createdAt?: Date;
+      authorName?: string;
+    }
+
     return {
       success: true,
-      data: (request.comments || []).map((c: any) => ({
+      data: ((request.comments || []) as CommentRecord[]).map((c) => ({
         id: c.id,
         content: c.content,
         createdAt: c.createdAt?.toISOString(),

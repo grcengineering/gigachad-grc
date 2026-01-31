@@ -1,5 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { AuditPlanEntry } from '@prisma/client';
 
 export interface CreatePlanEntryDto {
   year: number;
@@ -52,7 +53,7 @@ export class PlanningService {
   }
 
   async findAll(organizationId: string, year?: number, status?: string) {
-    const where: any = { organizationId };
+    const where: Record<string, unknown> = { organizationId };
     if (year) where.year = year;
     if (status) where.status = status;
 
@@ -162,10 +163,10 @@ export class PlanningService {
     };
   }
 
-  private groupBy(items: any[], key: string): Record<string, number> {
+  private groupBy(items: AuditPlanEntry[], key: keyof AuditPlanEntry): Record<string, number> {
     const result: Record<string, number> = {};
     items.forEach(item => {
-      const value = item[key] || 'unspecified';
+      const value = String(item[key] || 'unspecified');
       result[value] = (result[value] || 0) + 1;
     });
     return result;

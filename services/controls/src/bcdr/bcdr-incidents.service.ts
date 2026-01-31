@@ -13,6 +13,13 @@ import {
   IncidentFilterDto,
   TimelineEntryType,
 } from './dto/bcdr.dto';
+import {
+  BCDRIncidentRecord,
+  IncidentTimelineRecord,
+  IncidentStatsRecord,
+  CountRecord,
+  NameRecord,
+} from './types/bcdr-query.types';
 
 /**
  * Service for managing BC/DR incidents.
@@ -43,7 +50,7 @@ export class BCDRIncidentsService {
     // Generate incident ID
     const incidentId = `INC-${Date.now().toString(36).toUpperCase()}`;
 
-    const result = await this.prisma.$queryRaw<any[]>`
+    const result = await this.prisma.$queryRaw<BCDRIncidentRecord[]>`
       INSERT INTO bcdr_incidents (
         organization_id, incident_id, title, description,
         incident_type, severity, status,
@@ -128,7 +135,7 @@ export class BCDRIncidentsService {
     const whereClause = whereClauses.join(' AND ');
 
     const [incidents, total] = await Promise.all([
-      this.prisma.$queryRawUnsafe<any[]>(`
+      this.prisma.$queryRawUnsafe<BCDRIncidentRecord[]>(`
         SELECT *,
                (SELECT COUNT(*) FROM bcdr_incident_timeline WHERE incident_id = bcdr_incidents.id) as timeline_count
         FROM bcdr_incidents
@@ -136,7 +143,7 @@ export class BCDRIncidentsService {
         ORDER BY declared_at DESC
         LIMIT ${limit} OFFSET ${offset}
       `),
-      this.prisma.$queryRawUnsafe<[{ count: bigint }]>(`
+      this.prisma.$queryRawUnsafe<[CountRecord]>(`
         SELECT COUNT(*) as count
         FROM bcdr_incidents
         WHERE ${whereClause}
@@ -156,7 +163,7 @@ export class BCDRIncidentsService {
    * Get a single incident with timeline.
    */
   async findOne(id: string, organizationId: string) {
-    const incidents = await this.prisma.$queryRaw<any[]>`
+    const incidents = await this.prisma.$queryRaw<BCDRIncidentRecord[]>`
       SELECT i.*,
              u_declared.display_name as declared_by_name,
              u_closed.display_name as closed_by_name
@@ -172,7 +179,7 @@ export class BCDRIncidentsService {
     }
 
     // Get timeline
-    const timeline = await this.prisma.$queryRaw<any[]>`
+    const timeline = await this.prisma.$queryRaw<IncidentTimelineRecord[]>`
       SELECT t.*,
              u.display_name as created_by_name
       FROM bcdr_incident_timeline t
@@ -231,7 +238,7 @@ export class BCDRIncidentsService {
       }
     }
 
-    const result = await this.prisma.$queryRawUnsafe<any[]>(`
+    const result = await this.prisma.$queryRawUnsafe<BCDRIncidentRecord[]>(`
       UPDATE bcdr_incidents
       SET ${updates.join(', ')}
       WHERE id = '${id}'::uuid
@@ -305,9 +312,9 @@ export class BCDRIncidentsService {
     userId: string,
     entryType: string,
     description: string,
-    metadata?: any,
+    metadata?: Record<string, unknown>,
   ) {
-    const result = await this.prisma.$queryRaw<any[]>`
+    const result = await this.prisma.$queryRaw<IncidentTimelineRecord[]>`
       INSERT INTO bcdr_incident_timeline (
         incident_id, entry_type, description, created_by, metadata
       ) VALUES (
@@ -334,7 +341,7 @@ export class BCDRIncidentsService {
     const incident = await this.findOne(id, organizationId);
 
     // Get plan details
-    const plans = await this.prisma.$queryRaw<any[]>`
+    const plans = await this.prisma.$queryRaw<NameRecord[]>`
       SELECT title FROM bcdr.bcdr_plans
       WHERE id = ${dto.planId}::uuid
     `;
@@ -392,7 +399,7 @@ export class BCDRIncidentsService {
     const incident = await this.findOne(id, organizationId);
 
     // Get team details
-    const teams = await this.prisma.$queryRaw<any[]>`
+    const teams = await this.prisma.$queryRaw<NameRecord[]>`
       SELECT name FROM bcdr_recovery_teams
       WHERE id = ${dto.teamId}::uuid
     `;
@@ -441,7 +448,7 @@ export class BCDRIncidentsService {
       throw new BadRequestException('Incident is already closed');
     }
 
-    const result = await this.prisma.$queryRaw<any[]>`
+    const result = await this.prisma.$queryRaw<BCDRIncidentRecord[]>`
       UPDATE bcdr_incidents
       SET 
         status = 'closed',
@@ -495,7 +502,7 @@ export class BCDRIncidentsService {
    * Get active incidents.
    */
   async getActiveIncidents(organizationId: string) {
-    const incidents = await this.prisma.$queryRaw<any[]>`
+    const incidents = await this.prisma.$queryRaw<BCDRIncidentRecord[]>`
       SELECT *
       FROM bcdr_incidents
       WHERE organization_id = ${organizationId}::uuid
@@ -517,7 +524,7 @@ export class BCDRIncidentsService {
    * Get incident statistics.
    */
   async getStats(organizationId: string) {
-    const stats = await this.prisma.$queryRaw<any[]>`
+    const stats = await this.prisma.$queryRaw<IncidentStatsRecord[]>`
       SELECT
         COUNT(*) as total,
         COUNT(*) FILTER (WHERE status = 'active') as active_count,

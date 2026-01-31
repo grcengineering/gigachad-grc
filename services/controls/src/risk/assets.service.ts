@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
@@ -139,7 +140,7 @@ export class AssetsService {
         owner: dto.owner,
         location: dto.location,
         department: dto.department,
-        metadata: dto.metadata,
+        metadata: dto.metadata ? JSON.parse(JSON.stringify(dto.metadata)) : undefined,
       },
       include: {
         _count: { select: { riskAssets: true } },

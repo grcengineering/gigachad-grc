@@ -12,6 +12,7 @@ import {
   UploadedFile,
   Res,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
@@ -111,7 +112,7 @@ export class EvidenceController {
   async preview(
     @Param('id') id: string,
     @CurrentUser() user: UserContext,
-    @Res() res: any,
+    @Res() res: Response,
   ) {
     const { stream, mimeType, filename } = await this.evidenceService.getFileStream(id, user.organizationId);
     res.set({

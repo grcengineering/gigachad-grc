@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectMetric } from '@willsoto/nestjs-prometheus';
 import type { Counter } from 'prom-client';
@@ -274,16 +275,16 @@ export class ScheduledNotificationsService implements OnModuleInit {
       if (config?.defaultNotifications) {
         // NotificationConfiguration stores a generic JSON blob; for now we just
         // merge any known properties if present and fall back to defaults.
-        const defaults = (config.defaultNotifications as any) || {};
+        const defaults = (config.defaultNotifications as Record<string, unknown>) || {};
         return {
-          dueSoonDays: defaults.dueSoonDays || DEFAULT_SETTINGS.dueSoonDays,
-          overdueDays: defaults.overdueDays || DEFAULT_SETTINGS.overdueDays,
+          dueSoonDays: (defaults.dueSoonDays as number) || DEFAULT_SETTINGS.dueSoonDays,
+          overdueDays: (defaults.overdueDays as number) || DEFAULT_SETTINGS.overdueDays,
           reminderIntervalDays:
-            defaults.reminderIntervalDays || DEFAULT_SETTINGS.reminderIntervalDays,
+            (defaults.reminderIntervalDays as number) || DEFAULT_SETTINGS.reminderIntervalDays,
           enableEmailNotifications:
-            defaults.emailEnabled ?? DEFAULT_SETTINGS.enableEmailNotifications,
+            (defaults.emailEnabled as boolean) ?? DEFAULT_SETTINGS.enableEmailNotifications,
           enableInAppNotifications:
-            defaults.inAppEnabled ?? DEFAULT_SETTINGS.enableInAppNotifications,
+            (defaults.inAppEnabled as boolean) ?? DEFAULT_SETTINGS.enableInAppNotifications,
         };
       }
     } catch {

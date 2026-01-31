@@ -8,8 +8,9 @@ import {
   Param,
   Query,
   UseGuards,
-  Request,
+  Req,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { CollectorsService } from './collectors.service';
 import { CreateCollectorDto, UpdateCollectorDto, TestCollectorDto } from './dto/collector.dto';
@@ -17,6 +18,10 @@ import { DevAuthGuard } from '../auth/dev-auth.guard';
 import { PermissionGuard } from '../auth/permission.guard';
 import { RequirePermission } from '../auth/decorators/require-permission.decorator';
 import { Resource, Action } from '../permissions/dto/permission.dto';
+
+interface AuthenticatedRequest extends Request {
+  user: { userId: string; organizationId: string; email?: string };
+}
 
 @ApiTags('evidence-collectors')
 @ApiBearerAuth()
@@ -31,7 +36,7 @@ export class CollectorsController {
   @ApiParam({ name: 'implementationId', description: 'Implementation ID' })
   @RequirePermission(Resource.CONTROLS, Action.READ, 'controlId')
   findAll(
-    @Request() req: any,
+    @Req() req: AuthenticatedRequest,
     @Param('controlId') controlId: string,
     @Param('implementationId') implementationId: string,
   ) {
@@ -48,7 +53,7 @@ export class CollectorsController {
   @ApiParam({ name: 'implementationId', description: 'Implementation ID' })
   @ApiParam({ name: 'id', description: 'Collector ID' })
   @RequirePermission(Resource.CONTROLS, Action.READ, 'controlId')
-  findOne(@Request() req: any, @Param('id') id: string) {
+  findOne(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
     return this.collectorsService.findOne(id, req.user.organizationId);
   }
 
@@ -58,7 +63,7 @@ export class CollectorsController {
   @ApiParam({ name: 'implementationId', description: 'Implementation ID' })
   @RequirePermission(Resource.CONTROLS, Action.UPDATE, 'controlId')
   create(
-    @Request() req: any,
+    @Req() req: AuthenticatedRequest,
     @Param('controlId') controlId: string,
     @Param('implementationId') implementationId: string,
     @Body() dto: CreateCollectorDto,
@@ -79,7 +84,7 @@ export class CollectorsController {
   @ApiParam({ name: 'id', description: 'Collector ID' })
   @RequirePermission(Resource.CONTROLS, Action.UPDATE, 'controlId')
   update(
-    @Request() req: any,
+    @Req() req: AuthenticatedRequest,
     @Param('id') id: string,
     @Body() dto: UpdateCollectorDto,
   ) {
@@ -97,7 +102,7 @@ export class CollectorsController {
   @ApiParam({ name: 'implementationId', description: 'Implementation ID' })
   @ApiParam({ name: 'id', description: 'Collector ID' })
   @RequirePermission(Resource.CONTROLS, Action.UPDATE, 'controlId')
-  delete(@Request() req: any, @Param('id') id: string) {
+  delete(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
     return this.collectorsService.delete(
       id,
       req.user.organizationId,
@@ -112,7 +117,7 @@ export class CollectorsController {
   @ApiParam({ name: 'id', description: 'Collector ID' })
   @RequirePermission(Resource.CONTROLS, Action.UPDATE, 'controlId')
   test(
-    @Request() req: any,
+    @Req() req: AuthenticatedRequest,
     @Param('id') id: string,
     @Body() dto: TestCollectorDto,
   ) {
@@ -130,7 +135,7 @@ export class CollectorsController {
   @ApiParam({ name: 'implementationId', description: 'Implementation ID' })
   @ApiParam({ name: 'id', description: 'Collector ID' })
   @RequirePermission(Resource.CONTROLS, Action.UPDATE, 'controlId')
-  run(@Request() req: any, @Param('id') id: string) {
+  run(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
     return this.collectorsService.run(
       id,
       req.user.organizationId,
@@ -144,7 +149,7 @@ export class CollectorsController {
   @ApiParam({ name: 'implementationId', description: 'Implementation ID' })
   @ApiParam({ name: 'id', description: 'Collector ID' })
   getRuns(
-    @Request() req: any,
+    @Req() req: AuthenticatedRequest,
     @Param('id') id: string,
     @Query('limit') limit?: number,
   ) {

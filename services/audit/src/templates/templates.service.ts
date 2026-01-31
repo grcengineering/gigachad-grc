@@ -39,9 +39,9 @@ export class TemplatesService {
         description: dto.description,
         auditType: dto.auditType,
         framework: dto.framework,
-        checklistItems: (dto.checklistItems || []) as any,
-        requestTemplates: (dto.requestTemplates || []) as any,
-        testProcedureTemplates: (dto.testProcedureTemplates || []) as any,
+        checklistItems: JSON.parse(JSON.stringify(dto.checklistItems || [])),
+        requestTemplates: JSON.parse(JSON.stringify(dto.requestTemplates || [])),
+        testProcedureTemplates: JSON.parse(JSON.stringify(dto.testProcedureTemplates || [])),
         createdBy: userId,
       },
     });
@@ -52,7 +52,7 @@ export class TemplatesService {
     framework?: string;
     includeSystem?: boolean;
   }) {
-    const where: any = {
+    const where: Record<string, unknown> = {
       OR: [
         { organizationId },
         ...(filters?.includeSystem !== false ? [{ isSystem: true }] : []),
@@ -116,9 +116,9 @@ export class TemplatesService {
         auditType: dto.auditType,
         framework: dto.framework,
         status: dto.status,
-        checklistItems: dto.checklistItems as any,
-        requestTemplates: dto.requestTemplates as any,
-        testProcedureTemplates: dto.testProcedureTemplates as any,
+        checklistItems: dto.checklistItems ? JSON.parse(JSON.stringify(dto.checklistItems)) : undefined,
+        requestTemplates: dto.requestTemplates ? JSON.parse(JSON.stringify(dto.requestTemplates)) : undefined,
+        testProcedureTemplates: dto.testProcedureTemplates ? JSON.parse(JSON.stringify(dto.testProcedureTemplates)) : undefined,
       },
     });
   }

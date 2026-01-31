@@ -7,6 +7,29 @@ import {
   LikelihoodResult,
   ImpactResult,
 } from './dto/risk-assessment.dto';
+import { VendorRiskScore } from '@prisma/client';
+
+// Interface for parsed findings from VendorAssessment
+interface RiskAssessmentFindings {
+  title: string;
+  description?: string;
+  assessor: string;
+  assetScore: number;
+  threatScore: number;
+  likelihood: LikelihoodResult;
+  impact: ImpactResult;
+  totalScore: number;
+  riskLevel: RiskAssessmentResult['riskLevel'];
+  recommendedAction: string;
+  nextReviewDate?: string;
+}
+
+// Valid risk score values
+const VALID_RISK_SCORES: VendorRiskScore[] = ['very_low', 'low', 'medium', 'high', 'critical'];
+
+function toVendorRiskScore(value: string): VendorRiskScore {
+  return VALID_RISK_SCORES.includes(value as VendorRiskScore) ? value as VendorRiskScore : 'medium';
+}
 
 // ============================================
 // Risk Level Calculation Functions
@@ -163,19 +186,19 @@ export class RiskAssessmentService {
         inherentRiskScore: mapRiskLevelToInherentScore(riskLevel),
         outcome: 'completed',
         outcomeNotes: `Risk Assessment completed by ${dto.assessor}. Risk Level: ${riskLevel}. ${recommendedAction}`,
-        findings: {
+        findings: JSON.parse(JSON.stringify({
           title: dto.title,
           description: dto.description,
           assessor: dto.assessor,
           assetScore: dto.assetScore,
           threatScore: dto.threatScore,
-          likelihood: likelihoodResult as any,
-          impact: impactResult as any,
+          likelihood: likelihoodResult,
+          impact: impactResult,
           totalScore,
           riskLevel,
           recommendedAction,
           nextReviewDate: nextReviewDate.toISOString(),
-        } as any,
+        })),
         recommendations: recommendedAction,
         createdBy: userId,
       },
@@ -185,7 +208,7 @@ export class RiskAssessmentService {
     await this.prisma.vendor.update({
       where: { id: vendorId },
       data: {
-        inherentRiskScore: mapRiskLevelToInherentScore(riskLevel) as any,
+        inherentRiskScore: toVendorRiskScore(mapRiskLevelToInherentScore(riskLevel)),
       },
     });
 
@@ -244,18 +267,24 @@ export class RiskAssessmentService {
     }
 
     // Handle both old (stringified) and new (object) data formats
-    let findings: any = assessment.findings;
-    if (!findings) {
+    let findings: RiskAssessmentFindings | null = null;
+    if (!assessment.findings) {
       return null;
     }
     
     // If findings is a string (old double-serialized data), parse it
-    if (typeof findings === 'string') {
+    if (typeof assessment.findings === 'string') {
       try {
-        findings = JSON.parse(findings);
+        findings = JSON.parse(assessment.findings) as RiskAssessmentFindings;
       } catch {
         return null;
       }
+    } else {
+      findings = assessment.findings as unknown as RiskAssessmentFindings;
+    }
+
+    if (!findings) {
+      return null;
     }
 
     return {
@@ -293,17 +322,21 @@ export class RiskAssessmentService {
     return assessments
       .map((assessment): RiskAssessmentResult | null => {
         // Handle both old (stringified) and new (object) data formats
-        let findings: any = assessment.findings;
-        if (!findings) return null;
+        let findings: RiskAssessmentFindings | null = null;
+        if (!assessment.findings) return null;
         
         // If findings is a string (old double-serialized data), parse it
-        if (typeof findings === 'string') {
+        if (typeof assessment.findings === 'string') {
           try {
-            findings = JSON.parse(findings);
+            findings = JSON.parse(assessment.findings) as RiskAssessmentFindings;
           } catch {
             return null;
           }
+        } else {
+          findings = assessment.findings as unknown as RiskAssessmentFindings;
         }
+
+        if (!findings) return null;
 
         return {
           id: assessment.id,

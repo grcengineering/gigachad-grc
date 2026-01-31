@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { CreateCommunicationPlanDto, UpdateCommunicationPlanDto, CreateContactDto } from './dto/bcdr.dto';
+import { CommunicationPlanRecord, CommunicationContactRecord } from './types/bcdr-query.types';
 
 @Injectable()
 export class CommunicationPlansService {
@@ -35,7 +36,7 @@ export class CommunicationPlansService {
 
     const whereClause = whereClauses.join(' AND ');
 
-    const plans = await this.prisma.$queryRawUnsafe<any[]>(`
+    const plans = await this.prisma.$queryRawUnsafe<CommunicationPlanRecord[]>(`
       SELECT cp.*, 
              bp.title as bcdr_plan_title,
              (SELECT COUNT(*) FROM bcdr.communication_contacts WHERE communication_plan_id = cp.id) as contact_count
@@ -49,7 +50,7 @@ export class CommunicationPlansService {
   }
 
   async findOne(id: string, organizationId: string) {
-    const plans = await this.prisma.$queryRaw<any[]>`
+    const plans = await this.prisma.$queryRaw<CommunicationPlanRecord[]>`
       SELECT cp.*, bp.title as bcdr_plan_title
       FROM bcdr.communication_plans cp
       LEFT JOIN bcdr.bcdr_plans bp ON cp.bcdr_plan_id = bp.id
@@ -63,7 +64,7 @@ export class CommunicationPlansService {
     }
 
     // Get contacts
-    const contacts = await this.prisma.$queryRaw<any[]>`
+    const contacts = await this.prisma.$queryRaw<CommunicationContactRecord[]>`
       SELECT *
       FROM bcdr.communication_contacts
       WHERE communication_plan_id = ${id}::uuid
@@ -84,7 +85,7 @@ export class CommunicationPlansService {
     userEmail?: string,
     userName?: string,
   ) {
-    const result = await this.prisma.$queryRaw<any[]>`
+    const result = await this.prisma.$queryRaw<CommunicationPlanRecord[]>`
       INSERT INTO bcdr.communication_plans (
         organization_id, name, description, plan_type, bcdr_plan_id,
         activation_triggers, created_by, updated_by
@@ -124,7 +125,7 @@ export class CommunicationPlansService {
     await this.findOne(id, organizationId);
 
     const updates: string[] = ['updated_by = $2::uuid', 'updated_at = NOW()'];
-    const values: any[] = [id, userId];
+    const values: (string | boolean | null)[] = [id, userId];
     let paramIndex = 3;
 
     if (dto.name !== undefined) {
@@ -158,7 +159,7 @@ export class CommunicationPlansService {
       paramIndex++;
     }
 
-    const result = await this.prisma.$queryRawUnsafe<any[]>(
+    const result = await this.prisma.$queryRawUnsafe<CommunicationPlanRecord[]>(
       `UPDATE bcdr.communication_plans SET ${updates.join(', ')} WHERE id = $1::uuid RETURNING *`,
       ...values,
     );
@@ -213,7 +214,7 @@ export class CommunicationPlansService {
 
   // Contacts
   async addContact(planId: string, userId: string, dto: CreateContactDto) {
-    const result = await this.prisma.$queryRaw<any[]>`
+    const result = await this.prisma.$queryRaw<CommunicationContactRecord[]>`
       INSERT INTO bcdr.communication_contacts (
         communication_plan_id, name, title, organization_name, contact_type,
         primary_phone, secondary_phone, email, alternate_email,
@@ -239,7 +240,7 @@ export class CommunicationPlansService {
 
   async updateContact(contactId: string, updates: Partial<CreateContactDto> & { isActive?: boolean }) {
     const updateFields: string[] = ['updated_at = NOW()'];
-    const values: any[] = [contactId];
+    const values: (string | number | boolean | null)[] = [contactId];
     let paramIndex = 2;
 
     if (updates.name !== undefined) {
@@ -333,7 +334,7 @@ export class CommunicationPlansService {
       paramIndex++;
     }
 
-    const result = await this.prisma.$queryRawUnsafe<any[]>(
+    const result = await this.prisma.$queryRawUnsafe<CommunicationContactRecord[]>(
       `UPDATE bcdr.communication_contacts SET ${updateFields.join(', ')} WHERE id = $1::uuid RETURNING *`,
       ...values,
     );
@@ -376,7 +377,7 @@ export class CommunicationPlansService {
 
     const whereClause = whereClauses.join(' AND ');
 
-    const contacts = await this.prisma.$queryRawUnsafe<any[]>(`
+    const contacts = await this.prisma.$queryRawUnsafe<(CommunicationContactRecord & { plan_name?: string })[]>(`
       SELECT c.*, cp.name as plan_name
       FROM bcdr.communication_contacts c
       JOIN bcdr.communication_plans cp ON c.communication_plan_id = cp.id
@@ -385,7 +386,7 @@ export class CommunicationPlansService {
     `);
 
     // Group by escalation level
-    const grouped = contacts.reduce((acc: Record<number, any[]>, contact) => {
+    const grouped = contacts.reduce((acc: Record<number, (CommunicationContactRecord & { plan_name?: string })[]>, contact) => {
       const level = contact.escalation_level || 1;
       if (!acc[level]) acc[level] = [];
       acc[level].push(contact);

@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma.service';
 import { AuditService } from '../common/audit.service';
+import { Prisma } from '@prisma/client';
 
 export interface CreateTemplateDto {
   organizationId: string;
@@ -62,7 +63,7 @@ export class TemplatesService {
     status?: string;
     search?: string;
   }) {
-    const where: any = {
+    const where: Prisma.AnswerTemplateWhereInput = {
       organizationId,
       deletedAt: null,
     };
@@ -130,7 +131,7 @@ export class TemplatesService {
       entityId: id,
       entityName: updated.title,
       description: `Updated answer template "${updated.title}"`,
-      changes: dto,
+      changes: dto as unknown as Prisma.InputJsonValue,
     });
 
     return updated;

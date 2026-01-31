@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { ConfigAsCodeService } from './config-as-code.service';
 import { ConfigStateService } from './state/config-state.service';
-import { ControlImplementationStatus } from '@prisma/client';
+import { ControlImplementationStatus, Prisma, ConfigFile } from '@prisma/client';
 import {
   CreateConfigFileDto,
   UpdateConfigFileDto,
@@ -66,9 +66,10 @@ export class ConfigFilesService {
         this.logger.log('Config files already exist, skipping initialization');
         return;
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       // If table doesn't exist, throw a helpful error
-      if (error.code === '42P01' || error.message?.includes('does not exist') || error.message?.includes('relation') && error.message?.includes('does not exist')) {
+      const err = error as { code?: string; message?: string };
+      if (err.code === '42P01' || err.message?.includes('does not exist') || err.message?.includes('relation') && err.message?.includes('does not exist')) {
         this.logger.error('ConfigFile table does not exist. Please run Prisma migrations.');
         throw new BadRequestException(
           'Database tables not initialized. Please run: ./scripts/migrate-config-as-code.sh or cd services/shared && npx prisma migrate dev'
@@ -149,7 +150,7 @@ export class ConfigFilesService {
         
         const batchElapsed = Date.now() - batchStartTime;
         this.logger.log(`Batch transaction completed in ${batchElapsed}ms for ${createdFiles.length} files`);
-      } catch (batchError: any) {
+      } catch (batchError: unknown) {
         this.logger.error('Batch file creation failed:', batchError);
         // Clear created files since transaction rolled back
         createdFiles.length = 0;
@@ -195,10 +196,11 @@ export class ConfigFilesService {
             this.logger.log('Created basic main.tf file as fallback');
             return; // Success - exit early
           }
-        } catch (fallbackError: any) {
+        } catch (fallbackError: unknown) {
           this.logger.error('Failed to create fallback main.tf:', fallbackError);
+          const errorMessage = fallbackError instanceof Error ? fallbackError.message : 'Unknown error';
           throw new BadRequestException(
-            `Failed to create any config files. Last error: ${fallbackError.message || 'Unknown error'}. Please check backend logs.`
+            `Failed to create any config files. Last error: ${errorMessage}. Please check backend logs.`
           );
         }
         
@@ -206,14 +208,15 @@ export class ConfigFilesService {
       }
 
       this.logger.log(`Created ${createdFiles.length} initial config files: ${createdFiles.join(', ')}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.logger.error('Error during initialization:', error);
       // Re-throw with more context
       if (error instanceof BadRequestException) {
         throw error;
       }
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new BadRequestException(
-        `Failed to initialize config files: ${error.message || 'Unknown error'}. Please check backend logs.`
+        `Failed to initialize config files: ${errorMessage}. Please check backend logs.`
       );
     }
   }
@@ -349,9 +352,10 @@ export class ConfigFilesService {
         message: `Successfully refreshed ${filesUpdated} file(s) from database state`,
         filesUpdated,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.logger.error('Error refreshing from database:', error);
-      throw new BadRequestException(`Failed to refresh: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      throw new BadRequestException(`Failed to refresh: ${errorMessage}`);
     }
   }
 
@@ -444,17 +448,11 @@ export class ConfigFilesService {
     organizationId: string,
     workspaceId?: string,
   ): Promise<ConfigFileListResponseDto> {
-    const where: any = {
+    const where: Prisma.ConfigFileWhereInput = {
       organizationId,
       deletedAt: null,
+      workspaceId: workspaceId || null,
     };
-
-    if (workspaceId) {
-      where.workspaceId = workspaceId;
-    } else {
-      // Include org-level files (workspaceId is null)
-      where.workspaceId = null;
-    }
 
     const [files, total] = await Promise.all([
       this.prisma.configFile.findMany({
@@ -478,17 +476,12 @@ export class ConfigFilesService {
     path: string,
     workspaceId?: string,
   ): Promise<ConfigFileResponseDto> {
-    const where: any = {
+    const where: Prisma.ConfigFileWhereInput = {
       organizationId,
       path,
       deletedAt: null,
+      workspaceId: workspaceId || null,
     };
-
-    if (workspaceId) {
-      where.workspaceId = workspaceId;
-    } else {
-      where.workspaceId = null;
-    }
 
     const file = await this.prisma.configFile.findFirst({
       where,
@@ -575,17 +568,12 @@ export class ConfigFilesService {
     dto: UpdateConfigFileDto,
     workspaceId?: string,
   ): Promise<ConfigFileResponseDto> {
-    const where: any = {
+    const where: Prisma.ConfigFileWhereInput = {
       organizationId,
       path,
       deletedAt: null,
+      workspaceId: workspaceId || null,
     };
-
-    if (workspaceId) {
-      where.workspaceId = workspaceId;
-    } else {
-      where.workspaceId = null;
-    }
 
     const existing = await this.prisma.configFile.findFirst({ where });
 
@@ -642,17 +630,12 @@ export class ConfigFilesService {
     path: string,
     workspaceId?: string,
   ): Promise<void> {
-    const where: any = {
+    const where: Prisma.ConfigFileWhereInput = {
       organizationId,
       path,
       deletedAt: null,
+      workspaceId: workspaceId || null,
     };
-
-    if (workspaceId) {
-      where.workspaceId = workspaceId;
-    } else {
-      where.workspaceId = null;
-    }
 
     const file = await this.prisma.configFile.findFirst({ where });
 
@@ -780,9 +763,10 @@ export class ConfigFilesService {
         })),
       };
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.logger.error('Failed to preview changes:', error);
-      result.errors.push(`Parse error: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      result.errors.push(`Parse error: ${errorMessage}`);
     }
 
     return result;
@@ -791,18 +775,19 @@ export class ConfigFilesService {
   /**
    * Get the business identifier for a resource
    */
-  private getResourceBusinessId(resource: { type: string; name: string; attributes: Record<string, any> }): string {
+  private getResourceBusinessId(resource: { type: string; name: string; attributes: Record<string, unknown> }): string {
+    const attrs = resource.attributes;
     switch (resource.type) {
       case 'gigachad_grc_control':
-        return resource.attributes.control_id || resource.name;
+        return (attrs.control_id as string) || resource.name;
       case 'gigachad_grc_framework':
-        return resource.attributes.name || resource.name;
+        return (attrs.name as string) || resource.name;
       case 'gigachad_grc_policy':
-        return resource.attributes.title || resource.name;
+        return (attrs.title as string) || resource.name;
       case 'gigachad_grc_risk':
-        return resource.attributes.title || resource.name;
+        return (attrs.title as string) || resource.name;
       case 'gigachad_grc_vendor':
-        return resource.attributes.name || resource.name;
+        return (attrs.name as string) || resource.name;
       default:
         return resource.name;
     }
@@ -951,17 +936,12 @@ export class ConfigFilesService {
       }
 
       // Save the file
-      const where: any = {
+      const where: Prisma.ConfigFileWhereInput = {
         organizationId,
         path: dto.path,
         deletedAt: null,
+        workspaceId: workspaceId || null,
       };
-
-      if (workspaceId) {
-        where.workspaceId = workspaceId;
-      } else {
-        where.workspaceId = null;
-      }
 
       const existing = await this.prisma.configFile.findFirst({ where });
 
@@ -1006,15 +986,16 @@ export class ConfigFilesService {
               type: resource.type,
               id: resourceId,
               databaseId: applied.databaseId,
-              content: resource.attributes,
+              content: resource.attributes as Prisma.InputJsonValue,
               sourceFile: dto.path,
             },
             workspaceId,
           );
 
-        } catch (error: any) {
+        } catch (error: unknown) {
           result.errors++;
-          result.errorDetails.push(`${resourceKey}: ${error.message}`);
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          result.errorDetails.push(`${resourceKey}: ${errorMessage}`);
           this.logger.error(`Failed to apply ${resourceKey}:`, error);
         }
       }
@@ -1057,7 +1038,7 @@ export class ConfigFilesService {
         },
       });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Re-throw conflict exceptions as-is
       if (error instanceof ConflictException) {
         throw error;
@@ -1065,7 +1046,8 @@ export class ConfigFilesService {
       
       this.logger.error('Failed to apply changes:', error);
       result.errors++;
-      result.errorDetails.push(`Apply error: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      result.errorDetails.push(`Apply error: ${errorMessage}`);
       result.durationMs = Date.now() - startTime;
     } finally {
       // Always release the lock (unless dry run)
@@ -1142,9 +1124,9 @@ export class ConfigFilesService {
   private parseTerraformContent(content: string): Array<{
     type: string;
     name: string;
-    attributes: Record<string, any>;
+    attributes: Record<string, unknown>;
   }> {
-    const resources: Array<{ type: string; name: string; attributes: Record<string, any> }> = [];
+    const resources: Array<{ type: string; name: string; attributes: Record<string, unknown> }> = [];
     
     // Match resource blocks: resource "type" "name" { ... }
     const resourceRegex = /resource\s+"([^"]+)"\s+"([^"]+)"\s*\{([^}]*(?:\{[^}]*\}[^}]*)*)\}/g;
@@ -1167,8 +1149,8 @@ export class ConfigFilesService {
   /**
    * Parse resource body into key-value pairs
    */
-  private parseResourceBody(body: string): Record<string, any> {
-    const attributes: Record<string, any> = {};
+  private parseResourceBody(body: string): Record<string, unknown> {
+    const attributes: Record<string, unknown> = {};
     
     // Match key = value pairs
     const attrRegex = /(\w+)\s*=\s*("([^"\\]*(?:\\.[^"\\]*)*)"|(\[[^\]]*\])|(\d+(?:\.\d+)?)|(\w+))/g;
@@ -1216,7 +1198,7 @@ export class ConfigFilesService {
   private async applyResource(
     organizationId: string,
     userId: string,
-    resource: { type: string; name: string; attributes: Record<string, any> },
+    resource: { type: string; name: string; attributes: Record<string, unknown> },
     workspaceId?: string,
   ): Promise<{ created: boolean; updated: boolean; databaseId?: string }> {
     const { type, attributes } = resource;
@@ -1244,10 +1226,10 @@ export class ConfigFilesService {
   private async applyControl(
     organizationId: string,
     userId: string,
-    attrs: Record<string, any>,
+    attrs: Record<string, unknown>,
     _workspaceId?: string,
   ): Promise<{ created: boolean; updated: boolean; databaseId?: string }> {
-    const controlId = attrs.control_id;
+    const controlId = attrs.control_id as string | undefined;
     if (!controlId) {
       throw new Error('control_id is required');
     }
@@ -1265,32 +1247,36 @@ export class ConfigFilesService {
     });
 
     // Control data (no status - that's in control_implementations)
-    const controlData: any = {
-      title: attrs.title,
-      description: attrs.description,
-      category: attrs.category,
-      subcategory: attrs.subcategory,
-      tags: attrs.tags || [],
+    const controlUpdateData = {
+      title: attrs.title as string | undefined,
+      description: attrs.description as string | undefined,
+      category: attrs.category as string | undefined,
+      subcategory: attrs.subcategory as string | undefined,
+      tags: (attrs.tags as string[]) || [],
     };
 
     // Remove undefined values
-    Object.keys(controlData).forEach(key => controlData[key] === undefined && delete controlData[key]);
+    Object.keys(controlUpdateData).forEach(key => {
+      const k = key as keyof typeof controlUpdateData;
+      if (controlUpdateData[k] === undefined) delete controlUpdateData[k];
+    });
 
-    let controlRecord: any;
+    let controlRecord: { id: string };
     let created = false;
 
     if (existing) {
       controlRecord = await this.prisma.control.update({
         where: { id: existing.id },
-        data: controlData,
+        data: controlUpdateData,
       });
       this.logger.log(`Updated control: ${controlId}`);
     } else {
       controlRecord = await this.prisma.control.create({
         data: {
-          ...controlData,
+          ...controlUpdateData,
           controlId,
           organizationId,
+          title: (attrs.title as string) || controlId,
         },
       });
       created = true;
@@ -1299,7 +1285,7 @@ export class ConfigFilesService {
 
     // Update or create control implementation for status
     if (attrs.status) {
-      const mappedStatus = this.mapControlStatus(attrs.status);
+      const mappedStatus = this.mapControlStatus(attrs.status as string);
       
       // Find existing implementation
       const existingImpl = await this.prisma.controlImplementation.findFirst({
@@ -1342,9 +1328,9 @@ export class ConfigFilesService {
   private async applyFramework(
     organizationId: string,
     userId: string,
-    attrs: Record<string, any>,
+    attrs: Record<string, unknown>,
   ): Promise<{ created: boolean; updated: boolean; databaseId?: string }> {
-    const name = attrs.name;
+    const name = attrs.name as string | undefined;
     if (!name) {
       throw new Error('name is required for framework');
     }
@@ -1357,30 +1343,31 @@ export class ConfigFilesService {
       },
     });
 
-    const data: any = {
-      type: attrs.type || 'REGULATORY',
-      version: attrs.version || '1.0',
-      description: attrs.description,
-      isActive: attrs.is_active ?? true,
-      updatedBy: userId,
+    const frameworkUpdateData = {
+      type: (attrs.type as string) || 'REGULATORY',
+      version: (attrs.version as string) || '1.0',
+      description: attrs.description as string | undefined,
+      isActive: (attrs.is_active as boolean) ?? true,
     };
 
-    Object.keys(data).forEach(key => data[key] === undefined && delete data[key]);
+    Object.keys(frameworkUpdateData).forEach(key => {
+      const k = key as keyof typeof frameworkUpdateData;
+      if (frameworkUpdateData[k] === undefined) delete frameworkUpdateData[k];
+    });
 
     if (existing) {
       await this.prisma.framework.update({
         where: { id: existing.id },
-        data,
+        data: frameworkUpdateData,
       });
       this.logger.log(`Updated framework: ${name}`);
       return { created: false, updated: true, databaseId: existing.id };
     } else {
       const created = await this.prisma.framework.create({
         data: {
-          ...data,
+          ...frameworkUpdateData,
           name,
           organizationId,
-          createdBy: userId,
         },
       });
       this.logger.log(`Created framework: ${name}`);
@@ -1394,10 +1381,10 @@ export class ConfigFilesService {
   private async applyPolicy(
     organizationId: string,
     userId: string,
-    attrs: Record<string, any>,
-    workspaceId?: string,
+    attrs: Record<string, unknown>,
+    _workspaceId?: string,
   ): Promise<{ created: boolean; updated: boolean; databaseId?: string }> {
-    const title = attrs.title;
+    const title = attrs.title as string | undefined;
     if (!title) {
       throw new Error('title is required for policy');
     }
@@ -1410,32 +1397,39 @@ export class ConfigFilesService {
       },
     });
 
-    const data: any = {
-      description: attrs.description,
-      category: attrs.category,
-      status: attrs.status || 'DRAFT',
-      version: attrs.version || '1.0',
-      tags: attrs.tags || [],
-      updatedBy: userId,
+    const policyUpdateData = {
+      description: attrs.description as string | undefined,
+      category: attrs.category as string | undefined,
+      version: (attrs.version as string) || '1.0',
+      tags: (attrs.tags as string[]) || [],
     };
 
-    Object.keys(data).forEach(key => data[key] === undefined && delete data[key]);
+    Object.keys(policyUpdateData).forEach(key => {
+      const k = key as keyof typeof policyUpdateData;
+      if (policyUpdateData[k] === undefined) delete policyUpdateData[k];
+    });
 
     if (existing) {
       await this.prisma.policy.update({
         where: { id: existing.id },
-        data,
+        data: policyUpdateData,
       });
       this.logger.log(`Updated policy: ${title}`);
       return { created: false, updated: true, databaseId: existing.id };
     } else {
       const created = await this.prisma.policy.create({
         data: {
-          ...data,
+          ...policyUpdateData,
           title,
           organizationId,
-          workspaceId: workspaceId || null,
+          category: (attrs.category as string) || 'general',
+          filename: 'config-as-code.tf',
+          mimeType: 'text/plain',
+          size: 0,
+          storagePath: `policies/${organizationId}/${title.replace(/[^a-zA-Z0-9]/g, '_')}`,
+          ownerId: userId,
           createdBy: userId,
+          updatedBy: userId,
         },
       });
       this.logger.log(`Created policy: ${title}`);
@@ -1449,10 +1443,10 @@ export class ConfigFilesService {
   private async applyRisk(
     organizationId: string,
     userId: string,
-    attrs: Record<string, any>,
-    workspaceId?: string,
+    attrs: Record<string, unknown>,
+    _workspaceId?: string,
   ): Promise<{ created: boolean; updated: boolean; databaseId?: string }> {
-    const riskId = attrs.risk_id;
+    const riskId = attrs.risk_id as string | undefined;
     if (!riskId) {
       throw new Error('risk_id is required');
     }
@@ -1465,36 +1459,43 @@ export class ConfigFilesService {
       },
     });
 
-    const data: any = {
-      title: attrs.title,
-      description: attrs.description,
-      category: attrs.category,
-      likelihood: this.mapLikelihood(attrs.likelihood),
-      impact: this.mapImpact(attrs.impact),
-      status: attrs.status || 'IDENTIFIED',
-      tags: attrs.tags || [],
-      updatedBy: userId,
+    const riskUpdateData = {
+      title: attrs.title as string | undefined,
+      description: attrs.description as string | undefined,
+      category: attrs.category as string | undefined,
+      tags: (attrs.tags as string[]) || [],
     };
 
-    Object.keys(data).forEach(key => data[key] === undefined && delete data[key]);
+    Object.keys(riskUpdateData).forEach(key => {
+      const k = key as keyof typeof riskUpdateData;
+      if (riskUpdateData[k] === undefined) delete riskUpdateData[k];
+    });
 
     if (existing) {
       await this.prisma.risk.update({
         where: { id: existing.id },
-        data,
+        data: riskUpdateData,
       });
       this.logger.log(`Updated risk: ${riskId}`);
       return { created: false, updated: true, databaseId: existing.id };
     } else {
+      const riskTitle = (attrs.title as string) || riskId;
+      const riskDescription = (attrs.description as string) || `Risk ${riskId}`;
+      const riskCategory = (attrs.category as string) || 'operational';
+      const riskTags = (attrs.tags as string[]) || [];
+      
+      const riskCreateData: Prisma.RiskUncheckedCreateInput = {
+        riskId,
+        title: riskTitle,
+        description: riskDescription,
+        category: riskCategory,
+        tags: riskTags,
+        organizationId,
+        createdBy: userId,
+      };
+      
       const created = await this.prisma.risk.create({
-        data: {
-          ...data,
-          riskId,
-          organizationId,
-          workspaceId: workspaceId || null,
-          ownerId: userId,
-          createdBy: userId,
-        },
+        data: riskCreateData,
       });
       this.logger.log(`Created risk: ${riskId}`);
       return { created: true, updated: false, databaseId: created.id };
@@ -1507,9 +1508,9 @@ export class ConfigFilesService {
   private async applyVendor(
     organizationId: string,
     userId: string,
-    attrs: Record<string, any>,
+    attrs: Record<string, unknown>,
   ): Promise<{ created: boolean; updated: boolean; databaseId?: string }> {
-    const name = attrs.name;
+    const name = attrs.name as string | undefined;
     if (!name) {
       throw new Error('name is required for vendor');
     }
@@ -1522,32 +1523,43 @@ export class ConfigFilesService {
       },
     });
 
-    const data: any = {
-      vendorId: attrs.vendor_id,
-      description: attrs.description,
-      category: attrs.category,
-      status: attrs.status || 'ACTIVE',
-      tags: attrs.tags || [],
-      updatedBy: userId,
+    const vendorUpdateData = {
+      vendorId: attrs.vendor_id as string | undefined,
+      description: attrs.description as string | undefined,
+      tags: (attrs.tags as string[]) || [],
     };
 
-    Object.keys(data).forEach(key => data[key] === undefined && delete data[key]);
+    Object.keys(vendorUpdateData).forEach(key => {
+      const k = key as keyof typeof vendorUpdateData;
+      if (vendorUpdateData[k] === undefined) delete vendorUpdateData[k];
+    });
 
     if (existing) {
       await this.prisma.vendor.update({
         where: { id: existing.id },
-        data,
+        data: vendorUpdateData,
       });
       this.logger.log(`Updated vendor: ${name}`);
       return { created: false, updated: true, databaseId: existing.id };
     } else {
+      const vendorIdValue = (attrs.vendor_id as string) || `VND-${Date.now()}`;
+      const vendorDescription = (attrs.description as string) || undefined;
+      const vendorTags = (attrs.tags as string[]) || [];
+      
+      const vendorCreateData: Prisma.VendorUncheckedCreateInput = {
+        name,
+        vendorId: vendorIdValue,
+        tags: vendorTags,
+        organizationId,
+        createdBy: userId,
+      };
+      
+      if (vendorDescription) {
+        vendorCreateData.description = vendorDescription;
+      }
+      
       const created = await this.prisma.vendor.create({
-        data: {
-          ...data,
-          name,
-          organizationId,
-          createdBy: userId,
-        },
+        data: vendorCreateData,
       });
       this.logger.log(`Created vendor: ${name}`);
       return { created: true, updated: false, databaseId: created.id };
@@ -1638,17 +1650,12 @@ export class ConfigFilesService {
     path: string,
     workspaceId?: string,
   ): Promise<ConfigFileVersionDto[]> {
-    const where: any = {
+    const where: Prisma.ConfigFileWhereInput = {
       organizationId,
       path,
       deletedAt: null,
+      workspaceId: workspaceId || null,
     };
-
-    if (workspaceId) {
-      where.workspaceId = workspaceId;
-    } else {
-      where.workspaceId = null;
-    }
 
     const file = await this.prisma.configFile.findFirst({ where });
 
@@ -1674,7 +1681,7 @@ export class ConfigFilesService {
   /**
    * Map Prisma model to response DTO
    */
-  private mapToResponseDto(file: any): ConfigFileResponseDto {
+  private mapToResponseDto(file: ConfigFile): ConfigFileResponseDto {
     return {
       id: file.id,
       path: file.path,

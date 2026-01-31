@@ -28,7 +28,7 @@ export class UpdateWorkspaceDto {
   status?: WorkspaceStatus;
 
   @IsOptional()
-  settings?: Record<string, any>;
+  settings?: Record<string, unknown>;
 }
 
 export class AddWorkspaceMemberDto {
@@ -63,7 +63,7 @@ export class WorkspaceResponseDto {
   slug: string;
   description?: string;
   status: WorkspaceStatus;
-  settings: Record<string, any>;
+  settings: Record<string, unknown>;
   createdAt: Date;
   updatedAt: Date;
   memberCount?: number;

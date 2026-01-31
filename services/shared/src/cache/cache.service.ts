@@ -20,7 +20,7 @@ const DEFAULT_MAX_SIZE = 1000;
 @Injectable()
 export class CacheService {
   private readonly logger = new Logger(CacheService.name);
-  private cache = new Map<string, CacheEntry<any>>();
+  private cache = new Map<string, CacheEntry<unknown>>();
   private readonly options: CacheOptions;
   private currentMemoryBytes = 0;
   private hitCount = 0;
@@ -45,7 +45,7 @@ export class CacheService {
   /**
    * Estimate the size of a value in bytes
    */
-  private estimateSizeBytes(value: any): number {
+  private estimateSizeBytes(value: unknown): number {
     try {
       const json = JSON.stringify(value);
       // UTF-8 encoding: each character is 1-4 bytes, estimate 2 bytes average
@@ -87,7 +87,7 @@ export class CacheService {
     if (this.options.debug) {
       this.logger.debug(`Cache HIT: ${key}`);
     }
-    return entry.value;
+    return entry.value as T;
   }
 
   /**
@@ -269,7 +269,7 @@ export class CacheService {
   private evictLRU(): void {
     let lruKey: string | null = null;
     let lruTime = Infinity;
-    let lruEntry: CacheEntry<any> | null = null;
+    let lruEntry: CacheEntry<unknown> | null = null;
 
     // Find the least recently used entry
     for (const [key, entry] of this.cache.entries()) {

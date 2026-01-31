@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { Prisma } from '@prisma/client';
 import { createHash } from 'crypto';
 
 export interface ResourceStateInfo {
@@ -7,7 +8,7 @@ export interface ResourceStateInfo {
   resourceId: string;
   databaseId?: string;
   lastAppliedHash: string;
-  lastAppliedContent: Record<string, any>;
+  lastAppliedContent: Record<string, unknown>;
   lastAppliedAt: Date;
   appliedBy: string;
   sourceFile?: string;
@@ -89,8 +90,11 @@ export class ConfigStateService {
   /**
    * Generate a hash for resource content
    */
-  hashContent(content: Record<string, any>): string {
-    const normalized = JSON.stringify(content, Object.keys(content).sort());
+  hashContent(content: Prisma.InputJsonValue): string {
+    if (typeof content !== 'object' || content === null) {
+      return createHash('sha256').update(JSON.stringify(content)).digest('hex');
+    }
+    const normalized = JSON.stringify(content, Object.keys(content as object).sort());
     return createHash('sha256').update(normalized).digest('hex');
   }
 
@@ -104,7 +108,7 @@ export class ConfigStateService {
       type: string;
       id: string;
       databaseId?: string;
-      content: Record<string, any>;
+      content: Prisma.InputJsonValue;
       sourceFile?: string;
       sourceLine?: number;
     },
@@ -179,7 +183,7 @@ export class ConfigStateService {
       resourceId: state.resourceId,
       databaseId: state.databaseId || undefined,
       lastAppliedHash: state.lastAppliedHash,
-      lastAppliedContent: state.lastAppliedContent as Record<string, any>,
+      lastAppliedContent: state.lastAppliedContent as Record<string, unknown>,
       lastAppliedAt: state.lastAppliedAt,
       appliedBy: state.appliedBy,
       sourceFile: state.sourceFile || undefined,
@@ -232,7 +236,7 @@ export class ConfigStateService {
       }
 
       // Compare current data with last applied
-      const lastApplied = state.lastAppliedContent as Record<string, any>;
+      const lastApplied = state.lastAppliedContent as Record<string, unknown>;
       const drifts = this.compareResourceData(lastApplied, currentData);
 
       if (drifts.length > 0) {
@@ -272,7 +276,7 @@ export class ConfigStateService {
    */
   async detectConflicts(
     organizationId: string,
-    resources: Array<{ type: string; id: string; attributes: Record<string, any> }>,
+    resources: Array<{ type: string; id: string; attributes: Record<string, unknown> }>,
     workspaceId?: string,
   ): Promise<ConflictReport> {
     this.logger.log(`Detecting conflicts for ${resources.length} resources`);
@@ -387,8 +391,9 @@ export class ConfigStateService {
       });
       this.logger.log(`Lock acquired for org ${organizationId} by user ${userId}`);
       return true;
-    } catch (error: any) {
-      if (error.code === 'P2002') {
+    } catch (error: unknown) {
+      const prismaError = error as { code?: string };
+      if (prismaError.code === 'P2002') {
         // Unique constraint violation - lock exists
         this.logger.warn(`Lock already exists for org ${organizationId}`);
         return false;
@@ -563,7 +568,7 @@ export class ConfigStateService {
     resourceType: string,
     resourceIdOrDbId: string,
     workspaceId?: string,
-  ): Promise<Record<string, any> | null> {
+  ): Promise<Record<string, unknown> | null> {
     switch (resourceType) {
       case 'control':
       case 'gigachad_grc_control':
@@ -590,7 +595,7 @@ export class ConfigStateService {
     resourceType: string,
     businessId: string,
     workspaceId?: string,
-  ): Promise<Record<string, any> | null> {
+  ): Promise<Record<string, unknown> | null> {
     switch (resourceType) {
       case 'control':
       case 'gigachad_grc_control':
@@ -612,7 +617,7 @@ export class ConfigStateService {
     }
   }
 
-  private async getControlData(organizationId: string, id: string): Promise<Record<string, any> | null> {
+  private async getControlData(organizationId: string, id: string): Promise<Record<string, unknown> | null> {
     const control = await this.prisma.control.findFirst({
       where: {
         organizationId,
@@ -640,11 +645,11 @@ export class ConfigStateService {
     };
   }
 
-  private async getControlDataByControlId(organizationId: string, controlId: string): Promise<Record<string, any> | null> {
+  private async getControlDataByControlId(organizationId: string, controlId: string): Promise<Record<string, unknown> | null> {
     return this.getControlData(organizationId, controlId);
   }
 
-  private async getFrameworkData(organizationId: string, id: string): Promise<Record<string, any> | null> {
+  private async getFrameworkData(organizationId: string, id: string): Promise<Record<string, unknown> | null> {
     const framework = await this.prisma.framework.findFirst({
       where: {
         organizationId,
@@ -664,11 +669,11 @@ export class ConfigStateService {
     };
   }
 
-  private async getFrameworkDataByName(organizationId: string, name: string): Promise<Record<string, any> | null> {
+  private async getFrameworkDataByName(organizationId: string, name: string): Promise<Record<string, unknown> | null> {
     return this.getFrameworkData(organizationId, name);
   }
 
-  private async getPolicyData(organizationId: string, id: string, _workspaceId?: string): Promise<Record<string, any> | null> {
+  private async getPolicyData(organizationId: string, id: string, _workspaceId?: string): Promise<Record<string, unknown> | null> {
     const policy = await this.prisma.policy.findFirst({
       where: {
         organizationId,
@@ -689,11 +694,11 @@ export class ConfigStateService {
     };
   }
 
-  private async getPolicyDataByTitle(organizationId: string, title: string, _workspaceId?: string): Promise<Record<string, any> | null> {
+  private async getPolicyDataByTitle(organizationId: string, title: string, _workspaceId?: string): Promise<Record<string, unknown> | null> {
     return this.getPolicyData(organizationId, title, _workspaceId);
   }
 
-  private async getRiskData(organizationId: string, id: string, _workspaceId?: string): Promise<Record<string, any> | null> {
+  private async getRiskData(organizationId: string, id: string, _workspaceId?: string): Promise<Record<string, unknown> | null> {
     const risk = await this.prisma.risk.findFirst({
       where: {
         organizationId,
@@ -714,11 +719,11 @@ export class ConfigStateService {
     };
   }
 
-  private async getRiskDataByTitle(organizationId: string, title: string, workspaceId?: string): Promise<Record<string, any> | null> {
+  private async getRiskDataByTitle(organizationId: string, title: string, workspaceId?: string): Promise<Record<string, unknown> | null> {
     return this.getRiskData(organizationId, title, workspaceId);
   }
 
-  private async getVendorData(organizationId: string, id: string): Promise<Record<string, any> | null> {
+  private async getVendorData(organizationId: string, id: string): Promise<Record<string, unknown> | null> {
     const vendor = await this.prisma.vendor.findFirst({
       where: {
         organizationId,
@@ -738,15 +743,15 @@ export class ConfigStateService {
     };
   }
 
-  private async getVendorDataByName(organizationId: string, name: string): Promise<Record<string, any> | null> {
+  private async getVendorDataByName(organizationId: string, name: string): Promise<Record<string, unknown> | null> {
     return this.getVendorData(organizationId, name);
   }
 
   private compareResourceData(
-    lastApplied: Record<string, any>,
-    current: Record<string, any>,
-  ): Array<{ field: string; lastAppliedValue: any; currentValue: any; changeType: 'modified' | 'added' | 'removed' }> {
-    const drifts: Array<{ field: string; lastAppliedValue: any; currentValue: any; changeType: 'modified' | 'added' | 'removed' }> = [];
+    lastApplied: Record<string, unknown>,
+    current: Record<string, unknown>,
+  ): Array<{ field: string; lastAppliedValue: unknown; currentValue: unknown; changeType: 'modified' | 'added' | 'removed' }> {
+    const drifts: Array<{ field: string; lastAppliedValue: unknown; currentValue: unknown; changeType: 'modified' | 'added' | 'removed' }> = [];
 
     // Check for modified and removed fields
     for (const [key, lastValue] of Object.entries(lastApplied)) {
@@ -787,9 +792,9 @@ export class ConfigStateService {
   private detectFieldConflicts(
     resourceType: string,
     resourceId: string,
-    tfValue: Record<string, any>,
-    dbValue: Record<string, any>,
-    lastApplied: Record<string, any>,
+    tfValue: Record<string, unknown>,
+    dbValue: Record<string, unknown>,
+    lastApplied: Record<string, unknown>,
   ): ConflictItem[] {
     const conflicts: ConflictItem[] = [];
 
@@ -838,7 +843,7 @@ export class ConfigStateService {
 
   private async findUntrackedResources(
     organizationId: string,
-    states: any[],
+    states: Array<{ resourceType: string; resourceId: string }>,
     report: DriftReport,
     _workspaceId?: string,
   ): Promise<void> {

@@ -6,7 +6,26 @@ import { CreateQuestionnaireDto } from './dto/create-questionnaire.dto';
 import { UpdateQuestionnaireDto } from './dto/update-questionnaire.dto';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
-import { QuestionnaireStatus, QuestionStatus, Priority } from '@prisma/client';
+import { QuestionnaireStatus, QuestionStatus, Priority, Prisma } from '@prisma/client';
+
+interface QuestionnaireFilters {
+  status?: string;
+  assignedTo?: string;
+  priority?: string;
+}
+
+interface QueueItemInput {
+  id: string;
+  title: string;
+  requesterName: string | null;
+  company: string | null;
+  status: QuestionnaireStatus;
+  priority: Priority;
+  dueDate: Date | null;
+  createdAt: Date;
+  _count: { questions: number };
+  questions: { id: string }[];
+}
 
 @Injectable()
 export class QuestionnairesService {
@@ -18,13 +37,16 @@ export class QuestionnairesService {
 
   // Questionnaire CRUD
   async create(createQuestionnaireDto: CreateQuestionnaireDto, userId: string) {
+    const { status, priority, dueDate, metadata, assignedTo, ...restDto } = createQuestionnaireDto;
     const questionnaire = await this.prisma.questionnaireRequest.create({
       data: {
-        ...createQuestionnaireDto,
-        status: (createQuestionnaireDto.status as QuestionnaireStatus) || QuestionnaireStatus.pending,
-        priority: (createQuestionnaireDto.priority as Priority) || Priority.medium,
-        dueDate: createQuestionnaireDto.dueDate ? new Date(createQuestionnaireDto.dueDate) : undefined,
-        createdBy: userId,
+        ...restDto,
+        status: (status as QuestionnaireStatus) || QuestionnaireStatus.pending,
+        priority: (priority as Priority) || Priority.medium,
+        dueDate: dueDate ? new Date(dueDate) : undefined,
+        metadata: metadata as Prisma.InputJsonValue | undefined,
+        createdByUser: { connect: { id: userId } },
+        ...(assignedTo && { assignedToUser: { connect: { id: assignedTo } } }),
       },
       include: {
         questions: true,
@@ -45,17 +67,17 @@ export class QuestionnairesService {
     return questionnaire;
   }
 
-  async findAll(organizationId: string, filters?: any) {
-    const where: any = { organizationId, deletedAt: null };
+  async findAll(organizationId: string, filters?: QuestionnaireFilters) {
+    const where: Prisma.QuestionnaireRequestWhereInput = { organizationId, deletedAt: null };
 
     if (filters?.status) {
-      where.status = filters.status;
+      where.status = filters.status as QuestionnaireStatus;
     }
     if (filters?.assignedTo) {
       where.assignedTo = filters.assignedTo;
     }
     if (filters?.priority) {
-      where.priority = filters.priority;
+      where.priority = filters.priority as Priority;
     }
 
     return this.prisma.questionnaireRequest.findMany({
@@ -105,7 +127,7 @@ export class QuestionnairesService {
   async update(id: string, updateQuestionnaireDto: UpdateQuestionnaireDto, userId: string) {
     const _questionnaire = await this.findOne(id);
 
-    const { status, priority, assignedTo, ...restDto } = updateQuestionnaireDto;
+    const { status, priority, assignedTo, metadata, dueDate, completedAt, ...restDto } = updateQuestionnaireDto;
 
     const updated = await this.prisma.questionnaireRequest.update({
       where: { id },
@@ -113,8 +135,9 @@ export class QuestionnairesService {
         ...restDto,
         status: status as QuestionnaireStatus | undefined,
         priority: priority as Priority | undefined,
-        dueDate: updateQuestionnaireDto.dueDate ? new Date(updateQuestionnaireDto.dueDate) : undefined,
-        completedAt: updateQuestionnaireDto.completedAt ? new Date(updateQuestionnaireDto.completedAt) : undefined,
+        dueDate: dueDate ? new Date(dueDate) : undefined,
+        completedAt: completedAt ? new Date(completedAt) : undefined,
+        metadata: metadata as Prisma.InputJsonValue | undefined,
         ...(assignedTo && { assignee: { connect: { id: assignedTo } } }),
       },
       include: {
@@ -130,7 +153,7 @@ export class QuestionnairesService {
       entityId: id,
       entityName: updated.title,
       description: `Updated questionnaire ${updated.title}`,
-      changes: updateQuestionnaireDto,
+      changes: updateQuestionnaireDto as unknown as Prisma.InputJsonValue,
     });
 
     return updated;
@@ -242,7 +265,7 @@ export class QuestionnairesService {
       entityType: 'question',
       entityId: id,
       description: `Updated question in questionnaire`,
-      changes: updateQuestionDto,
+      changes: updateQuestionDto as unknown as Prisma.InputJsonValue,
     });
 
     return updated;
@@ -500,7 +523,7 @@ export class QuestionnairesService {
     const oneWeekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
     const twoWeeksFromNow = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
 
-    const baseWhere: any = {
+    const baseWhere: Prisma.QuestionnaireRequestWhereInput = {
       organizationId,
       deletedAt: null,
       status: { in: [QuestionnaireStatus.pending, QuestionnaireStatus.in_progress] },
@@ -583,7 +606,7 @@ export class QuestionnairesService {
     ]);
 
     // Format results with progress calculation
-    const formatItem = (item: any) => ({
+    const formatItem = (item: QueueItemInput) => ({
       id: item.id,
       title: item.title,
       requesterName: item.requesterName,

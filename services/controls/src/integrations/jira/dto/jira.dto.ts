@@ -277,7 +277,7 @@ export class CreateJiraIssueDto {
 
   @ApiPropertyOptional({ description: 'Additional Jira fields' })
   @IsOptional()
-  additionalFields?: Record<string, any>;
+  additionalFields?: Record<string, unknown>;
 }
 
 export class JiraIssueResponseDto {

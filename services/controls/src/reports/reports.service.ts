@@ -98,17 +98,17 @@ export class ReportsService {
         break;
 
       case 'bcdr_summary':
-        data = await this.getBCDRSummaryData(organizationId);
+        data = await this.getBCDRSummaryData(organizationId) as unknown as ComplianceSummaryData;
         filename = `bcdr-summary-${this.formatDateForFilename(new Date())}.pdf`;
         break;
 
       case 'bia_report':
-        data = await this.getBIAReportData(organizationId);
+        data = await this.getBIAReportData(organizationId) as unknown as ComplianceSummaryData;
         filename = `bia-report-${this.formatDateForFilename(new Date())}.pdf`;
         break;
 
       case 'dr_test_report':
-        data = await this.getDRTestReportData(organizationId, dto.periodStart, dto.periodEnd);
+        data = await this.getDRTestReportData(organizationId, dto.periodStart, dto.periodEnd) as unknown as ComplianceSummaryData;
         filename = `dr-test-report-${this.formatDateForFilename(new Date())}.pdf`;
         break;
 
@@ -476,9 +476,9 @@ export class ReportsService {
   /**
    * Get BC/DR summary data
    */
-  private async getBCDRSummaryData(organizationId: string): Promise<any> {
+  private async getBCDRSummaryData(organizationId: string): Promise<Record<string, unknown>> {
     // Get processes stats
-    const processStats = await this.prisma.$queryRaw<any[]>`
+    const processStats = await this.prisma.$queryRaw<Array<Record<string, unknown>>>`
       SELECT 
         COUNT(*) as total,
         COUNT(*) FILTER (WHERE criticality_tier = 'tier_1_critical') as tier_1,
@@ -494,7 +494,7 @@ export class ReportsService {
     `;
 
     // Get plan stats
-    const planStats = await this.prisma.$queryRaw<any[]>`
+    const planStats = await this.prisma.$queryRaw<Array<Record<string, unknown>>>`
       SELECT 
         COUNT(*) as total,
         COUNT(*) FILTER (WHERE status = 'published') as published,
@@ -506,7 +506,7 @@ export class ReportsService {
     `;
 
     // Get test stats
-    const testStats = await this.prisma.$queryRaw<any[]>`
+    const testStats = await this.prisma.$queryRaw<Array<Record<string, unknown>>>`
       SELECT 
         COUNT(*) as total,
         COUNT(*) FILTER (WHERE result = 'passed') as passed,
@@ -520,7 +520,7 @@ export class ReportsService {
     `;
 
     // Get open findings
-    const openFindings = await this.prisma.$queryRaw<any[]>`
+    const openFindings = await this.prisma.$queryRaw<Array<Record<string, unknown>>>`
       SELECT f.id, f.title, f.severity, f.remediation_status, t.name as test_name
       FROM bcdr.dr_test_findings f
       JOIN bcdr.dr_tests t ON f.test_id = t.id
@@ -544,8 +544,8 @@ export class ReportsService {
   /**
    * Get BIA (Business Impact Analysis) report data
    */
-  private async getBIAReportData(organizationId: string): Promise<any> {
-    const processes = await this.prisma.$queryRaw<any[]>`
+  private async getBIAReportData(organizationId: string): Promise<Record<string, unknown>> {
+    const processes = await this.prisma.$queryRaw<Array<Record<string, unknown>>>`
       SELECT 
         bp.process_id, bp.name, bp.department, bp.criticality_tier,
         bp.rto_hours, bp.rpo_hours, bp.mtpd_hours,
@@ -570,7 +570,7 @@ export class ReportsService {
     `;
 
     // Get recovery strategies
-    const strategies = await this.prisma.$queryRaw<any[]>`
+    const strategies = await this.prisma.$queryRaw<Array<Record<string, unknown>>>`
       SELECT 
         rs.name, rs.strategy_type, rs.estimated_recovery_time_hours, rs.estimated_cost,
         bp.name as process_name
@@ -590,11 +590,11 @@ export class ReportsService {
   /**
    * Get DR Test report data
    */
-  private async getDRTestReportData(organizationId: string, periodStart?: string, periodEnd?: string): Promise<any> {
+  private async getDRTestReportData(organizationId: string, periodStart?: string, periodEnd?: string): Promise<Record<string, unknown>> {
     const startDate = periodStart ? new Date(periodStart) : new Date(new Date().setFullYear(new Date().getFullYear() - 1));
     const endDate = periodEnd ? new Date(periodEnd) : new Date();
 
-    const tests = await this.prisma.$queryRaw<any[]>`
+    const tests = await this.prisma.$queryRaw<Array<Record<string, unknown>>>`
       SELECT 
         t.test_id, t.name, t.test_type, t.status, t.result,
         t.scheduled_date, t.actual_start_at, t.actual_end_at,
@@ -615,9 +615,9 @@ export class ReportsService {
     `;
 
     // Get findings for each test
-    const testIds = tests.map(t => t.id);
+    const testIds = tests.map(t => t.id as string);
     const findings = testIds.length > 0 
-      ? await this.prisma.$queryRaw<any[]>`
+      ? await this.prisma.$queryRaw<Array<Record<string, unknown>>>`
           SELECT 
             f.test_id, f.finding_number, f.title, f.severity, f.category,
             f.remediation_status, f.remediation_notes
@@ -628,18 +628,19 @@ export class ReportsService {
       : [];
 
     // Group findings by test
-    const findingsByTest: Record<string, any[]> = {};
+    const findingsByTest: Record<string, Array<Record<string, unknown>>> = {};
     for (const finding of findings) {
-      if (!findingsByTest[finding.test_id]) {
-        findingsByTest[finding.test_id] = [];
+      const testId = finding.test_id as string;
+      if (!findingsByTest[testId]) {
+        findingsByTest[testId] = [];
       }
-      findingsByTest[finding.test_id].push(finding);
+      findingsByTest[testId].push(finding);
     }
 
     return {
       tests: tests.map(t => ({
         ...t,
-        findings: findingsByTest[t.id] || [],
+        findings: findingsByTest[t.id as string] || [],
       })),
       summary: {
         total: tests.length,
@@ -647,7 +648,7 @@ export class ReportsService {
         failed: tests.filter(t => t.result === 'failed').length,
         passedWithIssues: tests.filter(t => t.result === 'passed_with_issues').length,
         avgRecoveryTime: tests.length > 0 
-          ? Math.round(tests.reduce((sum, t) => sum + (t.actual_recovery_time_minutes || 0), 0) / tests.length)
+          ? Math.round(tests.reduce((sum, t) => sum + ((t.actual_recovery_time_minutes as number) || 0), 0) / tests.length)
           : 0,
       },
       period: {
