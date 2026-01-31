@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -232,7 +233,8 @@ export class RiskWorkflowTasksService {
     page: number = 1,
     limit: number = 25,
   ): Promise<{ tasks: RiskWorkflowTaskResponseDto[]; total: number; page: number; limit: number }> {
-    const where: any = {
+     
+    const where: Record<string, any> = {
       organizationId,
       assigneeId: userId,
     };
@@ -301,7 +303,8 @@ export class RiskWorkflowTasksService {
     page: number = 1,
     limit: number = 25,
   ): Promise<{ tasks: RiskWorkflowTaskResponseDto[]; total: number; page: number; limit: number }> {
-    const where: any = { organizationId };
+     
+    const where: Record<string, any> = { organizationId };
 
     if (filters.status) {
       where.status = filters.status;
@@ -613,8 +616,15 @@ export class RiskWorkflowTasksService {
   /**
    * Get task statistics for dashboard
    */
-  async getTaskStats(organizationId: string, userId?: string): Promise<any> {
-    const where: any = { organizationId };
+  async getTaskStats(organizationId: string, userId?: string): Promise<{
+    pending: number;
+    inProgress: number;
+    overdue: number;
+    completedThisWeek: number;
+    total: number;
+  }> {
+     
+    const where: Record<string, any> = { organizationId };
     if (userId) {
       where.assigneeId = userId;
     }
@@ -671,7 +681,8 @@ export class RiskWorkflowTasksService {
     }
   }
 
-  private async sendTaskAssignedNotification(task: any, assignee: any): Promise<void> {
+   
+  private async sendTaskAssignedNotification(task: Record<string, any>, assignee: Record<string, any>): Promise<void> {
     try {
       // Check user notification preferences
       const prefs = await this.prisma.userNotificationPreferences.findUnique({
@@ -721,12 +732,13 @@ export class RiskWorkflowTasksService {
       // The notifications.create call above will trigger email if configured
       
       this.logger.log(`Task assigned notification sent to ${assignee.email} (in-app: ${sendInApp}, slack: ${sendSlack && !!slackUserId})`);
-    } catch (error) {
-      this.logger.error(`Failed to send task assigned notification: ${error.message}`);
+    } catch (error: unknown) {
+      this.logger.error(`Failed to send task assigned notification: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
-  private async sendTaskCompletedNotification(task: any): Promise<void> {
+   
+  private async sendTaskCompletedNotification(task: Record<string, any>): Promise<void> {
     try {
       // Check user notification preferences for the person who assigned the task
       const prefs = await this.prisma.userNotificationPreferences.findUnique({
@@ -770,12 +782,13 @@ export class RiskWorkflowTasksService {
           task.resultingAction,
         );
       }
-    } catch (error) {
-      this.logger.error(`Failed to send task completed notification: ${error.message}`);
+    } catch (error: unknown) {
+      this.logger.error(`Failed to send task completed notification: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
-  private toResponseDto(task: any): RiskWorkflowTaskResponseDto {
+   
+  private toResponseDto(task: Record<string, any>): RiskWorkflowTaskResponseDto {
     return {
       id: task.id,
       riskId: task.riskId,

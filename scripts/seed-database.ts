@@ -241,30 +241,38 @@ async function seedFramework(data: SeedFramework) {
   let mappingCount = 0;
 
   for (const controlData of data.controls || []) {
-    const control = await prisma.control.upsert({
+    // Use findFirst + create/update pattern since upsert doesn't support null in composite keys
+    let control = await prisma.control.findFirst({
       where: {
-        controlId_organizationId: {
-          controlId: controlData.controlId,
-          organizationId: null as any,
-        },
-      },
-      update: {
-        title: controlData.title,
-        description: controlData.description,
-        category: controlData.category,
-        guidance: controlData.guidance,
-      },
-      create: {
         controlId: controlData.controlId,
-        title: controlData.title,
-        description: controlData.description,
-        category: controlData.category,
-        guidance: controlData.guidance,
-        isCustom: false,
-        automationSupported: controlData.automationSupported || false,
-        tags: controlData.tags || [],
+        organizationId: null,
       },
     });
+
+    if (control) {
+      control = await prisma.control.update({
+        where: { id: control.id },
+        data: {
+          title: controlData.title,
+          description: controlData.description,
+          category: controlData.category,
+          guidance: controlData.guidance,
+        },
+      });
+    } else {
+      control = await prisma.control.create({
+        data: {
+          controlId: controlData.controlId,
+          title: controlData.title,
+          description: controlData.description,
+          category: controlData.category,
+          guidance: controlData.guidance,
+          isCustom: false,
+          automationSupported: controlData.automationSupported || false,
+          tags: controlData.tags || [],
+        },
+      });
+    }
     controlCount++;
 
     for (const reqRef of controlData.mappings || []) {

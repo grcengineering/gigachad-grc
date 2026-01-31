@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
+import { Prisma } from '@prisma/client';
 
 /**
  * User session record stored in database
@@ -318,7 +319,7 @@ export class SessionService {
     userId: string,
     organizationId: string,
     action: string,
-    details: Record<string, any>,
+    details: Record<string, unknown>,
   ): Promise<void> {
     try {
       await this.prisma.auditLog.create({
@@ -327,10 +328,10 @@ export class SessionService {
           userId,
           action,
           entityType: 'session',
-          entityId: details.sessionId || 'system',
+          entityId: (details.sessionId as string) || 'system',
           description: `Session event: ${action}`,
-          metadata: details,
-          ipAddress: details.ipAddress || null,
+          metadata: details as Prisma.InputJsonValue,
+          ipAddress: (details.ipAddress as string) || null,
         },
       });
     } catch (error) {

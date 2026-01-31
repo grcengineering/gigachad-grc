@@ -10,6 +10,7 @@ import {
   ContractSettingsDto,
   FeatureSettingsDto,
 } from './dto/tprm-config.dto';
+import { TprmConfiguration, Prisma } from '@prisma/client';
 
 // Default configuration values
 const DEFAULT_TIER_FREQUENCY_MAPPING: TierFrequencyMappingDto = {
@@ -153,12 +154,12 @@ export class TprmConfigService {
       config = await this.prisma.tprmConfiguration.create({
         data: {
           organizationId,
-          tierFrequencyMapping: DEFAULT_TIER_FREQUENCY_MAPPING as any,
-          vendorCategories: DEFAULT_VENDOR_CATEGORIES as any,
-          riskThresholds: DEFAULT_RISK_THRESHOLDS as any,
-          assessmentSettings: DEFAULT_ASSESSMENT_SETTINGS as any,
-          contractSettings: DEFAULT_CONTRACT_SETTINGS as any,
-          featureSettings: DEFAULT_FEATURE_SETTINGS as any,
+          tierFrequencyMapping: JSON.parse(JSON.stringify(DEFAULT_TIER_FREQUENCY_MAPPING)),
+          vendorCategories: JSON.parse(JSON.stringify(DEFAULT_VENDOR_CATEGORIES)),
+          riskThresholds: JSON.parse(JSON.stringify(DEFAULT_RISK_THRESHOLDS)),
+          assessmentSettings: JSON.parse(JSON.stringify(DEFAULT_ASSESSMENT_SETTINGS)),
+          contractSettings: JSON.parse(JSON.stringify(DEFAULT_CONTRACT_SETTINGS)),
+          featureSettings: JSON.parse(JSON.stringify(DEFAULT_FEATURE_SETTINGS)),
         },
       });
     }
@@ -177,7 +178,8 @@ export class TprmConfigService {
     // Ensure configuration exists
     await this.getConfiguration(organizationId);
 
-    const updateData: any = {};
+    // Build update data with proper JSON serialization
+    const updateData: Record<string, Prisma.InputJsonValue | string> = {};
     
     // Only set updatedBy if it's a valid UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -186,22 +188,22 @@ export class TprmConfigService {
     }
 
     if (dto.tierFrequencyMapping !== undefined) {
-      updateData.tierFrequencyMapping = dto.tierFrequencyMapping;
+      updateData.tierFrequencyMapping = JSON.parse(JSON.stringify(dto.tierFrequencyMapping));
     }
     if (dto.vendorCategories !== undefined) {
-      updateData.vendorCategories = dto.vendorCategories;
+      updateData.vendorCategories = JSON.parse(JSON.stringify(dto.vendorCategories));
     }
     if (dto.riskThresholds !== undefined) {
-      updateData.riskThresholds = dto.riskThresholds;
+      updateData.riskThresholds = JSON.parse(JSON.stringify(dto.riskThresholds));
     }
     if (dto.assessmentSettings !== undefined) {
-      updateData.assessmentSettings = dto.assessmentSettings;
+      updateData.assessmentSettings = JSON.parse(JSON.stringify(dto.assessmentSettings));
     }
     if (dto.contractSettings !== undefined) {
-      updateData.contractSettings = dto.contractSettings;
+      updateData.contractSettings = JSON.parse(JSON.stringify(dto.contractSettings));
     }
     if (dto.featureSettings !== undefined) {
-      updateData.featureSettings = dto.featureSettings;
+      updateData.featureSettings = JSON.parse(JSON.stringify(dto.featureSettings));
     }
 
     const config = await this.prisma.tprmConfiguration.update({
@@ -223,22 +225,22 @@ export class TprmConfigService {
     const config = await this.prisma.tprmConfiguration.upsert({
       where: { organizationId },
       update: {
-        tierFrequencyMapping: DEFAULT_TIER_FREQUENCY_MAPPING as any,
-        vendorCategories: DEFAULT_VENDOR_CATEGORIES as any,
-        riskThresholds: DEFAULT_RISK_THRESHOLDS as any,
-        assessmentSettings: DEFAULT_ASSESSMENT_SETTINGS as any,
-        contractSettings: DEFAULT_CONTRACT_SETTINGS as any,
-        featureSettings: DEFAULT_FEATURE_SETTINGS as any,
+        tierFrequencyMapping: JSON.parse(JSON.stringify(DEFAULT_TIER_FREQUENCY_MAPPING)),
+        vendorCategories: JSON.parse(JSON.stringify(DEFAULT_VENDOR_CATEGORIES)),
+        riskThresholds: JSON.parse(JSON.stringify(DEFAULT_RISK_THRESHOLDS)),
+        assessmentSettings: JSON.parse(JSON.stringify(DEFAULT_ASSESSMENT_SETTINGS)),
+        contractSettings: JSON.parse(JSON.stringify(DEFAULT_CONTRACT_SETTINGS)),
+        featureSettings: JSON.parse(JSON.stringify(DEFAULT_FEATURE_SETTINGS)),
         ...(validUserId && { updatedBy: validUserId }),
       },
       create: {
         organizationId,
-        tierFrequencyMapping: DEFAULT_TIER_FREQUENCY_MAPPING as any,
-        vendorCategories: DEFAULT_VENDOR_CATEGORIES as any,
-        riskThresholds: DEFAULT_RISK_THRESHOLDS as any,
-        assessmentSettings: DEFAULT_ASSESSMENT_SETTINGS as any,
-        contractSettings: DEFAULT_CONTRACT_SETTINGS as any,
-        featureSettings: DEFAULT_FEATURE_SETTINGS as any,
+        tierFrequencyMapping: JSON.parse(JSON.stringify(DEFAULT_TIER_FREQUENCY_MAPPING)),
+        vendorCategories: JSON.parse(JSON.stringify(DEFAULT_VENDOR_CATEGORIES)),
+        riskThresholds: JSON.parse(JSON.stringify(DEFAULT_RISK_THRESHOLDS)),
+        assessmentSettings: JSON.parse(JSON.stringify(DEFAULT_ASSESSMENT_SETTINGS)),
+        contractSettings: JSON.parse(JSON.stringify(DEFAULT_CONTRACT_SETTINGS)),
+        featureSettings: JSON.parse(JSON.stringify(DEFAULT_FEATURE_SETTINGS)),
       },
     });
 
@@ -304,19 +306,19 @@ export class TprmConfigService {
     };
   }
 
-  private mapToResponse(config: any): TprmConfigurationResponseDto {
+  private mapToResponse(config: TprmConfiguration): TprmConfigurationResponseDto {
     return {
       id: config.id,
       organizationId: config.organizationId,
-      tierFrequencyMapping: (config.tierFrequencyMapping || DEFAULT_TIER_FREQUENCY_MAPPING) as TierFrequencyMappingDto,
-      vendorCategories: (config.vendorCategories || []) as VendorCategoryDto[],
-      riskThresholds: (config.riskThresholds || DEFAULT_RISK_THRESHOLDS) as RiskThresholdsDto,
-      assessmentSettings: (config.assessmentSettings || {}) as AssessmentSettingsDto,
-      contractSettings: (config.contractSettings || {}) as ContractSettingsDto,
-      featureSettings: (config.featureSettings || DEFAULT_FEATURE_SETTINGS) as FeatureSettingsDto,
+      tierFrequencyMapping: (config.tierFrequencyMapping || DEFAULT_TIER_FREQUENCY_MAPPING) as unknown as TierFrequencyMappingDto,
+      vendorCategories: (config.vendorCategories || []) as unknown as VendorCategoryDto[],
+      riskThresholds: (config.riskThresholds || DEFAULT_RISK_THRESHOLDS) as unknown as RiskThresholdsDto,
+      assessmentSettings: (config.assessmentSettings || {}) as unknown as AssessmentSettingsDto,
+      contractSettings: (config.contractSettings || {}) as unknown as ContractSettingsDto,
+      featureSettings: (config.featureSettings || DEFAULT_FEATURE_SETTINGS) as unknown as FeatureSettingsDto,
       createdAt: config.createdAt,
       updatedAt: config.updatedAt,
-      updatedBy: config.updatedBy,
+      updatedBy: config.updatedBy ?? undefined,
     };
   }
 }

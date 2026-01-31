@@ -6,6 +6,69 @@ import { DRTestsService } from './dr-tests.service';
 import { RunbooksService } from './runbooks.service';
 import { RecoveryStrategiesService } from './recovery-strategies.service';
 
+/**
+ * Raw query result types for BC/DR dashboard
+ */
+export interface OverdueItem {
+  id: string;
+  title?: string;
+  name?: string;
+  entity_type: string;
+  due_date: Date;
+  plan_id?: string;
+  process_id?: string;
+  test_id?: string;
+  test_name?: string;
+}
+
+export interface CriticalityDistributionItem {
+  criticality_tier: string;
+  count: bigint | number;
+  avg_rto: number | null;
+  avg_rpo: number | null;
+}
+
+export interface TestHistoryItem {
+  month: Date;
+  total_tests: bigint | number;
+  passed: bigint | number;
+  passed_with_issues: bigint | number;
+  failed: bigint | number;
+  avg_recovery_time: number | null;
+}
+
+export interface RTORPOAnalysisItem {
+  id: string;
+  process_id: string;
+  name: string;
+  criticality_tier: string;
+  rto_hours: number | null;
+  rpo_hours: number | null;
+  strategy_recovery_time: number | null;
+  rto_status: string;
+}
+
+export interface PlanCoverageItem {
+  id: string;
+  process_id: string;
+  name: string;
+  criticality_tier: string;
+  has_plan: boolean;
+  plan_count: bigint | number;
+}
+
+export interface ActivityLogItem {
+  id: string;
+  action: string;
+  entity_type: string;
+  entity_id: string;
+  entity_name: string;
+  description: string | null;
+  timestamp: Date;
+  user_email: string | null;
+  user_name: string | null;
+}
+
 @Injectable()
 export class BCDRDashboardService {
   private readonly logger = new Logger(BCDRDashboardService.name);
@@ -20,14 +83,14 @@ export class BCDRDashboardService {
   ) {}
 
   // Helper function to convert BigInt values to Numbers in an object
-  private convertBigIntToNumber(obj: any): any {
+  private convertBigIntToNumber(obj: unknown): unknown {
     if (obj === null || obj === undefined) return obj;
     if (typeof obj === 'bigint') return Number(obj);
     if (Array.isArray(obj)) return obj.map(item => this.convertBigIntToNumber(item));
     if (typeof obj === 'object') {
-      const converted: any = {};
+      const converted: Record<string, unknown> = {};
       for (const key in obj) {
-        converted[key] = this.convertBigIntToNumber(obj[key]);
+        converted[key] = this.convertBigIntToNumber((obj as Record<string, unknown>)[key]);
       }
       return converted;
     }
@@ -36,7 +99,10 @@ export class BCDRDashboardService {
 
   async getSummary(organizationId: string) {
     // Default empty stats for when queries fail (e.g., schema not fully migrated)
-    const emptyStats = { total: 0, tier_1_count: 0, tier_2_count: 0, tier_3_count: 0, tier_4_count: 0 };
+    const emptyProcessStats = { total: 0, tier_1_count: 0, tier_2_count: 0, tier_3_count: 0, tier_4_count: 0, active_count: 0, overdue_review_count: 0 };
+    const emptyPlanStats = { total: 0, draft_count: 0, in_review_count: 0, approved_count: 0, published_count: 0, overdue_review_count: 0, expired_count: 0 };
+    const emptyTestStats = { total: 0, scheduled_count: 0, completed_count: 0, passed_count: 0, issues_count: 0, failed_count: 0, overdue_review_count: 0 };
+    const emptyGenericStats = { total: 0, active_count: 0 };
     
     // Wrap each service call to handle missing tables gracefully
     const safeCall = async <T>(fn: () => Promise<T>, fallback: T): Promise<T> => {
@@ -57,11 +123,11 @@ export class BCDRDashboardService {
       upcomingTests,
       overdueItems,
     ] = await Promise.all([
-      safeCall(() => this.processesService.getStats(organizationId), emptyStats),
-      safeCall(() => this.plansService.getStats(organizationId), emptyStats),
-      safeCall(() => this.testsService.getStats(organizationId), emptyStats),
-      safeCall(() => this.runbooksService.getStats(organizationId), emptyStats),
-      safeCall(() => this.strategiesService.getStats(organizationId), emptyStats),
+      safeCall(() => this.processesService.getStats(organizationId), emptyProcessStats),
+      safeCall(() => this.plansService.getStats(organizationId), emptyPlanStats),
+      safeCall(() => this.testsService.getStats(organizationId), emptyTestStats),
+      safeCall(() => this.runbooksService.getStats(organizationId), emptyGenericStats),
+      safeCall(() => this.strategiesService.getStats(organizationId), emptyGenericStats),
       safeCall(() => this.testsService.getUpcomingTests(organizationId, 30), []),
       safeCall(() => this.getOverdueItems(organizationId), { plans: [], processes: [], findings: [], totalOverdue: 0 }),
     ]);
@@ -80,7 +146,7 @@ export class BCDRDashboardService {
 
   async getOverdueItems(organizationId: string) {
     // Get overdue plan reviews
-    const overduePlans = await this.prisma.$queryRaw<any[]>`
+    const overduePlans = await this.prisma.$queryRaw<OverdueItem[]>`
       SELECT id, plan_id, title, 'bcdr_plan' as entity_type, next_review_due as due_date
       FROM bcdr.bcdr_plans
       WHERE organization_id = ${organizationId}::uuid
@@ -92,7 +158,7 @@ export class BCDRDashboardService {
     `;
 
     // Get overdue process reviews
-    const overdueProcesses = await this.prisma.$queryRaw<any[]>`
+    const overdueProcesses = await this.prisma.$queryRaw<OverdueItem[]>`
       SELECT id, process_id, name as title, 'business_process' as entity_type, next_review_due as due_date
       FROM bcdr.business_processes
       WHERE organization_id = ${organizationId}::uuid
@@ -104,7 +170,7 @@ export class BCDRDashboardService {
     `;
 
     // Get overdue test findings
-    const overdueFindings = await this.prisma.$queryRaw<any[]>`
+    const overdueFindings = await this.prisma.$queryRaw<OverdueItem[]>`
       SELECT f.id, f.title, 'test_finding' as entity_type, f.remediation_due_date as due_date,
              t.test_id, t.name as test_name
       FROM bcdr.dr_test_findings f
@@ -126,7 +192,7 @@ export class BCDRDashboardService {
   }
 
   async getCriticalityDistribution(organizationId: string) {
-    const distribution = await this.prisma.$queryRaw<any[]>`
+    const distribution = await this.prisma.$queryRaw<CriticalityDistributionItem[]>`
       SELECT 
         criticality_tier,
         COUNT(*) as count,
@@ -153,7 +219,7 @@ export class BCDRDashboardService {
     // Validate and sanitize months parameter to prevent SQL injection
     const safeMonths = Math.min(Math.max(1, Math.floor(Number(months) || 12)), 60);
     
-    const history = await this.prisma.$queryRaw<any[]>`
+    const history = await this.prisma.$queryRaw<TestHistoryItem[]>`
       SELECT 
         DATE_TRUNC('month', actual_end_at) as month,
         COUNT(*) as total_tests,
@@ -174,7 +240,7 @@ export class BCDRDashboardService {
   }
 
   async getRTORPOAnalysis(organizationId: string) {
-    const analysis = await this.prisma.$queryRaw<any[]>`
+    const analysis = await this.prisma.$queryRaw<RTORPOAnalysisItem[]>`
       SELECT 
         bp.id, bp.process_id, bp.name, bp.criticality_tier,
         bp.rto_hours, bp.rpo_hours,
@@ -211,7 +277,7 @@ export class BCDRDashboardService {
   }
 
   async getPlanCoverage(organizationId: string) {
-    const coverage = await this.prisma.$queryRaw<any[]>`
+    const coverage = await this.prisma.$queryRaw<PlanCoverageItem[]>`
       SELECT 
         bp.id, bp.process_id, bp.name, bp.criticality_tier,
         CASE 
@@ -257,7 +323,7 @@ export class BCDRDashboardService {
   }
 
   async getRecentActivity(organizationId: string, limit: number = 20) {
-    const activity = await this.prisma.$queryRaw<any[]>`
+    const activity = await this.prisma.$queryRaw<ActivityLogItem[]>`
       SELECT 
         id, action, entity_type, entity_id, entity_name, 
         description, timestamp, user_email, user_name
@@ -274,9 +340,10 @@ export class BCDRDashboardService {
   async getMetrics(organizationId: string) {
     try {
       // Calculate overall BC/DR readiness score
-      const emptyStats = { total: 0, completed_count: 0, passed_count: 0, issues_count: 0, failed_count: 0, overdue_review_count: 0 };
-      const emptyRtoAnalysis = { analysis: [], summary: { compliant: 0, atRisk: 0, noStrategy: 0, total: 0 } };
-      const emptyPlanCoverage = { coverage: [], summary: { covered: 0, notCovered: 0, total: 0, coveragePercent: 0 } };
+      const emptyTestStats = { total: 0, completed_count: 0, passed_count: 0, issues_count: 0, failed_count: 0, overdue_review_count: 0 };
+      const emptyProcessStats = { total: 0, tier_1_count: 0, tier_2_count: 0, tier_3_count: 0, tier_4_count: 0, active_count: 0, overdue_review_count: 0 };
+      const emptyRtoAnalysis = { analysis: [] as RTORPOAnalysisItem[], summary: { compliant: 0, atRisk: 0, noStrategy: 0, total: 0 } };
+      const emptyPlanCoverage = { coverage: [] as PlanCoverageItem[], summary: { covered: 0, notCovered: 0, total: 0, coveragePercent: 0 } };
 
       const safeCall = async <T>(fn: () => Promise<T>, fallback: T): Promise<T> => {
         try {
@@ -290,8 +357,8 @@ export class BCDRDashboardService {
       const [rtoAnalysis, planCoverage, testStats, processStats] = await Promise.all([
         safeCall(() => this.getRTORPOAnalysis(organizationId), emptyRtoAnalysis),
         safeCall(() => this.getPlanCoverage(organizationId), emptyPlanCoverage),
-        safeCall(() => this.testsService.getStats(organizationId), emptyStats),
-        safeCall(() => this.processesService.getStats(organizationId), emptyStats),
+        safeCall(() => this.testsService.getStats(organizationId), emptyTestStats),
+        safeCall(() => this.processesService.getStats(organizationId), emptyProcessStats),
       ]);
 
       // Calculate readiness score (0-100)

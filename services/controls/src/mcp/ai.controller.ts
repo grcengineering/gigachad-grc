@@ -125,14 +125,15 @@ export class AIController {
         isMockMode,
         mockModeReason,
       };
-    } catch (error: any) {
-      this.logger.error(`Risk analysis failed: ${error.message}`, error.stack);
+    } catch (error: unknown) {
+      const err = error as Error;
+      this.logger.error(`Risk analysis failed: ${err.message}`, err.stack);
       
       // Return a graceful fallback response
       return {
         summary: 'Unable to complete AI analysis at this time.',
         isMockMode: true,
-        mockModeReason: `Analysis failed: ${error.message}. Please configure AI provider or try again later.`,
+        mockModeReason: `Analysis failed: ${err.message}. Please configure AI provider or try again later.`,
       };
     }
   }

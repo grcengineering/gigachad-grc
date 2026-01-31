@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
-import { ControlImplementationStatus } from '@prisma/client';
+import { ControlImplementationStatus, Prisma } from '@prisma/client';
 import { 
   CreateControlDto, 
   UpdateControlDto, 
@@ -9,6 +9,7 @@ import {
   BulkUploadControlsDto,
   BulkUploadResultDto,
   BulkControlItemDto,
+  ControlCategory,
 } from './dto/control.dto';
 import { 
   parsePaginationParams, 
@@ -35,24 +36,22 @@ export class ControlsService {
       sortOrder: filters.sortOrder || 'asc',
     });
 
-    const where: any = {
-      AND: [
-        {
-          OR: [
-            { organizationId: null },
-            { organizationId },
-          ],
-        },
-        { deletedAt: null },
-      ],
-    };
+    const whereConditions: Prisma.ControlWhereInput[] = [
+      {
+        OR: [
+          { organizationId: null },
+          { organizationId },
+        ],
+      },
+      { deletedAt: null },
+    ];
 
     if (filters.category?.length) {
-      where.AND.push({ category: { in: filters.category } });
+      whereConditions.push({ category: { in: filters.category } });
     }
 
     if (filters.search) {
-      where.AND.push({
+      whereConditions.push({
         OR: [
           { title: { contains: filters.search, mode: 'insensitive' } },
           { controlId: { contains: filters.search, mode: 'insensitive' } },
@@ -63,16 +62,18 @@ export class ControlsService {
     if (filters.status) {
       const statusArray = Array.isArray(filters.status) ? filters.status : [filters.status];
       if (statusArray.length > 0) {
-        where.AND.push({
+        whereConditions.push({
           implementations: {
             some: {
               organizationId,
-              status: { in: statusArray },
+              status: { in: statusArray as ControlImplementationStatus[] },
             },
           },
         });
       }
     }
+
+    const where: Prisma.ControlWhereInput = { AND: whereConditions };
 
     const [controls, total] = await Promise.all([
       this.prisma.control.findMany({
@@ -120,33 +121,31 @@ export class ControlsService {
       sortOrder: filters.sortOrder || 'asc',
     });
 
-    const where: any = {
-      AND: [
-        {
-          OR: [
-            { organizationId: null }, // System controls
-            { organizationId }, // Org-specific controls
-          ],
-        },
-        { deletedAt: null }, // Filter out soft-deleted records
-      ],
-    };
+    const fullWhereConditions: Prisma.ControlWhereInput[] = [
+      {
+        OR: [
+          { organizationId: null }, // System controls
+          { organizationId }, // Org-specific controls
+        ],
+      },
+      { deletedAt: null }, // Filter out soft-deleted records
+    ];
 
     if (filters.category?.length) {
-      where.AND.push({ category: { in: filters.category } });
+      fullWhereConditions.push({ category: { in: filters.category } });
     }
 
     if (filters.tags?.length) {
-      where.AND.push({ tags: { hasSome: filters.tags } });
+      fullWhereConditions.push({ tags: { hasSome: filters.tags } });
     }
 
     if (filters.customOnly) {
-      where.AND.push({ isCustom: true });
-      where.AND.push({ organizationId });
+      fullWhereConditions.push({ isCustom: true });
+      fullWhereConditions.push({ organizationId });
     }
 
     if (filters.search) {
-      where.AND.push({
+      fullWhereConditions.push({
         OR: [
           { title: { contains: filters.search, mode: 'insensitive' } },
           { controlId: { contains: filters.search, mode: 'insensitive' } },
@@ -157,7 +156,7 @@ export class ControlsService {
 
     // Filter by framework - only show controls mapped to this framework
     if (filters.frameworkId) {
-      where.AND.push({
+      fullWhereConditions.push({
         mappings: {
           some: {
             frameworkId: filters.frameworkId,
@@ -170,20 +169,22 @@ export class ControlsService {
     if (filters.status) {
       const statusArray = Array.isArray(filters.status) ? filters.status : [filters.status];
       if (statusArray.length > 0) {
-        where.AND.push({
+        fullWhereConditions.push({
           implementations: {
             some: {
               organizationId,
-              status: { in: statusArray },
+              status: { in: statusArray as ControlImplementationStatus[] },
             },
           },
         });
       }
     }
 
+    const fullWhere: Prisma.ControlWhereInput = { AND: fullWhereConditions };
+
     const [controls, total] = await Promise.all([
       this.prisma.control.findMany({
-        where,
+        where: fullWhere,
         include: {
           implementations: {
             where: { organizationId },
@@ -209,7 +210,7 @@ export class ControlsService {
         ...getPrismaSkipTake(pagination),
         orderBy: { [pagination.sortBy]: pagination.sortOrder },
       }),
-      this.prisma.control.count({ where }),
+      this.prisma.control.count({ where: fullWhere }),
     ]);
 
     // Transform to include implementation status
@@ -696,7 +697,8 @@ export class ControlsService {
         controlId: row['controlid'] || row['control_id'] || row['id'],
         title: row['title'] || row['name'],
         description: row['description'],
-        category: row['category'] as any,
+         
+        category: row['category'] as ControlCategory,
         subcategory: row['subcategory'] || row['sub_category'] || undefined,
         tags: row['tags'] ? row['tags'].split(';').map(t => t.trim()).filter(Boolean) : undefined,
         guidance: row['guidance'] || row['implementation_guidance'] || undefined,

@@ -55,7 +55,7 @@ interface ApprovalRequestRecord {
   currentStep: number;
   stepApprovals: StepApprovalRecord[];
   comment?: string;
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
   requestedBy: string;
   createdAt: Date;
   completedAt?: Date;

@@ -16,6 +16,41 @@ export interface QuestionCategorization {
   suggestedTags: string[];
 }
 
+interface AiParsedResult {
+  suggestedAnswer: string;
+  confidence: number;
+  relevantKbIndices: number[];
+  reasoning: string;
+}
+
+interface KnowledgeBaseEntryForSearch {
+  id: string;
+  title: string;
+  question: string | null;
+  answer: string | null;
+  category: string | null;
+  tags: string[];
+  usageCount: number;
+}
+
+interface KnowledgeBaseEntryWithScore extends KnowledgeBaseEntryForSearch {
+  relevanceScore: number;
+}
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return String(error);
+}
+
+function getErrorStack(error: unknown): string | undefined {
+  if (error instanceof Error) {
+    return error.stack;
+  }
+  return undefined;
+}
+
 @Injectable()
 export class TrustAiService {
   private readonly logger = new Logger(TrustAiService.name);
@@ -118,12 +153,12 @@ Provide your response in the following JSON format:
       const aiResult = response.data;
 
       // Parse the AI response
-      let parsedResult: any;
+      let parsedResult: AiParsedResult;
       try {
         // Try to extract JSON from the response
         const jsonMatch = aiResult.analysis?.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
-          parsedResult = JSON.parse(jsonMatch[0]);
+          parsedResult = JSON.parse(jsonMatch[0]) as AiParsedResult;
         } else {
           // Fallback: use the raw analysis as the answer
           parsedResult = {
@@ -176,8 +211,9 @@ Provide your response in the following JSON format:
         sources,
         reasoning: parsedResult.reasoning,
       };
-    } catch (error: any) {
-      this.logger.error(`AI answer generation failed: ${error.message}`, error.stack);
+    } catch (error: unknown) {
+      const errorMessage = getErrorMessage(error);
+      this.logger.error(`AI answer generation failed: ${errorMessage}`, getErrorStack(error));
       
       // Return a fallback response with relevant KB entries
       const relevantEntries = this.findRelevantEntries(questionText, kbEntries);
@@ -195,7 +231,7 @@ Provide your response in the following JSON format:
         };
       }
 
-      throw new Error(`AI answer generation failed: ${error.message}`);
+      throw new Error(`AI answer generation failed: ${errorMessage}`);
     }
   }
 
@@ -242,15 +278,15 @@ Respond in JSON format:
 
       const jsonMatch = response.data.analysis?.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        const result = JSON.parse(jsonMatch[0]);
+        const result = JSON.parse(jsonMatch[0]) as { category?: string; confidence?: number; suggestedTags?: string[] };
         return {
           category: result.category || 'general',
           confidence: result.confidence || 50,
           suggestedTags: result.suggestedTags || [],
         };
       }
-    } catch (error: any) {
-      this.logger.error(`AI categorization failed: ${error.message}`);
+    } catch (error: unknown) {
+      this.logger.error(`AI categorization failed: ${getErrorMessage(error)}`);
     }
 
     // Fallback: simple keyword-based categorization
@@ -303,7 +339,7 @@ Respond in JSON format:
 
       const jsonMatch = response.data.analysis?.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        const result = JSON.parse(jsonMatch[0]);
+        const result = JSON.parse(jsonMatch[0]) as { suggestedAnswer?: string; confidence?: number; improvements?: string[] };
         return {
           suggestedAnswer: result.suggestedAnswer || currentAnswer,
           confidence: result.confidence || 60,
@@ -311,8 +347,8 @@ Respond in JSON format:
           reasoning: result.improvements?.join(', ') || 'Answer improved for clarity and completeness',
         };
       }
-    } catch (error: any) {
-      this.logger.error(`AI answer improvement failed: ${error.message}`);
+    } catch (error: unknown) {
+      this.logger.error(`AI answer improvement failed: ${getErrorMessage(error)}`);
     }
 
     return {
@@ -324,13 +360,13 @@ Respond in JSON format:
   }
 
   // Simple keyword-based relevance matching
-  private findRelevantEntries(questionText: string, entries: any[]): any[] {
+  private findRelevantEntries(questionText: string, entries: KnowledgeBaseEntryForSearch[]): KnowledgeBaseEntryWithScore[] {
     const questionWords = questionText.toLowerCase().split(/\s+/);
     
     return entries
       .map(entry => {
         let score = 0;
-        const entryText = `${entry.title} ${entry.question} ${entry.answer}`.toLowerCase();
+        const entryText = `${entry.title} ${entry.question || ''} ${entry.answer || ''}`.toLowerCase();
         
         questionWords.forEach(word => {
           if (word.length > 3 && entryText.includes(word)) {

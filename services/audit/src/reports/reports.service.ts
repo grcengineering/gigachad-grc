@@ -1,5 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { AuditFinding, AuditRequest, AuditTestResult, AuditTeamMember, AuditWorkpaper, User } from '@prisma/client';
 
 export interface ReportOptions {
   includeFindings?: boolean;
@@ -7,6 +8,26 @@ export interface ReportOptions {
   includeTestResults?: boolean;
   includeWorkpapers?: boolean;
   findingSeverityFilter?: string[];
+}
+
+interface AuditWithRelations {
+  id: string;
+  name: string;
+  auditType: string;
+  framework: string | null;
+  status: string;
+  plannedStartDate: Date | null;
+  plannedEndDate: Date | null;
+  actualStartDate: Date | null;
+  actualEndDate: Date | null;
+  scope: string | null;
+  methodology: string | null;
+  objectives: string | null;
+  overallRating: string | null;
+  findings?: AuditFinding[];
+  requests?: (AuditRequest & { evidence?: unknown[] })[];
+  testResults?: AuditTestResult[];
+  teamMembers?: (AuditTeamMember & { user: Pick<User, 'displayName' | 'email'> | null })[];
 }
 
 @Injectable()
@@ -54,12 +75,12 @@ export class ReportsService {
     }
   }
 
-  private generateExecutiveReport(audit: any) {
+  private generateExecutiveReport(audit: AuditWithRelations) {
     const findings = audit.findings || [];
-    const criticalCount = findings.filter((f: any) => f.severity === 'critical').length;
-    const highCount = findings.filter((f: any) => f.severity === 'high').length;
-    const mediumCount = findings.filter((f: any) => f.severity === 'medium').length;
-    const lowCount = findings.filter((f: any) => f.severity === 'low').length;
+    const criticalCount = findings.filter((f) => f.severity === 'critical').length;
+    const highCount = findings.filter((f) => f.severity === 'high').length;
+    const mediumCount = findings.filter((f) => f.severity === 'medium').length;
+    const lowCount = findings.filter((f) => f.severity === 'low').length;
 
     return {
       reportType: 'executive',
@@ -84,13 +105,13 @@ export class ReportsService {
         high: highCount,
         medium: mediumCount,
         low: lowCount,
-        open: findings.filter((f: any) => f.status === 'open').length,
-        resolved: findings.filter((f: any) => f.status === 'resolved').length,
+        open: findings.filter((f) => f.status === 'open').length,
+        resolved: findings.filter((f) => f.status === 'resolved').length,
       },
       keyFindings: findings
-        .filter((f: any) => f.severity === 'critical' || f.severity === 'high')
+        .filter((f) => f.severity === 'critical' || f.severity === 'high')
         .slice(0, 5)
-        .map((f: any) => ({
+        .map((f) => ({
           title: f.title,
           severity: f.severity,
           category: f.category,
@@ -101,7 +122,7 @@ export class ReportsService {
     };
   }
 
-  private generateManagementLetter(audit: any) {
+  private generateManagementLetter(audit: AuditWithRelations) {
     const findings = audit.findings || [];
 
     return {
@@ -115,7 +136,7 @@ export class ReportsService {
       introduction: `This management letter summarizes the results of the ${audit.name} audit conducted for ${audit.framework || 'the specified scope'}.`,
       scope: audit.scope || 'As defined in the audit plan',
       methodology: audit.methodology || 'Standard audit procedures were performed including inquiry, observation, inspection, and testing.',
-      findings: findings.map((f: any) => ({
+      findings: findings.map((f) => ({
         findingNumber: f.findingNumber,
         title: f.title,
         severity: f.severity,
@@ -128,7 +149,7 @@ export class ReportsService {
     };
   }
 
-  private generateFindingsSummary(audit: any) {
+  private generateFindingsSummary(audit: AuditWithRelations) {
     const findings = audit.findings || [];
 
     return {
@@ -140,11 +161,11 @@ export class ReportsService {
       },
       summary: {
         total: findings.length,
-        bySeverity: this.groupBy(findings, 'severity'),
-        byStatus: this.groupBy(findings, 'status'),
-        byCategory: this.groupBy(findings, 'category'),
+        bySeverity: this.groupByField(findings, 'severity'),
+        byStatus: this.groupByField(findings, 'status'),
+        byCategory: this.groupByField(findings, 'category'),
       },
-      findings: findings.map((f: any) => ({
+      findings: findings.map((f) => ({
         findingNumber: f.findingNumber,
         title: f.title,
         severity: f.severity,
@@ -160,7 +181,7 @@ export class ReportsService {
     };
   }
 
-  private generateFullReport(audit: any, workpapers: any[]) {
+  private generateFullReport(audit: AuditWithRelations, workpapers: AuditWorkpaper[]) {
     const executiveSection = this.generateExecutiveReport(audit);
     const findingsSection = this.generateFindingsSummary(audit);
 
@@ -169,7 +190,7 @@ export class ReportsService {
       generatedAt: new Date(),
       ...executiveSection,
       detailedFindings: findingsSection.findings,
-      testingResults: (audit.testResults || []).map((t: any) => ({
+      testingResults: (audit.testResults || []).map((t) => ({
         testNumber: t.testNumber,
         controlId: t.controlId,
         objective: t.testObjective,
@@ -179,16 +200,16 @@ export class ReportsService {
       })),
       requestsStatus: {
         total: (audit.requests || []).length,
-        byStatus: this.groupBy(audit.requests || [], 'status'),
+        byStatus: this.groupByField(audit.requests || [], 'status'),
       },
-      workpapers: workpapers.map((w: any) => ({
+      workpapers: workpapers.map((w) => ({
         workpaperNumber: w.workpaperNumber,
         title: w.title,
         status: w.status,
         preparedBy: w.preparedBy,
         approvedAt: w.approvedAt,
       })),
-      teamMembers: (audit.teamMembers || []).map((m: any) => ({
+      teamMembers: (audit.teamMembers || []).map((m) => ({
         name: m.user?.displayName,
         role: m.role,
       })),
@@ -200,10 +221,10 @@ export class ReportsService {
     };
   }
 
-  private buildExecutiveSummary(audit: any, findings: any[]): string {
-    const critical = findings.filter((f: any) => f.severity === 'critical').length;
-    const high = findings.filter((f: any) => f.severity === 'high').length;
-    const open = findings.filter((f: any) => f.status === 'open').length;
+  private buildExecutiveSummary(audit: AuditWithRelations, findings: AuditFinding[]): string {
+    const critical = findings.filter((f) => f.severity === 'critical').length;
+    const high = findings.filter((f) => f.severity === 'high').length;
+    const open = findings.filter((f) => f.status === 'open').length;
 
     let summary = `The ${audit.name} audit has been completed. `;
     summary += `A total of ${findings.length} findings were identified, `;
@@ -224,20 +245,20 @@ export class ReportsService {
     return summary;
   }
 
-  private buildRecommendations(findings: any[]): string[] {
+  private buildRecommendations(findings: AuditFinding[]): string[] {
     const recommendations: string[] = [];
     
-    const openFindings = findings.filter((f: any) => f.status === 'open');
+    const openFindings = findings.filter((f) => f.status === 'open');
     if (openFindings.length > 0) {
       recommendations.push(`Develop remediation plans for ${openFindings.length} open findings`);
     }
 
-    const criticalFindings = findings.filter((f: any) => f.severity === 'critical');
+    const criticalFindings = findings.filter((f) => f.severity === 'critical');
     if (criticalFindings.length > 0) {
       recommendations.push('Prioritize immediate remediation of critical findings');
     }
 
-    const categories = [...new Set(findings.map((f: any) => f.category))];
+    const categories = [...new Set(findings.map((f) => f.category))];
     if (categories.length > 3) {
       recommendations.push('Implement cross-functional improvement program');
     }
@@ -247,9 +268,9 @@ export class ReportsService {
     return recommendations;
   }
 
-  private buildConclusion(audit: any, findings: any[]): string {
-    const critical = findings.filter((f: any) => f.severity === 'critical').length;
-    const high = findings.filter((f: any) => f.severity === 'high').length;
+  private buildConclusion(_audit: AuditWithRelations, findings: AuditFinding[]): string {
+    const critical = findings.filter((f) => f.severity === 'critical').length;
+    const high = findings.filter((f) => f.severity === 'high').length;
 
     if (critical === 0 && high === 0) {
       return 'Based on our audit procedures, we conclude that the control environment is operating effectively with no significant deficiencies identified.';
@@ -266,10 +287,10 @@ export class ReportsService {
     return 'pass';
   }
 
-  private groupBy(items: any[], key: string): Record<string, number> {
+  private groupByField<T extends Record<string, unknown>>(items: T[], key: keyof T): Record<string, number> {
     const result: Record<string, number> = {};
     items.forEach(item => {
-      const value = item[key] || 'unspecified';
+      const value = String(item[key] || 'unspecified');
       result[value] = (result[value] || 0) + 1;
     });
     return result;

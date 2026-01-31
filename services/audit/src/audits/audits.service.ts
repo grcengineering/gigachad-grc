@@ -50,7 +50,7 @@ export class AuditsService {
     auditType?: string;
     isExternal?: boolean;
   }) {
-    const where: any = { organizationId, deletedAt: null };
+    const where: Record<string, unknown> = { organizationId, deletedAt: null };
 
     if (filters?.status) {
       where.status = filters.status;
@@ -102,7 +102,7 @@ export class AuditsService {
 
   async update(id: string, organizationId: string, updateAuditDto: UpdateAuditDto) {
     // Update finding counts if status is changing to completed
-    let updates: any = { ...updateAuditDto };
+    let updates: Record<string, unknown> = { ...updateAuditDto };
 
     if (updateAuditDto.status === 'completed') {
       const findingCounts = await this.prisma.auditFinding.groupBy({
@@ -137,15 +137,15 @@ export class AuditsService {
 
     // Convert date strings to Date objects
     if (updates.plannedStartDate) {
-      updates.plannedStartDate = new Date(updates.plannedStartDate);
+      updates.plannedStartDate = new Date(updates.plannedStartDate as string);
     }
     if (updates.plannedEndDate) {
-      updates.plannedEndDate = new Date(updates.plannedEndDate);
+      updates.plannedEndDate = new Date(updates.plannedEndDate as string);
     }
     if (updates.actualStartDate) {
-      updates.actualStartDate = new Date(updates.actualStartDate);
+      updates.actualStartDate = new Date(updates.actualStartDate as string);
     }
-    if (updates.actualEndDate) {
+    if (updates.actualEndDate && typeof updates.actualEndDate === 'string') {
       updates.actualEndDate = new Date(updates.actualEndDate);
     }
 

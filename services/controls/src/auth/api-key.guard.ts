@@ -8,6 +8,36 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { createHash } from 'crypto';
 import type { UserContext } from '@gigachad-grc/shared';
+import { Request } from 'express';
+
+/**
+ * API Key record with organization and scopes
+ */
+interface ApiKeyRecord {
+  id: string;
+  name: string;
+  keyHash: string;
+  keyPrefix: string;
+  scopes: string[];
+  organizationId: string;
+  createdBy: string;
+  isActive: boolean;
+  expiresAt: Date | null;
+  lastUsedAt: Date | null;
+  organization: {
+    id: string;
+    name: string;
+  };
+  apiKeyScopes: Array<{ scope: string }>;
+}
+
+/**
+ * Request extended with API key context
+ */
+interface ApiKeyRequest extends Request {
+  user?: UserContext;
+  apiKeyId?: string;
+}
 
 /**
  * API Key Authentication Guard
@@ -84,22 +114,22 @@ export class ApiKeyAuthGuard implements CanActivate {
   /**
    * Extract API key from request headers
    */
-  private extractApiKey(request: any): string | null {
+  private extractApiKey(request: ApiKeyRequest): string | null {
     // Check X-API-Key header first
     const headerKey = request.headers['x-api-key'];
     if (headerKey) {
-      return headerKey;
+      return Array.isArray(headerKey) ? headerKey[0] : headerKey;
     }
 
     // Check Authorization header with ApiKey scheme
     const authHeader = request.headers['authorization'];
-    if (authHeader?.startsWith('ApiKey ')) {
+    if (typeof authHeader === 'string' && authHeader.startsWith('ApiKey ')) {
       return authHeader.slice(7);
     }
 
     // Check query parameter (less secure, but sometimes needed)
     const queryKey = request.query?.api_key;
-    if (queryKey) {
+    if (queryKey && typeof queryKey === 'string') {
       this.logger.warn('API key passed via query parameter - consider using header');
       return queryKey;
     }
@@ -110,7 +140,7 @@ export class ApiKeyAuthGuard implements CanActivate {
   /**
    * Validate API key and return the record if valid
    */
-  private async validateApiKey(apiKey: string): Promise<any | null> {
+  private async validateApiKey(apiKey: string): Promise<(ApiKeyRecord & { scopes: string[] }) | null> {
     // Hash the provided key
     const keyHash = createHash('sha256').update(apiKey).digest('hex');
 

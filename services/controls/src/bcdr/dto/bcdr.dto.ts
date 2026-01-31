@@ -1475,17 +1475,17 @@ export class CreateExerciseTemplateDto {
 
   @ApiProperty({ type: 'array', items: { type: 'object' } })
   @IsArray()
-  discussionQuestions: any[];
+  discussionQuestions: Record<string, unknown>[];
 
   @ApiPropertyOptional({ type: 'array', items: { type: 'object' } })
   @IsOptional()
   @IsArray()
-  injects?: any[];
+  injects?: Record<string, unknown>[];
 
   @ApiPropertyOptional({ type: 'array', items: { type: 'object' } })
   @IsOptional()
   @IsArray()
-  expectedDecisions?: any[];
+  expectedDecisions?: Record<string, unknown>[];
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -1501,7 +1501,7 @@ export class CreateExerciseTemplateDto {
   @ApiPropertyOptional({ type: 'array', items: { type: 'object' } })
   @IsOptional()
   @IsArray()
-  participantRoles?: any[];
+  participantRoles?: Record<string, unknown>[];
 
   @ApiPropertyOptional({ type: [String] })
   @IsOptional()
@@ -1886,7 +1886,7 @@ export class AddTimelineEntryDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }
 
 export class ActivatePlanDto {
@@ -1925,7 +1925,7 @@ export class CloseIncidentDto {
   @ApiPropertyOptional({ type: 'array', items: { type: 'object' } })
   @IsOptional()
   @IsArray()
-  improvementActions?: any[];
+  improvementActions?: Record<string, unknown>[];
 
   @ApiPropertyOptional()
   @IsOptional()

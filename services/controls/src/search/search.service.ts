@@ -333,13 +333,13 @@ export class SearchService {
     }));
   }
 
-  private getMatchedField(item: any, searchTerm: string): string {
+  private getMatchedField(item: Record<string, unknown>, searchTerm: string): string {
     const term = searchTerm.toLowerCase();
-    if (item.controlId?.toLowerCase().includes(term)) return 'controlId';
-    if (item.riskId?.toLowerCase().includes(term)) return 'riskId';
-    if (item.title?.toLowerCase().includes(term)) return 'title';
-    if (item.description?.toLowerCase().includes(term)) return 'description';
-    if (item.tags?.some((t: string) => t.toLowerCase().includes(term))) return 'tags';
+    if ((item.controlId as string | undefined)?.toLowerCase().includes(term)) return 'controlId';
+    if ((item.riskId as string | undefined)?.toLowerCase().includes(term)) return 'riskId';
+    if ((item.title as string | undefined)?.toLowerCase().includes(term)) return 'title';
+    if ((item.description as string | undefined)?.toLowerCase().includes(term)) return 'description';
+    if ((item.tags as string[] | undefined)?.some((t: string) => t.toLowerCase().includes(term))) return 'tags';
     return 'content';
   }
 }

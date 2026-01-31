@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Injectable, Logger } from '@nestjs/common';
 
 export interface DatadogConfig { apiKey: string; appKey: string; site?: string; }

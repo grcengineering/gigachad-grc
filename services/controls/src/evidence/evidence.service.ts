@@ -4,7 +4,7 @@ import { AuditService } from '../audit/audit.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationType, NotificationSeverity } from '../notifications/dto/notification.dto';
 import { STORAGE_PROVIDER, StorageProvider, generateId } from '@gigachad-grc/shared';
-import { EvidenceStatus } from '@prisma/client';
+import { EvidenceStatus, Prisma } from '@prisma/client';
 import {
   UploadEvidenceDto,
   UpdateEvidenceDto,
@@ -35,64 +35,33 @@ export class EvidenceService {
       sortOrder: filters.sortOrder || 'desc',
     });
 
-    const where: any = { organizationId, deletedAt: null };
-
-    // Workspace filter for multi-workspace mode
-    if (filters.workspaceId) {
-      where.workspaceId = filters.workspaceId;
-    }
-
-    if (filters.type?.length) {
-      where.type = { in: filters.type };
-    }
-
-    if (filters.source?.length) {
-      where.source = { in: filters.source };
-    }
-
-    if (filters.status?.length) {
-      where.status = { in: filters.status };
-    }
-
-    if (filters.category) {
-      where.category = filters.category;
-    }
-
-    if (filters.tags?.length) {
-      where.tags = { hasSome: filters.tags };
-    }
-
-    if (filters.folderId) {
-      where.folderId = filters.folderId;
-    }
-
-    if (filters.controlId) {
-      where.controlLinks = {
-        some: { controlId: filters.controlId },
-      };
-    }
-
-    if (filters.expired) {
-      where.isExpired = true;
-    }
-
-    if (filters.expiringSoon) {
-      const thirtyDaysFromNow = new Date();
-      thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-      where.validUntil = {
-        lte: thirtyDaysFromNow,
-        gt: new Date(),
-      };
-      where.isExpired = false;
-    }
-
-    if (filters.search) {
-      where.OR = [
-        { title: { contains: filters.search, mode: 'insensitive' } },
-        { description: { contains: filters.search, mode: 'insensitive' } },
-        { filename: { contains: filters.search, mode: 'insensitive' } },
-      ];
-    }
+    const where: Prisma.EvidenceWhereInput = {
+      organizationId,
+      deletedAt: null,
+      ...(filters.workspaceId && { workspaceId: filters.workspaceId }),
+      ...(filters.type?.length && { type: { in: filters.type } }),
+      ...(filters.source?.length && { source: { in: filters.source } }),
+      ...(filters.status?.length && { status: { in: filters.status } }),
+      ...(filters.category && { category: filters.category }),
+      ...(filters.tags?.length && { tags: { hasSome: filters.tags } }),
+      ...(filters.folderId && { folderId: filters.folderId }),
+      ...(filters.controlId && { controlLinks: { some: { controlId: filters.controlId } } }),
+      ...(filters.expired && { isExpired: true }),
+      ...(filters.expiringSoon && {
+        validUntil: {
+          lte: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          gt: new Date(),
+        },
+        isExpired: false,
+      }),
+      ...(filters.search && {
+        OR: [
+          { title: { contains: filters.search, mode: 'insensitive' as const } },
+          { description: { contains: filters.search, mode: 'insensitive' as const } },
+          { filename: { contains: filters.search, mode: 'insensitive' as const } },
+        ],
+      }),
+    };
 
     const [evidence, total] = await Promise.all([
       this.prisma.evidence.findMany({

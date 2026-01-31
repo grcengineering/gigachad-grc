@@ -4,7 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationType, NotificationSeverity } from '../notifications/dto/notification.dto';
-import { IntegrationStatus, AlertJobStatus, EvidenceStatus } from '@prisma/client';
+import { IntegrationStatus, AlertJobStatus, EvidenceStatus, Prisma } from '@prisma/client';
 import {
   CreateIntegrationDto,
   UpdateIntegrationDto,
@@ -14,6 +14,46 @@ import {
 import { ConnectorFactory } from './connectors/connector.factory';
 import { ZipSyncResult } from './connectors/zip.connector';
 import { STORAGE_PROVIDER, StorageProvider } from '@gigachad-grc/shared';
+
+/**
+ * Interface for sync results from connectors
+ * @remarks Using index signature with any to allow flexible access to connector-specific properties
+ */
+export interface SyncResult {
+  summary?: { totalRecords?: number };
+  computers?: { total?: number; managed?: number; compliant?: number; devices?: unknown[] };
+  mobileDevices?: { total?: number; managed?: number };
+  suppliers?: { total?: number; items?: unknown[] };
+  securitySummary?: { fileVaultEnabled?: number; sipEnabled?: number; gatekeeperEnabled?: number };
+  collectedAt?: string;
+  // AWS/Security-related properties
+  securityHub?: { totalFindings?: number; criticalCount?: number; highCount?: number };
+  iam?: { users?: unknown[] };
+  config?: { compliancePercentage?: number };
+  // Identity provider properties
+  users?: { total?: number; withMFA?: number; noMFA?: number };
+  groups?: { total?: number; withPolicy?: number };
+  apps?: { total?: number };
+  applications?: { total?: number };
+  // GitHub properties
+  repositories?: { total?: number; private?: number; protected?: number };
+  securityAlerts?: { total?: number; critical?: number };
+  branchProtection?: { protected?: number };
+  // CrowdStrike properties
+  devices?: { total?: number; online?: number };
+  detections?: { total?: number; critical?: number };
+  protectionPercentage?: number;
+  // Jira properties
+  projects?: { total?: number; openIssues?: number; overdueIssues?: number };
+  issues?: { total?: number; open?: number };
+  securityIssues?: { total?: number };
+  // Snyk properties  
+  vulnerabilities?: { total?: number; critical?: number; high?: number; fixable?: number };
+  orgs?: { total?: number };
+  policies?: { total?: number };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any;
+}
 
 // Sensitive fields that should be encrypted
 const SENSITIVE_FIELDS = [
@@ -100,15 +140,15 @@ export class IntegrationsService {
   /**
    * Encrypt sensitive fields in config object before storing
    */
-  private encryptConfig(config: Record<string, any>): Record<string, any> {
+  private encryptConfig(config: Record<string, unknown>): Record<string, unknown> {
     if (!config) return config;
     
-    const encrypted: Record<string, any> = {};
+    const encrypted: Record<string, unknown> = {};
     
     for (const [key, value] of Object.entries(config)) {
       if (typeof value === 'object' && value !== null) {
         // Recursively encrypt nested objects
-        encrypted[key] = this.encryptConfig(value);
+        encrypted[key] = this.encryptConfig(value as Record<string, unknown>);
       } else if (typeof value === 'string' && SENSITIVE_FIELDS.some(f => key.toLowerCase().includes(f.toLowerCase()))) {
         // Encrypt sensitive string fields
         encrypted[key] = this.encrypt(value);
@@ -123,15 +163,15 @@ export class IntegrationsService {
   /**
    * Decrypt sensitive fields in config object for internal use
    */
-  private decryptConfig(config: Record<string, any>): Record<string, any> {
+  private decryptConfig(config: Record<string, unknown>): Record<string, unknown> {
     if (!config) return config;
     
-    const decrypted: Record<string, any> = {};
+    const decrypted: Record<string, unknown> = {};
     
     for (const [key, value] of Object.entries(config)) {
       if (typeof value === 'object' && value !== null) {
         // Recursively decrypt nested objects
-        decrypted[key] = this.decryptConfig(value);
+        decrypted[key] = this.decryptConfig(value as Record<string, unknown>);
       } else if (typeof value === 'string' && SENSITIVE_FIELDS.some(f => key.toLowerCase().includes(f.toLowerCase()))) {
         // Decrypt sensitive string fields
         decrypted[key] = this.decrypt(value);
@@ -148,7 +188,7 @@ export class IntegrationsService {
     const limit = filters.limit || 50;
     const skip = (page - 1) * limit;
 
-    const where: any = { organizationId };
+    const where: Prisma.IntegrationWhereInput = { organizationId };
 
     if (filters.type) {
       where.type = filters.type;
@@ -180,7 +220,7 @@ export class IntegrationsService {
       ...integration,
       typeMeta: INTEGRATION_TYPES[integration.type as keyof typeof INTEGRATION_TYPES] || null,
       // Don't expose sensitive config values in list
-      config: this.maskSensitiveConfig(integration.type, integration.config as Record<string, any>),
+      config: this.maskSensitiveConfig(integration.type, integration.config as Record<string, unknown>),
     }));
 
     return {
@@ -213,7 +253,7 @@ export class IntegrationsService {
       ...integration,
       typeMeta: INTEGRATION_TYPES[integration.type as keyof typeof INTEGRATION_TYPES] || null,
       // Mask sensitive config values
-      config: this.maskSensitiveConfig(integration.type, integration.config as Record<string, any>),
+      config: this.maskSensitiveConfig(integration.type, integration.config as Record<string, unknown>),
     };
   }
 
@@ -238,7 +278,7 @@ export class IntegrationsService {
         type: dto.type,
         name: dto.name,
         description: dto.description,
-        config: encryptedConfig,
+        config: encryptedConfig as Prisma.InputJsonValue,
         syncFrequency: dto.syncFrequency || 'daily',
         status: IntegrationStatus.pending_setup,
         createdBy: userId,
@@ -283,7 +323,7 @@ export class IntegrationsService {
     }
 
     // Merge config if provided (don't overwrite entire config)
-    let newConfig = existing.config as Record<string, any>;
+    let newConfig = existing.config as Record<string, unknown>;
     if (dto.config) {
       // Encrypt sensitive fields in the new config before merging
       const encryptedNewConfig = this.encryptConfig(dto.config);
@@ -296,7 +336,7 @@ export class IntegrationsService {
         name: dto.name,
         description: dto.description,
         status: dto.status,
-        config: newConfig,
+        config: newConfig as Prisma.InputJsonValue,
         syncFrequency: dto.syncFrequency,
         updatedBy: userId,
       },
@@ -322,7 +362,7 @@ export class IntegrationsService {
     return {
       ...integration,
       typeMeta: INTEGRATION_TYPES[integration.type as keyof typeof INTEGRATION_TYPES] || null,
-      config: this.maskSensitiveConfig(integration.type, integration.config as Record<string, any>),
+      config: this.maskSensitiveConfig(integration.type, integration.config as Record<string, unknown>),
     };
   }
 
@@ -378,7 +418,7 @@ export class IntegrationsService {
     }
 
     // Decrypt config for use in connection testing
-    const config = this.decryptConfig(integration.config as Record<string, any>);
+    const config = this.decryptConfig(integration.config as Record<string, unknown>);
     const typeMeta = INTEGRATION_TYPES[integration.type as keyof typeof INTEGRATION_TYPES];
     
     if (!typeMeta) {
@@ -456,7 +496,7 @@ export class IntegrationsService {
     }
 
     // Decrypt config for use in sync operations
-    const config = this.decryptConfig(integration.config as Record<string, any>);
+    const config = this.decryptConfig(integration.config as Record<string, unknown>);
 
     // Create a sync job
     const syncJob = await this.prisma.syncJob.create({
@@ -476,7 +516,7 @@ export class IntegrationsService {
       this.logger.log(`Starting sync for ${integration.type} integration ${id}`);
 
       // Use the ConnectorFactory to sync all integration types
-      const syncResult = await this.connectorFactory.sync(integration.type, config);
+      const syncResult = await this.connectorFactory.sync(integration.type, config) as SyncResult;
 
       // Calculate items processed from sync result
       if (syncResult.summary) {
@@ -550,7 +590,8 @@ export class IntegrationsService {
         data: syncResult,
       };
 
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Sync failed for integration ${id}`, error);
 
       // Update sync job as failed
@@ -559,10 +600,10 @@ export class IntegrationsService {
         data: {
           status: AlertJobStatus.failed,
           completedAt: new Date(),
-          error: error.message,
+          error: errorMessage,
           logs: [
             { timestamp: new Date().toISOString(), message: 'Sync started' },
-            { timestamp: new Date().toISOString(), message: `Error: ${error.message}` },
+            { timestamp: new Date().toISOString(), message: `Error: ${errorMessage}` },
           ],
         },
       });
@@ -572,7 +613,7 @@ export class IntegrationsService {
         where: { id },
         data: {
           lastSyncStatus: AlertJobStatus.failed,
-          lastSyncError: error.message,
+          lastSyncError: errorMessage,
         },
       });
 
@@ -586,11 +627,11 @@ export class IntegrationsService {
         entityType: 'integration',
         entityId: integration.id,
         entityName: integration.name,
-        description: `Sync failed for integration "${integration.name}" - ${error.message}`,
+        description: `Sync failed for integration "${integration.name}" - ${errorMessage}`,
         metadata: {
           jobId: syncJob.id,
           success: false,
-          error: error.message,
+          error: errorMessage,
         },
       });
 
@@ -600,7 +641,7 @@ export class IntegrationsService {
         userId: integration.createdBy,
         type: NotificationType.INTEGRATION_SYNC_FAILED,
         title: 'Integration Sync Failed',
-        message: `Sync failed for "${integration.name}": ${error.message}`,
+        message: `Sync failed for "${integration.name}": ${errorMessage}`,
         entityType: 'integration',
         entityId: integration.id,
         severity: NotificationSeverity.ERROR,
@@ -608,7 +649,7 @@ export class IntegrationsService {
           integrationId: integration.id,
           integrationName: integration.name,
           integrationType: integration.type,
-          error: error.message,
+          error: errorMessage,
           jobId: syncJob.id,
         },
       });
@@ -616,7 +657,7 @@ export class IntegrationsService {
       return {
         success: false,
         jobId: syncJob.id,
-        message: `Sync failed: ${error.message}`,
+        message: `Sync failed: ${errorMessage}`,
       };
     }
   }
@@ -628,7 +669,7 @@ export class IntegrationsService {
     organizationId: string,
     userId: string,
     integrationId: string,
-    syncResult: any
+    syncResult: SyncResult
   ): Promise<number> {
     let created = 0;
     const timestamp = Date.now();
@@ -690,7 +731,7 @@ export class IntegrationsService {
           ? Math.round((syncResult.computers.compliant / syncResult.computers.total) * 100) 
           : 0,
         // Include per-device security details for audit
-        deviceDetails: syncResult.computers.devices?.map((d: any) => ({
+        deviceDetails: ((syncResult.computers as Record<string, unknown>)?.devices as Array<Record<string, unknown>>)?.map((d) => ({
           name: d.name,
           serialNumber: d.serialNumber,
           security: d.security,
@@ -749,7 +790,7 @@ export class IntegrationsService {
     userId: string,
     integrationId: string,
     integrationType: string,
-    syncResult: any,
+    syncResult: SyncResult,
   ): Promise<number> {
     const timestamp = Date.now();
     let created = 0;
@@ -810,10 +851,11 @@ export class IntegrationsService {
   /**
    * Generate sync summary based on integration type
    */
-  private generateSyncSummary(integrationType: string, syncResult: any): string {
+  private generateSyncSummary(integrationType: string, syncResult: SyncResult): string {
     switch (integrationType) {
       case 'aws':
-        return `AWS: ${syncResult.securityHub?.totalFindings || 0} Security Hub findings, ${syncResult.iam?.users?.length || 0} IAM users, ${syncResult.config?.compliancePercentage || 0}% Config compliance`;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return `AWS: ${syncResult.securityHub?.totalFindings || 0} Security Hub findings, ${(syncResult.iam as any)?.users?.length || 0} IAM users, ${syncResult.config?.compliancePercentage || 0}% Config compliance`;
       case 'okta':
         return `Okta: ${syncResult.users?.total || 0} users (${syncResult.users?.withMFA || 0} with MFA), ${syncResult.applications?.total || 0} applications`;
       case 'github':
@@ -821,7 +863,8 @@ export class IntegrationsService {
       case 'crowdstrike':
         return `CrowdStrike: ${syncResult.devices?.total || 0} devices (${syncResult.devices?.online || 0} online), ${syncResult.detections?.total || 0} detections`;
       case 'jira':
-        return `Jira: ${syncResult.issues?.total || 0} issues (${syncResult.issues?.openIssues || 0} open), ${syncResult.securityIssues?.total || 0} security-related`;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return `Jira: ${(syncResult.issues as any)?.total || 0} issues (${(syncResult.issues as any)?.open || 0} open), ${(syncResult.securityIssues as any)?.total || 0} security-related`;
       case 'snyk':
         return `Snyk: ${syncResult.projects?.total || 0} projects, ${syncResult.vulnerabilities?.total || 0} vulnerabilities (${syncResult.vulnerabilities?.critical || 0} critical)`;
       default:
@@ -832,7 +875,7 @@ export class IntegrationsService {
   /**
    * Generate evidence description based on integration type
    */
-  private generateEvidenceDescription(integrationType: string, _syncResult: any): string {
+  private generateEvidenceDescription(integrationType: string, _syncResult: Record<string, unknown>): string {
     const summaries: Record<string, string> = {
       aws: `AWS security and compliance data including Security Hub findings, IAM users and roles, S3 bucket configurations, and AWS Config compliance status.`,
       okta: `Identity and access management data from Okta including user directory, MFA status, application assignments, and security event logs.`,
@@ -864,7 +907,7 @@ export class IntegrationsService {
   /**
    * Extract relevant metadata based on integration type
    */
-  private extractMetadata(integrationType: string, syncResult: any): Record<string, any> {
+  private extractMetadata(integrationType: string, syncResult: SyncResult): Record<string, unknown> {
     switch (integrationType) {
       case 'aws':
         return {
@@ -898,14 +941,18 @@ export class IntegrationsService {
           criticalDetections: syncResult.detections?.critical || 0,
           protectionRate: syncResult.prevention?.protectionPercentage || 0,
         };
-      case 'jira':
+      case 'jira': {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const jiraIssues = syncResult.issues as any;
         return {
-          totalIssues: syncResult.issues?.total || 0,
-          openIssues: syncResult.issues?.openIssues || 0,
-          overdueIssues: syncResult.issues?.overdueIssues || 0,
+          totalIssues: jiraIssues?.total || 0,
+          openIssues: jiraIssues?.openIssues || jiraIssues?.open || 0,
+          overdueIssues: jiraIssues?.overdueIssues || 0,
           securityIssues: syncResult.securityIssues?.total || 0,
-          avgResolutionDays: syncResult.slaMetrics?.avgResolutionTime || 0,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          avgResolutionDays: (syncResult.slaMetrics as any)?.avgResolutionTime || 0,
         };
+      }
       case 'snyk':
         return {
           projects: syncResult.projects?.total || 0,
@@ -958,13 +1005,17 @@ export class IntegrationsService {
             data: {
               name: supplier.name,
               legalName: supplier.legalName,
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               category: this.mapZipCategory(supplier.category) as any,
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               tier: this.determineZipVendorTier(supplier) as any,
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               status: this.mapZipStatus(supplier.status) as any,
               website: supplier.website,
               primaryContact: supplier.primaryContactName,
               primaryContactEmail: supplier.primaryContactEmail,
-              inherentRiskScore: supplier.riskLevel as any || null,
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              inherentRiskScore: (supplier.riskLevel ?? null) as any,
               certifications,
               tags: ['zip-synced', 'auto-imported'],
               notes: `Last synced from Zip: ${new Date().toISOString()}. Total spend: $${supplier.totalSpend || 0}`,
@@ -979,13 +1030,17 @@ export class IntegrationsService {
               vendorId: zipVendorId,
               name: supplier.name,
               legalName: supplier.legalName,
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               category: this.mapZipCategory(supplier.category) as any,
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               tier: this.determineZipVendorTier(supplier) as any,
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               status: this.mapZipStatus(supplier.status) as any,
               website: supplier.website,
               primaryContact: supplier.primaryContactName,
               primaryContactEmail: supplier.primaryContactEmail,
-              inherentRiskScore: supplier.riskLevel as any || null,
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              inherentRiskScore: (supplier.riskLevel ?? null) as any,
               certifications,
               tags: ['zip-synced', 'auto-imported'],
               notes: `Imported from Zip on ${new Date().toISOString()}. Total spend: $${supplier.totalSpend || 0}`,
@@ -1037,7 +1092,7 @@ export class IntegrationsService {
   /**
    * Determine vendor tier based on Zip data
    */
-  private determineZipVendorTier(supplier: any): string {
+  private determineZipVendorTier(supplier: { totalSpend?: number; riskLevel?: string }): string {
     const spend = supplier.totalSpend || 0;
     if (spend >= 1000000) return 'tier_1';
     if (spend >= 100000) return 'tier_2';
@@ -1097,7 +1152,7 @@ export class IntegrationsService {
   }
 
   // Helper to mask sensitive values in config
-  private maskSensitiveConfig(type: string, config: Record<string, any>): Record<string, any> {
+  private maskSensitiveConfig(type: string, config: Record<string, unknown>): Record<string, unknown> {
     if (!config) return {};
     
     const typeMeta = INTEGRATION_TYPES[type as keyof typeof INTEGRATION_TYPES];

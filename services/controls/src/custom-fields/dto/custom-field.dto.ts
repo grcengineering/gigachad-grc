@@ -205,7 +205,7 @@ export class CustomFieldValueDto {
   value: string;
 
   @ApiPropertyOptional({ description: 'Parsed value based on field type' })
-  parsedValue?: any;
+  parsedValue?: unknown;
 }
 
 export class EntityCustomFieldsDto {

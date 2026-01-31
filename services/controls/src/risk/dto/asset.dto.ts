@@ -83,7 +83,7 @@ export class CreateAssetDto {
   department?: string;
 
   @IsOptional()
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }
 
 export class UpdateAssetDto {
@@ -132,7 +132,7 @@ export class AssetResponseDto {
   owner?: string;
   location?: string;
   department?: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
   lastSyncAt?: Date;
   riskCount: number;
   createdAt: Date;

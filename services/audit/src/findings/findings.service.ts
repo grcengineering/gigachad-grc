@@ -55,7 +55,7 @@ export class FindingsService {
       remediationOwner?: string;
     },
   ) {
-    const where: any = { organizationId };
+    const where: Record<string, unknown> = { organizationId };
 
     if (filters?.auditId) {
       where.auditId = filters.auditId;
@@ -129,14 +129,14 @@ export class FindingsService {
   async update(id: string, organizationId: string, updateFindingDto: UpdateFindingDto) {
     await this.findOne(id, organizationId); // Verify existence
 
-    const data: any = { ...updateFindingDto };
+    const data: Record<string, unknown> = { ...updateFindingDto };
 
     // Convert dates
     if (data.targetDate) {
-      data.targetDate = new Date(data.targetDate);
+      data.targetDate = new Date(data.targetDate as string);
     }
     if (data.actualDate) {
-      data.actualDate = new Date(data.actualDate);
+      data.actualDate = new Date(data.actualDate as string);
     }
     if (updateFindingDto.managementResponse) {
       data.responseDate = new Date();

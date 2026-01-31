@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
-import { ControlImplementationStatus } from '@prisma/client';
+import { ControlImplementationStatus, Prisma } from '@prisma/client';
 import {
   UpdateImplementationDto,
   CreateControlTestDto,
@@ -29,29 +29,17 @@ export class ImplementationsService {
       sortOrder: 'desc',
     });
 
-    const where: any = { organizationId };
-
-    // Workspace filter for multi-workspace mode
-    if (filters.workspaceId) {
-      where.workspaceId = filters.workspaceId;
-    }
-
-    if (filters.status?.length) {
-      where.status = { in: filters.status };
-    }
-
-    if (filters.ownerId) {
-      where.ownerId = filters.ownerId;
-    }
-
-    if (filters.overdue) {
-      where.dueDate = { lt: new Date() };
-      where.status = { not: ControlImplementationStatus.implemented };
-    }
-
-    if (filters.needsTesting) {
-      where.nextTestDue = { lt: new Date() };
-    }
+    const where: Prisma.ControlImplementationWhereInput = {
+      organizationId,
+      ...(filters.workspaceId && { workspaceId: filters.workspaceId }),
+      ...(filters.status?.length && { status: { in: filters.status } }),
+      ...(filters.ownerId && { ownerId: filters.ownerId }),
+      ...(filters.overdue && {
+        dueDate: { lt: new Date() },
+        status: { not: ControlImplementationStatus.implemented },
+      }),
+      ...(filters.needsTesting && { nextTestDue: { lt: new Date() } }),
+    };
 
     const [implementations, total] = await Promise.all([
       this.prisma.controlImplementation.findMany({
@@ -134,20 +122,16 @@ export class ImplementationsService {
     // Get existing implementation for before/after comparison
     const existing = await this.findOne(id, organizationId);
 
-    const updateData: any = {
+    const updateData: Prisma.ControlImplementationUncheckedUpdateInput = {
       ...dto,
       updatedBy: userId,
+      ...(dto.status === ControlImplementationStatus.implemented && {
+        lastTestedAt: new Date(),
+      }),
+      ...(dto.testingFrequency && {
+        nextTestDue: this.calculateNextTestDue(dto.testingFrequency),
+      }),
     };
-
-    // If status changed to implemented, update lastTestedAt
-    if (dto.status === ControlImplementationStatus.implemented) {
-      updateData.lastTestedAt = new Date();
-    }
-
-    // Calculate next test due based on frequency
-    if (dto.testingFrequency) {
-      updateData.nextTestDue = this.calculateNextTestDue(dto.testingFrequency);
-    }
 
     const updated = await this.prisma.controlImplementation.update({
       where: { id },
@@ -199,18 +183,19 @@ export class ImplementationsService {
     userId: string,
     dto: BulkUpdateImplementationsDto,
   ) {
-    const updateData: any = { updatedBy: userId };
-
-    if (dto.status) updateData.status = dto.status;
-    if (dto.ownerId) updateData.ownerId = dto.ownerId;
-    if (dto.dueDate) updateData.dueDate = new Date(dto.dueDate);
+    const bulkUpdateData: Prisma.ControlImplementationUncheckedUpdateManyInput = {
+      updatedBy: userId,
+      ...(dto.status && { status: dto.status }),
+      ...(dto.ownerId && { ownerId: dto.ownerId }),
+      ...(dto.dueDate && { dueDate: new Date(dto.dueDate) }),
+    };
 
     await this.prisma.controlImplementation.updateMany({
       where: {
         id: { in: dto.implementationIds },
         organizationId,
       },
-      data: updateData,
+      data: bulkUpdateData,
     });
 
     return { updated: dto.implementationIds.length };
@@ -249,28 +234,18 @@ export class ImplementationsService {
     }
 
     // Update implementation with test results
-    const updateData: any = {
+    const testUpdateData: Prisma.ControlImplementationUncheckedUpdateInput = {
       lastTestedAt: new Date(),
       updatedBy: userId,
+      nextTestDue: this.calculateNextTestDue(implementation.testingFrequency),
+      ...(dto.result === 'pass' && { effectivenessScore: 100 }),
+      ...(dto.result === 'partial' && { effectivenessScore: 50 }),
+      ...(dto.result === 'fail' && { effectivenessScore: 0 }),
     };
-
-    // Calculate effectiveness score based on test result
-    if (dto.result === 'pass') {
-      updateData.effectivenessScore = 100;
-    } else if (dto.result === 'partial') {
-      updateData.effectivenessScore = 50;
-    } else if (dto.result === 'fail') {
-      updateData.effectivenessScore = 0;
-    }
-
-    // Calculate next test due
-    updateData.nextTestDue = this.calculateNextTestDue(
-      implementation.testingFrequency,
-    );
 
     await this.prisma.controlImplementation.update({
       where: { id: implementationId },
-      data: updateData,
+      data: testUpdateData,
     });
 
     // Audit log the test

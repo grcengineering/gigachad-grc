@@ -1,3 +1,4 @@
+ 
 import { Injectable, Logger, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -377,7 +378,7 @@ export class ResetDataService {
       this.logger.log(`Data reset completed. Total records deleted: ${result.totalRecords}`);
 
       // Create audit log entry AFTER deletion
-      await this.createAuditLogEntry(organizationId, userId, 'data_reset_completed', result);
+      await this.createAuditLogEntry(organizationId, userId, 'data_reset_completed', JSON.parse(JSON.stringify(result)));
 
       return result;
     } catch (error) {
@@ -433,7 +434,7 @@ export class ResetDataService {
     organizationId: string,
     userId: string,
     action: string,
-    details: any,
+    details: Record<string, unknown>,
   ): Promise<void> {
     try {
       await this.prisma.auditLog.create({
@@ -444,7 +445,7 @@ export class ResetDataService {
           entityType: 'organization',
           entityId: organizationId,
           description: `${action}: ${action === 'data_reset_completed' ? 'All organization data has been reset' : 'Data reset initiated'}`,
-          changes: details,
+          changes: JSON.parse(JSON.stringify(details)),
           ipAddress: '127.0.0.1',
           userAgent: 'System',
         },

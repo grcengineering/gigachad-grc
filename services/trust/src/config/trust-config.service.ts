@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../common/prisma.service';
 import { AuditService } from '../common/audit.service';
+import { Prisma } from '@prisma/client';
 
 export interface SlaSettings {
   urgent: { targetHours: number; warningHours: number };
@@ -105,11 +106,11 @@ export class TrustConfigService {
       config = await this.prisma.trustConfiguration.create({
         data: {
           organizationId,
-          slaSettings: DEFAULT_SLA_SETTINGS as any,
-          assignmentSettings: DEFAULT_ASSIGNMENT_SETTINGS as any,
-          kbSettings: DEFAULT_KB_SETTINGS as any,
-          trustCenterSettings: DEFAULT_TRUST_CENTER_SETTINGS as any,
-          aiSettings: DEFAULT_AI_SETTINGS as any,
+          slaSettings: DEFAULT_SLA_SETTINGS as unknown as Prisma.InputJsonValue,
+          assignmentSettings: DEFAULT_ASSIGNMENT_SETTINGS as unknown as Prisma.InputJsonValue,
+          kbSettings: DEFAULT_KB_SETTINGS as unknown as Prisma.InputJsonValue,
+          trustCenterSettings: DEFAULT_TRUST_CENTER_SETTINGS as unknown as Prisma.InputJsonValue,
+          aiSettings: DEFAULT_AI_SETTINGS as unknown as Prisma.InputJsonValue,
         },
       });
     }
@@ -138,19 +139,19 @@ export class TrustConfigService {
       where: { organizationId },
       data: {
         slaSettings: dto.slaSettings
-          ? ({ ...current.slaSettings, ...dto.slaSettings } as any)
+          ? ({ ...current.slaSettings, ...dto.slaSettings } as unknown as Prisma.InputJsonValue)
           : undefined,
         assignmentSettings: dto.assignmentSettings
-          ? ({ ...current.assignmentSettings, ...dto.assignmentSettings } as any)
+          ? ({ ...current.assignmentSettings, ...dto.assignmentSettings } as unknown as Prisma.InputJsonValue)
           : undefined,
         kbSettings: dto.kbSettings
-          ? ({ ...current.kbSettings, ...dto.kbSettings } as any)
+          ? ({ ...current.kbSettings, ...dto.kbSettings } as unknown as Prisma.InputJsonValue)
           : undefined,
         trustCenterSettings: dto.trustCenterSettings
-          ? ({ ...current.trustCenterSettings, ...dto.trustCenterSettings } as any)
+          ? ({ ...current.trustCenterSettings, ...dto.trustCenterSettings } as unknown as Prisma.InputJsonValue)
           : undefined,
         aiSettings: dto.aiSettings
-          ? ({ ...current.aiSettings, ...dto.aiSettings } as any)
+          ? ({ ...current.aiSettings, ...dto.aiSettings } as unknown as Prisma.InputJsonValue)
           : undefined,
         updatedBy: userId,
       },
@@ -164,7 +165,7 @@ export class TrustConfigService {
       entityId: updated.id,
       entityName: 'Trust Configuration',
       description: 'Updated trust module configuration',
-      changes: dto,
+      changes: dto as unknown as Prisma.InputJsonValue,
     });
 
     return this.getConfiguration(organizationId);
@@ -174,11 +175,11 @@ export class TrustConfigService {
     const updated = await this.prisma.trustConfiguration.update({
       where: { organizationId },
       data: {
-        slaSettings: DEFAULT_SLA_SETTINGS as any,
-        assignmentSettings: DEFAULT_ASSIGNMENT_SETTINGS as any,
-        kbSettings: DEFAULT_KB_SETTINGS as any,
-        trustCenterSettings: DEFAULT_TRUST_CENTER_SETTINGS as any,
-        aiSettings: DEFAULT_AI_SETTINGS as any,
+        slaSettings: DEFAULT_SLA_SETTINGS as unknown as Prisma.InputJsonValue,
+        assignmentSettings: DEFAULT_ASSIGNMENT_SETTINGS as unknown as Prisma.InputJsonValue,
+        kbSettings: DEFAULT_KB_SETTINGS as unknown as Prisma.InputJsonValue,
+        trustCenterSettings: DEFAULT_TRUST_CENTER_SETTINGS as unknown as Prisma.InputJsonValue,
+        aiSettings: DEFAULT_AI_SETTINGS as unknown as Prisma.InputJsonValue,
         updatedBy: userId,
       },
     });

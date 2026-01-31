@@ -2,15 +2,14 @@ import { Injectable } from '@nestjs/common';
 
 // Interface for any PrismaService implementation
 interface IPrismaClient {
-  $queryRaw: (query: any) => Promise<any>;
+  $queryRaw: <T = unknown>(query: TemplateStringsArray) => Promise<T>;
 }
 
 export interface HealthIndicatorResult {
   [key: string]: {
     status: 'up' | 'down';
     message?: string;
-    [key: string]: any;
-  };
+  } & Record<string, unknown>;
 }
 
 @Injectable()
@@ -31,7 +30,7 @@ export class PrismaHealthIndicator {
   protected getStatus(
     key: string,
     isHealthy: boolean,
-    data?: { [key: string]: any },
+    data?: Record<string, unknown>,
   ): HealthIndicatorResult {
     return {
       [key]: {

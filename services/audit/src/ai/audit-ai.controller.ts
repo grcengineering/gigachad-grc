@@ -1,5 +1,6 @@
 import { Controller, Post, Body, UseGuards, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { Request } from 'express';
 import { AuditAIService } from './audit-ai.service';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 import {
@@ -15,6 +16,13 @@ import {
   AuditSummary,
 } from './dto/audit-ai.dto';
 
+interface AuthenticatedRequest extends Request {
+  user: {
+    userId: string;
+    organizationId: string;
+  };
+}
+
 @ApiTags('Audit AI')
 @ApiBearerAuth()
 @UseGuards(DevAuthGuard)
@@ -26,7 +34,7 @@ export class AuditAIController {
   @ApiOperation({ summary: 'AI-categorize an audit finding' })
   async categorizeFinding(
     @Body() dto: CategorizeFindingDto,
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
   ): Promise<FindingCategorizationResult> {
     return this.auditAIService.categorizeFinding(
       req.user.organizationId,
@@ -39,7 +47,7 @@ export class AuditAIController {
   @ApiOperation({ summary: 'Analyze evidence gaps for an audit' })
   async analyzeGaps(
     @Body() dto: AnalyzeGapsDto,
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
   ): Promise<GapAnalysisResult> {
     return this.auditAIService.analyzeGaps(
       req.user.organizationId,
@@ -52,7 +60,7 @@ export class AuditAIController {
   @ApiOperation({ summary: 'Generate AI remediation suggestions for a finding' })
   async suggestRemediation(
     @Body() dto: SuggestRemediationDto,
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
   ): Promise<RemediationSuggestion> {
     return this.auditAIService.suggestRemediation(
       req.user.organizationId,
@@ -65,7 +73,7 @@ export class AuditAIController {
   @ApiOperation({ summary: 'Map audit requests to relevant controls' })
   async mapControls(
     @Body() dto: MapControlsDto,
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
   ): Promise<ControlMappingResult> {
     return this.auditAIService.mapControls(
       req.user.organizationId,
@@ -78,7 +86,7 @@ export class AuditAIController {
   @ApiOperation({ summary: 'Generate an AI audit summary' })
   async generateSummary(
     @Body() dto: GenerateSummaryDto,
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
   ): Promise<AuditSummary> {
     return this.auditAIService.generateSummary(
       req.user.organizationId,

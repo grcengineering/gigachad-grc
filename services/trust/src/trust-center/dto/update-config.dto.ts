@@ -55,5 +55,5 @@ export class UpdateTrustCenterConfigDto {
 
   @IsObject()
   @IsOptional()
-  customSections?: Record<string, any>;
+  customSections?: Record<string, unknown>;
 }

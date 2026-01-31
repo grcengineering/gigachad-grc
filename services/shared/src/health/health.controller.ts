@@ -4,9 +4,9 @@ import { RedisHealthIndicator } from './redis.health';
 
 interface HealthCheckResponse {
   status: 'ok' | 'error';
-  info?: Record<string, any>;
-  error?: Record<string, any>;
-  details?: Record<string, any>;
+  info?: Record<string, unknown>;
+  error?: Record<string, unknown>;
+  details?: Record<string, unknown>;
 }
 
 @Controller('health')
@@ -94,8 +94,8 @@ export class HealthController {
                           memoryCheck.memory_rss.status === 'up';
     const isHealthy = dbHealthy && redisHealthy && memoryHealthy;
 
-    const info: Record<string, any> = {};
-    const error: Record<string, any> = {};
+    const info: Record<string, unknown> = {};
+    const error: Record<string, unknown> = {};
 
     if (dbHealthy) {
       info.database = dbCheck.database;

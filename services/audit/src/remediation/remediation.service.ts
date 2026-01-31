@@ -70,7 +70,7 @@ export class RemediationService {
   }
 
   async findAllPlans(organizationId: string, status?: string) {
-    const where: any = { organizationId };
+    const where: Record<string, unknown> = { organizationId };
     if (status) where.status = status;
 
     return this.prisma.remediationPlan.findMany({
@@ -142,7 +142,7 @@ export class RemediationService {
       throw new NotFoundException(`Milestone ${id} not found`);
     }
 
-    const data: any = { ...dto };
+    const data: Record<string, unknown> = { ...dto };
     if (dto.dueDate) data.dueDate = new Date(dto.dueDate);
     if (dto.completedDate) data.completedDate = new Date(dto.completedDate);
 

@@ -218,7 +218,7 @@ export class FrameworksService {
       throw new BadRequestException('No file uploaded');
     }
 
-    let requirements: any[] = [];
+    let requirements: Record<string, unknown>[] = [];
     const fileExt = file.originalname.split('.').pop()?.toLowerCase();
 
     try {
@@ -228,7 +228,7 @@ export class FrameworksService {
       } else if (fileExt === 'xlsx' || fileExt === 'xls') {
         requirements = await this.parseExcel(file.buffer);
       } else if (fileExt === 'json') {
-        requirements = JSON.parse(file.buffer.toString());
+        requirements = JSON.parse(file.buffer.toString()) as Record<string, unknown>[];
       } else {
         throw new BadRequestException('Unsupported file type. Please upload CSV, Excel (.xlsx, .xls), or JSON file');
       }
@@ -236,22 +236,32 @@ export class FrameworksService {
       // Validate and create requirements
       const created = [];
       for (const req of requirements) {
-        if (!req.reference || !req.title || !req.description) {
+        const reference = req.reference as string | undefined;
+        const title = req.title as string | undefined;
+        const description = req.description as string | undefined;
+        
+        if (!reference || !title || !description) {
           this.logger.warn(`Skipping invalid requirement: ${JSON.stringify(req)}`);
           continue;
         }
 
+        const guidance = req.guidance as string | undefined;
+        const parentId = req.parentId as string | undefined;
+        const isCategory = req.isCategory;
+        const orderValue = req.order;
+        const levelValue = req.level;
+
         const requirement = await this.prisma.frameworkRequirement.create({
           data: {
             frameworkId,
-            reference: req.reference,
-            title: req.title,
-            description: req.description,
-            guidance: req.guidance || null,
-            parentId: req.parentId || null,
-            isCategory: req.isCategory === true || req.isCategory === 'true',
-            order: parseInt(req.order) || 0,
-            level: parseInt(req.level) || 0,
+            reference,
+            title,
+            description,
+            guidance: guidance || null,
+            parentId: parentId || null,
+            isCategory: isCategory === true || isCategory === 'true',
+            order: parseInt(String(orderValue ?? '0'), 10) || 0,
+            level: parseInt(String(levelValue ?? '0'), 10) || 0,
           },
         });
         created.push(requirement);
@@ -269,16 +279,16 @@ export class FrameworksService {
     }
   }
 
-  private parseCSV(buffer: Buffer): any[] {
+  private parseCSV(buffer: Buffer): Record<string, unknown>[] {
     const records = parse(buffer, {
       columns: true,
       skip_empty_lines: true,
       trim: true,
-    });
+    }) as Record<string, unknown>[];
     return records;
   }
 
-  private async parseExcel(buffer: Buffer): Promise<any[]> {
+  private async parseExcel(buffer: Buffer): Promise<Record<string, unknown>[]> {
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(buffer as unknown as ArrayBuffer);
     
@@ -287,7 +297,7 @@ export class FrameworksService {
       throw new BadRequestException('Excel file has no worksheets');
     }
     
-    const records: any[] = [];
+    const records: Record<string, unknown>[] = [];
     const headers: string[] = [];
     
     worksheet.eachRow((row, rowNumber) => {
@@ -298,7 +308,7 @@ export class FrameworksService {
         });
       } else {
         // Data rows
-        const record: Record<string, any> = {};
+        const record: Record<string, unknown> = {};
         row.eachCell((cell, colNumber) => {
           const header = headers[colNumber - 1];
           if (header) {
@@ -367,13 +377,26 @@ export class FrameworksService {
       orderBy: { order: 'asc' },
     });
 
+    // Type for control with optional implementations
+    type ControlWithImplementations = {
+      id: string;
+      controlId: string;
+      title: string;
+      implementations?: Array<{ status: string }>;
+    };
+
+    // Helper to get implementation status from control
+    const getImplementationStatus = (control: ControlWithImplementations): string | undefined => {
+      return control.implementations?.[0]?.status;
+    };
+
     // Calculate compliance status for each requirement
     const requirementsWithStatus = allRequirements.map(req => {
       let complianceStatus = 'not_assessed';
       
       if (!req.isCategory && req.mappings.length > 0) {
         const implementations = req.mappings
-          .map(m => (m.control as any).implementations?.[0]?.status)
+          .map(m => getImplementationStatus(m.control as ControlWithImplementations))
           .filter(Boolean);
         
         if (implementations.length === 0) {
@@ -396,16 +419,19 @@ export class FrameworksService {
       }
 
       // Add status to each mapping for frontend filtering
-      const mappingsWithStatus = req.mappings.map(m => ({
-        ...m,
-        status: (m.control as any).implementations?.[0]?.status === 'implemented' 
-          ? 'compliant' 
-          : (m.control as any).implementations?.[0]?.status === 'not_applicable'
-            ? 'not_applicable'
-            : (m.control as any).implementations?.[0]?.status
-              ? 'non_compliant'
-              : 'not_assessed',
-      }));
+      const mappingsWithStatus = req.mappings.map(m => {
+        const implStatus = getImplementationStatus(m.control as ControlWithImplementations);
+        return {
+          ...m,
+          status: implStatus === 'implemented' 
+            ? 'compliant' 
+            : implStatus === 'not_applicable'
+              ? 'not_applicable'
+              : implStatus
+                ? 'non_compliant'
+                : 'not_assessed',
+        };
+      });
 
       return {
         ...req,
@@ -414,9 +440,10 @@ export class FrameworksService {
       };
     });
 
-    // Build tree structure
-    const requirementMap = new Map(requirementsWithStatus.map(r => [r.id, { ...r, children: [] as any[] }]));
-    const roots: any[] = [];
+    // Build tree structure - define tree node type
+    type RequirementTreeNode = typeof requirementsWithStatus[0] & { children: RequirementTreeNode[] };
+    const requirementMap = new Map(requirementsWithStatus.map(r => [r.id, { ...r, children: [] as RequirementTreeNode[] }]));
+    const roots: RequirementTreeNode[] = [];
 
     requirementsWithStatus.forEach(req => {
       const node = requirementMap.get(req.id)!;

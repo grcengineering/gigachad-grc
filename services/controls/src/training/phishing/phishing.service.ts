@@ -178,7 +178,7 @@ export class PhishingService {
     });
 
     const settings = (org?.settings as Record<string, unknown>) || {};
-    const campaigns = (settings.phishingCampaigns as any[]) || [];
+    const campaigns = (settings.phishingCampaigns as Array<Record<string, unknown>>) || [];
 
     const campaign = {
       id,
@@ -228,19 +228,19 @@ export class PhishingService {
     });
 
     const settings = (org?.settings as Record<string, unknown>) || {};
-    const campaigns = (settings.phishingCampaigns as any[]) || [];
+    const campaigns = (settings.phishingCampaigns as Array<Record<string, unknown>>) || [];
 
     return campaigns.map(c => this.toCampaignDto(c));
   }
 
-  async getCampaign(organizationId: string, campaignId: string): Promise<any | null> {
+  async getCampaign(organizationId: string, campaignId: string): Promise<Record<string, unknown> | null> {
     const org = await this.prisma.organization.findUnique({
       where: { id: organizationId },
       select: { settings: true },
     });
 
     const settings = (org?.settings as Record<string, unknown>) || {};
-    const campaigns = (settings.phishingCampaigns as any[]) || [];
+    const campaigns = (settings.phishingCampaigns as Array<Record<string, unknown>>) || [];
 
     return campaigns.find(c => c.id === campaignId) || null;
   }
@@ -255,7 +255,7 @@ export class PhishingService {
       throw new BadRequestException('Campaign cannot be started');
     }
 
-    const template = await this.getTemplate(organizationId, campaign.templateId);
+    const template = await this.getTemplate(organizationId, campaign.templateId as string);
     if (!template) {
       throw new BadRequestException('Campaign template not found');
     }
@@ -294,7 +294,8 @@ export class PhishingService {
     await this.updateCampaign(organizationId, campaign);
 
     // Send report if configured
-    if (campaign.sendReportEmail && campaign.reportRecipients?.length > 0) {
+    const reportRecipients = campaign.reportRecipients as string[] | undefined;
+    if (campaign.sendReportEmail && reportRecipients && reportRecipients.length > 0) {
       await this.sendCampaignReport(organizationId, campaign);
     }
 
@@ -310,39 +311,47 @@ export class PhishingService {
       throw new NotFoundException('Campaign not found');
     }
 
-    const targets: CampaignTargetResultDto[] = campaign.targets.map((t: any) => ({
-      userId: t.userId,
-      email: t.email,
-      name: t.name,
-      status: t.status,
-      sentAt: t.sentAt,
-      openedAt: t.openedAt,
-      clickedAt: t.clickedAt,
-      reportedAt: t.reportedAt,
-      credentialsEnteredAt: t.credentialsEnteredAt,
-      trainingAssigned: t.trainingAssigned || false,
-      trainingCompleted: t.trainingCompleted || false,
+    const targetsArray = campaign.targets as Array<Record<string, unknown>>;
+    const targets: CampaignTargetResultDto[] = targetsArray.map((t) => ({
+      userId: t.userId as string,
+      email: t.email as string,
+      name: t.name as string,
+      status: t.status as TargetStatus,
+      sentAt: t.sentAt as Date | undefined,
+      openedAt: t.openedAt as Date | undefined,
+      clickedAt: t.clickedAt as Date | undefined,
+      reportedAt: t.reportedAt as Date | undefined,
+      credentialsEnteredAt: t.credentialsEnteredAt as Date | undefined,
+      trainingAssigned: (t.trainingAssigned as boolean) || false,
+      trainingCompleted: (t.trainingCompleted as boolean) || false,
     }));
 
+    const targetCount = campaign.targetCount as number;
+    const sentCount = campaign.sentCount as number;
+    const openedCount = campaign.openedCount as number;
+    const clickedCount = campaign.clickedCount as number;
+    const reportedCount = campaign.reportedCount as number;
+    const credentialsEnteredCount = campaign.credentialsEnteredCount as number;
+
     const metrics = {
-      totalTargets: campaign.targetCount,
-      emailsSent: campaign.sentCount,
-      emailsDelivered: targets.filter((t: any) => t.status !== TargetStatus.BOUNCED && t.status !== TargetStatus.PENDING).length,
-      emailsOpened: campaign.openedCount,
-      linksClicked: campaign.clickedCount,
-      credentialsEntered: campaign.credentialsEnteredCount,
-      reported: campaign.reportedCount,
-      bounced: targets.filter((t: any) => t.status === TargetStatus.BOUNCED).length,
-      openRate: campaign.sentCount > 0 ? (campaign.openedCount / campaign.sentCount) * 100 : 0,
-      clickRate: campaign.sentCount > 0 ? (campaign.clickedCount / campaign.sentCount) * 100 : 0,
-      reportRate: campaign.sentCount > 0 ? (campaign.reportedCount / campaign.sentCount) * 100 : 0,
-      failureRate: campaign.sentCount > 0 ? (campaign.clickedCount / campaign.sentCount) * 100 : 0,
+      totalTargets: targetCount,
+      emailsSent: sentCount,
+      emailsDelivered: targets.filter((t) => t.status !== TargetStatus.BOUNCED && t.status !== TargetStatus.PENDING).length,
+      emailsOpened: openedCount,
+      linksClicked: clickedCount,
+      credentialsEntered: credentialsEnteredCount,
+      reported: reportedCount,
+      bounced: targets.filter((t) => t.status === TargetStatus.BOUNCED).length,
+      openRate: sentCount > 0 ? (openedCount / sentCount) * 100 : 0,
+      clickRate: sentCount > 0 ? (clickedCount / sentCount) * 100 : 0,
+      reportRate: sentCount > 0 ? (reportedCount / sentCount) * 100 : 0,
+      failureRate: sentCount > 0 ? (clickedCount / sentCount) * 100 : 0,
     };
 
     // Calculate department breakdown
     const deptMap = new Map<string, { total: number; clicked: number }>();
-    for (const t of campaign.targets) {
-      const dept = t.department || 'Unknown';
+    for (const t of targetsArray) {
+      const dept = (t.department as string) || 'Unknown';
       const existing = deptMap.get(dept) || { total: 0, clicked: 0 };
       existing.total++;
       if (t.clickedAt) existing.clicked++;
@@ -378,15 +387,15 @@ export class PhishingService {
 
     for (const org of orgs) {
       const settings = (org.settings as Record<string, unknown>) || {};
-      const campaigns = (settings.phishingCampaigns as any[]) || [];
+      const campaigns = (settings.phishingCampaigns as Array<Record<string, unknown>>) || [];
       
       const campaign = campaigns.find(c => c.id === campaignId);
       if (campaign) {
-        const target = campaign.targets.find((t: any) => t.userId === userId);
+        const target = (campaign.targets as Array<Record<string, unknown>>).find((t) => t.userId === userId);
         if (target && !target.openedAt) {
           target.openedAt = new Date();
           target.status = TargetStatus.OPENED;
-          campaign.openedCount++;
+          (campaign.openedCount as number)++;
           await this.updateCampaign(org.id, campaign);
         }
         return;
@@ -403,19 +412,19 @@ export class PhishingService {
 
     for (const org of orgs) {
       const settings = (org.settings as Record<string, unknown>) || {};
-      const campaigns = (settings.phishingCampaigns as any[]) || [];
+      const campaigns = (settings.phishingCampaigns as Array<Record<string, unknown>>) || [];
       
       const campaign = campaigns.find(c => c.id === campaignId);
       if (campaign) {
-        const target = campaign.targets.find((t: any) => t.userId === userId);
+        const target = (campaign.targets as Array<Record<string, unknown>>).find((t) => t.userId === userId);
         if (target && !target.clickedAt) {
           target.clickedAt = new Date();
           target.status = TargetStatus.CLICKED;
-          campaign.clickedCount++;
+          (campaign.clickedCount as number)++;
 
           // Auto-assign training if configured
           if (campaign.failureTrainingId) {
-            await this.assignTraining(org.id, userId, campaign.failureTrainingId, campaign.createdBy || userId);
+            await this.assignTraining(org.id, userId as string, campaign.failureTrainingId as string, (campaign.createdBy || userId) as string);
             target.trainingAssigned = true;
           }
 
@@ -435,19 +444,19 @@ export class PhishingService {
 
     for (const org of orgs) {
       const settings = (org.settings as Record<string, unknown>) || {};
-      const campaigns = (settings.phishingCampaigns as any[]) || [];
+      const campaigns = (settings.phishingCampaigns as Array<Record<string, unknown>>) || [];
       
       const campaign = campaigns.find(c => c.id === campaignId);
       if (campaign) {
-        const target = campaign.targets.find((t: any) => t.userId === userId);
+        const target = (campaign.targets as Array<Record<string, unknown>>).find((t) => t.userId === userId);
         if (target && !target.credentialsEnteredAt) {
           target.credentialsEnteredAt = new Date();
           target.status = TargetStatus.CREDENTIALS_ENTERED;
-          campaign.credentialsEnteredCount++;
+          (campaign.credentialsEnteredCount as number)++;
 
           // Auto-assign training if configured (high priority)
           if (campaign.failureTrainingId && !target.trainingAssigned) {
-            await this.assignTraining(org.id, userId, campaign.failureTrainingId, campaign.createdBy || userId);
+            await this.assignTraining(org.id, userId as string, campaign.failureTrainingId as string, (campaign.createdBy || userId) as string);
             target.trainingAssigned = true;
           }
 
@@ -467,15 +476,15 @@ export class PhishingService {
 
     for (const org of orgs) {
       const settings = (org.settings as Record<string, unknown>) || {};
-      const campaigns = (settings.phishingCampaigns as any[]) || [];
+      const campaigns = (settings.phishingCampaigns as Array<Record<string, unknown>>) || [];
       
       const campaign = campaigns.find(c => c.id === campaignId);
       if (campaign) {
-        const target = campaign.targets.find((t: any) => t.userId === userId);
+        const target = (campaign.targets as Array<Record<string, unknown>>).find((t) => t.userId === userId);
         if (target) {
           target.reportedAt = new Date();
           target.status = TargetStatus.REPORTED;
-          campaign.reportedCount++;
+          (campaign.reportedCount as number)++;
           await this.updateCampaign(org.id, campaign);
 
           return {
@@ -613,14 +622,14 @@ export class PhishingService {
     return (settings.phishingTemplates as PhishingTemplateDto[]) || [];
   }
 
-  private async updateCampaign(organizationId: string, campaign: any): Promise<void> {
+  private async updateCampaign(organizationId: string, campaign: Record<string, unknown>): Promise<void> {
     const org = await this.prisma.organization.findUnique({
       where: { id: organizationId },
       select: { settings: true },
     });
 
     const settings = (org?.settings as Record<string, unknown>) || {};
-    const campaigns = (settings.phishingCampaigns as any[]) || [];
+    const campaigns = (settings.phishingCampaigns as Array<Record<string, unknown>>) || [];
 
     const index = campaigns.findIndex(c => c.id === campaign.id);
     if (index !== -1) {
@@ -640,27 +649,28 @@ export class PhishingService {
 
   private async sendCampaignEmails(
     organizationId: string,
-    campaign: any,
+    campaign: Record<string, unknown>,
     template: PhishingTemplateDto
   ): Promise<void> {
     const trackingDomain = process.env.PHISHING_TRACKING_DOMAIN || 'localhost:3001';
+    const targetsArray = campaign.targets as Array<Record<string, unknown>>;
 
-    for (const target of campaign.targets) {
+    for (const target of targetsArray) {
       try {
         const trackingUrl = `http://${trackingDomain}/api/phishing/track/click?t=${target.trackingToken}`;
         const openTrackingUrl = `http://${trackingDomain}/api/phishing/track/open?t=${target.trackingToken}`;
 
         const htmlBody = template.htmlBody
           .replace(/{{TRACKING_URL}}/g, trackingUrl)
-          .replace(/{{NAME}}/g, target.name || 'User')
+          .replace(/{{NAME}}/g, (target.name as string) || 'User')
           + `<img src="${openTrackingUrl}" width="1" height="1" style="display:none;" />`;
 
         const textBody = template.textBody
           .replace(/{{TRACKING_URL}}/g, trackingUrl)
-          .replace(/{{NAME}}/g, target.name || 'User');
+          .replace(/{{NAME}}/g, (target.name as string) || 'User');
 
         await this.emailService.sendEmail({
-          to: target.email,
+          to: target.email as string,
           subject: template.subject,
           html: htmlBody,
           text: textBody,
@@ -668,19 +678,20 @@ export class PhishingService {
 
         target.sentAt = new Date();
         target.status = TargetStatus.SENT;
-        campaign.sentCount++;
+        (campaign.sentCount as number)++;
 
         this.logger.log(`Sent phishing email to ${target.email} for campaign ${campaign.id}`);
-      } catch (error) {
-        this.logger.error(`Failed to send phishing email to ${target.email}: ${error.message}`);
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        this.logger.error(`Failed to send phishing email to ${target.email}: ${errorMessage}`);
         target.status = TargetStatus.BOUNCED;
       }
     }
   }
 
-  private async sendCampaignReport(organizationId: string, campaign: any): Promise<void> {
+  private async sendCampaignReport(organizationId: string, campaign: Record<string, unknown>): Promise<void> {
     // Send summary report to configured recipients
-    const results = await this.getCampaignResults(organizationId, campaign.id);
+    const results = await this.getCampaignResults(organizationId, campaign.id as string);
     
     const reportHtml = `
       <h2>Phishing Campaign Report: ${campaign.name}</h2>
@@ -695,7 +706,8 @@ export class PhishingService {
       </ul>
     `;
 
-    for (const recipient of campaign.reportRecipients) {
+    const reportRecipients = campaign.reportRecipients as string[];
+    for (const recipient of reportRecipients) {
       await this.emailService.sendEmail({
         to: recipient,
         subject: `Phishing Campaign Report: ${campaign.name}`,
@@ -756,23 +768,23 @@ export class PhishingService {
     }
   }
 
-  private toCampaignDto(campaign: any): CampaignDto {
+  private toCampaignDto(campaign: Record<string, unknown>): CampaignDto {
     return {
-      id: campaign.id,
-      name: campaign.name,
-      description: campaign.description,
-      templateId: campaign.templateId,
-      status: campaign.status,
-      targetCount: campaign.targetCount,
-      sentCount: campaign.sentCount,
-      openedCount: campaign.openedCount,
-      clickedCount: campaign.clickedCount,
-      reportedCount: campaign.reportedCount,
-      credentialsEnteredCount: campaign.credentialsEnteredCount,
-      scheduledAt: campaign.scheduledAt,
-      startedAt: campaign.startedAt,
-      completedAt: campaign.completedAt,
-      createdAt: campaign.createdAt,
+      id: campaign.id as string,
+      name: campaign.name as string,
+      description: campaign.description as string,
+      templateId: campaign.templateId as string,
+      status: campaign.status as CampaignStatus,
+      targetCount: campaign.targetCount as number,
+      sentCount: campaign.sentCount as number,
+      openedCount: campaign.openedCount as number,
+      clickedCount: campaign.clickedCount as number,
+      reportedCount: campaign.reportedCount as number,
+      credentialsEnteredCount: campaign.credentialsEnteredCount as number,
+      scheduledAt: (campaign.scheduledAt || new Date()) as Date,
+      startedAt: (campaign.startedAt || new Date()) as Date,
+      completedAt: (campaign.completedAt || new Date()) as Date,
+      createdAt: (campaign.createdAt || new Date()) as Date,
     };
   }
 }

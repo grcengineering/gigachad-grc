@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
+import { Prisma } from '@prisma/client';
 
 interface AuditLogData {
   organizationId: string;
@@ -9,8 +10,8 @@ interface AuditLogData {
   entityId: string;
   entityName?: string;
   description?: string;
-  metadata?: Record<string, any>;
-  changes?: Record<string, any>;
+  metadata?: Prisma.InputJsonValue;
+  changes?: Prisma.InputJsonValue;
 }
 
 @Injectable()

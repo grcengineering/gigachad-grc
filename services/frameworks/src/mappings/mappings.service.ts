@@ -7,7 +7,7 @@ export class MappingsService {
   constructor(private prisma: PrismaService) {}
 
   async findAll(frameworkId?: string, controlId?: string) {
-    const where: any = {};
+    const where: { frameworkId?: string; controlId?: string } = {};
     if (frameworkId) where.frameworkId = frameworkId;
     if (controlId) where.controlId = controlId;
 
@@ -95,10 +95,11 @@ export class MappingsService {
       try {
         const mapping = await this.create(userId, dto);
         results.push({ success: true, mapping });
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         results.push({
           success: false,
-          error: error.message,
+          error: errorMessage,
           dto,
         });
       }

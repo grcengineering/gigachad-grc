@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { Request } from 'express';
 import { TemplatesService } from './templates.service';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 import {
@@ -8,6 +9,13 @@ import {
   CreateAuditFromTemplateDto,
   UpdateChecklistProgressDto,
 } from './dto/template.dto';
+
+interface AuthenticatedRequest extends Request {
+  user: {
+    userId: string;
+    organizationId: string;
+  };
+}
 
 @ApiTags('Audit Templates')
 @ApiBearerAuth()
@@ -20,7 +28,7 @@ export class TemplatesController {
   @ApiOperation({ summary: 'Create an audit template' })
   async create(
     @Body() dto: CreateAuditTemplateDto,
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
   ) {
     return this.templatesService.create(
       req.user.organizationId,
@@ -35,10 +43,10 @@ export class TemplatesController {
   @ApiQuery({ name: 'framework', required: false })
   @ApiQuery({ name: 'includeSystem', required: false, type: Boolean })
   async findAll(
-    @Query('auditType') auditType?: string,
-    @Query('framework') framework?: string,
-    @Query('includeSystem') includeSystem?: string,
-    @Req() req?: any,
+    @Query('auditType') auditType: string | undefined,
+    @Query('framework') framework: string | undefined,
+    @Query('includeSystem') includeSystem: string | undefined,
+    @Req() req: AuthenticatedRequest,
   ) {
     return this.templatesService.findAll(req.user.organizationId, {
       auditType,
@@ -51,7 +59,7 @@ export class TemplatesController {
   @ApiOperation({ summary: 'Get an audit template' })
   async findOne(
     @Param('id') id: string,
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
   ) {
     return this.templatesService.findOne(id, req.user.organizationId);
   }
@@ -61,7 +69,7 @@ export class TemplatesController {
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateAuditTemplateDto,
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
   ) {
     return this.templatesService.update(id, req.user.organizationId, dto);
   }
@@ -70,7 +78,7 @@ export class TemplatesController {
   @ApiOperation({ summary: 'Delete (archive) an audit template' })
   async delete(
     @Param('id') id: string,
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
   ) {
     return this.templatesService.delete(id, req.user.organizationId);
   }
@@ -80,7 +88,7 @@ export class TemplatesController {
   async clone(
     @Param('id') id: string,
     @Body() body: { name?: string },
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
   ) {
     return this.templatesService.cloneTemplate(
       id,
@@ -94,7 +102,7 @@ export class TemplatesController {
   @ApiOperation({ summary: 'Create an audit from a template' })
   async createAuditFromTemplate(
     @Body() dto: CreateAuditFromTemplateDto,
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
   ) {
     return this.templatesService.createAuditFromTemplate(
       req.user.organizationId,
@@ -107,7 +115,7 @@ export class TemplatesController {
   @ApiOperation({ summary: 'Get checklist status for an audit' })
   async getChecklistStatus(
     @Param('auditId') auditId: string,
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
   ) {
     return this.templatesService.getChecklistStatus(auditId, req.user.organizationId);
   }
@@ -117,7 +125,7 @@ export class TemplatesController {
   async updateChecklistProgress(
     @Param('auditId') auditId: string,
     @Body() dto: UpdateChecklistProgressDto,
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
   ) {
     return this.templatesService.updateChecklistProgress(
       auditId,

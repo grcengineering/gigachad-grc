@@ -13,8 +13,8 @@ export interface LogAuditParams {
   entityId: string;
   entityName?: string;
   description: string;
-  changes?: { before?: any; after?: any } | Record<string, any>;
-  metadata?: Record<string, any>;
+  changes?: { before?: unknown; after?: unknown } | object;
+  metadata?: Record<string, unknown>;
   ipAddress?: string;
   userAgent?: string;
 }

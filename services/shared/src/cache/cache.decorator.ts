@@ -9,7 +9,7 @@ export const CACHE_TTL = 'cache_ttl';
  * @param options.ttl Time to live in seconds (default: service default)
  */
 export const Cacheable = (options?: { key?: string; ttl?: number }) =>
-  (target: any, propertyKey: string, descriptor: PropertyDescriptor) => {
+  (target: object, propertyKey: string, descriptor: PropertyDescriptor) => {
     SetMetadata(CACHE_KEY, options?.key || propertyKey)(target, propertyKey, descriptor);
     if (options?.ttl) {
       SetMetadata(CACHE_TTL, options.ttl)(target, propertyKey, descriptor);

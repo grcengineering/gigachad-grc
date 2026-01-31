@@ -9,11 +9,15 @@ import {
   Query,
   Res,
   UseGuards,
-  Request,
+  Req,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { Response } from 'express';
+import { Request, Response } from 'express';
+
+interface AuthenticatedRequest extends Request {
+  user: { userId: string; organizationId: string; email?: string };
+}
 import {
   ApiTags,
   ApiBearerAuth,
@@ -52,7 +56,7 @@ export class PhishingController {
   @ApiOperation({ summary: 'List all phishing templates' })
   @ApiResponse({ status: 200, description: 'List of templates', type: [PhishingTemplateDto] })
   @RequirePermission(Resource.SETTINGS, Action.READ)
-  async getTemplates(@Request() req: any): Promise<PhishingTemplateDto[]> {
+  async getTemplates(@Req() req: AuthenticatedRequest): Promise<PhishingTemplateDto[]> {
     return this.phishingService.getTemplates(req.user.organizationId);
   }
 
@@ -63,7 +67,7 @@ export class PhishingController {
   @ApiParam({ name: 'id', description: 'Template ID' })
   @RequirePermission(Resource.SETTINGS, Action.READ)
   async getTemplate(
-    @Request() req: any,
+    @Req() req: AuthenticatedRequest,
     @Param('id') id: string
   ): Promise<PhishingTemplateDto | null> {
     return this.phishingService.getTemplate(req.user.organizationId, id);
@@ -77,7 +81,7 @@ export class PhishingController {
   @ApiResponse({ status: 201, description: 'Template created', type: PhishingTemplateDto })
   @RequirePermission(Resource.SETTINGS, Action.CREATE)
   async createTemplate(
-    @Request() req: any,
+    @Req() req: AuthenticatedRequest,
     @Body() dto: CreatePhishingTemplateDto
   ): Promise<PhishingTemplateDto> {
     return this.phishingService.createTemplate(req.user.organizationId, dto);
@@ -90,7 +94,7 @@ export class PhishingController {
   @ApiParam({ name: 'id', description: 'Template ID' })
   @RequirePermission(Resource.SETTINGS, Action.UPDATE)
   async updateTemplate(
-    @Request() req: any,
+    @Req() req: AuthenticatedRequest,
     @Param('id') id: string,
     @Body() dto: Partial<CreatePhishingTemplateDto>
   ): Promise<PhishingTemplateDto> {
@@ -105,7 +109,7 @@ export class PhishingController {
   @ApiParam({ name: 'id', description: 'Template ID' })
   @RequirePermission(Resource.SETTINGS, Action.DELETE)
   async deleteTemplate(
-    @Request() req: any,
+    @Req() req: AuthenticatedRequest,
     @Param('id') id: string
   ): Promise<void> {
     return this.phishingService.deleteTemplate(req.user.organizationId, id);
@@ -121,7 +125,7 @@ export class PhishingController {
   @ApiOperation({ summary: 'List all phishing campaigns' })
   @ApiResponse({ status: 200, description: 'List of campaigns', type: [CampaignDto] })
   @RequirePermission(Resource.SETTINGS, Action.READ)
-  async getCampaigns(@Request() req: any): Promise<CampaignDto[]> {
+  async getCampaigns(@Req() req: AuthenticatedRequest): Promise<CampaignDto[]> {
     return this.phishingService.getCampaigns(req.user.organizationId);
   }
 
@@ -132,9 +136,9 @@ export class PhishingController {
   @ApiParam({ name: 'id', description: 'Campaign ID' })
   @RequirePermission(Resource.SETTINGS, Action.READ)
   async getCampaign(
-    @Request() req: any,
+    @Req() req: AuthenticatedRequest,
     @Param('id') id: string
-  ): Promise<CampaignDto | null> {
+  ): Promise<Record<string, unknown> | null> {
     const campaign = await this.phishingService.getCampaign(req.user.organizationId, id);
     return campaign;
   }
@@ -147,7 +151,7 @@ export class PhishingController {
   @ApiResponse({ status: 201, description: 'Campaign created', type: CampaignDto })
   @RequirePermission(Resource.SETTINGS, Action.CREATE)
   async createCampaign(
-    @Request() req: any,
+    @Req() req: AuthenticatedRequest,
     @Body() dto: CreateCampaignDto
   ): Promise<CampaignDto> {
     return this.phishingService.createCampaign(req.user.organizationId, dto);
@@ -161,7 +165,7 @@ export class PhishingController {
   @ApiParam({ name: 'id', description: 'Campaign ID' })
   @RequirePermission(Resource.SETTINGS, Action.UPDATE)
   async startCampaign(
-    @Request() req: any,
+    @Req() req: AuthenticatedRequest,
     @Param('id') id: string
   ): Promise<CampaignDto> {
     return this.phishingService.startCampaign(req.user.organizationId, id);
@@ -175,7 +179,7 @@ export class PhishingController {
   @ApiParam({ name: 'id', description: 'Campaign ID' })
   @RequirePermission(Resource.SETTINGS, Action.UPDATE)
   async pauseCampaign(
-    @Request() req: any,
+    @Req() req: AuthenticatedRequest,
     @Param('id') id: string
   ): Promise<CampaignDto> {
     return this.phishingService.pauseCampaign(req.user.organizationId, id);
@@ -189,7 +193,7 @@ export class PhishingController {
   @ApiParam({ name: 'id', description: 'Campaign ID' })
   @RequirePermission(Resource.SETTINGS, Action.UPDATE)
   async completeCampaign(
-    @Request() req: any,
+    @Req() req: AuthenticatedRequest,
     @Param('id') id: string
   ): Promise<CampaignDto> {
     return this.phishingService.completeCampaign(req.user.organizationId, id);
@@ -203,7 +207,7 @@ export class PhishingController {
   @ApiResponse({ status: 200, description: 'Campaign results', type: CampaignResultsDto })
   @RequirePermission(Resource.SETTINGS, Action.READ)
   async getCampaignResults(
-    @Request() req: any,
+    @Req() req: AuthenticatedRequest,
     @Param('id') id: string
   ): Promise<CampaignResultsDto> {
     return this.phishingService.getCampaignResults(req.user.organizationId, id);

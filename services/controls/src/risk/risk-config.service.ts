@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
@@ -84,12 +85,12 @@ export class RiskConfigService {
         data: {
           organizationId,
           methodology: 'qualitative',
-          likelihoodScale: DEFAULT_LIKELIHOOD_SCALE as any,
-          impactScale: DEFAULT_IMPACT_SCALE as any,
-          categories: DEFAULT_CATEGORIES as any,
-          riskLevelThresholds: DEFAULT_RISK_LEVEL_THRESHOLDS as any,
-          workflowSettings: DEFAULT_WORKFLOW_SETTINGS as any,
-          riskAppetite: DEFAULT_RISK_APPETITE as any,
+          likelihoodScale: JSON.parse(JSON.stringify(DEFAULT_LIKELIHOOD_SCALE)),
+          impactScale: JSON.parse(JSON.stringify(DEFAULT_IMPACT_SCALE)),
+          categories: JSON.parse(JSON.stringify(DEFAULT_CATEGORIES)),
+          riskLevelThresholds: JSON.parse(JSON.stringify(DEFAULT_RISK_LEVEL_THRESHOLDS)),
+          workflowSettings: JSON.parse(JSON.stringify(DEFAULT_WORKFLOW_SETTINGS)),
+          riskAppetite: JSON.parse(JSON.stringify(DEFAULT_RISK_APPETITE)),
         },
       });
     }
@@ -108,7 +109,8 @@ export class RiskConfigService {
     // Ensure configuration exists
     const _existing = await this.getConfiguration(organizationId);
 
-    const updateData: any = {
+     
+    const updateData: Record<string, any> = {
       updatedBy: userId,
     };
 
@@ -116,22 +118,22 @@ export class RiskConfigService {
       updateData.methodology = dto.methodology;
     }
     if (dto.likelihoodScale !== undefined) {
-      updateData.likelihoodScale = dto.likelihoodScale;
+      updateData.likelihoodScale = JSON.parse(JSON.stringify(dto.likelihoodScale));
     }
     if (dto.impactScale !== undefined) {
-      updateData.impactScale = dto.impactScale;
+      updateData.impactScale = JSON.parse(JSON.stringify(dto.impactScale));
     }
     if (dto.categories !== undefined) {
-      updateData.categories = dto.categories;
+      updateData.categories = JSON.parse(JSON.stringify(dto.categories));
     }
     if (dto.riskLevelThresholds !== undefined) {
-      updateData.riskLevelThresholds = dto.riskLevelThresholds;
+      updateData.riskLevelThresholds = JSON.parse(JSON.stringify(dto.riskLevelThresholds));
     }
     if (dto.workflowSettings !== undefined) {
-      updateData.workflowSettings = dto.workflowSettings;
+      updateData.workflowSettings = JSON.parse(JSON.stringify(dto.workflowSettings));
     }
     if (dto.riskAppetite !== undefined) {
-      updateData.riskAppetite = dto.riskAppetite;
+      updateData.riskAppetite = JSON.parse(JSON.stringify(dto.riskAppetite));
     }
 
     const config = await this.prisma.riskConfiguration.update({
@@ -150,23 +152,23 @@ export class RiskConfigService {
       where: { organizationId },
       update: {
         methodology: 'qualitative',
-        likelihoodScale: DEFAULT_LIKELIHOOD_SCALE as any,
-        impactScale: DEFAULT_IMPACT_SCALE as any,
-        categories: DEFAULT_CATEGORIES as any,
-        riskLevelThresholds: DEFAULT_RISK_LEVEL_THRESHOLDS as any,
-        workflowSettings: DEFAULT_WORKFLOW_SETTINGS as any,
-        riskAppetite: DEFAULT_RISK_APPETITE as any,
+        likelihoodScale: JSON.parse(JSON.stringify(DEFAULT_LIKELIHOOD_SCALE)),
+        impactScale: JSON.parse(JSON.stringify(DEFAULT_IMPACT_SCALE)),
+        categories: JSON.parse(JSON.stringify(DEFAULT_CATEGORIES)),
+        riskLevelThresholds: JSON.parse(JSON.stringify(DEFAULT_RISK_LEVEL_THRESHOLDS)),
+        workflowSettings: JSON.parse(JSON.stringify(DEFAULT_WORKFLOW_SETTINGS)),
+        riskAppetite: JSON.parse(JSON.stringify(DEFAULT_RISK_APPETITE)),
         updatedBy: userId,
       },
       create: {
         organizationId,
         methodology: 'qualitative',
-        likelihoodScale: DEFAULT_LIKELIHOOD_SCALE as any,
-        impactScale: DEFAULT_IMPACT_SCALE as any,
-        categories: DEFAULT_CATEGORIES as any,
-        riskLevelThresholds: DEFAULT_RISK_LEVEL_THRESHOLDS as any,
-        workflowSettings: DEFAULT_WORKFLOW_SETTINGS as any,
-        riskAppetite: DEFAULT_RISK_APPETITE as any,
+        likelihoodScale: JSON.parse(JSON.stringify(DEFAULT_LIKELIHOOD_SCALE)),
+        impactScale: JSON.parse(JSON.stringify(DEFAULT_IMPACT_SCALE)),
+        categories: JSON.parse(JSON.stringify(DEFAULT_CATEGORIES)),
+        riskLevelThresholds: JSON.parse(JSON.stringify(DEFAULT_RISK_LEVEL_THRESHOLDS)),
+        workflowSettings: JSON.parse(JSON.stringify(DEFAULT_WORKFLOW_SETTINGS)),
+        riskAppetite: JSON.parse(JSON.stringify(DEFAULT_RISK_APPETITE)),
       },
     });
 
@@ -230,7 +232,8 @@ export class RiskConfigService {
     return this.updateConfiguration(organizationId, { riskAppetite }, userId || 'system');
   }
 
-  private mapToResponse(config: any): RiskConfigurationResponseDto {
+   
+  private mapToResponse(config: Record<string, any>): RiskConfigurationResponseDto {
     return {
       id: config.id,
       organizationId: config.organizationId,

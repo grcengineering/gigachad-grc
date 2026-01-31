@@ -8,6 +8,28 @@ export interface ExportOptions {
   includePending?: boolean;
 }
 
+interface ExportQuestion {
+  questionNumber: string | null;
+  questionText: string;
+  answerText: string | null;
+  status: string;
+  category: string | null;
+}
+
+interface ExportQuestionnaire {
+  id: string;
+  title: string;
+  requesterName: string | null;
+  requesterEmail: string;
+  company: string | null;
+  status: string;
+  priority: string;
+  dueDate: Date | null;
+  createdAt: Date;
+  completedAt: Date | null;
+  questions: ExportQuestion[];
+}
+
 @Injectable()
 export class QuestionnaireExportService {
   constructor(private prisma: PrismaService) {}
@@ -61,7 +83,7 @@ export class QuestionnaireExportService {
   }
 
   // Export to Excel format
-  private async exportToExcel(questionnaire: any, options: ExportOptions): Promise<Buffer> {
+  private async exportToExcel(questionnaire: ExportQuestionnaire, options: ExportOptions): Promise<Buffer> {
     const workbook = new ExcelJS.Workbook();
     workbook.creator = 'GigaChad GRC';
     workbook.created = new Date();
@@ -110,9 +132,9 @@ export class QuestionnaireExportService {
     // Add questions
     const questions = options.includePending !== false 
       ? questionnaire.questions 
-      : questionnaire.questions.filter((q: any) => q.status === 'answered' || q.status === 'approved');
+      : questionnaire.questions.filter((q) => q.status === 'answered' || q.status === 'approved');
 
-    questions.forEach((question: any, index: number) => {
+    questions.forEach((question, index) => {
       const row = sheet.addRow([
         question.questionNumber || (index + 1).toString(),
         question.questionText,
@@ -144,14 +166,14 @@ export class QuestionnaireExportService {
     // Add summary at the bottom
     sheet.addRow([]);
     const _totalRow = sheet.addRow(['', `Total Questions: ${questionnaire.questions.length}`]);
-    const _answeredRow = sheet.addRow(['', `Answered: ${questionnaire.questions.filter((q: any) => q.status === 'answered' || q.status === 'approved').length}`]);
-    const _pendingRow = sheet.addRow(['', `Pending: ${questionnaire.questions.filter((q: any) => q.status === 'pending').length}`]);
+    const _answeredRow = sheet.addRow(['', `Answered: ${questionnaire.questions.filter((q) => q.status === 'answered' || q.status === 'approved').length}`]);
+    const _pendingRow = sheet.addRow(['', `Pending: ${questionnaire.questions.filter((q) => q.status === 'pending').length}`]);
 
     return Buffer.from(await workbook.xlsx.writeBuffer());
   }
 
   // Export to CSV format
-  private async exportToCsv(questionnaire: any, options: ExportOptions): Promise<string> {
+  private async exportToCsv(questionnaire: ExportQuestionnaire, options: ExportOptions): Promise<string> {
     const rows: string[] = [];
 
     // Header
@@ -160,9 +182,9 @@ export class QuestionnaireExportService {
     // Questions
     const questions = options.includePending !== false 
       ? questionnaire.questions 
-      : questionnaire.questions.filter((q: any) => q.status === 'answered' || q.status === 'approved');
+      : questionnaire.questions.filter((q) => q.status === 'answered' || q.status === 'approved');
 
-    questions.forEach((question: any, index: number) => {
+    questions.forEach((question, index) => {
       rows.push([
         question.questionNumber || (index + 1).toString(),
         this.escapeCsv(question.questionText),
@@ -176,10 +198,10 @@ export class QuestionnaireExportService {
   }
 
   // Export to JSON format
-  private async exportToJson(questionnaire: any, options: ExportOptions): Promise<string> {
+  private async exportToJson(questionnaire: ExportQuestionnaire, options: ExportOptions): Promise<string> {
     const questions = options.includePending !== false 
       ? questionnaire.questions 
-      : questionnaire.questions.filter((q: any) => q.status === 'answered' || q.status === 'approved');
+      : questionnaire.questions.filter((q) => q.status === 'answered' || q.status === 'approved');
 
     const exportData = {
       metadata: options.includeMetadata !== false ? {
@@ -193,7 +215,7 @@ export class QuestionnaireExportService {
         createdAt: questionnaire.createdAt,
         completedAt: questionnaire.completedAt,
       } : undefined,
-      questions: questions.map((q: any, index: number) => ({
+      questions: questions.map((q, index) => ({
         number: q.questionNumber || (index + 1).toString(),
         question: q.questionText,
         answer: q.answerText,
@@ -206,7 +228,7 @@ export class QuestionnaireExportService {
   }
 
   // Export multiple questionnaires to a single Excel file
-  private async exportMultipleToExcel(questionnaires: any[], _options: ExportOptions): Promise<Buffer> {
+  private async exportMultipleToExcel(questionnaires: ExportQuestionnaire[], _options: ExportOptions): Promise<Buffer> {
     const workbook = new ExcelJS.Workbook();
     workbook.creator = 'GigaChad GRC';
     workbook.created = new Date();
@@ -224,7 +246,7 @@ export class QuestionnaireExportService {
     summaryHeader.font = { bold: true };
 
     questionnaires.forEach((q) => {
-      const answeredCount = q.questions.filter((question: any) => 
+      const answeredCount = q.questions.filter((question) => 
         question.status === 'answered' || question.status === 'approved'
       ).length;
       summarySheet.addRow([
@@ -257,7 +279,7 @@ export class QuestionnaireExportService {
       sheet.getColumn(3).width = 70;
       sheet.getColumn(4).width = 12;
 
-      questionnaire.questions.forEach((question: any, qIdx: number) => {
+      questionnaire.questions.forEach((question, qIdx) => {
         const row = sheet.addRow([
           question.questionNumber || (qIdx + 1).toString(),
           question.questionText,

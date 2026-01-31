@@ -10,7 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { VendorsService } from './vendors.service';
-import { VendorAIService } from '../ai/vendor-ai.service';
+import { VendorAIService, SOC2AnalysisResult } from '../ai/vendor-ai.service';
 import { CreateVendorDto } from './dto/create-vendor.dto';
 import { UpdateVendorDto } from './dto/update-vendor.dto';
 import { CurrentUser, UserContext } from '@gigachad-grc/shared';
@@ -121,8 +121,8 @@ export class VendorsController {
   @Post(':vendorId/documents/:documentId/create-assessment')
   createAssessmentFromAnalysis(
     @Param('vendorId') vendorId: string,
-    @Param('documentId') documentId: string,
-    @Body() analysis: any,
+    @Param('documentId') _documentId: string,
+    @Body() analysis: SOC2AnalysisResult,
     @CurrentUser() user: UserContext,
   ) {
     return this.vendorAIService.createAssessmentFromAnalysis(

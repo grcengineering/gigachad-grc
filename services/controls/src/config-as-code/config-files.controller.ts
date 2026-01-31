@@ -8,11 +8,12 @@ import {
   Param,
   Query,
   UseGuards,
-  Request,
+  Req,
   HttpCode,
   HttpStatus,
   Logger,
 } from '@nestjs/common';
+import { Request } from 'express';
 import {
   ApiTags,
   ApiBearerAuth,
@@ -26,6 +27,10 @@ import { PermissionGuard } from '../auth/permission.guard';
 import { RequirePermission } from '../auth/decorators/require-permission.decorator';
 import { Resource, Action } from '../permissions/dto/permission.dto';
 import { ConfigFilesService } from './config-files.service';
+
+interface AuthenticatedRequest extends Request {
+  user: { userId: string; organizationId: string; email?: string };
+}
 import {
   CreateConfigFileDto,
   UpdateConfigFileDto,
@@ -60,7 +65,7 @@ export class ConfigFilesController {
   @ApiQuery({ name: 'workspaceId', required: false })
   @RequirePermission(Resource.SETTINGS, Action.READ)
   async getDriftReport(
-    @Request() req: any,
+    @Req() req: AuthenticatedRequest,
     @Query('workspaceId') workspaceId?: string,
   ) {
     return this.configFilesService.getDriftReport(
@@ -79,7 +84,7 @@ export class ConfigFilesController {
   @ApiQuery({ name: 'limit', required: false, description: 'Maximum number of records to return' })
   @RequirePermission(Resource.SETTINGS, Action.READ)
   async getApplyHistory(
-    @Request() req: any,
+    @Req() req: AuthenticatedRequest,
     @Query('workspaceId') workspaceId?: string,
     @Query('limit') limit?: string,
   ) {
@@ -99,7 +104,7 @@ export class ConfigFilesController {
   @ApiQuery({ name: 'workspaceId', required: false })
   @RequirePermission(Resource.SETTINGS, Action.READ)
   async getLockStatus(
-    @Request() req: any,
+    @Req() req: AuthenticatedRequest,
     @Query('workspaceId') workspaceId?: string,
   ) {
     return this.configFilesService.getLockStatus(
@@ -118,7 +123,7 @@ export class ConfigFilesController {
   @ApiQuery({ name: 'workspaceId', required: false })
   @RequirePermission(Resource.SETTINGS, Action.UPDATE)
   async forceReleaseLock(
-    @Request() req: any,
+    @Req() req: AuthenticatedRequest,
     @Query('workspaceId') workspaceId?: string,
   ) {
     return this.configFilesService.forceReleaseLock(
@@ -143,7 +148,7 @@ export class ConfigFilesController {
   @ApiQuery({ name: 'initialize', required: false, description: 'Initialize default files if none exist' })
   @RequirePermission(Resource.SETTINGS, Action.READ)
   async listFiles(
-    @Request() req: any,
+    @Req() req: AuthenticatedRequest,
     @Query('workspaceId') workspaceId?: string,
     @Query('initialize') initialize?: string,
   ): Promise<ConfigFileListResponseDto> {
@@ -157,13 +162,14 @@ export class ConfigFilesController {
           workspaceId,
         );
         this.logger.log('Initialization completed successfully');
-      } catch (error: any) {
+      } catch (error: unknown) {
         // Log the error with full details
-        this.logger.error('Failed to initialize config files', error.stack);
+        const err = error as Error & { response?: { data?: unknown }; status?: number };
+        this.logger.error('Failed to initialize config files', err.stack);
         this.logger.error(`Error details: ${JSON.stringify({
-          message: error.message,
-          response: error.response?.data,
-          status: error.status,
+          message: err.message,
+          response: err.response?.data,
+          status: err.status,
         })}`);
         // Re-throw the error so the frontend can handle it properly
         throw error;
@@ -188,7 +194,7 @@ export class ConfigFilesController {
   @ApiQuery({ name: 'workspaceId', required: false })
   @RequirePermission(Resource.SETTINGS, Action.READ)
   async getFile(
-    @Request() req: any,
+    @Req() req: AuthenticatedRequest,
     @Param('path') path: string,
     @Query('workspaceId') workspaceId?: string,
   ): Promise<ConfigFileResponseDto> {
@@ -210,7 +216,7 @@ export class ConfigFilesController {
   @ApiResponse({ status: 400, description: 'File already exists' })
   @RequirePermission(Resource.SETTINGS, Action.UPDATE)
   async createFile(
-    @Request() req: any,
+    @Req() req: AuthenticatedRequest,
     @Body() dto: CreateConfigFileDto,
   ): Promise<ConfigFileResponseDto> {
     return this.configFilesService.createFile(
@@ -233,7 +239,7 @@ export class ConfigFilesController {
   @ApiQuery({ name: 'workspaceId', required: false })
   @RequirePermission(Resource.SETTINGS, Action.UPDATE)
   async updateFile(
-    @Request() req: any,
+    @Req() req: AuthenticatedRequest,
     @Param('path') path: string,
     @Body() dto: UpdateConfigFileDto,
     @Query('workspaceId') workspaceId?: string,
@@ -256,7 +262,7 @@ export class ConfigFilesController {
   @ApiQuery({ name: 'workspaceId', required: false })
   @RequirePermission(Resource.SETTINGS, Action.UPDATE)
   async deleteFile(
-    @Request() req: any,
+    @Req() req: AuthenticatedRequest,
     @Param('path') path: string,
     @Query('workspaceId') workspaceId?: string,
   ): Promise<void> {
@@ -279,7 +285,7 @@ export class ConfigFilesController {
   @ApiQuery({ name: 'workspaceId', required: false })
   @RequirePermission(Resource.SETTINGS, Action.READ)
   async previewChanges(
-    @Request() req: any,
+    @Req() req: AuthenticatedRequest,
     @Body() dto: PreviewChangesDto,
     @Query('workspaceId') workspaceId?: string,
   ): Promise<PreviewChangesResponseDto> {
@@ -301,7 +307,7 @@ export class ConfigFilesController {
   @ApiQuery({ name: 'workspaceId', required: false })
   @RequirePermission(Resource.SETTINGS, Action.UPDATE)
   async applyChanges(
-    @Request() req: any,
+    @Req() req: AuthenticatedRequest,
     @Body() dto: ApplyChangesDto,
     @Query('workspaceId') workspaceId?: string,
   ): Promise<ApplyChangesResponseDto> {
@@ -324,7 +330,7 @@ export class ConfigFilesController {
   @ApiQuery({ name: 'workspaceId', required: false })
   @RequirePermission(Resource.SETTINGS, Action.READ)
   async getVersionHistory(
-    @Request() req: any,
+    @Req() req: AuthenticatedRequest,
     @Param('path') path: string,
     @Query('workspaceId') workspaceId?: string,
   ): Promise<ConfigFileVersionDto[]> {
@@ -345,7 +351,7 @@ export class ConfigFilesController {
   @ApiQuery({ name: 'workspaceId', required: false })
   @RequirePermission(Resource.SETTINGS, Action.UPDATE)
   async refreshFromDatabase(
-    @Request() req: any,
+    @Req() req: AuthenticatedRequest,
     @Query('workspaceId') workspaceId?: string,
   ): Promise<{ message: string; filesUpdated: number }> {
     return this.configFilesService.refreshFromDatabase(

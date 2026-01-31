@@ -8,7 +8,7 @@ import {
   PolicyFilterDto,
 } from './dto/policy.dto';
 import { generateId, STORAGE_PROVIDER, StorageProvider } from '@gigachad-grc/shared';
-import { PolicyStatus } from '@prisma/client';
+import { PolicyStatus, Prisma } from '@prisma/client';
 
 @Injectable()
 export class PoliciesService {
@@ -23,47 +23,48 @@ export class PoliciesService {
     const limit = filters.limit || 20;
     const skip = (page - 1) * limit;
 
-    const where: any = {
-      organizationId,
-      deletedAt: null,
-      AND: [],
-    };
+    const andConditions: Prisma.PolicyWhereInput[] = [];
 
     if (filters.search) {
       // Split search into keywords for more flexible matching
       const keywords = filters.search.trim().split(/\s+/).filter(k => k.length > 0);
       
       // Build OR conditions for each keyword across multiple fields
-      const keywordConditions = keywords.map(keyword => ({
-        OR: [
-          { title: { contains: keyword, mode: 'insensitive' } },
-          { description: { contains: keyword, mode: 'insensitive' } },
-          { category: { contains: keyword, mode: 'insensitive' } },
-          { filename: { contains: keyword, mode: 'insensitive' } },
+      const orConditions: Prisma.PolicyWhereInput[] = [];
+      for (const keyword of keywords) {
+        orConditions.push(
+          { title: { contains: keyword, mode: Prisma.QueryMode.insensitive } },
+          { description: { contains: keyword, mode: Prisma.QueryMode.insensitive } },
+          { category: { contains: keyword, mode: Prisma.QueryMode.insensitive } },
+          { filename: { contains: keyword, mode: Prisma.QueryMode.insensitive } },
           { tags: { has: keyword } },
           { tags: { hasSome: [keyword, keyword.toLowerCase(), keyword.toUpperCase()] } },
-        ],
-      }));
+        );
+      }
       
       // Match if ANY keyword matches (OR between keywords)
-      if (keywordConditions.length > 0) {
-        where.AND.push({
-          OR: keywordConditions.flatMap(kc => kc.OR),
-        });
+      if (orConditions.length > 0) {
+        andConditions.push({ OR: orConditions });
       }
     }
 
     if (filters.status?.length) {
-      where.AND.push({ status: { in: filters.status } });
+      andConditions.push({ status: { in: filters.status as PolicyStatus[] } });
     }
 
     if (filters.category?.length) {
-      where.AND.push({ category: { in: filters.category } });
+      andConditions.push({ category: { in: filters.category } });
     }
+
+    const whereClause: Prisma.PolicyWhereInput = {
+      organizationId,
+      deletedAt: null,
+      ...(andConditions.length > 0 ? { AND: andConditions } : {}),
+    };
 
     const [policies, total] = await Promise.all([
       this.prisma.policy.findMany({
-        where: where.AND.length > 0 ? where : { organizationId, deletedAt: null },
+        where: whereClause,
         include: {
           owner: { select: { id: true, displayName: true, email: true } },
           _count: { select: { controlLinks: true, versions: true } },
@@ -73,7 +74,7 @@ export class PoliciesService {
         orderBy: { updatedAt: 'desc' },
       }),
       this.prisma.policy.count({
-        where: where.AND.length > 0 ? where : { organizationId, deletedAt: null },
+        where: whereClause,
       }),
     ]);
 
@@ -369,7 +370,12 @@ export class PoliciesService {
       select: { displayName: true, email: true },
     });
 
-    const updateData: any = {
+    const updateData: {
+      status: PolicyStatus;
+      updatedBy: string;
+      approvedAt?: Date;
+      approvedBy?: string;
+    } = {
       status: dto.status,
       updatedBy: userId,
     };

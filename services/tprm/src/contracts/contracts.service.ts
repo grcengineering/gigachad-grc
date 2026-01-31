@@ -5,6 +5,18 @@ import { CreateContractDto } from './dto/create-contract.dto';
 import { UpdateContractDto } from './dto/update-contract.dto';
 import { STORAGE_PROVIDER, StorageProvider } from '@gigachad-grc/shared';
 import { Readable } from 'stream';
+import { Prisma, ContractStatus, VendorContract, Vendor } from '@prisma/client';
+
+// Type for contract with vendor relation
+type ContractWithVendor = VendorContract & {
+  vendor: Pick<Vendor, 'id' | 'name'>;
+};
+
+// Helper to convert string to ContractStatus
+function toContractStatus(status: string | undefined, defaultValue: ContractStatus = 'draft'): ContractStatus {
+  const validStatuses: ContractStatus[] = ['draft', 'pending', 'active', 'expiring_soon', 'expired', 'terminated', 'renewed'];
+  return validStatuses.includes(status as ContractStatus) ? status as ContractStatus : defaultValue;
+}
 
 @Injectable()
 export class ContractsService {
@@ -17,15 +29,14 @@ export class ContractsService {
   ) {}
 
   async create(createContractDto: CreateContractDto, userId: string) {
+    const { status, startDate, endDate, renewalDate, ...rest } = createContractDto;
     const contract = await this.prisma.vendorContract.create({
       data: {
-        ...createContractDto,
-        status: (createContractDto.status || 'draft') as any,
-        startDate: new Date(createContractDto.startDate),
-        endDate: new Date(createContractDto.endDate),
-        renewalDate: createContractDto.renewalDate
-          ? new Date(createContractDto.renewalDate)
-          : undefined,
+        ...rest,
+        status: toContractStatus(status),
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
+        renewalDate: renewalDate ? new Date(renewalDate) : undefined,
         createdBy: userId,
       },
       include: {
@@ -38,6 +49,8 @@ export class ContractsService {
       },
     });
 
+    const contractWithVendor = contract as ContractWithVendor;
+
     await this.audit.log({
       organizationId: contract.organizationId,
       userId,
@@ -45,7 +58,7 @@ export class ContractsService {
       entityType: 'contract',
       entityId: contract.id,
       entityName: contract.title,
-      description: `Created contract ${contract.title} for ${(contract).vendor.name}`,
+      description: `Created contract ${contract.title} for ${contractWithVendor.vendor.name}`,
       metadata: {
         vendorId: contract.vendorId,
         title: contract.title,
@@ -61,7 +74,7 @@ export class ContractsService {
     contractType?: string;
     status?: string;
   }) {
-    const where: any = {};
+    const where: Prisma.VendorContractWhereInput = {};
 
     if (filters?.vendorId) {
       where.vendorId = filters.vendorId;
@@ -72,7 +85,7 @@ export class ContractsService {
     }
 
     if (filters?.status) {
-      where.status = filters.status;
+      where.status = toContractStatus(filters.status);
     }
 
     return this.prisma.vendorContract.findMany({
@@ -108,18 +121,23 @@ export class ContractsService {
   }
 
   async update(id: string, updateContractDto: UpdateContractDto, userId: string) {
-    const data: any = { ...updateContractDto };
+    const { status, startDate, endDate, renewalDate, ...rest } = updateContractDto;
+    const data: Prisma.VendorContractUpdateInput = { ...rest };
 
-    if (updateContractDto.startDate) {
-      data.startDate = new Date(updateContractDto.startDate);
+    if (status) {
+      data.status = toContractStatus(status);
     }
 
-    if (updateContractDto.endDate) {
-      data.endDate = new Date(updateContractDto.endDate);
+    if (startDate) {
+      data.startDate = new Date(startDate);
     }
 
-    if (updateContractDto.renewalDate) {
-      data.renewalDate = new Date(updateContractDto.renewalDate);
+    if (endDate) {
+      data.endDate = new Date(endDate);
+    }
+
+    if (renewalDate) {
+      data.renewalDate = new Date(renewalDate);
     }
 
     const contract = await this.prisma.vendorContract.update({
@@ -135,6 +153,8 @@ export class ContractsService {
       },
     });
 
+    const contractWithVendor = contract as ContractWithVendor;
+
     await this.audit.log({
       organizationId: contract.organizationId,
       userId,
@@ -142,8 +162,8 @@ export class ContractsService {
       entityType: 'contract',
       entityId: contract.id,
       entityName: contract.title,
-      description: `Updated contract ${contract.title} for ${contract.vendor.name}`,
-      changes: updateContractDto,
+      description: `Updated contract ${contract.title} for ${contractWithVendor.vendor.name}`,
+      changes: updateContractDto as unknown as Prisma.InputJsonValue,
     });
 
     return contract;

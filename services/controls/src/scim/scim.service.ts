@@ -26,7 +26,7 @@ export class ScimService {
     const count = Math.min(query.count || 100, 100);
     const skip = startIndex - 1;
 
-    const where: any = { organizationId };
+    const where: Record<string, unknown> = { organizationId };
 
     // Parse simple SCIM filter (userName eq "value")
     if (query.filter) {
@@ -155,18 +155,19 @@ export class ScimService {
       throw new NotFoundException('User not found');
     }
 
-    const updates: any = {};
+    const updates: Record<string, unknown> = {};
 
     for (const op of dto.Operations) {
       if (op.op === 'replace' || op.op === 'add') {
-        if (op.path === 'active' || (!op.path && op.value?.active !== undefined)) {
-          updates.status = (op.value?.active ?? op.value) ? 'active' : 'inactive';
+        const opValue = op.value as Record<string, unknown> | undefined;
+        if (op.path === 'active' || (!op.path && opValue?.active !== undefined)) {
+          updates.status = (opValue?.active ?? op.value) ? 'active' : 'inactive';
         }
-        if (op.path === 'displayName' || (!op.path && op.value?.displayName)) {
-          updates.displayName = op.value?.displayName ?? op.value;
+        if (op.path === 'displayName' || (!op.path && opValue?.displayName)) {
+          updates.displayName = opValue?.displayName ?? op.value;
         }
-        if (op.path === 'userName' || (!op.path && op.value?.userName)) {
-          updates.email = op.value?.userName ?? op.value;
+        if (op.path === 'userName' || (!op.path && opValue?.userName)) {
+          updates.email = opValue?.userName ?? op.value;
         }
       }
     }
@@ -205,7 +206,7 @@ export class ScimService {
     const count = Math.min(query.count || 100, 100);
     const skip = startIndex - 1;
 
-    const where: any = { organizationId };
+    const where: Record<string, unknown> = { organizationId };
 
     if (query.filter) {
       const filterMatch = query.filter.match(/displayName\s+eq\s+"([^"]+)"/i);
@@ -432,58 +433,66 @@ export class ScimService {
     }
   }
 
-  private toScimUser(user: any, memberships?: any[]): ScimUserResource {
+  private toScimUser(user: Record<string, unknown>, memberships?: Array<Record<string, unknown>>): ScimUserResource {
     const now = new Date().toISOString();
     return {
       schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
-      id: user.id,
-      externalId: user.keycloakId,
-      userName: user.email,
+      id: user.id as string,
+      externalId: user.keycloakId as string,
+      userName: user.email as string,
       name: {
-        formatted: user.displayName,
-        givenName: user.firstName,
-        familyName: user.lastName,
+        formatted: user.displayName as string,
+        givenName: user.firstName as string,
+        familyName: user.lastName as string,
       },
-      displayName: user.displayName,
+      displayName: user.displayName as string,
       emails: [
         {
-          value: user.email,
+          value: user.email as string,
           type: 'work',
           primary: true,
         },
       ],
       active: user.status === 'active',
-      groups: memberships?.map((m: any) => ({
-        value: m.group.id,
-        display: m.group.name,
-        $ref: `/scim/v2/Groups/${m.group.id}`,
-      })),
+      groups: memberships?.map((m) => {
+        const group = m.group as Record<string, unknown>;
+        return {
+          value: group.id as string,
+          display: group.name as string,
+          $ref: `/scim/v2/Groups/${group.id}`,
+        };
+      }),
       meta: {
         resourceType: 'User',
-        created: user.createdAt?.toISOString() || now,
-        lastModified: user.updatedAt?.toISOString() || now,
+        created: (user.createdAt as Date)?.toISOString() || now,
+        lastModified: (user.updatedAt as Date)?.toISOString() || now,
         location: `/scim/v2/Users/${user.id}`,
       },
     };
   }
 
-  private toScimGroup(group: any): ScimGroupResource {
+  private toScimGroup(group: Record<string, unknown>): ScimGroupResource {
     const now = new Date().toISOString();
+    const scimExternalId = group.scimExternalId as Record<string, unknown> | undefined;
+    const members = group.members as Array<Record<string, unknown>> | undefined;
     return {
       schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'],
-      id: group.id,
-      externalId: group.scimExternalId?.externalId,
-      displayName: group.name,
-      members: group.members?.map((m: any) => ({
-        value: m.user.id,
-        display: m.user.displayName,
-        type: 'User',
-        $ref: `/scim/v2/Users/${m.user.id}`,
-      })),
+      id: group.id as string,
+      externalId: scimExternalId?.externalId as string | undefined,
+      displayName: group.name as string,
+      members: members?.map((m) => {
+        const user = m.user as Record<string, unknown>;
+        return {
+          value: user.id as string,
+          display: user.displayName as string,
+          type: 'User' as const,
+          $ref: `/scim/v2/Users/${user.id}`,
+        };
+      }),
       meta: {
         resourceType: 'Group',
-        created: group.createdAt?.toISOString() || now,
-        lastModified: group.updatedAt?.toISOString() || now,
+        created: (group.createdAt as Date)?.toISOString() || now,
+        lastModified: (group.updatedAt as Date)?.toISOString() || now,
         location: `/scim/v2/Groups/${group.id}`,
       },
     };

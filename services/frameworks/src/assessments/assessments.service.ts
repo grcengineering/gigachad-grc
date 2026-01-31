@@ -1,13 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAssessmentDto, UpdateRequirementStatusDto, CreateGapDto, CreateRemediationTaskDto } from './dto/assessment.dto';
+import { Prisma, TaskStatus } from '@prisma/client';
 
 @Injectable()
 export class AssessmentsService {
   constructor(private prisma: PrismaService) {}
 
   async findAll(organizationId: string, frameworkId?: string) {
-    const where: any = { organizationId };
+    const where: { organizationId: string; frameworkId?: string } = { organizationId };
     if (frameworkId) {
       where.frameworkId = frameworkId;
     }
@@ -289,8 +290,14 @@ export class AssessmentsService {
   ) {
     await this.findOne(assessmentId, organizationId);
 
-    const updateData: any = { ...dto };
-    delete updateData.linkedControlIds; // Remove from update data, will handle separately
+    const updateData: Prisma.RemediationTaskUpdateInput = {};
+    if (dto.gapId !== undefined) updateData.gap = { connect: { id: dto.gapId } };
+    if (dto.title !== undefined) updateData.title = dto.title;
+    if (dto.description !== undefined) updateData.description = dto.description;
+    if (dto.priority !== undefined) updateData.priority = dto.priority;
+    if (dto.status !== undefined) updateData.status = dto.status as TaskStatus;
+    if (dto.assignedTo !== undefined) updateData.assignee = { connect: { id: dto.assignedTo } };
+    if (dto.effort !== undefined) updateData.effort = dto.effort;
     if (dto.dueDate) updateData.dueDate = new Date(dto.dueDate);
     if (dto.status === 'completed') updateData.completedAt = new Date();
 

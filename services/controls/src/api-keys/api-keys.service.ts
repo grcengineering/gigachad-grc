@@ -10,6 +10,7 @@ import {
   ApiKeyListResponseDto,
   ApiKeyFilterDto,
 } from './dto/api-key.dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class ApiKeysService {
@@ -29,7 +30,7 @@ export class ApiKeysService {
     page: number = 1,
     limit: number = 50,
   ): Promise<ApiKeyListResponseDto> {
-    const where: any = { organizationId };
+    const where: Prisma.ApiKeyWhereInput = { organizationId };
 
     if (filters.search) {
       where.OR = [
@@ -377,12 +378,12 @@ export class ApiKeysService {
   /**
    * Convert API key entity to response DTO
    */
-  private toResponseDto(key: any): ApiKeyResponseDto {
+  private toResponseDto(key: Prisma.ApiKeyGetPayload<{ include: { apiKeyScopes: true } }>): ApiKeyResponseDto {
     // Merge scopes from both the legacy array field and the relation
     const scopes = [
       ...new Set([
         ...(key.scopes || []),
-        ...(key.apiKeyScopes?.map((s: any) => s.scope) || []),
+        ...(key.apiKeyScopes?.map((s) => s.scope) || []),
       ]),
     ];
 

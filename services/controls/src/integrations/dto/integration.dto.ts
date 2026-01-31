@@ -252,7 +252,7 @@ export class CreateIntegrationDto {
   @ApiPropertyOptional({ type: 'object', additionalProperties: true })
   @IsObject()
   @IsOptional()
-  config?: Record<string, any>;
+  config?: Record<string, unknown>;
 
   @ApiPropertyOptional({ enum: SyncFrequency })
   @IsEnum(SyncFrequency)
@@ -279,7 +279,7 @@ export class UpdateIntegrationDto {
   @ApiPropertyOptional({ type: 'object', additionalProperties: true })
   @IsObject()
   @IsOptional()
-  config?: Record<string, any>;
+  config?: Record<string, unknown>;
 
   @ApiPropertyOptional({ enum: SyncFrequency })
   @IsEnum(SyncFrequency)

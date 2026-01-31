@@ -38,7 +38,12 @@ export class S3StorageProvider implements StorageProvider {
   constructor(config: StorageConfig) {
     this.bucket = config.bucket || 'grc-storage';
 
-    const clientConfig: any = {
+    const clientConfig: {
+      region: string;
+      endpoint?: string;
+      forcePathStyle?: boolean;
+      credentials?: { accessKeyId: string; secretAccessKey: string };
+    } = {
       region: config.region || 'us-east-1',
     };
 
@@ -124,8 +129,9 @@ export class S3StorageProvider implements StorageProvider {
       });
       await this.client.send(command);
       return true;
-    } catch (error: any) {
-      if (error.name === 'NotFound' || error.$metadata?.httpStatusCode === 404) {
+    } catch (error: unknown) {
+      const s3Error = error as { name?: string; $metadata?: { httpStatusCode?: number } };
+      if (s3Error.name === 'NotFound' || s3Error.$metadata?.httpStatusCode === 404) {
         return false;
       }
       throw error;
@@ -158,8 +164,9 @@ export class S3StorageProvider implements StorageProvider {
         etag: response.ETag,
         metadata: response.Metadata,
       };
-    } catch (error: any) {
-      if (error.name === 'NotFound' || error.$metadata?.httpStatusCode === 404) {
+    } catch (error: unknown) {
+      const s3Error = error as { name?: string; $metadata?: { httpStatusCode?: number } };
+      if (s3Error.name === 'NotFound' || s3Error.$metadata?.httpStatusCode === 404) {
         return null;
       }
       throw error;

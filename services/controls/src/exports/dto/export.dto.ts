@@ -42,7 +42,7 @@ export class CreateExportJobDto {
 
   @ApiPropertyOptional({ description: 'Filter criteria for the export' })
   @IsOptional()
-  filters?: Record<string, any>;
+  filters?: Record<string, unknown>;
 
   @ApiPropertyOptional({ description: 'Specific fields to include' })
   @IsOptional()

@@ -86,7 +86,7 @@ export class AssetsService {
   async findAll(
     organizationId: string,
     filters: AssetFilterDto
-  ): Promise<{ data: AssetDto[]; meta: any }> {
+  ): Promise<{ data: AssetDto[]; meta: Record<string, unknown> }> {
     const pagination = parsePaginationParams({
       page: filters.page,
       limit: filters.limit,
@@ -366,6 +366,7 @@ export class AssetsService {
   // Helper Methods
   // ============================================
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private toAssetDto(asset: any): AssetDto {
     return {
       id: asset.id,
@@ -379,12 +380,12 @@ export class AssetsService {
       owner: asset.owner,
       location: asset.location,
       department: asset.department,
-      metadata: asset.metadata,
+      metadata: asset.metadata as Record<string, unknown>,
       lastSyncAt: asset.lastSyncAt,
       workspaceId: asset.workspaceId,
       workspaceName: asset.workspace?.name,
       riskCount: asset.riskAssets?.length || 0,
-      linkedRisks: asset.riskAssets?.map((ra: any) => ({
+      linkedRisks: asset.riskAssets?.map((ra: { risk?: { id: string; riskId: string; title: string } }) => ({
         riskId: ra.risk?.id,
         riskCode: ra.risk?.riskId,
         title: ra.risk?.title,

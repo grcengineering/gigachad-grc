@@ -98,7 +98,7 @@ export function sanitizeInput(input: string, level: SanitizeLevel = 'strict'): s
  * @param skipFields - Fields to skip sanitization (e.g., passwords, tokens)
  * @returns New object with sanitized string values
  */
-export function sanitizeObject<T extends Record<string, any>>(
+export function sanitizeObject<T extends Record<string, unknown>>(
   obj: T,
   level: SanitizeLevel = 'strict',
   skipFields: string[] = ['password', 'token', 'secret', 'key', 'hash'],
@@ -107,7 +107,7 @@ export function sanitizeObject<T extends Record<string, any>>(
     return obj;
   }
 
-  const sanitized: Record<string, any> = Array.isArray(obj) ? [] : {};
+  const sanitized: Record<string, unknown> = Array.isArray(obj) ? [] as unknown as Record<string, unknown> : {};
 
   for (const [key, value] of Object.entries(obj)) {
     // Skip certain fields
@@ -122,12 +122,12 @@ export function sanitizeObject<T extends Record<string, any>>(
       sanitized[key] = value.map(item =>
         typeof item === 'string'
           ? sanitizeInput(item, level)
-          : typeof item === 'object'
-            ? sanitizeObject(item, level, skipFields)
+          : typeof item === 'object' && item !== null
+            ? sanitizeObject(item as Record<string, unknown>, level, skipFields)
             : item
       );
     } else if (value && typeof value === 'object') {
-      sanitized[key] = sanitizeObject(value, level, skipFields);
+      sanitized[key] = sanitizeObject(value as Record<string, unknown>, level, skipFields);
     } else {
       sanitized[key] = value;
     }
@@ -264,7 +264,7 @@ export function sanitizeSqlInput(input: string): string {
  * }
  */
 export function sanitizeTransform(level: SanitizeLevel = 'strict') {
-  return ({ value }: { value: any }) => {
+  return ({ value }: { value: unknown }) => {
     if (typeof value === 'string') {
       return sanitizeInput(value, level);
     }

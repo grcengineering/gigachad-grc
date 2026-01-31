@@ -301,7 +301,7 @@ export class ScheduledReportsService {
   /**
    * Format report for API response
    */
-  private formatReport(report: any) {
+  private formatReport(report: Record<string, unknown>) {
     return {
       id: report.id,
       name: report.name,
@@ -316,9 +316,9 @@ export class ScheduledReportsService {
       recipients: report.recipients,
       filters: report.filters,
       enabled: report.isEnabled,
-      lastRun: report.lastRunAt?.toISOString(),
-      nextRun: report.nextRunAt?.toISOString(),
-      createdAt: report.createdAt.toISOString(),
+      lastRun: (report.lastRunAt as Date)?.toISOString(),
+      nextRun: (report.nextRunAt as Date)?.toISOString(),
+      createdAt: (report.createdAt as Date).toISOString(),
     };
   }
 }

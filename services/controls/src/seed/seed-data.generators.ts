@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Seed Data Generators
  * Generates realistic demo data for all platform modules

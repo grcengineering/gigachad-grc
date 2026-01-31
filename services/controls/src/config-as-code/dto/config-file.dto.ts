@@ -134,13 +134,13 @@ export class ConflictItemDto {
   field: string;
 
   @ApiProperty({ description: 'Value in Terraform file' })
-  terraformValue: any;
+  terraformValue: unknown;
 
   @ApiProperty({ description: 'Current value in database' })
-  databaseValue: any;
+  databaseValue: unknown;
 
   @ApiProperty({ description: 'Value when last applied via Config as Code' })
-  lastAppliedValue: any;
+  lastAppliedValue: unknown;
 
   @ApiProperty({ enum: ['warning', 'error'], description: 'Conflict severity' })
   severity: 'warning' | 'error';
@@ -178,7 +178,7 @@ export class PreviewChangesResponseDto {
   errors: string[];
 
   @ApiProperty({ description: 'Preview of changes (diff)' })
-  diff: any;
+  diff: Record<string, unknown>;
 
   @ApiProperty({ description: 'Resources safe to apply' })
   safeToApply: Array<{ resourceType: string; resourceId: string; action: string }>;

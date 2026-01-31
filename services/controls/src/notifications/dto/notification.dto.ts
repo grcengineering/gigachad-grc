@@ -101,7 +101,7 @@ export class CreateNotificationDto {
 
   @IsOptional()
   @IsObject()
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export class BulkCreateNotificationDto {
@@ -131,7 +131,7 @@ export class BulkCreateNotificationDto {
 
   @IsOptional()
   @IsObject()
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 // ===========================
@@ -210,7 +210,7 @@ export class NotificationResponseDto {
   severity: string;
   isRead: boolean;
   readAt?: Date | null;
-  metadata?: Record<string, any> | null;
+  metadata?: Record<string, unknown> | null;
   createdAt: Date;
 }
 

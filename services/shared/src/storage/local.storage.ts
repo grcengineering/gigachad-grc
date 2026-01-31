@@ -72,8 +72,9 @@ export class LocalStorageProvider implements StorageProvider {
     
     try {
       await unlink(fullPath);
-    } catch (error: any) {
-      if (error.code !== 'ENOENT') {
+    } catch (error: unknown) {
+      const fsError = error as NodeJS.ErrnoException;
+      if (fsError.code !== 'ENOENT') {
         throw error;
       }
     }
@@ -107,8 +108,9 @@ export class LocalStorageProvider implements StorageProvider {
         size: stats.size,
         lastModified: stats.mtime,
       };
-    } catch (error: any) {
-      if (error.code === 'ENOENT') {
+    } catch (error: unknown) {
+      const fsError = error as NodeJS.ErrnoException;
+      if (fsError.code === 'ENOENT') {
         return null;
       }
       throw error;
@@ -136,8 +138,9 @@ export class LocalStorageProvider implements StorageProvider {
           results.push(...subResults);
         }
       }
-    } catch (error: any) {
-      if (error.code !== 'ENOENT') {
+    } catch (error: unknown) {
+      const fsError = error as NodeJS.ErrnoException;
+      if (fsError.code !== 'ENOENT') {
         throw error;
       }
     }

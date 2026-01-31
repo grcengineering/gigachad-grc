@@ -8,6 +8,7 @@ import {
   CalendarEventListResponseDto,
   CalendarEventFilterDto,
 } from './dto/calendar-event.dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class CalendarService {
@@ -26,21 +27,23 @@ export class CalendarService {
     filters: CalendarEventFilterDto,
     workspaceId?: string,
   ): Promise<CalendarEventListResponseDto> {
-    const where: any = { organizationId };
+    const where: Prisma.CalendarEventWhereInput = { organizationId };
+    const startDateFilter: { gte?: Date; lte?: Date } = {};
 
     if (workspaceId) {
       where.OR = [{ workspaceId }, { workspaceId: null }];
     }
 
     if (filters.startDate) {
-      where.startDate = { gte: new Date(filters.startDate) };
+      startDateFilter.gte = new Date(filters.startDate);
     }
 
     if (filters.endDate) {
-      where.startDate = {
-        ...where.startDate,
-        lte: new Date(filters.endDate),
-      };
+      startDateFilter.lte = new Date(filters.endDate);
+    }
+
+    if (startDateFilter.gte || startDateFilter.lte) {
+      where.startDate = startDateFilter;
     }
 
     if (filters.eventType) {
@@ -543,7 +546,27 @@ export class CalendarService {
   /**
    * Convert event to response DTO
    */
-  private toResponseDto(event: any): CalendarEventResponseDto {
+  private toResponseDto(event: Record<string, unknown> & {
+    id: string;
+    title: string;
+    description?: string | null;
+    eventType: string;
+    startDate: Date;
+    endDate?: Date | null;
+    allDay: boolean;
+    isRecurring: boolean;
+    recurrenceRule?: string | null;
+    entityId?: string | null;
+    entityType?: string | null;
+    assigneeId?: string | null;
+    priority: string;
+    status: string;
+    color?: string | null;
+    reminders?: unknown;
+    createdBy: string;
+    createdAt: Date;
+    updatedAt: Date;
+  }): CalendarEventResponseDto {
     return {
       id: event.id,
       title: event.title,
@@ -560,7 +583,7 @@ export class CalendarService {
       priority: event.priority,
       status: event.status,
       color: event.color || undefined,
-      reminders: event.reminders || undefined,
+      reminders: event.reminders as { type: string; before: number }[] | undefined,
       createdBy: event.createdBy,
       createdAt: event.createdAt,
       updatedAt: event.updatedAt,

@@ -308,7 +308,7 @@ export class MCPClientService implements OnModuleInit, OnModuleDestroy {
     }
 
     const result = await this.sendRequest(serverId, 'resources/list', {});
-    return (result as any)?.resources || [];
+    return ((result as Record<string, unknown>)?.resources as unknown[]) || [];
   }
 
   /**
@@ -333,7 +333,7 @@ export class MCPClientService implements OnModuleInit, OnModuleDestroy {
     }
 
     const result = await this.sendRequest(serverId, 'prompts/list', {});
-    return (result as any)?.prompts || [];
+    return ((result as Record<string, unknown>)?.prompts as unknown[]) || [];
   }
 
   /**

@@ -165,7 +165,7 @@ export class WebhookDeliveryDto {
   eventType: WebhookEventType;
 
   @ApiProperty()
-  payload: Record<string, any>;
+  payload: Record<string, unknown>;
 
   @ApiProperty()
   statusCode: number;

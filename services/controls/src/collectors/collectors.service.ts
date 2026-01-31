@@ -8,7 +8,7 @@ import { NotificationType, NotificationSeverity } from '../notifications/dto/not
 import { STORAGE_PROVIDER, StorageProvider } from '@gigachad-grc/shared';
 import { CreateCollectorDto, UpdateCollectorDto, TestCollectorDto, TestResultDto } from './dto/collector.dto';
 import { addDays, addWeeks, addMonths } from 'date-fns';
-import { CollectorRunStatus, EvidenceStatus } from '@prisma/client';
+import { CollectorRunStatus, EvidenceStatus, Prisma } from '@prisma/client';
 
 @Injectable()
 export class CollectorsService {
@@ -42,7 +42,7 @@ export class CollectorsService {
 
     return collectors.map((c) => ({
       ...c,
-      authConfig: this.maskAuthConfig(c.authType, c.authConfig as Record<string, any>),
+      authConfig: this.maskAuthConfig(c.authType, c.authConfig as Record<string, unknown>),
     }));
   }
 
@@ -69,7 +69,7 @@ export class CollectorsService {
 
     return {
       ...collector,
-      authConfig: this.maskAuthConfig(collector.authType, collector.authConfig as Record<string, any>),
+      authConfig: this.maskAuthConfig(collector.authType, collector.authConfig as Record<string, unknown>),
     };
   }
 
@@ -156,7 +156,7 @@ export class CollectorsService {
 
     return {
       ...collector,
-      authConfig: this.maskAuthConfig(collector.authType, collector.authConfig as Record<string, any>),
+      authConfig: this.maskAuthConfig(collector.authType, collector.authConfig as Record<string, unknown>),
     };
   }
 
@@ -239,7 +239,7 @@ export class CollectorsService {
 
     return {
       ...collector,
-      authConfig: this.maskAuthConfig(collector.authType, collector.authConfig as Record<string, any>),
+      authConfig: this.maskAuthConfig(collector.authType, collector.authConfig as Record<string, unknown>),
     };
   }
 
@@ -304,12 +304,13 @@ export class CollectorsService {
         data: result.data,
       };
 
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
       return {
         success: false,
         message: 'Test failed',
         responseTime: Date.now() - startTime,
-        error: error.message,
+        error: message,
       };
     }
   }
@@ -424,18 +425,19 @@ export class CollectorsService {
         message: `Successfully collected evidence: ${evidence.title}`,
       };
 
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
       // Update run record with error
       await this.prisma.collectorRun.update({
         where: { id: run.id },
         data: {
           status: CollectorRunStatus.error,
           completedAt: new Date(),
-          errorMessage: error.message,
+          errorMessage: errorMessage,
           logs: [
-            ...(run.logs as any[]),
-            { timestamp: new Date().toISOString(), message: `Error: ${error.message}`, level: 'error' },
-          ],
+            ...(run.logs as Prisma.InputJsonValue[] || []),
+            { timestamp: new Date().toISOString(), message: `Error: ${errorMessage}`, level: 'error' },
+          ] as Prisma.InputJsonValue,
         },
       });
 
@@ -445,7 +447,7 @@ export class CollectorsService {
         data: {
           lastRunAt: new Date(),
           lastRunStatus: CollectorRunStatus.error,
-          lastRunError: error.message,
+          lastRunError: errorMessage,
           totalRuns: { increment: 1 },
           nextRunAt: collector.scheduleEnabled && collector.scheduleFrequency
             ? this.calculateNextRunTime(collector.scheduleFrequency)
@@ -453,7 +455,7 @@ export class CollectorsService {
         },
       });
 
-      this.logger.error(`Collector ${collector.id} run failed: ${error.message}`);
+      this.logger.error(`Collector ${collector.id} run failed: ${errorMessage}`);
 
       // Notify on failure
       await this.notificationsService.create({
@@ -461,14 +463,14 @@ export class CollectorsService {
         userId: collector.createdBy,
         type: NotificationType.COLLECTOR_FAILED,
         title: 'Evidence Collection Failed',
-        message: `Collector "${collector.name}" failed: ${error.message}`,
+        message: `Collector "${collector.name}" failed: ${errorMessage}`,
         entityType: 'control',
         entityId: collector.controlId,
         severity: NotificationSeverity.ERROR,
         metadata: {
           collectorId: collector.id,
           collectorName: collector.name,
-          error: error.message,
+          error: errorMessage,
           runId: run.id,
         },
       });
@@ -476,8 +478,8 @@ export class CollectorsService {
       return {
         success: false,
         runId: run.id,
-        message: `Collection failed: ${error.message}`,
-        error: error.message,
+        message: `Collection failed: ${errorMessage}`,
+        error: errorMessage,
       };
     }
   }
@@ -646,15 +648,15 @@ export class CollectorsService {
    */
   private async getAuthHeaders(
     authType: string,
-    authConfig: Record<string, any>,
-    integration?: any,
+    authConfig: Record<string, unknown>,
+    integration?: { type?: string; config?: Record<string, unknown> },
   ): Promise<Record<string, string>> {
     const headers: Record<string, string> = {};
 
     switch (authType) {
       case 'api_key':
         if (authConfig.location === 'header') {
-          headers[authConfig.keyName] = authConfig.keyValue;
+          headers[authConfig.keyName as string] = authConfig.keyValue as string;
         }
         break;
 
@@ -662,21 +664,22 @@ export class CollectorsService {
         try {
           const token = await this.getOAuth2Token(authConfig, integration);
           headers['Authorization'] = `Bearer ${token}`;
-        } catch (error: any) {
-          this.logger.error(`OAuth2 token fetch failed: ${error.message}`);
+        } catch (error: unknown) {
+          const message = error instanceof Error ? error.message : String(error);
+          this.logger.error(`OAuth2 token fetch failed: ${message}`);
           throw error;
         }
         break;
 
       case 'bearer':
         if (authConfig.token) {
-          headers['Authorization'] = `Bearer ${authConfig.token}`;
+          headers['Authorization'] = `Bearer ${authConfig.token as string}`;
         }
         break;
 
       case 'basic':
         if (authConfig.username && authConfig.password) {
-          const credentials = Buffer.from(`${authConfig.username}:${authConfig.password}`).toString('base64');
+          const credentials = Buffer.from(`${authConfig.username as string}:${authConfig.password as string}`).toString('base64');
           headers['Authorization'] = `Basic ${credentials}`;
         }
         break;
@@ -688,16 +691,16 @@ export class CollectorsService {
   /**
    * Get OAuth 2.0 access token
    */
-  private async getOAuth2Token(authConfig: Record<string, any>, integration?: any): Promise<string> {
+  private async getOAuth2Token(authConfig: Record<string, unknown>, integration?: { type?: string; config?: Record<string, unknown> }): Promise<string> {
     // Check if using Jamf-style auth from integration
     if (integration?.type === 'jamf' && authConfig.clientId && authConfig.clientSecret) {
-      const serverUrl = authConfig.serverUrl || integration?.config?.serverUrl;
+      const serverUrl = (authConfig.serverUrl as string) || (integration?.config?.serverUrl as string);
       const tokenUrl = `${serverUrl}/api/oauth/token`;
 
       const params = new URLSearchParams({
         grant_type: 'client_credentials',
-        client_id: authConfig.clientId,
-        client_secret: authConfig.clientSecret,
+        client_id: authConfig.clientId as string,
+        client_secret: authConfig.clientSecret as string,
       });
 
       const response = await fetch(tokenUrl, {
@@ -716,7 +719,12 @@ export class CollectorsService {
     }
 
     // Standard OAuth2 flow
-    const { tokenUrl, clientId, clientSecret, scope } = authConfig;
+    const { tokenUrl, clientId, clientSecret, scope } = authConfig as {
+      tokenUrl: string;
+      clientId: string;
+      clientSecret: string;
+      scope?: string;
+    };
 
     const params = new URLSearchParams({
       grant_type: 'client_credentials',
@@ -865,7 +873,7 @@ export class CollectorsService {
   /**
    * Mask sensitive auth config values
    */
-  private maskAuthConfig(authType: string | null, authConfig: Record<string, any> | null): Record<string, any> | null {
+  private maskAuthConfig(authType: string | null, authConfig: Record<string, unknown> | null): Record<string, unknown> | null {
     if (!authConfig) return null;
 
     const masked = { ...authConfig };

@@ -52,7 +52,7 @@ export class WorkpapersService {
   }
 
   async findAll(organizationId: string, auditId?: string) {
-    const where: any = { organizationId };
+    const where: Record<string, unknown> = { organizationId };
     if (auditId) where.auditId = auditId;
 
     return this.prisma.auditWorkpaper.findMany({

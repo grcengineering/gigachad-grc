@@ -47,5 +47,5 @@ export class UpdateQuestionnaireDto {
 
   @IsObject()
   @IsOptional()
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }

@@ -50,7 +50,7 @@ export class CreateCollectorDto {
   @ApiPropertyOptional({ description: 'Request body (for POST/PUT/PATCH)' })
   @IsOptional()
   @IsObject()
-  body?: Record<string, any>;
+  body?: Record<string, unknown>;
 
   @ApiPropertyOptional({ enum: ['api_key', 'oauth2', 'bearer', 'basic'], description: 'Authentication type (standalone mode)' })
   @IsOptional()
@@ -61,7 +61,7 @@ export class CreateCollectorDto {
   @ApiPropertyOptional({ description: 'Authentication configuration' })
   @IsOptional()
   @IsObject()
-  authConfig?: Record<string, any>;
+  authConfig?: Record<string, unknown>;
 
   @ApiPropertyOptional({ description: 'Response mapping configuration' })
   @IsOptional()
@@ -150,7 +150,7 @@ export class UpdateCollectorDto {
   @ApiPropertyOptional({ description: 'Request body' })
   @IsOptional()
   @IsObject()
-  body?: Record<string, any>;
+  body?: Record<string, unknown>;
 
   @ApiPropertyOptional({ enum: ['api_key', 'oauth2', 'bearer', 'basic'] })
   @IsOptional()
@@ -161,12 +161,12 @@ export class UpdateCollectorDto {
   @ApiPropertyOptional({ description: 'Authentication configuration' })
   @IsOptional()
   @IsObject()
-  authConfig?: Record<string, any>;
+  authConfig?: Record<string, unknown>;
 
   @ApiPropertyOptional({ description: 'Response mapping configuration' })
   @IsOptional()
   @IsObject()
-  responseMapping?: Record<string, any>;
+  responseMapping?: Record<string, unknown>;
 
   @ApiPropertyOptional({ description: 'Template for evidence title' })
   @IsOptional()
@@ -248,16 +248,16 @@ export class CollectorResponseDto {
   queryParams?: Record<string, string>;
 
   @ApiPropertyOptional()
-  body?: Record<string, any>;
+  body?: Record<string, unknown>;
 
   @ApiPropertyOptional()
   authType?: string;
 
   @ApiPropertyOptional()
-  authConfig?: Record<string, any>; // Masked
+  authConfig?: Record<string, unknown>; // Masked
 
   @ApiPropertyOptional()
-  responseMapping?: Record<string, any>;
+  responseMapping?: Record<string, unknown>;
 
   @ApiPropertyOptional()
   evidenceTitle?: string;
@@ -337,7 +337,7 @@ export class CollectorRunResponseDto {
   errorMessage?: string;
 
   @ApiProperty()
-  logs: any[];
+  logs: Record<string, unknown>[];
 }
 
 export class TestCollectorDto {
@@ -349,7 +349,7 @@ export class TestCollectorDto {
   @ApiPropertyOptional({ description: 'Override auth config for testing' })
   @IsOptional()
   @IsObject()
-  authConfig?: Record<string, any>;
+  authConfig?: Record<string, unknown>;
 }
 
 export class TestResultDto {
@@ -366,11 +366,8 @@ export class TestResultDto {
   responseTime?: number;
 
   @ApiPropertyOptional()
-  data?: any;
+  data?: unknown;
 
   @ApiPropertyOptional()
   error?: string;
 }
-
-
-

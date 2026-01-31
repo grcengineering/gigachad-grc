@@ -5,6 +5,30 @@ import { TprmConfigService } from '../config/tprm-config.service';
 import { CacheService } from '@gigachad-grc/shared';
 import { CreateVendorDto } from './dto/create-vendor.dto';
 import { UpdateVendorDto } from './dto/update-vendor.dto';
+import { Prisma, VendorCategory, VendorTier, VendorStatus, VendorRiskScore } from '@prisma/client';
+
+// Valid enum values for type guards
+const VALID_CATEGORIES: VendorCategory[] = ['software_vendor', 'cloud_provider', 'professional_services', 'hardware_vendor', 'consultant'];
+const VALID_TIERS: VendorTier[] = ['tier_1', 'tier_2', 'tier_3', 'tier_4'];
+const VALID_STATUSES: VendorStatus[] = ['active', 'inactive', 'pending_onboarding', 'offboarding', 'terminated'];
+const VALID_RISK_SCORES: VendorRiskScore[] = ['very_low', 'low', 'medium', 'high', 'critical'];
+
+// Helper functions to convert strings to enum types
+function toVendorCategory(value: string | undefined, defaultValue: VendorCategory = 'software_vendor'): VendorCategory {
+  return VALID_CATEGORIES.includes(value as VendorCategory) ? value as VendorCategory : defaultValue;
+}
+
+function toVendorTier(value: string | undefined, defaultValue: VendorTier = 'tier_3'): VendorTier {
+  return VALID_TIERS.includes(value as VendorTier) ? value as VendorTier : defaultValue;
+}
+
+function toVendorStatus(value: string | undefined, defaultValue: VendorStatus = 'active'): VendorStatus {
+  return VALID_STATUSES.includes(value as VendorStatus) ? value as VendorStatus : defaultValue;
+}
+
+function toVendorRiskScore(value: string | undefined): VendorRiskScore | undefined {
+  return VALID_RISK_SCORES.includes(value as VendorRiskScore) ? value as VendorRiskScore : undefined;
+}
 
 // ============================================
 // Tier-Based Review Scheduling Constants
@@ -177,8 +201,9 @@ export class VendorsService {
     const vendorId = createVendorDto.vendorId || await this.generateVendorId();
     
     // Set defaults for category and tier if not provided
-    const category = createVendorDto.category || 'software_vendor';
-    const tier = createVendorDto.tier || 'tier_3';
+    const category = toVendorCategory(createVendorDto.category);
+    const tier = toVendorTier(createVendorDto.tier);
+    const status = toVendorStatus(createVendorDto.status);
     
     // Auto-set review frequency based on tier if not provided
     const reviewFrequency = createVendorDto.reviewFrequency || 
@@ -189,14 +214,23 @@ export class VendorsService {
 
     const vendor = await this.prisma.vendor.create({
       data: {
-        ...createVendorDto,
+        organizationId: createVendorDto.organizationId!,
         vendorId,
+        name: createVendorDto.name,
+        legalName: createVendorDto.legalName,
         category,
         tier,
+        status,
+        description: createVendorDto.description,
+        website: createVendorDto.website,
+        primaryContact: createVendorDto.primaryContact,
+        primaryContactEmail: createVendorDto.primaryContactEmail,
+        primaryContactPhone: createVendorDto.primaryContactPhone,
+        notes: createVendorDto.notes,
         reviewFrequency,
         nextReviewDue,
         createdBy: userId,
-      } as any,
+      },
     });
 
     await this.audit.log({
@@ -219,18 +253,18 @@ export class VendorsService {
     status?: string;
     search?: string;
   }) {
-    const where: any = {};
+    const where: Prisma.VendorWhereInput = {};
 
     if (filters?.category) {
-      where.category = filters.category;
+      where.category = toVendorCategory(filters.category);
     }
 
     if (filters?.tier) {
-      where.tier = filters.tier;
+      where.tier = toVendorTier(filters.tier);
     }
 
     if (filters?.status) {
-      where.status = filters.status;
+      where.status = toVendorStatus(filters.status);
     }
 
     if (filters?.search) {
@@ -296,19 +330,32 @@ export class VendorsService {
     // Get current vendor to check if tier changed
     const currentVendor = await this.findOne(id);
     
-    const updateData: any = { ...updateVendorDto };
+    const { category, tier, status, ...restDto } = updateVendorDto;
+    const updateData: Prisma.VendorUpdateInput = { ...restDto };
+    
+    if (category) {
+      updateData.category = toVendorCategory(category);
+    }
+    
+    if (status) {
+      updateData.status = toVendorStatus(status);
+    }
     
     // If tier is being changed, update review frequency and next review date using org config
-    if (updateVendorDto.tier && updateVendorDto.tier !== currentVendor.tier) {
+    if (tier && tier !== currentVendor.tier) {
+      const newTier = toVendorTier(tier);
+      updateData.tier = newTier;
       const newFrequency = await this.getFrequencyForTier(
         currentVendor.organizationId,
-        updateVendorDto.tier
+        tier
       );
       updateData.reviewFrequency = newFrequency;
       updateData.nextReviewDue = calculateNextReviewDate(
         currentVendor.lastReviewedAt,
         newFrequency
       );
+    } else if (tier) {
+      updateData.tier = toVendorTier(tier);
     }
 
     const vendor = await this.prisma.vendor.update({
@@ -324,7 +371,7 @@ export class VendorsService {
       entityId: vendor.id,
       entityName: vendor.name,
       description: `Updated vendor ${vendor.name}`,
-      changes: updateVendorDto,
+      changes: updateVendorDto as unknown as Prisma.InputJsonValue,
     });
 
     return vendor;
@@ -359,7 +406,7 @@ export class VendorsService {
   async updateRiskScore(id: string, inherentRiskScore: string, userId: string) {
     const vendor = await this.prisma.vendor.update({
       where: { id },
-      data: { inherentRiskScore: inherentRiskScore as any },
+      data: { inherentRiskScore: toVendorRiskScore(inherentRiskScore) },
     });
 
     await this.audit.log({
@@ -458,7 +505,7 @@ export class VendorsService {
     const oneMonthFromNow = new Date();
     oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
 
-    const baseWhere: any = {
+    const baseWhere: Prisma.VendorWhereInput = {
       deletedAt: null,
       status: 'active',
     };

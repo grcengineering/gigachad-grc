@@ -1,4 +1,4 @@
-import { Module, DynamicModule, Global } from '@nestjs/common';
+import { Module, DynamicModule, Global, Type, InjectionToken, OptionalFactoryDependency } from '@nestjs/common';
 import { SearchController } from './search.controller';
 import { SearchService, IPrismaService } from './search.service';
 
@@ -11,7 +11,7 @@ export class SearchModule {
    * Register SearchModule with a Prisma service provider
    * @param prismaProvider The Prisma service class to use for database queries
    */
-  static forRoot(prismaProvider: any): DynamicModule {
+  static forRoot(prismaProvider: Type<IPrismaService>): DynamicModule {
     return {
       module: SearchModule,
       controllers: [SearchController],
@@ -30,9 +30,9 @@ export class SearchModule {
    * Register SearchModule for async configuration
    */
   static forRootAsync(options: {
-    imports?: any[];
-    useFactory: (...args: any[]) => IPrismaService | Promise<IPrismaService>;
-    inject?: any[];
+    imports?: Type<unknown>[];
+    useFactory: (...args: unknown[]) => IPrismaService | Promise<IPrismaService>;
+    inject?: (InjectionToken | OptionalFactoryDependency)[];
   }): DynamicModule {
     return {
       module: SearchModule,

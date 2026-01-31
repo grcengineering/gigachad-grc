@@ -1,4 +1,5 @@
 import { IsString, IsOptional, IsDateString, IsInt, Min, Max, IsObject } from 'class-validator';
+import { Prisma } from '@prisma/client';
 
 export class CreateAssessmentDto {
   @IsString()
@@ -28,7 +29,7 @@ export class CreateAssessmentDto {
 
   @IsObject()
   @IsOptional()
-  responses?: any;
+  responses?: Prisma.InputJsonValue;
 
   @IsString()
   @IsOptional()
@@ -82,7 +83,7 @@ export class CreateAssessmentDto {
 
   @IsObject()
   @IsOptional()
-  findings?: any;
+  findings?: Prisma.InputJsonValue;
 
   @IsString()
   @IsOptional()

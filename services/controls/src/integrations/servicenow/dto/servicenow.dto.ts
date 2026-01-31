@@ -317,7 +317,7 @@ export class CreateRecordDto {
 
   @ApiPropertyOptional({ description: 'Additional ServiceNow fields' })
   @IsOptional()
-  additionalFields?: Record<string, any>;
+  additionalFields?: Record<string, unknown>;
 }
 
 export class RecordLinkResponseDto {

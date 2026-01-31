@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
@@ -23,7 +24,7 @@ export interface RiskScenario {
   tags: string[];
   isTemplate: boolean;
   usageCount: number;
-  simulation: Record<string, any> | null;
+  simulation: Record<string, unknown> | null;
   relatedControlIds: string[];
   relatedRiskIds: string[];
   mitigationStrategy: string | null;
@@ -92,7 +93,8 @@ export class RiskScenariosService {
   }> {
     const { search, category, threatActor, attackVector, isTemplate, page = 1, limit = 25 } = query;
 
-    const where: any = {
+     
+    const where: Record<string, any> = {
       organizationId,
       deletedAt: null,
     };
@@ -327,7 +329,7 @@ export class RiskScenariosService {
         impact: original.impact,
         tags: original.tags as string[],
         isTemplate: false,
-        simulation: original.simulation as Record<string, any> || null,
+        simulation: original.simulation ? JSON.parse(JSON.stringify(original.simulation)) : null,
         relatedControlIds: original.relatedControlIds as string[],
         relatedRiskIds: original.relatedRiskIds as string[],
         mitigationStrategy: original.mitigationStrategy,
@@ -423,8 +425,8 @@ export class RiskScenariosService {
       try {
         const cloned = await this.cloneScenario(organizationId, userId, templateId);
         results.push(cloned);
-      } catch (error) {
-        this.logger.warn(`Failed to clone template ${templateId}: ${error.message}`);
+      } catch (error: unknown) {
+        this.logger.warn(`Failed to clone template ${templateId}: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
 

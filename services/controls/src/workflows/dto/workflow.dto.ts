@@ -223,7 +223,7 @@ export class CreateApprovalRequestDto {
 
   @ApiPropertyOptional({ description: 'Additional context data' })
   @IsOptional()
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
 }
 
 export class ApprovalActionDto {
@@ -289,7 +289,7 @@ export class ApprovalRequestDto {
   comment?: string;
 
   @ApiPropertyOptional()
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
 
   @ApiProperty()
   requestedBy: string;
