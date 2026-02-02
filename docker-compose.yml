@@ -6,16 +6,19 @@ services:
     image: traefik:v3.0
     container_name: grc-traefik
     command:
-      - '--api.insecure=true'
+      # SECURITY: api.insecure is only for development - NEVER use in production
+      - '--api.insecure=${TRAEFIK_API_INSECURE:-false}'
+      - '--api.dashboard=${TRAEFIK_DASHBOARD_ENABLED:-false}'
       - '--providers.docker=true'
       - '--providers.docker.exposedbydefault=false'
       - '--entrypoints.web.address=:80'
       - '--entrypoints.websecure.address=:443'
-      - '--log.level=INFO'
+      - '--log.level=${TRAEFIK_LOG_LEVEL:-INFO}'
     ports:
       - '80:80'
       - '443:443'
-      - '8090:8080' # Traefik dashboard
+      # Dashboard port only exposed if explicitly enabled
+      - '${TRAEFIK_DASHBOARD_PORT:-127.0.0.1:8090}:8080'
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./gateway/traefik.yml:/etc/traefik/traefik.yml:ro
@@ -30,8 +33,10 @@ services:
     image: postgres:16-alpine
     container_name: grc-postgres
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-grc}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-grc_secret}
+      # SECURITY: POSTGRES_PASSWORD must be set - no default value
+      # Run: export POSTGRES_PASSWORD=$(openssl rand -base64 32)
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required - set a strong password}
       POSTGRES_DB: ${POSTGRES_DB:-gigachad_grc}
     ports:
       - '5433:5432' # Using 5433 externally to avoid conflicts
@@ -53,7 +58,9 @@ services:
   redis:
     image: redis:7-alpine
     container_name: grc-redis
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis_secret}
+    # SECURITY: REDIS_PASSWORD must be set - no default value
+    # Run: export REDIS_PASSWORD=$(openssl rand -base64 32)
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
     ports:
       - '6380:6379' # Using 6380 externally to avoid conflicts
     volumes:
@@ -62,7 +69,7 @@ services:
       - grc-network
     restart: unless-stopped
     healthcheck:
-      test: ['CMD', 'redis-cli', '-a', '${REDIS_PASSWORD:-redis_secret}', 'ping']
+      test: ['CMD', 'redis-cli', '-a', '${REDIS_PASSWORD}', 'ping']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -84,8 +91,9 @@ services:
       KC_HOSTNAME_STRICT: 'false'
       KC_HOSTNAME_STRICT_HTTPS: 'false'
       KC_HTTP_ENABLED: 'true'
+      # SECURITY: KEYCLOAK_ADMIN_PASSWORD must be set - no default value
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
-      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?KEYCLOAK_ADMIN_PASSWORD is required}
     ports:
       - '8080:8080'
     volumes:

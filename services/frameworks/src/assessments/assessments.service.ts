@@ -214,36 +214,61 @@ export class AssessmentsService {
       s => s.status === 'non_compliant' || s.status === 'partial',
     );
 
-    const gaps = [];
-
-    for (const status of nonCompliantStatuses) {
-      // Check if gap already exists
-      const existingGap = await this.prisma.gap.findFirst({
-        where: { assessmentId, requirementId: status.requirementId },
-      });
-
-      if (!existingGap) {
-        const gap = await this.prisma.gap.create({
-          data: {
-            assessmentId,
-            requirementId: status.requirementId,
-            severity: status.status === 'non_compliant' ? 'high' : 'medium',
-            description: `Requirement ${status.requirement.reference} is ${status.status.replace('_', ' ')}.`,
-            recommendation: `Review and implement controls to address ${status.requirement.title}.`,
-            remediationStatus: 'open',
-          },
-        });
-        gaps.push(gap);
-      }
+    if (nonCompliantStatuses.length === 0) {
+      return [];
     }
+
+    // Batch query: Get all existing gaps for these requirements in one query
+    const requirementIds = nonCompliantStatuses.map(s => s.requirementId);
+    const existingGaps = await this.prisma.gap.findMany({
+      where: {
+        assessmentId,
+        requirementId: { in: requirementIds },
+      },
+      select: { requirementId: true },
+    });
+
+    const existingRequirementIds = new Set(existingGaps.map(g => g.requirementId));
+
+    // Filter statuses that don't have existing gaps
+    const statusesNeedingGaps = nonCompliantStatuses.filter(
+      s => !existingRequirementIds.has(s.requirementId),
+    );
+
+    if (statusesNeedingGaps.length === 0) {
+      return [];
+    }
+
+    // Batch create: Create all gaps in one operation
+    const gapData = statusesNeedingGaps.map(status => ({
+      assessmentId,
+      requirementId: status.requirementId,
+      severity: status.status === 'non_compliant' ? 'high' : 'medium',
+      description: `Requirement ${status.requirement.reference} is ${status.status.replace('_', ' ')}.`,
+      recommendation: `Review and implement controls to address ${status.requirement.title}.`,
+      remediationStatus: 'open',
+    }));
+
+    await this.prisma.gap.createMany({
+      data: gapData,
+      skipDuplicates: true,
+    });
+
+    // Fetch the newly created gaps to return
+    const newGaps = await this.prisma.gap.findMany({
+      where: {
+        assessmentId,
+        requirementId: { in: statusesNeedingGaps.map(s => s.requirementId) },
+      },
+    });
 
     // Update gap count
     await this.prisma.readinessAssessment.update({
       where: { id: assessmentId },
-      data: { gapCount: gaps.length + assessment.gapCount },
+      data: { gapCount: assessment.gapCount + newGaps.length },
     });
 
-    return gaps;
+    return newGaps;
   }
 
   async createRemediationTask(

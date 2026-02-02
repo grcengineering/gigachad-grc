@@ -39,14 +39,14 @@ export class KnowledgeBaseController {
 
   @Get()
   findAll(
-    @Query('organizationId') organizationId: string,
+    @CurrentUser() user: UserContext,
     @Query('category') category?: string,
     @Query('status') status?: string,
     @Query('framework') framework?: string,
     @Query('isPublic') isPublic?: string,
     @Query('search') search?: string,
   ) {
-    return this.knowledgeBaseService.findAll(organizationId, {
+    return this.knowledgeBaseService.findAll(user.organizationId, {
       category,
       status,
       framework,
@@ -56,24 +56,24 @@ export class KnowledgeBaseController {
   }
 
   @Get('stats')
-  getStats(@Query('organizationId') organizationId: string) {
-    return this.knowledgeBaseService.getStats(organizationId);
+  getStats(@CurrentUser() user: UserContext) {
+    return this.knowledgeBaseService.getStats(user.organizationId);
   }
 
   @Get('search')
   search(
-    @Query('organizationId') organizationId: string,
+    @CurrentUser() user: UserContext,
     @Query('q') query: string,
   ) {
-    return this.knowledgeBaseService.search(organizationId, query);
+    return this.knowledgeBaseService.search(user.organizationId, query);
   }
 
   @Get('public')
   getPublicEntries(
-    @Query('organizationId') organizationId: string,
+    @CurrentUser() user: UserContext,
     @Query('category') category?: string,
   ) {
-    return this.knowledgeBaseService.getPublicEntries(organizationId, category);
+    return this.knowledgeBaseService.getPublicEntries(user.organizationId, category);
   }
 
   @Get(':id')

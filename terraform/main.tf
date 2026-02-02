@@ -15,13 +15,21 @@ terraform {
     }
   }
 
-  # Uncomment to use S3 backend for state management
+  # S3 backend for state management
+  # IMPORTANT: Before enabling, create the S3 bucket and DynamoDB table:
+  #   1. aws s3api create-bucket --bucket ${var.terraform_state_bucket} --region ${var.aws_region}
+  #   2. aws s3api put-bucket-versioning --bucket ${var.terraform_state_bucket} --versioning-configuration Status=Enabled
+  #   3. aws s3api put-bucket-encryption --bucket ${var.terraform_state_bucket} --server-side-encryption-configuration '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"aws:kms"}}]}'
+  #   4. aws dynamodb create-table --table-name terraform-lock --attribute-definitions AttributeName=LockID,AttributeType=S --key-schema AttributeName=LockID,KeyType=HASH --billing-mode PAY_PER_REQUEST
+  #
+  # Then uncomment and configure:
   # backend "s3" {
-  #   bucket         = "your-terraform-state-bucket"
+  #   bucket         = "gigachad-grc-terraform-state"
   #   key            = "gigachad-grc/terraform.tfstate"
   #   region         = "us-east-1"
   #   encrypt        = true
   #   dynamodb_table = "terraform-lock"
+  #   kms_key_id     = "alias/terraform-state"
   # }
 }
 

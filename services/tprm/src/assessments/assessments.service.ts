@@ -70,12 +70,17 @@ export class AssessmentsService {
     return assessment;
   }
 
-  async findAll(filters?: {
-    vendorId?: string;
-    assessmentType?: string;
-    status?: string;
-  }) {
-    const where: Prisma.VendorAssessmentWhereInput = {};
+  async findAll(
+    organizationId: string,
+    filters?: {
+      vendorId?: string;
+      assessmentType?: string;
+      status?: string;
+    }
+  ) {
+    const where: Prisma.VendorAssessmentWhereInput = {
+      organizationId, // Required for multi-tenant data isolation
+    };
 
     if (filters?.vendorId) {
       where.vendorId = filters.vendorId;

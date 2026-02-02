@@ -1,0 +1,32 @@
+#!/bin/sh
+
+# Run lint-staged for incremental linting
+npx lint-staged
+
+# Check for secrets in staged files
+echo "Checking for potential secrets..."
+SECRETS_PATTERN='(password|secret|api[_-]?key|access[_-]?key|private[_-]?key|token)\s*[:=]\s*["\047][^"\047]{8,}["\047]'
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(ts|tsx|js|jsx|json|yml|yaml|env)$' || true)
+
+if [ -n "$STAGED_FILES" ]; then
+  # Check for hardcoded secrets (case insensitive)
+  if echo "$STAGED_FILES" | xargs grep -iE "$SECRETS_PATTERN" 2>/dev/null | grep -v -E '^\s*(//|#|\*|<!--)' | grep -v 'process\.env\.' | grep -v '\$\{' > /dev/null; then
+    echo "⚠️  Warning: Potential hardcoded secrets detected!"
+    echo "Please review the following files:"
+    echo "$STAGED_FILES" | xargs grep -ilE "$SECRETS_PATTERN" 2>/dev/null || true
+    echo ""
+    echo "If these are false positives, you can bypass this check with:"
+    echo "  git commit --no-verify"
+    echo ""
+    # Don't block commit, just warn
+  fi
+fi
+
+# Check for .env files being committed
+if git diff --cached --name-only | grep -E '^\.env(\.|$)' > /dev/null; then
+  echo "❌ Error: Attempting to commit .env file(s)!"
+  echo "Remove .env files from staging with: git reset HEAD <file>"
+  exit 1
+fi
+
+echo "✅ Pre-commit checks passed"

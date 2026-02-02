@@ -1,0 +1,51 @@
+#!/bin/sh
+
+# Validate commit message format
+# Follows Conventional Commits specification: https://www.conventionalcommits.org/
+
+COMMIT_MSG_FILE=$1
+COMMIT_MSG=$(cat "$COMMIT_MSG_FILE")
+
+# Pattern for conventional commits
+# type(scope): description
+# type: description
+PATTERN='^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-z0-9-]+\))?: .{1,100}$'
+
+# Check first line (subject)
+FIRST_LINE=$(echo "$COMMIT_MSG" | head -n 1)
+
+if ! echo "$FIRST_LINE" | grep -qE "$PATTERN"; then
+  echo "❌ Invalid commit message format!"
+  echo ""
+  echo "Commit message: $FIRST_LINE"
+  echo ""
+  echo "Expected format: type(scope): description"
+  echo "  or: type: description"
+  echo ""
+  echo "Valid types:"
+  echo "  feat     - A new feature"
+  echo "  fix      - A bug fix"
+  echo "  docs     - Documentation changes"
+  echo "  style    - Code style changes (formatting, etc)"
+  echo "  refactor - Code refactoring"
+  echo "  perf     - Performance improvements"
+  echo "  test     - Adding or updating tests"
+  echo "  build    - Build system or dependencies"
+  echo "  ci       - CI/CD configuration"
+  echo "  chore    - Other changes"
+  echo "  revert   - Reverting a previous commit"
+  echo ""
+  echo "Examples:"
+  echo "  feat(auth): add role-based access control"
+  echo "  fix: resolve memory leak in dashboard"
+  echo "  docs(api): update API documentation"
+  echo ""
+  exit 1
+fi
+
+# Check for issue reference in body (optional but encouraged)
+if ! echo "$COMMIT_MSG" | grep -qE '(#[0-9]+|[A-Z]+-[0-9]+)'; then
+  echo "💡 Tip: Consider adding an issue reference (e.g., #123 or JIRA-456)"
+fi
+
+echo "✅ Commit message format is valid"

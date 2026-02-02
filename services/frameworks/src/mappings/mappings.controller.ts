@@ -18,6 +18,7 @@ import { MappingsService } from './mappings.service';
 import { CreateMappingDto, BulkCreateMappingsDto } from './dto/mapping.dto';
 import {
   Roles,
+  RolesGuard,
   CurrentUser,
   UserContext,
 } from '@gigachad-grc/shared';
@@ -26,7 +27,7 @@ import { DevAuthGuard } from '../auth/dev-auth.guard';
 @ApiTags('mappings')
 @ApiBearerAuth()
 @Controller('api/mappings')
-@UseGuards(DevAuthGuard)
+@UseGuards(DevAuthGuard, RolesGuard)
 export class MappingsController {
   constructor(private readonly mappingsService: MappingsService) {}
 

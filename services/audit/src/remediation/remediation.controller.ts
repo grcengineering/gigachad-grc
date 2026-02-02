@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import { RemediationService, CreateRemediationPlanDto, CreateMilestoneDto, UpdateMilestoneDto } from './remediation.service';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
+import { Roles, RolesGuard } from '@gigachad-grc/shared';
 
 interface AuthenticatedRequest extends Request {
   user: {
@@ -13,7 +14,8 @@ interface AuthenticatedRequest extends Request {
 
 @ApiTags('Remediation Plans')
 @ApiBearerAuth()
-@UseGuards(DevAuthGuard)
+@UseGuards(DevAuthGuard, RolesGuard)
+@Roles('admin', 'auditor', 'compliance_manager')
 @Controller('remediation')
 export class RemediationController {
   constructor(private readonly remediationService: RemediationService) {}

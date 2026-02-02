@@ -1,4 +1,5 @@
-import { Logger } from '@nestjs/common';
+import { Logger, HttpException, InternalServerErrorException } from '@nestjs/common';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Standard error response structure.
@@ -9,6 +10,21 @@ export interface ErrorDetails {
   statusCode?: number;
   details?: Record<string, unknown>;
   stack?: string;
+  correlationId?: string;
+}
+
+/**
+ * Standard API error response.
+ */
+export interface ApiErrorResponse {
+  success: false;
+  error: {
+    message: string;
+    code: string;
+    correlationId: string;
+    timestamp: string;
+    details?: Record<string, unknown>;
+  };
 }
 
 /**
@@ -259,4 +275,198 @@ export async function retryAsync<T>(
     getStatusCode(lastError),
     { context, attempts: maxRetries + 1 },
   );
+}
+
+/**
+ * Create a standardized API error response.
+ */
+export function createApiErrorResponse(
+  error: unknown,
+  correlationId?: string,
+): ApiErrorResponse {
+  const errorDetails = toErrorDetails(error);
+  const id = correlationId || uuidv4();
+
+  return {
+    success: false,
+    error: {
+      message: errorDetails.message,
+      code: errorDetails.code || 'INTERNAL_ERROR',
+      correlationId: id,
+      timestamp: new Date().toISOString(),
+      details: process.env.NODE_ENV !== 'production' ? errorDetails.details : undefined,
+    },
+  };
+}
+
+/**
+ * Options for the CatchErrors decorator.
+ */
+export interface CatchErrorsOptions {
+  /** Context string for logging */
+  context?: string;
+  /** Whether to rethrow the error after handling */
+  rethrow?: boolean;
+  /** Default error message if the original is too technical */
+  defaultMessage?: string;
+  /** Error code to use */
+  errorCode?: string;
+}
+
+/**
+ * Method decorator that wraps async methods with standardized error handling.
+ * 
+ * Features:
+ * - Automatic logging with correlation ID
+ * - Converts unknown errors to HttpException
+ * - Preserves original HTTP status codes
+ * - Adds correlation ID to error response
+ * 
+ * @example
+ * ```typescript
+ * @CatchErrors({ context: 'UserService.findById' })
+ * async findById(id: string): Promise<User> {
+ *   return this.prisma.user.findUniqueOrThrow({ where: { id } });
+ * }
+ * ```
+ */
+export function CatchErrors(options: CatchErrorsOptions = {}): MethodDecorator {
+  return function (
+    _target: object,
+    propertyKey: string | symbol,
+    descriptor: PropertyDescriptor,
+  ) {
+    const originalMethod = descriptor.value;
+    const methodName = String(propertyKey);
+
+    descriptor.value = async function (...args: unknown[]) {
+      const correlationId = uuidv4();
+      const logger = (this as { logger?: Logger }).logger || new Logger(methodName);
+      const context = options.context || methodName;
+
+      try {
+        return await originalMethod.apply(this, args);
+      } catch (error: unknown) {
+        // Log the error with correlation ID
+        const errorMessage = getErrorMessage(error);
+        const statusCode = getStatusCode(error);
+        
+        if (statusCode >= 500) {
+          logger.error(
+            `[${correlationId}] ${context}: ${errorMessage}`,
+            isError(error) ? error.stack : undefined,
+          );
+        } else {
+          logger.warn(`[${correlationId}] ${context}: ${errorMessage}`);
+        }
+
+        // If it's already an HttpException, add correlation ID and rethrow
+        if (error instanceof HttpException) {
+          const response = error.getResponse();
+          if (typeof response === 'object') {
+            throw new HttpException(
+              { ...response, correlationId },
+              error.getStatus(),
+            );
+          }
+          throw error;
+        }
+
+        // Convert to appropriate HttpException
+        const finalMessage = options.defaultMessage || errorMessage;
+        const finalCode = options.errorCode || getErrorCode(error) || 'OPERATION_FAILED';
+
+        if (isDomainError(error)) {
+          throw new HttpException(
+            {
+              message: finalMessage,
+              code: error.code,
+              correlationId,
+              details: error.details,
+            },
+            error.statusCode,
+          );
+        }
+
+        // For Prisma errors, map to appropriate status codes
+        if (isPrismaError(error)) {
+          const prismaCode = error.code;
+          let prismaStatusCode = 500;
+          let prismaMessage = finalMessage;
+
+          if (prismaCode === 'P2002') {
+            prismaStatusCode = 409;
+            prismaMessage = 'A record with this value already exists';
+          } else if (prismaCode === 'P2025') {
+            prismaStatusCode = 404;
+            prismaMessage = 'Record not found';
+          } else if (prismaCode === 'P2003') {
+            prismaStatusCode = 400;
+            prismaMessage = 'Related record not found';
+          }
+
+          throw new HttpException(
+            {
+              message: prismaMessage,
+              code: `PRISMA_${prismaCode}`,
+              correlationId,
+            },
+            prismaStatusCode,
+          );
+        }
+
+        // Default to internal server error
+        throw new InternalServerErrorException({
+          message: process.env.NODE_ENV === 'production' 
+            ? 'An internal error occurred' 
+            : finalMessage,
+          code: finalCode,
+          correlationId,
+        });
+      }
+    };
+
+    return descriptor;
+  };
+}
+
+/**
+ * Class decorator that applies CatchErrors to all methods in a service.
+ * 
+ * @example
+ * ```typescript
+ * @CatchErrorsClass({ context: 'UserService' })
+ * @Injectable()
+ * export class UserService {
+ *   // All methods automatically get error handling
+ * }
+ * ```
+ */
+export function CatchErrorsClass(options: CatchErrorsOptions = {}): ClassDecorator {
+  return function (target: Function) {
+    const prototype = target.prototype;
+    const propertyNames = Object.getOwnPropertyNames(prototype);
+
+    for (const propertyName of propertyNames) {
+      if (propertyName === 'constructor') continue;
+
+      const descriptor = Object.getOwnPropertyDescriptor(prototype, propertyName);
+      if (!descriptor || typeof descriptor.value !== 'function') continue;
+
+      const methodOptions = {
+        ...options,
+        context: options.context ? `${options.context}.${propertyName}` : propertyName,
+      };
+
+      const decoratedDescriptor = CatchErrors(methodOptions)(
+        prototype,
+        propertyName,
+        descriptor,
+      );
+
+      if (decoratedDescriptor) {
+        Object.defineProperty(prototype, propertyName, decoratedDescriptor);
+      }
+    }
+  };
 }

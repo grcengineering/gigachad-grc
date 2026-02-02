@@ -1,0 +1,230 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+      version:
+        description: 'Image version to deploy (leave empty for latest)'
+        required: false
+        type: string
+
+  workflow_run:
+    workflows: ["Build and Push"]
+    types: [completed]
+    branches: [main]
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
+
+jobs:
+  # Terraform plan
+  plan:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment || 'staging' }}
+
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+
+    outputs:
+      plan_exit_code: ${{ steps.plan.outputs.exitcode }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+
+      - name: Terraform Init
+        working-directory: terraform
+        run: terraform init
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=sha-$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Terraform Plan
+        id: plan
+        working-directory: terraform
+        run: |
+          terraform plan \
+            -var="environment=${{ inputs.environment || 'staging' }}" \
+            -var="image_tag=${{ steps.version.outputs.version }}" \
+            -out=tfplan \
+            -detailed-exitcode
+        continue-on-error: true
+
+      - name: Upload plan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan
+          path: terraform/tfplan
+          retention-days: 5
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const output = `#### Terraform Plan 📖
+            
+            **Environment:** \`${{ inputs.environment || 'staging' }}\`
+            **Version:** \`${{ steps.version.outputs.version }}\`
+            
+            Plan exit code: ${{ steps.plan.outputs.exitcode }}
+            
+            *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
+
+  # Terraform apply (requires approval for production)
+  apply:
+    name: Terraform Apply
+    runs-on: ubuntu-latest
+    needs: plan
+    if: needs.plan.outputs.plan_exit_code == '2'
+    environment: 
+      name: ${{ inputs.environment || 'staging' }}
+      url: ${{ steps.outputs.outputs.app_url }}
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+
+      - name: Terraform Init
+        working-directory: terraform
+        run: terraform init
+
+      - name: Download plan artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan
+          path: terraform
+
+      - name: Terraform Apply
+        working-directory: terraform
+        run: terraform apply -auto-approve tfplan
+
+      - name: Get outputs
+        id: outputs
+        working-directory: terraform
+        run: |
+          echo "app_url=$(terraform output -raw app_url 2>/dev/null || echo 'N/A')" >> $GITHUB_OUTPUT
+
+  # Update ECS services
+  deploy-services:
+    name: Deploy ECS Services
+    runs-on: ubuntu-latest
+    needs: apply
+    environment: ${{ inputs.environment || 'staging' }}
+
+    permissions:
+      id-token: write
+      contents: read
+
+    strategy:
+      matrix:
+        service: [controls, frameworks, policies, tprm, trust, audit]
+      max-parallel: 2
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=sha-$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update ECS service
+        run: |
+          CLUSTER_NAME="grc-${{ inputs.environment || 'staging' }}-cluster"
+          SERVICE_NAME="grc-${{ inputs.environment || 'staging' }}-${{ matrix.service }}"
+          
+          echo "Updating $SERVICE_NAME in cluster $CLUSTER_NAME..."
+          
+          aws ecs update-service \
+            --cluster $CLUSTER_NAME \
+            --service $SERVICE_NAME \
+            --force-new-deployment \
+            --no-cli-pager
+
+      - name: Wait for service stability
+        run: |
+          CLUSTER_NAME="grc-${{ inputs.environment || 'staging' }}-cluster"
+          SERVICE_NAME="grc-${{ inputs.environment || 'staging' }}-${{ matrix.service }}"
+          
+          echo "Waiting for $SERVICE_NAME to stabilize..."
+          
+          aws ecs wait services-stable \
+            --cluster $CLUSTER_NAME \
+            --services $SERVICE_NAME
+
+  # Deployment summary
+  summary:
+    name: Deployment Summary
+    runs-on: ubuntu-latest
+    needs: [apply, deploy-services]
+    if: always()
+
+    steps:
+      - name: Create summary
+        run: |
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
+          echo "| Environment | ${{ inputs.environment || 'staging' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Version | ${{ inputs.version || 'latest' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Terraform Apply | ${{ needs.apply.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Service Deployment | ${{ needs.deploy-services.result }} |" >> $GITHUB_STEP_SUMMARY

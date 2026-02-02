@@ -57,9 +57,14 @@ variable "single_nat_gateway" {
 }
 
 variable "allowed_cidr_blocks" {
-  description = "CIDR blocks allowed to access the application"
+  description = "CIDR blocks allowed to access the application. SECURITY: Restrict to specific IPs/ranges in production!"
   type        = list(string)
-  default     = ["0.0.0.0/0"] # Restrict this in production!
+  default     = [] # Empty by default - must be explicitly configured
+  
+  validation {
+    condition     = length(var.allowed_cidr_blocks) > 0
+    error_message = "allowed_cidr_blocks must be explicitly configured. Do not use 0.0.0.0/0 in production."
+  }
 }
 
 # Load Balancer Configuration

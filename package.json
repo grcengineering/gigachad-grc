@@ -12,6 +12,7 @@
     "frontend"
   ],
   "scripts": {
+    "prepare": "husky",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "lint:check": "eslint . --max-warnings=0",
@@ -38,9 +39,24 @@
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^9.1.0",
     "globals": "^14.0.0",
+    "husky": "^9.0.0",
+    "lint-staged": "^15.0.0",
     "prettier": "^3.4.0",
     "prisma": "^5.22.0",
     "typescript-eslint": "^8.20.0"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
   },
   "dependencies": {
     "@prisma/client": "^5.22.0"

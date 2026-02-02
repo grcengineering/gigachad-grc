@@ -69,12 +69,17 @@ export class ContractsService {
     return contract;
   }
 
-  async findAll(filters?: {
-    vendorId?: string;
-    contractType?: string;
-    status?: string;
-  }) {
-    const where: Prisma.VendorContractWhereInput = {};
+  async findAll(
+    organizationId: string,
+    filters?: {
+      vendorId?: string;
+      contractType?: string;
+      status?: string;
+    }
+  ) {
+    const where: Prisma.VendorContractWhereInput = {
+      organizationId, // Required for multi-tenant data isolation
+    };
 
     if (filters?.vendorId) {
       where.vendorId = filters.vendorId;

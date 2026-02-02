@@ -12,11 +12,12 @@ import {
 import { AssessmentsService } from './assessments.service';
 import { CreateAssessmentDto } from './dto/create-assessment.dto';
 import { UpdateAssessmentDto } from './dto/update-assessment.dto';
-import { CurrentUser, UserContext } from '@gigachad-grc/shared';
+import { CurrentUser, UserContext, Roles, RolesGuard } from '@gigachad-grc/shared';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 
 @Controller('assessments')
-@UseGuards(DevAuthGuard)
+@UseGuards(DevAuthGuard, RolesGuard)
+@Roles('admin', 'compliance_manager', 'tprm_manager')
 export class AssessmentsController {
   constructor(private readonly assessmentsService: AssessmentsService) {}
 
@@ -30,11 +31,12 @@ export class AssessmentsController {
 
   @Get()
   findAll(
+    @CurrentUser() user: UserContext,
     @Query('vendorId') vendorId?: string,
     @Query('assessmentType') assessmentType?: string,
     @Query('status') status?: string,
   ) {
-    return this.assessmentsService.findAll({ vendorId, assessmentType, status });
+    return this.assessmentsService.findAll(user.organizationId, { vendorId, assessmentType, status });
   }
 
   @Get('stats')

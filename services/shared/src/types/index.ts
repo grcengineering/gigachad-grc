@@ -13,5 +13,14 @@ export * from './error.types';
 export * from './event.types';
 export * from './prisma-helpers.types';
 
+// Dashboard and widget types
+export * from './widget.types';
+
+// Workflow automation types
+export * from './workflow.types';
+
+// Integration response types
+export * from './integration.types';
+
 
 

@@ -35,11 +35,12 @@ export class ContractsController {
 
   @Get()
   findAll(
+    @CurrentUser() user: UserContext,
     @Query('vendorId') vendorId?: string,
     @Query('contractType') contractType?: string,
     @Query('status') status?: string,
   ) {
-    return this.contractsService.findAll({ vendorId, contractType, status });
+    return this.contractsService.findAll(user.organizationId, { vendorId, contractType, status });
   }
 
   @Get(':id')

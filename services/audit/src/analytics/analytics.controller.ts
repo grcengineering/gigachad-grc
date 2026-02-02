@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Request } from 'express';
 import { AnalyticsService } from './analytics.service';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
+import { Roles, RolesGuard } from '@gigachad-grc/shared';
 
 interface AuthenticatedRequest extends Request {
   user: {
@@ -13,7 +14,8 @@ interface AuthenticatedRequest extends Request {
 
 @ApiTags('Audit Analytics')
 @ApiBearerAuth()
-@UseGuards(DevAuthGuard)
+@UseGuards(DevAuthGuard, RolesGuard)
+@Roles('admin', 'auditor', 'compliance_manager')
 @Controller('analytics')
 export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) {}
