@@ -86,8 +86,9 @@ export class QuestionnairesController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.questionnairesService.findOne(id);
+  findOne(@Param('id') id: string, @CurrentUser() user: UserContext) {
+    // SECURITY: Pass organizationId to ensure tenant isolation
+    return this.questionnairesService.findOne(id, user.organizationId);
   }
 
   @Patch(':id')
@@ -96,7 +97,8 @@ export class QuestionnairesController {
     @Body() updateQuestionnaireDto: UpdateQuestionnaireDto,
     @CurrentUser() user: UserContext,
   ) {
-    return this.questionnairesService.update(id, updateQuestionnaireDto, user.userId);
+    // SECURITY: Pass organizationId to ensure tenant isolation
+    return this.questionnairesService.update(id, updateQuestionnaireDto, user.userId, user.organizationId);
   }
 
   @Delete(':id')
@@ -104,7 +106,8 @@ export class QuestionnairesController {
     @Param('id') id: string,
     @CurrentUser() user: UserContext,
   ) {
-    return this.questionnairesService.remove(id, user.userId);
+    // SECURITY: Pass organizationId to ensure tenant isolation
+    return this.questionnairesService.remove(id, user.userId, user.organizationId);
   }
 
   // Question endpoints
@@ -113,7 +116,8 @@ export class QuestionnairesController {
     @Body() createQuestionDto: CreateQuestionDto,
     @CurrentUser() user: UserContext,
   ) {
-    return this.questionnairesService.createQuestion(createQuestionDto, user.userId);
+    // SECURITY: Pass organizationId to ensure tenant isolation
+    return this.questionnairesService.createQuestion(createQuestionDto, user.userId, user.organizationId);
   }
 
   @Patch('questions/:id')
@@ -122,7 +126,8 @@ export class QuestionnairesController {
     @Body() updateQuestionDto: UpdateQuestionDto,
     @CurrentUser() user: UserContext,
   ) {
-    return this.questionnairesService.updateQuestion(id, updateQuestionDto, user.userId);
+    // SECURITY: Pass organizationId to ensure tenant isolation
+    return this.questionnairesService.updateQuestion(id, updateQuestionDto, user.userId, user.organizationId);
   }
 
   @Delete('questions/:id')
@@ -130,7 +135,8 @@ export class QuestionnairesController {
     @Param('id') id: string,
     @CurrentUser() user: UserContext,
   ) {
-    return this.questionnairesService.removeQuestion(id, user.userId);
+    // SECURITY: Pass organizationId to ensure tenant isolation
+    return this.questionnairesService.removeQuestion(id, user.userId, user.organizationId);
   }
 
   // Similar Questions Endpoints
@@ -171,6 +177,7 @@ export class QuestionnairesController {
   @Get(':id/export')
   async exportQuestionnaire(
     @Param('id') id: string,
+    @CurrentUser() user: UserContext,
     @Res() res: Response,
     @Query('format') format: 'excel' | 'csv' | 'json' = 'excel',
     @Query('includeMetadata') includeMetadata?: string,
@@ -184,8 +191,8 @@ export class QuestionnairesController {
 
     const result = await this.exportService.exportQuestionnaire(id, options);
     
-    // Get questionnaire for filename
-    const questionnaire = await this.questionnairesService.findOne(id);
+    // SECURITY: Pass organizationId to ensure tenant isolation
+    const questionnaire = await this.questionnairesService.findOne(id, user.organizationId);
     const filename = `${questionnaire.title.replace(/[^a-z0-9]/gi, '_')}_${new Date().toISOString().split('T')[0]}`;
 
     switch (format) {

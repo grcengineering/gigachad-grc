@@ -37,15 +37,23 @@ export class RiskAssessmentController {
    * Get the latest risk assessment for a vendor
    */
   @Get('latest')
-  async getLatestAssessment(@Param('vendorId') vendorId: string) {
-    return this.riskAssessmentService.getLatestAssessment(vendorId);
+  async getLatestAssessment(
+    @Param('vendorId') vendorId: string,
+    @CurrentUser() user: UserContext,
+  ) {
+    // SECURITY: Pass organizationId to ensure tenant isolation
+    return this.riskAssessmentService.getLatestAssessment(vendorId, user.organizationId);
   }
 
   /**
    * Get all risk assessments for a vendor
    */
   @Get('history')
-  async getAssessmentHistory(@Param('vendorId') vendorId: string) {
-    return this.riskAssessmentService.getAssessmentHistory(vendorId);
+  async getAssessmentHistory(
+    @Param('vendorId') vendorId: string,
+    @CurrentUser() user: UserContext,
+  ) {
+    // SECURITY: Pass organizationId to ensure tenant isolation
+    return this.riskAssessmentService.getAssessmentHistory(vendorId, user.organizationId);
   }
 }

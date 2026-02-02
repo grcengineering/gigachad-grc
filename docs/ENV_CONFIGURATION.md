@@ -105,7 +105,7 @@ SENTRY_TRACES_SAMPLE_RATE=0.2
 # JWT secret for internal auth (generate: openssl rand -base64 32)
 JWT_SECRET=your-secret-here
 
-# Encryption key for sensitive data
+# Encryption key for sensitive data (minimum 32 characters)
 ENCRYPTION_KEY=your-encryption-key
 
 # Rate limiting
@@ -113,9 +113,35 @@ RATE_LIMIT_ENABLED=true
 RATE_LIMIT_MAX=100
 RATE_LIMIT_WINDOW_MS=60000
 
-# CORS
+# CORS - comma-separated list of allowed origins
 CORS_ORIGINS=https://grc.yourcompany.com,https://www.yourcompany.com
 ```
+
+### Proxy Authentication (v1.1.0+)
+
+When using an authentication proxy (Keycloak, Auth0, etc.) that sets user context headers,
+configure these variables for additional security:
+
+```bash
+# Shared secret between auth proxy and backend services
+# The proxy must send this value in the x-proxy-secret header
+# Generate: openssl rand -base64 32
+AUTH_PROXY_SECRET=your-32-character-secret-here
+
+# Require proxy authentication (default: false)
+# When true, requests without valid x-proxy-secret are rejected
+# When false, requests without x-proxy-secret are allowed (for backwards compatibility)
+REQUIRE_PROXY_AUTH=true
+```
+
+**Security Note:** Without `AUTH_PROXY_SECRET`, the application relies on network isolation
+to prevent clients from forging `x-user-id` and `x-organization-id` headers. In production,
+you should either:
+1. Set `AUTH_PROXY_SECRET` and configure your auth proxy to send it, OR
+2. Ensure network isolation prevents direct client access to backend services
+
+The auth guard validates that user and organization IDs are valid UUIDs and uses
+timing-safe comparison for proxy secrets to prevent timing attacks.
 
 ### Service Ports
 

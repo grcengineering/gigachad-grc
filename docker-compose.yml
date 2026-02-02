@@ -1,3 +1,21 @@
+# ===========================================
+# DEVELOPMENT DOCKER COMPOSE
+# ===========================================
+# 
+# SECURITY WARNING: This file contains default credentials for development only.
+# DO NOT use this file in production!
+# 
+# For production deployments, use docker-compose.prod.yml which:
+# - Requires all credentials to be set via environment variables
+# - Enables TLS/HTTPS with Let's Encrypt
+# - Applies security hardening (read-only containers, cap_drop, etc.)
+# - Disables API dashboards and debug endpoints
+#
+# Before deploying to production, ensure all secrets are rotated
+# and stored securely (e.g., in a secrets manager or .env file
+# with restricted permissions).
+# ===========================================
+
 services:
   # ===========================================
   # API Gateway - Traefik (Official Docker Image)
@@ -491,6 +509,9 @@ services:
     image: grafana/grafana:10.2.0
     container_name: grc-grafana
     environment:
+      # SECURITY WARNING: admin/admin is a development default only!
+      # Set GRAFANA_ADMIN_USER and GRAFANA_ADMIN_PASSWORD environment variables
+      # with strong credentials before exposing this service.
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
       GF_USERS_ALLOW_SIGN_UP: 'false'

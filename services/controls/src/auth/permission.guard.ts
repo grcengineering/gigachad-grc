@@ -51,11 +51,14 @@ export class PermissionGuard implements CanActivate {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest();
-    const userId = request.headers['x-user-id'];
+    const request = context.switchToHttp().getRequest() as PermissionCheckRequest;
+    
+    // SECURITY: Use authenticated user context set by AuthGuard, NOT raw headers
+    // This ensures the userId has been validated by the auth guard
+    const userId = request.user?.userId;
 
     if (!userId) {
-      this.logger.warn('No user ID in request headers for permission check');
+      this.logger.warn('No authenticated user context for permission check');
       throw new ForbiddenException('User not authenticated');
     }
 

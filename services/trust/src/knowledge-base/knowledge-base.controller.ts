@@ -77,8 +77,9 @@ export class KnowledgeBaseController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.knowledgeBaseService.findOne(id);
+  findOne(@Param('id') id: string, @CurrentUser() user: UserContext) {
+    // SECURITY: Pass organizationId to ensure tenant isolation
+    return this.knowledgeBaseService.findOne(id, user.organizationId);
   }
 
   @Patch(':id')
@@ -87,7 +88,8 @@ export class KnowledgeBaseController {
     @Body() updateKnowledgeBaseDto: UpdateKnowledgeBaseDto,
     @CurrentUser() user: UserContext,
   ) {
-    return this.knowledgeBaseService.update(id, updateKnowledgeBaseDto, user.userId);
+    // SECURITY: Pass organizationId to ensure tenant isolation
+    return this.knowledgeBaseService.update(id, updateKnowledgeBaseDto, user.userId, user.organizationId);
   }
 
   @Delete(':id')
@@ -95,7 +97,8 @@ export class KnowledgeBaseController {
     @Param('id') id: string,
     @CurrentUser() user: UserContext,
   ) {
-    return this.knowledgeBaseService.remove(id, user.userId);
+    // SECURITY: Pass organizationId to ensure tenant isolation
+    return this.knowledgeBaseService.remove(id, user.userId, user.organizationId);
   }
 
   @Post(':id/approve')
@@ -103,11 +106,13 @@ export class KnowledgeBaseController {
     @Param('id') id: string,
     @CurrentUser() user: UserContext,
   ) {
-    return this.knowledgeBaseService.approve(id, user.userId);
+    // SECURITY: Pass organizationId to ensure tenant isolation
+    return this.knowledgeBaseService.approve(id, user.userId, user.organizationId);
   }
 
   @Post(':id/use')
-  incrementUsage(@Param('id') id: string) {
-    return this.knowledgeBaseService.incrementUsage(id);
+  incrementUsage(@Param('id') id: string, @CurrentUser() user: UserContext) {
+    // SECURITY: Pass organizationId to ensure tenant isolation
+    return this.knowledgeBaseService.incrementUsage(id, user.organizationId);
   }
 }

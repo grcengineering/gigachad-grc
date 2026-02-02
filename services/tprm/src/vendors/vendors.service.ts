@@ -298,9 +298,15 @@ export class VendorsService {
     return { data, total };
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, organizationId: string) {
+    // SECURITY: Include organizationId in query to prevent IDOR
+    // This ensures users can only access vendors within their organization
     const vendor = await this.prisma.vendor.findFirst({
-      where: { id, deletedAt: null },
+      where: { 
+        id, 
+        organizationId, // Tenant isolation - prevents cross-organization access
+        deletedAt: null,
+      },
       include: {
         assessments: {
           orderBy: { createdAt: 'desc' },
@@ -326,9 +332,9 @@ export class VendorsService {
     return vendor;
   }
 
-  async update(id: string, updateVendorDto: UpdateVendorDto, userId: string) {
-    // Get current vendor to check if tier changed
-    const currentVendor = await this.findOne(id);
+  async update(id: string, updateVendorDto: UpdateVendorDto, userId: string, organizationId: string) {
+    // SECURITY: Verify vendor belongs to user's organization before updating
+    const currentVendor = await this.findOne(id, organizationId);
     
     const { category, tier, status, ...restDto } = updateVendorDto;
     const updateData: Prisma.VendorUpdateInput = { ...restDto };
@@ -377,9 +383,9 @@ export class VendorsService {
     return vendor;
   }
 
-  async remove(id: string, userId: string) {
-    // First, get the vendor to include in audit log
-    const vendor = await this.findOne(id);
+  async remove(id: string, userId: string, organizationId: string) {
+    // SECURITY: Verify vendor belongs to user's organization before deleting
+    const vendor = await this.findOne(id, organizationId);
 
     // Soft delete from database
     await this.prisma.vendor.update({
@@ -403,9 +409,12 @@ export class VendorsService {
     return vendor;
   }
 
-  async updateRiskScore(id: string, inherentRiskScore: string, userId: string) {
+  async updateRiskScore(id: string, inherentRiskScore: string, userId: string, organizationId: string) {
+    // SECURITY: Verify vendor belongs to user's organization before updating
+    const existingVendor = await this.findOne(id, organizationId);
+    
     const vendor = await this.prisma.vendor.update({
-      where: { id },
+      where: { id: existingVendor.id },
       data: { inherentRiskScore: toVendorRiskScore(inherentRiskScore) },
     });
 
@@ -609,8 +618,9 @@ export class VendorsService {
   /**
    * Update vendor's last review date and recalculate next review due
    */
-  async updateReviewDates(id: string, userId: string) {
-    const vendor = await this.findOne(id);
+  async updateReviewDates(id: string, userId: string, organizationId: string) {
+    // SECURITY: Verify vendor belongs to user's organization before updating
+    const vendor = await this.findOne(id, organizationId);
     const now = new Date();
     const nextReviewDue = calculateNextReviewDate(now, vendor.reviewFrequency || 'annual');
 

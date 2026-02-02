@@ -91,8 +91,9 @@ export class MappingsController {
   @Roles('admin', 'compliance_manager')
   @ApiOperation({ summary: 'Delete a mapping' })
   @ApiParam({ name: 'id', description: 'Mapping ID' })
-  async delete(@Param('id') id: string) {
-    return this.mappingsService.delete(id);
+  async delete(@Param('id') id: string, @CurrentUser() user: UserContext) {
+    // SECURITY: Pass organizationId to ensure tenant isolation
+    return this.mappingsService.delete(id, user.organizationId);
   }
 }
 

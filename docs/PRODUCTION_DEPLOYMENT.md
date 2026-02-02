@@ -612,30 +612,52 @@ Logs are shipped to Loki via Promtail. View in Grafana:
 
 ### Pre-Deployment
 
-- [ ] Change all default passwords
+- [ ] Change all default passwords (database, Redis, Grafana, etc.)
 - [ ] Generate new JWT_SECRET: `openssl rand -base64 32`
-- [ ] Generate new ENCRYPTION_KEY: `openssl rand -base64 32`
-- [ ] Review and update CORS settings
+- [ ] Generate new ENCRYPTION_KEY: `openssl rand -base64 32` (min 32 chars)
+- [ ] Generate new AUTH_PROXY_SECRET: `openssl rand -base64 32` (if using auth proxy)
+- [ ] Set REQUIRE_PROXY_AUTH=true (if using auth proxy)
+- [ ] Review and update CORS_ORIGINS for Trust service
 - [ ] Enable rate limiting
-- [ ] Configure firewall rules
+- [ ] Configure firewall rules (block direct access to backend services)
 - [ ] Set up WAF if available
+- [ ] Verify docker-compose.prod.yml is used (NOT docker-compose.yml)
 
 ### Post-Deployment
 
 - [ ] Verify SSL/TLS configuration (https://ssllabs.com/ssltest)
 - [ ] Test authentication flow
+- [ ] Verify Helmet security headers are present (X-Content-Type-Options, etc.)
+- [ ] Verify CORS headers restrict to allowed origins
 - [ ] Verify error tracking is working
 - [ ] Run security scan (OWASP ZAP)
 - [ ] Test backup and restore procedure
 - [ ] Document recovery procedures
+- [ ] Test file upload with malicious filenames (should be sanitized)
+
+### Authentication Hardening (v1.1.0+)
+
+- [ ] Set AUTH_PROXY_SECRET environment variable
+- [ ] Configure auth proxy to send x-proxy-secret header
+- [ ] Set REQUIRE_PROXY_AUTH=true to reject requests without proxy secret
+- [ ] Verify network isolation prevents direct client access to backend
+- [ ] Test that invalid UUIDs in x-user-id/x-organization-id are rejected
+
+### File Upload Security (v1.1.0+)
+
+- [ ] Verify dangerous file extensions are rejected (.exe, .sh, .php, etc.)
+- [ ] Test path traversal attempts are blocked
+- [ ] Verify file size limits are enforced
+- [ ] Check magic bytes validation is working
 
 ### Ongoing
 
 - [ ] Regular dependency updates
 - [ ] Monitor security advisories
 - [ ] Review access logs
-- [ ] Rotate secrets quarterly
+- [ ] Rotate secrets quarterly (JWT_SECRET, ENCRYPTION_KEY, AUTH_PROXY_SECRET)
 - [ ] Penetration testing annually
+- [ ] Re-encrypt credentials after ENCRYPTION_KEY rotation
 
 ---
 

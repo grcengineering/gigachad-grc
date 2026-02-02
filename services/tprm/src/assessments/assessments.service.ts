@@ -111,9 +111,14 @@ export class AssessmentsService {
     });
   }
 
-  async findOne(id: string) {
-    const assessment = await this.prisma.vendorAssessment.findUnique({
-      where: { id },
+  async findOne(id: string, organizationId: string) {
+    // SECURITY: Use findFirst with organizationId to prevent IDOR
+    // This ensures users can only access assessments within their organization
+    const assessment = await this.prisma.vendorAssessment.findFirst({
+      where: { 
+        id,
+        organizationId, // Tenant isolation - prevents cross-organization access
+      },
       include: {
         vendor: true,
       },
@@ -126,9 +131,9 @@ export class AssessmentsService {
     return assessment;
   }
 
-  async update(id: string, updateAssessmentDto: UpdateAssessmentDto, userId: string) {
-    // Get current assessment to check status change
-    const currentAssessment = await this.findOne(id);
+  async update(id: string, updateAssessmentDto: UpdateAssessmentDto, userId: string, organizationId: string) {
+    // SECURITY: Verify assessment belongs to user's organization before updating
+    const currentAssessment = await this.findOne(id, organizationId);
     
     const { status, dueDate, completedAt, responses, findings, ...rest } = updateAssessmentDto;
     const data: Prisma.VendorAssessmentUpdateInput = { ...rest };
@@ -220,24 +225,12 @@ export class AssessmentsService {
     return assessment;
   }
 
-  async remove(id: string, userId: string) {
-    const assessment = await this.prisma.vendorAssessment.findUnique({
-      where: { id },
-      include: {
-        vendor: {
-          select: {
-            name: true,
-          },
-        },
-      },
-    });
-
-    if (!assessment) {
-      throw new NotFoundException(`Assessment with ID ${id} not found`);
-    }
+  async remove(id: string, userId: string, organizationId: string) {
+    // SECURITY: Verify assessment belongs to user's organization before deleting
+    const assessment = await this.findOne(id, organizationId);
 
     await this.prisma.vendorAssessment.delete({
-      where: { id },
+      where: { id: assessment.id },
     });
 
     await this.audit.log({

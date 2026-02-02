@@ -93,9 +93,15 @@ export class TemplatesService {
     });
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, organizationId: string) {
+    // SECURITY: Include organizationId in query to prevent IDOR
+    // This ensures users can only access templates within their organization
     const template = await this.prisma.answerTemplate.findFirst({
-      where: { id, deletedAt: null },
+      where: { 
+        id, 
+        organizationId, // Tenant isolation - prevents cross-organization access
+        deletedAt: null,
+      },
     });
 
     if (!template) {
@@ -105,8 +111,9 @@ export class TemplatesService {
     return template;
   }
 
-  async update(id: string, dto: UpdateTemplateDto, userId: string) {
-    const template = await this.findOne(id);
+  async update(id: string, dto: UpdateTemplateDto, userId: string, organizationId: string) {
+    // SECURITY: Verify template belongs to user's organization before updating
+    const template = await this.findOne(id, organizationId);
 
     // Re-extract variables if content changed
     let variables = dto.variables;
@@ -137,8 +144,9 @@ export class TemplatesService {
     return updated;
   }
 
-  async remove(id: string, userId: string) {
-    const template = await this.findOne(id);
+  async remove(id: string, userId: string, organizationId: string) {
+    // SECURITY: Verify template belongs to user's organization before deleting
+    const template = await this.findOne(id, organizationId);
 
     // Soft delete
     await this.prisma.answerTemplate.update({
@@ -162,17 +170,22 @@ export class TemplatesService {
     return { message: 'Template deleted successfully' };
   }
 
-  async archive(id: string, userId: string) {
-    return this.update(id, { status: 'archived' }, userId);
+  async archive(id: string, userId: string, organizationId: string) {
+    // SECURITY: Pass organizationId to ensure tenant isolation
+    return this.update(id, { status: 'archived' }, userId, organizationId);
   }
 
-  async unarchive(id: string, userId: string) {
-    return this.update(id, { status: 'active' }, userId);
+  async unarchive(id: string, userId: string, organizationId: string) {
+    // SECURITY: Pass organizationId to ensure tenant isolation
+    return this.update(id, { status: 'active' }, userId, organizationId);
   }
 
-  async incrementUsage(id: string) {
+  async incrementUsage(id: string, organizationId: string) {
+    // SECURITY: Verify template belongs to organization before incrementing
+    const template = await this.findOne(id, organizationId);
+    
     await this.prisma.answerTemplate.update({
-      where: { id },
+      where: { id: template.id },
       data: {
         usageCount: { increment: 1 },
         lastUsedAt: new Date(),
@@ -181,8 +194,9 @@ export class TemplatesService {
   }
 
   // Apply template with variable substitution
-  async applyTemplate(id: string, variableValues: Record<string, string>) {
-    const template = await this.findOne(id);
+  async applyTemplate(id: string, variableValues: Record<string, string>, organizationId: string) {
+    // SECURITY: Verify template belongs to user's organization before applying
+    const template = await this.findOne(id, organizationId);
     let content = template.content;
 
     // Replace variables with values
@@ -193,7 +207,7 @@ export class TemplatesService {
     }
 
     // Track usage
-    await this.incrementUsage(id);
+    await this.incrementUsage(id, organizationId);
 
     return {
       content,

@@ -75,16 +75,26 @@ export class MappingsService {
     });
   }
 
-  async delete(id: string) {
-    const mapping = await this.prisma.controlMapping.findUnique({
-      where: { id },
+  async delete(id: string, organizationId: string) {
+    // SECURITY: Verify the mapping's control belongs to user's organization
+    // This prevents users from deleting mappings for controls in other organizations
+    const mapping = await this.prisma.controlMapping.findFirst({
+      where: { 
+        id,
+        control: {
+          OR: [
+            { organizationId }, // Control belongs to user's org
+            { organizationId: null }, // Or is a global control
+          ],
+        },
+      },
     });
 
     if (!mapping) {
       throw new NotFoundException(`Mapping with ID ${id} not found`);
     }
 
-    await this.prisma.controlMapping.delete({ where: { id } });
+    await this.prisma.controlMapping.delete({ where: { id: mapping.id } });
     return { success: true };
   }
 

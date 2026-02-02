@@ -97,9 +97,15 @@ export class QuestionnairesService {
     });
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, organizationId: string) {
+    // SECURITY: Include organizationId in query to prevent IDOR
+    // This ensures users can only access questionnaires within their organization
     const questionnaire = await this.prisma.questionnaireRequest.findFirst({
-      where: { id, deletedAt: null },
+      where: { 
+        id, 
+        organizationId, // Tenant isolation - prevents cross-organization access
+        deletedAt: null,
+      },
       include: {
         questions: {
           include: {
@@ -124,8 +130,9 @@ export class QuestionnairesService {
     return questionnaire;
   }
 
-  async update(id: string, updateQuestionnaireDto: UpdateQuestionnaireDto, userId: string) {
-    const _questionnaire = await this.findOne(id);
+  async update(id: string, updateQuestionnaireDto: UpdateQuestionnaireDto, userId: string, organizationId: string) {
+    // SECURITY: Verify questionnaire belongs to user's organization before updating
+    const _questionnaire = await this.findOne(id, organizationId);
 
     const { status, priority, assignedTo, metadata, dueDate, completedAt, ...restDto } = updateQuestionnaireDto;
 
@@ -159,8 +166,9 @@ export class QuestionnairesService {
     return updated;
   }
 
-  async remove(id: string, userId: string) {
-    const questionnaire = await this.findOne(id);
+  async remove(id: string, userId: string, organizationId: string) {
+    // SECURITY: Verify questionnaire belongs to user's organization before deleting
+    const questionnaire = await this.findOne(id, organizationId);
 
     // Soft delete
     await this.prisma.questionnaireRequest.update({
@@ -185,9 +193,13 @@ export class QuestionnairesService {
   }
 
   // Question CRUD
-  async createQuestion(createQuestionDto: CreateQuestionDto, userId: string) {
-    const questionnaire = await this.prisma.questionnaireRequest.findUnique({
-      where: { id: createQuestionDto.questionnaireId },
+  async createQuestion(createQuestionDto: CreateQuestionDto, userId: string, organizationId: string) {
+    // SECURITY: Verify questionnaire belongs to user's organization before creating question
+    const questionnaire = await this.prisma.questionnaireRequest.findFirst({
+      where: { 
+        id: createQuestionDto.questionnaireId,
+        organizationId, // Tenant isolation - prevents cross-organization access
+      },
     });
 
     if (!questionnaire) {
@@ -226,9 +238,15 @@ export class QuestionnairesService {
     return question;
   }
 
-  async updateQuestion(id: string, updateQuestionDto: UpdateQuestionDto, userId: string) {
-    const question = await this.prisma.questionnaireQuestion.findUnique({
-      where: { id },
+  async updateQuestion(id: string, updateQuestionDto: UpdateQuestionDto, userId: string, organizationId: string) {
+    // SECURITY: Verify question's questionnaire belongs to user's organization
+    const question = await this.prisma.questionnaireQuestion.findFirst({
+      where: { 
+        id,
+        questionnaire: {
+          organizationId, // Tenant isolation - prevents cross-organization access
+        },
+      },
       include: { questionnaire: true },
     });
 
@@ -271,9 +289,15 @@ export class QuestionnairesService {
     return updated;
   }
 
-  async removeQuestion(id: string, userId: string) {
-    const question = await this.prisma.questionnaireQuestion.findUnique({
-      where: { id },
+  async removeQuestion(id: string, userId: string, organizationId: string) {
+    // SECURITY: Verify question's questionnaire belongs to user's organization
+    const question = await this.prisma.questionnaireQuestion.findFirst({
+      where: { 
+        id,
+        questionnaire: {
+          organizationId, // Tenant isolation - prevents cross-organization access
+        },
+      },
       include: { questionnaire: true },
     });
 

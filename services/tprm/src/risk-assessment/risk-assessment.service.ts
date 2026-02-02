@@ -123,11 +123,14 @@ export class RiskAssessmentService {
     vendorId: string,
     dto: CreateRiskAssessmentDto,
     userId: string,
-    _organizationId: string,
+    organizationId: string,
   ): Promise<RiskAssessmentResult> {
-    // Verify vendor exists
-    const vendor = await this.prisma.vendor.findUnique({
-      where: { id: vendorId },
+    // SECURITY: Verify vendor exists AND belongs to user's organization
+    const vendor = await this.prisma.vendor.findFirst({
+      where: { 
+        id: vendorId,
+        organizationId, // Tenant isolation - prevents cross-organization access
+      },
       select: { id: true, name: true, organizationId: true },
     });
 
@@ -251,10 +254,12 @@ export class RiskAssessmentService {
   /**
    * Get the latest risk assessment for a vendor
    */
-  async getLatestAssessment(vendorId: string): Promise<RiskAssessmentResult | null> {
+  async getLatestAssessment(vendorId: string, organizationId: string): Promise<RiskAssessmentResult | null> {
+    // SECURITY: Include organizationId in query to prevent IDOR
     const assessment = await this.prisma.vendorAssessment.findFirst({
       where: {
         vendorId,
+        organizationId, // Tenant isolation - prevents cross-organization access
         assessmentType: 'risk_assessment_wizard',
       },
       orderBy: {
@@ -308,10 +313,12 @@ export class RiskAssessmentService {
   /**
    * Get all risk assessments for a vendor
    */
-  async getAssessmentHistory(vendorId: string): Promise<RiskAssessmentResult[]> {
+  async getAssessmentHistory(vendorId: string, organizationId: string): Promise<RiskAssessmentResult[]> {
+    // SECURITY: Include organizationId in query to prevent IDOR
     const assessments = await this.prisma.vendorAssessment.findMany({
       where: {
         vendorId,
+        organizationId, // Tenant isolation - prevents cross-organization access
         assessmentType: 'risk_assessment_wizard',
       },
       orderBy: {

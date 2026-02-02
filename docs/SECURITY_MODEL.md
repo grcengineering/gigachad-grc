@@ -104,6 +104,40 @@ export class DevAuthGuard implements CanActivate {
 - **Session Storage**: `sessionStorage` for in-memory tokens
 - **CSRF Protection**: SameSite cookies, CORS restrictions
 
+### Proxy Authentication (v1.1.0+)
+
+When using an authentication proxy, the backend validates proxy-set headers with additional security:
+
+```typescript
+// AuthGuard validates proxy requests
+@Injectable()
+export class AuthGuard implements CanActivate {
+  canActivate(context: ExecutionContext): boolean {
+    // 1. Verify proxy secret (if configured)
+    if (process.env.AUTH_PROXY_SECRET) {
+      // Uses timing-safe comparison to prevent timing attacks
+      verifyProxySecret(request.headers['x-proxy-secret']);
+    }
+    
+    // 2. Validate UUID format for user/org IDs
+    // Prevents SQL injection and malformed input
+    validateUUID(request.headers['x-user-id']);
+    validateUUID(request.headers['x-organization-id']);
+    
+    return true;
+  }
+}
+```
+
+**Configuration:**
+- `AUTH_PROXY_SECRET`: Shared secret between auth proxy and backend
+- `REQUIRE_PROXY_AUTH`: When `true`, requests without valid proxy secret are rejected
+
+**Security Features:**
+- **Timing-safe comparison**: Prevents timing attacks on secret verification
+- **UUID validation**: Ensures user and organization IDs are valid UUIDs
+- **Production warnings**: Logs warning if no proxy secret is configured in production
+
 ---
 
 ## Authorization
@@ -333,6 +367,77 @@ export const secureStorage = {
 - Cleared when browser tab closes
 - Not sent with requests (unlike cookies)
 - Isolated per origin
+
+---
+
+## File Upload Security (v1.1.0+)
+
+### Path Traversal Protection
+
+All file storage operations include path traversal protection:
+
+```typescript
+// LocalStorageProvider validates all paths
+private getFullPath(relativePath: string): string {
+  const fullPath = path.resolve(this.basePath, relativePath);
+  
+  // Reject paths that escape the storage directory
+  if (!fullPath.startsWith(this.basePath + path.sep)) {
+    throw new Error('SECURITY: Path traversal detected');
+  }
+  
+  return fullPath;
+}
+```
+
+### Filename Sanitization
+
+Uploaded filenames are sanitized to prevent attacks:
+
+- **Path components removed**: `../../../etc/passwd` → `passwd`
+- **Null bytes removed**: `file.txt\x00.exe` → `file.txt.exe`
+- **Special characters replaced**: Shell metacharacters, SQL injection characters
+- **Length limited**: Maximum 255 characters
+
+### File Validation
+
+The `FileValidatorService` provides comprehensive validation:
+
+- **Dangerous extensions blocked**: `.exe`, `.sh`, `.php`, `.js`, etc.
+- **MIME type validation**: Only allowed types per category
+- **Magic bytes verification**: Content matches declared type
+- **Size limits enforced**: Per-category limits (e.g., 50MB for evidence)
+- **Double extension detection**: Flags suspicious patterns like `.pdf.exe`
+
+---
+
+## Encryption Security (v1.1.0+)
+
+### Random Salt per Encryption
+
+Credential encryption now uses random salts instead of hardcoded values:
+
+```typescript
+// New format with random salt
+private encrypt(text: string): string {
+  const iv = crypto.randomBytes(16);
+  const salt = crypto.randomBytes(16); // Random salt per encryption
+  const key = crypto.scryptSync(this.encryptionKey, salt, 32);
+  // ... encryption logic
+  return `${iv}:${authTag}:${salt}:${encrypted}`; // Salt included in output
+}
+```
+
+**Benefits:**
+- Each encrypted value uses a unique salt
+- Prevents rainbow table attacks
+- Backwards compatible with existing encrypted data
+
+**Affected Services:**
+- Integration credentials
+- MCP server credentials
+- Notification webhook secrets
+- API key secrets
 
 ---
 

@@ -21,12 +21,25 @@ export class LocalStorageProvider implements StorageProvider {
   private baseUrl: string;
 
   constructor(config: StorageConfig) {
-    this.basePath = config.localPath || './storage';
+    this.basePath = path.resolve(config.localPath || './storage');
     this.baseUrl = config.localBaseUrl || '/files';
   }
 
+  /**
+   * SECURITY: Get full path with path traversal protection
+   * Ensures the resolved path is within the base storage directory
+   */
   private getFullPath(relativePath: string): string {
-    return path.join(this.basePath, relativePath);
+    // Resolve the full path
+    const fullPath = path.resolve(this.basePath, relativePath);
+    
+    // SECURITY: Ensure the resolved path is within the base path
+    // This prevents path traversal attacks like "../../../etc/passwd"
+    if (!fullPath.startsWith(this.basePath + path.sep) && fullPath !== this.basePath) {
+      throw new Error('SECURITY: Path traversal detected - access denied');
+    }
+    
+    return fullPath;
   }
 
   private async ensureDir(filePath: string): Promise<void> {

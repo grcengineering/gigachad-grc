@@ -62,12 +62,14 @@ export class VendorsController {
     @Param('id') id: string,
     @CurrentUser() user: UserContext,
   ) {
-    return this.vendorsService.updateReviewDates(id, user.userId);
+    // SECURITY: Pass organizationId to ensure tenant isolation
+    return this.vendorsService.updateReviewDates(id, user.userId, user.organizationId);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.vendorsService.findOne(id);
+  findOne(@Param('id') id: string, @CurrentUser() user: UserContext) {
+    // SECURITY: Pass organizationId to ensure tenant isolation
+    return this.vendorsService.findOne(id, user.organizationId);
   }
 
   @Patch(':id')
@@ -76,7 +78,8 @@ export class VendorsController {
     @Body() updateVendorDto: UpdateVendorDto,
     @CurrentUser() user: UserContext,
   ) {
-    return this.vendorsService.update(id, updateVendorDto, user.userId);
+    // SECURITY: Pass organizationId to ensure tenant isolation
+    return this.vendorsService.update(id, updateVendorDto, user.userId, user.organizationId);
   }
 
   @Patch(':id/risk-score')
@@ -85,12 +88,14 @@ export class VendorsController {
     @Body('inherentRiskScore') inherentRiskScore: string,
     @CurrentUser() user: UserContext,
   ) {
-    return this.vendorsService.updateRiskScore(id, inherentRiskScore, user.userId);
+    // SECURITY: Pass organizationId to ensure tenant isolation
+    return this.vendorsService.updateRiskScore(id, inherentRiskScore, user.userId, user.organizationId);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string, @CurrentUser() user: UserContext) {
-    return this.vendorsService.remove(id, user.userId);
+    // SECURITY: Pass organizationId to ensure tenant isolation
+    return this.vendorsService.remove(id, user.userId, user.organizationId);
   }
 
   // ============================================

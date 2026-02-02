@@ -51,8 +51,9 @@ export class TemplatesController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.templatesService.findOne(id);
+  findOne(@Param('id') id: string, @CurrentUser() user: UserContext) {
+    // SECURITY: Pass organizationId to ensure tenant isolation
+    return this.templatesService.findOne(id, user.organizationId);
   }
 
   @Patch(':id')
@@ -61,7 +62,8 @@ export class TemplatesController {
     @Body() dto: UpdateTemplateDto,
     @CurrentUser() user: UserContext,
   ) {
-    return this.templatesService.update(id, dto, user.userId);
+    // SECURITY: Pass organizationId to ensure tenant isolation
+    return this.templatesService.update(id, dto, user.userId, user.organizationId);
   }
 
   @Delete(':id')
@@ -69,7 +71,8 @@ export class TemplatesController {
     @Param('id') id: string,
     @CurrentUser() user: UserContext,
   ) {
-    return this.templatesService.remove(id, user.userId);
+    // SECURITY: Pass organizationId to ensure tenant isolation
+    return this.templatesService.remove(id, user.userId, user.organizationId);
   }
 
   @Post(':id/archive')
@@ -77,7 +80,8 @@ export class TemplatesController {
     @Param('id') id: string,
     @CurrentUser() user: UserContext,
   ) {
-    return this.templatesService.archive(id, user.userId);
+    // SECURITY: Pass organizationId to ensure tenant isolation
+    return this.templatesService.archive(id, user.userId, user.organizationId);
   }
 
   @Post(':id/unarchive')
@@ -85,20 +89,24 @@ export class TemplatesController {
     @Param('id') id: string,
     @CurrentUser() user: UserContext,
   ) {
-    return this.templatesService.unarchive(id, user.userId);
+    // SECURITY: Pass organizationId to ensure tenant isolation
+    return this.templatesService.unarchive(id, user.userId, user.organizationId);
   }
 
   @Post(':id/apply')
   applyTemplate(
     @Param('id') id: string,
     @Body() body: { variables: Record<string, string> },
+    @CurrentUser() user: UserContext,
   ) {
-    return this.templatesService.applyTemplate(id, body.variables || {});
+    // SECURITY: Pass organizationId to ensure tenant isolation
+    return this.templatesService.applyTemplate(id, body.variables || {}, user.organizationId);
   }
 
   @Post(':id/use')
-  incrementUsage(@Param('id') id: string) {
-    return this.templatesService.incrementUsage(id);
+  incrementUsage(@Param('id') id: string, @CurrentUser() user: UserContext) {
+    // SECURITY: Pass organizationId to ensure tenant isolation
+    return this.templatesService.incrementUsage(id, user.organizationId);
   }
 }
 

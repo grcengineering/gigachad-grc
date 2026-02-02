@@ -316,22 +316,10 @@ export class PlanAttestationsService {
     const { planId, status, page = 1, limit = 25 } = filters;
     const offset = (page - 1) * limit;
 
-    const whereClauses = [
-      `a.organization_id = '${organizationId}'::uuid`,
-    ];
-
-    if (planId) {
-      whereClauses.push(`a.plan_id = '${planId}'::uuid`);
-    }
-
-    if (status) {
-      whereClauses.push(`a.status = '${status}'`);
-    }
-
-    const whereClause = whereClauses.join(' AND ');
-
+    // SECURITY FIX: Use Prisma's parameterized $queryRaw instead of $queryRawUnsafe
+    // to prevent SQL injection. All variables are properly escaped as parameters.
     const [attestations, total] = await Promise.all([
-      this.prisma.$queryRawUnsafe<any[]>(`
+      this.prisma.$queryRaw<any[]>`
         SELECT a.*,
                p.title as plan_title,
                p.plan_type,
@@ -341,15 +329,19 @@ export class PlanAttestationsService {
         JOIN bcdr.bcdr_plans p ON a.plan_id = p.id
         LEFT JOIN public.users u_attester ON a.attester_id::text = u_attester.id
         LEFT JOIN public.users u_requester ON a.requested_by::text = u_requester.id
-        WHERE ${whereClause}
+        WHERE a.organization_id = ${organizationId}::uuid
+          AND (${planId}::uuid IS NULL OR a.plan_id = ${planId}::uuid)
+          AND (${status}::text IS NULL OR a.status = ${status})
         ORDER BY a.requested_at DESC
         LIMIT ${limit} OFFSET ${offset}
-      `),
-      this.prisma.$queryRawUnsafe<[{ count: bigint }]>(`
+      `,
+      this.prisma.$queryRaw<[{ count: bigint }]>`
         SELECT COUNT(*) as count
         FROM bcdr_plan_attestations a
-        WHERE ${whereClause}
-      `),
+        WHERE a.organization_id = ${organizationId}::uuid
+          AND (${planId}::uuid IS NULL OR a.plan_id = ${planId}::uuid)
+          AND (${status}::text IS NULL OR a.status = ${status})
+      `,
     ]);
 
     return {

@@ -1,11 +1,17 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import helmet from 'helmet';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
+
+  // SECURITY: Add Helmet for security headers
+  app.use(helmet({
+    contentSecurityPolicy: false, // Disable for API service
+  }));
 
   app.useGlobalPipes(
     new ValidationPipe({

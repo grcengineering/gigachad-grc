@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, Inject, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject, Logger } from '@nestjs/common';
 import { PrismaService } from '../common/prisma.service';
 import { AuditService } from '../common/audit.service';
 import { CreateContractDto } from './dto/create-contract.dto';
@@ -11,6 +11,37 @@ import { Prisma, ContractStatus, VendorContract, Vendor } from '@prisma/client';
 type ContractWithVendor = VendorContract & {
   vendor: Pick<Vendor, 'id' | 'name'>;
 };
+
+/**
+ * SECURITY: Sanitize filename to prevent path traversal attacks
+ * Removes path components, null bytes, and special characters
+ */
+function sanitizeFilename(filename: string): string {
+  if (!filename) return 'file';
+  
+  // Remove path components (prevents ../../../etc/passwd)
+  let sanitized = filename.replace(/^.*[\\/]/, '');
+  
+  // Remove null bytes (prevents null byte injection)
+  // eslint-disable-next-line no-control-regex
+  sanitized = sanitized.replace(/\x00/g, '');
+  sanitized = sanitized.replace(/%00/g, '');
+  
+  // Replace special characters with underscore
+  sanitized = sanitized.replace(/[^a-zA-Z0-9._-]/g, '_');
+  
+  // Prevent multiple dots that could indicate double extension attacks
+  sanitized = sanitized.replace(/\.{2,}/g, '.');
+  
+  // Limit length (255 is typical filesystem limit)
+  if (sanitized.length > 255) {
+    const ext = sanitized.substring(sanitized.lastIndexOf('.'));
+    const name = sanitized.substring(0, 255 - ext.length);
+    sanitized = name + ext;
+  }
+  
+  return sanitized || 'file';
+}
 
 // Helper to convert string to ContractStatus
 function toContractStatus(status: string | undefined, defaultValue: ContractStatus = 'draft'): ContractStatus {
@@ -110,9 +141,14 @@ export class ContractsService {
     });
   }
 
-  async findOne(id: string) {
-    const contract = await this.prisma.vendorContract.findUnique({
-      where: { id },
+  async findOne(id: string, organizationId: string) {
+    // SECURITY: Use findFirst with organizationId to prevent IDOR
+    // This ensures users can only access contracts within their organization
+    const contract = await this.prisma.vendorContract.findFirst({
+      where: { 
+        id,
+        organizationId, // Tenant isolation - prevents cross-organization access
+      },
       include: {
         vendor: true,
       },
@@ -125,7 +161,10 @@ export class ContractsService {
     return contract;
   }
 
-  async update(id: string, updateContractDto: UpdateContractDto, userId: string) {
+  async update(id: string, updateContractDto: UpdateContractDto, userId: string, organizationId: string) {
+    // SECURITY: Verify contract belongs to user's organization before updating
+    const existingContract = await this.findOne(id, organizationId);
+    
     const { status, startDate, endDate, renewalDate, ...rest } = updateContractDto;
     const data: Prisma.VendorContractUpdateInput = { ...rest };
 
@@ -146,7 +185,7 @@ export class ContractsService {
     }
 
     const contract = await this.prisma.vendorContract.update({
-      where: { id },
+      where: { id: existingContract.id },
       data,
       include: {
         vendor: {
@@ -174,21 +213,9 @@ export class ContractsService {
     return contract;
   }
 
-  async remove(id: string, userId: string) {
-    const contract = await this.prisma.vendorContract.findUnique({
-      where: { id },
-      include: {
-        vendor: {
-          select: {
-            name: true,
-          },
-        },
-      },
-    });
-
-    if (!contract) {
-      throw new NotFoundException(`Contract with ID ${id} not found`);
-    }
+  async remove(id: string, userId: string, organizationId: string) {
+    // SECURITY: Verify contract belongs to user's organization before deleting
+    const contract = await this.findOne(id, organizationId);
 
     // Delete file from storage if it exists
     if (contract.storagePath) {
@@ -200,7 +227,7 @@ export class ContractsService {
     }
 
     await this.prisma.vendorContract.delete({
-      where: { id },
+      where: { id: contract.id },
     });
 
     await this.audit.log({
@@ -224,8 +251,10 @@ export class ContractsService {
     id: string,
     file: Express.Multer.File,
     userId: string,
+    organizationId: string,
   ) {
-    const contract = await this.findOne(id);
+    // SECURITY: Verify contract belongs to user's organization before uploading
+    const contract = await this.findOne(id, organizationId);
 
     // Delete old file if it exists
     if (contract.storagePath) {
@@ -236,18 +265,21 @@ export class ContractsService {
       }
     }
 
+    // SECURITY: Sanitize filename to prevent path traversal attacks
+    const safeFilename = sanitizeFilename(file.originalname);
+    
     // Upload new file
-    const storagePath = `contracts/${contract.vendorId}/${id}/${file.originalname}`;
+    const storagePath = `contracts/${contract.vendorId}/${id}/${safeFilename}`;
     await this.storage.upload(file.buffer, storagePath, {
       contentType: file.mimetype,
     });
 
-    // Update contract with file info
+    // Update contract with file info (store original filename for display, safe path for storage)
     const updatedContract = await this.prisma.vendorContract.update({
       where: { id },
       data: {
         storagePath: storagePath,
-        filename: file.originalname,
+        filename: safeFilename, // Use sanitized filename
         mimeType: file.mimetype,
         size: file.size,
       },
@@ -278,8 +310,9 @@ export class ContractsService {
     return updatedContract;
   }
 
-  async downloadDocument(id: string) {
-    const contract = await this.findOne(id);
+  async downloadDocument(id: string, organizationId: string) {
+    // SECURITY: Verify contract belongs to user's organization before downloading
+    const contract = await this.findOne(id, organizationId);
 
     if (!contract.storagePath) {
       throw new NotFoundException(`Contract ${id} has no uploaded document`);
@@ -301,8 +334,9 @@ export class ContractsService {
     };
   }
 
-  async deleteDocument(id: string, userId: string) {
-    const contract = await this.findOne(id);
+  async deleteDocument(id: string, userId: string, organizationId: string) {
+    // SECURITY: Verify contract belongs to user's organization before deleting
+    const contract = await this.findOne(id, organizationId);
 
     if (!contract.storagePath) {
       throw new NotFoundException(`Contract ${id} has no uploaded document`);

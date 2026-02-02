@@ -55,8 +55,9 @@ export class AssessmentsController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.assessmentsService.findOne(id);
+  findOne(@Param('id') id: string, @CurrentUser() user: UserContext) {
+    // SECURITY: Pass organizationId to ensure tenant isolation
+    return this.assessmentsService.findOne(id, user.organizationId);
   }
 
   @Patch(':id')
@@ -65,11 +66,13 @@ export class AssessmentsController {
     @Body() updateAssessmentDto: UpdateAssessmentDto,
     @CurrentUser() user: UserContext,
   ) {
-    return this.assessmentsService.update(id, updateAssessmentDto, user.userId);
+    // SECURITY: Pass organizationId to ensure tenant isolation
+    return this.assessmentsService.update(id, updateAssessmentDto, user.userId, user.organizationId);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string, @CurrentUser() user: UserContext) {
-    return this.assessmentsService.remove(id, user.userId);
+    // SECURITY: Pass organizationId to ensure tenant isolation
+    return this.assessmentsService.remove(id, user.userId, user.organizationId);
   }
 }

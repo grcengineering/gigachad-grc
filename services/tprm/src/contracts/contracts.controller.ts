@@ -44,8 +44,9 @@ export class ContractsController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.contractsService.findOne(id);
+  findOne(@Param('id') id: string, @CurrentUser() user: UserContext) {
+    // SECURITY: Pass organizationId to ensure tenant isolation
+    return this.contractsService.findOne(id, user.organizationId);
   }
 
   @Patch(':id')
@@ -54,12 +55,14 @@ export class ContractsController {
     @Body() updateContractDto: UpdateContractDto,
     @CurrentUser() user: UserContext,
   ) {
-    return this.contractsService.update(id, updateContractDto, user.userId);
+    // SECURITY: Pass organizationId to ensure tenant isolation
+    return this.contractsService.update(id, updateContractDto, user.userId, user.organizationId);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string, @CurrentUser() user: UserContext) {
-    return this.contractsService.remove(id, user.userId);
+    // SECURITY: Pass organizationId to ensure tenant isolation
+    return this.contractsService.remove(id, user.userId, user.organizationId);
   }
 
   @Post(':id/document')
@@ -69,12 +72,14 @@ export class ContractsController {
     @UploadedFile() file: Express.Multer.File,
     @CurrentUser() user: UserContext,
   ) {
-    return this.contractsService.uploadDocument(id, file, user.userId);
+    // SECURITY: Pass organizationId to ensure tenant isolation
+    return this.contractsService.uploadDocument(id, file, user.userId, user.organizationId);
   }
 
   @Get(':id/document')
-  async downloadDocument(@Param('id') id: string, @Res() res: Response) {
-    const { buffer, filename, mimetype } = await this.contractsService.downloadDocument(id);
+  async downloadDocument(@Param('id') id: string, @CurrentUser() user: UserContext, @Res() res: Response) {
+    // SECURITY: Pass organizationId to ensure tenant isolation
+    const { buffer, filename, mimetype } = await this.contractsService.downloadDocument(id, user.organizationId);
 
     res.setHeader('Content-Type', mimetype);
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
@@ -83,6 +88,7 @@ export class ContractsController {
 
   @Delete(':id/document')
   deleteDocument(@Param('id') id: string, @CurrentUser() user: UserContext) {
-    return this.contractsService.deleteDocument(id, user.userId);
+    // SECURITY: Pass organizationId to ensure tenant isolation
+    return this.contractsService.deleteDocument(id, user.userId, user.organizationId);
   }
 }

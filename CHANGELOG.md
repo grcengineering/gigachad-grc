@@ -6,6 +6,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Security
+
+#### Critical Security Fixes
+- **IDOR Vulnerability Fixes**: Fixed 33+ Insecure Direct Object Reference vulnerabilities across TPRM and Trust services by adding organizationId validation to all findOne, update, and delete operations
+- **SQL Injection Fix**: Converted `$queryRawUnsafe` to parameterized `$queryRaw` in plan-attestations service
+- **Code Execution Hardening**: Enhanced code validation in custom-integration service with comprehensive blocklist for sandbox escape patterns
+- **Command Injection Fix**: Replaced `exec` with `spawn` using argument arrays in vulnerability-scanner to prevent shell injection
+
+#### Authentication Hardening
+- **Proxy Secret Verification**: New `AUTH_PROXY_SECRET` environment variable for shared secret between auth proxy and backend services
+- **Timing-Safe Comparison**: Proxy secret verification now uses `crypto.timingSafeEqual` to prevent timing attacks
+- **UUID Validation**: Auth guard validates that user-id and organization-id headers are valid UUIDs
+- **Permission Guard Fix**: Permission guard now uses authenticated user context instead of raw headers
+
+#### Encryption Improvements
+- **Random Salt Per Encryption**: Replaced hardcoded salts with random per-encryption salts in all encryption services
+- **Backwards Compatibility**: New encryption format is backwards compatible with existing encrypted data
+- **Affected Services**: mcp-credentials, integrations, notifications-config services
+
+#### File Upload Security
+- **Path Traversal Protection**: Local storage provider now validates all paths are within the designated storage directory
+- **Filename Sanitization**: Added sanitizeFilename function to remove path components, null bytes, and special characters
+- **Double Extension Detection**: File validator flags suspicious patterns like `.pdf.exe`
+
+#### Infrastructure Hardening
+- **Helmet Security Headers**: Added Helmet middleware to all 5 backend services (audit, tprm, trust, policies, frameworks)
+- **CORS Restriction**: Trust service CORS now uses `CORS_ORIGINS` environment variable instead of allowing all origins
+- **Docker Compose Warnings**: Added security warnings to docker-compose.yml about default credentials
+
 ### Added
 
 #### Graceful Demo Mode
@@ -67,9 +96,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Fixed Azure evidence collector dynamic imports
 - Fixed ScheduledReports component to display loading state
 
+### Migration Notes
+
+#### Security Configuration (Recommended)
+These changes are backwards compatible, but we recommend configuring the new security features:
+
+1. **Proxy Authentication** (if using auth proxy):
+   ```bash
+   # Generate a secure secret
+   AUTH_PROXY_SECRET=$(openssl rand -base64 32)
+   
+   # Configure your auth proxy to send this as x-proxy-secret header
+   # Then enable enforcement
+   REQUIRE_PROXY_AUTH=true
+   ```
+
+2. **CORS Origins** (if using Trust service externally):
+   ```bash
+   # Set allowed origins for Trust service
+   CORS_ORIGINS=https://grc.yourcompany.com,https://trust.yourcompany.com
+   ```
+
+3. **Encryption Format**: No action required. The new encryption format with random salts is backwards compatible. Existing encrypted data will continue to work. New data will use the more secure format.
+
+4. **Docker Compose**: If deploying to production, use `docker-compose.prod.yml` instead of `docker-compose.yml`. The development compose file now includes prominent security warnings.
+
 ### Documentation
 
 - **ENV_CONFIGURATION.md**: Added comprehensive sections for cloud provider integrations, email configuration, vulnerability scanning, AI features, and demo mode behavior
+- **ENV_CONFIGURATION.md**: Added Proxy Authentication section documenting AUTH_PROXY_SECRET and REQUIRE_PROXY_AUTH
+- **SECURITY_MODEL.md**: Added File Upload Security, Encryption Security, and Proxy Authentication sections
+- **PRODUCTION_DEPLOYMENT.md**: Extended Security Checklist with authentication hardening and file upload security items
 - **guides/integrations-setup.md**: New comprehensive guide explaining how to configure all integrations with step-by-step instructions
 - **help/reporting/scheduled-reports.md**: Added email configuration section and demo mode explanation
 - **help/data/evidence-collectors.md**: Added demo mode section and SDK requirements

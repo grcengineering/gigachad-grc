@@ -1,6 +1,6 @@
 import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { createHmac } from 'crypto';
+import { createHmac, timingSafeEqual } from 'crypto';
 import { AuditStatus } from '@prisma/client';
 import {
   FieldGuideConnectDto,
@@ -504,7 +504,17 @@ export class FieldGuideService {
       .update(rawBody)
       .digest('hex');
 
-    return signature === expectedSignature;
+    // SECURITY: Use timingSafeEqual to prevent timing attacks
+    // Regular string comparison (===) can leak timing information
+    // that could allow attackers to forge valid signatures
+    if (signature.length !== expectedSignature.length) {
+      return false;
+    }
+    
+    return timingSafeEqual(
+      Buffer.from(signature, 'hex'),
+      Buffer.from(expectedSignature, 'hex')
+    );
   }
 
   // ============================================

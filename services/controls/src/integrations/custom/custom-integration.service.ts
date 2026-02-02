@@ -74,7 +74,9 @@ export class CustomIntegrationService {
     if (!text) return text;
     
     const iv = crypto.randomBytes(16);
-    const key = crypto.scryptSync(this.encryptionKey, 'salt', 32);
+    // SECURITY FIX: Generate random salt per encryption instead of using hardcoded salt
+    const salt = crypto.randomBytes(16);
+    const key = crypto.scryptSync(this.encryptionKey, salt, 32);
     const cipher = crypto.createCipheriv(this.algorithm, key, iv);
     
     let encrypted = cipher.update(text, 'utf8', 'hex');
@@ -82,7 +84,8 @@ export class CustomIntegrationService {
     
     const authTag = cipher.getAuthTag();
     
-    return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
+    // New format with salt: iv:authTag:salt:encrypted
+    return `${iv.toString('hex')}:${authTag.toString('hex')}:${salt.toString('hex')}:${encrypted}`;
   }
 
   private decrypt(encryptedText: string): string {
@@ -90,20 +93,40 @@ export class CustomIntegrationService {
     
     try {
       const parts = encryptedText.split(':');
-      if (parts.length !== 3) return encryptedText;
       
-      const [ivHex, authTagHex, encrypted] = parts;
-      const iv = Buffer.from(ivHex, 'hex');
-      const authTag = Buffer.from(authTagHex, 'hex');
-      const key = crypto.scryptSync(this.encryptionKey, 'salt', 32);
-      
-      const decipher = crypto.createDecipheriv(this.algorithm, key, iv);
-      decipher.setAuthTag(authTag);
-      
-      let decrypted = decipher.update(encrypted, 'hex', 'utf8');
-      decrypted += decipher.final('utf8');
-      
-      return decrypted;
+      // Support both old format (3 parts) and new format (4 parts with salt)
+      if (parts.length === 3) {
+        // Legacy format without salt
+        const [ivHex, authTagHex, encrypted] = parts;
+        const iv = Buffer.from(ivHex, 'hex');
+        const authTag = Buffer.from(authTagHex, 'hex');
+        const key = crypto.scryptSync(this.encryptionKey, 'salt', 32); // Legacy salt
+        
+        const decipher = crypto.createDecipheriv(this.algorithm, key, iv);
+        decipher.setAuthTag(authTag);
+        
+        let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+        decrypted += decipher.final('utf8');
+        
+        return decrypted;
+      } else if (parts.length === 4) {
+        // New format with random salt
+        const [ivHex, authTagHex, saltHex, encrypted] = parts;
+        const iv = Buffer.from(ivHex, 'hex');
+        const authTag = Buffer.from(authTagHex, 'hex');
+        const salt = Buffer.from(saltHex, 'hex');
+        const key = crypto.scryptSync(this.encryptionKey, salt, 32);
+        
+        const decipher = crypto.createDecipheriv(this.algorithm, key, iv);
+        decipher.setAuthTag(authTag);
+        
+        let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+        decrypted += decipher.final('utf8');
+        
+        return decrypted;
+      } else {
+        return encryptedText; // Not encrypted
+      }
     } catch {
       this.logger.warn('Failed to decrypt value, returning as-is');
       return encryptedText;
@@ -482,31 +505,90 @@ export class CustomIntegrationService {
     const errors: string[] = [];
     const warnings: string[] = [];
 
-    // Basic syntax check
+    // SECURITY: Comprehensive blocklist of dangerous patterns
+    // These patterns can be used to escape the sandbox or execute arbitrary code
+    const dangerousPatterns = [
+      // Direct code execution
+      { pattern: /\beval\s*\(/, message: 'eval() is not allowed for security reasons' },
+      { pattern: /\bFunction\s*\(/, message: 'Function() constructor is not allowed' },
+      { pattern: /new\s+Function\s*\(/, message: 'new Function() is not allowed' },
+      
+      // Global object access - bypass attempts
+      { pattern: /\bglobalThis\b/, message: 'globalThis is not allowed - sandbox bypass' },
+      { pattern: /\bglobal\b(?!\.)/, message: 'global is not allowed - sandbox bypass' },
+      { pattern: /\bwindow\b/, message: 'window is not allowed' },
+      { pattern: /\bself\b/, message: 'self is not allowed' },
+      
+      // Process access - server compromise
+      { pattern: /\bprocess\b/, message: 'process is not allowed - server access' },
+      { pattern: /\brequire\s*\(/, message: 'require() is not allowed - module loading' },
+      { pattern: /\bimport\s*\(/, message: 'dynamic import() is not allowed' },
+      { pattern: /\bimport\s+/, message: 'import statements are not allowed' },
+      
+      // Prototype pollution and constructor access
+      { pattern: /__proto__/, message: '__proto__ is not allowed - prototype pollution' },
+      { pattern: /\.prototype\b/, message: 'prototype access is not allowed' },
+      { pattern: /\.constructor\b/, message: 'constructor access is not allowed - sandbox bypass' },
+      { pattern: /\bconstructor\s*\[/, message: 'constructor bracket access is not allowed' },
+      
+      // Reflect and Proxy - can bypass sandbox
+      { pattern: /\bReflect\b/, message: 'Reflect is not allowed - sandbox bypass' },
+      { pattern: /\bProxy\b/, message: 'Proxy is not allowed - sandbox bypass' },
+      
+      // File system and network access
+      { pattern: /\bfs\b/, message: 'fs module is not allowed' },
+      { pattern: /\bchild_process\b/, message: 'child_process is not allowed' },
+      { pattern: /\bhttp\b(?!s?:\/\/)/, message: 'http module is not allowed' },
+      { pattern: /\bhttps\b(?!:\/\/)/, message: 'https module is not allowed' },
+      { pattern: /\bnet\b/, message: 'net module is not allowed' },
+      
+      // Dangerous object access patterns
+      { pattern: /\['constructor'\]/, message: "['constructor'] is not allowed - sandbox bypass" },
+      { pattern: /\["constructor"\]/, message: '["constructor"] is not allowed - sandbox bypass' },
+      { pattern: /\['__proto__'\]/, message: "['__proto__'] is not allowed - prototype pollution" },
+      { pattern: /\["__proto__"\]/, message: '["__proto__"] is not allowed - prototype pollution' },
+      
+      // Timer functions that could enable DoS or async escapes
+      { pattern: /\bsetTimeout\b/, message: 'setTimeout is not allowed' },
+      { pattern: /\bsetInterval\b/, message: 'setInterval is not allowed' },
+      { pattern: /\bsetImmediate\b/, message: 'setImmediate is not allowed' },
+      
+      // Web APIs that shouldn't be available
+      { pattern: /\bWebSocket\b/, message: 'WebSocket is not allowed' },
+      { pattern: /\bWorker\b/, message: 'Worker is not allowed' },
+      { pattern: /\bSharedArrayBuffer\b/, message: 'SharedArrayBuffer is not allowed' },
+    ];
+
+    // Check all dangerous patterns
+    for (const { pattern, message } of dangerousPatterns) {
+      if (pattern.test(code)) {
+        errors.push(message);
+      }
+    }
+
+    // If we already found security issues, don't even try to parse
+    if (errors.length > 0) {
+      return { valid: false, errors, warnings };
+    }
+
+    // Basic syntax check - note: we still use Function() here but ONLY for syntax validation
+    // The actual execution will be blocked if the code contains dangerous patterns
     try {
-      new Function(code);
+      // Use strict mode to catch more syntax errors
+      new Function('"use strict";\n' + code);
     } catch (syntaxError: any) {
       errors.push(`Syntax error: ${syntaxError.message}`);
       return { valid: false, errors, warnings };
     }
 
     // Check for required sync function
-    if (!code.includes('function sync') && !code.includes('sync =')) {
+    if (!code.includes('function sync') && !code.includes('sync =') && !code.includes('async function sync')) {
       errors.push('Missing required "sync" function');
     }
 
     // Check for module.exports
     if (!code.includes('module.exports')) {
       warnings.push('Consider adding module.exports = { sync } at the end');
-    }
-
-    // Check for dangerous operations
-    if (code.includes('eval(') || code.includes('Function(')) {
-      errors.push('eval() and Function() are not allowed for security reasons');
-    }
-
-    if (code.includes('require(') && !code.includes('module.exports')) {
-      warnings.push('require() is limited to approved modules only');
     }
 
     return {
@@ -665,8 +747,30 @@ export class CustomIntegrationService {
 
   /**
    * Execute custom JavaScript code in a sandbox
+   * 
+   * SECURITY: Defense-in-depth approach:
+   * 1. Code is validated before execution via validateCode()
+   * 2. Runtime validation is performed here as a double-check
+   * 3. Limited scope is provided to the function
+   * 
+   * NOTE: For maximum security, consider migrating to vm2 or isolated-vm
+   * for proper process-level sandboxing.
    */
   private async executeCode(code: string, context: ExecutionContext): Promise<SyncResult> {
+    // SECURITY: Runtime validation - double-check for dangerous patterns
+    // This catches any patterns that might have been missed or smuggled in
+    const dangerousPatterns = [
+      /\bglobalThis\b/, /\bglobal\b(?!\.)/, /\bprocess\b/, /\brequire\s*\(/,
+      /\beval\s*\(/, /\bFunction\s*\(/, /__proto__/, /\.constructor\b/,
+      /\bReflect\b/, /\bProxy\b/, /\bimport\s*\(/,
+    ];
+    
+    for (const pattern of dangerousPatterns) {
+      if (pattern.test(code)) {
+        throw new Error('SECURITY: Dangerous pattern detected in code. Execution blocked.');
+      }
+    }
+    
     // Create a safe execution environment
     // Note: For production, use vm2 or isolated-vm for proper sandboxing
     const sandbox = {

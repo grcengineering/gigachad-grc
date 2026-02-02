@@ -40,7 +40,9 @@ export class NotificationsConfigService {
     if (!text) return text;
     
     const iv = crypto.randomBytes(16);
-    const key = crypto.scryptSync(this.encryptionKey, 'salt', 32);
+    // SECURITY FIX: Generate random salt per encryption instead of using hardcoded salt
+    const salt = crypto.randomBytes(16);
+    const key = crypto.scryptSync(this.encryptionKey, salt, 32);
     const cipher = crypto.createCipheriv(this.algorithm, key, iv);
     
     let encrypted = cipher.update(text, 'utf8', 'hex');
@@ -48,8 +50,8 @@ export class NotificationsConfigService {
     
     const authTag = cipher.getAuthTag();
     
-    // Return iv:authTag:encrypted
-    return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
+    // New format with salt: iv:authTag:salt:encrypted
+    return `${iv.toString('hex')}:${authTag.toString('hex')}:${salt.toString('hex')}:${encrypted}`;
   }
 
   private decrypt(encryptedText: string): string {
@@ -57,20 +59,40 @@ export class NotificationsConfigService {
     
     try {
       const parts = encryptedText.split(':');
-      if (parts.length !== 3) return encryptedText; // Not encrypted
       
-      const [ivHex, authTagHex, encrypted] = parts;
-      const iv = Buffer.from(ivHex, 'hex');
-      const authTag = Buffer.from(authTagHex, 'hex');
-      const key = crypto.scryptSync(this.encryptionKey, 'salt', 32);
-      
-      const decipher = crypto.createDecipheriv(this.algorithm, key, iv);
-      decipher.setAuthTag(authTag);
-      
-      let decrypted = decipher.update(encrypted, 'hex', 'utf8');
-      decrypted += decipher.final('utf8');
-      
-      return decrypted;
+      // Support both old format (3 parts) and new format (4 parts with salt)
+      if (parts.length === 3) {
+        // Legacy format without salt
+        const [ivHex, authTagHex, encrypted] = parts;
+        const iv = Buffer.from(ivHex, 'hex');
+        const authTag = Buffer.from(authTagHex, 'hex');
+        const key = crypto.scryptSync(this.encryptionKey, 'salt', 32); // Legacy salt
+        
+        const decipher = crypto.createDecipheriv(this.algorithm, key, iv);
+        decipher.setAuthTag(authTag);
+        
+        let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+        decrypted += decipher.final('utf8');
+        
+        return decrypted;
+      } else if (parts.length === 4) {
+        // New format with random salt
+        const [ivHex, authTagHex, saltHex, encrypted] = parts;
+        const iv = Buffer.from(ivHex, 'hex');
+        const authTag = Buffer.from(authTagHex, 'hex');
+        const salt = Buffer.from(saltHex, 'hex');
+        const key = crypto.scryptSync(this.encryptionKey, salt, 32);
+        
+        const decipher = crypto.createDecipheriv(this.algorithm, key, iv);
+        decipher.setAuthTag(authTag);
+        
+        let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+        decrypted += decipher.final('utf8');
+        
+        return decrypted;
+      } else {
+        return encryptedText; // Not encrypted
+      }
     } catch {
       this.logger.warn('Failed to decrypt value, returning as-is');
       return encryptedText;

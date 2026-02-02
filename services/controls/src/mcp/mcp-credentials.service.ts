@@ -7,6 +7,7 @@ interface EncryptedData {
   iv: string;
   encrypted: string;
   authTag: string;
+  salt?: string; // SECURITY: Random salt per encryption (optional for backwards compatibility)
 }
 
 interface MCPCredentialRecord {
@@ -52,10 +53,13 @@ export class MCPCredentialsService {
 
   /**
    * Encrypt sensitive data using AES-256-GCM
+   * SECURITY: Uses random salt per encryption to strengthen key derivation
    */
   private encrypt(text: string): EncryptedData {
     const iv = crypto.randomBytes(16);
-    const key = crypto.scryptSync(this.encryptionKey, 'mcp-salt', 32);
+    // SECURITY FIX: Generate random salt per encryption instead of using hardcoded salt
+    const salt = crypto.randomBytes(16);
+    const key = crypto.scryptSync(this.encryptionKey, salt, 32);
     const cipher = crypto.createCipheriv(this.algorithm, key, iv);
 
     let encrypted = cipher.update(text, 'utf8', 'hex');
@@ -67,6 +71,7 @@ export class MCPCredentialsService {
       iv: iv.toString('hex'),
       encrypted,
       authTag: authTag.toString('hex'),
+      salt: salt.toString('hex'), // Store salt with encrypted data
     };
   }
 
@@ -75,7 +80,9 @@ export class MCPCredentialsService {
    */
   private decrypt(data: EncryptedData): string {
     try {
-      const key = crypto.scryptSync(this.encryptionKey, 'mcp-salt', 32);
+      // SECURITY: Use stored salt if available, fall back to legacy salt for backwards compatibility
+      const salt = data.salt ? Buffer.from(data.salt, 'hex') : 'mcp-salt';
+      const key = crypto.scryptSync(this.encryptionKey, salt, 32);
       const iv = Buffer.from(data.iv, 'hex');
       const authTag = Buffer.from(data.authTag, 'hex');
       const decipher = crypto.createDecipheriv(this.algorithm, key, iv);
@@ -410,10 +417,13 @@ export class MCPCredentialsService {
 
   /**
    * Encrypt with a specific key (used during key rotation)
+   * SECURITY: Uses random salt per encryption
    */
   private encryptWithKey(text: string, key: string): EncryptedData {
     const iv = crypto.randomBytes(16);
-    const derivedKey = crypto.scryptSync(key, 'mcp-salt', 32);
+    // SECURITY FIX: Generate random salt per encryption
+    const salt = crypto.randomBytes(16);
+    const derivedKey = crypto.scryptSync(key, salt, 32);
     const cipher = crypto.createCipheriv(this.algorithm, derivedKey, iv);
 
     let encrypted = cipher.update(text, 'utf8', 'hex');
@@ -425,6 +435,7 @@ export class MCPCredentialsService {
       iv: iv.toString('hex'),
       encrypted,
       authTag: authTag.toString('hex'),
+      salt: salt.toString('hex'), // Store salt with encrypted data
     };
   }
 

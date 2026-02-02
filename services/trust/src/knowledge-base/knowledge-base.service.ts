@@ -148,9 +148,15 @@ export class KnowledgeBaseService {
     });
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, organizationId: string) {
+    // SECURITY: Include organizationId in query to prevent IDOR
+    // This ensures users can only access knowledge base entries within their organization
     const entry = await this.prisma.knowledgeBaseEntry.findFirst({
-      where: { id, deletedAt: null },
+      where: { 
+        id, 
+        organizationId, // Tenant isolation - prevents cross-organization access
+        deletedAt: null,
+      },
       include: {
         attachments: true,
         questions: {
@@ -174,8 +180,9 @@ export class KnowledgeBaseService {
     return entry;
   }
 
-  async update(id: string, updateKnowledgeBaseDto: UpdateKnowledgeBaseDto, userId: string) {
-    const _entry = await this.findOne(id);
+  async update(id: string, updateKnowledgeBaseDto: UpdateKnowledgeBaseDto, userId: string, organizationId: string) {
+    // SECURITY: Verify entry belongs to user's organization before updating
+    const _entry = await this.findOne(id, organizationId);
 
     const { linkedControls, linkedEvidence, linkedPolicies, approvedBy, status, category, ...updateData } = updateKnowledgeBaseDto;
 
@@ -265,8 +272,9 @@ export class KnowledgeBaseService {
     return updated;
   }
 
-  async remove(id: string, userId: string) {
-    const entry = await this.findOne(id);
+  async remove(id: string, userId: string, organizationId: string) {
+    // SECURITY: Verify entry belongs to user's organization before deleting
+    const entry = await this.findOne(id, organizationId);
 
     // Soft delete
     await this.prisma.knowledgeBaseEntry.update({
@@ -290,8 +298,9 @@ export class KnowledgeBaseService {
     return { message: 'Knowledge base entry deleted successfully' };
   }
 
-  async approve(id: string, userId: string) {
-    const _entry = await this.findOne(id);
+  async approve(id: string, userId: string, organizationId: string) {
+    // SECURITY: Verify entry belongs to user's organization before approving
+    const _entry = await this.findOne(id, organizationId);
 
     const approved = await this.prisma.knowledgeBaseEntry.update({
       where: { id },
@@ -316,9 +325,18 @@ export class KnowledgeBaseService {
     return approved;
   }
 
-  async incrementUsage(id: string) {
+  async incrementUsage(id: string, organizationId: string) {
+    // SECURITY: Include organizationId to prevent incrementing entries from other orgs
+    const entry = await this.prisma.knowledgeBaseEntry.findFirst({
+      where: { id, organizationId },
+    });
+    
+    if (!entry) {
+      throw new NotFoundException(`Knowledge base entry with ID ${id} not found`);
+    }
+    
     await this.prisma.knowledgeBaseEntry.update({
-      where: { id },
+      where: { id: entry.id },
       data: {
         usageCount: { increment: 1 },
         lastUsedAt: new Date(),

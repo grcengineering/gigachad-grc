@@ -3,7 +3,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { EmailService } from '../../email/email.service';
 import { Prisma } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
-import { createHmac } from 'crypto';
+import { createHmac, timingSafeEqual } from 'crypto';
 import {
   CampaignStatus,
   PhishingTemplateType,
@@ -758,7 +758,18 @@ export class PhishingService {
         .digest('hex')
         .substring(0, 8);
 
-      if (signature !== expectedSignature) {
+      // SECURITY: Use timingSafeEqual to prevent timing attacks
+      // Regular string comparison (===) can leak timing information
+      if (!signature || signature.length !== expectedSignature.length) {
+        throw new Error('Invalid token signature');
+      }
+      
+      const signatureValid = timingSafeEqual(
+        Buffer.from(signature),
+        Buffer.from(expectedSignature)
+      );
+      
+      if (!signatureValid) {
         throw new Error('Invalid token signature');
       }
 
