@@ -38,7 +38,7 @@
     "dompurify": "^3.2.7",
     "exceljs": "^4.4.0",
     "html2canvas": "^1.4.1",
-    "jspdf": "^4.0.0",
+    "jspdf": "^4.1.0",
     "keycloak-js": "^23.0.3",
     "lucide-react": "^0.555.0",
     "mammoth": "^1.11.0",
