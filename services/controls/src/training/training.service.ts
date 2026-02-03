@@ -1257,7 +1257,7 @@ export class TrainingService {
     }
 
     // Generate certificate ID
-    const certificateId = `CERT-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+    const certificateId = `CERT-${crypto.randomBytes(8).toString('hex').toUpperCase()}`;
 
     const moduleNames: Record<string, string> = {
       'phishing-smishing-vishing': 'Phishing, Smishing & Vishing Awareness',

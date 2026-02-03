@@ -10,6 +10,7 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { GroupsService } from './groups.service';
 import { PermissionsService } from './permissions.service';
@@ -51,7 +52,7 @@ export class PermissionsController {
   @UseGuards(PermissionGuard)
   @RequirePermission(Resource.PERMISSIONS, Action.READ)
   async getGroup(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Headers('x-organization-id') orgId: string = 'default',
   ) {
     return this.groupsService.findOne(id, orgId);
@@ -73,7 +74,7 @@ export class PermissionsController {
   @UseGuards(PermissionGuard)
   @RequirePermission(Resource.PERMISSIONS, Action.UPDATE)
   async updateGroup(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdatePermissionGroupDto,
     @Headers('x-organization-id') orgId: string = 'default',
     @Headers('x-user-id') userId?: string,
@@ -87,7 +88,7 @@ export class PermissionsController {
   @RequirePermission(Resource.PERMISSIONS, Action.DELETE)
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteGroup(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Headers('x-organization-id') orgId: string = 'default',
     @Headers('x-user-id') userId?: string,
     @Headers('x-user-email') userEmail?: string,
@@ -103,7 +104,7 @@ export class PermissionsController {
   @UseGuards(PermissionGuard)
   @RequirePermission(Resource.PERMISSIONS, Action.READ)
   async getGroupMembers(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Headers('x-organization-id') orgId: string = 'default',
   ) {
     return this.groupsService.getMembers(id, orgId);
@@ -114,7 +115,7 @@ export class PermissionsController {
   @RequirePermission(Resource.PERMISSIONS, Action.UPDATE)
   @HttpCode(HttpStatus.CREATED)
   async addGroupMember(
-    @Param('id') groupId: string,
+    @Param('id', ParseUUIDPipe) groupId: string,
     @Body() dto: AddGroupMemberDto,
     @Headers('x-organization-id') orgId: string = 'default',
     @Headers('x-user-id') actorId?: string,
@@ -129,8 +130,8 @@ export class PermissionsController {
   @RequirePermission(Resource.PERMISSIONS, Action.UPDATE)
   @HttpCode(HttpStatus.NO_CONTENT)
   async removeGroupMember(
-    @Param('groupId') groupId: string,
-    @Param('userId') userId: string,
+    @Param('groupId', ParseUUIDPipe) groupId: string,
+    @Param('userId', ParseUUIDPipe) userId: string,
     @Headers('x-organization-id') orgId: string = 'default',
     @Headers('x-user-id') actorId?: string,
     @Headers('x-user-email') actorEmail?: string,
@@ -146,7 +147,7 @@ export class PermissionsController {
   @UseGuards(PermissionGuard)
   @RequirePermission(Resource.PERMISSIONS, Action.READ)
   async getUserPermissions(
-    @Param('id') userId: string,
+    @Param('id', ParseUUIDPipe) userId: string,
     @Headers('x-organization-id') orgId: string = 'default',
   ) {
     return this.permissionsService.getUserPermissions(userId, orgId);
@@ -156,7 +157,7 @@ export class PermissionsController {
   @UseGuards(PermissionGuard)
   @RequirePermission(Resource.PERMISSIONS, Action.UPDATE)
   async setUserOverrides(
-    @Param('id') userId: string,
+    @Param('id', ParseUUIDPipe) userId: string,
     @Body() dto: SetUserOverridesDto,
     @Headers('x-organization-id') orgId: string = 'default',
     @Headers('x-user-id') actorId?: string,
@@ -169,7 +170,7 @@ export class PermissionsController {
   @Get('users/:id/overrides')
   @UseGuards(PermissionGuard)
   @RequirePermission(Resource.PERMISSIONS, Action.READ)
-  async getUserOverrides(@Param('id') userId: string) {
+  async getUserOverrides(@Param('id', ParseUUIDPipe) userId: string) {
     return this.groupsService.getUserOverrides(userId);
   }
 

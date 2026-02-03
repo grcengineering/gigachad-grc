@@ -2,7 +2,6 @@ import {
   Controller,
   Post,
   Body,
-  Query,
   UseGuards,
 } from '@nestjs/common';
 import { TrustAiService } from './trust-ai.service';
@@ -16,12 +15,12 @@ export class TrustAiController {
 
   @Post('draft-answer')
   draftAnswer(
-    @Query('organizationId') organizationId: string,
     @Body() body: { questionText: string },
     @CurrentUser() user: UserContext,
   ) {
+    // SECURITY: Organization ID extracted from authenticated context, not query param
     return this.aiService.generateAnswerDraft(
-      organizationId || 'default-org',
+      user.organizationId,
       body.questionText,
       user.userId,
     );
@@ -29,12 +28,12 @@ export class TrustAiController {
 
   @Post('categorize')
   categorizeQuestion(
-    @Query('organizationId') organizationId: string,
     @Body() body: { questionText: string },
     @CurrentUser() user: UserContext,
   ) {
+    // SECURITY: Organization ID extracted from authenticated context, not query param
     return this.aiService.categorizeQuestion(
-      organizationId || 'default-org',
+      user.organizationId,
       body.questionText,
       user.userId,
     );
@@ -42,12 +41,12 @@ export class TrustAiController {
 
   @Post('improve-answer')
   improveAnswer(
-    @Query('organizationId') organizationId: string,
     @Body() body: { questionText: string; currentAnswer: string },
     @CurrentUser() user: UserContext,
   ) {
+    // SECURITY: Organization ID extracted from authenticated context, not query param
     return this.aiService.improveAnswer(
-      organizationId || 'default-org',
+      user.organizationId,
       body.questionText,
       body.currentAnswer,
       user.userId,

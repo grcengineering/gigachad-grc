@@ -11,6 +11,7 @@ import {
   UseInterceptors,
   UploadedFile,
   Res,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -93,7 +94,7 @@ export class EvidenceController {
   @ApiOperation({ summary: 'Get evidence by ID' })
   @ApiParam({ name: 'id', description: 'Evidence ID' })
   async findOne(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: UserContext,
   ) {
     return this.evidenceService.findOne(id, user.organizationId);
@@ -103,7 +104,7 @@ export class EvidenceController {
   @ApiOperation({ summary: 'Get download URL for evidence' })
   @ApiParam({ name: 'id', description: 'Evidence ID' })
   async getDownloadUrl(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: UserContext,
   ) {
     return this.evidenceService.getDownloadUrl(id, user.organizationId);
@@ -113,7 +114,7 @@ export class EvidenceController {
   @ApiOperation({ summary: 'Stream file content for preview' })
   @ApiParam({ name: 'id', description: 'Evidence ID' })
   async preview(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: UserContext,
     @Res() res: Response,
   ) {
@@ -166,7 +167,7 @@ export class EvidenceController {
   @ApiOperation({ summary: 'Update evidence' })
   @ApiParam({ name: 'id', description: 'Evidence ID' })
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: UserContext,
     @Body() dto: UpdateEvidenceDto,
   ) {
@@ -183,7 +184,7 @@ export class EvidenceController {
   @ApiOperation({ summary: 'Delete evidence' })
   @ApiParam({ name: 'id', description: 'Evidence ID' })
   async delete(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: UserContext,
   ) {
     return this.evidenceService.delete(id, user.organizationId);
@@ -194,7 +195,7 @@ export class EvidenceController {
   @ApiOperation({ summary: 'Review evidence' })
   @ApiParam({ name: 'id', description: 'Evidence ID' })
   async review(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: UserContext,
     @Body() dto: ReviewEvidenceDto,
   ) {
@@ -211,7 +212,7 @@ export class EvidenceController {
   @ApiOperation({ summary: 'Link evidence to controls' })
   @ApiParam({ name: 'id', description: 'Evidence ID' })
   async linkToControls(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: UserContext,
     @Body() dto: LinkEvidenceDto,
   ) {
@@ -227,8 +228,8 @@ export class EvidenceController {
   @Roles('admin', 'compliance_manager')
   @ApiOperation({ summary: 'Unlink evidence from control' })
   async unlinkFromControl(
-    @Param('id') id: string,
-    @Param('controlId') controlId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('controlId', ParseUUIDPipe) controlId: string,
     @CurrentUser() user: UserContext,
   ) {
     return this.evidenceService.unlinkFromControl(

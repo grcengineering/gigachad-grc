@@ -10,6 +10,7 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { PermissionsService } from '../permissions/permissions.service';
@@ -79,7 +80,7 @@ export class UsersController {
   @Get(':id')
   @RequirePermission(Resource.USERS, Action.READ)
   async getUser(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Headers('x-organization-id') orgId: string = 'default',
   ) {
     return this.usersService.findOne(id, orgId);
@@ -88,7 +89,7 @@ export class UsersController {
   @Get(':id/permissions')
   @RequirePermission(Resource.USERS, Action.READ)
   async getUserPermissions(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Headers('x-organization-id') orgId: string = 'default',
   ) {
     return this.permissionsService.getUserPermissions(id, orgId);
@@ -108,7 +109,7 @@ export class UsersController {
   @Put(':id')
   @RequirePermission(Resource.USERS, Action.UPDATE)
   async updateUser(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateUserDto,
     @Headers('x-organization-id') orgId: string = 'default',
     @Headers('x-user-id') actorId?: string,
@@ -121,7 +122,7 @@ export class UsersController {
   @RequirePermission(Resource.USERS, Action.UPDATE)
   @HttpCode(HttpStatus.NO_CONTENT)
   async deactivateUser(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Headers('x-organization-id') orgId: string = 'default',
     @Headers('x-user-id') actorId?: string,
     @Headers('x-user-email') actorEmail?: string,
@@ -133,7 +134,7 @@ export class UsersController {
   @RequirePermission(Resource.USERS, Action.UPDATE)
   @HttpCode(HttpStatus.NO_CONTENT)
   async reactivateUser(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Headers('x-organization-id') orgId: string = 'default',
     @Headers('x-user-id') actorId?: string,
     @Headers('x-user-email') actorEmail?: string,
@@ -148,7 +149,7 @@ export class UsersController {
   @Get(':id/groups')
   @RequirePermission(Resource.USERS, Action.READ)
   async getUserGroups(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Headers('x-organization-id') orgId: string = 'default',
   ) {
     const user = await this.usersService.findOne(id, orgId);
@@ -159,8 +160,8 @@ export class UsersController {
   @RequirePermission(Resource.PERMISSIONS, Action.UPDATE)
   @HttpCode(HttpStatus.CREATED)
   async addUserToGroup(
-    @Param('id') userId: string,
-    @Param('groupId') groupId: string,
+    @Param('id', ParseUUIDPipe) userId: string,
+    @Param('groupId', ParseUUIDPipe) groupId: string,
     @Headers('x-organization-id') orgId: string = 'default',
     @Headers('x-user-id') actorId?: string,
     @Headers('x-user-email') actorEmail?: string,
@@ -173,8 +174,8 @@ export class UsersController {
   @RequirePermission(Resource.PERMISSIONS, Action.UPDATE)
   @HttpCode(HttpStatus.NO_CONTENT)
   async removeUserFromGroup(
-    @Param('id') userId: string,
-    @Param('groupId') groupId: string,
+    @Param('id', ParseUUIDPipe) userId: string,
+    @Param('groupId', ParseUUIDPipe) groupId: string,
     @Headers('x-organization-id') orgId: string = 'default',
     @Headers('x-user-id') actorId?: string,
     @Headers('x-user-email') actorEmail?: string,

@@ -27,11 +27,11 @@ ARG VITE_ENABLE_AI_MODULE=true
 
 ENV VITE_API_URL=$VITE_API_URL
 ENV VITE_ENABLE_AI_MODULE=$VITE_ENABLE_AI_MODULE
-# Dev auth is enabled by default in development mode
-ENV VITE_ENABLE_DEV_AUTH=true
+# SECURITY: Dev auth must be disabled for production builds
+ENV VITE_ENABLE_DEV_AUTH=false
 
-# Build in development mode to allow dev auth
-RUN npm run build -- --mode development
+# Build in production mode for security and optimization
+RUN npm run build -- --mode production
 
 # Production stage - Nginx
 FROM nginx:alpine AS production

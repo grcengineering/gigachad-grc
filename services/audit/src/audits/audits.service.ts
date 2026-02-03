@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAuditDto } from './dto/create-audit.dto';
 import { UpdateAuditDto } from './dto/update-audit.dto';
@@ -236,11 +237,6 @@ export class AuditsService {
   }
 
   private generateAccessCode(): string {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Avoid confusing characters
-    let code = '';
-    for (let i = 0; i < 12; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return code.match(/.{1,4}/g)?.join('-') || code; // Format as XXXX-XXXX-XXXX
+    return randomBytes(6).toString('hex').toUpperCase().match(/.{1,4}/g)?.join('-') || randomBytes(6).toString('hex').toUpperCase();
   }
 }

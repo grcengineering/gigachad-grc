@@ -8,7 +8,6 @@ import {
   Query,
   Body,
   Put,
-  Headers,
   HttpCode,
   HttpStatus,
   UseGuards,
@@ -22,6 +21,7 @@ import {
   NotificationPreferenceResponseDto,
 } from './dto/notification.dto';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
+import { CurrentUser, UserContext } from '@gigachad-grc/shared';
 
 @Controller('api/notifications')
 @UseGuards(DevAuthGuard)
@@ -34,33 +34,37 @@ export class NotificationsController {
 
   @Get()
   async findAll(
-    @Headers('x-user-id') userId: string = 'default-user',
+    @CurrentUser() user: UserContext,
     @Query() filters: NotificationFilterDto,
   ) {
-    return this.notificationsService.findAll(userId, filters);
+    // SECURITY: User ID extracted from authenticated context, not client-provided header
+    return this.notificationsService.findAll(user.userId, filters);
   }
 
   @Get('unread-count')
   async getUnreadCount(
-    @Headers('x-user-id') userId: string = 'default-user',
+    @CurrentUser() user: UserContext,
   ): Promise<{ count: number }> {
-    const count = await this.notificationsService.getUnreadCount(userId);
+    // SECURITY: User ID extracted from authenticated context, not client-provided header
+    const count = await this.notificationsService.getUnreadCount(user.userId);
     return { count };
   }
 
   @Get('stats')
   async getStats(
-    @Headers('x-user-id') userId: string = 'default-user',
+    @CurrentUser() user: UserContext,
   ): Promise<NotificationStatsDto> {
-    return this.notificationsService.getStats(userId);
+    // SECURITY: User ID extracted from authenticated context, not client-provided header
+    return this.notificationsService.getStats(user.userId);
   }
 
   @Get(':id')
   async findOne(
-    @Headers('x-user-id') userId: string = 'default-user',
+    @CurrentUser() user: UserContext,
     @Param('id') id: string,
   ) {
-    return this.notificationsService.findOne(userId, id);
+    // SECURITY: User ID extracted from authenticated context, not client-provided header
+    return this.notificationsService.findOne(user.userId, id);
   }
 
   // ===========================
@@ -70,19 +74,21 @@ export class NotificationsController {
   @Post('mark-read')
   @HttpCode(HttpStatus.OK)
   async markAsRead(
-    @Headers('x-user-id') userId: string = 'default-user',
+    @CurrentUser() user: UserContext,
     @Body() dto: MarkReadDto,
   ): Promise<{ updated: number }> {
-    return this.notificationsService.markAsRead(userId, dto);
+    // SECURITY: User ID extracted from authenticated context, not client-provided header
+    return this.notificationsService.markAsRead(user.userId, dto);
   }
 
   @Post(':id/read')
   @HttpCode(HttpStatus.OK)
   async markOneAsRead(
-    @Headers('x-user-id') userId: string = 'default-user',
+    @CurrentUser() user: UserContext,
     @Param('id') id: string,
   ): Promise<{ success: boolean }> {
-    await this.notificationsService.markOneAsRead(userId, id);
+    // SECURITY: User ID extracted from authenticated context, not client-provided header
+    await this.notificationsService.markOneAsRead(user.userId, id);
     return { success: true };
   }
 
@@ -93,17 +99,19 @@ export class NotificationsController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async delete(
-    @Headers('x-user-id') userId: string = 'default-user',
+    @CurrentUser() user: UserContext,
     @Param('id') id: string,
   ): Promise<void> {
-    await this.notificationsService.delete(userId, id);
+    // SECURITY: User ID extracted from authenticated context, not client-provided header
+    await this.notificationsService.delete(user.userId, id);
   }
 
   @Delete()
   async deleteAll(
-    @Headers('x-user-id') userId: string = 'default-user',
+    @CurrentUser() user: UserContext,
   ): Promise<{ deleted: number }> {
-    return this.notificationsService.deleteAll(userId);
+    // SECURITY: User ID extracted from authenticated context, not client-provided header
+    return this.notificationsService.deleteAll(user.userId);
   }
 
   // ===========================
@@ -112,17 +120,19 @@ export class NotificationsController {
 
   @Get('preferences/list')
   async getPreferences(
-    @Headers('x-user-id') userId: string = 'default-user',
+    @CurrentUser() user: UserContext,
   ): Promise<NotificationPreferenceResponseDto[]> {
-    return this.notificationsService.getPreferences(userId);
+    // SECURITY: User ID extracted from authenticated context, not client-provided header
+    return this.notificationsService.getPreferences(user.userId);
   }
 
   @Put('preferences')
   async updatePreferences(
-    @Headers('x-user-id') userId: string = 'default-user',
+    @CurrentUser() user: UserContext,
     @Body() dto: UpdatePreferencesDto,
   ): Promise<{ success: boolean }> {
-    await this.notificationsService.updatePreferences(userId, dto.preferences);
+    // SECURITY: User ID extracted from authenticated context, not client-provided header
+    await this.notificationsService.updatePreferences(user.userId, dto.preferences);
     return { success: true };
   }
 }

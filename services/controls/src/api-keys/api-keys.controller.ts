@@ -11,6 +11,7 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiKeysService } from './api-keys.service';
 import {
@@ -73,7 +74,7 @@ export class ApiKeysController {
   @Get(':id')
   @RequirePermission(Resource.SETTINGS, Action.READ)
   async getApiKey(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Headers('x-organization-id') orgId: string = 'default',
   ) {
     return this.apiKeysService.findOne(id, orgId);
@@ -101,7 +102,7 @@ export class ApiKeysController {
   @Put(':id')
   @RequirePermission(Resource.SETTINGS, Action.UPDATE)
   async updateApiKey(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateApiKeyDto,
     @Headers('x-organization-id') orgId: string = 'default',
     @Headers('x-user-id') actorId?: string,
@@ -117,7 +118,7 @@ export class ApiKeysController {
   @RequirePermission(Resource.SETTINGS, Action.UPDATE)
   @HttpCode(HttpStatus.NO_CONTENT)
   async revokeApiKey(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Headers('x-organization-id') orgId: string = 'default',
     @Headers('x-user-id') actorId?: string,
     @Headers('x-user-email') actorEmail?: string,
@@ -134,7 +135,7 @@ export class ApiKeysController {
   @EndpointRateLimit(ENDPOINT_RATE_LIMITS.API_KEY)
   @RequirePermission(Resource.SETTINGS, Action.UPDATE)
   async regenerateApiKey(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Headers('x-organization-id') orgId: string = 'default',
     @Headers('x-user-id') actorId?: string,
     @Headers('x-user-email') actorEmail?: string,
@@ -149,7 +150,7 @@ export class ApiKeysController {
   @RequirePermission(Resource.SETTINGS, Action.DELETE)
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteApiKey(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Headers('x-organization-id') orgId: string = 'default',
     @Headers('x-user-id') actorId?: string,
     @Headers('x-user-email') actorEmail?: string,

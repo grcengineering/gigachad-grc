@@ -12,6 +12,9 @@ import {
   HttpStatus,
   Headers,
   UnauthorizedException,
+  ServiceUnavailableException,
+  Logger,
+  OnModuleInit,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -44,21 +47,48 @@ import { ConfigService } from '@nestjs/config';
 @ApiTags('SCIM 2.0')
 @ApiHeader({ name: 'Authorization', description: 'Bearer <SCIM_TOKEN>' })
 @Controller('scim/v2')
-export class ScimController {
+export class ScimController implements OnModuleInit {
+  private readonly logger = new Logger(ScimController.name);
   private readonly scimTokens: Map<string, string> = new Map();
+  private scimEnabled = false;
 
   constructor(
     private readonly scimService: ScimService,
     private readonly configService: ConfigService,
   ) {
     // In production, tokens would be stored in database per-organization
-    // For now, use environment variable
-    const defaultToken = this.configService.get('SCIM_TOKEN') || 'scim-development-token';
+    // For now, use environment variable - but REQUIRE it to be set
+    const scimToken = this.configService.get<string>('SCIM_TOKEN');
     const defaultOrgId = this.configService.get('DEFAULT_ORG_ID') || 'org-1';
-    this.scimTokens.set(defaultToken, defaultOrgId);
+
+    if (scimToken && scimToken.trim().length > 0) {
+      this.scimTokens.set(scimToken, defaultOrgId);
+      this.scimEnabled = true;
+    }
+  }
+
+  onModuleInit() {
+    if (!this.scimEnabled) {
+      this.logger.warn(
+        'SCIM_TOKEN environment variable is not set. SCIM endpoints are disabled. ' +
+          'Set SCIM_TOKEN to enable SCIM provisioning.',
+      );
+    } else {
+      this.logger.log('SCIM provisioning is enabled');
+    }
+  }
+
+  private ensureScimEnabled(): void {
+    if (!this.scimEnabled) {
+      throw new ServiceUnavailableException(
+        'SCIM provisioning is not configured. Please contact your administrator to enable SCIM.',
+      );
+    }
   }
 
   private validateToken(authHeader: string): string {
+    this.ensureScimEnabled();
+
     if (!authHeader?.startsWith('Bearer ')) {
       throw new UnauthorizedException('Missing or invalid Authorization header');
     }
@@ -221,7 +251,10 @@ export class ScimController {
 
   @Get('ServiceProviderConfig')
   @ApiOperation({ summary: 'Get SCIM service provider configuration' })
+  @ApiResponse({ status: 503, description: 'SCIM is not configured' })
   async getServiceProviderConfig() {
+    this.ensureScimEnabled();
+
     return {
       schemas: ['urn:ietf:params:scim:schemas:core:2.0:ServiceProviderConfig'],
       documentationUri: 'https://docs.gigachad-grc.io/scim',
@@ -245,7 +278,10 @@ export class ScimController {
 
   @Get('Schemas')
   @ApiOperation({ summary: 'Get SCIM schemas' })
+  @ApiResponse({ status: 503, description: 'SCIM is not configured' })
   async getSchemas() {
+    this.ensureScimEnabled();
+
     return {
       schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
       totalResults: 2,
@@ -266,7 +302,10 @@ export class ScimController {
 
   @Get('ResourceTypes')
   @ApiOperation({ summary: 'Get SCIM resource types' })
+  @ApiResponse({ status: 503, description: 'SCIM is not configured' })
   async getResourceTypes() {
+    this.ensureScimEnabled();
+
     return {
       schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
       totalResults: 2,

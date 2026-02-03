@@ -483,6 +483,7 @@ function TrainingViewer({
           className="w-full h-full border-0"
           title={module.title}
           allow="fullscreen"
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
         />
       </div>
     </div>

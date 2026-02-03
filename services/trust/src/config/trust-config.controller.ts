@@ -4,7 +4,6 @@ import {
   Put,
   Post,
   Body,
-  Query,
   UseGuards,
 } from '@nestjs/common';
 import { TrustConfigService, UpdateTrustConfigDto } from './trust-config.service';
@@ -17,18 +16,19 @@ export class TrustConfigController {
   constructor(private readonly configService: TrustConfigService) {}
 
   @Get()
-  getConfiguration(@Query('organizationId') organizationId: string) {
-    return this.configService.getConfiguration(organizationId || 'default-org');
+  getConfiguration(@CurrentUser() user: UserContext) {
+    // SECURITY: Organization ID extracted from authenticated context, not query param
+    return this.configService.getConfiguration(user.organizationId);
   }
 
   @Put()
   updateConfiguration(
-    @Query('organizationId') organizationId: string,
     @Body() dto: UpdateTrustConfigDto,
     @CurrentUser() user: UserContext,
   ) {
+    // SECURITY: Organization ID extracted from authenticated context, not query param
     return this.configService.updateConfiguration(
-      organizationId || 'default-org',
+      user.organizationId,
       dto,
       user.userId,
     );
@@ -36,11 +36,11 @@ export class TrustConfigController {
 
   @Post('reset')
   resetToDefaults(
-    @Query('organizationId') organizationId: string,
     @CurrentUser() user: UserContext,
   ) {
+    // SECURITY: Organization ID extracted from authenticated context, not query param
     return this.configService.resetToDefaults(
-      organizationId || 'default-org',
+      user.organizationId,
       user.userId,
     );
   }

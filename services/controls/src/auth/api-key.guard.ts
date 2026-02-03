@@ -112,10 +112,30 @@ export class ApiKeyAuthGuard implements CanActivate {
   }
 
   /**
-   * Extract API key from request headers
+   * Extract API key from request headers only
+   * 
+   * SECURITY: API keys must ONLY be passed via headers (X-API-Key or Authorization).
+   * Query parameter support has been removed due to security risks:
+   * - Query params appear in server logs
+   * - Query params appear in browser history  
+   * - Query params can be leaked via Referer headers
    */
   private extractApiKey(request: ApiKeyRequest): string | null {
-    // Check X-API-Key header first
+    // SECURITY: Reject API keys in query parameters
+    // This is a HIGH severity vulnerability - log and reject
+    const queryKey = request.query?.api_key;
+    if (queryKey) {
+      this.logger.warn(
+        `SECURITY: Rejected API key in query parameter from IP: ${request.ip}, ` +
+        `path: ${request.url}. API keys must be passed via X-API-Key or Authorization header.`
+      );
+      throw new UnauthorizedException(
+        'API keys in query parameters are not allowed. ' +
+        'Please use the X-API-Key header or Authorization header with ApiKey scheme.'
+      );
+    }
+
+    // Check X-API-Key header first (preferred method)
     const headerKey = request.headers['x-api-key'];
     if (headerKey) {
       return Array.isArray(headerKey) ? headerKey[0] : headerKey;
@@ -125,13 +145,6 @@ export class ApiKeyAuthGuard implements CanActivate {
     const authHeader = request.headers['authorization'];
     if (typeof authHeader === 'string' && authHeader.startsWith('ApiKey ')) {
       return authHeader.slice(7);
-    }
-
-    // Check query parameter (less secure, but sometimes needed)
-    const queryKey = request.query?.api_key;
-    if (queryKey && typeof queryKey === 'string') {
-      this.logger.warn('API key passed via query parameter - consider using header');
-      return queryKey;
     }
 
     return null;

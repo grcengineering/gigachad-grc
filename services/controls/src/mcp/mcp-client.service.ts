@@ -2,7 +2,7 @@ import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/commo
 import { ConfigService } from '@nestjs/config';
 import { spawn, ChildProcess } from 'child_process';
 import { EventEmitter } from 'events';
-import { resolve, join } from 'path';
+import { resolve, join, basename } from 'path';
 import {
   MCPServerConfig,
   MCP_SERVERS,
@@ -144,10 +144,11 @@ export class MCPClientService implements OnModuleInit, OnModuleDestroy {
 
     try {
       // Security: Validate command against whitelist to prevent command injection
-      const baseCommand = config.command.split('/').pop() || config.command;
-      if (!ALLOWED_MCP_COMMANDS.includes(baseCommand as typeof ALLOWED_MCP_COMMANDS[number])) {
-        throw new Error(`Command '${config.command}' is not in the allowed MCP commands whitelist`);
-      }
+      this.validateCommand(config.command);
+
+      // Security: Validate args don't contain shell metacharacters
+      const args = config.args || [];
+      this.validateArgs(args);
 
       const cwd = config.cwd 
         ? join(this.projectRoot, config.cwd)
@@ -160,7 +161,7 @@ export class MCPClientService implements OnModuleInit, OnModuleDestroy {
 
       this.logger.log(`Starting MCP server ${serverId} in ${cwd}`);
 
-      const child = spawn(config.command, config.args || [], {
+      const child = spawn(config.command, args, {
         cwd,
         env,
         stdio: ['pipe', 'pipe', 'pipe'],
@@ -355,6 +356,34 @@ export class MCPClientService implements OnModuleInit, OnModuleDestroy {
   // ============================================
   // Private Methods
   // ============================================
+
+  /**
+   * Validates that a command is in the allowed whitelist.
+   * Prevents command injection by only allowing known safe executables.
+   */
+  private validateCommand(command: string): void {
+    const commandBasename = basename(command);
+    if (!ALLOWED_MCP_COMMANDS.includes(commandBasename as typeof ALLOWED_MCP_COMMANDS[number])) {
+      throw new Error(
+        `Command not allowed: ${command}. Allowed commands: ${ALLOWED_MCP_COMMANDS.join(', ')}`
+      );
+    }
+  }
+
+  /**
+   * Validates that arguments don't contain dangerous shell metacharacters.
+   * Prevents shell injection attacks through command arguments.
+   */
+  private validateArgs(args: string[]): void {
+    const dangerousChars = /[;&|`$(){}[\]<>]/;
+    for (const arg of args) {
+      if (dangerousChars.test(arg)) {
+        throw new Error(
+          `Invalid characters in argument: ${arg}. Shell metacharacters are not allowed.`
+        );
+      }
+    }
+  }
 
   private async waitForReady(serverId: string, _timeout: number): Promise<void> {
     const state = this.servers.get(serverId);

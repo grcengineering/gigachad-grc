@@ -28,12 +28,13 @@ export class TemplatesController {
 
   @Get()
   findAll(
-    @Query('organizationId') organizationId: string,
+    @CurrentUser() user: UserContext,
     @Query('category') category?: string,
     @Query('status') status?: string,
     @Query('search') search?: string,
   ) {
-    return this.templatesService.findAll(organizationId, {
+    // SECURITY: Organization ID extracted from authenticated context, not query param
+    return this.templatesService.findAll(user.organizationId, {
       category,
       status,
       search,
@@ -41,13 +42,15 @@ export class TemplatesController {
   }
 
   @Get('stats')
-  getStats(@Query('organizationId') organizationId: string) {
-    return this.templatesService.getStats(organizationId);
+  getStats(@CurrentUser() user: UserContext) {
+    // SECURITY: Organization ID extracted from authenticated context, not query param
+    return this.templatesService.getStats(user.organizationId);
   }
 
   @Get('categories')
-  getCategories(@Query('organizationId') organizationId: string) {
-    return this.templatesService.getCategories(organizationId);
+  getCategories(@CurrentUser() user: UserContext) {
+    // SECURITY: Organization ID extracted from authenticated context, not query param
+    return this.templatesService.getCategories(user.organizationId);
   }
 
   @Get(':id')

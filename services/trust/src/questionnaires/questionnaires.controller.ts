@@ -40,12 +40,13 @@ export class QuestionnairesController {
 
   @Get()
   findAll(
-    @Query('organizationId') organizationId: string,
+    @CurrentUser() user: UserContext,
     @Query('status') status?: string,
     @Query('assignedTo') assignedTo?: string,
     @Query('priority') priority?: string,
   ) {
-    return this.questionnairesService.findAll(organizationId, {
+    // SECURITY: Organization ID extracted from authenticated context, not query param
+    return this.questionnairesService.findAll(user.organizationId, {
       status,
       assignedTo,
       priority,
@@ -53,36 +54,38 @@ export class QuestionnairesController {
   }
 
   @Get('stats')
-  getStats(@Query('organizationId') organizationId: string) {
-    return this.questionnairesService.getStats(organizationId);
+  getStats(@CurrentUser() user: UserContext) {
+    // SECURITY: Organization ID extracted from authenticated context, not query param
+    return this.questionnairesService.getStats(user.organizationId);
   }
 
   @Get('analytics')
   getAnalytics(
-    @Query('organizationId') organizationId: string,
+    @CurrentUser() user: UserContext,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
+    // SECURITY: Organization ID extracted from authenticated context, not query param
     const dateRange = startDate && endDate
       ? { start: new Date(startDate), end: new Date(endDate) }
       : undefined;
-    return this.questionnairesService.getAnalytics(organizationId, dateRange);
+    return this.questionnairesService.getAnalytics(user.organizationId, dateRange);
   }
 
   @Get('dashboard-queue')
   getDashboardQueue(
-    @Query('organizationId') organizationId: string,
     @CurrentUser() user: UserContext,
   ) {
-    return this.questionnairesService.getDashboardQueue(organizationId, user.userId);
+    // SECURITY: Organization ID extracted from authenticated context, not query param
+    return this.questionnairesService.getDashboardQueue(user.organizationId, user.userId);
   }
 
   @Get('my-queue')
   getMyQueue(
     @CurrentUser() user: UserContext,
-    @Query('organizationId') organizationId: string,
   ) {
-    return this.questionnairesService.getMyQueue(user.userId, organizationId);
+    // SECURITY: Organization ID extracted from authenticated context, not query param
+    return this.questionnairesService.getMyQueue(user.userId, user.organizationId);
   }
 
   @Get(':id')
@@ -142,13 +145,14 @@ export class QuestionnairesController {
   // Similar Questions Endpoints
   @Get('similar-questions')
   findSimilarQuestions(
-    @Query('organizationId') organizationId: string,
+    @CurrentUser() user: UserContext,
     @Query('questionText') questionText: string,
     @Query('excludeId') excludeId?: string,
     @Query('limit') limit?: string,
   ) {
+    // SECURITY: Organization ID extracted from authenticated context, not query param
     return this.similarQuestionsService.findSimilarQuestions(
-      organizationId,
+      user.organizationId,
       questionText,
       excludeId,
       limit ? parseInt(limit) : undefined,
@@ -162,12 +166,13 @@ export class QuestionnairesController {
 
   @Get('answer-suggestions')
   getAnswerSuggestions(
-    @Query('organizationId') organizationId: string,
+    @CurrentUser() user: UserContext,
     @Query('questionText') questionText: string,
     @Query('limit') limit?: string,
   ) {
+    // SECURITY: Organization ID extracted from authenticated context, not query param
     return this.similarQuestionsService.getAnswerSuggestions(
-      organizationId,
+      user.organizationId,
       questionText,
       limit ? parseInt(limit) : undefined,
     );

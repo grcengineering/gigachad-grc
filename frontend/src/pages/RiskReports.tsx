@@ -393,7 +393,10 @@ export default function RiskReports() {
         
         const printWindow = window.open('', '_blank');
         if (printWindow) {
-          printWindow.document.write(pdfContent);
+          // Use safer DOM manipulation instead of document.write
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(pdfContent, 'text/html');
+          printWindow.document.documentElement.innerHTML = doc.documentElement.innerHTML;
           printWindow.document.close();
           printWindow.focus();
           // Give the content time to render before printing

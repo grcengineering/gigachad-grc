@@ -9,6 +9,7 @@ import {
   Query,
   UseGuards,
   Req,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
@@ -56,7 +57,7 @@ export class IntegrationsController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get integration details' })
-  findOne(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
+  findOne(@Req() req: AuthenticatedRequest, @Param('id', ParseUUIDPipe) id: string) {
     return this.integrationsService.findOne(id, req.user.organizationId);
   }
 
@@ -74,7 +75,7 @@ export class IntegrationsController {
   @ApiOperation({ summary: 'Update an integration' })
   update(
     @Req() req: AuthenticatedRequest,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateIntegrationDto
   ) {
     return this.integrationsService.update(
@@ -87,19 +88,19 @@ export class IntegrationsController {
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete an integration' })
-  delete(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
+  delete(@Req() req: AuthenticatedRequest, @Param('id', ParseUUIDPipe) id: string) {
     return this.integrationsService.delete(id, req.user.organizationId);
   }
 
   @Post(':id/test')
   @ApiOperation({ summary: 'Test integration connection' })
-  testConnection(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
+  testConnection(@Req() req: AuthenticatedRequest, @Param('id', ParseUUIDPipe) id: string) {
     return this.integrationsService.testConnection(id, req.user.organizationId);
   }
 
   @Post(':id/sync')
   @ApiOperation({ summary: 'Trigger a manual sync' })
-  triggerSync(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
+  triggerSync(@Req() req: AuthenticatedRequest, @Param('id', ParseUUIDPipe) id: string) {
     return this.integrationsService.triggerSync(
       id,
       req.user.organizationId,
@@ -113,7 +114,7 @@ export class IntegrationsController {
 
   @Get(':id/custom-config')
   @ApiOperation({ summary: 'Get custom integration configuration' })
-  getCustomConfig(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
+  getCustomConfig(@Req() req: AuthenticatedRequest, @Param('id', ParseUUIDPipe) id: string) {
     return this.customIntegrationService.getConfig(id, req.user.organizationId);
   }
 
@@ -121,7 +122,7 @@ export class IntegrationsController {
   @ApiOperation({ summary: 'Save custom integration configuration' })
   saveCustomConfig(
     @Req() req: AuthenticatedRequest,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: SaveCustomConfigDto,
   ) {
     return this.customIntegrationService.saveConfig(
@@ -136,7 +137,7 @@ export class IntegrationsController {
   @ApiOperation({ summary: 'Test custom integration endpoint' })
   testCustomEndpoint(
     @Req() req: AuthenticatedRequest,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: TestEndpointDto,
   ) {
     return this.customIntegrationService.testEndpoint(
@@ -161,7 +162,7 @@ export class IntegrationsController {
 
   @Post(':id/custom-sync')
   @ApiOperation({ summary: 'Execute custom integration sync' })
-  executeCustomSync(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
+  executeCustomSync(@Req() req: AuthenticatedRequest, @Param('id', ParseUUIDPipe) id: string) {
     return this.customIntegrationService.executeSync(
       id,
       req.user.organizationId,

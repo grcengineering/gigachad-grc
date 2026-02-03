@@ -23,17 +23,18 @@ export class TrustCenterController {
 
   // Config endpoints
   @Get('config')
-  getConfig(@Query('organizationId') organizationId: string) {
-    return this.trustCenterService.getConfig(organizationId);
+  getConfig(@CurrentUser() user: UserContext) {
+    // SECURITY: Organization ID extracted from authenticated context, not query param
+    return this.trustCenterService.getConfig(user.organizationId);
   }
 
   @Patch('config')
   updateConfig(
-    @Query('organizationId') organizationId: string,
     @Body() updateConfigDto: UpdateTrustCenterConfigDto,
     @CurrentUser() user: UserContext,
   ) {
-    return this.trustCenterService.updateConfig(organizationId, updateConfigDto, user.userId);
+    // SECURITY: Organization ID extracted from authenticated context, not query param
+    return this.trustCenterService.updateConfig(user.organizationId, updateConfigDto, user.userId);
   }
 
   // Content endpoints
@@ -47,12 +48,13 @@ export class TrustCenterController {
 
   @Get('content')
   getContent(
-    @Query('organizationId') organizationId: string,
+    @CurrentUser() user: UserContext,
     @Query('section') section?: string,
     @Query('publishedOnly') publishedOnly?: string,
   ) {
+    // SECURITY: Organization ID extracted from authenticated context, not query param
     return this.trustCenterService.getContent(
-      organizationId,
+      user.organizationId,
       section,
       publishedOnly === 'true',
     );
@@ -82,7 +84,8 @@ export class TrustCenterController {
 
   // Public Trust Center view
   @Get('public')
-  getPublicTrustCenter(@Query('organizationId') organizationId: string) {
-    return this.trustCenterService.getPublicTrustCenter(organizationId);
+  getPublicTrustCenter(@CurrentUser() user: UserContext) {
+    // SECURITY: Organization ID extracted from authenticated context, not query param
+    return this.trustCenterService.getPublicTrustCenter(user.organizationId);
   }
 }

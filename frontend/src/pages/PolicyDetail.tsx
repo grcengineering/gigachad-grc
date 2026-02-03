@@ -216,6 +216,7 @@ export default function PolicyDetail() {
                   className="w-full h-[800px]"
                   title={policy.title}
                   onError={() => setPreviewError(true)}
+                  sandbox="allow-scripts allow-same-origin"
                 />
               ) : policy.mimeType?.startsWith('image/') ? (
                 <img

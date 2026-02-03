@@ -1,7 +1,7 @@
 # Traefik Static Configuration
 api:
-  dashboard: true
-  insecure: true
+  dashboard: false
+  insecure: false
 
 log:
   level: INFO

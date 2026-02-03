@@ -232,6 +232,7 @@ export default function EvidenceDetail() {
                     src={`/api/evidence/${evidence.id}/preview`}
                     className="w-full h-[600px]"
                     title={evidence.title}
+                    sandbox="allow-scripts allow-same-origin"
                   />
                 )}
                 {isText && (

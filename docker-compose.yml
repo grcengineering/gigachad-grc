@@ -509,13 +509,14 @@ services:
     image: grafana/grafana:10.2.0
     container_name: grc-grafana
     environment:
-      # SECURITY WARNING: admin/admin is a development default only!
-      # Set GRAFANA_ADMIN_USER and GRAFANA_ADMIN_PASSWORD environment variables
-      # with strong credentials before exposing this service.
-      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      # SECURITY WARNING: These credentials MUST be set via environment variables!
+      # DO NOT use default values in production - set strong credentials:
+      #   export GRAFANA_ADMIN_USER=your_admin_user
+      #   export GRAFANA_ADMIN_PASSWORD=$(openssl rand -base64 32)
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:?GRAFANA_ADMIN_USER is required}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD is required}
       GF_USERS_ALLOW_SIGN_UP: 'false'
-      GF_AUTH_ANONYMOUS_ENABLED: 'true'
+      GF_AUTH_ANONYMOUS_ENABLED: 'false'
       GF_AUTH_ANONYMOUS_ORG_ROLE: 'Viewer'
     volumes:
       - grafana_data:/var/lib/grafana

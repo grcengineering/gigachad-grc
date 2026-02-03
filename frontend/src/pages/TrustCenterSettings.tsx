@@ -521,6 +521,7 @@ function EmbedSettings({
   height="800"
   frameborder="0"
   title="${config.companyName} Trust Center"
+  sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
 ></iframe>`;
 
   const buttonCode = `<a 

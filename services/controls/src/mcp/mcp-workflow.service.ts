@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { randomBytes } from 'crypto';
 import { InjectMetric } from '@willsoto/nestjs-prometheus';
 import type { Counter } from 'prom-client';
 import { MCPClientService } from './mcp-client.service';
@@ -350,7 +351,7 @@ export class MCPWorkflowService {
       throw new Error(`Workflow not found: ${workflowId}`);
     }
 
-    const executionId = `exec-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const executionId = `exec-${randomBytes(8).toString('hex')}`;
     const execution: WorkflowExecution = {
       id: executionId,
       workflowId,
