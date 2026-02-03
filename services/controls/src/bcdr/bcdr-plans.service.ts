@@ -199,119 +199,113 @@ export class BCDRPlansService {
   ) {
     const _existing = await this.findOne(id, organizationId);
 
+    // SECURITY: Allowed column names for dynamic UPDATE query.
+    // Only these hardcoded column names can be included in the query.
+    // This prevents SQL injection even though column names come from code, not user input.
+    const ALLOWED_COLUMNS = new Set([
+      'title', 'description', 'status', 'approved_at', 'published_at', 'version',
+      'version_notes', 'owner_id', 'approver_id', 'effective_date', 'expiry_date',
+      'scope_description', 'in_scope_processes', 'out_of_scope', 'activation_criteria',
+      'deactivation_criteria', 'objectives', 'assumptions', 'plan_type',
+      'activation_authority', 'review_frequency_months', 'tags', 'updated_by', 'updated_at',
+    ]);
+
     const updates: string[] = ['updated_by = $2::uuid', 'updated_at = NOW()'];
     const values: (string | number | boolean | Date | string[] | null)[] = [id, userId];
     let paramIndex = 3;
 
-    if (dto.title !== undefined) {
-      updates.push(`title = $${paramIndex}`);
-      values.push(dto.title);
+    // Helper to safely add column updates - validates column is in allowed list
+    const addUpdate = (column: string, value: string | number | boolean | Date | string[] | null, typeCast?: string) => {
+      if (!ALLOWED_COLUMNS.has(column)) {
+        throw new Error(`Invalid column name: ${column}`);
+      }
+      updates.push(`${column} = $${paramIndex}${typeCast || ''}`);
+      values.push(value);
       paramIndex++;
+    };
+
+    // Helper for non-parameterized updates (like NOW())
+    const addRawUpdate = (column: string, expression: string) => {
+      if (!ALLOWED_COLUMNS.has(column)) {
+        throw new Error(`Invalid column name: ${column}`);
+      }
+      updates.push(`${column} = ${expression}`);
+    };
+
+    if (dto.title !== undefined) {
+      addUpdate('title', dto.title);
     }
     if (dto.description !== undefined) {
-      updates.push(`description = $${paramIndex}`);
-      values.push(dto.description);
-      paramIndex++;
+      addUpdate('description', dto.description);
     }
     if (dto.status !== undefined) {
-      updates.push(`status = $${paramIndex}::bcdr.plan_status`);
-      values.push(dto.status);
-      paramIndex++;
+      addUpdate('status', dto.status, '::bcdr.plan_status');
 
       // Handle status changes
       if (dto.status === PlanStatus.APPROVED) {
-        updates.push('approved_at = NOW()');
+        addRawUpdate('approved_at', 'NOW()');
       }
       if (dto.status === PlanStatus.PUBLISHED) {
-        updates.push('published_at = NOW()');
+        addRawUpdate('published_at', 'NOW()');
       }
     }
     if (dto.version !== undefined) {
-      updates.push(`version = $${paramIndex}`);
-      values.push(dto.version);
-      paramIndex++;
+      addUpdate('version', dto.version);
     }
     if (dto.versionNotes !== undefined) {
-      updates.push(`version_notes = $${paramIndex}`);
-      values.push(dto.versionNotes);
-      paramIndex++;
+      addUpdate('version_notes', dto.versionNotes);
     }
     if (dto.ownerId !== undefined) {
-      updates.push(`owner_id = $${paramIndex}::uuid`);
-      values.push(dto.ownerId);
-      paramIndex++;
+      addUpdate('owner_id', dto.ownerId, '::uuid');
     }
     if (dto.approverId !== undefined) {
-      updates.push(`approver_id = $${paramIndex}::uuid`);
-      values.push(dto.approverId);
-      paramIndex++;
+      addUpdate('approver_id', dto.approverId, '::uuid');
     }
     if (dto.effectiveDate !== undefined) {
-      updates.push(`effective_date = $${paramIndex}::date`);
-      values.push(dto.effectiveDate ? new Date(dto.effectiveDate) : null);
-      paramIndex++;
+      addUpdate('effective_date', dto.effectiveDate ? new Date(dto.effectiveDate) : null, '::date');
     }
     if (dto.expiryDate !== undefined) {
-      updates.push(`expiry_date = $${paramIndex}::date`);
-      values.push(dto.expiryDate ? new Date(dto.expiryDate) : null);
-      paramIndex++;
+      addUpdate('expiry_date', dto.expiryDate ? new Date(dto.expiryDate) : null, '::date');
     }
     if (dto.scopeDescription !== undefined) {
-      updates.push(`scope_description = $${paramIndex}`);
-      values.push(dto.scopeDescription);
-      paramIndex++;
+      addUpdate('scope_description', dto.scopeDescription);
     }
     if (dto.inScopeProcesses !== undefined) {
-      updates.push(`in_scope_processes = $${paramIndex}::uuid[]`);
-      values.push(dto.inScopeProcesses);
-      paramIndex++;
+      addUpdate('in_scope_processes', dto.inScopeProcesses, '::uuid[]');
     }
     if (dto.outOfScope !== undefined) {
-      updates.push(`out_of_scope = $${paramIndex}`);
-      values.push(dto.outOfScope);
-      paramIndex++;
+      addUpdate('out_of_scope', dto.outOfScope);
     }
     if (dto.activationCriteria !== undefined) {
-      updates.push(`activation_criteria = $${paramIndex}`);
-      values.push(dto.activationCriteria);
-      paramIndex++;
+      addUpdate('activation_criteria', dto.activationCriteria);
     }
     if (dto.deactivationCriteria !== undefined) {
-      updates.push(`deactivation_criteria = $${paramIndex}`);
-      values.push(dto.deactivationCriteria);
-      paramIndex++;
+      addUpdate('deactivation_criteria', dto.deactivationCriteria);
     }
     if (dto.objectives !== undefined) {
-      updates.push(`objectives = $${paramIndex}`);
-      values.push(dto.objectives);
-      paramIndex++;
+      addUpdate('objectives', dto.objectives);
     }
     if (dto.assumptions !== undefined) {
-      updates.push(`assumptions = $${paramIndex}`);
-      values.push(dto.assumptions);
-      paramIndex++;
+      addUpdate('assumptions', dto.assumptions);
     }
     if (dto.planType !== undefined) {
-      updates.push(`plan_type = $${paramIndex}::bcdr.plan_type`);
-      values.push(dto.planType);
-      paramIndex++;
+      addUpdate('plan_type', dto.planType, '::bcdr.plan_type');
     }
     if (dto.activationAuthority !== undefined) {
-      updates.push(`activation_authority = $${paramIndex}`);
-      values.push(dto.activationAuthority);
-      paramIndex++;
+      addUpdate('activation_authority', dto.activationAuthority);
     }
     if (dto.reviewFrequencyMonths !== undefined) {
-      updates.push(`review_frequency_months = $${paramIndex}`);
-      values.push(dto.reviewFrequencyMonths);
-      paramIndex++;
+      addUpdate('review_frequency_months', dto.reviewFrequencyMonths);
     }
     if (dto.tags !== undefined) {
-      updates.push(`tags = $${paramIndex}::text[]`);
-      values.push(dto.tags);
-      paramIndex++;
+      addUpdate('tags', dto.tags, '::text[]');
     }
 
+    // SECURITY NOTE: $queryRawUnsafe is used here because Prisma's tagged template
+    // doesn't support dynamic column names. This is safe because:
+    // 1. Column names are hardcoded strings validated against ALLOWED_COLUMNS
+    // 2. All values are parameterized via positional parameters ($1, $2, etc.)
+    // 3. No user input is interpolated into column names
     const result = await this.prisma.$queryRawUnsafe<BCDRPlanRecord[]>(
       `UPDATE bcdr.bcdr_plans SET ${updates.join(', ')} WHERE id = $1::uuid RETURNING *`,
       ...values,

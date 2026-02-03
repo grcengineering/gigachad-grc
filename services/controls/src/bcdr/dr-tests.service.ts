@@ -185,71 +185,71 @@ export class DRTestsService {
   ) {
     await this.findOne(id, organizationId);
 
+    // SECURITY: Allowed column names for dynamic UPDATE query.
+    // Only these hardcoded column names can be included in the query.
+    // This prevents SQL injection even though column names come from code, not user input.
+    const ALLOWED_COLUMNS = new Set([
+      'name', 'description', 'status', 'scheduled_date', 'scheduled_start_time',
+      'scheduled_duration_hours', 'coordinator_id', 'test_objectives', 'success_criteria',
+      'participant_ids', 'external_participants', 'tags', 'updated_by', 'updated_at',
+    ]);
+
     const updates: string[] = ['updated_by = $2::uuid', 'updated_at = NOW()'];
     const values: any[] = [id, userId];
     let paramIndex = 3;
 
-    if (dto.name !== undefined) {
-      updates.push(`name = $${paramIndex}`);
-      values.push(dto.name);
+    // Helper to safely add column updates - validates column is in allowed list
+    const addUpdate = (column: string, value: any, typeCast?: string) => {
+      if (!ALLOWED_COLUMNS.has(column)) {
+        throw new Error(`Invalid column name: ${column}`);
+      }
+      updates.push(`${column} = $${paramIndex}${typeCast || ''}`);
+      values.push(value);
       paramIndex++;
+    };
+
+    if (dto.name !== undefined) {
+      addUpdate('name', dto.name);
     }
     if (dto.description !== undefined) {
-      updates.push(`description = $${paramIndex}`);
-      values.push(dto.description);
-      paramIndex++;
+      addUpdate('description', dto.description);
     }
     if (dto.status !== undefined) {
-      updates.push(`status = $${paramIndex}::bcdr.test_status`);
-      values.push(dto.status);
-      paramIndex++;
+      addUpdate('status', dto.status, '::bcdr.test_status');
     }
     if (dto.scheduledDate !== undefined) {
-      updates.push(`scheduled_date = $${paramIndex}::date`);
-      values.push(dto.scheduledDate ? new Date(dto.scheduledDate) : null);
-      paramIndex++;
+      addUpdate('scheduled_date', dto.scheduledDate ? new Date(dto.scheduledDate) : null, '::date');
     }
     if (dto.scheduledStartTime !== undefined) {
-      updates.push(`scheduled_start_time = $${paramIndex}::time`);
-      values.push(dto.scheduledStartTime);
-      paramIndex++;
+      addUpdate('scheduled_start_time', dto.scheduledStartTime, '::time');
     }
     if (dto.scheduledDurationHours !== undefined) {
-      updates.push(`scheduled_duration_hours = $${paramIndex}`);
-      values.push(dto.scheduledDurationHours);
-      paramIndex++;
+      addUpdate('scheduled_duration_hours', dto.scheduledDurationHours);
     }
     if (dto.coordinatorId !== undefined) {
-      updates.push(`coordinator_id = $${paramIndex}::uuid`);
-      values.push(dto.coordinatorId);
-      paramIndex++;
+      addUpdate('coordinator_id', dto.coordinatorId, '::uuid');
     }
     if (dto.testObjectives !== undefined) {
-      updates.push(`test_objectives = $${paramIndex}`);
-      values.push(dto.testObjectives);
-      paramIndex++;
+      addUpdate('test_objectives', dto.testObjectives);
     }
     if (dto.successCriteria !== undefined) {
-      updates.push(`success_criteria = $${paramIndex}`);
-      values.push(dto.successCriteria);
-      paramIndex++;
+      addUpdate('success_criteria', dto.successCriteria);
     }
     if (dto.participantIds !== undefined) {
-      updates.push(`participant_ids = $${paramIndex}::uuid[]`);
-      values.push(dto.participantIds);
-      paramIndex++;
+      addUpdate('participant_ids', dto.participantIds, '::uuid[]');
     }
     if (dto.externalParticipants !== undefined) {
-      updates.push(`external_participants = $${paramIndex}`);
-      values.push(dto.externalParticipants);
-      paramIndex++;
+      addUpdate('external_participants', dto.externalParticipants);
     }
     if (dto.tags !== undefined) {
-      updates.push(`tags = $${paramIndex}::text[]`);
-      values.push(dto.tags);
-      paramIndex++;
+      addUpdate('tags', dto.tags, '::text[]');
     }
 
+    // SECURITY NOTE: $queryRawUnsafe is used here because Prisma's tagged template
+    // doesn't support dynamic column names. This is safe because:
+    // 1. Column names are hardcoded strings validated against ALLOWED_COLUMNS
+    // 2. All values are parameterized via positional parameters ($1, $2, etc.)
+    // 3. No user input is interpolated into column names
     const result = await this.prisma.$queryRawUnsafe<any[]>(
       `UPDATE bcdr.dr_tests SET ${updates.join(', ')} WHERE id = $1::uuid RETURNING *`,
       ...values,
@@ -392,55 +392,70 @@ export class DRTestsService {
     userId: string,
     updates: Partial<CreateTestFindingDto> & { remediationStatus?: string; remediationNotes?: string },
   ) {
+    // SECURITY: Allowed column names for dynamic UPDATE query.
+    // Only these hardcoded column names can be included in the query.
+    const ALLOWED_COLUMNS = new Set([
+      'title', 'description', 'severity', 'remediation_status', 'remediation_completed_at',
+      'remediation_plan', 'remediation_owner_id', 'remediation_due_date', 'remediation_notes',
+      'updated_at',
+    ]);
+
     const updateFields: string[] = ['updated_at = NOW()'];
     const values: any[] = [findingId];
     let paramIndex = 2;
 
-    if (updates.title !== undefined) {
-      updateFields.push(`title = $${paramIndex}`);
-      values.push(updates.title);
+    // Helper to safely add column updates - validates column is in allowed list
+    const addUpdate = (column: string, value: any, typeCast?: string) => {
+      if (!ALLOWED_COLUMNS.has(column)) {
+        throw new Error(`Invalid column name: ${column}`);
+      }
+      updateFields.push(`${column} = $${paramIndex}${typeCast || ''}`);
+      values.push(value);
       paramIndex++;
+    };
+
+    // Helper for non-parameterized updates (like NOW())
+    const addRawUpdate = (column: string, expression: string) => {
+      if (!ALLOWED_COLUMNS.has(column)) {
+        throw new Error(`Invalid column name: ${column}`);
+      }
+      updateFields.push(`${column} = ${expression}`);
+    };
+
+    if (updates.title !== undefined) {
+      addUpdate('title', updates.title);
     }
     if (updates.description !== undefined) {
-      updateFields.push(`description = $${paramIndex}`);
-      values.push(updates.description);
-      paramIndex++;
+      addUpdate('description', updates.description);
     }
     if (updates.severity !== undefined) {
-      updateFields.push(`severity = $${paramIndex}`);
-      values.push(updates.severity);
-      paramIndex++;
+      addUpdate('severity', updates.severity);
     }
     if (updates.remediationStatus !== undefined) {
-      updateFields.push(`remediation_status = $${paramIndex}`);
-      values.push(updates.remediationStatus);
-      paramIndex++;
+      addUpdate('remediation_status', updates.remediationStatus);
 
       if (updates.remediationStatus === 'resolved') {
-        updateFields.push('remediation_completed_at = NOW()');
+        addRawUpdate('remediation_completed_at', 'NOW()');
       }
     }
     if (updates.remediationPlan !== undefined) {
-      updateFields.push(`remediation_plan = $${paramIndex}`);
-      values.push(updates.remediationPlan);
-      paramIndex++;
+      addUpdate('remediation_plan', updates.remediationPlan);
     }
     if (updates.remediationOwnerId !== undefined) {
-      updateFields.push(`remediation_owner_id = $${paramIndex}::uuid`);
-      values.push(updates.remediationOwnerId);
-      paramIndex++;
+      addUpdate('remediation_owner_id', updates.remediationOwnerId, '::uuid');
     }
     if (updates.remediationDueDate !== undefined) {
-      updateFields.push(`remediation_due_date = $${paramIndex}::date`);
-      values.push(updates.remediationDueDate ? new Date(updates.remediationDueDate) : null);
-      paramIndex++;
+      addUpdate('remediation_due_date', updates.remediationDueDate ? new Date(updates.remediationDueDate) : null, '::date');
     }
     if (updates.remediationNotes !== undefined) {
-      updateFields.push(`remediation_notes = $${paramIndex}`);
-      values.push(updates.remediationNotes);
-      paramIndex++;
+      addUpdate('remediation_notes', updates.remediationNotes);
     }
 
+    // SECURITY NOTE: $queryRawUnsafe is used here because Prisma's tagged template
+    // doesn't support dynamic column names. This is safe because:
+    // 1. Column names are hardcoded strings validated against ALLOWED_COLUMNS
+    // 2. All values are parameterized via positional parameters ($1, $2, etc.)
+    // 3. No user input is interpolated into column names
     const result = await this.prisma.$queryRawUnsafe<any[]>(
       `UPDATE bcdr.dr_test_findings SET ${updateFields.join(', ')} WHERE id = $1::uuid RETURNING *`,
       ...values,

@@ -23,12 +23,12 @@ import {
   SessionSettingsDto,
   UpdateSessionSettingsDto,
 } from './dto/session.dto';
-import { CurrentUser, UserContext, Roles } from '@gigachad-grc/shared';
+import { CurrentUser, UserContext, Roles, RolesGuard } from '@gigachad-grc/shared';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 
 @ApiTags('Sessions')
 @ApiBearerAuth()
-@UseGuards(DevAuthGuard)
+@UseGuards(DevAuthGuard, RolesGuard)
 @Controller('api/sessions')
 export class SessionsController {
   constructor(private readonly sessionsService: SessionsService) {}

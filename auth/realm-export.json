@@ -3,7 +3,7 @@
   "realm": "gigachad-grc",
   "displayName": "GigaChad GRC",
   "enabled": true,
-  "sslRequired": "none",
+  "sslRequired": "external",
   "registrationAllowed": false,
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,
@@ -69,7 +69,7 @@
   ],
   "defaultRoles": ["viewer"],
   "requiredCredentials": ["password"],
-  "passwordPolicy": "",
+  "passwordPolicy": "length(12) and upperCase(1) and lowerCase(1) and digits(1) and specialChars(1) and notUsername",
   "clients": [
     {
       "clientId": "grc-frontend",
@@ -151,7 +151,7 @@
       "directAccessGrantsEnabled": false,
       "serviceAccountsEnabled": true,
       "protocol": "openid-connect",
-      "secret": "grc-services-secret-change-me",
+      "secret": "${GRC_SERVICES_SECRET}",
       "defaultClientScopes": [
         "web-origins",
         "acr",
@@ -187,7 +187,7 @@
       "directAccessGrantsEnabled": true,
       "serviceAccountsEnabled": true,
       "protocol": "openid-connect",
-      "secret": "grc-mcp-secret-change-me",
+      "secret": "${GRC_MCP_SECRET}",
       "defaultClientScopes": [
         "web-origins",
         "acr",

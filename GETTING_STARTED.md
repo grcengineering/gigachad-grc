@@ -61,6 +61,49 @@ If you see an error, make sure Docker Desktop is running (look for the whale ico
 
 ---
 
+## Configuring Your Environment
+
+Before starting GigaChad GRC, you need to set up your environment configuration.
+
+### Step 3: Create Your Environment File
+
+```bash
+# Copy the example environment file
+cp .env.example .env
+```
+
+### Step 4: Generate Secure Secrets
+
+**Important:** You MUST generate unique secrets for your installation. Never use the placeholder values in production.
+
+```bash
+# Generate encryption key (64-char hex)
+openssl rand -hex 32
+
+# Generate JWT/session secrets (base64)
+openssl rand -base64 64
+
+# Generate passwords
+openssl rand -base64 24
+```
+
+Open your `.env` file and replace the placeholder values:
+
+| Variable | How to Generate |
+|----------|-----------------|
+| `ENCRYPTION_KEY` | `openssl rand -hex 32` |
+| `JWT_SECRET` | `openssl rand -base64 64` |
+| `SESSION_SECRET` | `openssl rand -base64 64` |
+| `POSTGRES_PASSWORD` | `openssl rand -base64 24` |
+| `REDIS_PASSWORD` | `openssl rand -base64 24` |
+| `MINIO_ROOT_PASSWORD` | `openssl rand -base64 24` |
+
+> **Security Warning:** Never commit your `.env` file to version control. It's already in `.gitignore`, but always double-check before pushing changes.
+
+For production deployments, see `env.example.production` for additional configuration options.
+
+---
+
 ## Starting GigaChad GRC
 
 ### Option A: Download and Run (Easiest)
@@ -76,6 +119,10 @@ git clone https://github.com/grcengineering/gigachad-grc.git
 # Go into the folder
 cd gigachad-grc
 
+# Create your environment file (REQUIRED)
+cp .env.example .env
+# Edit .env and replace placeholder values with generated secrets
+
 # Start the application
 ./start.sh
 ```
@@ -90,6 +137,11 @@ git clone https://github.com/grcengineering/gigachad-grc.git
 
 # Go into the folder
 cd gigachad-grc
+
+# Create your environment file (REQUIRED)
+copy .env.example .env
+# Edit .env and replace placeholder values with generated secrets
+# Use Git Bash or WSL to run: openssl rand -hex 32
 
 # Start the application
 start.bat

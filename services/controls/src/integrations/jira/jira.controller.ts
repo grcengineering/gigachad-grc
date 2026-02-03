@@ -33,12 +33,13 @@ import {
   CurrentUser,
   UserContext,
   Roles,
+  RolesGuard,
 } from '@gigachad-grc/shared';
 import { DevAuthGuard } from '../../auth/dev-auth.guard';
 
 @ApiTags('Integrations - Jira')
 @ApiBearerAuth()
-@UseGuards(DevAuthGuard)
+@UseGuards(DevAuthGuard, RolesGuard)
 @Controller('api/integrations/jira')
 export class JiraController {
   constructor(private readonly jiraService: JiraService) {}

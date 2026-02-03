@@ -111,41 +111,52 @@ export class CommunicationPlansService {
   ) {
     await this.findOne(id, organizationId);
 
+    // SECURITY: Allowed column names for dynamic UPDATE query.
+    // Only these hardcoded column names can be included in the query.
+    // This prevents SQL injection even though column names come from code, not user input.
+    const ALLOWED_COLUMNS = new Set([
+      'name', 'description', 'plan_type', 'bcdr_plan_id', 'activation_triggers',
+      'is_active', 'updated_by', 'updated_at',
+    ]);
+
     const updates: string[] = ['updated_by = $2::uuid', 'updated_at = NOW()'];
     const values: (string | boolean | null)[] = [id, userId];
     let paramIndex = 3;
 
-    if (dto.name !== undefined) {
-      updates.push(`name = $${paramIndex}`);
-      values.push(dto.name);
+    // Helper to safely add column updates - validates column is in allowed list
+    const addUpdate = (column: string, value: string | boolean | null, typeCast?: string) => {
+      if (!ALLOWED_COLUMNS.has(column)) {
+        throw new Error(`Invalid column name: ${column}`);
+      }
+      updates.push(`${column} = $${paramIndex}${typeCast || ''}`);
+      values.push(value);
       paramIndex++;
+    };
+
+    if (dto.name !== undefined) {
+      addUpdate('name', dto.name);
     }
     if (dto.description !== undefined) {
-      updates.push(`description = $${paramIndex}`);
-      values.push(dto.description);
-      paramIndex++;
+      addUpdate('description', dto.description);
     }
     if (dto.planType !== undefined) {
-      updates.push(`plan_type = $${paramIndex}`);
-      values.push(dto.planType);
-      paramIndex++;
+      addUpdate('plan_type', dto.planType);
     }
     if (dto.bcdrPlanId !== undefined) {
-      updates.push(`bcdr_plan_id = $${paramIndex}::uuid`);
-      values.push(dto.bcdrPlanId);
-      paramIndex++;
+      addUpdate('bcdr_plan_id', dto.bcdrPlanId, '::uuid');
     }
     if (dto.activationTriggers !== undefined) {
-      updates.push(`activation_triggers = $${paramIndex}`);
-      values.push(dto.activationTriggers);
-      paramIndex++;
+      addUpdate('activation_triggers', dto.activationTriggers);
     }
     if (dto.isActive !== undefined) {
-      updates.push(`is_active = $${paramIndex}`);
-      values.push(dto.isActive);
-      paramIndex++;
+      addUpdate('is_active', dto.isActive);
     }
 
+    // SECURITY NOTE: $queryRawUnsafe is used here because Prisma's tagged template
+    // doesn't support dynamic column names. This is safe because:
+    // 1. Column names are hardcoded strings validated against ALLOWED_COLUMNS
+    // 2. All values are parameterized via positional parameters ($1, $2, etc.)
+    // 3. No user input is interpolated into column names
     const result = await this.prisma.$queryRawUnsafe<CommunicationPlanRecord[]>(
       `UPDATE bcdr.communication_plans SET ${updates.join(', ')} WHERE id = $1::uuid RETURNING *`,
       ...values,
@@ -226,101 +237,89 @@ export class CommunicationPlansService {
   }
 
   async updateContact(contactId: string, updates: Partial<CreateContactDto> & { isActive?: boolean }) {
+    // SECURITY: Allowed column names for dynamic UPDATE query.
+    // Only these hardcoded column names can be included in the query.
+    const ALLOWED_COLUMNS = new Set([
+      'name', 'title', 'organization_name', 'contact_type', 'primary_phone',
+      'secondary_phone', 'email', 'alternate_email', 'location', 'time_zone',
+      'role_in_plan', 'responsibilities', 'escalation_level', 'escalation_wait_minutes',
+      'availability_hours', 'notes', 'sort_order', 'is_active', 'updated_at',
+    ]);
+
     const updateFields: string[] = ['updated_at = NOW()'];
     const values: (string | number | boolean | null)[] = [contactId];
     let paramIndex = 2;
 
-    if (updates.name !== undefined) {
-      updateFields.push(`name = $${paramIndex}`);
-      values.push(updates.name);
+    // Helper to safely add column updates - validates column is in allowed list
+    const addUpdate = (column: string, value: string | number | boolean | null, typeCast?: string) => {
+      if (!ALLOWED_COLUMNS.has(column)) {
+        throw new Error(`Invalid column name: ${column}`);
+      }
+      updateFields.push(`${column} = $${paramIndex}${typeCast || ''}`);
+      values.push(value);
       paramIndex++;
+    };
+
+    if (updates.name !== undefined) {
+      addUpdate('name', updates.name);
     }
     if (updates.title !== undefined) {
-      updateFields.push(`title = $${paramIndex}`);
-      values.push(updates.title);
-      paramIndex++;
+      addUpdate('title', updates.title);
     }
     if (updates.organizationName !== undefined) {
-      updateFields.push(`organization_name = $${paramIndex}`);
-      values.push(updates.organizationName);
-      paramIndex++;
+      addUpdate('organization_name', updates.organizationName);
     }
     if (updates.contactType !== undefined) {
-      updateFields.push(`contact_type = $${paramIndex}::bcdr.contact_type`);
-      values.push(updates.contactType);
-      paramIndex++;
+      addUpdate('contact_type', updates.contactType, '::bcdr.contact_type');
     }
     if (updates.primaryPhone !== undefined) {
-      updateFields.push(`primary_phone = $${paramIndex}`);
-      values.push(updates.primaryPhone);
-      paramIndex++;
+      addUpdate('primary_phone', updates.primaryPhone);
     }
     if (updates.secondaryPhone !== undefined) {
-      updateFields.push(`secondary_phone = $${paramIndex}`);
-      values.push(updates.secondaryPhone);
-      paramIndex++;
+      addUpdate('secondary_phone', updates.secondaryPhone);
     }
     if (updates.email !== undefined) {
-      updateFields.push(`email = $${paramIndex}`);
-      values.push(updates.email);
-      paramIndex++;
+      addUpdate('email', updates.email);
     }
     if (updates.alternateEmail !== undefined) {
-      updateFields.push(`alternate_email = $${paramIndex}`);
-      values.push(updates.alternateEmail);
-      paramIndex++;
+      addUpdate('alternate_email', updates.alternateEmail);
     }
     if (updates.location !== undefined) {
-      updateFields.push(`location = $${paramIndex}`);
-      values.push(updates.location);
-      paramIndex++;
+      addUpdate('location', updates.location);
     }
     if (updates.timeZone !== undefined) {
-      updateFields.push(`time_zone = $${paramIndex}`);
-      values.push(updates.timeZone);
-      paramIndex++;
+      addUpdate('time_zone', updates.timeZone);
     }
     if (updates.roleInPlan !== undefined) {
-      updateFields.push(`role_in_plan = $${paramIndex}`);
-      values.push(updates.roleInPlan);
-      paramIndex++;
+      addUpdate('role_in_plan', updates.roleInPlan);
     }
     if (updates.responsibilities !== undefined) {
-      updateFields.push(`responsibilities = $${paramIndex}`);
-      values.push(updates.responsibilities);
-      paramIndex++;
+      addUpdate('responsibilities', updates.responsibilities);
     }
     if (updates.escalationLevel !== undefined) {
-      updateFields.push(`escalation_level = $${paramIndex}`);
-      values.push(updates.escalationLevel);
-      paramIndex++;
+      addUpdate('escalation_level', updates.escalationLevel);
     }
     if (updates.escalationWaitMinutes !== undefined) {
-      updateFields.push(`escalation_wait_minutes = $${paramIndex}`);
-      values.push(updates.escalationWaitMinutes);
-      paramIndex++;
+      addUpdate('escalation_wait_minutes', updates.escalationWaitMinutes);
     }
     if (updates.availabilityHours !== undefined) {
-      updateFields.push(`availability_hours = $${paramIndex}`);
-      values.push(updates.availabilityHours);
-      paramIndex++;
+      addUpdate('availability_hours', updates.availabilityHours);
     }
     if (updates.notes !== undefined) {
-      updateFields.push(`notes = $${paramIndex}`);
-      values.push(updates.notes);
-      paramIndex++;
+      addUpdate('notes', updates.notes);
     }
     if (updates.sortOrder !== undefined) {
-      updateFields.push(`sort_order = $${paramIndex}`);
-      values.push(updates.sortOrder);
-      paramIndex++;
+      addUpdate('sort_order', updates.sortOrder);
     }
     if (updates.isActive !== undefined) {
-      updateFields.push(`is_active = $${paramIndex}`);
-      values.push(updates.isActive);
-      paramIndex++;
+      addUpdate('is_active', updates.isActive);
     }
 
+    // SECURITY NOTE: $queryRawUnsafe is used here because Prisma's tagged template
+    // doesn't support dynamic column names. This is safe because:
+    // 1. Column names are hardcoded strings validated against ALLOWED_COLUMNS
+    // 2. All values are parameterized via positional parameters ($1, $2, etc.)
+    // 3. No user input is interpolated into column names
     const result = await this.prisma.$queryRawUnsafe<CommunicationContactRecord[]>(
       `UPDATE bcdr.communication_contacts SET ${updateFields.join(', ')} WHERE id = $1::uuid RETURNING *`,
       ...values,

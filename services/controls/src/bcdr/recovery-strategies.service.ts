@@ -123,86 +123,81 @@ export class RecoveryStrategiesService {
   ) {
     await this.findOne(id, organizationId);
 
+    // SECURITY: Allowed column names for dynamic UPDATE query.
+    // Only these hardcoded column names can be included in the query.
+    // This prevents SQL injection even though column names come from code, not user input.
+    const ALLOWED_COLUMNS = new Set([
+      'name', 'description', 'strategy_type', 'process_id', 'recovery_location',
+      'recovery_procedure', 'estimated_recovery_time_hours', 'estimated_cost',
+      'required_personnel', 'required_equipment', 'required_data', 'vendor_name',
+      'vendor_contact', 'contract_reference', 'tags', 'updated_by', 'updated_at',
+    ]);
+
     const updates: string[] = ['updated_by = $2::uuid', 'updated_at = NOW()'];
     const values: any[] = [id, userId];
     let paramIndex = 3;
 
-    if (dto.name !== undefined) {
-      updates.push(`name = $${paramIndex}`);
-      values.push(dto.name);
+    // Helper to safely add column updates - validates column is in allowed list
+    const addUpdate = (column: string, value: any, typeCast?: string) => {
+      if (!ALLOWED_COLUMNS.has(column)) {
+        throw new Error(`Invalid column name: ${column}`);
+      }
+      updates.push(`${column} = $${paramIndex}${typeCast || ''}`);
+      values.push(value);
       paramIndex++;
+    };
+
+    if (dto.name !== undefined) {
+      addUpdate('name', dto.name);
     }
     if (dto.description !== undefined) {
-      updates.push(`description = $${paramIndex}`);
-      values.push(dto.description);
-      paramIndex++;
+      addUpdate('description', dto.description);
     }
     if (dto.strategyType !== undefined) {
-      updates.push(`strategy_type = $${paramIndex}`);
-      values.push(dto.strategyType);
-      paramIndex++;
+      addUpdate('strategy_type', dto.strategyType);
     }
     if (dto.processId !== undefined) {
-      updates.push(`process_id = $${paramIndex}::uuid`);
-      values.push(dto.processId);
-      paramIndex++;
+      addUpdate('process_id', dto.processId, '::uuid');
     }
     if (dto.recoveryLocation !== undefined) {
-      updates.push(`recovery_location = $${paramIndex}`);
-      values.push(dto.recoveryLocation);
-      paramIndex++;
+      addUpdate('recovery_location', dto.recoveryLocation);
     }
     if (dto.recoveryProcedure !== undefined) {
-      updates.push(`recovery_procedure = $${paramIndex}`);
-      values.push(dto.recoveryProcedure);
-      paramIndex++;
+      addUpdate('recovery_procedure', dto.recoveryProcedure);
     }
     if (dto.estimatedRecoveryTimeHours !== undefined) {
-      updates.push(`estimated_recovery_time_hours = $${paramIndex}`);
-      values.push(dto.estimatedRecoveryTimeHours);
-      paramIndex++;
+      addUpdate('estimated_recovery_time_hours', dto.estimatedRecoveryTimeHours);
     }
     if (dto.estimatedCost !== undefined) {
-      updates.push(`estimated_cost = $${paramIndex}`);
-      values.push(dto.estimatedCost);
-      paramIndex++;
+      addUpdate('estimated_cost', dto.estimatedCost);
     }
     if (dto.requiredPersonnel !== undefined) {
-      updates.push(`required_personnel = $${paramIndex}`);
-      values.push(dto.requiredPersonnel);
-      paramIndex++;
+      addUpdate('required_personnel', dto.requiredPersonnel);
     }
     if (dto.requiredEquipment !== undefined) {
-      updates.push(`required_equipment = $${paramIndex}`);
-      values.push(dto.requiredEquipment);
-      paramIndex++;
+      addUpdate('required_equipment', dto.requiredEquipment);
     }
     if (dto.requiredData !== undefined) {
-      updates.push(`required_data = $${paramIndex}`);
-      values.push(dto.requiredData);
-      paramIndex++;
+      addUpdate('required_data', dto.requiredData);
     }
     if (dto.vendorName !== undefined) {
-      updates.push(`vendor_name = $${paramIndex}`);
-      values.push(dto.vendorName);
-      paramIndex++;
+      addUpdate('vendor_name', dto.vendorName);
     }
     if (dto.vendorContact !== undefined) {
-      updates.push(`vendor_contact = $${paramIndex}`);
-      values.push(dto.vendorContact);
-      paramIndex++;
+      addUpdate('vendor_contact', dto.vendorContact);
     }
     if (dto.contractReference !== undefined) {
-      updates.push(`contract_reference = $${paramIndex}`);
-      values.push(dto.contractReference);
-      paramIndex++;
+      addUpdate('contract_reference', dto.contractReference);
     }
     if (dto.tags !== undefined) {
-      updates.push(`tags = $${paramIndex}::text[]`);
-      values.push(dto.tags);
-      paramIndex++;
+      addUpdate('tags', dto.tags, '::text[]');
     }
 
+    // SECURITY NOTE: $queryRawUnsafe is used here because Prisma's tagged template
+    // doesn't support dynamic column names. This is safe because:
+    // 1. Column names are hardcoded strings validated against ALLOWED_COLUMNS
+    // 2. All values are parameterized via positional parameters ($1, $2, etc.)
+    // 3. No user input is interpolated into column names
     const result = await this.prisma.$queryRawUnsafe<any[]>(
       `UPDATE bcdr.recovery_strategies SET ${updates.join(', ')} WHERE id = $1::uuid RETURNING *`,
       ...values,

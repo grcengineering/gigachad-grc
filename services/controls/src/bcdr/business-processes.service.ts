@@ -293,107 +293,95 @@ export class BusinessProcessesService {
   ) {
     await this.findOne(id, organizationId);
 
+    // SECURITY: Allowed column names for dynamic UPDATE query.
+    // Only these hardcoded column names can be included in the query.
+    // This prevents SQL injection even though column names come from code, not user input.
+    const ALLOWED_COLUMNS = new Set([
+      'name', 'description', 'department', 'owner_id', 'criticality_tier',
+      'business_criticality_score', 'rto_hours', 'rpo_hours', 'mtpd_hours',
+      'financial_impact', 'operational_impact', 'reputational_impact', 'regulatory_impact',
+      'hourly_revenue_impact', 'daily_revenue_impact', 'recovery_cost_estimate',
+      'is_active', 'review_frequency_months', 'tags', 'updated_by', 'updated_at',
+    ]);
+
     // Build dynamic update query
     const updates: string[] = ['updated_by = $2::uuid', 'updated_at = NOW()'];
     const values: (string | number | boolean | string[] | null)[] = [id, userId];
     let paramIndex = 3;
 
-    if (dto.name !== undefined) {
-      updates.push(`name = $${paramIndex}`);
-      values.push(dto.name);
+    // Helper to safely add column updates - validates column is in allowed list
+    const addUpdate = (column: string, value: string | number | boolean | string[] | null, typeCast?: string) => {
+      if (!ALLOWED_COLUMNS.has(column)) {
+        throw new Error(`Invalid column name: ${column}`);
+      }
+      updates.push(`${column} = $${paramIndex}${typeCast || ''}`);
+      values.push(value);
       paramIndex++;
+    };
+
+    if (dto.name !== undefined) {
+      addUpdate('name', dto.name);
     }
     if (dto.description !== undefined) {
-      updates.push(`description = $${paramIndex}`);
-      values.push(dto.description);
-      paramIndex++;
+      addUpdate('description', dto.description);
     }
     if (dto.department !== undefined) {
-      updates.push(`department = $${paramIndex}`);
-      values.push(dto.department);
-      paramIndex++;
+      addUpdate('department', dto.department);
     }
     if (dto.ownerId !== undefined) {
-      updates.push(`owner_id = $${paramIndex}::uuid`);
-      values.push(dto.ownerId);
-      paramIndex++;
+      addUpdate('owner_id', dto.ownerId, '::uuid');
     }
     if (dto.criticalityTier !== undefined) {
-      updates.push(`criticality_tier = $${paramIndex}::bcdr.criticality_tier`);
-      values.push(dto.criticalityTier);
-      paramIndex++;
+      addUpdate('criticality_tier', dto.criticalityTier, '::bcdr.criticality_tier');
     }
     if (dto.businessCriticalityScore !== undefined) {
-      updates.push(`business_criticality_score = $${paramIndex}`);
-      values.push(dto.businessCriticalityScore);
-      paramIndex++;
+      addUpdate('business_criticality_score', dto.businessCriticalityScore);
     }
     if (dto.rtoHours !== undefined) {
-      updates.push(`rto_hours = $${paramIndex}`);
-      values.push(dto.rtoHours);
-      paramIndex++;
+      addUpdate('rto_hours', dto.rtoHours);
     }
     if (dto.rpoHours !== undefined) {
-      updates.push(`rpo_hours = $${paramIndex}`);
-      values.push(dto.rpoHours);
-      paramIndex++;
+      addUpdate('rpo_hours', dto.rpoHours);
     }
     if (dto.mtpdHours !== undefined) {
-      updates.push(`mtpd_hours = $${paramIndex}`);
-      values.push(dto.mtpdHours);
-      paramIndex++;
+      addUpdate('mtpd_hours', dto.mtpdHours);
     }
     if (dto.financialImpact !== undefined) {
-      updates.push(`financial_impact = $${paramIndex}::bcdr.impact_level`);
-      values.push(dto.financialImpact);
-      paramIndex++;
+      addUpdate('financial_impact', dto.financialImpact, '::bcdr.impact_level');
     }
     if (dto.operationalImpact !== undefined) {
-      updates.push(`operational_impact = $${paramIndex}::bcdr.impact_level`);
-      values.push(dto.operationalImpact);
-      paramIndex++;
+      addUpdate('operational_impact', dto.operationalImpact, '::bcdr.impact_level');
     }
     if (dto.reputationalImpact !== undefined) {
-      updates.push(`reputational_impact = $${paramIndex}::bcdr.impact_level`);
-      values.push(dto.reputationalImpact);
-      paramIndex++;
+      addUpdate('reputational_impact', dto.reputationalImpact, '::bcdr.impact_level');
     }
     if (dto.regulatoryImpact !== undefined) {
-      updates.push(`regulatory_impact = $${paramIndex}::bcdr.impact_level`);
-      values.push(dto.regulatoryImpact);
-      paramIndex++;
+      addUpdate('regulatory_impact', dto.regulatoryImpact, '::bcdr.impact_level');
     }
     if (dto.hourlyRevenueImpact !== undefined) {
-      updates.push(`hourly_revenue_impact = $${paramIndex}`);
-      values.push(dto.hourlyRevenueImpact);
-      paramIndex++;
+      addUpdate('hourly_revenue_impact', dto.hourlyRevenueImpact);
     }
     if (dto.dailyRevenueImpact !== undefined) {
-      updates.push(`daily_revenue_impact = $${paramIndex}`);
-      values.push(dto.dailyRevenueImpact);
-      paramIndex++;
+      addUpdate('daily_revenue_impact', dto.dailyRevenueImpact);
     }
     if (dto.recoveryCostEstimate !== undefined) {
-      updates.push(`recovery_cost_estimate = $${paramIndex}`);
-      values.push(dto.recoveryCostEstimate);
-      paramIndex++;
+      addUpdate('recovery_cost_estimate', dto.recoveryCostEstimate);
     }
     if (dto.isActive !== undefined) {
-      updates.push(`is_active = $${paramIndex}`);
-      values.push(dto.isActive);
-      paramIndex++;
+      addUpdate('is_active', dto.isActive);
     }
     if (dto.reviewFrequencyMonths !== undefined) {
-      updates.push(`review_frequency_months = $${paramIndex}`);
-      values.push(dto.reviewFrequencyMonths);
-      paramIndex++;
+      addUpdate('review_frequency_months', dto.reviewFrequencyMonths);
     }
     if (dto.tags !== undefined) {
-      updates.push(`tags = $${paramIndex}::text[]`);
-      values.push(dto.tags);
-      paramIndex++;
+      addUpdate('tags', dto.tags, '::text[]');
     }
 
+    // SECURITY NOTE: $queryRawUnsafe is used here because Prisma's tagged template
+    // doesn't support dynamic column names. This is safe because:
+    // 1. Column names are hardcoded strings validated against ALLOWED_COLUMNS
+    // 2. All values are parameterized via positional parameters ($1, $2, etc.)
+    // 3. No user input is interpolated into column names
     const result = await this.prisma.$queryRawUnsafe<BusinessProcessRecord[]>(
       `UPDATE bcdr.business_processes SET ${updates.join(', ')} WHERE id = $1::uuid RETURNING *`,
       ...values,

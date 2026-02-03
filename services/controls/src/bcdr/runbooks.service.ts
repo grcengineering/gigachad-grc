@@ -141,76 +141,74 @@ export class RunbooksService {
   ) {
     await this.findOne(id, organizationId);
 
+    // SECURITY: Allowed column names for dynamic UPDATE query.
+    // Only these hardcoded column names can be included in the query.
+    // This prevents SQL injection even though column names come from code, not user input.
+    const ALLOWED_COLUMNS = new Set([
+      'title', 'description', 'status', 'category', 'system_name', 'process_id',
+      'content', 'version', 'owner_id', 'estimated_duration_minutes',
+      'required_access_level', 'prerequisites', 'tags', 'updated_by', 'updated_at',
+    ]);
+
     const updates: string[] = ['updated_by = $2::uuid', 'updated_at = NOW()'];
     const values: any[] = [id, userId];
     let paramIndex = 3;
 
-    if (dto.title !== undefined) {
-      updates.push(`title = $${paramIndex}`);
-      values.push(dto.title);
+    // Helper to safely add column updates - validates column is in allowed list
+    const addUpdate = (column: string, value: any, typeCast?: string) => {
+      if (!ALLOWED_COLUMNS.has(column)) {
+        throw new Error(`Invalid column name: ${column}`);
+      }
+      updates.push(`${column} = $${paramIndex}${typeCast || ''}`);
+      values.push(value);
       paramIndex++;
+    };
+
+    if (dto.title !== undefined) {
+      addUpdate('title', dto.title);
     }
     if (dto.description !== undefined) {
-      updates.push(`description = $${paramIndex}`);
-      values.push(dto.description);
-      paramIndex++;
+      addUpdate('description', dto.description);
     }
     if (dto.status !== undefined) {
-      updates.push(`status = $${paramIndex}::bcdr.runbook_status`);
-      values.push(dto.status);
-      paramIndex++;
+      addUpdate('status', dto.status, '::bcdr.runbook_status');
     }
     if (dto.category !== undefined) {
-      updates.push(`category = $${paramIndex}`);
-      values.push(dto.category);
-      paramIndex++;
+      addUpdate('category', dto.category);
     }
     if (dto.systemName !== undefined) {
-      updates.push(`system_name = $${paramIndex}`);
-      values.push(dto.systemName);
-      paramIndex++;
+      addUpdate('system_name', dto.systemName);
     }
     if (dto.processId !== undefined) {
-      updates.push(`process_id = $${paramIndex}::uuid`);
-      values.push(dto.processId);
-      paramIndex++;
+      addUpdate('process_id', dto.processId, '::uuid');
     }
     if (dto.content !== undefined) {
-      updates.push(`content = $${paramIndex}`);
-      values.push(dto.content);
-      paramIndex++;
+      addUpdate('content', dto.content);
     }
     if (dto.version !== undefined) {
-      updates.push(`version = $${paramIndex}`);
-      values.push(dto.version);
-      paramIndex++;
+      addUpdate('version', dto.version);
     }
     if (dto.ownerId !== undefined) {
-      updates.push(`owner_id = $${paramIndex}::uuid`);
-      values.push(dto.ownerId);
-      paramIndex++;
+      addUpdate('owner_id', dto.ownerId, '::uuid');
     }
     if (dto.estimatedDurationMinutes !== undefined) {
-      updates.push(`estimated_duration_minutes = $${paramIndex}`);
-      values.push(dto.estimatedDurationMinutes);
-      paramIndex++;
+      addUpdate('estimated_duration_minutes', dto.estimatedDurationMinutes);
     }
     if (dto.requiredAccessLevel !== undefined) {
-      updates.push(`required_access_level = $${paramIndex}`);
-      values.push(dto.requiredAccessLevel);
-      paramIndex++;
+      addUpdate('required_access_level', dto.requiredAccessLevel);
     }
     if (dto.prerequisites !== undefined) {
-      updates.push(`prerequisites = $${paramIndex}`);
-      values.push(dto.prerequisites);
-      paramIndex++;
+      addUpdate('prerequisites', dto.prerequisites);
     }
     if (dto.tags !== undefined) {
-      updates.push(`tags = $${paramIndex}::text[]`);
-      values.push(dto.tags);
-      paramIndex++;
+      addUpdate('tags', dto.tags, '::text[]');
     }
 
+    // SECURITY NOTE: $queryRawUnsafe is used here because Prisma's tagged template
+    // doesn't support dynamic column names. This is safe because:
+    // 1. Column names are hardcoded strings validated against ALLOWED_COLUMNS
+    // 2. All values are parameterized via positional parameters ($1, $2, etc.)
+    // 3. No user input is interpolated into column names
     const result = await this.prisma.$queryRawUnsafe<any[]>(
       `UPDATE bcdr.runbooks SET ${updates.join(', ')} WHERE id = $1::uuid RETURNING *`,
       ...values,
@@ -297,56 +295,61 @@ export class RunbooksService {
   }
 
   async updateStep(runbookId: string, stepNumber: number, updates: Partial<CreateRunbookStepDto>) {
+    // SECURITY: Allowed column names for dynamic UPDATE query.
+    // Only these hardcoded column names can be included in the query.
+    const ALLOWED_COLUMNS = new Set([
+      'title', 'description', 'instructions', 'estimated_duration_minutes',
+      'requires_approval', 'verification_steps', 'rollback_steps', 'warnings',
+      'notes', 'updated_at',
+    ]);
+
     const updateFields: string[] = ['updated_at = NOW()'];
     const values: any[] = [runbookId, stepNumber];
     let paramIndex = 3;
 
-    if (updates.title !== undefined) {
-      updateFields.push(`title = $${paramIndex}`);
-      values.push(updates.title);
+    // Helper to safely add column updates - validates column is in allowed list
+    const addUpdate = (column: string, value: any) => {
+      if (!ALLOWED_COLUMNS.has(column)) {
+        throw new Error(`Invalid column name: ${column}`);
+      }
+      updateFields.push(`${column} = $${paramIndex}`);
+      values.push(value);
       paramIndex++;
+    };
+
+    if (updates.title !== undefined) {
+      addUpdate('title', updates.title);
     }
     if (updates.description !== undefined) {
-      updateFields.push(`description = $${paramIndex}`);
-      values.push(updates.description);
-      paramIndex++;
+      addUpdate('description', updates.description);
     }
     if (updates.instructions !== undefined) {
-      updateFields.push(`instructions = $${paramIndex}`);
-      values.push(updates.instructions);
-      paramIndex++;
+      addUpdate('instructions', updates.instructions);
     }
     if (updates.estimatedDurationMinutes !== undefined) {
-      updateFields.push(`estimated_duration_minutes = $${paramIndex}`);
-      values.push(updates.estimatedDurationMinutes);
-      paramIndex++;
+      addUpdate('estimated_duration_minutes', updates.estimatedDurationMinutes);
     }
     if (updates.requiresApproval !== undefined) {
-      updateFields.push(`requires_approval = $${paramIndex}`);
-      values.push(updates.requiresApproval);
-      paramIndex++;
+      addUpdate('requires_approval', updates.requiresApproval);
     }
     if (updates.verificationSteps !== undefined) {
-      updateFields.push(`verification_steps = $${paramIndex}`);
-      values.push(updates.verificationSteps);
-      paramIndex++;
+      addUpdate('verification_steps', updates.verificationSteps);
     }
     if (updates.rollbackSteps !== undefined) {
-      updateFields.push(`rollback_steps = $${paramIndex}`);
-      values.push(updates.rollbackSteps);
-      paramIndex++;
+      addUpdate('rollback_steps', updates.rollbackSteps);
     }
     if (updates.warnings !== undefined) {
-      updateFields.push(`warnings = $${paramIndex}`);
-      values.push(updates.warnings);
-      paramIndex++;
+      addUpdate('warnings', updates.warnings);
     }
     if (updates.notes !== undefined) {
-      updateFields.push(`notes = $${paramIndex}`);
-      values.push(updates.notes);
-      paramIndex++;
+      addUpdate('notes', updates.notes);
     }
 
+    // SECURITY NOTE: $queryRawUnsafe is used here because Prisma's tagged template
+    // doesn't support dynamic column names. This is safe because:
+    // 1. Column names are hardcoded strings validated against ALLOWED_COLUMNS
+    // 2. All values are parameterized via positional parameters ($1, $2, etc.)
+    // 3. No user input is interpolated into column names
     const result = await this.prisma.$queryRawUnsafe<any[]>(
       `UPDATE bcdr.runbook_steps SET ${updateFields.join(', ')} 
        WHERE runbook_id = $1::uuid AND step_number = $2 RETURNING *`,

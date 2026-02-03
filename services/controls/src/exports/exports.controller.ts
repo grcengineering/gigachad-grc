@@ -22,12 +22,12 @@ import {
   ExportJobDto,
   ExportJobListQueryDto,
 } from './dto/export.dto';
-import { CurrentUser, UserContext, Roles, EndpointRateLimit, ENDPOINT_RATE_LIMITS } from '@gigachad-grc/shared';
+import { CurrentUser, UserContext, Roles, RolesGuard, EndpointRateLimit, ENDPOINT_RATE_LIMITS } from '@gigachad-grc/shared';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 
 @ApiTags('Exports')
 @ApiBearerAuth()
-@UseGuards(DevAuthGuard)
+@UseGuards(DevAuthGuard, RolesGuard)
 @Controller('api/exports')
 export class ExportsController {
   constructor(private readonly exportsService: ExportsService) {}

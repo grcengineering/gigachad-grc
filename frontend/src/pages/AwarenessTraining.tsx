@@ -410,6 +410,18 @@ function TrainingViewer({
   
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
+      // SECURITY: Validate origin to prevent unauthorized postMessage attacks
+      const allowedOrigins = [
+        window.location.origin,
+        import.meta.env.VITE_API_URL,
+        import.meta.env.VITE_TRAINING_CDN_URL,
+      ].filter(Boolean) as string[];
+      
+      if (!allowedOrigins.includes(event.origin)) {
+        console.warn('[Security] Received postMessage from unauthorized origin:', event.origin);
+        return;
+      }
+      
       if (event.data?.type === 'trainingComplete') {
         onComplete();
       }

@@ -24,12 +24,12 @@ import {
   TestWebhookDto,
   TestWebhookResultDto,
 } from './dto/webhook.dto';
-import { CurrentUser, UserContext, Roles } from '@gigachad-grc/shared';
+import { CurrentUser, UserContext, Roles, RolesGuard } from '@gigachad-grc/shared';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 
 @ApiTags('Webhooks')
 @ApiBearerAuth()
-@UseGuards(DevAuthGuard)
+@UseGuards(DevAuthGuard, RolesGuard)
 @Controller('api/webhooks')
 export class WebhooksController {
   constructor(private readonly webhooksService: WebhooksService) {}

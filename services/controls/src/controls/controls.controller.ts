@@ -31,6 +31,7 @@ import {
 } from './dto/control.dto';
 import {
   Roles,
+  RolesGuard,
   CurrentUser,
   UserContext,
 } from '@gigachad-grc/shared';
@@ -39,7 +40,7 @@ import { DevAuthGuard } from '../auth/dev-auth.guard';
 @ApiTags('controls')
 @ApiBearerAuth()
 @Controller('api/controls')
-@UseGuards(DevAuthGuard)
+@UseGuards(DevAuthGuard, RolesGuard)
 export class ControlsController {
   constructor(private readonly controlsService: ControlsService) {}
 

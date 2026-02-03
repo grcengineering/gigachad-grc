@@ -34,12 +34,13 @@ import {
   CurrentUser,
   UserContext,
   Roles,
+  RolesGuard,
 } from '@gigachad-grc/shared';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 
 @ApiTags('Departments')
 @ApiBearerAuth()
-@UseGuards(DevAuthGuard)
+@UseGuards(DevAuthGuard, RolesGuard)
 @Controller('api/departments')
 export class DepartmentsController {
   constructor(private readonly departmentsService: DepartmentsService) {}
@@ -139,7 +140,7 @@ export class DepartmentsController {
 
 @ApiTags('Permission Groups - Enhanced')
 @ApiBearerAuth()
-@UseGuards(DevAuthGuard)
+@UseGuards(DevAuthGuard, RolesGuard)
 @Controller('api/permission-groups')
 export class PermissionGroupsEnhancedController {
   constructor(private readonly departmentsService: DepartmentsService) {}

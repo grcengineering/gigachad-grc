@@ -33,12 +33,13 @@ import {
   CurrentUser,
   UserContext,
   Roles,
+  RolesGuard,
 } from '@gigachad-grc/shared';
 import { DevAuthGuard } from '../../auth/dev-auth.guard';
 
 @ApiTags('Integrations - ServiceNow')
 @ApiBearerAuth()
-@UseGuards(DevAuthGuard)
+@UseGuards(DevAuthGuard, RolesGuard)
 @Controller('api/integrations/servicenow')
 export class ServiceNowController {
   constructor(private readonly serviceNowService: ServiceNowService) {}

@@ -24,6 +24,7 @@ import {
 } from './dto/implementation.dto';
 import {
   Roles,
+  RolesGuard,
   CurrentUser,
   UserContext,
 } from '@gigachad-grc/shared';
@@ -32,7 +33,7 @@ import { DevAuthGuard } from '../auth/dev-auth.guard';
 @ApiTags('implementations')
 @ApiBearerAuth()
 @Controller('api/implementations')
-@UseGuards(DevAuthGuard)
+@UseGuards(DevAuthGuard, RolesGuard)
 export class ImplementationsController {
   constructor(private readonly implementationsService: ImplementationsService) {}
 

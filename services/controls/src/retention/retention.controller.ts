@@ -24,12 +24,12 @@ import {
   RunRetentionPolicyDto,
   RetentionRunResultDto,
 } from './dto/retention.dto';
-import { CurrentUser, UserContext, Roles } from '@gigachad-grc/shared';
+import { CurrentUser, UserContext, Roles, RolesGuard } from '@gigachad-grc/shared';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 
 @ApiTags('Retention Policies')
 @ApiBearerAuth()
-@UseGuards(DevAuthGuard)
+@UseGuards(DevAuthGuard, RolesGuard)
 @Roles('admin')
 @Controller('api/retention-policies')
 export class RetentionController {

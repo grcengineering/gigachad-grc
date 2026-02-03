@@ -41,10 +41,27 @@ const AUTH_SENSITIVE_FIELDS = [
   'bearerToken', 'bearer_token', 'refreshToken', 'refresh_token',
 ];
 
+// SECURITY: Rate limiting configuration for code execution
+interface RateLimitEntry {
+  count: number;
+  windowStart: number;
+}
+
+const CODE_EXECUTION_RATE_LIMIT = {
+  maxRequests: 10,      // Maximum requests per window
+  windowMs: 60 * 1000,  // 1 minute window
+};
+
 @Injectable()
 export class CustomIntegrationService {
   private readonly logger = new Logger(CustomIntegrationService.name);
   private readonly encryptionKey: string;
+  
+  // SECURITY: Rate limiting state for code execution
+  private readonly codeExecutionRateLimits = new Map<string, RateLimitEntry>();
+  
+  // SECURITY: Feature flag for custom code execution
+  private readonly customCodeExecutionEnabled: boolean;
 
   private validateEncryptionKey(): string {
     const key = process.env.ENCRYPTION_KEY;
@@ -64,6 +81,20 @@ export class CustomIntegrationService {
     @Inject(STORAGE_PROVIDER) private storage: StorageProvider,
   ) {
     this.encryptionKey = this.validateEncryptionKey();
+    
+    // SECURITY: Custom code execution is disabled by default
+    // Set ENABLE_CUSTOM_CODE_EXECUTION=true to enable (NOT RECOMMENDED for production)
+    this.customCodeExecutionEnabled = process.env.ENABLE_CUSTOM_CODE_EXECUTION === 'true';
+    
+    if (this.customCodeExecutionEnabled) {
+      this.logger.warn(
+        'SECURITY WARNING: Custom code execution is ENABLED. ' +
+        'This feature uses dynamic code execution which poses security risks. ' +
+        'Only enable in trusted environments with proper isolation.'
+      );
+    } else {
+      this.logger.log('Custom code execution is disabled for security. Set ENABLE_CUSTOM_CODE_EXECUTION=true to enable.');
+    }
   }
 
   // ============================================
@@ -463,12 +494,26 @@ export class CustomIntegrationService {
 
   /**
    * Test code mode execution
+   * 
+   * SECURITY: Checks if code execution is enabled before testing
    */
   private async testCodeExecution(
     config: any,
     organizationId: string,
     integrationId: string,
   ): Promise<TestResultDto> {
+    // SECURITY: Check if code execution is enabled
+    if (!this.customCodeExecutionEnabled) {
+      return {
+        success: false,
+        message: 'Custom code execution is disabled',
+        error: 
+          'Custom code execution is disabled for security reasons. ' +
+          'Set ENABLE_CUSTOM_CODE_EXECUTION=true environment variable to enable. ' +
+          'Consider using visual mode as a safer alternative.',
+      };
+    }
+    
     if (!config.customCode) {
       return { success: false, message: 'No custom code configured', error: 'Add custom code first' };
     }
@@ -500,10 +545,21 @@ export class CustomIntegrationService {
 
   /**
    * Validate custom code syntax
+   * 
+   * SECURITY: This validates code before it can be saved or executed.
+   * Even if code execution is disabled, we still validate to provide feedback.
    */
   validateCode(code: string): ValidateCodeResultDto {
     const errors: string[] = [];
     const warnings: string[] = [];
+
+    // SECURITY: Check if code execution is enabled
+    if (!this.customCodeExecutionEnabled) {
+      warnings.push(
+        'Custom code execution is currently DISABLED for security. ' +
+        'Set ENABLE_CUSTOM_CODE_EXECUTION=true to enable execution.'
+      );
+    }
 
     // SECURITY: Comprehensive blocklist of dangerous patterns
     // These patterns can be used to escape the sandbox or execute arbitrary code
@@ -542,11 +598,13 @@ export class CustomIntegrationService {
       { pattern: /\bhttps\b(?!:\/\/)/, message: 'https module is not allowed' },
       { pattern: /\bnet\b/, message: 'net module is not allowed' },
       
-      // Dangerous object access patterns
+      // Dangerous object access patterns (string-based property access)
       { pattern: /\['constructor'\]/, message: "['constructor'] is not allowed - sandbox bypass" },
       { pattern: /\["constructor"\]/, message: '["constructor"] is not allowed - sandbox bypass' },
       { pattern: /\['__proto__'\]/, message: "['__proto__'] is not allowed - prototype pollution" },
       { pattern: /\["__proto__"\]/, message: '["__proto__"] is not allowed - prototype pollution' },
+      { pattern: /\['prototype'\]/, message: "['prototype'] is not allowed - prototype access" },
+      { pattern: /\["prototype"\]/, message: '["prototype"] is not allowed - prototype access' },
       
       // Timer functions that could enable DoS or async escapes
       { pattern: /\bsetTimeout\b/, message: 'setTimeout is not allowed' },
@@ -557,6 +615,24 @@ export class CustomIntegrationService {
       { pattern: /\bWebSocket\b/, message: 'WebSocket is not allowed' },
       { pattern: /\bWorker\b/, message: 'Worker is not allowed' },
       { pattern: /\bSharedArrayBuffer\b/, message: 'SharedArrayBuffer is not allowed' },
+      
+      // Unicode/hex escape bypass attempts
+      { pattern: /\\u[0-9a-fA-F]{4}/, message: 'Unicode escapes are not allowed - potential bypass' },
+      { pattern: /\\x[0-9a-fA-F]{2}/, message: 'Hex escapes are not allowed - potential bypass' },
+      
+      // Obfuscation attempts
+      { pattern: /atob\s*\(/, message: 'atob() is not allowed - potential code obfuscation' },
+      { pattern: /btoa\s*\(/, message: 'btoa() is not allowed' },
+      { pattern: /String\.fromCharCode/, message: 'String.fromCharCode is not allowed - potential bypass' },
+      { pattern: /String\.fromCodePoint/, message: 'String.fromCodePoint is not allowed - potential bypass' },
+      
+      // Additional dangerous patterns
+      { pattern: /\bwith\s*\(/, message: 'with statement is not allowed' },
+      { pattern: /\bdebugger\b/, message: 'debugger statement is not allowed' },
+      { pattern: /\bObject\.getOwnPropertyDescriptor/, message: 'Object.getOwnPropertyDescriptor is not allowed' },
+      { pattern: /\bObject\.defineProperty/, message: 'Object.defineProperty is not allowed' },
+      { pattern: /\bObject\.setPrototypeOf/, message: 'Object.setPrototypeOf is not allowed' },
+      { pattern: /\bObject\.getPrototypeOf/, message: 'Object.getPrototypeOf is not allowed' },
     ];
 
     // Check all dangerous patterns
@@ -571,14 +647,48 @@ export class CustomIntegrationService {
       return { valid: false, errors, warnings };
     }
 
-    // Basic syntax check - note: we still use Function() here but ONLY for syntax validation
-    // The actual execution will be blocked if the code contains dangerous patterns
-    try {
-      // Use strict mode to catch more syntax errors
-      new Function('"use strict";\n' + code);
-    } catch (syntaxError: any) {
-      errors.push(`Syntax error: ${syntaxError.message}`);
-      return { valid: false, errors, warnings };
+    // SECURITY: Only perform syntax check with new Function() if code execution is enabled
+    // When disabled, we skip this to avoid any code evaluation, even for syntax checking
+    if (this.customCodeExecutionEnabled) {
+      try {
+        // Use strict mode to catch more syntax errors
+        // Note: This is for syntax validation only - actual execution happens in executeCode()
+        new Function('"use strict";\n' + code);
+      } catch (syntaxError: any) {
+        errors.push(`Syntax error: ${syntaxError.message}`);
+        return { valid: false, errors, warnings };
+      }
+    } else {
+      // When code execution is disabled, do basic syntax checks without new Function()
+      // Check for unbalanced braces/brackets/parens
+      const braceCount = (code.match(/\{/g) || []).length - (code.match(/\}/g) || []).length;
+      const bracketCount = (code.match(/\[/g) || []).length - (code.match(/\]/g) || []).length;
+      const parenCount = (code.match(/\(/g) || []).length - (code.match(/\)/g) || []).length;
+      
+      if (braceCount !== 0) {
+        errors.push('Syntax error: Unbalanced curly braces {}');
+      }
+      if (bracketCount !== 0) {
+        errors.push('Syntax error: Unbalanced square brackets []');
+      }
+      if (parenCount !== 0) {
+        errors.push('Syntax error: Unbalanced parentheses ()');
+      }
+      
+      // Check for unclosed strings (simple check)
+      const singleQuotes = (code.match(/'/g) || []).length;
+      const doubleQuotes = (code.match(/"/g) || []).length;
+      const backticks = (code.match(/`/g) || []).length;
+      
+      if (singleQuotes % 2 !== 0) {
+        warnings.push('Warning: Possibly unclosed single-quoted string');
+      }
+      if (doubleQuotes % 2 !== 0) {
+        warnings.push('Warning: Possibly unclosed double-quoted string');
+      }
+      if (backticks % 2 !== 0) {
+        warnings.push('Warning: Possibly unclosed template literal');
+      }
     }
 
     // Check for required sync function
@@ -627,6 +737,14 @@ export class CustomIntegrationService {
       let syncResult: SyncResult;
 
       if (config.mode === 'code') {
+        // SECURITY: Check if code execution is enabled for code mode
+        if (!this.customCodeExecutionEnabled) {
+          throw new BadRequestException(
+            'Custom code execution is disabled for security reasons. ' +
+            'Set ENABLE_CUSTOM_CODE_EXECUTION=true to enable, or use visual mode instead.'
+          );
+        }
+        
         // Execute custom code
         const context = await this.buildExecutionContext(config, organizationId, integrationId);
         syncResult = await this.executeCode(config.customCode!, context);
@@ -746,33 +864,112 @@ export class CustomIntegrationService {
   }
 
   /**
+   * SECURITY: Check and update rate limit for code execution
+   * Returns true if request is allowed, false if rate limited
+   */
+  private checkCodeExecutionRateLimit(organizationId: string): boolean {
+    const now = Date.now();
+    const key = `code-exec:${organizationId}`;
+    const entry = this.codeExecutionRateLimits.get(key);
+    
+    if (!entry || (now - entry.windowStart) > CODE_EXECUTION_RATE_LIMIT.windowMs) {
+      // Start new window
+      this.codeExecutionRateLimits.set(key, { count: 1, windowStart: now });
+      return true;
+    }
+    
+    if (entry.count >= CODE_EXECUTION_RATE_LIMIT.maxRequests) {
+      this.logger.warn(`Rate limit exceeded for code execution: org=${organizationId}`);
+      return false;
+    }
+    
+    entry.count++;
+    return true;
+  }
+
+  /**
+   * SECURITY: Check if custom code execution is enabled
+   * Throws an error if disabled with clear explanation
+   */
+  private assertCodeExecutionEnabled(): void {
+    if (!this.customCodeExecutionEnabled) {
+      throw new BadRequestException(
+        'Custom code execution is disabled for security reasons. ' +
+        'This feature uses dynamic code execution (new Function()) which can pose security risks. ' +
+        'To enable, set the environment variable ENABLE_CUSTOM_CODE_EXECUTION=true. ' +
+        'WARNING: Only enable in trusted environments with proper network isolation. ' +
+        'Consider using the visual mode instead for a safer alternative.'
+      );
+    }
+  }
+
+  /**
    * Execute custom JavaScript code in a sandbox
    * 
    * SECURITY: Defense-in-depth approach:
-   * 1. Code is validated before execution via validateCode()
-   * 2. Runtime validation is performed here as a double-check
-   * 3. Limited scope is provided to the function
+   * 1. Feature must be explicitly enabled via ENABLE_CUSTOM_CODE_EXECUTION env var
+   * 2. Rate limiting prevents abuse
+   * 3. Code is validated before execution via validateCode()
+   * 4. Runtime validation is performed here as a double-check
+   * 5. Limited scope is provided to the function
    * 
-   * NOTE: For maximum security, consider migrating to vm2 or isolated-vm
+   * NOTE: For maximum security, consider migrating to isolated-vm
    * for proper process-level sandboxing.
    */
   private async executeCode(code: string, context: ExecutionContext): Promise<SyncResult> {
+    // SECURITY: Check if custom code execution is enabled
+    this.assertCodeExecutionEnabled();
+    
+    // SECURITY: Apply rate limiting
+    if (!this.checkCodeExecutionRateLimit(context.organizationId)) {
+      throw new Error(
+        'Rate limit exceeded for code execution. ' +
+        `Maximum ${CODE_EXECUTION_RATE_LIMIT.maxRequests} executions per minute allowed. ` +
+        'Please wait before trying again.'
+      );
+    }
+    
+    this.logger.warn(
+      `SECURITY AUDIT: Executing custom code for org=${context.organizationId}, ` +
+      `integration=${context.integrationId}, codeLength=${code.length}`
+    );
+    
     // SECURITY: Runtime validation - double-check for dangerous patterns
     // This catches any patterns that might have been missed or smuggled in
     const dangerousPatterns = [
-      /\bglobalThis\b/, /\bglobal\b(?!\.)/, /\bprocess\b/, /\brequire\s*\(/,
-      /\beval\s*\(/, /\bFunction\s*\(/, /__proto__/, /\.constructor\b/,
-      /\bReflect\b/, /\bProxy\b/, /\bimport\s*\(/,
+      // Sandbox escape patterns
+      { pattern: /\bglobalThis\b/, name: 'globalThis' },
+      { pattern: /\bglobal\b(?!\.)/, name: 'global' },
+      { pattern: /\bprocess\b/, name: 'process' },
+      { pattern: /\brequire\s*\(/, name: 'require()' },
+      { pattern: /\beval\s*\(/, name: 'eval()' },
+      { pattern: /\bFunction\s*\(/, name: 'Function()' },
+      { pattern: /new\s+Function\s*\(/, name: 'new Function()' },
+      { pattern: /__proto__/, name: '__proto__' },
+      { pattern: /\.constructor\b/, name: '.constructor' },
+      { pattern: /\['constructor'\]/, name: "['constructor']" },
+      { pattern: /\["constructor"\]/, name: '["constructor"]' },
+      { pattern: /\bReflect\b/, name: 'Reflect' },
+      { pattern: /\bProxy\b/, name: 'Proxy' },
+      { pattern: /\bimport\s*\(/, name: 'import()' },
+      { pattern: /\.prototype\b/, name: '.prototype' },
+      // Additional bypass attempts using Unicode or encoding
+      { pattern: /\\u0065\\u0076\\u0061\\u006c/, name: 'eval (unicode)' },
+      { pattern: /\\x65\\x76\\x61\\x6c/, name: 'eval (hex)' },
+      // Template literal escapes
+      { pattern: /\$\{.*constructor.*\}/, name: 'constructor in template' },
+      { pattern: /\$\{.*eval.*\}/, name: 'eval in template' },
     ];
     
-    for (const pattern of dangerousPatterns) {
+    for (const { pattern, name } of dangerousPatterns) {
       if (pattern.test(code)) {
-        throw new Error('SECURITY: Dangerous pattern detected in code. Execution blocked.');
+        this.logger.error(`SECURITY: Blocked dangerous pattern "${name}" in custom code`);
+        throw new Error(`SECURITY: Dangerous pattern "${name}" detected in code. Execution blocked.`);
       }
     }
     
     // Create a safe execution environment
-    // Note: For production, use vm2 or isolated-vm for proper sandboxing
+    // Note: For production, use isolated-vm for proper sandboxing
     const sandbox = {
       fetch: fetch,
       console: {
@@ -797,6 +994,7 @@ export class CustomIntegrationService {
     try {
       // Wrap code to capture the sync function
       const wrappedCode = `
+        "use strict";
         ${code}
         
         // Execute sync and return result
@@ -809,6 +1007,13 @@ export class CustomIntegrationService {
         }
       `;
 
+      // SECURITY NOTE: new Function() is used here for dynamic code execution.
+      // This is inherently risky. The code above validates patterns, but this is
+      // not a true sandbox. For maximum security:
+      // 1. Keep ENABLE_CUSTOM_CODE_EXECUTION=false (default)
+      // 2. Consider migrating to isolated-vm npm package for process-level isolation
+      // 3. Run the controls service in an isolated container with limited network access
+      
       // Create function with limited scope
       const fn = new Function('fetch', 'console', 'context', 'JSON', 'Date', 'Math', 'Array', 'Object', 'String', 'Number', 'Boolean', 'Promise', 'module', wrappedCode);
 

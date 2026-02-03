@@ -34,6 +34,7 @@ import {
 } from './dto/evidence.dto';
 import {
   Roles,
+  RolesGuard,
   CurrentUser,
   UserContext,
   EndpointRateLimit,
@@ -44,7 +45,7 @@ import { DevAuthGuard } from '../auth/dev-auth.guard';
 @ApiTags('evidence')
 @ApiBearerAuth()
 @Controller('api/evidence')
-@UseGuards(DevAuthGuard)
+@UseGuards(DevAuthGuard, RolesGuard)
 export class EvidenceController {
   constructor(private readonly evidenceService: EvidenceService) {}
 

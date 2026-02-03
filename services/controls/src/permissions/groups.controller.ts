@@ -24,6 +24,7 @@ import {
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 import { PermissionGuard } from '../auth/permission.guard';
 import { RequirePermission } from '../auth/decorators/require-permission.decorator';
+import { Roles, RolesGuard } from '@gigachad-grc/shared';
 
 @Controller('api/permissions')
 @UseGuards(DevAuthGuard)
@@ -220,7 +221,8 @@ export class PermissionsController {
   // ===========================
 
   @Post('seed')
-  // No auth required for bootstrapping
+  @UseGuards(RolesGuard)
+  @Roles('admin')
   async seedDefaultGroups(
     @Headers('x-organization-id') orgId: string = 'default',
   ) {

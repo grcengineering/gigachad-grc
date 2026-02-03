@@ -26,12 +26,12 @@ import {
   ApprovalRequestListQueryDto,
   WorkflowListQueryDto,
 } from './dto/workflow.dto';
-import { CurrentUser, UserContext, Roles } from '@gigachad-grc/shared';
+import { CurrentUser, UserContext, Roles, RolesGuard } from '@gigachad-grc/shared';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 
 @ApiTags('Approval Workflows')
 @ApiBearerAuth()
-@UseGuards(DevAuthGuard)
+@UseGuards(DevAuthGuard, RolesGuard)
 @Controller('api/workflows')
 export class WorkflowsController {
   constructor(private readonly workflowsService: WorkflowsService) {}

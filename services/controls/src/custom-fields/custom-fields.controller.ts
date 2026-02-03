@@ -26,12 +26,12 @@ import {
   CustomFieldListQueryDto,
   CustomFieldEntityType,
 } from './dto/custom-field.dto';
-import { CurrentUser, UserContext, Roles } from '@gigachad-grc/shared';
+import { CurrentUser, UserContext, Roles, RolesGuard } from '@gigachad-grc/shared';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 
 @ApiTags('Custom Fields')
 @ApiBearerAuth()
-@UseGuards(DevAuthGuard)
+@UseGuards(DevAuthGuard, RolesGuard)
 @Controller('api/custom-fields')
 export class CustomFieldsController {
   constructor(private readonly customFieldsService: CustomFieldsService) {}

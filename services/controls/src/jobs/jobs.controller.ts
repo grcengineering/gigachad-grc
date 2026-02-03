@@ -31,12 +31,12 @@ import {
   ScheduledJobDto,
   JobDashboardSummaryDto,
 } from './dto/job.dto';
-import { Roles } from '@gigachad-grc/shared';
+import { Roles, RolesGuard } from '@gigachad-grc/shared';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 
 @ApiTags('Admin - Job Queue')
 @ApiBearerAuth()
-@UseGuards(DevAuthGuard)
+@UseGuards(DevAuthGuard, RolesGuard)
 @Roles('admin')
 @Controller('api/admin/jobs')
 export class JobsController {
