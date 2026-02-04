@@ -22,6 +22,7 @@ This document provides a comprehensive overview of the security architecture, au
 16. [Input Validation Enhancements](#input-validation-enhancements-v130)
 17. [Docker Security Hardening](#docker-security-hardening-v130)
 18. [Nginx Security Headers](#nginx-security-headers-v130)
+    - [Content Security Policy Limitations](#content-security-policy-limitations)
 19. [Symlink Protection](#symlink-protection-v130)
 20. [Content-Disposition Header Security](#content-disposition-header-security-v130)
 21. [Deployment Hardening](#deployment-hardening)
@@ -82,11 +83,27 @@ const keycloakConfig = {
 ```
 
 **Token Flow:**
+
 1. User redirected to Keycloak login
 2. Keycloak issues JWT access token and refresh token
 3. Frontend stores tokens in `sessionStorage` (via `secureStorage`)
 4. API requests include `Authorization: Bearer <token>`
 5. Backend validates JWT signature and claims
+
+**Password Policies:**
+
+Password policies must be configured via the Keycloak Admin Console after deployment. Navigate to:
+
+1. Keycloak Admin Console → Realm Settings → Authentication → Password Policy
+2. Add the following recommended policies:
+   - **Length**: 12 characters minimum
+   - **Uppercase Characters**: 1 minimum
+   - **Lowercase Characters**: 1 minimum
+   - **Digits**: 1 minimum
+   - **Special Characters**: 1 minimum
+   - **Not Username**: Enabled
+
+> **Note:** Password policies cannot be reliably configured via the realm-export.json file due to Keycloak 25.x import limitations. Configure policies via the Admin UI or REST API.
 
 ### Development Authentication (DevAuthGuard)
 
@@ -100,7 +117,7 @@ export class DevAuthGuard implements CanActivate {
     if (process.env.NODE_ENV === 'production') {
       throw new Error('DevAuthGuard cannot be used in production');
     }
-    
+
     // Inject mock user context
     request.user = mockUserContext;
     return true;
@@ -130,9 +147,11 @@ const sessionStore = new RedisSessionStore();
 ```
 
 **Configuration:**
+
 - `REDIS_URL`: Redis connection string (e.g., `redis://localhost:6379`)
 
 **Features:**
+
 - Sessions persist across server restarts
 - Works in multi-instance deployments
 - Automatic TTL-based expiry
@@ -148,12 +167,14 @@ JWT tokens can now be revoked before expiry:
 ```
 
 **How it works:**
+
 1. Token `jti` (JWT ID) is extracted from the token
 2. On logout, the `jti` is added to a Redis blacklist with TTL matching token expiry
 3. `JwtAuthGuard` checks the blacklist on every request
 4. Blacklisted tokens are rejected even if signature is valid
 
 **Configuration:**
+
 - Requires `REDIS_URL` for blacklist storage
 - Tokens are automatically removed from blacklist after they expire
 
@@ -171,22 +192,24 @@ export class AuthGuard implements CanActivate {
       // Uses timing-safe comparison to prevent timing attacks
       verifyProxySecret(request.headers['x-proxy-secret']);
     }
-    
+
     // 2. Validate UUID format for user/org IDs
     // Prevents SQL injection and malformed input
     validateUUID(request.headers['x-user-id']);
     validateUUID(request.headers['x-organization-id']);
-    
+
     return true;
   }
 }
 ```
 
 **Configuration:**
+
 - `AUTH_PROXY_SECRET`: Shared secret between auth proxy and backend
 - `REQUIRE_PROXY_AUTH`: When `true`, requests without valid proxy secret are rejected
 
 **Security Features:**
+
 - **Timing-safe comparison**: Prevents timing attacks on secret verification
 - **UUID validation**: Ensures user and organization IDs are valid UUIDs
 - **Production warnings**: Logs warning if no proxy secret is configured in production
@@ -200,6 +223,7 @@ export class AuthGuard implements CanActivate {
 The platform implements fine-grained RBAC with the following components:
 
 #### Resources
+
 ```typescript
 enum Resource {
   CONTROLS = 'controls',
@@ -221,6 +245,7 @@ enum Resource {
 ```
 
 #### Actions
+
 ```typescript
 enum Action {
   CREATE = 'create',
@@ -240,18 +265,23 @@ API endpoints are protected using the `@RequirePermission` decorator:
 @Controller('api/controls')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 export class ControlsController {
-  
   @Get()
   @RequirePermission(Resource.CONTROLS, Action.READ)
-  async findAll() { /* ... */ }
-  
+  async findAll() {
+    /* ... */
+  }
+
   @Post()
   @RequirePermission(Resource.CONTROLS, Action.CREATE)
-  async create(@Body() dto: CreateControlDto) { /* ... */ }
-  
+  async create(@Body() dto: CreateControlDto) {
+    /* ... */
+  }
+
   @Delete(':id')
   @RequirePermission(Resource.CONTROLS, Action.DELETE)
-  async delete(@Param('id') id: string) { /* ... */ }
+  async delete(@Param('id') id: string) {
+    /* ... */
+  }
 }
 ```
 
@@ -259,13 +289,13 @@ export class ControlsController {
 
 Users are assigned to permission groups that bundle related permissions:
 
-| Group | Description | Typical Permissions |
-|-------|-------------|---------------------|
-| Admin | Full platform access | All resources, all actions |
-| Compliance Manager | Manage compliance program | Controls, Evidence, Frameworks (CRUD) |
-| Risk Manager | Manage risk program | Risk, BCDR (CRUD), Reports (read) |
-| Auditor | Read-only audit access | All resources (read), Audit Logs (read) |
-| Viewer | Basic read access | Dashboard, Controls, Evidence (read) |
+| Group              | Description               | Typical Permissions                     |
+| ------------------ | ------------------------- | --------------------------------------- |
+| Admin              | Full platform access      | All resources, all actions              |
+| Compliance Manager | Manage compliance program | Controls, Evidence, Frameworks (CRUD)   |
+| Risk Manager       | Manage risk program       | Risk, BCDR (CRUD), Reports (read)       |
+| Auditor            | Read-only audit access    | All resources (read), Audit Logs (read) |
+| Viewer             | Basic read access         | Dashboard, Controls, Evidence (read)    |
 
 ---
 
@@ -297,7 +327,7 @@ The `ModuleGuard` component prevents access to disabled modules:
 Backend endpoints can verify module status before processing:
 
 ```typescript
-if (!await this.isModuleEnabled(orgId, 'risk')) {
+if (!(await this.isModuleEnabled(orgId, 'risk'))) {
   throw new ForbiddenException('Risk module is not enabled');
 }
 ```
@@ -384,17 +414,19 @@ await this.auditService.log({
 
 ```typescript
 // Helmet CSP configuration
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'", process.env.API_URL],
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", 'data:', 'https:'],
+        connectSrc: ["'self'", process.env.API_URL],
+      },
     },
-  },
-}));
+  })
+);
 ```
 
 ### XSS Prevention
@@ -417,6 +449,7 @@ export const secureStorage = {
 ```
 
 **Why `sessionStorage`:**
+
 - Cleared when browser tab closes
 - Not sent with requests (unlike cookies)
 - Isolated per origin
@@ -433,12 +466,12 @@ All file storage operations include path traversal protection:
 // LocalStorageProvider validates all paths
 private getFullPath(relativePath: string): string {
   const fullPath = path.resolve(this.basePath, relativePath);
-  
+
   // Reject paths that escape the storage directory
   if (!fullPath.startsWith(this.basePath + path.sep)) {
     throw new Error('SECURITY: Path traversal detected');
   }
-  
+
   return fullPath;
 }
 ```
@@ -490,6 +523,7 @@ const response = await safeFetch(userProvidedUrl, options);
 ```
 
 **Blocked:**
+
 - Private IP ranges: `10.x.x.x`, `172.16-31.x.x`, `192.168.x.x`
 - Localhost: `127.0.0.1`, `localhost`, `::1`
 - Link-local: `169.254.x.x`
@@ -497,6 +531,7 @@ const response = await safeFetch(userProvidedUrl, options);
 - DNS rebinding attacks (resolved IPs are checked)
 
 **Configurable:**
+
 - `allowedHosts`: Whitelist specific external hosts
 - `allowPrivateIPs`: Enable for internal integrations (not recommended)
 - `maxRedirects`: Limit redirect chains (default: 5)
@@ -509,14 +544,14 @@ Sensitive endpoints are protected with rate limiting to prevent abuse.
 
 ### Protected Endpoints
 
-| Endpoint Category | Limit | Window |
-|------------------|-------|--------|
-| Exports (PDF, CSV) | 5 requests | 1 minute |
-| Bulk Operations | 10 requests | 1 minute |
-| API Key Management | 20 requests | 1 hour |
-| File Uploads | 10 requests | 1 minute |
-| Seed/Demo Data | 3 requests | 1 hour |
-| Config Import/Export | 5 requests | 5 minutes |
+| Endpoint Category    | Limit       | Window    |
+| -------------------- | ----------- | --------- |
+| Exports (PDF, CSV)   | 5 requests  | 1 minute  |
+| Bulk Operations      | 10 requests | 1 minute  |
+| API Key Management   | 20 requests | 1 hour    |
+| File Uploads         | 10 requests | 1 minute  |
+| Seed/Demo Data       | 3 requests  | 1 hour    |
+| Config Import/Export | 5 requests  | 5 minutes |
 
 ### Usage
 
@@ -587,11 +622,13 @@ private encrypt(text: string): string {
 ```
 
 **Benefits:**
+
 - Each encrypted value uses a unique salt
 - Prevents rainbow table attacks
 - Backwards compatible with existing encrypted data
 
 **Affected Services:**
+
 - Integration credentials
 - MCP server credentials
 - Notification webhook secrets
@@ -606,18 +643,21 @@ private encrypt(text: string): string {
 When using OpenAI or Anthropic integrations:
 
 **API Key Protection:**
+
 - API keys encrypted at rest using AES-256
 - Keys never exposed in logs, responses, or UI
 - Keys stored in encrypted `settings` JSONB column
 - Access controlled by `settings:update` permission
 
 **Data Handling:**
+
 - Review what data is sent to AI providers
 - Consider data residency requirements
 - Understand provider data retention policies
 - Use API keys with minimal scope
 
 **Configuration:**
+
 ```typescript
 // AI configuration is stored securely
 const aiConfig = {
@@ -628,19 +668,21 @@ const aiConfig = {
     riskScoring: boolean,
     categorization: boolean,
     search: boolean,
-  }
+  },
 };
 ```
 
 ### FieldGuide Integration Security
 
 **OAuth 2.0 Flow:**
+
 - Authorization code flow with PKCE
 - Tokens stored encrypted
 - Automatic token refresh
 - Revocation support
 
 **Webhook Security:**
+
 - Webhook signature verification
 - Shared secret validation
 - IP allowlist support
@@ -649,6 +691,7 @@ const aiConfig = {
 ### Evidence Collector Security
 
 **Credential Management:**
+
 - Service account credentials encrypted at rest
 - Least-privilege access (read-only where possible)
 - Credential rotation support
@@ -656,22 +699,24 @@ const aiConfig = {
 
 **Supported Authentication:**
 
-| Provider | Auth Method | Minimum Permissions |
-|----------|-------------|---------------------|
-| AWS | Access Keys / IAM Role | Read-only resource access |
-| Azure | Service Principal | Reader role |
-| GitHub | PAT / OAuth App | `read:org`, repo read |
-| Okta | API Token | Read-only Admin |
+| Provider | Auth Method            | Minimum Permissions       |
+| -------- | ---------------------- | ------------------------- |
+| AWS      | Access Keys / IAM Role | Read-only resource access |
+| Azure    | Service Principal      | Reader role               |
+| GitHub   | PAT / OAuth App        | `read:org`, repo read     |
+| Okta     | API Token              | Read-only Admin           |
 
 ### MCP Server Security
 
 **Server Isolation:**
+
 - Each MCP server runs in isolated process
 - Network access restricted to localhost
 - Resource limits enforced
 - Automatic health monitoring
 
 **Tool Execution:**
+
 - All tool calls logged with parameters
 - Sensitive parameters redacted in logs
 - Permission checks before execution
@@ -686,6 +731,7 @@ const aiConfig = {
 **Never commit secrets to version control.**
 
 Required production secrets:
+
 - `DATABASE_URL` - PostgreSQL connection string
 - `KEYCLOAK_CLIENT_SECRET` - Keycloak client secret
 - `JWT_SECRET` - JWT signing key (if not using Keycloak)
@@ -701,11 +747,13 @@ Required production secrets:
 
 ```typescript
 // Production rate limiting
-app.use(rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 100, // 100 requests per minute
-  skipPaths: ['/health', '/api/health'],
-}));
+app.use(
+  rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    max: 100, // 100 requests per minute
+    skipPaths: ['/health', '/api/health'],
+  })
+);
 ```
 
 ### Database Security
@@ -720,6 +768,7 @@ app.use(rateLimit({
 ## Production Readiness Checklist
 
 ### Authentication & Authorization
+
 - [ ] Keycloak configured with production realm
 - [ ] Client secrets rotated from defaults
 - [ ] JWT token lifetimes configured appropriately
@@ -727,24 +776,28 @@ app.use(rateLimit({
 - [ ] Permission groups defined and assigned
 
 ### Network Security
+
 - [ ] TLS certificates installed and valid
 - [ ] CORS origins restricted to known domains
 - [ ] Rate limiting enabled
 - [ ] WAF rules configured (if applicable)
 
 ### Data Protection
+
 - [ ] Database encryption at rest enabled
 - [ ] Backup encryption enabled
 - [ ] Audit log retention configured
 - [ ] PII handling documented
 
 ### Monitoring & Alerting
+
 - [ ] Error tracking configured (Sentry, etc.)
 - [ ] Security event alerts configured
 - [ ] Failed login attempt monitoring
 - [ ] Unusual access pattern detection
 
 ### Compliance
+
 - [ ] Security policy documented
 - [ ] Incident response plan defined
 - [ ] Data retention policies configured
@@ -783,6 +836,7 @@ When enabled, custom code execution includes:
 ### Recommendation
 
 For production environments, we recommend:
+
 - Keep `ENABLE_CUSTOM_CODE_EXECUTION=false`
 - Use visual mode transformations instead
 - Review and approve custom code before enabling
@@ -918,17 +972,52 @@ deploy:
 The frontend nginx configuration includes comprehensive security headers:
 
 ```nginx
-# Content Security Policy
-add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' wss:; frame-ancestors 'self';" always;
+# HSTS with preload (only effective when using HTTPS in production)
+add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
 
-# HTTP Strict Transport Security
-add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+# Permissions Policy (replaces deprecated Feature-Policy)
+add_header Permissions-Policy "accelerometer=(), ambient-light-sensor=(), autoplay=(), battery=(), camera=(), ..." always;
 
-# Other security headers
-add_header X-Frame-Options "SAMEORIGIN" always;
+# X-Content-Type-Options - Prevents MIME type sniffing
 add_header X-Content-Type-Options "nosniff" always;
-add_header X-XSS-Protection "1; mode=block" always;
+
+# X-Frame-Options - Clickjacking protection
+add_header X-Frame-Options "SAMEORIGIN" always;
+
+# Referrer-Policy - Controls referrer information
+add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+# Content Security Policy (Hardened)
+add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.keycloak.* wss://*; frame-src 'self' https://*.keycloak.*; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; upgrade-insecure-requests;" always;
 ```
+
+**Note:** The deprecated `X-XSS-Protection` header has been intentionally removed. Modern browsers no longer support it, and in some edge cases it could introduce vulnerabilities. CSP provides superior XSS protection.
+
+### Content Security Policy Limitations
+
+The following CSP directives contain relaxed settings due to external dependencies:
+
+| Directive    | Value             | Reason                                                                                                                                                                               |
+| ------------ | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `script-src` | `'unsafe-eval'`   | **Required by Monaco Editor**. The Monaco code editor library uses `eval()` for syntax highlighting and code execution features. This is a known limitation documented by Microsoft. |
+| `style-src`  | `'unsafe-inline'` | **Required by Recharts and charting libraries**. These libraries dynamically inject styles for responsive charts and animations.                                                     |
+
+**Security Impact Assessment:**
+
+1. **`script-src 'unsafe-eval'`**: While `eval()` can be dangerous, the risk is mitigated because:
+   - No user input is passed to Monaco's eval context
+   - The code editor is used only for viewing/editing controlled content
+   - CSP still blocks inline scripts and external script sources
+
+2. **`style-src 'unsafe-inline'`**: This is a common requirement for many UI libraries. The risk is lower than `script-src 'unsafe-inline'` because:
+   - CSS cannot execute JavaScript directly
+   - Data exfiltration via CSS is limited and requires specific conditions
+
+**Improvement Roadmap:**
+
+- Monitor Monaco Editor for nonce-based CSP support
+- Evaluate alternative charting libraries that support strict CSP
+- Consider using CSS-in-JS libraries with nonce support
 
 ### Rate Limiting
 
@@ -968,13 +1057,12 @@ Download endpoints sanitize filenames to prevent header injection:
 ```typescript
 function sanitizeFilename(filename: string): string {
   return filename
-    .replace(/[\r\n\x00-\x1f\x7f]/g, '')  // Remove control chars
-    .replace(/["\\/]/g, '_');              // Replace problematic chars
+    .replace(/[\r\n\x00-\x1f\x7f]/g, '') // Remove control chars
+    .replace(/["\\/]/g, '_'); // Replace problematic chars
 }
 
 // Usage
-res.setHeader('Content-Disposition', 
-  `attachment; filename="${sanitizeFilename(file.name)}"`);
+res.setHeader('Content-Disposition', `attachment; filename="${sanitizeFilename(file.name)}"`);
 ```
 
 ---
@@ -989,4 +1077,3 @@ If you discover a security vulnerability, please report it responsibly:
 4. Allow 90 days for remediation before disclosure
 
 See [SECURITY.md](../SECURITY.md) for the full security policy.
-

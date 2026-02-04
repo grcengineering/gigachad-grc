@@ -13,22 +13,20 @@ import {
   UseGuards,
   Req,
   UnauthorizedException,
+  BadRequestException,
 } from '@nestjs/common';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { Request } from 'express';
 import { PortalService } from './portal.service';
-import {
-  PortalLoginDto,
-  CreatePortalUserDto,
-  UpdatePortalUserDto,
-} from './dto/portal.dto';
-import { DevAuthGuard } from '../auth/dev-auth.guard';
+import { PortalLoginDto, CreatePortalUserDto, UpdatePortalUserDto } from './dto/portal.dto';
+import { DevAuthGuard, User, UserContext } from '../auth/dev-auth.guard';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Controller('api')
 export class PortalController {
   constructor(
     private readonly portalService: PortalService,
-    private readonly prisma: PrismaService,
+    private readonly prisma: PrismaService
   ) {}
 
   /**
@@ -54,10 +52,9 @@ export class PortalController {
    * Authenticate with access code
    */
   @Post('audit-portal/auth')
-  async authenticate(
-    @Body() dto: PortalLoginDto,
-    @Req() req: Request,
-  ) {
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 per minute
+  async authenticate(@Body() dto: PortalLoginDto, @Req() req: Request) {
     const ipAddress = this.getClientIp(req);
     const userAgent = req.headers['user-agent'];
     return this.portalService.authenticate(dto, ipAddress, userAgent);
@@ -67,10 +64,9 @@ export class PortalController {
    * Refresh portal session
    */
   @Post('audit-portal/auth/refresh')
-  async refreshSession(
-    @Body() dto: PortalLoginDto,
-    @Req() req: Request,
-  ) {
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 per minute
+  async refreshSession(@Body() dto: PortalLoginDto, @Req() req: Request) {
     const ipAddress = this.getClientIp(req);
     const userAgent = req.headers['user-agent'];
     return this.portalService.authenticate(dto, ipAddress, userAgent);
@@ -82,32 +78,31 @@ export class PortalController {
 
   /**
    * List portal users for an audit
+   * SECURITY: Uses authenticated user's organizationId to prevent unauthorized access
    */
   @Get('audits/:auditId/portal/users')
   @UseGuards(DevAuthGuard)
-  async listPortalUsers(
-    @Param('auditId') auditId: string,
-    @Headers('x-organization-id') orgId: string = 'default',
-  ) {
-    return this.portalService.listPortalUsers(auditId, orgId);
+  async listPortalUsers(@Param('auditId') auditId: string, @User() user: UserContext) {
+    return this.portalService.listPortalUsers(auditId, user.organizationId);
   }
 
   /**
    * Create a new portal user
+   * SECURITY: Uses authenticated user's organizationId to prevent unauthorized access
    */
   @Post('audits/:auditId/portal/users')
   @UseGuards(DevAuthGuard)
   async createPortalUser(
     @Param('auditId') auditId: string,
     @Body() dto: CreatePortalUserDto,
-    @Headers('x-organization-id') orgId: string = 'default',
-    @Headers('x-user-id') actorId: string,
+    @User() user: UserContext
   ) {
-    return this.portalService.createPortalUser(auditId, orgId, dto, actorId);
+    return this.portalService.createPortalUser(auditId, user.organizationId, dto, user.userId);
   }
 
   /**
    * Update a portal user
+   * SECURITY: Uses authenticated user's organizationId to prevent unauthorized access
    */
   @Put('audits/:auditId/portal/users/:userId')
   @UseGuards(DevAuthGuard)
@@ -115,13 +110,14 @@ export class PortalController {
     @Param('auditId') auditId: string,
     @Param('userId') userId: string,
     @Body() dto: UpdatePortalUserDto,
-    @Headers('x-organization-id') orgId: string = 'default',
+    @User() user: UserContext
   ) {
-    return this.portalService.updatePortalUser(auditId, userId, orgId, dto);
+    return this.portalService.updatePortalUser(auditId, userId, user.organizationId, dto);
   }
 
   /**
    * Delete a portal user
+   * SECURITY: Uses authenticated user's organizationId to prevent unauthorized access
    */
   @Delete('audits/:auditId/portal/users/:userId')
   @UseGuards(DevAuthGuard)
@@ -129,43 +125,52 @@ export class PortalController {
   async deletePortalUser(
     @Param('auditId') auditId: string,
     @Param('userId') userId: string,
-    @Headers('x-organization-id') orgId: string = 'default',
+    @User() user: UserContext
   ) {
-    await this.portalService.deletePortalUser(auditId, userId, orgId);
+    await this.portalService.deletePortalUser(auditId, userId, user.organizationId);
   }
 
   /**
    * Get access logs for an audit
+   * SECURITY: Uses authenticated user's organizationId to prevent unauthorized access
    */
   @Get('audits/:auditId/portal/logs')
   @UseGuards(DevAuthGuard)
   async getAccessLogs(
     @Param('auditId') auditId: string,
     @Query('limit') limit: string = '100',
-    @Headers('x-organization-id') orgId: string = 'default',
+    @User() user: UserContext
   ) {
-    return this.portalService.getAccessLogs(auditId, orgId, parseInt(limit, 10));
+    return this.portalService.getAccessLogs(auditId, user.organizationId, parseInt(limit, 10));
   }
 
   /**
    * Bulk create portal users
+   * SECURITY: Uses authenticated user's organizationId to prevent unauthorized access
    */
   @Post('audits/:auditId/portal/users/bulk')
   @UseGuards(DevAuthGuard)
   async bulkCreatePortalUsers(
     @Param('auditId') auditId: string,
     @Body() users: CreatePortalUserDto[],
-    @Headers('x-organization-id') orgId: string = 'default',
-    @Headers('x-user-id') actorId: string,
+    @User() user: UserContext
   ) {
+    if (users.length > 50) {
+      throw new BadRequestException('Maximum 50 users per bulk create operation');
+    }
     const results = [];
-    for (const user of users) {
+    for (const portalUser of users) {
       try {
-        const created = await this.portalService.createPortalUser(auditId, orgId, user, actorId);
+        const created = await this.portalService.createPortalUser(
+          auditId,
+          user.organizationId,
+          portalUser,
+          user.userId
+        );
         results.push({ success: true, user: created });
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : 'Unknown error';
-        results.push({ success: false, email: user.email, error: message });
+        results.push({ success: false, email: portalUser.email, error: message });
       }
     }
     return {
@@ -186,10 +191,10 @@ export class PortalController {
     if (!accessCode) {
       throw new UnauthorizedException('Access code required');
     }
-    
+
     const ipAddress = this.getClientIp(req);
     const userAgent = req.headers['user-agent'];
-    
+
     // This reuses the authenticate method which already validates the access code
     return this.portalService.authenticate({ accessCode }, ipAddress, userAgent);
   }
@@ -201,7 +206,7 @@ export class PortalController {
   async getPortalRequests(
     @Headers('x-portal-access-code') accessCode: string,
     @Req() req: Request,
-    @Query('status') status?: string,
+    @Query('status') status?: string
   ) {
     const session = await this.validatePortalAccess(accessCode, req);
     const ipAddress = this.getClientIp(req);
@@ -215,7 +220,7 @@ export class PortalController {
       'view_requests',
       ipAddress,
       userAgent,
-      true,
+      true
     );
 
     // Get requests for this audit
@@ -233,7 +238,7 @@ export class PortalController {
 
     return {
       success: true,
-      data: requests.map(r => ({
+      data: requests.map((r) => ({
         id: r.id,
         title: r.title,
         description: r.description,
@@ -243,10 +248,12 @@ export class PortalController {
         createdAt: r.createdAt.toISOString(),
         controlId: r.controlId,
         requirementRef: r.requirementRef,
-        assignee: r.assignedToUser ? {
-          name: r.assignedToUser.displayName,
-          email: r.assignedToUser.email,
-        } : null,
+        assignee: r.assignedToUser
+          ? {
+              name: r.assignedToUser.displayName,
+              email: r.assignedToUser.email,
+            }
+          : null,
       })),
     };
   }
@@ -258,7 +265,7 @@ export class PortalController {
   async getPortalRequest(
     @Headers('x-portal-access-code') accessCode: string,
     @Param('requestId') requestId: string,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const session = await this.validatePortalAccess(accessCode, req);
     const ipAddress = this.getClientIp(req);
@@ -287,7 +294,7 @@ export class PortalController {
       ipAddress,
       userAgent,
       true,
-      `Viewed request: ${request.title}`,
+      `Viewed request: ${request.title}`
     );
 
     interface EvidenceItem {
@@ -317,10 +324,12 @@ export class PortalController {
         createdAt: request.createdAt.toISOString(),
         controlId: request.controlId,
         requirementRef: request.requirementRef,
-        assignee: request.assignedToUser ? {
-          name: request.assignedToUser.displayName,
-          email: request.assignedToUser.email,
-        } : null,
+        assignee: request.assignedToUser
+          ? {
+              name: request.assignedToUser.displayName,
+              email: request.assignedToUser.email,
+            }
+          : null,
         evidence: ((request.evidence || []) as EvidenceItem[]).map((e) => ({
           id: e.id,
           title: e.title,
@@ -346,7 +355,7 @@ export class PortalController {
   async getPortalEvidence(
     @Headers('x-portal-access-code') accessCode: string,
     @Param('requestId') requestId: string,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const session = await this.validatePortalAccess(accessCode, req);
     const ipAddress = this.getClientIp(req);
@@ -370,7 +379,7 @@ export class PortalController {
       'view_evidence',
       ipAddress,
       userAgent,
-      true,
+      true
     );
 
     interface EvidenceRecord {
@@ -409,7 +418,7 @@ export class PortalController {
     @Headers('x-portal-access-code') accessCode: string,
     @Param('requestId') requestId: string,
     @Body() body: { content: string },
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const session = await this.validatePortalAccess(accessCode, req);
     const ipAddress = this.getClientIp(req);
@@ -430,7 +439,7 @@ export class PortalController {
 
     // Get the portal user ID or use a fallback for legacy
     const portalUserId = session.portalUserId !== 'legacy' ? session.portalUserId : null;
-    
+
     // Create comment from external auditor
     const comment = await this.prisma.auditRequestComment.create({
       data: {
@@ -451,7 +460,7 @@ export class PortalController {
       ipAddress,
       userAgent,
       true,
-      `Added comment on request: ${request.title}`,
+      `Added comment on request: ${request.title}`
     );
 
     return {
@@ -472,7 +481,7 @@ export class PortalController {
   async getPortalComments(
     @Headers('x-portal-access-code') accessCode: string,
     @Param('requestId') requestId: string,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const session = await this.validatePortalAccess(accessCode, req);
     const ipAddress = this.getClientIp(req);
@@ -499,7 +508,7 @@ export class PortalController {
       'view_comments',
       ipAddress,
       userAgent,
-      true,
+      true
     );
 
     interface CommentRecord {

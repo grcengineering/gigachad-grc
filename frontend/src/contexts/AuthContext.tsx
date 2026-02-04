@@ -61,14 +61,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.debug('Auth profile loaded for user:', profile.email);
       }
 
-      const role = tokenParsed?.roles?.[0] || 
-        tokenParsed?.realm_access?.roles?.find(
-          (r: string) => ['admin', 'compliance_manager', 'auditor', 'viewer'].includes(r)
-        ) || 'viewer';
+      const role =
+        tokenParsed?.roles?.[0] ||
+        tokenParsed?.realm_access?.roles?.find((r: string) =>
+          ['admin', 'compliance_manager', 'auditor', 'viewer'].includes(r)
+        ) ||
+        'viewer';
 
       const userId = kc.subject || '';
       const organizationId = tokenParsed?.organization_id || 'default';
-      
+
       const newUser = {
         id: userId,
         email: profile.email || '',
@@ -77,7 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         organizationId,
       };
       setUser(newUser);
-      
+
       // Set user for error tracking (Sentry)
       setErrorTrackingUser({
         id: userId,
@@ -128,7 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       const kc = getKeycloak();
-      
+
       // Prevent double initialization
       if (initPromise) {
         try {
@@ -146,8 +148,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       try {
-        console.log('Initializing Keycloak...');
-        
+        if (import.meta.env.DEV) {
+          console.log('Initializing Keycloak...');
+        }
+
         initPromise = kc.init({
           onLoad: 'check-sso',
           checkLoginIframe: false, // Disable iframe check which can cause issues
@@ -156,7 +160,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
 
         const authenticated = await initPromise;
-        console.log('Keycloak initialized, authenticated:', authenticated);
+        if (import.meta.env.DEV) {
+          console.log('Keycloak initialized, authenticated:', authenticated);
+        }
 
         if (authenticated) {
           await loadUserProfile(kc);
@@ -166,23 +172,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // Token refresh
         kc.onTokenExpired = () => {
-          console.log('Token expired, refreshing...');
-          kc.updateToken(30).then((refreshed) => {
-            if (refreshed) {
-              console.log('Token refreshed');
-              setToken(kc.token || null);
-            }
-          }).catch(() => {
-            console.error('Failed to refresh token');
-            setIsAuthenticated(false);
-            setUser(null);
-            setToken(null);
-          });
+          if (import.meta.env.DEV) {
+            console.log('Token expired, refreshing...');
+          }
+          kc.updateToken(30)
+            .then((refreshed) => {
+              if (refreshed && import.meta.env.DEV) {
+                console.log('Token refreshed');
+              }
+              if (refreshed) {
+                setToken(kc.token || null);
+              }
+            })
+            .catch(() => {
+              console.error('Failed to refresh token');
+              setIsAuthenticated(false);
+              setUser(null);
+              setToken(null);
+            });
         };
 
         // Handle auth success callback
         kc.onAuthSuccess = () => {
-          console.log('Auth success');
+          if (import.meta.env.DEV) {
+            console.log('Auth success');
+          }
           loadUserProfile(kc);
           setIsAuthenticated(true);
         };
@@ -190,7 +204,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         kc.onAuthError = (error) => {
           console.error('Auth error:', error);
         };
-
       } catch (error) {
         console.error('Keycloak initialization failed:', error);
         initPromise = null;
@@ -204,7 +217,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(() => {
     const kc = getKeycloak();
-    console.log('Logging in...');
+    if (import.meta.env.DEV) {
+      console.log('Logging in...');
+    }
     // Redirect back to root so Keycloak can process the callback
     kc.login({
       redirectUri: window.location.origin + '/',
@@ -221,11 +236,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsAuthenticated(false);
     setUser(null);
     setToken(null);
-    
+
     // Clear user from error tracking
     setErrorTrackingUser(null);
     addBreadcrumb({ category: 'auth', message: 'User logged out' });
-    
+
     // Only call keycloak logout if we were authenticated via keycloak
     if (kc.authenticated) {
       kc.logout({
@@ -238,7 +253,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const devLogin = useCallback(() => {
     const isDevMode = import.meta.env.DEV || import.meta.env.VITE_ENABLE_DEV_AUTH === 'true';
     if (isDevMode) {
-      console.log('Dev login activated');
+      if (import.meta.env.DEV) {
+        console.log('Dev login activated');
+      }
       const devUser: User = {
         id: '8f88a42b-e799-455c-b68a-308d7d2e9aa4', // John Doe - seeded user
         email: 'john.doe@example.com',
@@ -265,21 +282,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const hasPermission = (permission: string): boolean => {
     if (!user) return false;
     if (user.role === 'admin') return true;
-    
+
     const rolePermissions: Record<string, string[]> = {
       compliance_manager: [
-        'controls:view', 'controls:create', 'controls:update',
-        'evidence:view', 'evidence:upload', 'evidence:approve',
-        'frameworks:view', 'frameworks:manage',
-        'policies:view', 'policies:create', 'policies:update', 'policies:approve',
-        'integrations:view', 'integrations:manage',
+        'controls:view',
+        'controls:create',
+        'controls:update',
+        'evidence:view',
+        'evidence:upload',
+        'evidence:approve',
+        'frameworks:view',
+        'frameworks:manage',
+        'policies:view',
+        'policies:create',
+        'policies:update',
+        'policies:approve',
+        'integrations:view',
+        'integrations:manage',
       ],
-      auditor: [
-        'controls:view', 'evidence:view', 'frameworks:view', 'policies:view',
-      ],
-      viewer: [
-        'controls:view', 'evidence:view', 'frameworks:view', 'policies:view',
-      ],
+      auditor: ['controls:view', 'evidence:view', 'frameworks:view', 'policies:view'],
+      viewer: ['controls:view', 'evidence:view', 'frameworks:view', 'policies:view'],
     };
 
     return rolePermissions[user.role]?.includes(permission) || false;
@@ -294,7 +316,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         token,
         login,
         logout,
-        devLogin: (import.meta.env.DEV || import.meta.env.VITE_ENABLE_DEV_AUTH === 'true') ? devLogin : undefined,
+        devLogin:
+          import.meta.env.DEV || import.meta.env.VITE_ENABLE_DEV_AUTH === 'true'
+            ? devLogin
+            : undefined,
         hasRole,
         hasPermission,
       }}
@@ -325,4 +350,3 @@ export function useAuth() {
   }
   return context;
 }
-

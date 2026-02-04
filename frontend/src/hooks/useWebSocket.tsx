@@ -36,18 +36,18 @@ interface RealTimeProviderProps {
 
 // Exponential backoff configuration
 const WS_RECONNECT_CONFIG = {
-  minDelay: 1000,    // 1 second
-  maxDelay: 60000,   // 60 seconds maximum
-  multiplier: 2,     // Double delay each attempt
-  jitter: 0.1,       // 10% random jitter
+  minDelay: 1000, // 1 second
+  maxDelay: 60000, // 60 seconds maximum
+  multiplier: 2, // Double delay each attempt
+  jitter: 0.1, // 10% random jitter
 };
 
 export function RealTimeProvider({ children, wsUrl }: RealTimeProviderProps) {
   const queryClient = useQueryClient();
-  
+
   // Get WebSocket URL from environment or prop
   const url = wsUrl || import.meta.env.VITE_WS_URL || 'ws://localhost:3001/ws';
-  
+
   const [status, setStatus] = useState<WebSocketStatus>('disconnected');
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -60,13 +60,13 @@ export function RealTimeProvider({ children, wsUrl }: RealTimeProviderProps) {
   const getReconnectDelay = useCallback(() => {
     const { minDelay, maxDelay, multiplier, jitter } = WS_RECONNECT_CONFIG;
     const attempt = reconnectAttemptRef.current;
-    
+
     // Calculate base delay with exponential backoff
     const baseDelay = Math.min(minDelay * Math.pow(multiplier, attempt), maxDelay);
-    
+
     // Add random jitter to prevent thundering herd
     const jitterAmount = baseDelay * jitter * (Math.random() * 2 - 1);
-    
+
     return Math.floor(baseDelay + jitterAmount);
   }, []);
 
@@ -105,7 +105,11 @@ export function RealTimeProvider({ children, wsUrl }: RealTimeProviderProps) {
         // Exponential backoff reconnection
         const delay = getReconnectDelay();
         reconnectAttemptRef.current++;
-        console.debug(`WebSocket closed. Reconnecting in ${delay}ms (attempt ${reconnectAttemptRef.current})`);
+        if (import.meta.env.DEV) {
+          console.debug(
+            `WebSocket closed. Reconnecting in ${delay}ms (attempt ${reconnectAttemptRef.current})`
+          );
+        }
         reconnectTimeoutRef.current = setTimeout(() => {
           connect();
         }, delay);
@@ -120,33 +124,41 @@ export function RealTimeProvider({ children, wsUrl }: RealTimeProviderProps) {
     }
   }, [url, getReconnectDelay]);
 
-  const handleMessage = useCallback((message: { type: string; payload: unknown }) => {
-    switch (message.type) {
-      case 'entity.updated': {
-        // Invalidate relevant queries
-        const { entityType, entityId } = message.payload as { entityType: string; entityId: string };
-        queryClient.invalidateQueries({ queryKey: [entityType, entityId] });
-        queryClient.invalidateQueries({ queryKey: [entityType + 's'] }); // Plural for list queries
-        break;
+  const handleMessage = useCallback(
+    (message: { type: string; payload: unknown }) => {
+      switch (message.type) {
+        case 'entity.updated': {
+          // Invalidate relevant queries
+          const { entityType, entityId } = message.payload as {
+            entityType: string;
+            entityId: string;
+          };
+          queryClient.invalidateQueries({ queryKey: [entityType, entityId] });
+          queryClient.invalidateQueries({ queryKey: [entityType + 's'] }); // Plural for list queries
+          break;
+        }
+
+        case 'notification': {
+          const { body } = message.payload as { title: string; body: string };
+          toast(body, { icon: '🔔' });
+          queryClient.invalidateQueries({ queryKey: ['notifications'] });
+          break;
+        }
+
+        case 'sync.complete':
+          toast.success('Sync completed');
+          queryClient.invalidateQueries();
+          break;
+
+        default:
+          // Unknown message type - log for debugging
+          if (import.meta.env.DEV) {
+            console.debug('Unknown WebSocket message type:', message.type);
+          }
       }
-      
-      case 'notification': {
-        const { body } = message.payload as { title: string; body: string };
-        toast(body, { icon: '🔔' });
-        queryClient.invalidateQueries({ queryKey: ['notifications'] });
-        break;
-      }
-      
-      case 'sync.complete':
-        toast.success('Sync completed');
-        queryClient.invalidateQueries();
-        break;
-      
-      default:
-        // Unknown message type - log for debugging
-        console.debug('Unknown WebSocket message type:', message.type);
-    }
-  }, [queryClient]);
+    },
+    [queryClient]
+  );
 
   const send = useCallback((type: string, payload: unknown) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -154,17 +166,23 @@ export function RealTimeProvider({ children, wsUrl }: RealTimeProviderProps) {
     }
   }, []);
 
-  const subscribeToEntity = useCallback((entityType: string, entityId: string) => {
-    const key = `${entityType}:${entityId}`;
-    subscriptionsRef.current.add(key);
-    send('subscribe', { entityType, entityId });
-  }, [send]);
+  const subscribeToEntity = useCallback(
+    (entityType: string, entityId: string) => {
+      const key = `${entityType}:${entityId}`;
+      subscriptionsRef.current.add(key);
+      send('subscribe', { entityType, entityId });
+    },
+    [send]
+  );
 
-  const unsubscribeFromEntity = useCallback((entityType: string, entityId: string) => {
-    const key = `${entityType}:${entityId}`;
-    subscriptionsRef.current.delete(key);
-    send('unsubscribe', { entityType, entityId });
-  }, [send]);
+  const unsubscribeFromEntity = useCallback(
+    (entityType: string, entityId: string) => {
+      const key = `${entityType}:${entityId}`;
+      subscriptionsRef.current.delete(key);
+      send('unsubscribe', { entityType, entityId });
+    },
+    [send]
+  );
 
   // Connect on mount (optional - can be disabled for environments without WebSocket)
   useEffect(() => {
@@ -190,11 +208,7 @@ export function RealTimeProvider({ children, wsUrl }: RealTimeProviderProps) {
     unsubscribeFromEntity,
   };
 
-  return (
-    <RealTimeContext.Provider value={value}>
-      {children}
-    </RealTimeContext.Provider>
-  );
+  return <RealTimeContext.Provider value={value}>{children}</RealTimeContext.Provider>;
 }
 
 /**
@@ -203,7 +217,7 @@ export function RealTimeProvider({ children, wsUrl }: RealTimeProviderProps) {
  */
 export function useRealTime(): RealTimeContextValue {
   const context = useContext(RealTimeContext);
-  
+
   // Return safe defaults if provider is not available
   // This prevents crashes when the component is used outside the provider
   if (!context) {
@@ -214,7 +228,7 @@ export function useRealTime(): RealTimeContextValue {
       unsubscribeFromEntity: () => {},
     };
   }
-  
+
   return context;
 }
 
@@ -255,10 +269,7 @@ export function useWebSocket({
    */
   const getReconnectDelay = useCallback(() => {
     const attempt = reconnectAttemptRef.current;
-    const baseDelay = Math.min(
-      reconnectInterval * Math.pow(2, attempt),
-      maxReconnectInterval
-    );
+    const baseDelay = Math.min(reconnectInterval * Math.pow(2, attempt), maxReconnectInterval);
     // Add 10% jitter
     const jitter = baseDelay * 0.1 * (Math.random() * 2 - 1);
     return Math.floor(baseDelay + jitter);

@@ -7,6 +7,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { encrypt, decrypt } from '@gigachad-grc/shared';
 import {
   ServiceNowConnectionConfigDto,
   ServiceNowConnectionResponseDto,
@@ -34,7 +35,7 @@ export class ServiceNowService {
 
   async connect(
     organizationId: string,
-    dto: ServiceNowConnectionConfigDto,
+    dto: ServiceNowConnectionConfigDto
   ): Promise<ServiceNowConnectionResponseDto> {
     // Validate connection
     const testResult = await this.testConnection(dto);
@@ -100,12 +101,12 @@ export class ServiceNowService {
       throw new NotFoundException('ServiceNow connection not configured');
     }
 
-    const credentials = JSON.parse(connection.credentials || '{}');
+    const credentials = this.decryptCredentials(connection.credentials);
 
     const params = new URLSearchParams({
       response_type: 'code',
       redirect_uri: redirectUri,
-      client_id: credentials.clientId,
+      client_id: credentials.clientId || '',
       state: organizationId,
     });
 
@@ -115,7 +116,7 @@ export class ServiceNowService {
   async handleOAuthCallback(
     organizationId: string,
     code: string,
-    redirectUri: string,
+    redirectUri: string
   ): Promise<ServiceNowConnectionResponseDto> {
     const connection = await this.prisma.serviceNowConnection.findUnique({
       where: { organizationId },
@@ -125,7 +126,7 @@ export class ServiceNowService {
       throw new NotFoundException('ServiceNow connection not configured');
     }
 
-    const credentials = JSON.parse(connection.credentials || '{}');
+    const credentials = this.decryptCredentials(connection.credentials);
 
     // Exchange code for tokens
     const tokenResponse = await fetch(`${connection.instanceUrl}/oauth_token.do`, {
@@ -133,8 +134,8 @@ export class ServiceNowService {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
         grant_type: 'authorization_code',
-        client_id: credentials.clientId,
-        client_secret: credentials.clientSecret,
+        client_id: credentials.clientId || '',
+        client_secret: credentials.clientSecret || '',
         code,
         redirect_uri: redirectUri,
       }).toString(),
@@ -146,12 +147,12 @@ export class ServiceNowService {
 
     const tokens = await tokenResponse.json();
 
-    // Store tokens
+    // Store encrypted tokens
     const updated = await this.prisma.serviceNowConnection.update({
       where: { organizationId },
       data: {
-        accessToken: tokens.access_token,
-        refreshToken: tokens.refresh_token,
+        accessToken: encrypt(tokens.access_token),
+        refreshToken: tokens.refresh_token ? encrypt(tokens.refresh_token) : null,
         tokenExpiresAt: new Date(Date.now() + tokens.expires_in * 1000),
         isConnected: true,
         connectedAt: new Date(),
@@ -169,7 +170,7 @@ export class ServiceNowService {
 
   async createTableMapping(
     organizationId: string,
-    dto: CreateTableMappingDto,
+    dto: CreateTableMappingDto
   ): Promise<TableMappingResponseDto> {
     await this.ensureConnected(organizationId);
 
@@ -208,7 +209,7 @@ export class ServiceNowService {
       orderBy: { createdAt: 'desc' },
     });
 
-    return mappings.map(m => this.toMappingResponse(m));
+    return mappings.map((m) => this.toMappingResponse(m));
   }
 
   async deleteTableMapping(organizationId: string, id: string): Promise<void> {
@@ -291,16 +292,13 @@ export class ServiceNowService {
     result.duration = Date.now() - startTime;
 
     this.logger.log(
-      `ServiceNow sync completed: ${result.recordsCreated} created, ${result.recordsUpdated} updated`,
+      `ServiceNow sync completed: ${result.recordsCreated} created, ${result.recordsUpdated} updated`
     );
 
     return result;
   }
 
-  async createRecord(
-    organizationId: string,
-    dto: CreateRecordDto,
-  ): Promise<RecordLinkResponseDto> {
+  async createRecord(organizationId: string, dto: CreateRecordDto): Promise<RecordLinkResponseDto> {
     await this.ensureConnected(organizationId);
 
     // Get mapping
@@ -326,11 +324,7 @@ export class ServiceNowService {
     const snowRecord = this.buildSnowRecord(mapping, entityData, dto.additionalFields);
 
     // Create in ServiceNow
-    const created = await this.createSnowRecord(
-      organizationId,
-      mapping.snowTableName,
-      snowRecord,
-    );
+    const created = await this.createSnowRecord(organizationId, mapping.snowTableName, snowRecord);
 
     const instanceUrl = await this.getInstanceUrl(organizationId);
 
@@ -363,13 +357,13 @@ export class ServiceNowService {
   async getLinkedRecords(
     organizationId: string,
     entityType: GrcEntityType,
-    entityId: string,
+    entityId: string
   ): Promise<RecordLinkResponseDto[]> {
     const links = await this.prisma.serviceNowRecordLink.findMany({
       where: { organizationId, grcEntityType: entityType, grcEntityId: entityId },
     });
 
-    return links.map(l => ({
+    return links.map((l) => ({
       id: l.id,
       snowSysId: l.snowSysId,
       snowNumber: l.snowNumber,
@@ -405,7 +399,7 @@ export class ServiceNowService {
     const response = await this.snowApiRequest(
       organizationId,
       'GET',
-      '/api/now/table/sys_user_group?sysparm_limit=100&sysparm_fields=sys_id,name',
+      '/api/now/table/sys_user_group?sysparm_limit=100&sysparm_fields=sys_id,name'
     );
 
     return (response?.result || []).map((g: any) => ({
@@ -446,16 +440,18 @@ export class ServiceNowService {
       throw new UnauthorizedException('No refresh token available');
     }
 
-    const credentials = JSON.parse(connection.credentials || '{}');
+    const credentials = this.decryptCredentials(connection.credentials);
+    // Decrypt the stored refresh token
+    const decryptedRefreshToken = decrypt(connection.refreshToken);
 
     const response = await fetch(`${connection.instanceUrl}/oauth_token.do`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
         grant_type: 'refresh_token',
-        client_id: credentials.clientId,
-        client_secret: credentials.clientSecret,
-        refresh_token: connection.refreshToken,
+        client_id: credentials.clientId || '',
+        client_secret: credentials.clientSecret || '',
+        refresh_token: decryptedRefreshToken,
       }).toString(),
     });
 
@@ -472,18 +468,21 @@ export class ServiceNowService {
 
     const tokens = await response.json();
 
+    // Encrypt new tokens before storing
     await this.prisma.serviceNowConnection.update({
       where: { organizationId },
       data: {
-        accessToken: tokens.access_token,
-        refreshToken: tokens.refresh_token || connection.refreshToken,
+        accessToken: encrypt(tokens.access_token),
+        refreshToken: tokens.refresh_token
+          ? encrypt(tokens.refresh_token)
+          : connection.refreshToken,
         tokenExpiresAt: new Date(Date.now() + tokens.expires_in * 1000),
       },
     });
   }
 
   private async testConnection(
-    dto: ServiceNowConnectionConfigDto,
+    dto: ServiceNowConnectionConfigDto
   ): Promise<{ success: boolean; error?: string }> {
     try {
       let auth: string;
@@ -513,7 +512,7 @@ export class ServiceNowService {
     organizationId: string,
     method: string,
     path: string,
-    body?: any,
+    body?: any
   ): Promise<any> {
     const connection = await this.prisma.serviceNowConnection.findUnique({
       where: { organizationId },
@@ -523,12 +522,14 @@ export class ServiceNowService {
       throw new UnauthorizedException('ServiceNow not connected');
     }
 
-    const credentials = JSON.parse(connection.credentials || '{}');
+    const credentials = this.decryptCredentials(connection.credentials);
     let auth: string;
 
     if (connection.accessToken) {
-      auth = `Bearer ${connection.accessToken}`;
-    } else if (connection.authType === 'basic') {
+      // Decrypt the stored access token
+      const decryptedAccessToken = decrypt(connection.accessToken);
+      auth = `Bearer ${decryptedAccessToken}`;
+    } else if (connection.authType === 'basic' && credentials.username && credentials.password) {
       auth = `Basic ${Buffer.from(`${credentials.username}:${credentials.password}`).toString('base64')}`;
     } else {
       throw new UnauthorizedException('No authentication available');
@@ -556,7 +557,7 @@ export class ServiceNowService {
       const response = await this.snowApiRequest(
         organizationId,
         'GET',
-        `/api/now/table/sys_db_object?sysparm_query=name=${tableName}&sysparm_fields=label`,
+        `/api/now/table/sys_db_object?sysparm_query=name=${tableName}&sysparm_fields=label`
       );
       return response?.result?.[0]?.label || tableName;
     } catch {
@@ -574,7 +575,7 @@ export class ServiceNowService {
   private async getGrcEntityData(
     organizationId: string,
     entityType: GrcEntityType,
-    entityId: string,
+    entityId: string
   ): Promise<any> {
     switch (entityType) {
       case GrcEntityType.RISK:
@@ -626,20 +627,20 @@ export class ServiceNowService {
   private async createSnowRecord(
     organizationId: string,
     tableName: string,
-    data: any,
+    data: any
   ): Promise<any> {
     const response = await this.snowApiRequest(
       organizationId,
       'POST',
       `/api/now/table/${tableName}`,
-      data,
+      data
     );
     return response?.result;
   }
 
   private async syncGrcToSnow(
     _organizationId: string,
-    _mapping: any,
+    _mapping: any
   ): Promise<{ created: number; updated: number; failed: number; errors: string[] }> {
     // Implementation would query GRC entities and sync to ServiceNow
     return { created: 0, updated: 0, failed: 0, errors: [] };
@@ -647,19 +648,43 @@ export class ServiceNowService {
 
   private async syncSnowToGrc(
     _organizationId: string,
-    _mapping: any,
+    _mapping: any
   ): Promise<{ updated: number; failed: number; errors: string[] }> {
     // Implementation would query ServiceNow records and sync to GRC
     return { updated: 0, failed: 0, errors: [] };
   }
 
+  /**
+   * Encrypt sensitive credential fields before storing
+   */
   private encryptCredentials(dto: ServiceNowConnectionConfigDto): any {
-    // In production, use proper encryption
     return {
       username: dto.username,
-      password: dto.password ? '***encrypted***' : undefined,
+      password: dto.password ? encrypt(dto.password) : undefined,
       clientId: dto.clientId,
-      clientSecret: dto.clientSecret ? '***encrypted***' : undefined,
+      clientSecret: dto.clientSecret ? encrypt(dto.clientSecret) : undefined,
+    };
+  }
+
+  /**
+   * Decrypt stored credentials JSON
+   */
+  private decryptCredentials(credentialsJson: string | null): {
+    username?: string;
+    password?: string;
+    clientId?: string;
+    clientSecret?: string;
+  } {
+    if (!credentialsJson) {
+      return {};
+    }
+
+    const credentials = JSON.parse(credentialsJson);
+    return {
+      username: credentials.username,
+      password: credentials.password ? decrypt(credentials.password) : undefined,
+      clientId: credentials.clientId,
+      clientSecret: credentials.clientSecret ? decrypt(credentials.clientSecret) : undefined,
     };
   }
 

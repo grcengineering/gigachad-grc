@@ -7,11 +7,14 @@ import {
   Body,
   Param,
   Headers,
+  UseGuards,
 } from '@nestjs/common';
+import { DevAuthGuard } from '@gigachad-grc/shared';
 import { TprmConfigService } from './tprm-config.service';
 import { UpdateTprmConfigurationDto, VendorCategoryDto } from './dto/tprm-config.dto';
 
 @Controller('tprm-config')
+@UseGuards(DevAuthGuard)
 export class TprmConfigController {
   constructor(private readonly tprmConfigService: TprmConfigService) {}
 
@@ -19,9 +22,7 @@ export class TprmConfigController {
    * Get TPRM configuration for organization
    */
   @Get()
-  async getConfiguration(
-    @Headers('x-organization-id') organizationId: string,
-  ) {
+  async getConfiguration(@Headers('x-organization-id') organizationId: string) {
     const orgId = organizationId || 'default-org';
     return this.tprmConfigService.getConfiguration(orgId);
   }
@@ -41,7 +42,7 @@ export class TprmConfigController {
   async updateConfiguration(
     @Headers('x-organization-id') organizationId: string,
     @Headers('x-user-id') userId: string,
-    @Body() dto: UpdateTprmConfigurationDto,
+    @Body() dto: UpdateTprmConfigurationDto
   ) {
     const orgId = organizationId || 'default-org';
     const user = userId || 'system';
@@ -54,7 +55,7 @@ export class TprmConfigController {
   @Post('reset')
   async resetToDefaults(
     @Headers('x-organization-id') organizationId: string,
-    @Headers('x-user-id') userId: string,
+    @Headers('x-user-id') userId: string
   ) {
     const orgId = organizationId || 'default-org';
     const user = userId || 'system';
@@ -68,7 +69,7 @@ export class TprmConfigController {
   async addCategory(
     @Headers('x-organization-id') organizationId: string,
     @Headers('x-user-id') userId: string,
-    @Body() category: Omit<VendorCategoryDto, 'id'>,
+    @Body() category: Omit<VendorCategoryDto, 'id'>
   ) {
     const orgId = organizationId || 'default-org';
     const user = userId || 'system';
@@ -82,7 +83,7 @@ export class TprmConfigController {
   async removeCategory(
     @Headers('x-organization-id') organizationId: string,
     @Headers('x-user-id') userId: string,
-    @Param('categoryId') categoryId: string,
+    @Param('categoryId') categoryId: string
   ) {
     const orgId = organizationId || 'default-org';
     const user = userId || 'system';
@@ -95,11 +96,10 @@ export class TprmConfigController {
   @Get('tier-frequency/:tier')
   async getTierFrequency(
     @Headers('x-organization-id') organizationId: string,
-    @Param('tier') tier: string,
+    @Param('tier') tier: string
   ) {
     const orgId = organizationId || 'default-org';
     const frequency = await this.tprmConfigService.getFrequencyForTier(orgId, tier);
     return { tier, frequency };
   }
 }
-

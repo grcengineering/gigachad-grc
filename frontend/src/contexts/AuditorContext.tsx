@@ -118,15 +118,18 @@ export function AuditorProvider({ children }: AuditorProviderProps) {
       });
 
       if (!response.ok) {
+        if (response.status === 429) {
+          throw new Error('Too many login attempts. Please wait a moment and try again.');
+        }
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || 'Invalid access code');
       }
 
       const data = await response.json();
-      
+
       // Map backend permissions to frontend format
       const permissions = data.permissions || {};
-      
+
       const newSession: AuditorSession = {
         accessCode,
         auditId: data.auditId,
@@ -186,7 +189,7 @@ export function AuditorProvider({ children }: AuditorProviderProps) {
 
       const data = await response.json();
       const permissions = data.permissions || {};
-      
+
       const updatedSession: AuditorSession = {
         ...session,
         expiresAt: new Date(data.expiresAt),
@@ -224,11 +227,7 @@ export function AuditorProvider({ children }: AuditorProviderProps) {
     clearError,
   };
 
-  return (
-    <AuditorContext.Provider value={value}>
-      {children}
-    </AuditorContext.Provider>
-  );
+  return <AuditorContext.Provider value={value}>{children}</AuditorContext.Provider>;
 }
 
 // ============================================
@@ -270,4 +269,3 @@ export function AuditorProtectedRoute({ children }: AuditorProtectedRouteProps) 
 
   return <>{children}</>;
 }
-

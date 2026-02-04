@@ -30,10 +30,12 @@ interface UploadResult {
 
 type UploadMode = 'csv' | 'json';
 
+const MAX_BULK_ITEMS = 500;
+
 export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProps) {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   const [uploadMode, setUploadMode] = useState<UploadMode>('csv');
   const [fileContent, setFileContent] = useState<string>('');
   const [fileName, setFileName] = useState<string>('');
@@ -44,7 +46,13 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
 
   const uploadMutation = useMutation({
     mutationFn: async (data: { content: string; mode: UploadMode }) => {
+      // Pre-validate row count before upload
       if (data.mode === 'csv') {
+        const lines = data.content.split('\n').filter((line) => line.trim());
+        const rowCount = lines.length - 1; // Subtract header row
+        if (rowCount > MAX_BULK_ITEMS) {
+          throw new Error(`Maximum ${MAX_BULK_ITEMS} items per upload. File has ${rowCount} rows.`);
+        }
         const response = await controlsApi.bulkUploadCSV({
           csv: data.content,
           skipExisting,
@@ -53,8 +61,14 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
         return response.data;
       } else {
         const controls = JSON.parse(data.content);
+        const items = Array.isArray(controls) ? controls : controls.controls;
+        if (items.length > MAX_BULK_ITEMS) {
+          throw new Error(
+            `Maximum ${MAX_BULK_ITEMS} items per upload. File has ${items.length} items.`
+          );
+        }
         const response = await controlsApi.bulkUpload({
-          controls: Array.isArray(controls) ? controls : controls.controls,
+          controls: items,
           skipExisting,
           updateExisting,
         });
@@ -89,7 +103,7 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
 
   const handleFile = (file: File) => {
     setFileName(file.name);
-    
+
     // Detect mode from file extension
     if (file.name.endsWith('.json')) {
       setUploadMode('json');
@@ -144,10 +158,7 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex min-h-screen items-center justify-center p-4">
         {/* Backdrop */}
-        <div 
-          className="fixed inset-0 bg-black/70 backdrop-blur-sm"
-          onClick={handleClose}
-        />
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" onClick={handleClose} />
 
         {/* Modal */}
         <div className="relative w-full max-w-2xl bg-surface-900 rounded-xl shadow-2xl border border-surface-700">
@@ -155,9 +166,7 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
           <div className="flex items-center justify-between p-6 border-b border-surface-700">
             <div>
               <h2 className="text-xl font-semibold text-surface-100">Bulk Upload Controls</h2>
-              <p className="text-sm text-surface-400 mt-1">
-                Import controls from CSV or JSON file
-              </p>
+              <p className="text-sm text-surface-400 mt-1">Import controls from CSV or JSON file</p>
             </div>
             <button
               onClick={handleClose}
@@ -181,7 +190,8 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
                   <div>
                     <h3 className="text-lg font-medium text-surface-100">Upload Complete</h3>
                     <p className="text-surface-400">
-                      Processed {result.total || (result.created + result.updated + result.skipped)} controls
+                      Processed {result.total || result.created + result.updated + result.skipped}{' '}
+                      controls
                     </p>
                   </div>
                 </div>
@@ -200,7 +210,9 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
                     <div className="text-sm text-surface-400">Skipped</div>
                   </div>
                   <div className="bg-surface-800 rounded-lg p-4 text-center">
-                    <div className="text-2xl font-bold text-red-400">{result.errors?.length || 0}</div>
+                    <div className="text-2xl font-bold text-red-400">
+                      {result.errors?.length || 0}
+                    </div>
                     <div className="text-sm text-surface-400">Errors</div>
                   </div>
                 </div>
@@ -221,10 +233,7 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
                   </div>
                 )}
 
-                <button
-                  onClick={handleClose}
-                  className="btn-primary w-full"
-                >
+                <button onClick={handleClose} className="btn-primary w-full">
                   Done
                 </button>
               </div>
@@ -278,7 +287,7 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
                     onChange={handleFileSelect}
                     className="hidden"
                   />
-                  
+
                   {fileContent ? (
                     <div className="space-y-2">
                       <DocumentTextIcon className="w-12 h-12 mx-auto text-green-400" />
@@ -308,9 +317,7 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
                           browse
                         </button>
                       </p>
-                      <p className="text-surface-500 text-sm">
-                        Supports .csv and .json files
-                      </p>
+                      <p className="text-surface-500 text-sm">Supports .csv and .json files</p>
                     </div>
                   )}
                 </div>
@@ -352,10 +359,7 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
                         Download our CSV template with example data
                       </p>
                     </div>
-                    <button
-                      onClick={handleDownloadTemplate}
-                      className="btn-secondary text-sm"
-                    >
+                    <button onClick={handleDownloadTemplate} className="btn-secondary text-sm">
                       <ArrowDownTrayIcon className="w-4 h-4 mr-2" />
                       Download
                     </button>
@@ -366,9 +370,9 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
                 {uploadMutation.isError && (
                   <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
                     <p className="text-red-400">
-                      {(uploadMutation.error as any)?.response?.data?.message || 
-                       (uploadMutation.error as Error)?.message || 
-                       'Upload failed'}
+                      {(uploadMutation.error as any)?.response?.data?.message ||
+                        (uploadMutation.error as Error)?.message ||
+                        'Upload failed'}
                     </p>
                   </div>
                 )}
@@ -379,10 +383,7 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
           {/* Footer */}
           {!result && (
             <div className="flex items-center justify-end gap-3 p-6 border-t border-surface-700">
-              <button
-                onClick={handleClose}
-                className="btn-secondary"
-              >
+              <button onClick={handleClose} className="btn-secondary">
                 Cancel
               </button>
               <button
@@ -409,6 +410,3 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
     </div>
   );
 }
-
-
-

@@ -66,7 +66,12 @@ async function sync(context) {
 module.exports = { sync };
 `;
 
-export default function CustomConfigModal({ integrationId, integrationName, isOpen, onClose }: Props) {
+export default function CustomConfigModal({
+  integrationId,
+  integrationName,
+  isOpen,
+  onClose,
+}: Props) {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<ConfigMode>('visual');
   const [config, setConfig] = useState<CustomConfig>({
@@ -79,7 +84,11 @@ export default function CustomConfigModal({ integrationId, integrationName, isOp
     customCode: DEFAULT_CODE,
   });
   const [hasChanges, setHasChanges] = useState(false);
-  const [testResult, setTestResult] = useState<{ success: boolean; message: string; data?: any } | null>(null);
+  const [testResult, setTestResult] = useState<{
+    success: boolean;
+    message: string;
+    data?: any;
+  } | null>(null);
 
   // Fetch existing config
   const { data: existingConfig, isLoading } = useQuery({
@@ -123,7 +132,7 @@ export default function CustomConfigModal({ integrationId, integrationName, isOp
 
   // Test mutation
   const testMutation = useMutation({
-    mutationFn: (data: { endpointIndex?: number }) => 
+    mutationFn: (data: { endpointIndex?: number }) =>
       integrationsApi.testCustomEndpoint(integrationId, data),
     onSuccess: (response) => {
       const result = response.data;
@@ -131,12 +140,38 @@ export default function CustomConfigModal({ integrationId, integrationName, isOp
       if (result.success) {
         toast.success(result.message);
       } else {
-        toast.error(result.message);
+        // Check for SSRF-specific error messages
+        const errorMsg = result.error || result.message || '';
+        if (
+          errorMsg.includes('SSRF') ||
+          errorMsg.includes('private') ||
+          errorMsg.includes('blocked') ||
+          errorMsg.includes('internal')
+        ) {
+          toast.error('Cannot connect to internal/private addresses. Use a public URL.');
+        } else {
+          toast.error(result.message);
+        }
       }
     },
     onError: (error: any) => {
-      setTestResult({ success: false, message: error.response?.data?.message || 'Test failed' });
-      toast.error('Test failed');
+      const msg = error.response?.data?.message || error.message || 'Test failed';
+      // Check for SSRF-specific error messages
+      if (
+        msg.includes('SSRF') ||
+        msg.includes('private') ||
+        msg.includes('blocked') ||
+        msg.includes('internal')
+      ) {
+        setTestResult({
+          success: false,
+          message: 'Cannot connect to internal/private addresses. Use a public URL.',
+        });
+        toast.error('Cannot connect to internal/private addresses. Use a public URL.');
+      } else {
+        setTestResult({ success: false, message: msg });
+        toast.error(msg);
+      }
     },
   });
 
@@ -248,19 +283,21 @@ export default function CustomConfigModal({ integrationId, integrationName, isOp
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-surface-700">
           <div>
-            <h2 className="text-lg font-semibold text-surface-100">
-              Configure Custom Integration
-            </h2>
+            <h2 className="text-lg font-semibold text-surface-100">Configure Custom Integration</h2>
             <p className="text-sm text-surface-400">{integrationName}</p>
           </div>
           <div className="flex items-center gap-3">
             {config.lastTestAt && (
               <div className="text-xs text-surface-500">
                 Last test: {new Date(config.lastTestAt).toLocaleString()}
-                <span className={clsx(
-                  'ml-2 px-1.5 py-0.5 rounded',
-                  config.lastTestStatus === 'success' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
-                )}>
+                <span
+                  className={clsx(
+                    'ml-2 px-1.5 py-0.5 rounded',
+                    config.lastTestStatus === 'success'
+                      ? 'bg-green-500/20 text-green-400'
+                      : 'bg-red-500/20 text-red-400'
+                  )}
+                >
                   {config.lastTestStatus}
                 </span>
               </div>
@@ -314,12 +351,14 @@ export default function CustomConfigModal({ integrationId, integrationName, isOp
                   authType: config.authType,
                   authConfig: config.authConfig,
                 }}
-                onChange={(visualConfig) => handleConfigChange({
-                  baseUrl: visualConfig.baseUrl,
-                  endpoints: visualConfig.endpoints,
-                  authType: visualConfig.authType,
-                  authConfig: visualConfig.authConfig,
-                })}
+                onChange={(visualConfig) =>
+                  handleConfigChange({
+                    baseUrl: visualConfig.baseUrl,
+                    endpoints: visualConfig.endpoints,
+                    authType: visualConfig.authType,
+                    authConfig: visualConfig.authConfig,
+                  })
+                }
                 onTest={handleTest}
                 isTestLoading={testMutation.isPending}
               />
@@ -339,9 +378,7 @@ export default function CustomConfigModal({ integrationId, integrationName, isOp
         {/* Footer */}
         <div className="flex items-center justify-between px-6 py-4 border-t border-surface-700 bg-surface-800/50">
           <div className="flex items-center gap-2">
-            {hasChanges && (
-              <span className="text-xs text-yellow-400">• Unsaved changes</span>
-            )}
+            {hasChanges && <span className="text-xs text-yellow-400">• Unsaved changes</span>}
           </div>
           <div className="flex items-center gap-3">
             <button onClick={onClose} className="btn-secondary">
@@ -354,11 +391,7 @@ export default function CustomConfigModal({ integrationId, integrationName, isOp
             >
               {saveMutation.isPending ? 'Saving...' : 'Save'}
             </button>
-            <button
-              onClick={handleSync}
-              disabled={syncMutation.isPending}
-              className="btn-primary"
-            >
+            <button onClick={handleSync} disabled={syncMutation.isPending} className="btn-primary">
               {syncMutation.isPending ? 'Syncing...' : 'Save & Sync'}
             </button>
           </div>
@@ -367,6 +400,3 @@ export default function CustomConfigModal({ integrationId, integrationName, isOp
     </div>
   );
 }
-
-
-

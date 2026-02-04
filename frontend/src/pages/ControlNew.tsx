@@ -26,7 +26,7 @@ const CATEGORY_OPTIONS: { value: ControlCategory; label: string }[] = [
 export default function ControlNew() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  
+
   const [formData, setFormData] = useState<CreateControlData>({
     controlId: '',
     title: '',
@@ -39,11 +39,15 @@ export default function ControlNew() {
 
   const createMutation = useMutation({
     mutationFn: (data: CreateControlData) => {
-      console.log('[ControlNew] Creating control with data:', JSON.stringify(data, null, 2));
+      if (import.meta.env.DEV) {
+        console.log('[ControlNew] Creating control with data:', JSON.stringify(data, null, 2));
+      }
       return controlsApi.create(data);
     },
     onSuccess: (response) => {
-      console.log('[ControlNew] Control created successfully:', response.data);
+      if (import.meta.env.DEV) {
+        console.log('[ControlNew] Control created successfully:', response.data);
+      }
       queryClient.invalidateQueries({ queryKey: ['controls'] });
       toast.success('Control created successfully');
       navigate(`/controls/${response.data.id}`);
@@ -61,7 +65,7 @@ export default function ControlNew() {
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
-    
+
     if (!formData.controlId.trim()) {
       newErrors.controlId = 'Control ID is required';
     }
@@ -71,30 +75,35 @@ export default function ControlNew() {
     if (!formData.description.trim()) {
       newErrors.description = 'Description is required';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validate()) {
       return;
     }
 
     const data: CreateControlData = {
       ...formData,
-      tags: tagsInput ? tagsInput.split(',').map(t => t.trim()).filter(Boolean) : [],
+      tags: tagsInput
+        ? tagsInput
+            .split(',')
+            .map((t) => t.trim())
+            .filter(Boolean)
+        : [],
     };
 
     createMutation.mutate(data);
   };
 
   const handleChange = (field: keyof CreateControlData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
+      setErrors((prev) => ({ ...prev, [field]: '' }));
     }
   };
 
@@ -128,9 +137,7 @@ export default function ControlNew() {
             placeholder="e.g., AC-001, SOC2-CC6.1"
             className={`input ${errors.controlId ? 'border-red-500' : ''}`}
           />
-          {errors.controlId && (
-            <p className="mt-1 text-sm text-red-400">{errors.controlId}</p>
-          )}
+          {errors.controlId && <p className="mt-1 text-sm text-red-400">{errors.controlId}</p>}
           <p className="mt-1 text-xs text-surface-500">
             A unique identifier for this control (e.g., AC-001, SOC2-CC6.1)
           </p>
@@ -149,9 +156,7 @@ export default function ControlNew() {
             placeholder="Enter control title"
             className={`input ${errors.title ? 'border-red-500' : ''}`}
           />
-          {errors.title && (
-            <p className="mt-1 text-sm text-red-400">{errors.title}</p>
-          )}
+          {errors.title && <p className="mt-1 text-sm text-red-400">{errors.title}</p>}
         </div>
 
         {/* Category */}
@@ -165,7 +170,7 @@ export default function ControlNew() {
             onChange={(e) => handleChange('category', e.target.value)}
             className="input"
           >
-            {CATEGORY_OPTIONS.map(option => (
+            {CATEGORY_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
@@ -186,9 +191,7 @@ export default function ControlNew() {
             rows={4}
             className={`input ${errors.description ? 'border-red-500' : ''}`}
           />
-          {errors.description && (
-            <p className="mt-1 text-sm text-red-400">{errors.description}</p>
-          )}
+          {errors.description && <p className="mt-1 text-sm text-red-400">{errors.description}</p>}
         </div>
 
         {/* Tags */}
@@ -211,17 +214,10 @@ export default function ControlNew() {
 
         {/* Actions */}
         <div className="flex items-center justify-end gap-3 pt-4 border-t border-surface-700">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => navigate('/controls')}
-          >
+          <Button type="button" variant="secondary" onClick={() => navigate('/controls')}>
             Cancel
           </Button>
-          <Button
-            type="submit"
-            disabled={createMutation.isPending}
-          >
+          <Button type="submit" disabled={createMutation.isPending}>
             {createMutation.isPending ? 'Creating...' : 'Create Control'}
           </Button>
         </div>
@@ -229,4 +225,3 @@ export default function ControlNew() {
     </div>
   );
 }
-

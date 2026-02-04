@@ -1,11 +1,86 @@
 import { z } from 'zod';
 
 // ===========================================
+// CIDR/IP Validation Utilities
+// ===========================================
+
+/**
+ * Validates a single IP address (IPv4)
+ * @param ip - The IP address string to validate
+ * @returns true if valid IPv4 address, false otherwise
+ */
+export function isValidIp(ip: string): boolean {
+  const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$/;
+  if (!ipRegex.test(ip)) return false;
+  const octets = ip.split('.');
+  return octets.every((octet) => {
+    const num = parseInt(octet, 10);
+    return num >= 0 && num <= 255;
+  });
+}
+
+/**
+ * Validates CIDR notation (e.g., "192.168.1.0/24" or single IPs like "10.0.0.1")
+ * @param cidr - The CIDR string to validate
+ * @returns true if valid CIDR notation or single IP, false otherwise
+ */
+export function isValidCidr(cidr: string): boolean {
+  // Handle single IP addresses (no CIDR prefix)
+  if (!cidr.includes('/')) {
+    return isValidIp(cidr);
+  }
+
+  // Validate CIDR format
+  const cidrRegex = /^(\d{1,3}\.){3}\d{1,3}\/(\d{1,2})$/;
+  if (!cidrRegex.test(cidr)) return false;
+
+  const [ip, prefixStr] = cidr.split('/');
+  const prefix = parseInt(prefixStr, 10);
+
+  // Validate prefix length (0-32 for IPv4)
+  if (prefix < 0 || prefix > 32) return false;
+
+  // Validate each octet
+  return isValidIp(ip);
+}
+
+/**
+ * Validates an array of CIDR/IP strings
+ * @param cidrs - Array of CIDR strings to validate
+ * @returns Array of invalid entries (empty if all valid)
+ */
+export function validateCidrArray(cidrs: string[]): string[] {
+  return cidrs.filter((cidr) => !isValidCidr(cidr.trim()));
+}
+
+/**
+ * Formats CIDR validation error message
+ * @param invalidCidrs - Array of invalid CIDR strings
+ * @returns Error message string
+ */
+export function formatCidrError(invalidCidrs: string[]): string {
+  if (invalidCidrs.length === 0) return '';
+  return `Invalid CIDR notation: ${invalidCidrs.join(', ')}. Expected format: single IP (e.g., "192.168.1.1") or CIDR range (e.g., "192.168.1.0/24")`;
+}
+
+// Zod custom refinement for CIDR validation
+export const cidrSchema = z
+  .string()
+  .refine(
+    (val) => !val || isValidCidr(val.trim()),
+    'Invalid CIDR notation. Expected format: single IP (e.g., "192.168.1.1") or CIDR range (e.g., "192.168.1.0/24")'
+  );
+
+export const cidrArraySchema = z.array(z.string()).refine(
+  (arr) => validateCidrArray(arr).length === 0,
+  (arr) => ({ message: formatCidrError(validateCidrArray(arr)) })
+);
+
+// ===========================================
 // Common Validation Patterns
 // ===========================================
 
-export const requiredString = (field: string) =>
-  z.string().min(1, `${field} is required`);
+export const requiredString = (field: string) => z.string().min(1, `${field} is required`);
 
 export const optionalString = z.string().optional().or(z.literal(''));
 
@@ -13,10 +88,9 @@ export const emailSchema = z.string().email('Please enter a valid email address'
 
 export const urlSchema = z.string().url('Please enter a valid URL').optional().or(z.literal(''));
 
-export const dateSchema = z.string().refine(
-  (val) => !val || !isNaN(Date.parse(val)),
-  'Please enter a valid date'
-);
+export const dateSchema = z
+  .string()
+  .refine((val) => !val || !isNaN(Date.parse(val)), 'Please enter a valid date');
 
 export const positiveNumber = z.number().positive('Must be a positive number');
 
@@ -28,15 +102,21 @@ export const percentageSchema = z.number().min(0).max(100, 'Must be between 0 an
 
 export const riskIntakeSchema = z.object({
   title: requiredString('Title').max(200, 'Title must be less than 200 characters'),
-  description: requiredString('Description').max(2000, 'Description must be less than 2000 characters'),
-  source: z.enum([
-    'internal_security_reviews',
-    'ad_hoc_discovery',
-    'external_security_reviews',
-    'incident_response',
-    'policy_exception',
-    'employee_reporting',
-  ], { required_error: 'Please select a source' }),
+  description: requiredString('Description').max(
+    2000,
+    'Description must be less than 2000 characters'
+  ),
+  source: z.enum(
+    [
+      'internal_security_reviews',
+      'ad_hoc_discovery',
+      'external_security_reviews',
+      'incident_response',
+      'policy_exception',
+      'employee_reporting',
+    ],
+    { required_error: 'Please select a source' }
+  ),
   initialSeverity: z.enum(['very_low', 'low', 'medium', 'high', 'very_high'], {
     required_error: 'Please select an initial severity',
   }),
@@ -80,29 +160,34 @@ export const riskTreatmentSchema = z.object({
 // ===========================================
 
 export const controlSchema = z.object({
-  controlId: requiredString('Control ID')
-    .regex(/^[A-Z]{2,}-\d{3}$/, 'Control ID must be in format XX-000 (e.g., AC-001)'),
+  controlId: requiredString('Control ID').regex(
+    /^[A-Z]{2,}-\d{3}$/,
+    'Control ID must be in format XX-000 (e.g., AC-001)'
+  ),
   title: requiredString('Title').max(200, 'Title must be less than 200 characters'),
   description: requiredString('Description'),
-  category: z.enum([
-    'access_control',
-    'data_protection',
-    'network_security',
-    'incident_management',
-    'business_continuity',
-    'risk_management',
-    'change_management',
-    'asset_management',
-    'compliance',
-    'physical_security',
-    'hr_security',
-    'supplier_management',
-    'cryptography',
-    'operations',
-    'communications',
-    'system_acquisition',
-    'other',
-  ], { required_error: 'Please select a category' }),
+  category: z.enum(
+    [
+      'access_control',
+      'data_protection',
+      'network_security',
+      'incident_management',
+      'business_continuity',
+      'risk_management',
+      'change_management',
+      'asset_management',
+      'compliance',
+      'physical_security',
+      'hr_security',
+      'supplier_management',
+      'cryptography',
+      'operations',
+      'communications',
+      'system_acquisition',
+      'other',
+    ],
+    { required_error: 'Please select a category' }
+  ),
   subcategory: optionalString,
   tags: z.array(z.string()).optional(),
   guidance: optionalString,
@@ -126,19 +211,22 @@ export const controlImplementationSchema = z.object({
 export const evidenceSchema = z.object({
   title: requiredString('Title').max(200, 'Title must be less than 200 characters'),
   description: optionalString,
-  type: z.enum([
-    'screenshot',
-    'document',
-    'export',
-    'report',
-    'configuration',
-    'log',
-    'policy',
-    'procedure',
-    'certificate',
-    'audit_report',
-    'other',
-  ], { required_error: 'Please select a type' }),
+  type: z.enum(
+    [
+      'screenshot',
+      'document',
+      'export',
+      'report',
+      'configuration',
+      'log',
+      'policy',
+      'procedure',
+      'certificate',
+      'audit_report',
+      'other',
+    ],
+    { required_error: 'Please select a type' }
+  ),
   validFrom: requiredString('Valid from date'),
   validUntil: dateSchema.optional(),
   tags: z.array(z.string()).optional(),
@@ -152,21 +240,24 @@ export const evidenceSchema = z.object({
 export const policySchema = z.object({
   title: requiredString('Title').max(200, 'Title must be less than 200 characters'),
   description: optionalString,
-  category: z.enum([
-    'information_security',
-    'data_privacy',
-    'acceptable_use',
-    'access_control',
-    'business_continuity',
-    'incident_response',
-    'vendor_management',
-    'change_management',
-    'asset_management',
-    'hr_security',
-    'physical_security',
-    'compliance',
-    'other',
-  ], { required_error: 'Please select a category' }),
+  category: z.enum(
+    [
+      'information_security',
+      'data_privacy',
+      'acceptable_use',
+      'access_control',
+      'business_continuity',
+      'incident_response',
+      'vendor_management',
+      'change_management',
+      'asset_management',
+      'hr_security',
+      'physical_security',
+      'compliance',
+      'other',
+    ],
+    { required_error: 'Please select a category' }
+  ),
   ownerId: requiredString('Owner'),
   reviewFrequency: z.enum(['monthly', 'quarterly', 'semi_annual', 'annual', 'biennial']).optional(),
   effectiveDate: dateSchema.optional(),
@@ -187,13 +278,15 @@ export const vendorSchema = z.object({
   primaryContact: optionalString,
   primaryContactEmail: z.string().email('Invalid email').optional().or(z.literal('')),
   primaryContactPhone: optionalString,
-  category: z.enum([
-    'software_vendor',
-    'cloud_provider',
-    'professional_services',
-    'hardware_vendor',
-    'consultant',
-  ]).optional(),
+  category: z
+    .enum([
+      'software_vendor',
+      'cloud_provider',
+      'professional_services',
+      'hardware_vendor',
+      'consultant',
+    ])
+    .optional(),
   tier: z.enum(['tier_1', 'tier_2', 'tier_3', 'tier_4']).optional(),
   dataClassification: z.enum(['public', 'internal', 'confidential', 'restricted']).optional(),
   hasDataAccess: z.boolean().optional(),
@@ -264,21 +357,24 @@ export const assetSchema = z.object({
 
 export const frameworkSchema = z.object({
   name: requiredString('Framework name').max(200, 'Name must be less than 200 characters'),
-  type: z.enum([
-    'soc2',
-    'iso27001',
-    'iso27701',
-    'hipaa',
-    'gdpr',
-    'pci_dss',
-    'nist_csf',
-    'nist_800_53',
-    'cis',
-    'fedramp',
-    'cmmc',
-    'ccpa',
-    'custom',
-  ], { required_error: 'Please select a framework type' }),
+  type: z.enum(
+    [
+      'soc2',
+      'iso27001',
+      'iso27701',
+      'hipaa',
+      'gdpr',
+      'pci_dss',
+      'nist_csf',
+      'nist_800_53',
+      'cis',
+      'fedramp',
+      'cmmc',
+      'ccpa',
+      'custom',
+    ],
+    { required_error: 'Please select a framework type' }
+  ),
   version: optionalString,
   description: optionalString,
   isActive: z.boolean().optional(),
@@ -349,6 +445,29 @@ export const notificationSettingsSchema = z.object({
 });
 
 // ===========================================
+// Portal User Schemas
+// ===========================================
+
+export const portalUserSchema = z.object({
+  name: requiredString('Name').max(200, 'Name must be less than 200 characters'),
+  email: emailSchema,
+  role: z.enum(['lead_auditor', 'auditor', 'reviewer'], {
+    required_error: 'Please select a role',
+  }),
+  canViewAll: z.boolean().optional(),
+  canUpload: z.boolean().optional(),
+  canComment: z.boolean().optional(),
+  allowedIpRanges: cidrArraySchema.optional(),
+  enforceIpRestriction: z.boolean().optional(),
+  downloadLimit: z.number().positive('Download limit must be positive').optional(),
+  enableWatermark: z.boolean().optional(),
+  watermarkText: optionalString,
+  expiresAt: dateSchema.optional(),
+});
+
+export const updatePortalUserSchema = portalUserSchema.partial();
+
+// ===========================================
 // Type Exports
 // ===========================================
 
@@ -370,5 +489,5 @@ export type ContractInput = z.infer<typeof contractSchema>;
 export type RiskInput = z.infer<typeof riskSchema>;
 export type UserProfileInput = z.infer<typeof userProfileSchema>;
 export type NotificationSettingsInput = z.infer<typeof notificationSettingsSchema>;
-
-
+export type PortalUserInput = z.infer<typeof portalUserSchema>;
+export type UpdatePortalUserInput = z.infer<typeof updatePortalUserSchema>;

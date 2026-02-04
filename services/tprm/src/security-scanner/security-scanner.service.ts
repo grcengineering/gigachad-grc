@@ -15,12 +15,111 @@ import {
   riskLevelToInherentScore,
 } from './dto/security-scan.dto';
 import { VendorAssessment, VendorRiskScore } from '@prisma/client';
+import * as net from 'net';
+
+// Private IP ranges for SSRF protection
+const PRIVATE_IP_RANGES = [
+  { start: '10.0.0.0', end: '10.255.255.255' },
+  { start: '172.16.0.0', end: '172.31.255.255' },
+  { start: '192.168.0.0', end: '192.168.255.255' },
+  { start: '127.0.0.0', end: '127.255.255.255' },
+  { start: '169.254.0.0', end: '169.254.255.255' },
+  { start: '0.0.0.0', end: '0.255.255.255' },
+];
+
+function ipToNumber(ip: string): number {
+  const parts = ip.split('.').map(Number);
+  return (parts[0] << 24) + (parts[1] << 16) + (parts[2] << 8) + parts[3];
+}
+
+function isPrivateIP(ip: string): boolean {
+  if (!net.isIPv4(ip)) {
+    if (net.isIPv6(ip)) {
+      return ip === '::1' || ip.startsWith('fe80:') || ip.startsWith('fc') || ip.startsWith('fd');
+    }
+    return false;
+  }
+
+  const ipNum = ipToNumber(ip);
+  for (const range of PRIVATE_IP_RANGES) {
+    const start = ipToNumber(range.start);
+    const end = ipToNumber(range.end);
+    if (ipNum >= start && ipNum <= end) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Validates a URL for SSRF protection before scanning.
+ * Blocks private IPs, localhost, and non-HTTP(S) protocols.
+ */
+function validateScanUrl(url: string): void {
+  let parsed: URL;
+  try {
+    parsed = new URL(url.startsWith('http') ? url : `https://${url}`);
+  } catch {
+    throw new BadRequestException('Invalid URL format');
+  }
+
+  // Block non-HTTP(S) protocols
+  if (!['http:', 'https:'].includes(parsed.protocol)) {
+    throw new BadRequestException('Only HTTP/HTTPS URLs are allowed for security scanning');
+  }
+
+  // Block localhost and private IPs
+  const hostname = parsed.hostname.toLowerCase();
+
+  // Check for localhost variations
+  if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') {
+    throw new BadRequestException('Cannot scan localhost or loopback addresses');
+  }
+
+  // Check for direct IP addresses that are private
+  if (net.isIP(hostname)) {
+    if (isPrivateIP(hostname)) {
+      throw new BadRequestException('Cannot scan private/internal IP addresses');
+    }
+  }
+
+  // Check for private IP ranges in hostname (for hostnames like 192.168.1.1.example.com)
+  const privatePatterns = [
+    /^192\.168\./,
+    /^10\./,
+    /^172\.(1[6-9]|2[0-9]|3[0-1])\./,
+    /^127\./,
+    /^169\.254\./,
+    /^0\./,
+  ];
+
+  for (const pattern of privatePatterns) {
+    if (pattern.test(hostname)) {
+      throw new BadRequestException('Cannot scan private/internal addresses');
+    }
+  }
+
+  // Block internal cloud metadata endpoints
+  const blockedHosts = [
+    '169.254.169.254', // AWS/GCP/Azure metadata
+    'metadata.google.internal',
+    'metadata.goog',
+    'kubernetes.default',
+    'kubernetes.default.svc',
+  ];
+
+  if (blockedHosts.includes(hostname)) {
+    throw new BadRequestException('Cannot scan cloud metadata or internal service endpoints');
+  }
+}
 
 // Valid risk score values
 const VALID_RISK_SCORES: VendorRiskScore[] = ['very_low', 'low', 'medium', 'high', 'critical'];
 
 function toVendorRiskScore(value: string): VendorRiskScore {
-  return VALID_RISK_SCORES.includes(value as VendorRiskScore) ? value as VendorRiskScore : 'medium';
+  return VALID_RISK_SCORES.includes(value as VendorRiskScore)
+    ? (value as VendorRiskScore)
+    : 'medium';
 }
 
 // Interface for security scan findings stored in assessment
@@ -54,7 +153,7 @@ export class SecurityScannerService {
     private readonly webCollector: WebCollector,
     private readonly complianceCollector: ComplianceCollector,
     private readonly subdomainCollector: SubdomainCollector,
-    private readonly riskAnalyzer: RiskAnalyzer,
+    private readonly riskAnalyzer: RiskAnalyzer
   ) {}
 
   /**
@@ -63,7 +162,7 @@ export class SecurityScannerService {
   async initiateScan(
     vendorId: string,
     dto: InitiateSecurityScanDto,
-    userId: string,
+    userId: string
   ): Promise<SecurityScanResult> {
     this.logger.log(`Initiating security scan for vendor ${vendorId}`);
 
@@ -79,10 +178,11 @@ export class SecurityScannerService {
 
     const targetUrl = dto.targetUrl || vendor.website;
     if (!targetUrl) {
-      throw new BadRequestException(
-        'No target URL provided and vendor has no website configured'
-      );
+      throw new BadRequestException('No target URL provided and vendor has no website configured');
     }
+
+    // SSRF Protection: Validate URL before scanning
+    validateScanUrl(targetUrl);
 
     this.logger.log(`Scanning target: ${targetUrl}`);
 
@@ -210,7 +310,7 @@ export class SecurityScannerService {
       return result;
     } catch (error) {
       this.logger.error(`Security scan failed for ${vendorId}: ${error.message}`, error.stack);
-      
+
       // Store failed assessment
       const _assessment = await this.prisma.vendorAssessment.create({
         data: {

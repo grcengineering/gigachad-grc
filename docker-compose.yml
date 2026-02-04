@@ -1,10 +1,10 @@
 # ===========================================
 # DEVELOPMENT DOCKER COMPOSE
 # ===========================================
-# 
+#
 # SECURITY WARNING: This file contains default credentials for development only.
 # DO NOT use this file in production!
-# 
+#
 # For production deployments, use docker-compose.prod.yml which:
 # - Requires all credentials to be set via environment variables
 # - Enables TLS/HTTPS with Let's Encrypt
@@ -121,7 +121,7 @@ services:
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-gigachad_grc}
       KC_DB_USERNAME: ${POSTGRES_USER:-grc}
-      KC_DB_PASSWORD: ${POSTGRES_PASSWORD:-grc_secret}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
       KC_HOSTNAME: ${KEYCLOAK_HOSTNAME:-localhost}
       KC_HOSTNAME_PORT: ${KEYCLOAK_PORT:-8080}
       KC_HOSTNAME_STRICT: 'false'
@@ -154,8 +154,8 @@ services:
     image: rustfs/rustfs:latest
     container_name: grc-rustfs
     environment:
-      RUSTFS_ROOT_USER: ${MINIO_ROOT_USER:-rustfsadmin}
-      RUSTFS_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-rustfsadmin}
+      RUSTFS_ROOT_USER: ${MINIO_ROOT_USER:?MINIO_ROOT_USER is required}
+      RUSTFS_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD is required}
     ports:
       - '9000:9000' # S3 API
       - '9001:9001' # Console

@@ -7,6 +7,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { encrypt, decrypt } from '@gigachad-grc/shared';
 import {
   JiraOAuthConfigDto,
   JiraConnectionResponseDto,
@@ -38,7 +39,7 @@ export class JiraService {
 
   async connect(
     organizationId: string,
-    dto: JiraOAuthConfigDto,
+    dto: JiraOAuthConfigDto
   ): Promise<JiraConnectionResponseDto> {
     // Validate connection by making a test API call
     const testResult = await this.testConnection(dto);
@@ -47,29 +48,26 @@ export class JiraService {
       throw new BadRequestException(`Connection failed: ${testResult.error}`);
     }
 
-    // Store connection (encrypt credentials in production)
+    // Store connection with encrypted credentials
+    const encryptedCredentials = {
+      clientId: dto.clientId,
+      clientSecret: dto.clientSecret ? encrypt(dto.clientSecret) : undefined,
+      apiToken: dto.apiToken ? encrypt(dto.apiToken) : undefined,
+      userEmail: dto.userEmail,
+    };
+
     const connection = await this.prisma.jiraConnection.upsert({
       where: { organizationId },
       create: {
         organizationId,
         instanceUrl: dto.instanceUrl,
-        credentials: JSON.stringify({
-          clientId: dto.clientId,
-          clientSecret: dto.clientSecret ? '***encrypted***' : undefined,
-          apiToken: dto.apiToken ? '***encrypted***' : undefined,
-          userEmail: dto.userEmail,
-        }),
+        credentials: JSON.stringify(encryptedCredentials),
         isConnected: true,
         connectedAt: new Date(),
       },
       update: {
         instanceUrl: dto.instanceUrl,
-        credentials: JSON.stringify({
-          clientId: dto.clientId,
-          clientSecret: dto.clientSecret ? '***encrypted***' : undefined,
-          apiToken: dto.apiToken ? '***encrypted***' : undefined,
-          userEmail: dto.userEmail,
-        }),
+        credentials: JSON.stringify(encryptedCredentials),
         isConnected: true,
         connectedAt: new Date(),
         connectionError: null,
@@ -110,7 +108,7 @@ export class JiraService {
       throw new NotFoundException('Jira connection not configured');
     }
 
-    const credentials = JSON.parse(connection.credentials || '{}');
+    const credentials = this.decryptCredentials(connection.credentials);
 
     // Atlassian OAuth 2.0 authorization URL
     const params = new URLSearchParams({
@@ -129,7 +127,7 @@ export class JiraService {
   async handleOAuthCallback(
     organizationId: string,
     code: string,
-    redirectUri: string,
+    redirectUri: string
   ): Promise<JiraConnectionResponseDto> {
     const connection = await this.prisma.jiraConnection.findUnique({
       where: { organizationId },
@@ -139,7 +137,7 @@ export class JiraService {
       throw new NotFoundException('Jira connection not configured');
     }
 
-    const credentials = JSON.parse(connection.credentials || '{}');
+    const credentials = this.decryptCredentials(connection.credentials);
 
     // Exchange code for tokens
     const tokenResponse = await fetch('https://auth.atlassian.com/oauth/token', {
@@ -160,12 +158,12 @@ export class JiraService {
 
     const tokens = await tokenResponse.json();
 
-    // Store tokens
+    // Store encrypted tokens
     const updated = await this.prisma.jiraConnection.update({
       where: { organizationId },
       data: {
-        accessToken: tokens.access_token,
-        refreshToken: tokens.refresh_token,
+        accessToken: encrypt(tokens.access_token),
+        refreshToken: tokens.refresh_token ? encrypt(tokens.refresh_token) : null,
         tokenExpiresAt: new Date(Date.now() + tokens.expires_in * 1000),
         isConnected: true,
         connectedAt: new Date(),
@@ -183,7 +181,7 @@ export class JiraService {
 
   async createProjectMapping(
     organizationId: string,
-    dto: CreateJiraProjectMappingDto,
+    dto: CreateJiraProjectMappingDto
   ): Promise<JiraProjectMappingResponseDto> {
     await this.ensureConnected(organizationId);
 
@@ -214,15 +212,13 @@ export class JiraService {
     return this.toMappingResponse(mapping);
   }
 
-  async listProjectMappings(
-    organizationId: string,
-  ): Promise<JiraProjectMappingResponseDto[]> {
+  async listProjectMappings(organizationId: string): Promise<JiraProjectMappingResponseDto[]> {
     const mappings = await this.prisma.jiraProjectMapping.findMany({
       where: { organizationId },
       orderBy: { createdAt: 'desc' },
     });
 
-    return mappings.map(m => this.toMappingResponse(m));
+    return mappings.map((m) => this.toMappingResponse(m));
   }
 
   async deleteProjectMapping(organizationId: string, id: string): Promise<void> {
@@ -241,10 +237,7 @@ export class JiraService {
   // Issue Sync
   // ===========================================
 
-  async syncNow(
-    organizationId: string,
-    mappingId: string,
-  ): Promise<JiraSyncResultDto> {
+  async syncNow(organizationId: string, mappingId: string): Promise<JiraSyncResultDto> {
     const mapping = await this.prisma.jiraProjectMapping.findFirst({
       where: { id: mappingId, organizationId },
     });
@@ -308,7 +301,7 @@ export class JiraService {
     result.duration = Date.now() - startTime;
 
     this.logger.log(
-      `Jira sync completed: ${result.issuesCreated} created, ${result.issuesUpdated} updated`,
+      `Jira sync completed: ${result.issuesCreated} created, ${result.issuesUpdated} updated`
     );
 
     return result;
@@ -316,7 +309,7 @@ export class JiraService {
 
   async createJiraIssue(
     organizationId: string,
-    dto: CreateJiraIssueDto,
+    dto: CreateJiraIssueDto
   ): Promise<JiraIssueResponseDto> {
     await this.ensureConnected(organizationId);
 
@@ -375,13 +368,13 @@ export class JiraService {
   async getLinkedIssues(
     organizationId: string,
     entityType: GrcEntityType,
-    entityId: string,
+    entityId: string
   ): Promise<JiraIssueResponseDto[]> {
     const links = await this.prisma.jiraIssueLink.findMany({
       where: { organizationId, grcEntityType: entityType, grcEntityId: entityId },
     });
 
-    return links.map(l => ({
+    return links.map((l) => ({
       id: l.id,
       jiraKey: l.jiraKey,
       jiraUrl: l.jiraUrl,
@@ -400,11 +393,7 @@ export class JiraService {
   async listJiraProjects(organizationId: string): Promise<JiraProjectDto[]> {
     await this.ensureConnected(organizationId);
 
-    const response = await this.jiraApiRequest(
-      organizationId,
-      'GET',
-      '/rest/api/3/project',
-    );
+    const response = await this.jiraApiRequest(organizationId, 'GET', '/rest/api/3/project');
 
     return (response || []).map((p: any) => ({
       id: p.id,
@@ -416,14 +405,14 @@ export class JiraService {
 
   async listJiraIssueTypes(
     organizationId: string,
-    projectKey: string,
+    projectKey: string
   ): Promise<JiraIssueTypeDto[]> {
     await this.ensureConnected(organizationId);
 
     const response = await this.jiraApiRequest(
       organizationId,
       'GET',
-      `/rest/api/3/project/${projectKey}`,
+      `/rest/api/3/project/${projectKey}`
     );
 
     return (response?.issueTypes || []).map((t: any) => ({
@@ -461,7 +450,9 @@ export class JiraService {
       throw new UnauthorizedException('No refresh token available');
     }
 
-    const credentials = JSON.parse(connection.credentials || '{}');
+    const credentials = this.decryptCredentials(connection.credentials);
+    // Decrypt the stored refresh token
+    const decryptedRefreshToken = decrypt(connection.refreshToken);
 
     const response = await fetch('https://auth.atlassian.com/oauth/token', {
       method: 'POST',
@@ -470,7 +461,7 @@ export class JiraService {
         grant_type: 'refresh_token',
         client_id: credentials.clientId,
         client_secret: credentials.clientSecret,
-        refresh_token: connection.refreshToken,
+        refresh_token: decryptedRefreshToken,
       }),
     });
 
@@ -487,17 +478,22 @@ export class JiraService {
 
     const tokens = await response.json();
 
+    // Encrypt new tokens before storing
     await this.prisma.jiraConnection.update({
       where: { organizationId },
       data: {
-        accessToken: tokens.access_token,
-        refreshToken: tokens.refresh_token || connection.refreshToken,
+        accessToken: encrypt(tokens.access_token),
+        refreshToken: tokens.refresh_token
+          ? encrypt(tokens.refresh_token)
+          : connection.refreshToken,
         tokenExpiresAt: new Date(Date.now() + tokens.expires_in * 1000),
       },
     });
   }
 
-  private async testConnection(dto: JiraOAuthConfigDto): Promise<{ success: boolean; error?: string }> {
+  private async testConnection(
+    dto: JiraOAuthConfigDto
+  ): Promise<{ success: boolean; error?: string }> {
     try {
       const auth = dto.apiToken
         ? `Basic ${Buffer.from(`${dto.userEmail}:${dto.apiToken}`).toString('base64')}`
@@ -521,7 +517,7 @@ export class JiraService {
     organizationId: string,
     method: string,
     path: string,
-    body?: any,
+    body?: any
   ): Promise<any> {
     const connection = await this.prisma.jiraConnection.findUnique({
       where: { organizationId },
@@ -531,11 +527,13 @@ export class JiraService {
       throw new UnauthorizedException('Jira not connected');
     }
 
-    const credentials = JSON.parse(connection.credentials || '{}');
+    const credentials = this.decryptCredentials(connection.credentials);
     let auth: string;
 
     if (connection.accessToken) {
-      auth = `Bearer ${connection.accessToken}`;
+      // Decrypt the stored access token
+      const decryptedAccessToken = decrypt(connection.accessToken);
+      auth = `Bearer ${decryptedAccessToken}`;
     } else if (credentials.apiToken) {
       auth = `Basic ${Buffer.from(`${credentials.userEmail}:${credentials.apiToken}`).toString('base64')}`;
     } else {
@@ -558,11 +556,14 @@ export class JiraService {
     return response.json();
   }
 
-  private async getJiraProject(organizationId: string, projectKey: string): Promise<JiraProjectDto> {
+  private async getJiraProject(
+    organizationId: string,
+    projectKey: string
+  ): Promise<JiraProjectDto> {
     const project = await this.jiraApiRequest(
       organizationId,
       'GET',
-      `/rest/api/3/project/${projectKey}`,
+      `/rest/api/3/project/${projectKey}`
     );
 
     return {
@@ -582,7 +583,7 @@ export class JiraService {
   private async getGrcEntityData(
     organizationId: string,
     entityType: GrcEntityType,
-    entityId: string,
+    entityId: string
   ): Promise<any> {
     switch (entityType) {
       case GrcEntityType.RISK:
@@ -638,7 +639,7 @@ export class JiraService {
 
   private async syncGrcToJira(
     _organizationId: string,
-    _mapping: any,
+    _mapping: any
   ): Promise<{ created: number; updated: number; failed: number; errors: string[] }> {
     // Implementation would query GRC entities and sync to Jira
     return { created: 0, updated: 0, failed: 0, errors: [] };
@@ -646,10 +647,32 @@ export class JiraService {
 
   private async syncJiraToGrc(
     _organizationId: string,
-    _mapping: any,
+    _mapping: any
   ): Promise<{ updated: number; failed: number; errors: string[] }> {
     // Implementation would query Jira issues and sync to GRC
     return { updated: 0, failed: 0, errors: [] };
+  }
+
+  /**
+   * Decrypt stored credentials JSON
+   */
+  private decryptCredentials(credentialsJson: string | null): {
+    clientId?: string;
+    clientSecret?: string;
+    apiToken?: string;
+    userEmail?: string;
+  } {
+    if (!credentialsJson) {
+      return {};
+    }
+
+    const credentials = JSON.parse(credentialsJson);
+    return {
+      clientId: credentials.clientId,
+      clientSecret: credentials.clientSecret ? decrypt(credentials.clientSecret) : undefined,
+      apiToken: credentials.apiToken ? decrypt(credentials.apiToken) : undefined,
+      userEmail: credentials.userEmail,
+    };
   }
 
   private toConnectionResponse(connection: any): JiraConnectionResponseDto {

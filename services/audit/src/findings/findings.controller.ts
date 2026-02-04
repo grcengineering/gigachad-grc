@@ -9,6 +9,7 @@ import {
   Query,
   UseGuards,
   Req,
+  BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { FindingsService } from './findings.service';
@@ -33,10 +34,7 @@ export class FindingsController {
   constructor(private readonly findingsService: FindingsService) {}
 
   @Post()
-  create(
-    @Body() createFindingDto: CreateFindingDto,
-    @Req() req: AuthenticatedRequest,
-  ) {
+  create(@Body() createFindingDto: CreateFindingDto, @Req() req: AuthenticatedRequest) {
     return this.findingsService.create(createFindingDto, req.user.userId);
   }
 
@@ -47,7 +45,7 @@ export class FindingsController {
     @Query('status') status?: string,
     @Query('severity') severity?: string,
     @Query('category') category?: string,
-    @Query('remediationOwner') remediationOwner?: string,
+    @Query('remediationOwner') remediationOwner?: string
   ) {
     return this.findingsService.findAll(req.user.organizationId, {
       auditId,
@@ -64,10 +62,7 @@ export class FindingsController {
   }
 
   @Get(':id')
-  findOne(
-    @Param('id') id: string,
-    @Req() req: AuthenticatedRequest,
-  ) {
+  findOne(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
     return this.findingsService.findOne(id, req.user.organizationId);
   }
 
@@ -75,29 +70,24 @@ export class FindingsController {
   update(
     @Param('id') id: string,
     @Body() updateFindingDto: UpdateFindingDto,
-    @Req() req: AuthenticatedRequest,
+    @Req() req: AuthenticatedRequest
   ) {
     return this.findingsService.update(id, req.user.organizationId, updateFindingDto);
   }
 
   @Delete(':id')
-  delete(
-    @Param('id') id: string,
-    @Req() req: AuthenticatedRequest,
-  ) {
+  delete(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
     return this.findingsService.delete(id, req.user.organizationId);
   }
 
   @Post('bulk/status')
   bulkUpdateStatus(
     @Body() body: { ids: string[]; status: string },
-    @Req() req: AuthenticatedRequest,
+    @Req() req: AuthenticatedRequest
   ) {
+    if (body.ids.length > 100) {
+      throw new BadRequestException('Maximum 100 items per bulk operation');
+    }
     return this.findingsService.bulkUpdateStatus(body.ids, req.user.organizationId, body.status);
   }
 }
-
-
-
-
-

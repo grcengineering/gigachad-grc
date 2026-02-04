@@ -902,8 +902,8 @@ model User {
   dashboardDataSourcesCreated DashboardDataSource[] @relation("DataSourceCreator")
 
   // Custom & Scheduled Reports
-  customReports               CustomReport[]        @relation("UserCustomReports")
-  scheduledReports            ScheduledReport[]     @relation("UserScheduledReports")
+  customReports    CustomReport[]    @relation("UserCustomReports")
+  scheduledReports ScheduledReport[] @relation("UserScheduledReports")
 
   // Training
   trainingProgress             TrainingProgress[]     @relation("UserTrainingProgress")
@@ -938,6 +938,8 @@ model User {
   userNotificationPrefs      UserNotificationPreferences? @relation("UserNotificationPrefs")
 
   @@unique([organizationId, email])
+  @@index([organizationId, status])
+  @@index([status, lastLoginAt])
   @@map("users")
 }
 
@@ -963,7 +965,7 @@ model Control {
   deletedBy           String?   @map("deleted_by")
 
   // Relations
-  organization           Organization?              @relation(fields: [organizationId], references: [id])
+  organization           Organization?              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   deletedByUser          User?                      @relation("ControlDeletedBy", fields: [deletedBy], references: [id])
   implementations        ControlImplementation[]
   mappings               ControlMapping[]
@@ -1178,7 +1180,7 @@ model Evidence {
   deletedBy         String?        @map("deleted_by")
 
   // Relations
-  organization           Organization                @relation(fields: [organizationId], references: [id])
+  organization           Organization                @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   workspace              Workspace?                  @relation("WorkspaceEvidence", fields: [workspaceId], references: [id])
   folder                 EvidenceFolder?             @relation(fields: [folderId], references: [id])
   createdByUser          User                        @relation("EvidenceCreatedBy", fields: [createdBy], references: [id])
@@ -1210,7 +1212,7 @@ model EvidenceFolder {
   createdAt      DateTime @default(now()) @map("created_at")
 
   // Relations
-  parent        EvidenceFolder?  @relation("FolderHierarchy", fields: [parentId], references: [id])
+  parent        EvidenceFolder?  @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
   children      EvidenceFolder[] @relation("FolderHierarchy")
   evidence      Evidence[]
   createdByUser User             @relation("EvidenceFolderCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
@@ -1261,7 +1263,7 @@ model Framework {
   deletedBy      String?   @map("deleted_by")
 
   // Relations
-  workspace    Workspace?             @relation("WorkspaceFrameworks", fields: [workspaceId], references: [id])
+  workspace    Workspace?             @relation("WorkspaceFrameworks", fields: [workspaceId], references: [id], onDelete: SetNull)
   requirements FrameworkRequirement[]
   mappings     ControlMapping[]
   assessments  ReadinessAssessment[]
@@ -1604,7 +1606,7 @@ model PolicyControlLink {
 
   // Relations
   policy  Policy  @relation(fields: [policyId], references: [id], onDelete: Cascade)
-  control Control @relation(fields: [controlId], references: [id])
+  control Control @relation(fields: [controlId], references: [id], onDelete: Cascade)
 
   @@unique([policyId, controlId])
   @@index([controlId])
@@ -1730,6 +1732,8 @@ model ApiKey {
 
   @@index([organizationId, isActive])
   @@index([keyPrefix])
+  @@index([expiresAt])
+  @@index([organizationId, isActive, expiresAt])
   @@map("api_keys")
 }
 
@@ -1895,6 +1899,7 @@ model AuditLog {
   @@index([organizationId, timestamp])
   @@index([organizationId, entityType, entityId])
   @@index([organizationId, action])
+  @@index([userId, timestamp])
   @@map("audit_logs")
 }
 
@@ -2163,7 +2168,7 @@ model Risk {
   workflowTasks RiskWorkflowTask[]
   assessment    RiskAssessment?
   treatment     RiskTreatment?
-  organization  Organization       @relation(fields: [organizationId], references: [id])
+  organization  Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   workspace     Workspace?         @relation("WorkspaceRisks", fields: [workspaceId], references: [id])
   createdByUser User               @relation("RiskCreatedBy", fields: [createdBy], references: [id])
   reporter      User?              @relation("RiskReporter", fields: [reporterId], references: [id])
@@ -2797,7 +2802,7 @@ model Vendor {
   deletedBy String?   @map("deleted_by")
 
   // Relations
-  organization         Organization          @relation(fields: [organizationId], references: [id])
+  organization         Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   workspace            Workspace?            @relation("WorkspaceVendors", fields: [workspaceId], references: [id])
   createdByUser        User                  @relation("VendorCreatedBy", fields: [createdBy], references: [id])
   deletedByUser        User?                 @relation("VendorDeletedBy", fields: [deletedBy], references: [id])
@@ -3817,9 +3822,13 @@ model AuditPortalUser {
   role  String // lead_auditor, auditor, reviewer
 
   // Access
-  accessCode  String    @map("access_code") // Personal access code
+  accessCode  String    @map("access_code") // Personal access code (hashed)
   isActive    Boolean   @default(true) @map("is_active")
   lastLoginAt DateTime? @map("last_login_at")
+
+  // Session Management
+  sessionToken     String?   @map("session_token") // Hashed session token for authenticated requests
+  sessionExpiresAt DateTime? @map("session_expires_at") // When the current session expires
 
   // Permissions
   canViewAll Boolean @default(true) @map("can_view_all")
@@ -3827,12 +3836,12 @@ model AuditPortalUser {
   canComment Boolean @default(true) @map("can_comment")
 
   // IP Restrictions
-  allowedIpRanges String[] @default([]) @map("allowed_ip_ranges") // e.g., ["192.168.1.0/24", "10.0.0.0/8"]
-  enforceIpRestriction Boolean @default(false) @map("enforce_ip_restriction")
+  allowedIpRanges      String[] @default([]) @map("allowed_ip_ranges") // e.g., ["192.168.1.0/24", "10.0.0.0/8"]
+  enforceIpRestriction Boolean  @default(false) @map("enforce_ip_restriction")
 
   // Download Limits
-  downloadLimit      Int?      @map("download_limit") // Max downloads allowed (null = unlimited)
-  downloadsUsed      Int       @default(0) @map("downloads_used")
+  downloadLimit        Int?      @map("download_limit") // Max downloads allowed (null = unlimited)
+  downloadsUsed        Int       @default(0) @map("downloads_used")
   downloadLimitResetAt DateTime? @map("download_limit_reset_at") // When to reset counter
 
   // Watermarking
@@ -3845,38 +3854,40 @@ model AuditPortalUser {
   expiresAt DateTime @map("expires_at")
 
   // Relations
-  invitedByUser    User                   @relation("AuditPortalUserInvitedBy", fields: [invitedBy], references: [id], onDelete: Restrict)
-  audit            Audit                  @relation(fields: [auditId], references: [id], onDelete: Cascade)
-  accessLogs       AuditPortalAccessLog[]
+  invitedByUser User                   @relation("AuditPortalUserInvitedBy", fields: [invitedBy], references: [id], onDelete: Restrict)
+  audit         Audit                  @relation(fields: [auditId], references: [id], onDelete: Cascade)
+  accessLogs    AuditPortalAccessLog[]
 
   @@unique([auditId, email])
   @@index([accessCode])
+  @@index([expiresAt])
+  @@index([auditId, isActive, expiresAt])
   @@map("audit_portal_users")
 }
 
 // Audit Portal Access Logs
 model AuditPortalAccessLog {
-  id           String   @id @default(uuid())
-  auditId      String   @map("audit_id")
-  portalUserId String?  @map("portal_user_id")
-  accessCode   String   @map("access_code")
+  id           String  @id @default(uuid())
+  auditId      String  @map("audit_id")
+  portalUserId String? @map("portal_user_id")
+  accessCode   String  @map("access_code")
 
   // Action Details
-  action       String   // login, logout, view_request, download_evidence, view_evidence, comment, upload
-  entityType   String?  @map("entity_type") // request, evidence, finding
-  entityId     String?  @map("entity_id")
-  entityName   String?  @map("entity_name")
+  action     String // login, logout, view_request, download_evidence, view_evidence, comment, upload
+  entityType String? @map("entity_type") // request, evidence, finding
+  entityId   String? @map("entity_id")
+  entityName String? @map("entity_name")
 
   // Request Details
-  ipAddress    String   @map("ip_address")
-  userAgent    String?  @map("user_agent")
-  
+  ipAddress String  @map("ip_address")
+  userAgent String? @map("user_agent")
+
   // Additional Context
-  success      Boolean  @default(true)
+  success       Boolean @default(true)
   failureReason String? @map("failure_reason")
-  metadata     Json?    // Additional context like file size, etc.
-  
-  timestamp    DateTime @default(now())
+  metadata      Json? // Additional context like file size, etc.
+
+  timestamp DateTime @default(now())
 
   // Relations
   portalUser AuditPortalUser? @relation(fields: [portalUserId], references: [id], onDelete: SetNull)
@@ -4149,14 +4160,14 @@ model CalendarEvent {
   assigneeId     String?   @map("assignee_id")
   priority       String    @default("medium") // critical, high, medium, low
   status         String    @default("scheduled") // scheduled, completed, cancelled
-  color          String?   // Custom color for the event
-  reminders      Json?     // Array of reminder configs [{type: 'email', before: 86400}]
-  metadata       Json?     // Additional event metadata
+  color          String? // Custom color for the event
+  reminders      Json? // Array of reminder configs [{type: 'email', before: 86400}]
+  metadata       Json? // Additional event metadata
   createdBy      String    @map("created_by")
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
 
-  organization Organization @relation(fields: [organizationId], references: [id])
+  organization Organization    @relation(fields: [organizationId], references: [id])
   parentEvent  CalendarEvent?  @relation("RecurringEvents", fields: [parentEventId], references: [id])
   childEvents  CalendarEvent[] @relation("RecurringEvents")
 
@@ -4558,12 +4569,12 @@ model ScheduledReport {
   name           String
   reportType     String    @map("report_type")
   format         String    @default("pdf") // pdf, csv, xlsx
-  frequency      String    // daily, weekly, monthly, quarterly
+  frequency      String // daily, weekly, monthly, quarterly
   dayOfWeek      Int?      @map("day_of_week") // 0-6 for Sunday-Saturday
   dayOfMonth     Int?      @map("day_of_month") // 1-31
   time           String    @default("09:00") // HH:mm format
   timezone       String    @default("UTC")
-  recipients     String[]  // Email addresses
+  recipients     String[] // Email addresses
   filters        Json      @default("{}") // Report filters
   isEnabled      Boolean   @default(true) @map("is_enabled")
   lastRunAt      DateTime? @map("last_run_at")
@@ -4574,8 +4585,8 @@ model ScheduledReport {
   updatedAt      DateTime  @updatedAt @map("updated_at")
 
   // Relations
-  organization Organization        @relation("OrgScheduledReports", fields: [organizationId], references: [id], onDelete: Cascade)
-  user         User                @relation("UserScheduledReports", fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization               @relation("OrgScheduledReports", fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User                       @relation("UserScheduledReports", fields: [userId], references: [id], onDelete: Cascade)
   executions   ScheduledReportExecution[]
 
   @@index([organizationId])
@@ -4587,15 +4598,15 @@ model ScheduledReport {
 
 // Execution history for scheduled reports
 model ScheduledReportExecution {
-  id                String   @id @default(uuid())
-  scheduledReportId String   @map("scheduled_report_id")
-  status            String   // pending, running, success, failed
-  startedAt         DateTime @default(now()) @map("started_at")
+  id                String    @id @default(uuid())
+  scheduledReportId String    @map("scheduled_report_id")
+  status            String // pending, running, success, failed
+  startedAt         DateTime  @default(now()) @map("started_at")
   completedAt       DateTime? @map("completed_at")
-  error             String?  @db.Text
-  recipientCount    Int      @default(0) @map("recipient_count")
-  filePath          String?  @map("file_path") // S3 path to generated report
-  fileSize          Int?     @map("file_size") // bytes
+  error             String?   @db.Text
+  recipientCount    Int       @default(0) @map("recipient_count")
+  filePath          String?   @map("file_path") // S3 path to generated report
+  fileSize          Int?      @map("file_size") // bytes
 
   // Relations
   scheduledReport ScheduledReport @relation(fields: [scheduledReportId], references: [id], onDelete: Cascade)
@@ -5839,14 +5850,14 @@ model ScheduledJob {
 
 // Plan attestations - formal sign-off from plan owners
 model BCDRPlanAttestation {
-  id             String    @id @default(uuid())
-  planId         String    @map("plan_id")
-  attesterId     String    @map("attester_id")
-  organizationId String    @map("organization_id")
+  id             String @id @default(uuid())
+  planId         String @map("plan_id")
+  attesterId     String @map("attester_id")
+  organizationId String @map("organization_id")
 
   // Attestation details
-  attestationType String   @map("attestation_type") // annual_review, post_update, post_incident
-  status          String   @default("pending") // pending, attested, declined
+  attestationType String    @map("attestation_type") // annual_review, post_update, post_incident
+  status          String    @default("pending") // pending, attested, declined
   attestedAt      DateTime? @map("attested_at")
   declinedAt      DateTime? @map("declined_at")
   declineReason   String?   @map("decline_reason")
@@ -5854,9 +5865,9 @@ model BCDRPlanAttestation {
   validUntil      DateTime? @map("valid_until")
 
   // Request tracking
-  requestedBy String?   @map("requested_by")
-  requestedAt DateTime  @default(now()) @map("requested_at")
-  message     String?   // Optional message to attester
+  requestedBy String?  @map("requested_by")
+  requestedAt DateTime @default(now()) @map("requested_at")
+  message     String? // Optional message to attester
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -5873,20 +5884,20 @@ model ExerciseTemplate {
   id             String  @id @default(uuid())
   organizationId String? @map("organization_id") // null = global template
 
-  templateId  String  @unique @map("template_id")
-  title       String
-  description String?
-  category    String // ransomware, natural_disaster, vendor_outage, data_breach, pandemic, infrastructure
-  scenarioType String @map("scenario_type") // tabletop, walkthrough, simulation
+  templateId   String  @unique @map("template_id")
+  title        String
+  description  String?
+  category     String // ransomware, natural_disaster, vendor_outage, data_breach, pandemic, infrastructure
+  scenarioType String  @map("scenario_type") // tabletop, walkthrough, simulation
 
   // Scenario content
-  scenarioNarrative   String @map("scenario_narrative") @db.Text
-  discussionQuestions Json   @map("discussion_questions") // Array of question objects
-  injects             Json?  // Timed scenario injects
-  expectedDecisions   Json?  @map("expected_decisions")
+  scenarioNarrative   String  @map("scenario_narrative") @db.Text
+  discussionQuestions Json    @map("discussion_questions") // Array of question objects
+  injects             Json? // Timed scenario injects
+  expectedDecisions   Json?   @map("expected_decisions")
   facilitatorNotes    String? @map("facilitator_notes") @db.Text
-  estimatedDuration   Int?   @map("estimated_duration_minutes")
-  participantRoles    Json?  @map("participant_roles")
+  estimatedDuration   Int?    @map("estimated_duration_minutes")
+  participantRoles    Json?   @map("participant_roles")
 
   // Metadata
   isGlobal   Boolean @default(false) @map("is_global")
@@ -5969,9 +5980,9 @@ model RecoveryTeamMember {
 
 // Link recovery teams to BC/DR plans
 model RecoveryTeamPlanLink {
-  id        String @id @default(uuid())
-  teamId    String @map("team_id")
-  planId    String @map("plan_id")
+  id         String  @id @default(uuid())
+  teamId     String  @map("team_id")
+  planId     String  @map("plan_id")
   roleInPlan String? @map("role_in_plan") // Description of team's role in this plan
 
   team RecoveryTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
@@ -6021,7 +6032,7 @@ model BCDRIncident {
   id             String @id @default(uuid())
   organizationId String @map("organization_id")
 
-  incidentId  String @unique @map("incident_id")
+  incidentId  String  @unique @map("incident_id")
   title       String
   description String? @db.Text
 
@@ -6079,7 +6090,7 @@ model BCDRIncidentTimelineEntry {
   entryType   String   @map("entry_type") // status_change, plan_activated, team_activated, note, action_taken
   description String   @db.Text
   createdBy   String   @map("created_by")
-  metadata    Json?    // Additional structured data
+  metadata    Json? // Additional structured data
 
   // Relations
   incident BCDRIncident @relation(fields: [incidentId], references: [id], onDelete: Cascade)

@@ -8,29 +8,79 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Security
 
+#### Comprehensive Security Hardening (Phase 2)
+
+##### Secrets & Credential Management
+
+- **Removed Hardcoded Secrets**: Eliminated all hardcoded fallback values for sensitive credentials (`KEYCLOAK_ADMIN_CLIENT_SECRET`, `PHISHING_TRACKING_SECRET`, `POSTGRES_PASSWORD`, `MINIO_ROOT_USER/PASSWORD`)
+- **OAuth Token Encryption**: Jira and ServiceNow OAuth tokens are now encrypted at rest using AES-256-GCM
+- **Session Token System**: Portal access codes are now hashed with bcrypt; sessions use time-limited tokens instead of raw access codes
+- **Environment Validation**: Services now fail fast with clear error messages when required secrets are not configured
+
+##### SSRF Protection
+
+- **Custom Integration Service**: All fetch calls replaced with `safeFetch()` that blocks private IPs, metadata endpoints, and internal networks
+- **Security Scanner**: Added URL validation to block scanning of private/internal addresses and prevent DNS rebinding attacks
+- **Sandbox Hardening**: Custom code execution sandbox now uses wrapped `safeFetch()` to prevent SSRF from user-provided code
+
+##### Input Validation & Rate Limiting
+
+- **Bulk Operation Limits**: Portal user bulk create limited to 50 users; bulk status updates limited to 100 items
+- **Portal Auth Rate Limiting**: Authentication endpoints rate limited to 5 attempts/minute; refresh to 10/minute
+- **CIDR Validation**: Fixed IP restriction validation with proper CIDR notation parsing and subnet matching
+- **Frontend Pre-validation**: Bulk upload modal validates file size (500 items max) before upload
+
+##### Authentication & Authorization
+
+- **Missing Auth Guards**: Added `DevAuthGuard` to TPRM config controller; added `RolesGuard` where missing
+- **Organization Context**: Replaced header-based organization ID with authenticated user context to prevent authorization bypass
+- **Frontend 429 Handling**: Added user-friendly error messages for rate limit responses
+
+##### Cryptographic Security
+
+- **Weak RNG Removal**: Replaced `Math.random()` with `crypto.randomBytes()` for subdomain generation
+- **Console Log Guards**: Development-only console logs wrapped with environment checks to prevent data leakage in production
+
+##### Database Security
+
+- **Security Indexes**: Added indexes for efficient security queries (user status, API key expiration, audit logs, portal user expiration)
+- **Cascade Delete Constraints**: Added proper `onDelete: Cascade` for organization-dependent data and folder hierarchies
+
+##### Security Headers
+
+- **HSTS Preload**: Added `Strict-Transport-Security` header with preload directive
+- **Permissions-Policy**: Comprehensive policy restricting sensitive browser APIs
+- **CSP Hardening**: Removed `'unsafe-inline'` from `script-src` (kept `'unsafe-eval'` required by Monaco Editor)
+- **Additional Headers**: Added `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`
+
 #### Critical Security Fixes
+
 - **IDOR Vulnerability Fixes**: Fixed 33+ Insecure Direct Object Reference vulnerabilities across TPRM and Trust services by adding organizationId validation to all findOne, update, and delete operations
 - **SQL Injection Fix**: Converted `$queryRawUnsafe` to parameterized `$queryRaw` in plan-attestations service
 - **Code Execution Hardening**: Enhanced code validation in custom-integration service with comprehensive blocklist for sandbox escape patterns
 - **Command Injection Fix**: Replaced `exec` with `spawn` using argument arrays in vulnerability-scanner to prevent shell injection
 
 #### Authentication Hardening
+
 - **Proxy Secret Verification**: New `AUTH_PROXY_SECRET` environment variable for shared secret between auth proxy and backend services
 - **Timing-Safe Comparison**: Proxy secret verification now uses `crypto.timingSafeEqual` to prevent timing attacks
 - **UUID Validation**: Auth guard validates that user-id and organization-id headers are valid UUIDs
 - **Permission Guard Fix**: Permission guard now uses authenticated user context instead of raw headers
 
 #### Encryption Improvements
+
 - **Random Salt Per Encryption**: Replaced hardcoded salts with random per-encryption salts in all encryption services
 - **Backwards Compatibility**: New encryption format is backwards compatible with existing encrypted data
 - **Affected Services**: mcp-credentials, integrations, notifications-config services
 
 #### File Upload Security
+
 - **Path Traversal Protection**: Local storage provider now validates all paths are within the designated storage directory
 - **Filename Sanitization**: Added sanitizeFilename function to remove path components, null bytes, and special characters
 - **Double Extension Detection**: File validator flags suspicious patterns like `.pdf.exe`
 
 #### Infrastructure Hardening
+
 - **Helmet Security Headers**: Added Helmet middleware to all 5 backend services (audit, tprm, trust, policies, frameworks)
 - **CORS Restriction**: Trust service CORS now uses `CORS_ORIGINS` environment variable instead of allowing all origins
 - **Docker Compose Warnings**: Added security warnings to docker-compose.yml about default credentials
@@ -38,38 +88,46 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Added
 
 #### Graceful Demo Mode
+
 - **Consistent Mock Mode Behavior**: All external integrations now return realistic sample data when not configured, with explicit `isMockMode: true` flags in API responses
 - **Demo Mode Warnings**: Clear console warnings logged when services operate without credentials
 - **UI Configuration Status**: Frontend components display informational banners about service configuration status
 
 #### Cloud Provider Integrations
+
 - **AWS Evidence Collection**: Full implementation for Security Hub, CloudTrail, IAM, S3, and GuardDuty evidence collection using AWS SDK v3
 - **Azure Security Center**: Implementation for secure score and recommendation collection
 - **Google Workspace**: Audit log collection implementation with service account support
 
 #### Email Notifications
+
 - **Dynamic Email Status**: New `/api/notifications-config/email-status` endpoint to check email service configuration
 - **Provider Status Display**: NotificationSettings page now dynamically shows whether email is configured or in demo mode
 - **Multi-Provider Support**: Documentation for SMTP, SendGrid, and Amazon SES configuration
 
 #### Background Job System
+
 - **Job Scheduler Implementation**: All job handlers now call actual service methods instead of placeholder stubs
 - **Evidence Collection Jobs**: Automated evidence collection scheduling
 - **Retention Policy Jobs**: Automated data retention enforcement
 - **Integration Sync Jobs**: Jira and ServiceNow synchronization
 
 #### Data Retention
+
 - **Extended Entity Support**: Retention policies now support EVIDENCE, POLICY_VERSIONS, and EXPORT_JOBS in addition to existing entity types
 - **Policy Version Protection**: Retention automatically protects the most recent version of each policy
 
 #### AI/MCP Features
+
 - **AI Risk Analysis**: AI controller now returns actual analysis from the AI service with demo mode fallback
 - **MCP Key Rotation**: Full implementation of encryption key rotation for MCP credential storage
 
 #### Vulnerability Scanning
+
 - **Enhanced Fallback**: Vulnerability scanner returns detailed mock data with `toolsRequired` hints when scanning tools are not installed
 
 #### BC/DR Module Enhancements
+
 - **BIA Questionnaire Wizard**: Guided 5-step wizard for conducting business impact analysis with plain-language questions that map to technical BIA fields (RTO, RPO, criticality tier, impact levels)
 - **Plan Owner Attestation**: Formal sign-off workflow for BC/DR plan owners to confirm plans are accurate and current, with attestation history and audit trail
 - **Exercise Template Library**: Pre-built tabletop exercise scenarios (Ransomware, Data Center Failure, Vendor Outage, Natural Disaster, Pandemic, Data Breach) with discussion questions, injects, and facilitator notes
@@ -81,11 +139,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Changed
 
 #### API Clients
+
 - **Report Builder API**: Migrated from localStorage to backend API with graceful localStorage fallback
 - **Scheduled Reports API**: Migrated from localStorage to backend API with graceful localStorage fallback
 - **CustomReportConfig Type**: Extended to include 'divider' section type and additional properties
 
 #### Session Management
+
 - **Async Cleanup**: Session cleanup refactored to async method returning cleanup count for job scheduler integration
 
 ### Fixed
@@ -99,19 +159,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Migration Notes
 
 #### Security Configuration (Recommended)
+
 These changes are backwards compatible, but we recommend configuring the new security features:
 
 1. **Proxy Authentication** (if using auth proxy):
+
    ```bash
    # Generate a secure secret
    AUTH_PROXY_SECRET=$(openssl rand -base64 32)
-   
+
    # Configure your auth proxy to send this as x-proxy-secret header
    # Then enable enforcement
    REQUIRE_PROXY_AUTH=true
    ```
 
 2. **CORS Origins** (if using Trust service externally):
+
    ```bash
    # Set allowed origins for Trust service
    CORS_ORIGINS=https://grc.yourcompany.com,https://trust.yourcompany.com
@@ -137,6 +200,7 @@ These changes are backwards compatible, but we recommend configuring the new sec
 ### Added
 
 #### Trust Module Enhancements
+
 - **Answer Templates**: Reusable response templates for common questionnaire questions
   - Template categories for organization
   - Variable substitution support (e.g., `{{company_name}}`, `{{date}}`)
@@ -174,6 +238,7 @@ These changes are backwards compatible, but we recommend configuring the new sec
   - Better tokenization and matching
 
 #### Audit Module Enhancements
+
 - **Audit Templates**: Reusable audit program templates
   - Pre-built system templates for SOC 2, ISO 27001, HIPAA, PCI-DSS
   - Custom template creation with checklists and request templates
@@ -221,6 +286,7 @@ These changes are backwards compatible, but we recommend configuring the new sec
   - Full audit report with all sections
 
 #### TPRM Module Enhancements
+
 - **TPRM Configuration**: Dedicated settings page
   - Tier-to-frequency mapping customization
   - Custom review frequencies (e.g., "2 months")
@@ -236,6 +302,7 @@ These changes are backwards compatible, but we recommend configuring the new sec
   - Suggested risk scores
 
 #### Community & Infrastructure
+
 - GitHub issue templates (bug report, feature request, security vulnerability)
 - Pull request template with comprehensive checklist
 - Security audit documentation (`docs/SECURITY_AUDIT.md`)
@@ -247,6 +314,7 @@ These changes are backwards compatible, but we recommend configuring the new sec
 - Comprehensive demo documentation (`docs/DEMO.md`)
 
 ### Changed
+
 - Updated README with contribution badges and improved support section
 - Enhanced CONTRIBUTING.md with clear guidelines
 - Replaced `xlsx` library with `exceljs` for Excel import/export (more actively maintained)
@@ -254,10 +322,12 @@ These changes are backwards compatible, but we recommend configuring the new sec
 - MCP client service now starts servers asynchronously (non-blocking)
 
 ### Fixed
+
 - Controls service MCP server startup no longer blocks application bootstrap
 - Pagination pipes instantiation in controllers
 
 ### Security
+
 - **Fixed all high severity vulnerabilities** (reduced from 3 to 0)
 - Upgraded `@nestjs/cli` from v10.x to v11.x across all services (fixes glob CLI command injection - CVE-related)
 - Replaced `xlsx` (SheetJS) with `exceljs` (fixes prototype pollution CVE-2024-22363 and ReDoS vulnerabilities)
@@ -293,6 +363,3 @@ These changes are backwards compatible, but we recommend configuring the new sec
 
 - Dates are in YYYY-MM-DD format.
 - "Unreleased" changes should be moved into a versioned section when publishing a release.
-
-
-

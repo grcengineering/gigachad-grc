@@ -25,21 +25,31 @@ import clsx from 'clsx';
 // ============================================
 
 const CATEGORY_TOOLTIPS = {
-  security: 'Evaluates SSL/TLS configuration, security headers (CSP, HSTS, X-Frame-Options), and HTTP-to-HTTPS redirects. Higher scores indicate better technical security posture.',
-  breach: 'Assesses known data breach history and exposure. This is an automated check and should be supplemented with manual verification via HaveIBeenPwned or vendor attestations.',
-  reputation: 'Evaluates website accessibility, professional web presence, contact information availability, and terms of service. Indicates operational maturity.',
-  compliance: 'Checks for SOC 2 reports, ISO 27001 certification, trust portals, privacy policies, GDPR compliance indicators, and bug bounty programs.',
+  security:
+    'Evaluates SSL/TLS configuration, security headers (CSP, HSTS, X-Frame-Options), and HTTP-to-HTTPS redirects. Higher scores indicate better technical security posture.',
+  breach:
+    'Assesses known data breach history and exposure. This is an automated check and should be supplemented with manual verification via HaveIBeenPwned or vendor attestations.',
+  reputation:
+    'Evaluates website accessibility, professional web presence, contact information availability, and terms of service. Indicates operational maturity.',
+  compliance:
+    'Checks for SOC 2 reports, ISO 27001 certification, trust portals, privacy policies, GDPR compliance indicators, and bug bounty programs.',
 };
 
 const ITEM_TOOLTIPS = {
-  sslGrade: 'SSL/TLS certificate quality and configuration. Grade A indicates strong encryption with proper certificate chain.',
-  httpRedirect: 'Whether HTTP requests are automatically redirected to HTTPS, ensuring encrypted connections.',
+  sslGrade:
+    'SSL/TLS certificate quality and configuration. Grade A indicates strong encryption with proper certificate chain.',
+  httpRedirect:
+    'Whether HTTP requests are automatically redirected to HTTPS, ensuring encrypted connections.',
   spf: 'Sender Policy Framework (SPF) DNS record prevents email spoofing by specifying authorized mail servers.',
-  dmarc: 'Domain-based Message Authentication (DMARC) provides email authentication and reporting to prevent phishing.',
-  accessible: 'Whether the vendor website is publicly accessible and returns a valid HTTP response.',
-  privacyPolicy: 'Presence of a privacy policy or privacy notice page explaining data handling practices.',
+  dmarc:
+    'Domain-based Message Authentication (DMARC) provides email authentication and reporting to prevent phishing.',
+  accessible:
+    'Whether the vendor website is publicly accessible and returns a valid HTTP response.',
+  privacyPolicy:
+    'Presence of a privacy policy or privacy notice page explaining data handling practices.',
   soc2: 'SOC 2 Type I/II audit reports demonstrate independent verification of security controls.',
-  trustPortal: 'Dedicated security trust center or portal where vendors publish compliance documents and security information.',
+  trustPortal:
+    'Dedicated security trust center or portal where vendors publish compliance documents and security information.',
 };
 
 // ============================================
@@ -194,7 +204,16 @@ function ScoreGauge({ score, size = 'lg' }: { score: number; size?: 'sm' | 'lg' 
         <div className={clsx('text-lg font-bold', getColor(score))}>{score}</div>
         <div className="w-16 h-2 bg-surface-800 rounded-full overflow-hidden">
           <div
-            className={clsx('h-full', score >= 80 ? 'bg-green-500' : score >= 60 ? 'bg-yellow-500' : score >= 40 ? 'bg-orange-500' : 'bg-red-500')}
+            className={clsx(
+              'h-full',
+              score >= 80
+                ? 'bg-green-500'
+                : score >= 60
+                  ? 'bg-yellow-500'
+                  : score >= 40
+                    ? 'bg-orange-500'
+                    : 'bg-red-500'
+            )}
             style={{ width: `${score}%` }}
           />
         </div>
@@ -242,7 +261,9 @@ function StatusBadge({ status, label }: { status: boolean; label: string }) {
       ) : (
         <XCircleIcon className="w-4 h-4 text-red-400" />
       )}
-      <span className={clsx('text-sm', status ? 'text-surface-300' : 'text-surface-500')}>{label}</span>
+      <span className={clsx('text-sm', status ? 'text-surface-300' : 'text-surface-500')}>
+        {label}
+      </span>
     </div>
   );
 }
@@ -250,13 +271,13 @@ function StatusBadge({ status, label }: { status: boolean; label: string }) {
 /**
  * Status badge with optional clickable link for artifacts
  */
-function StatusBadgeWithLink({ 
-  status, 
-  label, 
-  url 
-}: { 
-  status: boolean; 
-  label: string; 
+function StatusBadgeWithLink({
+  status,
+  label,
+  url,
+}: {
+  status: boolean;
+  label: string;
   url?: string;
 }) {
   const content = (
@@ -266,10 +287,10 @@ function StatusBadgeWithLink({
       ) : (
         <XCircleIcon className="w-4 h-4 text-red-400" />
       )}
-      <span className={clsx('text-sm', status ? 'text-surface-300' : 'text-surface-500')}>{label}</span>
-      {status && url && (
-        <ArrowTopRightOnSquareIcon className="w-3 h-3 text-brand-400" />
-      )}
+      <span className={clsx('text-sm', status ? 'text-surface-300' : 'text-surface-500')}>
+        {label}
+      </span>
+      {status && url && <ArrowTopRightOnSquareIcon className="w-3 h-3 text-brand-400" />}
     </div>
   );
 
@@ -291,7 +312,18 @@ function StatusBadgeWithLink({
 }
 
 // Sensitive subdomains that may indicate security concerns
-const SENSITIVE_SUBDOMAINS = ['dev', 'staging', 'test', 'beta', 'demo', 'admin', 'internal', 'uat', 'qa', 'sandbox'];
+const SENSITIVE_SUBDOMAINS = [
+  'dev',
+  'staging',
+  'test',
+  'beta',
+  'demo',
+  'admin',
+  'internal',
+  'uat',
+  'qa',
+  'sandbox',
+];
 
 // Modal for showing crawl results
 function SubdomainCrawlModal({
@@ -385,11 +417,15 @@ function SubdomainCrawlModal({
               {/* Stats Bar */}
               <div className="flex items-center gap-6 p-4 bg-surface-800/50 border-b border-surface-700">
                 <div>
-                  <div className="text-2xl font-bold text-surface-100">{crawlResult.pages.length}</div>
+                  <div className="text-2xl font-bold text-surface-100">
+                    {crawlResult.pages.length}
+                  </div>
                   <div className="text-xs text-surface-400">Pages Found</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-surface-100">{crawlResult.externalLinks.length}</div>
+                  <div className="text-2xl font-bold text-surface-100">
+                    {crawlResult.externalLinks.length}
+                  </div>
                   <div className="text-xs text-surface-400">External Links</div>
                 </div>
                 <div className="ml-auto text-xs text-surface-500">
@@ -428,64 +464,83 @@ function SubdomainCrawlModal({
                 <table className="w-full text-sm">
                   <thead className="sticky top-0 bg-surface-800 z-10">
                     <tr className="border-b border-surface-700">
-                      <th className="px-4 py-2 text-left text-xs font-medium text-surface-400 uppercase">Page</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-surface-400 uppercase w-20">Status</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-surface-400 uppercase w-24 hidden md:table-cell">Size</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-surface-400 uppercase">
+                        Page
+                      </th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-surface-400 uppercase w-20">
+                        Status
+                      </th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-surface-400 uppercase w-24 hidden md:table-cell">
+                        Size
+                      </th>
                       <th className="px-4 py-2 text-left text-xs font-medium text-surface-400 uppercase w-12"></th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-surface-800">
-                    {(activeTab === 'pages' ? crawlResult.pages : crawlResult.externalLinks).map((page, idx) => (
-                      <tr key={idx} className="hover:bg-surface-800/50">
-                        <td className="px-4 py-3">
-                          <div className="flex items-start gap-2">
-                            <DocumentTextIcon className="w-4 h-4 text-surface-500 mt-0.5 flex-shrink-0" />
-                            <div className="min-w-0">
-                              <div className="font-medium text-surface-200 truncate max-w-md" title={page.title || page.url}>
-                                {page.title || new URL(page.url).pathname || '/'}
-                              </div>
-                              <div className="text-xs text-surface-500 truncate max-w-md" title={page.url}>
-                                {page.url}
-                              </div>
-                              {page.linkText && (
-                                <div className="text-xs text-surface-600 mt-0.5 truncate max-w-md">
-                                  Link text: "{page.linkText}"
+                    {(activeTab === 'pages' ? crawlResult.pages : crawlResult.externalLinks).map(
+                      (page, idx) => (
+                        <tr key={idx} className="hover:bg-surface-800/50">
+                          <td className="px-4 py-3">
+                            <div className="flex items-start gap-2">
+                              <DocumentTextIcon className="w-4 h-4 text-surface-500 mt-0.5 flex-shrink-0" />
+                              <div className="min-w-0">
+                                <div
+                                  className="font-medium text-surface-200 truncate max-w-md"
+                                  title={page.title || page.url}
+                                >
+                                  {page.title || new URL(page.url).pathname || '/'}
                                 </div>
-                              )}
+                                <div
+                                  className="text-xs text-surface-500 truncate max-w-md"
+                                  title={page.url}
+                                >
+                                  {page.url}
+                                </div>
+                                {page.linkText && (
+                                  <div className="text-xs text-surface-600 mt-0.5 truncate max-w-md">
+                                    Link text: "{page.linkText}"
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          {page.statusCode ? (
-                            <span className={clsx(
-                              'px-2 py-0.5 rounded text-xs font-mono',
-                              page.statusCode >= 200 && page.statusCode < 300 ? 'bg-green-500/20 text-green-400' :
-                              page.statusCode >= 300 && page.statusCode < 400 ? 'bg-blue-500/20 text-blue-400' :
-                              page.statusCode >= 400 ? 'bg-red-500/20 text-red-400' :
-                              'bg-surface-700 text-surface-400'
-                            )}>
-                              {page.statusCode}
-                            </span>
-                          ) : (
-                            <span className="text-surface-600">—</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-surface-500 text-xs hidden md:table-cell">
-                          {formatSize(page.size)}
-                        </td>
-                        <td className="px-4 py-3">
-                          <a
-                            href={page.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="p-1 text-surface-400 hover:text-brand-400 transition-colors"
-                            title="Open in new tab"
-                          >
-                            <ArrowTopRightOnSquareIcon className="w-4 h-4" />
-                          </a>
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+                          <td className="px-4 py-3">
+                            {page.statusCode ? (
+                              <span
+                                className={clsx(
+                                  'px-2 py-0.5 rounded text-xs font-mono',
+                                  page.statusCode >= 200 && page.statusCode < 300
+                                    ? 'bg-green-500/20 text-green-400'
+                                    : page.statusCode >= 300 && page.statusCode < 400
+                                      ? 'bg-blue-500/20 text-blue-400'
+                                      : page.statusCode >= 400
+                                        ? 'bg-red-500/20 text-red-400'
+                                        : 'bg-surface-700 text-surface-400'
+                                )}
+                              >
+                                {page.statusCode}
+                              </span>
+                            ) : (
+                              <span className="text-surface-600">—</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-surface-500 text-xs hidden md:table-cell">
+                            {formatSize(page.size)}
+                          </td>
+                          <td className="px-4 py-3">
+                            <a
+                              href={page.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-1 text-surface-400 hover:text-brand-400 transition-colors"
+                              title="Open in new tab"
+                            >
+                              <ArrowTopRightOnSquareIcon className="w-4 h-4" />
+                            </a>
+                          </td>
+                        </tr>
+                      )
+                    )}
                   </tbody>
                 </table>
 
@@ -521,21 +576,28 @@ function SubdomainCrawlModal({
   );
 }
 
-function SubdomainSection({ subdomains, vendorId }: { subdomains: SubdomainScanResult; vendorId: string }) {
+function SubdomainSection({
+  subdomains,
+  vendorId,
+}: {
+  subdomains: SubdomainScanResult;
+  vendorId: string;
+}) {
   const [expanded, setExpanded] = useState(false);
   const [filter, setFilter] = useState<'all' | 'sensitive' | 'ssl' | 'nossl'>('all');
   const [selectedSubdomain, setSelectedSubdomain] = useState<SubdomainInfo | null>(null);
 
   // Categorize subdomains
-  const sensitiveSubdomains = subdomains.discovered.filter(sub => 
-    SENSITIVE_SUBDOMAINS.some(s => sub.subdomain.toLowerCase().includes(s))
+  const sensitiveSubdomains = subdomains.discovered.filter((sub) =>
+    SENSITIVE_SUBDOMAINS.some((s) => sub.subdomain.toLowerCase().includes(s))
   );
-  const sslSubdomains = subdomains.discovered.filter(sub => sub.hasSSL);
-  const noSslSubdomains = subdomains.discovered.filter(sub => sub.accessible && !sub.hasSSL);
+  const sslSubdomains = subdomains.discovered.filter((sub) => sub.hasSSL);
+  const noSslSubdomains = subdomains.discovered.filter((sub) => sub.accessible && !sub.hasSSL);
 
   // Filter subdomains based on selection
-  const filteredSubdomains = subdomains.discovered.filter(sub => {
-    if (filter === 'sensitive') return SENSITIVE_SUBDOMAINS.some(s => sub.subdomain.toLowerCase().includes(s));
+  const filteredSubdomains = subdomains.discovered.filter((sub) => {
+    if (filter === 'sensitive')
+      return SENSITIVE_SUBDOMAINS.some((s) => sub.subdomain.toLowerCase().includes(s));
     if (filter === 'ssl') return sub.hasSSL;
     if (filter === 'nossl') return sub.accessible && !sub.hasSSL;
     return true;
@@ -568,8 +630,8 @@ function SubdomainSection({ subdomains, vendorId }: { subdomains: SubdomainScanR
     );
   };
 
-  const isSensitive = (sub: SubdomainInfo) => 
-    SENSITIVE_SUBDOMAINS.some(s => sub.subdomain.toLowerCase().includes(s));
+  const isSensitive = (sub: SubdomainInfo) =>
+    SENSITIVE_SUBDOMAINS.some((s) => sub.subdomain.toLowerCase().includes(s));
 
   return (
     <div className="p-4 border-b border-surface-800">
@@ -586,13 +648,11 @@ function SubdomainSection({ subdomains, vendorId }: { subdomains: SubdomainScanR
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <ServerIcon className="w-5 h-5 text-surface-400" />
-          <h4 className="text-sm font-medium text-surface-200">
-            Discovered Subdomains
-          </h4>
+          <h4 className="text-sm font-medium text-surface-200">Discovered Subdomains</h4>
           <span className="px-2 py-0.5 text-xs bg-surface-700 text-surface-300 rounded-full">
             {subdomains.discovered.length} found
           </span>
-          <Tooltip 
+          <Tooltip
             content="Subdomains discovered through DNS enumeration. Click any subdomain to crawl and discover all pages. Sensitive subdomains (dev, staging, admin) are flagged as they may indicate exposed development environments."
             position="right"
             width="lg"
@@ -611,24 +671,31 @@ function SubdomainSection({ subdomains, vendorId }: { subdomains: SubdomainScanR
           onClick={() => setFilter('all')}
           className={clsx(
             'px-3 py-2 rounded-lg text-left transition-colors',
-            filter === 'all' 
-              ? 'bg-brand-500/20 border border-brand-500/50' 
+            filter === 'all'
+              ? 'bg-brand-500/20 border border-brand-500/50'
               : 'bg-surface-800 border border-surface-700 hover:border-surface-600'
           )}
         >
-          <div className="text-lg font-semibold text-surface-100">{subdomains.discovered.length}</div>
+          <div className="text-lg font-semibold text-surface-100">
+            {subdomains.discovered.length}
+          </div>
           <div className="text-xs text-surface-400">Total</div>
         </button>
         <button
           onClick={() => setFilter('sensitive')}
           className={clsx(
             'px-3 py-2 rounded-lg text-left transition-colors',
-            filter === 'sensitive' 
-              ? 'bg-red-500/20 border border-red-500/50' 
+            filter === 'sensitive'
+              ? 'bg-red-500/20 border border-red-500/50'
               : 'bg-surface-800 border border-surface-700 hover:border-surface-600'
           )}
         >
-          <div className={clsx('text-lg font-semibold', sensitiveSubdomains.length > 0 ? 'text-red-400' : 'text-surface-100')}>
+          <div
+            className={clsx(
+              'text-lg font-semibold',
+              sensitiveSubdomains.length > 0 ? 'text-red-400' : 'text-surface-100'
+            )}
+          >
             {sensitiveSubdomains.length}
           </div>
           <div className="text-xs text-surface-400">Sensitive</div>
@@ -637,8 +704,8 @@ function SubdomainSection({ subdomains, vendorId }: { subdomains: SubdomainScanR
           onClick={() => setFilter('ssl')}
           className={clsx(
             'px-3 py-2 rounded-lg text-left transition-colors',
-            filter === 'ssl' 
-              ? 'bg-green-500/20 border border-green-500/50' 
+            filter === 'ssl'
+              ? 'bg-green-500/20 border border-green-500/50'
               : 'bg-surface-800 border border-surface-700 hover:border-surface-600'
           )}
         >
@@ -649,12 +716,17 @@ function SubdomainSection({ subdomains, vendorId }: { subdomains: SubdomainScanR
           onClick={() => setFilter('nossl')}
           className={clsx(
             'px-3 py-2 rounded-lg text-left transition-colors',
-            filter === 'nossl' 
-              ? 'bg-yellow-500/20 border border-yellow-500/50' 
+            filter === 'nossl'
+              ? 'bg-yellow-500/20 border border-yellow-500/50'
               : 'bg-surface-800 border border-surface-700 hover:border-surface-600'
           )}
         >
-          <div className={clsx('text-lg font-semibold', noSslSubdomains.length > 0 ? 'text-yellow-400' : 'text-surface-100')}>
+          <div
+            className={clsx(
+              'text-lg font-semibold',
+              noSslSubdomains.length > 0 ? 'text-yellow-400' : 'text-surface-100'
+            )}
+          >
             {noSslSubdomains.length}
           </div>
           <div className="text-xs text-surface-400">No SSL</div>
@@ -666,17 +738,27 @@ function SubdomainSection({ subdomains, vendorId }: { subdomains: SubdomainScanR
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-surface-700 bg-surface-800">
-              <th className="px-4 py-2 text-left text-xs font-medium text-surface-400 uppercase tracking-wider">Subdomain</th>
-              <th className="px-4 py-2 text-left text-xs font-medium text-surface-400 uppercase tracking-wider">Status</th>
-              <th className="px-4 py-2 text-left text-xs font-medium text-surface-400 uppercase tracking-wider hidden md:table-cell">HTTP</th>
-              <th className="px-4 py-2 text-left text-xs font-medium text-surface-400 uppercase tracking-wider hidden lg:table-cell">Details</th>
-              <th className="px-4 py-2 text-right text-xs font-medium text-surface-400 uppercase tracking-wider w-24">Action</th>
+              <th className="px-4 py-2 text-left text-xs font-medium text-surface-400 uppercase tracking-wider">
+                Subdomain
+              </th>
+              <th className="px-4 py-2 text-left text-xs font-medium text-surface-400 uppercase tracking-wider">
+                Status
+              </th>
+              <th className="px-4 py-2 text-left text-xs font-medium text-surface-400 uppercase tracking-wider hidden md:table-cell">
+                HTTP
+              </th>
+              <th className="px-4 py-2 text-left text-xs font-medium text-surface-400 uppercase tracking-wider hidden lg:table-cell">
+                Details
+              </th>
+              <th className="px-4 py-2 text-right text-xs font-medium text-surface-400 uppercase tracking-wider w-24">
+                Action
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-surface-700">
             {displaySubdomains.map((sub) => (
-              <tr 
-                key={sub.fullDomain} 
+              <tr
+                key={sub.fullDomain}
                 className={clsx(
                   'hover:bg-surface-700/50 transition-colors',
                   isSensitive(sub) && 'bg-red-500/5'
@@ -693,17 +775,19 @@ function SubdomainSection({ subdomains, vendorId }: { subdomains: SubdomainScanR
                     <span className="text-surface-500">.{subdomains.domain}</span>
                   </div>
                 </td>
-                <td className="px-4 py-2.5">
-                  {getStatusBadge(sub)}
-                </td>
+                <td className="px-4 py-2.5">{getStatusBadge(sub)}</td>
                 <td className="px-4 py-2.5 hidden md:table-cell">
                   {sub.httpStatus ? (
-                    <span className={clsx(
-                      'font-mono text-xs',
-                      sub.httpStatus >= 200 && sub.httpStatus < 300 ? 'text-green-400' :
-                      sub.httpStatus >= 300 && sub.httpStatus < 400 ? 'text-blue-400' :
-                      'text-yellow-400'
-                    )}>
+                    <span
+                      className={clsx(
+                        'font-mono text-xs',
+                        sub.httpStatus >= 200 && sub.httpStatus < 300
+                          ? 'text-green-400'
+                          : sub.httpStatus >= 300 && sub.httpStatus < 400
+                            ? 'text-blue-400'
+                            : 'text-yellow-400'
+                      )}
+                    >
                       {sub.httpStatus}
                     </span>
                   ) : (
@@ -731,7 +815,7 @@ function SubdomainSection({ subdomains, vendorId }: { subdomains: SubdomainScanR
                         View Pages
                       </button>
                     )}
-                    <a 
+                    <a
                       href={`${sub.hasSSL ? 'https' : 'http'}://${sub.fullDomain}`}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -771,7 +855,15 @@ function SubdomainSection({ subdomains, vendorId }: { subdomains: SubdomainScanR
   );
 }
 
-function FindingCard({ finding, expanded, onToggle }: { finding: SecurityFinding; expanded: boolean; onToggle: () => void }) {
+function FindingCard({
+  finding,
+  expanded,
+  onToggle,
+}: {
+  finding: SecurityFinding;
+  expanded: boolean;
+  onToggle: () => void;
+}) {
   const getLevelColor = (level: string) => {
     switch (level) {
       case 'Critical':
@@ -804,12 +896,14 @@ function FindingCard({ finding, expanded, onToggle }: { finding: SecurityFinding
 
   return (
     <div className={clsx('border rounded-lg', getLevelColor(finding.level))}>
-      <button
-        onClick={onToggle}
-        className="w-full flex items-center justify-between p-3 text-left"
-      >
+      <button onClick={onToggle} className="w-full flex items-center justify-between p-3 text-left">
         <div className="flex items-center gap-3">
-          <span className={clsx('px-2 py-0.5 rounded text-xs font-medium', getLevelBadgeColor(finding.level))}>
+          <span
+            className={clsx(
+              'px-2 py-0.5 rounded text-xs font-medium',
+              getLevelBadgeColor(finding.level)
+            )}
+          >
             {finding.level}
           </span>
           <span className="font-medium text-surface-200">{finding.title}</span>
@@ -884,14 +978,36 @@ export function VendorSecurityScanPanel({
       });
 
       if (!response.ok) {
-        throw new Error('Scan failed');
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.message || 'Scan failed';
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
       setResult(data);
       onScanComplete?.();
-    } catch (err) {
-      setError('Failed to complete security scan. Please try again.');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+
+      // SSRF-specific error handling
+      if (
+        errorMessage.includes('private') ||
+        errorMessage.includes('internal') ||
+        errorMessage.includes('localhost') ||
+        errorMessage.includes('loopback') ||
+        errorMessage.includes('metadata') ||
+        errorMessage.includes('blocked')
+      ) {
+        setError(
+          'Cannot scan private/internal addresses. Please provide a publicly accessible URL.'
+        );
+      } else if (errorMessage.includes('Only HTTP/HTTPS')) {
+        setError('Invalid URL protocol. Only HTTP and HTTPS URLs are supported.');
+      } else if (errorMessage.includes('Invalid URL')) {
+        setError('Invalid URL format. Please check the vendor website URL.');
+      } else {
+        setError('Failed to complete security scan. Please try again.');
+      }
       console.error('Scan error:', err);
     } finally {
       setScanning(false);
@@ -915,8 +1031,8 @@ export function VendorSecurityScanPanel({
           <ArrowPathIcon className="w-12 h-12 text-brand-400 animate-spin mb-4" />
           <h3 className="text-lg font-medium text-surface-100 mb-2">Scanning {vendorName}...</h3>
           <p className="text-surface-400 text-center max-w-md">
-            Analyzing SSL/TLS, security headers, DNS configuration, and compliance indicators.
-            This may take 30 seconds to 2 minutes depending on the target website.
+            Analyzing SSL/TLS, security headers, DNS configuration, and compliance indicators. This
+            may take 30 seconds to 2 minutes depending on the target website.
           </p>
         </div>
       </div>
@@ -931,7 +1047,8 @@ export function VendorSecurityScanPanel({
           <div>
             <h3 className="text-lg font-medium text-surface-100">Security Scan</h3>
             <p className="text-sm text-surface-400">
-              Automatically scan vendor website for security posture, compliance indicators, and risks.
+              Automatically scan vendor website for security posture, compliance indicators, and
+              risks.
             </p>
           </div>
         </div>
@@ -939,7 +1056,8 @@ export function VendorSecurityScanPanel({
         {!vendorWebsite && (
           <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
             <p className="text-sm text-yellow-400">
-              No website configured for this vendor. Please add a website URL to the vendor profile before scanning.
+              No website configured for this vendor. Please add a website URL to the vendor profile
+              before scanning.
             </p>
           </div>
         )}
@@ -990,13 +1108,18 @@ export function VendorSecurityScanPanel({
         <div className="flex items-center gap-8">
           <ScoreGauge score={result.overallScore} />
           <div className="flex-1">
-            <div className={clsx(
-              'inline-block px-3 py-1 rounded-full text-sm font-medium mb-2',
-              result.riskLevel === 'Critical' ? 'bg-red-500/20 text-red-400' :
-              result.riskLevel === 'High' ? 'bg-orange-500/20 text-orange-400' :
-              result.riskLevel === 'Medium' ? 'bg-yellow-500/20 text-yellow-400' :
-              'bg-green-500/20 text-green-400'
-            )}>
+            <div
+              className={clsx(
+                'inline-block px-3 py-1 rounded-full text-sm font-medium mb-2',
+                result.riskLevel === 'Critical'
+                  ? 'bg-red-500/20 text-red-400'
+                  : result.riskLevel === 'High'
+                    ? 'bg-orange-500/20 text-orange-400'
+                    : result.riskLevel === 'Medium'
+                      ? 'bg-yellow-500/20 text-yellow-400'
+                      : 'bg-green-500/20 text-green-400'
+              )}
+            >
               {result.riskLevel} Risk
             </div>
             <p className="text-surface-400 text-sm">{result.summary}</p>
@@ -1056,7 +1179,10 @@ export function VendorSecurityScanPanel({
         <div>
           <h5 className="text-xs font-medium text-surface-500 mb-2">SSL/TLS</h5>
           <div className="flex items-center gap-1">
-            <StatusBadge status={result.ssl.enabled} label={result.ssl.enabled ? `Grade ${result.ssl.grade}` : 'Not Enabled'} />
+            <StatusBadge
+              status={result.ssl.enabled}
+              label={result.ssl.enabled ? `Grade ${result.ssl.grade}` : 'Not Enabled'}
+            />
             <Tooltip content={ITEM_TOOLTIPS.sslGrade} position="right" />
           </div>
           <div className="flex items-center gap-1">
@@ -1082,9 +1208,9 @@ export function VendorSecurityScanPanel({
             <Tooltip content={ITEM_TOOLTIPS.accessible} position="right" />
           </div>
           <div className="flex items-center gap-1">
-            <StatusBadgeWithLink 
-              status={result.webPresence.hasPrivacyPolicy} 
-              label="Privacy Policy" 
+            <StatusBadgeWithLink
+              status={result.webPresence.hasPrivacyPolicy}
+              label="Privacy Policy"
               url={result.webPresence.privacyPolicyUrl || result.compliance.privacyPolicyUrl}
             />
             <Tooltip content={ITEM_TOOLTIPS.privacyPolicy} position="right" />
@@ -1093,17 +1219,19 @@ export function VendorSecurityScanPanel({
         <div>
           <h5 className="text-xs font-medium text-surface-500 mb-2">Compliance</h5>
           <div className="flex items-center gap-1">
-            <StatusBadgeWithLink 
-              status={result.compliance.hasSOC2} 
-              label={result.compliance.hasSOC2 ? `SOC 2 ${result.compliance.soc2Type || ''}` : 'SOC 2'} 
+            <StatusBadgeWithLink
+              status={result.compliance.hasSOC2}
+              label={
+                result.compliance.hasSOC2 ? `SOC 2 ${result.compliance.soc2Type || ''}` : 'SOC 2'
+              }
               url={result.compliance.soc2Url}
             />
             <Tooltip content={ITEM_TOOLTIPS.soc2} position="left" />
           </div>
           <div className="flex items-center gap-1">
-            <StatusBadgeWithLink 
-              status={result.compliance.hasTrustPortal} 
-              label="Trust Portal" 
+            <StatusBadgeWithLink
+              status={result.compliance.hasTrustPortal}
+              label="Trust Portal"
               url={result.compliance.trustPortalUrl}
             />
             <Tooltip content={ITEM_TOOLTIPS.trustPortal} position="left" />
@@ -1112,45 +1240,49 @@ export function VendorSecurityScanPanel({
       </div>
 
       {/* Additional Compliance Artifacts with Links */}
-      {(result.compliance.hasBugBounty || result.compliance.hasISO27001 || result.compliance.hasSecurityWhitepaper || result.compliance.certifications.length > 2) && (
+      {(result.compliance.hasBugBounty ||
+        result.compliance.hasISO27001 ||
+        result.compliance.hasSecurityWhitepaper ||
+        result.compliance.certifications.length > 2) && (
         <div className="px-4 pb-4 border-b border-surface-800">
           <h5 className="text-xs font-medium text-surface-500 mb-2">Additional Compliance</h5>
           <div className="flex flex-wrap gap-3">
             {result.compliance.hasBugBounty && (
               <div className="flex items-center gap-1">
-                <StatusBadgeWithLink 
-                  status={true} 
-                  label="Bug Bounty Program" 
+                <StatusBadgeWithLink
+                  status={true}
+                  label="Bug Bounty Program"
                   url={result.compliance.bugBountyUrl}
                 />
               </div>
             )}
             {result.compliance.hasISO27001 && (
               <div className="flex items-center gap-1">
-                <StatusBadgeWithLink 
-                  status={true} 
-                  label="ISO 27001" 
+                <StatusBadgeWithLink
+                  status={true}
+                  label="ISO 27001"
                   url={result.compliance.iso27001Url}
                 />
               </div>
             )}
             {result.compliance.hasSecurityWhitepaper && (
               <div className="flex items-center gap-1">
-                <StatusBadgeWithLink 
-                  status={true} 
-                  label="Security Whitepaper" 
+                <StatusBadgeWithLink
+                  status={true}
+                  label="Security Whitepaper"
                   url={result.compliance.securityWhitepaperUrl}
                 />
               </div>
             )}
             {result.compliance.certifications
-              .filter(cert => !['SOC 2', 'SOC 2 Type I', 'SOC 2 Type II', 'ISO 27001'].includes(cert))
+              .filter(
+                (cert) => !['SOC 2', 'SOC 2 Type I', 'SOC 2 Type II', 'ISO 27001'].includes(cert)
+              )
               .map((cert, idx) => (
                 <div key={idx} className="flex items-center gap-1">
                   <StatusBadge status={true} label={cert} />
                 </div>
-              ))
-            }
+              ))}
           </div>
         </div>
       )}

@@ -2,9 +2,45 @@ import { Injectable, Logger } from '@nestjs/common';
 import * as dns from 'dns';
 import * as https from 'https';
 import * as http from 'http';
+import * as net from 'net';
 import { promisify } from 'util';
+import { randomBytes } from 'crypto';
 
 const dnsResolve = promisify(dns.resolve);
+
+// Private IP ranges for SSRF protection
+const PRIVATE_IP_RANGES = [
+  { start: '10.0.0.0', end: '10.255.255.255' },
+  { start: '172.16.0.0', end: '172.31.255.255' },
+  { start: '192.168.0.0', end: '192.168.255.255' },
+  { start: '127.0.0.0', end: '127.255.255.255' },
+  { start: '169.254.0.0', end: '169.254.255.255' },
+  { start: '0.0.0.0', end: '0.255.255.255' },
+];
+
+function ipToNumber(ip: string): number {
+  const parts = ip.split('.').map(Number);
+  return (parts[0] << 24) + (parts[1] << 16) + (parts[2] << 8) + parts[3];
+}
+
+function isPrivateIP(ip: string): boolean {
+  if (!net.isIPv4(ip)) {
+    if (net.isIPv6(ip)) {
+      return ip === '::1' || ip.startsWith('fe80:') || ip.startsWith('fc') || ip.startsWith('fd');
+    }
+    return false;
+  }
+
+  const ipNum = ipToNumber(ip);
+  for (const range of PRIVATE_IP_RANGES) {
+    const start = ipToNumber(range.start);
+    const end = ipToNumber(range.end);
+    if (ipNum >= start && ipNum <= end) {
+      return true;
+    }
+  }
+  return false;
+}
 
 export interface SubdomainInfo {
   subdomain: string;
@@ -127,7 +163,7 @@ export class SubdomainCollector {
     for (let i = 0; i < this.COMMON_SUBDOMAINS.length; i += batchSize) {
       const batch = this.COMMON_SUBDOMAINS.slice(i, i + batchSize);
       const checks = batch.map((sub) => this.checkSubdomain(sub, domain, result.wildcardIp));
-      
+
       const results = await Promise.all(checks);
       result.totalChecked += batch.length;
 
@@ -170,9 +206,11 @@ export class SubdomainCollector {
   /**
    * Check if domain has wildcard DNS configured
    */
-  private async checkWildcard(domain: string): Promise<{ hasWildcard: boolean; wildcardIp?: string }> {
+  private async checkWildcard(
+    domain: string
+  ): Promise<{ hasWildcard: boolean; wildcardIp?: string }> {
     // Generate a random subdomain that shouldn't exist
-    const randomSubdomain = `nonexistent-${Math.random().toString(36).substring(7)}`;
+    const randomSubdomain = `nonexistent-${randomBytes(6).toString('hex')}`;
     const testDomain = `${randomSubdomain}.${domain}`;
 
     try {
@@ -193,10 +231,10 @@ export class SubdomainCollector {
   private async checkSubdomain(
     subdomain: string,
     baseDomain: string,
-    wildcardIp?: string,
+    wildcardIp?: string
   ): Promise<SubdomainInfo | null> {
     const fullDomain = `${subdomain}.${baseDomain}`;
-    
+
     const info: SubdomainInfo = {
       subdomain,
       fullDomain,
@@ -205,12 +243,10 @@ export class SubdomainCollector {
 
     try {
       // DNS resolution with 3 second timeout
-      const addresses = await Promise.race([
+      const addresses = (await Promise.race([
         dnsResolve(fullDomain, 'A'),
-        new Promise<never>((_, reject) => 
-          setTimeout(() => reject(new Error('DNS timeout')), 3000)
-        ),
-      ]) as string[];
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('DNS timeout')), 3000)),
+      ])) as string[];
 
       if (addresses && addresses.length > 0) {
         info.resolved = true;
@@ -218,6 +254,13 @@ export class SubdomainCollector {
 
         // Skip HTTP check if same as wildcard
         if (wildcardIp && addresses.includes(wildcardIp)) {
+          return info;
+        }
+
+        // SSRF Protection: Skip HTTP checks if any resolved IP is private
+        const hasPrivateIP = addresses.some((ip) => isPrivateIP(ip));
+        if (hasPrivateIP) {
+          this.logger.debug(`Skipping HTTP check for ${fullDomain} - resolves to private IP`);
           return info;
         }
 
@@ -240,7 +283,7 @@ export class SubdomainCollector {
    * Check if subdomain is HTTP/HTTPS accessible
    */
   private async checkHttpAccess(
-    domain: string,
+    domain: string
   ): Promise<{ accessible: boolean; status?: number; hasSSL?: boolean; redirectsTo?: string }> {
     // Try HTTPS first
     try {
@@ -293,7 +336,7 @@ export class SubdomainCollector {
             status: res.statusCode || 0,
             redirectsTo: redirectsTo ? redirectsTo : undefined,
           });
-        },
+        }
       );
 
       req.on('error', reject);

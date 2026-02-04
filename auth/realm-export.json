@@ -3,7 +3,7 @@
   "realm": "gigachad-grc",
   "displayName": "GigaChad GRC",
   "enabled": true,
-  "sslRequired": "external",
+  "sslRequired": "none",
   "registrationAllowed": false,
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,
@@ -69,7 +69,7 @@
   ],
   "defaultRoles": ["viewer"],
   "requiredCredentials": ["password"],
-  "passwordPolicy": "length(12) and upperCase(1) and lowerCase(1) and digits(1) and specialChars(1) and notUsername",
+  "passwordPolicy": "",
   "clients": [
     {
       "clientId": "grc-frontend",
@@ -84,27 +84,10 @@
       "protocol": "openid-connect",
       "rootUrl": "http://localhost:3000",
       "baseUrl": "/",
-      "redirectUris": [
-        "http://localhost:3000/*",
-        "http://localhost/*"
-      ],
-      "webOrigins": [
-        "http://localhost:3000",
-        "http://localhost",
-        "+"
-      ],
-      "defaultClientScopes": [
-        "web-origins",
-        "acr",
-        "profile",
-        "roles",
-        "email"
-      ],
-      "optionalClientScopes": [
-        "address",
-        "phone",
-        "offline_access"
-      ],
+      "redirectUris": ["http://localhost:3000/*", "http://localhost/*"],
+      "webOrigins": ["http://localhost:3000", "http://localhost", "+"],
+      "defaultClientScopes": ["web-origins", "acr", "profile", "roles", "email"],
+      "optionalClientScopes": ["address", "phone", "offline_access"],
       "attributes": {
         "pkce.code.challenge.method": "S256",
         "post.logout.redirect.uris": "http://localhost:3000/*"
@@ -152,13 +135,7 @@
       "serviceAccountsEnabled": true,
       "protocol": "openid-connect",
       "secret": "${GRC_SERVICES_SECRET}",
-      "defaultClientScopes": [
-        "web-origins",
-        "acr",
-        "profile",
-        "roles",
-        "email"
-      ],
+      "defaultClientScopes": ["web-origins", "acr", "profile", "roles", "email"],
       "protocolMappers": [
         {
           "name": "realm-roles",
@@ -188,13 +165,7 @@
       "serviceAccountsEnabled": true,
       "protocol": "openid-connect",
       "secret": "${GRC_MCP_SECRET}",
-      "defaultClientScopes": [
-        "web-origins",
-        "acr",
-        "profile",
-        "roles",
-        "email"
-      ]
+      "defaultClientScopes": ["web-origins", "acr", "profile", "roles", "email"]
     }
   ],
   "users": [
@@ -283,4 +254,3 @@
   "adminEventsEnabled": true,
   "adminEventsDetailsEnabled": true
 }
-

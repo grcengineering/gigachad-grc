@@ -43,7 +43,7 @@ interface AuditFormData {
 export default function AuditNew() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  
+
   const [formData, setFormData] = useState<AuditFormData>({
     name: '',
     auditType: 'internal',
@@ -58,13 +58,17 @@ export default function AuditNew() {
 
   const createMutation = useMutation({
     mutationFn: (data: AuditFormData) => {
-      console.log('[AuditNew] Sending create request with data:', data);
+      if (import.meta.env.DEV) {
+        console.log('[AuditNew] Sending create request with data:', data);
+      }
       return auditsApi.create(data as any);
     },
     onSuccess: (response) => {
-      console.log('[AuditNew] Create SUCCESS - full response:', response);
-      console.log('[AuditNew] response.data:', response.data);
-      console.log('[AuditNew] response.data.id:', response.data?.id);
+      if (import.meta.env.DEV) {
+        console.log('[AuditNew] Create SUCCESS - full response:', response);
+        console.log('[AuditNew] response.data:', response.data);
+        console.log('[AuditNew] response.data.id:', response.data?.id);
+      }
       queryClient.invalidateQueries({ queryKey: ['audits'] });
       toast.success('Audit created successfully');
       navigate(`/audits/${response.data.id}`);
@@ -75,7 +79,10 @@ export default function AuditNew() {
       console.error('[AuditNew] ERROR MSG:', String(error?.message || 'no message'));
       console.error('[AuditNew] ERROR CODE:', String(error?.code || 'no code'));
       console.error('[AuditNew] RESPONSE STATUS:', String(error?.response?.status || 'no status'));
-      console.error('[AuditNew] RESPONSE DATA MSG:', String(error?.response?.data?.message || 'no data msg'));
+      console.error(
+        '[AuditNew] RESPONSE DATA MSG:',
+        String(error?.response?.data?.message || 'no data msg')
+      );
       const message = error.response?.data?.message || error?.message || 'Failed to create audit';
       toast.error(message);
     },
@@ -83,21 +90,21 @@ export default function AuditNew() {
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
-    
+
     if (!formData.name.trim()) {
       newErrors.name = 'Audit name is required';
     }
     if (!formData.auditType) {
       newErrors.auditType = 'Audit type is required';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validate()) {
       return;
     }
@@ -110,14 +117,14 @@ export default function AuditNew() {
       framework: formData.framework || undefined,
       description: formData.description || undefined,
     };
-    
+
     createMutation.mutate(dataToSend);
   };
 
   const handleChange = (field: keyof AuditFormData, value: string | boolean) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as string]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
+      setErrors((prev) => ({ ...prev, [field]: '' }));
     }
   };
 
@@ -151,9 +158,7 @@ export default function AuditNew() {
             placeholder="e.g., SOC 2 Type II 2025"
             className={`input ${errors.name ? 'border-red-500' : ''}`}
           />
-          {errors.name && (
-            <p className="mt-1 text-sm text-red-400">{errors.name}</p>
-          )}
+          {errors.name && <p className="mt-1 text-sm text-red-400">{errors.name}</p>}
         </div>
 
         {/* Audit Type */}
@@ -166,11 +171,14 @@ export default function AuditNew() {
             value={formData.auditType}
             onChange={(e) => {
               handleChange('auditType', e.target.value);
-              handleChange('isExternal', e.target.value === 'external' || e.target.value === 'certification');
+              handleChange(
+                'isExternal',
+                e.target.value === 'external' || e.target.value === 'certification'
+              );
             }}
             className="input"
           >
-            {AUDIT_TYPE_OPTIONS.map(option => (
+            {AUDIT_TYPE_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
@@ -189,7 +197,7 @@ export default function AuditNew() {
             onChange={(e) => handleChange('status', e.target.value)}
             className="input"
           >
-            {STATUS_OPTIONS.map(option => (
+            {STATUS_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
@@ -209,7 +217,7 @@ export default function AuditNew() {
             className="input"
           >
             <option value="">Select a framework (optional)</option>
-            {FRAMEWORK_OPTIONS.map(option => (
+            {FRAMEWORK_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
@@ -220,7 +228,10 @@ export default function AuditNew() {
         {/* Planned Dates */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label htmlFor="plannedStartDate" className="block text-sm font-medium text-surface-300 mb-1">
+            <label
+              htmlFor="plannedStartDate"
+              className="block text-sm font-medium text-surface-300 mb-1"
+            >
               Planned Start Date
             </label>
             <input
@@ -232,7 +243,10 @@ export default function AuditNew() {
             />
           </div>
           <div>
-            <label htmlFor="plannedEndDate" className="block text-sm font-medium text-surface-300 mb-1">
+            <label
+              htmlFor="plannedEndDate"
+              className="block text-sm font-medium text-surface-300 mb-1"
+            >
               Planned End Date
             </label>
             <input
@@ -262,17 +276,10 @@ export default function AuditNew() {
 
         {/* Actions */}
         <div className="flex items-center justify-end gap-3 pt-4 border-t border-surface-700">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => navigate('/audits')}
-          >
+          <Button type="button" variant="secondary" onClick={() => navigate('/audits')}>
             Cancel
           </Button>
-          <Button
-            type="submit"
-            disabled={createMutation.isPending}
-          >
+          <Button type="submit" disabled={createMutation.isPending}>
             {createMutation.isPending ? 'Creating...' : 'Create Audit'}
           </Button>
         </div>

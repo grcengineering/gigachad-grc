@@ -3,7 +3,12 @@ import { Injectable, NotFoundException, BadRequestException, Logger, Inject } fr
 import * as crypto from 'crypto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuditService } from '../../audit/audit.service';
-import { STORAGE_PROVIDER, StorageProvider } from '@gigachad-grc/shared';
+import {
+  STORAGE_PROVIDER,
+  StorageProvider,
+  safeFetch,
+  SSRFProtectionError,
+} from '@gigachad-grc/shared';
 import {
   SaveCustomConfigDto,
   TestEndpointDto,
@@ -35,10 +40,23 @@ interface SyncResult {
 
 // Sensitive fields that should be encrypted in authConfig
 const AUTH_SENSITIVE_FIELDS = [
-  'apiKey', 'api_key', 'secret', 'secretKey', 'secret_key',
-  'password', 'token', 'accessToken', 'access_token',
-  'privateKey', 'private_key', 'clientSecret', 'client_secret',
-  'bearerToken', 'bearer_token', 'refreshToken', 'refresh_token',
+  'apiKey',
+  'api_key',
+  'secret',
+  'secretKey',
+  'secret_key',
+  'password',
+  'token',
+  'accessToken',
+  'access_token',
+  'privateKey',
+  'private_key',
+  'clientSecret',
+  'client_secret',
+  'bearerToken',
+  'bearer_token',
+  'refreshToken',
+  'refresh_token',
 ];
 
 // SECURITY: Rate limiting configuration for code execution
@@ -48,25 +66,27 @@ interface RateLimitEntry {
 }
 
 const CODE_EXECUTION_RATE_LIMIT = {
-  maxRequests: 10,      // Maximum requests per window
-  windowMs: 60 * 1000,  // 1 minute window
+  maxRequests: 10, // Maximum requests per window
+  windowMs: 60 * 1000, // 1 minute window
 };
 
 @Injectable()
 export class CustomIntegrationService {
   private readonly logger = new Logger(CustomIntegrationService.name);
   private readonly encryptionKey: string;
-  
+
   // SECURITY: Rate limiting state for code execution
   private readonly codeExecutionRateLimits = new Map<string, RateLimitEntry>();
-  
+
   // SECURITY: Feature flag for custom code execution
   private readonly customCodeExecutionEnabled: boolean;
 
   private validateEncryptionKey(): string {
     const key = process.env.ENCRYPTION_KEY;
     if (!key) {
-      throw new Error('ENCRYPTION_KEY environment variable is required for secure credential storage');
+      throw new Error(
+        'ENCRYPTION_KEY environment variable is required for secure credential storage'
+      );
     }
     if (key.length < 32) {
       throw new Error('ENCRYPTION_KEY must be at least 32 characters long');
@@ -78,22 +98,24 @@ export class CustomIntegrationService {
   constructor(
     private prisma: PrismaService,
     private auditService: AuditService,
-    @Inject(STORAGE_PROVIDER) private storage: StorageProvider,
+    @Inject(STORAGE_PROVIDER) private storage: StorageProvider
   ) {
     this.encryptionKey = this.validateEncryptionKey();
-    
+
     // SECURITY: Custom code execution is disabled by default
     // Set ENABLE_CUSTOM_CODE_EXECUTION=true to enable (NOT RECOMMENDED for production)
     this.customCodeExecutionEnabled = process.env.ENABLE_CUSTOM_CODE_EXECUTION === 'true';
-    
+
     if (this.customCodeExecutionEnabled) {
       this.logger.warn(
         'SECURITY WARNING: Custom code execution is ENABLED. ' +
-        'This feature uses dynamic code execution which poses security risks. ' +
-        'Only enable in trusted environments with proper isolation.'
+          'This feature uses dynamic code execution which poses security risks. ' +
+          'Only enable in trusted environments with proper isolation.'
       );
     } else {
-      this.logger.log('Custom code execution is disabled for security. Set ENABLE_CUSTOM_CODE_EXECUTION=true to enable.');
+      this.logger.log(
+        'Custom code execution is disabled for security. Set ENABLE_CUSTOM_CODE_EXECUTION=true to enable.'
+      );
     }
   }
 
@@ -103,28 +125,28 @@ export class CustomIntegrationService {
 
   private encrypt(text: string): string {
     if (!text) return text;
-    
+
     const iv = crypto.randomBytes(16);
     // SECURITY FIX: Generate random salt per encryption instead of using hardcoded salt
     const salt = crypto.randomBytes(16);
     const key = crypto.scryptSync(this.encryptionKey, salt, 32);
     const cipher = crypto.createCipheriv(this.algorithm, key, iv);
-    
+
     let encrypted = cipher.update(text, 'utf8', 'hex');
     encrypted += cipher.final('hex');
-    
+
     const authTag = cipher.getAuthTag();
-    
+
     // New format with salt: iv:authTag:salt:encrypted
     return `${iv.toString('hex')}:${authTag.toString('hex')}:${salt.toString('hex')}:${encrypted}`;
   }
 
   private decrypt(encryptedText: string): string {
     if (!encryptedText) return encryptedText;
-    
+
     try {
       const parts = encryptedText.split(':');
-      
+
       // Support both old format (3 parts) and new format (4 parts with salt)
       if (parts.length === 3) {
         // Legacy format without salt
@@ -132,13 +154,13 @@ export class CustomIntegrationService {
         const iv = Buffer.from(ivHex, 'hex');
         const authTag = Buffer.from(authTagHex, 'hex');
         const key = crypto.scryptSync(this.encryptionKey, 'salt', 32); // Legacy salt
-        
+
         const decipher = crypto.createDecipheriv(this.algorithm, key, iv);
         decipher.setAuthTag(authTag);
-        
+
         let decrypted = decipher.update(encrypted, 'hex', 'utf8');
         decrypted += decipher.final('utf8');
-        
+
         return decrypted;
       } else if (parts.length === 4) {
         // New format with random salt
@@ -147,13 +169,13 @@ export class CustomIntegrationService {
         const authTag = Buffer.from(authTagHex, 'hex');
         const salt = Buffer.from(saltHex, 'hex');
         const key = crypto.scryptSync(this.encryptionKey, salt, 32);
-        
+
         const decipher = crypto.createDecipheriv(this.algorithm, key, iv);
         decipher.setAuthTag(authTag);
-        
+
         let decrypted = decipher.update(encrypted, 'hex', 'utf8');
         decrypted += decipher.final('utf8');
-        
+
         return decrypted;
       } else {
         return encryptedText; // Not encrypted
@@ -166,11 +188,14 @@ export class CustomIntegrationService {
 
   private encryptAuthConfig(authConfig: Record<string, any>): Record<string, any> {
     if (!authConfig) return authConfig;
-    
+
     const encrypted: Record<string, any> = {};
-    
+
     for (const [key, value] of Object.entries(authConfig)) {
-      if (typeof value === 'string' && AUTH_SENSITIVE_FIELDS.some(f => key.toLowerCase().includes(f.toLowerCase()))) {
+      if (
+        typeof value === 'string' &&
+        AUTH_SENSITIVE_FIELDS.some((f) => key.toLowerCase().includes(f.toLowerCase()))
+      ) {
         encrypted[key] = this.encrypt(value);
       } else if (typeof value === 'object' && value !== null) {
         encrypted[key] = this.encryptAuthConfig(value);
@@ -178,17 +203,20 @@ export class CustomIntegrationService {
         encrypted[key] = value;
       }
     }
-    
+
     return encrypted;
   }
 
   private decryptAuthConfig(authConfig: Record<string, any>): Record<string, any> {
     if (!authConfig) return authConfig;
-    
+
     const decrypted: Record<string, any> = {};
-    
+
     for (const [key, value] of Object.entries(authConfig)) {
-      if (typeof value === 'string' && AUTH_SENSITIVE_FIELDS.some(f => key.toLowerCase().includes(f.toLowerCase()))) {
+      if (
+        typeof value === 'string' &&
+        AUTH_SENSITIVE_FIELDS.some((f) => key.toLowerCase().includes(f.toLowerCase()))
+      ) {
         decrypted[key] = this.decrypt(value);
       } else if (typeof value === 'object' && value !== null) {
         decrypted[key] = this.decryptAuthConfig(value);
@@ -196,7 +224,7 @@ export class CustomIntegrationService {
         decrypted[key] = value;
       }
     }
-    
+
     return decrypted;
   }
 
@@ -232,7 +260,10 @@ export class CustomIntegrationService {
 
     // Mask sensitive auth config values
     const config = integration.customConfig;
-    const maskedAuthConfig = this.maskAuthConfig(config.authType, config.authConfig as Record<string, any>);
+    const maskedAuthConfig = this.maskAuthConfig(
+      config.authType,
+      config.authConfig as Record<string, any>
+    );
 
     return {
       ...config,
@@ -248,7 +279,7 @@ export class CustomIntegrationService {
     integrationId: string,
     organizationId: string,
     userId: string,
-    dto: SaveCustomConfigDto,
+    dto: SaveCustomConfigDto
   ) {
     const integration = await this.prisma.integration.findFirst({
       where: { id: integrationId, organizationId },
@@ -306,7 +337,11 @@ export class CustomIntegrationService {
       entityId: integrationId,
       entityName: integration.name,
       description: `Updated custom integration config for "${integration.name}" (${dto.mode} mode)`,
-      metadata: { mode: dto.mode, hasCode: !!dto.customCode, endpointCount: dto.endpoints?.length || 0 },
+      metadata: {
+        mode: dto.mode,
+        hasCode: !!dto.customCode,
+        endpointCount: dto.endpoints?.length || 0,
+      },
     });
 
     return {
@@ -322,7 +357,7 @@ export class CustomIntegrationService {
     integrationId: string,
     organizationId: string,
     userId: string,
-    dto: TestEndpointDto,
+    dto: TestEndpointDto
   ): Promise<TestResultDto> {
     const integration = await this.prisma.integration.findFirst({
       where: { id: integrationId, organizationId },
@@ -335,7 +370,9 @@ export class CustomIntegrationService {
 
     const config = integration.customConfig;
     if (!config) {
-      throw new BadRequestException('No custom configuration found. Please save a configuration first.');
+      throw new BadRequestException(
+        'No custom configuration found. Please save a configuration first.'
+      );
     }
 
     const startTime = Date.now();
@@ -376,7 +413,6 @@ export class CustomIntegrationService {
       });
 
       return result;
-
     } catch (error: any) {
       const responseTime = Date.now() - startTime;
 
@@ -402,10 +438,7 @@ export class CustomIntegrationService {
   /**
    * Test visual mode endpoint
    */
-  private async testVisualEndpoint(
-    config: any,
-    dto: TestEndpointDto,
-  ): Promise<TestResultDto> {
+  private async testVisualEndpoint(config: any, dto: TestEndpointDto): Promise<TestResultDto> {
     const baseUrl = dto.baseUrl || config.baseUrl;
     if (!baseUrl) {
       return { success: false, message: 'Base URL is required', error: 'No base URL configured' };
@@ -413,12 +446,20 @@ export class CustomIntegrationService {
 
     const endpoints = config.endpoints as any[];
     if (!endpoints || endpoints.length === 0) {
-      return { success: false, message: 'No endpoints configured', error: 'Add at least one endpoint' };
+      return {
+        success: false,
+        message: 'No endpoints configured',
+        error: 'Add at least one endpoint',
+      };
     }
 
     const endpointIndex = dto.endpointIndex ?? 0;
     if (endpointIndex >= endpoints.length) {
-      return { success: false, message: 'Invalid endpoint index', error: `Endpoint ${endpointIndex} not found` };
+      return {
+        success: false,
+        message: 'Invalid endpoint index',
+        error: `Endpoint ${endpointIndex} not found`,
+      };
     }
 
     const endpoint = endpoints[endpointIndex];
@@ -457,7 +498,8 @@ export class CustomIntegrationService {
     }
 
     try {
-      const response = await fetch(finalUrl, fetchOptions);
+      // SECURITY: Use safeFetch to prevent SSRF attacks
+      const response = await safeFetch(finalUrl, fetchOptions, { allowPrivateIPs: false });
       const responseText = await response.text();
 
       let data;
@@ -482,8 +524,15 @@ export class CustomIntegrationService {
         statusCode: response.status,
         data: typeof data === 'object' ? data : { response: data },
       };
-
     } catch (error: any) {
+      // SECURITY: Provide clear error message for SSRF blocks
+      if (error instanceof SSRFProtectionError) {
+        return {
+          success: false,
+          message: 'Request blocked for security',
+          error: `SSRF Protection: ${error.message}. Cannot connect to internal/private addresses.`,
+        };
+      }
       return {
         success: false,
         message: 'Connection failed',
@@ -494,28 +543,32 @@ export class CustomIntegrationService {
 
   /**
    * Test code mode execution
-   * 
+   *
    * SECURITY: Checks if code execution is enabled before testing
    */
   private async testCodeExecution(
     config: any,
     organizationId: string,
-    integrationId: string,
+    integrationId: string
   ): Promise<TestResultDto> {
     // SECURITY: Check if code execution is enabled
     if (!this.customCodeExecutionEnabled) {
       return {
         success: false,
         message: 'Custom code execution is disabled',
-        error: 
+        error:
           'Custom code execution is disabled for security reasons. ' +
           'Set ENABLE_CUSTOM_CODE_EXECUTION=true environment variable to enable. ' +
           'Consider using visual mode as a safer alternative.',
       };
     }
-    
+
     if (!config.customCode) {
-      return { success: false, message: 'No custom code configured', error: 'Add custom code first' };
+      return {
+        success: false,
+        message: 'No custom code configured',
+        error: 'Add custom code first',
+      };
     }
 
     try {
@@ -533,7 +586,6 @@ export class CustomIntegrationService {
           })),
         },
       };
-
     } catch (error: any) {
       return {
         success: false,
@@ -545,7 +597,7 @@ export class CustomIntegrationService {
 
   /**
    * Validate custom code syntax
-   * 
+   *
    * SECURITY: This validates code before it can be saved or executed.
    * Even if code execution is disabled, we still validate to provide feedback.
    */
@@ -557,7 +609,7 @@ export class CustomIntegrationService {
     if (!this.customCodeExecutionEnabled) {
       warnings.push(
         'Custom code execution is currently DISABLED for security. ' +
-        'Set ENABLE_CUSTOM_CODE_EXECUTION=true to enable execution.'
+          'Set ENABLE_CUSTOM_CODE_EXECUTION=true to enable execution.'
       );
     }
 
@@ -568,36 +620,36 @@ export class CustomIntegrationService {
       { pattern: /\beval\s*\(/, message: 'eval() is not allowed for security reasons' },
       { pattern: /\bFunction\s*\(/, message: 'Function() constructor is not allowed' },
       { pattern: /new\s+Function\s*\(/, message: 'new Function() is not allowed' },
-      
+
       // Global object access - bypass attempts
       { pattern: /\bglobalThis\b/, message: 'globalThis is not allowed - sandbox bypass' },
       { pattern: /\bglobal\b(?!\.)/, message: 'global is not allowed - sandbox bypass' },
       { pattern: /\bwindow\b/, message: 'window is not allowed' },
       { pattern: /\bself\b/, message: 'self is not allowed' },
-      
+
       // Process access - server compromise
       { pattern: /\bprocess\b/, message: 'process is not allowed - server access' },
       { pattern: /\brequire\s*\(/, message: 'require() is not allowed - module loading' },
       { pattern: /\bimport\s*\(/, message: 'dynamic import() is not allowed' },
       { pattern: /\bimport\s+/, message: 'import statements are not allowed' },
-      
+
       // Prototype pollution and constructor access
       { pattern: /__proto__/, message: '__proto__ is not allowed - prototype pollution' },
       { pattern: /\.prototype\b/, message: 'prototype access is not allowed' },
       { pattern: /\.constructor\b/, message: 'constructor access is not allowed - sandbox bypass' },
       { pattern: /\bconstructor\s*\[/, message: 'constructor bracket access is not allowed' },
-      
+
       // Reflect and Proxy - can bypass sandbox
       { pattern: /\bReflect\b/, message: 'Reflect is not allowed - sandbox bypass' },
       { pattern: /\bProxy\b/, message: 'Proxy is not allowed - sandbox bypass' },
-      
+
       // File system and network access
       { pattern: /\bfs\b/, message: 'fs module is not allowed' },
       { pattern: /\bchild_process\b/, message: 'child_process is not allowed' },
       { pattern: /\bhttp\b(?!s?:\/\/)/, message: 'http module is not allowed' },
       { pattern: /\bhttps\b(?!:\/\/)/, message: 'https module is not allowed' },
       { pattern: /\bnet\b/, message: 'net module is not allowed' },
-      
+
       // Dangerous object access patterns (string-based property access)
       { pattern: /\['constructor'\]/, message: "['constructor'] is not allowed - sandbox bypass" },
       { pattern: /\["constructor"\]/, message: '["constructor"] is not allowed - sandbox bypass' },
@@ -605,31 +657,43 @@ export class CustomIntegrationService {
       { pattern: /\["__proto__"\]/, message: '["__proto__"] is not allowed - prototype pollution' },
       { pattern: /\['prototype'\]/, message: "['prototype'] is not allowed - prototype access" },
       { pattern: /\["prototype"\]/, message: '["prototype"] is not allowed - prototype access' },
-      
+
       // Timer functions that could enable DoS or async escapes
       { pattern: /\bsetTimeout\b/, message: 'setTimeout is not allowed' },
       { pattern: /\bsetInterval\b/, message: 'setInterval is not allowed' },
       { pattern: /\bsetImmediate\b/, message: 'setImmediate is not allowed' },
-      
+
       // Web APIs that shouldn't be available
       { pattern: /\bWebSocket\b/, message: 'WebSocket is not allowed' },
       { pattern: /\bWorker\b/, message: 'Worker is not allowed' },
       { pattern: /\bSharedArrayBuffer\b/, message: 'SharedArrayBuffer is not allowed' },
-      
+
       // Unicode/hex escape bypass attempts
-      { pattern: /\\u[0-9a-fA-F]{4}/, message: 'Unicode escapes are not allowed - potential bypass' },
+      {
+        pattern: /\\u[0-9a-fA-F]{4}/,
+        message: 'Unicode escapes are not allowed - potential bypass',
+      },
       { pattern: /\\x[0-9a-fA-F]{2}/, message: 'Hex escapes are not allowed - potential bypass' },
-      
+
       // Obfuscation attempts
       { pattern: /atob\s*\(/, message: 'atob() is not allowed - potential code obfuscation' },
       { pattern: /btoa\s*\(/, message: 'btoa() is not allowed' },
-      { pattern: /String\.fromCharCode/, message: 'String.fromCharCode is not allowed - potential bypass' },
-      { pattern: /String\.fromCodePoint/, message: 'String.fromCodePoint is not allowed - potential bypass' },
-      
+      {
+        pattern: /String\.fromCharCode/,
+        message: 'String.fromCharCode is not allowed - potential bypass',
+      },
+      {
+        pattern: /String\.fromCodePoint/,
+        message: 'String.fromCodePoint is not allowed - potential bypass',
+      },
+
       // Additional dangerous patterns
       { pattern: /\bwith\s*\(/, message: 'with statement is not allowed' },
       { pattern: /\bdebugger\b/, message: 'debugger statement is not allowed' },
-      { pattern: /\bObject\.getOwnPropertyDescriptor/, message: 'Object.getOwnPropertyDescriptor is not allowed' },
+      {
+        pattern: /\bObject\.getOwnPropertyDescriptor/,
+        message: 'Object.getOwnPropertyDescriptor is not allowed',
+      },
       { pattern: /\bObject\.defineProperty/, message: 'Object.defineProperty is not allowed' },
       { pattern: /\bObject\.setPrototypeOf/, message: 'Object.setPrototypeOf is not allowed' },
       { pattern: /\bObject\.getPrototypeOf/, message: 'Object.getPrototypeOf is not allowed' },
@@ -664,7 +728,7 @@ export class CustomIntegrationService {
       const braceCount = (code.match(/\{/g) || []).length - (code.match(/\}/g) || []).length;
       const bracketCount = (code.match(/\[/g) || []).length - (code.match(/\]/g) || []).length;
       const parenCount = (code.match(/\(/g) || []).length - (code.match(/\)/g) || []).length;
-      
+
       if (braceCount !== 0) {
         errors.push('Syntax error: Unbalanced curly braces {}');
       }
@@ -674,12 +738,12 @@ export class CustomIntegrationService {
       if (parenCount !== 0) {
         errors.push('Syntax error: Unbalanced parentheses ()');
       }
-      
+
       // Check for unclosed strings (simple check)
       const singleQuotes = (code.match(/'/g) || []).length;
       const doubleQuotes = (code.match(/"/g) || []).length;
       const backticks = (code.match(/`/g) || []).length;
-      
+
       if (singleQuotes % 2 !== 0) {
         warnings.push('Warning: Possibly unclosed single-quoted string');
       }
@@ -692,7 +756,11 @@ export class CustomIntegrationService {
     }
 
     // Check for required sync function
-    if (!code.includes('function sync') && !code.includes('sync =') && !code.includes('async function sync')) {
+    if (
+      !code.includes('function sync') &&
+      !code.includes('sync =') &&
+      !code.includes('async function sync')
+    ) {
       errors.push('Missing required "sync" function');
     }
 
@@ -714,7 +782,7 @@ export class CustomIntegrationService {
   async executeSync(
     integrationId: string,
     organizationId: string,
-    userId: string,
+    userId: string
   ): Promise<{ success: boolean; evidenceCreated: number; message: string; errors?: string[] }> {
     const integration = await this.prisma.integration.findFirst({
       where: { id: integrationId, organizationId },
@@ -741,10 +809,10 @@ export class CustomIntegrationService {
         if (!this.customCodeExecutionEnabled) {
           throw new BadRequestException(
             'Custom code execution is disabled for security reasons. ' +
-            'Set ENABLE_CUSTOM_CODE_EXECUTION=true to enable, or use visual mode instead.'
+              'Set ENABLE_CUSTOM_CODE_EXECUTION=true to enable, or use visual mode instead.'
           );
         }
-        
+
         // Execute custom code
         const context = await this.buildExecutionContext(config, organizationId, integrationId);
         syncResult = await this.executeCode(config.customCode!, context);
@@ -760,7 +828,7 @@ export class CustomIntegrationService {
           userId,
           integrationId,
           integration.name,
-          syncResult.evidence,
+          syncResult.evidence
         );
       }
 
@@ -769,7 +837,6 @@ export class CustomIntegrationService {
         evidenceCreated,
         message: `Sync completed successfully. Created ${evidenceCreated} evidence records.`,
       };
-
     } catch (error: any) {
       this.logger.error(`Custom integration sync failed: ${error.message}`, error.stack);
       errors.push(error.message);
@@ -789,7 +856,7 @@ export class CustomIntegrationService {
   private async executeVisualSync(
     config: any,
     _organizationId: string,
-    _integrationId: string,
+    _integrationId: string
   ): Promise<SyncResult> {
     const evidence: EvidenceItem[] = [];
     const baseUrl = config.baseUrl;
@@ -800,10 +867,13 @@ export class CustomIntegrationService {
     }
 
     // Get auth headers - decrypt stored authConfig for use
-    const decryptedAuthConfig = config.authConfig ? this.decryptAuthConfig(config.authConfig) : null;
-    const authHeaders = config.authType && decryptedAuthConfig
-      ? await this.getAuthHeaders(config.authType, decryptedAuthConfig)
-      : {};
+    const decryptedAuthConfig = config.authConfig
+      ? this.decryptAuthConfig(config.authConfig)
+      : null;
+    const authHeaders =
+      config.authType && decryptedAuthConfig
+        ? await this.getAuthHeaders(config.authType, decryptedAuthConfig)
+        : {};
 
     for (const endpoint of endpoints) {
       try {
@@ -829,7 +899,8 @@ export class CustomIntegrationService {
           fetchOptions.body = JSON.stringify(endpoint.body);
         }
 
-        const response = await fetch(finalUrl, fetchOptions);
+        // SECURITY: Use safeFetch to prevent SSRF attacks
+        const response = await safeFetch(finalUrl, fetchOptions, { allowPrivateIPs: false });
         const data = await response.json();
 
         if (response.ok) {
@@ -843,7 +914,8 @@ export class CustomIntegrationService {
               title = this.extractValue(data, endpoint.responseMapping.title) || title;
             }
             if (endpoint.responseMapping.description) {
-              description = this.extractValue(data, endpoint.responseMapping.description) || description;
+              description =
+                this.extractValue(data, endpoint.responseMapping.description) || description;
             }
           }
 
@@ -854,7 +926,6 @@ export class CustomIntegrationService {
             type: 'automated',
           });
         }
-
       } catch (error: any) {
         this.logger.warn(`Endpoint ${endpoint.path} failed: ${error.message}`);
       }
@@ -871,18 +942,18 @@ export class CustomIntegrationService {
     const now = Date.now();
     const key = `code-exec:${organizationId}`;
     const entry = this.codeExecutionRateLimits.get(key);
-    
-    if (!entry || (now - entry.windowStart) > CODE_EXECUTION_RATE_LIMIT.windowMs) {
+
+    if (!entry || now - entry.windowStart > CODE_EXECUTION_RATE_LIMIT.windowMs) {
       // Start new window
       this.codeExecutionRateLimits.set(key, { count: 1, windowStart: now });
       return true;
     }
-    
+
     if (entry.count >= CODE_EXECUTION_RATE_LIMIT.maxRequests) {
       this.logger.warn(`Rate limit exceeded for code execution: org=${organizationId}`);
       return false;
     }
-    
+
     entry.count++;
     return true;
   }
@@ -895,45 +966,45 @@ export class CustomIntegrationService {
     if (!this.customCodeExecutionEnabled) {
       throw new BadRequestException(
         'Custom code execution is disabled for security reasons. ' +
-        'This feature uses dynamic code execution (new Function()) which can pose security risks. ' +
-        'To enable, set the environment variable ENABLE_CUSTOM_CODE_EXECUTION=true. ' +
-        'WARNING: Only enable in trusted environments with proper network isolation. ' +
-        'Consider using the visual mode instead for a safer alternative.'
+          'This feature uses dynamic code execution (new Function()) which can pose security risks. ' +
+          'To enable, set the environment variable ENABLE_CUSTOM_CODE_EXECUTION=true. ' +
+          'WARNING: Only enable in trusted environments with proper network isolation. ' +
+          'Consider using the visual mode instead for a safer alternative.'
       );
     }
   }
 
   /**
    * Execute custom JavaScript code in a sandbox
-   * 
+   *
    * SECURITY: Defense-in-depth approach:
    * 1. Feature must be explicitly enabled via ENABLE_CUSTOM_CODE_EXECUTION env var
    * 2. Rate limiting prevents abuse
    * 3. Code is validated before execution via validateCode()
    * 4. Runtime validation is performed here as a double-check
    * 5. Limited scope is provided to the function
-   * 
+   *
    * NOTE: For maximum security, consider migrating to isolated-vm
    * for proper process-level sandboxing.
    */
   private async executeCode(code: string, context: ExecutionContext): Promise<SyncResult> {
     // SECURITY: Check if custom code execution is enabled
     this.assertCodeExecutionEnabled();
-    
+
     // SECURITY: Apply rate limiting
     if (!this.checkCodeExecutionRateLimit(context.organizationId)) {
       throw new Error(
         'Rate limit exceeded for code execution. ' +
-        `Maximum ${CODE_EXECUTION_RATE_LIMIT.maxRequests} executions per minute allowed. ` +
-        'Please wait before trying again.'
+          `Maximum ${CODE_EXECUTION_RATE_LIMIT.maxRequests} executions per minute allowed. ` +
+          'Please wait before trying again.'
       );
     }
-    
+
     this.logger.warn(
       `SECURITY AUDIT: Executing custom code for org=${context.organizationId}, ` +
-      `integration=${context.integrationId}, codeLength=${code.length}`
+        `integration=${context.integrationId}, codeLength=${code.length}`
     );
-    
+
     // SECURITY: Runtime validation - double-check for dangerous patterns
     // This catches any patterns that might have been missed or smuggled in
     const dangerousPatterns = [
@@ -960,18 +1031,23 @@ export class CustomIntegrationService {
       { pattern: /\$\{.*constructor.*\}/, name: 'constructor in template' },
       { pattern: /\$\{.*eval.*\}/, name: 'eval in template' },
     ];
-    
+
     for (const { pattern, name } of dangerousPatterns) {
       if (pattern.test(code)) {
         this.logger.error(`SECURITY: Blocked dangerous pattern "${name}" in custom code`);
-        throw new Error(`SECURITY: Dangerous pattern "${name}" detected in code. Execution blocked.`);
+        throw new Error(
+          `SECURITY: Dangerous pattern "${name}" detected in code. Execution blocked.`
+        );
       }
     }
-    
+
     // Create a safe execution environment
     // Note: For production, use isolated-vm for proper sandboxing
     const sandbox = {
-      fetch: fetch,
+      // SECURITY: Wrap fetch with safeFetch to prevent SSRF attacks from custom code
+      fetch: async (url: string, opts?: RequestInit) => {
+        return safeFetch(url, opts || {}, { allowPrivateIPs: false });
+      },
       console: {
         log: (...args: any[]) => this.logger.log(`[Custom Code] ${args.join(' ')}`),
         error: (...args: any[]) => this.logger.error(`[Custom Code] ${args.join(' ')}`),
@@ -1013,9 +1089,24 @@ export class CustomIntegrationService {
       // 1. Keep ENABLE_CUSTOM_CODE_EXECUTION=false (default)
       // 2. Consider migrating to isolated-vm npm package for process-level isolation
       // 3. Run the controls service in an isolated container with limited network access
-      
+
       // Create function with limited scope
-      const fn = new Function('fetch', 'console', 'context', 'JSON', 'Date', 'Math', 'Array', 'Object', 'String', 'Number', 'Boolean', 'Promise', 'module', wrappedCode);
+      const fn = new Function(
+        'fetch',
+        'console',
+        'context',
+        'JSON',
+        'Date',
+        'Math',
+        'Array',
+        'Object',
+        'String',
+        'Number',
+        'Boolean',
+        'Promise',
+        'module',
+        wrappedCode
+      );
 
       const module = { exports: {} };
       const result = await fn(
@@ -1031,11 +1122,10 @@ export class CustomIntegrationService {
         sandbox.Number,
         sandbox.Boolean,
         sandbox.Promise,
-        module,
+        module
       );
 
       return result || { evidence: [] };
-
     } catch (error: any) {
       this.logger.error(`Custom code execution error: ${error.message}`);
       throw new Error(`Code execution failed: ${error.message}`);
@@ -1048,13 +1138,16 @@ export class CustomIntegrationService {
   private async buildExecutionContext(
     config: any,
     organizationId: string,
-    integrationId: string,
+    integrationId: string
   ): Promise<ExecutionContext> {
     // Decrypt stored authConfig for use in execution context
-    const decryptedAuthConfig = config.authConfig ? this.decryptAuthConfig(config.authConfig) : null;
-    const authHeaders = config.authType && decryptedAuthConfig
-      ? await this.getAuthHeaders(config.authType, decryptedAuthConfig)
-      : {};
+    const decryptedAuthConfig = config.authConfig
+      ? this.decryptAuthConfig(config.authConfig)
+      : null;
+    const authHeaders =
+      config.authType && decryptedAuthConfig
+        ? await this.getAuthHeaders(config.authType, decryptedAuthConfig)
+        : {};
 
     return {
       baseUrl: config.baseUrl || '',
@@ -1069,7 +1162,10 @@ export class CustomIntegrationService {
   /**
    * Get authentication headers based on auth type
    */
-  private async getAuthHeaders(authType: string, authConfig: Record<string, any>): Promise<Record<string, string>> {
+  private async getAuthHeaders(
+    authType: string,
+    authConfig: Record<string, any>
+  ): Promise<Record<string, string>> {
     const headers: Record<string, string> = {};
 
     switch (authType) {
@@ -1096,7 +1192,9 @@ export class CustomIntegrationService {
 
       case 'basic':
         if (authConfig.username && authConfig.password) {
-          const credentials = Buffer.from(`${authConfig.username}:${authConfig.password}`).toString('base64');
+          const credentials = Buffer.from(`${authConfig.username}:${authConfig.password}`).toString(
+            'base64'
+          );
           headers['Authorization'] = `Basic ${credentials}`;
         }
         break;
@@ -1121,19 +1219,33 @@ export class CustomIntegrationService {
       params.append('scope', scope);
     }
 
-    const response = await fetch(tokenUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: params.toString(),
-    });
+    // SECURITY: Use safeFetch to prevent SSRF attacks on OAuth token endpoint
+    try {
+      const response = await safeFetch(
+        tokenUrl,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: params.toString(),
+        },
+        { allowPrivateIPs: false }
+      );
 
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`OAuth2 token request failed: ${error}`);
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`OAuth2 token request failed: ${error}`);
+      }
+
+      const data = await response.json();
+      return data.access_token;
+    } catch (error: any) {
+      if (error instanceof SSRFProtectionError) {
+        throw new Error(
+          `OAuth2 token URL blocked: ${error.message}. Use a public OAuth provider URL.`
+        );
+      }
+      throw error;
     }
-
-    const data = await response.json();
-    return data.access_token;
   }
 
   /**
@@ -1144,7 +1256,7 @@ export class CustomIntegrationService {
     userId: string,
     integrationId: string,
     integrationName: string,
-    evidenceItems: EvidenceItem[],
+    evidenceItems: EvidenceItem[]
   ): Promise<number> {
     let created = 0;
     const timestamp = Date.now();
@@ -1157,11 +1269,9 @@ export class CustomIntegrationService {
         const storagePath = `integrations/custom/${integrationId}/${timestamp}-${i}.json`;
 
         // Save to storage
-        await this.storage.upload(
-          Buffer.from(jsonData, 'utf-8'),
-          storagePath,
-          { contentType: 'application/json' },
-        );
+        await this.storage.upload(Buffer.from(jsonData, 'utf-8'), storagePath, {
+          contentType: 'application/json',
+        });
 
         // Create evidence record
         await this.prisma.evidence.create({
@@ -1198,13 +1308,13 @@ export class CustomIntegrationService {
    */
   private extractValue(obj: any, path: string): any {
     if (!path) return undefined;
-    
+
     const parts = path.replace(/^\$\.?/, '').split('.');
     let current = obj;
 
     for (const part of parts) {
       if (current === null || current === undefined) return undefined;
-      
+
       // Handle array access like [0]
       const arrayMatch = part.match(/(\w+)\[(\d+)\]/);
       if (arrayMatch) {
@@ -1220,7 +1330,10 @@ export class CustomIntegrationService {
   /**
    * Mask sensitive auth config values
    */
-  private maskAuthConfig(authType: string | null, authConfig: Record<string, any> | null): Record<string, any> | null {
+  private maskAuthConfig(
+    authType: string | null,
+    authConfig: Record<string, any> | null
+  ): Record<string, any> | null {
     if (!authConfig) return null;
 
     const masked = { ...authConfig };
@@ -1244,6 +1357,3 @@ export class CustomIntegrationService {
     return CODE_TEMPLATE;
   }
 }
-
-
-

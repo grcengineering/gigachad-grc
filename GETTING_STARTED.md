@@ -13,6 +13,7 @@ You only need **one thing** installed: **Docker Desktop**
 Docker Desktop is a free application that runs the GigaChad GRC platform.
 
 #### macOS
+
 1. Go to [Docker Desktop for Mac](https://www.docker.com/products/docker-desktop/)
 2. Click **"Download for Mac"**
    - Choose **Apple Silicon** if you have an M1/M2/M3 Mac
@@ -23,6 +24,7 @@ Docker Desktop is a free application that runs the GigaChad GRC platform.
 6. Wait for Docker to start (you'll see a whale icon in your menu bar)
 
 #### Windows
+
 1. Go to [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/)
 2. Click **"Download for Windows"**
 3. Run the installer
@@ -34,6 +36,7 @@ Docker Desktop is a free application that runs the GigaChad GRC platform.
 > **Windows Note:** You may need to enable virtualization in your BIOS. If Docker won't start, search "enable virtualization [your computer brand]" for instructions.
 
 #### Linux (Ubuntu/Debian)
+
 ```bash
 # Install Docker
 curl -fsSL https://get.docker.com -o get-docker.sh
@@ -89,14 +92,17 @@ openssl rand -base64 24
 
 Open your `.env` file and replace the placeholder values:
 
-| Variable | How to Generate |
-|----------|-----------------|
-| `ENCRYPTION_KEY` | `openssl rand -hex 32` |
-| `JWT_SECRET` | `openssl rand -base64 64` |
-| `SESSION_SECRET` | `openssl rand -base64 64` |
-| `POSTGRES_PASSWORD` | `openssl rand -base64 24` |
-| `REDIS_PASSWORD` | `openssl rand -base64 24` |
-| `MINIO_ROOT_PASSWORD` | `openssl rand -base64 24` |
+| Variable                       | How to Generate                      |
+| ------------------------------ | ------------------------------------ |
+| `ENCRYPTION_KEY`               | `openssl rand -hex 32`               |
+| `JWT_SECRET`                   | `openssl rand -base64 64`            |
+| `SESSION_SECRET`               | `openssl rand -base64 64`            |
+| `POSTGRES_PASSWORD`            | `openssl rand -base64 24`            |
+| `REDIS_PASSWORD`               | `openssl rand -base64 24`            |
+| `MINIO_ROOT_USER`              | Set a username (e.g., `rustfsadmin`) |
+| `MINIO_ROOT_PASSWORD`          | `openssl rand -base64 24`            |
+| `KEYCLOAK_ADMIN_CLIENT_SECRET` | `openssl rand -base64 32`            |
+| `PHISHING_TRACKING_SECRET`     | `openssl rand -base64 32`            |
 
 > **Security Warning:** Never commit your `.env` file to version control. It's already in `.gitignore`, but always double-check before pushing changes.
 
@@ -161,12 +167,12 @@ start.bat
 
 Once started, open your browser to:
 
-| Service | URL | Credentials |
-|---------|-----|-------------|
-| **GigaChad GRC** | http://localhost:3000 | Click "Dev Login" button |
-| API Documentation | http://localhost:3001/api/docs | None needed |
-| Keycloak (Auth) | http://localhost:8080 | admin / admin |
-| Grafana (Monitoring) | http://localhost:3003 | admin / admin |
+| Service              | URL                            | Credentials              |
+| -------------------- | ------------------------------ | ------------------------ |
+| **GigaChad GRC**     | http://localhost:3000          | Click "Dev Login" button |
+| API Documentation    | http://localhost:3001/api/docs | None needed              |
+| Keycloak (Auth)      | http://localhost:8080          | admin / admin            |
+| Grafana (Monitoring) | http://localhost:3003          | admin / admin            |
 
 ### How to Log In
 
@@ -218,6 +224,7 @@ We recommend starting with demo data to explore the features!
 **Symptom:** Error message about Docker not being found or not running
 
 **Solution:**
+
 1. Look for the Docker whale icon in your menu bar (Mac) or system tray (Windows)
 2. If not there, open Docker Desktop from your Applications/Start Menu
 3. Wait 30-60 seconds for Docker to fully start
@@ -228,6 +235,7 @@ We recommend starting with demo data to explore the features!
 **Symptom:** Error about port 3000, 3001, or another port being in use
 
 **Solution:**
+
 ```bash
 # Stop any running containers
 ./start.sh stop
@@ -244,6 +252,7 @@ docker compose down -v
 **Symptom:** Containers exit immediately or show unhealthy
 
 **Solution:**
+
 1. Open Docker Desktop
 2. Go to Settings → Resources
 3. Ensure you have at least:
@@ -255,16 +264,19 @@ docker compose down -v
 ### Database authentication errors (WSL)
 
 **Symptom:** Containers crash with errors like:
+
 - `FATAL: password authentication failed for user "grc"` or `"GRC"`
 - `failed to start server in dev mode`
 - Keycloak or other services can't connect to PostgreSQL
 
 **Cause:** The PostgreSQL data volume was initialized with different credentials than what's in your current `.env` file. This happens when:
+
 - The `.env` file was deleted and regenerated (new random passwords)
 - You cloned the repo fresh but Docker volumes still exist from a previous install
 - Environment variables changed after initial setup
 
 **Solution:**
+
 ```bash
 # Stop all containers and REMOVE ALL VOLUMES (this deletes all data!)
 docker compose down -v
@@ -277,6 +289,7 @@ docker compose down -v
 
 **Alternative (preserve data):**
 If you need to preserve your data, you can manually update the PostgreSQL password:
+
 ```bash
 # 1. Check what password is in your .env file
 cat .env | grep POSTGRES_PASSWORD
@@ -293,11 +306,13 @@ docker compose restart
 **Symptom:** Application is sluggish or pages load slowly
 
 **Solution (Mac):**
+
 1. Open Docker Desktop → Settings → Resources
 2. Increase Memory to 8GB or more
 3. Enable "Use Virtualization Framework" (Apple Silicon)
 
 **Solution (Windows):**
+
 1. Open Docker Desktop → Settings → Resources → WSL Integration
 2. Enable integration with your WSL distro
 3. Run commands from within WSL for better performance
@@ -309,6 +324,7 @@ docker compose restart
 This happens on Linux servers with AppArmor or SELinux enabled.
 
 **Solution 1: Disable AppArmor for Docker (Ubuntu/Debian)**
+
 ```bash
 # Stop AppArmor
 sudo systemctl stop apparmor
@@ -322,6 +338,7 @@ sudo systemctl restart docker
 ```
 
 **Solution 2: Disable SELinux for Docker (RHEL/CentOS/Fedora)**
+
 ```bash
 # Temporarily disable SELinux
 sudo setenforce 0
@@ -337,6 +354,7 @@ sudo systemctl restart docker
 ```
 
 **Solution 3: Run with elevated privileges (not recommended for production)**
+
 ```bash
 # Add :z flag to volumes for SELinux
 # Or run containers with --privileged flag
@@ -363,12 +381,12 @@ docker rmi $(docker images 'gigachad-grc-*' -q) 2>/dev/null
 
 ## System Requirements
 
-| Component | Minimum | Recommended |
-|-----------|---------|-------------|
-| **RAM** | 8 GB | 16 GB |
-| **CPU** | 4 cores | 8 cores |
-| **Disk Space** | 10 GB | 20 GB |
-| **Docker Desktop** | 4.0+ | Latest |
+| Component          | Minimum | Recommended |
+| ------------------ | ------- | ----------- |
+| **RAM**            | 8 GB    | 16 GB       |
+| **CPU**            | 4 cores | 8 cores     |
+| **Disk Space**     | 10 GB   | 20 GB       |
+| **Docker Desktop** | 4.0+    | Latest      |
 
 ### Supported Operating Systems
 
@@ -405,4 +423,3 @@ Once you're up and running:
 4. **Check the Demo Guide** - [docs/DEMO.md](docs/DEMO.md) for a full walkthrough
 
 Welcome to GigaChad GRC! 🏋️
-

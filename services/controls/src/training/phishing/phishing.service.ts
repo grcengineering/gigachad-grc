@@ -21,7 +21,7 @@ import {
 
 /**
  * Phishing Campaign Service
- * 
+ *
  * Manages phishing simulation campaigns including:
  * - Template management
  * - Campaign creation and scheduling
@@ -32,12 +32,18 @@ import {
 @Injectable()
 export class PhishingService {
   private readonly logger = new Logger(PhishingService.name);
-  private readonly TRACKING_SECRET = process.env.PHISHING_TRACKING_SECRET || 'phishing-secret-key';
+  private readonly TRACKING_SECRET: string;
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly emailService: EmailService,
-  ) {}
+    private readonly emailService: EmailService
+  ) {
+    const trackingSecret = process.env.PHISHING_TRACKING_SECRET;
+    if (!trackingSecret) {
+      throw new Error('PHISHING_TRACKING_SECRET environment variable is required');
+    }
+    this.TRACKING_SECRET = trackingSecret;
+  }
 
   // ============================================
   // Template Management
@@ -49,14 +55,17 @@ export class PhishingService {
     return [...this.getBuiltInTemplates(), ...customTemplates];
   }
 
-  async getTemplate(organizationId: string, templateId: string): Promise<PhishingTemplateDto | null> {
+  async getTemplate(
+    organizationId: string,
+    templateId: string
+  ): Promise<PhishingTemplateDto | null> {
     // Check built-in templates first
-    const builtIn = this.getBuiltInTemplates().find(t => t.id === templateId);
+    const builtIn = this.getBuiltInTemplates().find((t) => t.id === templateId);
     if (builtIn) return builtIn;
 
     // Check custom templates
     const customTemplates = await this.getCustomTemplates(organizationId);
-    return customTemplates.find(t => t.id === templateId) || null;
+    return customTemplates.find((t) => t.id === templateId) || null;
   }
 
   async createTemplate(
@@ -111,7 +120,7 @@ export class PhishingService {
     const settings = (org?.settings as Record<string, unknown>) || {};
     const phishingTemplates = (settings.phishingTemplates as PhishingTemplateDto[]) || [];
 
-    const index = phishingTemplates.findIndex(t => t.id === templateId);
+    const index = phishingTemplates.findIndex((t) => t.id === templateId);
     if (index === -1) {
       throw new NotFoundException('Template not found');
     }
@@ -143,7 +152,7 @@ export class PhishingService {
     const settings = (org?.settings as Record<string, unknown>) || {};
     const phishingTemplates = (settings.phishingTemplates as PhishingTemplateDto[]) || [];
 
-    const filtered = phishingTemplates.filter(t => t.id !== templateId);
+    const filtered = phishingTemplates.filter((t) => t.id !== templateId);
 
     await this.prisma.organization.update({
       where: { id: organizationId },
@@ -160,10 +169,7 @@ export class PhishingService {
   // Campaign Management
   // ============================================
 
-  async createCampaign(
-    organizationId: string,
-    dto: CreateCampaignDto
-  ): Promise<CampaignDto> {
+  async createCampaign(organizationId: string, dto: CreateCampaignDto): Promise<CampaignDto> {
     const template = await this.getTemplate(organizationId, dto.templateId);
     if (!template) {
       throw new BadRequestException('Template not found');
@@ -187,7 +193,7 @@ export class PhishingService {
       description: dto.description,
       templateId: dto.templateId,
       status: dto.scheduledAt ? CampaignStatus.SCHEDULED : CampaignStatus.DRAFT,
-      targets: dto.targets.map(t => ({
+      targets: dto.targets.map((t) => ({
         ...t,
         trackingToken: this.generateTrackingToken(id, t.userId),
         status: TargetStatus.PENDING,
@@ -231,10 +237,13 @@ export class PhishingService {
     const settings = (org?.settings as Record<string, unknown>) || {};
     const campaigns = (settings.phishingCampaigns as Array<Record<string, unknown>>) || [];
 
-    return campaigns.map(c => this.toCampaignDto(c));
+    return campaigns.map((c) => this.toCampaignDto(c));
   }
 
-  async getCampaign(organizationId: string, campaignId: string): Promise<Record<string, unknown> | null> {
+  async getCampaign(
+    organizationId: string,
+    campaignId: string
+  ): Promise<Record<string, unknown> | null> {
     const org = await this.prisma.organization.findUnique({
       where: { id: organizationId },
       select: { settings: true },
@@ -243,7 +252,7 @@ export class PhishingService {
     const settings = (org?.settings as Record<string, unknown>) || {};
     const campaigns = (settings.phishingCampaigns as Array<Record<string, unknown>>) || [];
 
-    return campaigns.find(c => c.id === campaignId) || null;
+    return campaigns.find((c) => c.id === campaignId) || null;
   }
 
   async startCampaign(organizationId: string, campaignId: string): Promise<CampaignDto> {
@@ -337,7 +346,9 @@ export class PhishingService {
     const metrics = {
       totalTargets: targetCount,
       emailsSent: sentCount,
-      emailsDelivered: targets.filter((t) => t.status !== TargetStatus.BOUNCED && t.status !== TargetStatus.PENDING).length,
+      emailsDelivered: targets.filter(
+        (t) => t.status !== TargetStatus.BOUNCED && t.status !== TargetStatus.PENDING
+      ).length,
       emailsOpened: openedCount,
       linksClicked: clickedCount,
       credentialsEntered: credentialsEnteredCount,
@@ -380,7 +391,7 @@ export class PhishingService {
 
   async trackOpen(trackingToken: string): Promise<void> {
     const { campaignId, userId } = this.decodeTrackingToken(trackingToken);
-    
+
     // Find campaign across all organizations (tracking is anonymous)
     const orgs = await this.prisma.organization.findMany({
       select: { id: true, settings: true },
@@ -389,10 +400,12 @@ export class PhishingService {
     for (const org of orgs) {
       const settings = (org.settings as Record<string, unknown>) || {};
       const campaigns = (settings.phishingCampaigns as Array<Record<string, unknown>>) || [];
-      
-      const campaign = campaigns.find(c => c.id === campaignId);
+
+      const campaign = campaigns.find((c) => c.id === campaignId);
       if (campaign) {
-        const target = (campaign.targets as Array<Record<string, unknown>>).find((t) => t.userId === userId);
+        const target = (campaign.targets as Array<Record<string, unknown>>).find(
+          (t) => t.userId === userId
+        );
         if (target && !target.openedAt) {
           target.openedAt = new Date();
           target.status = TargetStatus.OPENED;
@@ -406,7 +419,7 @@ export class PhishingService {
 
   async trackClick(trackingToken: string): Promise<void> {
     const { campaignId, userId } = this.decodeTrackingToken(trackingToken);
-    
+
     const orgs = await this.prisma.organization.findMany({
       select: { id: true, settings: true },
     });
@@ -414,10 +427,12 @@ export class PhishingService {
     for (const org of orgs) {
       const settings = (org.settings as Record<string, unknown>) || {};
       const campaigns = (settings.phishingCampaigns as Array<Record<string, unknown>>) || [];
-      
-      const campaign = campaigns.find(c => c.id === campaignId);
+
+      const campaign = campaigns.find((c) => c.id === campaignId);
       if (campaign) {
-        const target = (campaign.targets as Array<Record<string, unknown>>).find((t) => t.userId === userId);
+        const target = (campaign.targets as Array<Record<string, unknown>>).find(
+          (t) => t.userId === userId
+        );
         if (target && !target.clickedAt) {
           target.clickedAt = new Date();
           target.status = TargetStatus.CLICKED;
@@ -425,7 +440,12 @@ export class PhishingService {
 
           // Auto-assign training if configured
           if (campaign.failureTrainingId) {
-            await this.assignTraining(org.id, userId as string, campaign.failureTrainingId as string, (campaign.createdBy || userId) as string);
+            await this.assignTraining(
+              org.id,
+              userId as string,
+              campaign.failureTrainingId as string,
+              (campaign.createdBy || userId) as string
+            );
             target.trainingAssigned = true;
           }
 
@@ -438,7 +458,7 @@ export class PhishingService {
 
   async trackCredentialsEntered(trackingToken: string): Promise<void> {
     const { campaignId, userId } = this.decodeTrackingToken(trackingToken);
-    
+
     const orgs = await this.prisma.organization.findMany({
       select: { id: true, settings: true },
     });
@@ -446,10 +466,12 @@ export class PhishingService {
     for (const org of orgs) {
       const settings = (org.settings as Record<string, unknown>) || {};
       const campaigns = (settings.phishingCampaigns as Array<Record<string, unknown>>) || [];
-      
-      const campaign = campaigns.find(c => c.id === campaignId);
+
+      const campaign = campaigns.find((c) => c.id === campaignId);
       if (campaign) {
-        const target = (campaign.targets as Array<Record<string, unknown>>).find((t) => t.userId === userId);
+        const target = (campaign.targets as Array<Record<string, unknown>>).find(
+          (t) => t.userId === userId
+        );
         if (target && !target.credentialsEnteredAt) {
           target.credentialsEnteredAt = new Date();
           target.status = TargetStatus.CREDENTIALS_ENTERED;
@@ -457,7 +479,12 @@ export class PhishingService {
 
           // Auto-assign training if configured (high priority)
           if (campaign.failureTrainingId && !target.trainingAssigned) {
-            await this.assignTraining(org.id, userId as string, campaign.failureTrainingId as string, (campaign.createdBy || userId) as string);
+            await this.assignTraining(
+              org.id,
+              userId as string,
+              campaign.failureTrainingId as string,
+              (campaign.createdBy || userId) as string
+            );
             target.trainingAssigned = true;
           }
 
@@ -470,7 +497,7 @@ export class PhishingService {
 
   async reportPhishing(dto: ReportPhishingDto): Promise<{ success: boolean; message: string }> {
     const { campaignId, userId } = this.decodeTrackingToken(dto.trackingToken);
-    
+
     const orgs = await this.prisma.organization.findMany({
       select: { id: true, settings: true },
     });
@@ -478,10 +505,12 @@ export class PhishingService {
     for (const org of orgs) {
       const settings = (org.settings as Record<string, unknown>) || {};
       const campaigns = (settings.phishingCampaigns as Array<Record<string, unknown>>) || [];
-      
-      const campaign = campaigns.find(c => c.id === campaignId);
+
+      const campaign = campaigns.find((c) => c.id === campaignId);
       if (campaign) {
-        const target = (campaign.targets as Array<Record<string, unknown>>).find((t) => t.userId === userId);
+        const target = (campaign.targets as Array<Record<string, unknown>>).find(
+          (t) => t.userId === userId
+        );
         if (target) {
           target.reportedAt = new Date();
           target.status = TargetStatus.REPORTED;
@@ -490,7 +519,8 @@ export class PhishingService {
 
           return {
             success: true,
-            message: 'Thank you for reporting this email! This was a phishing simulation. Great job identifying it!',
+            message:
+              'Thank you for reporting this email! This was a phishing simulation. Great job identifying it!',
           };
         }
       }
@@ -542,7 +572,7 @@ export class PhishingService {
           'Sender email uses external domain (company-security.com)',
           'Creates urgency with 24-hour deadline',
           'Generic greeting without your name',
-          'Link doesn\'t go to official company domain',
+          "Link doesn't go to official company domain",
         ],
         tags: ['password', 'IT', 'credential'],
         isActive: true,
@@ -567,7 +597,8 @@ export class PhishingService {
             <p>Best regards,<br>Accounts Receivable</p>
           </div>
         `,
-        textBody: 'URGENT: Invoice #INV-2024-3847 for $4,287.50 is past due. Pay now: {{TRACKING_URL}}',
+        textBody:
+          'URGENT: Invoice #INV-2024-3847 for $4,287.50 is past due. Pay now: {{TRACKING_URL}}',
         redFlags: [
           'Unexpected invoice from unknown sender',
           'Creates urgency with "URGENT" in subject',
@@ -598,7 +629,8 @@ export class PhishingService {
             <p style="font-size: 12px; color: #666;">Sent from my iPhone</p>
           </div>
         `,
-        textBody: 'Hi, Are you available? I need your help purchasing some gift cards urgently. Reply to let me know.',
+        textBody:
+          'Hi, Are you available? I need your help purchasing some gift cards urgently. Reply to let me know.',
         redFlags: [
           'CEO asking for gift cards is a major red flag',
           'Request to keep it confidential',
@@ -623,7 +655,10 @@ export class PhishingService {
     return (settings.phishingTemplates as PhishingTemplateDto[]) || [];
   }
 
-  private async updateCampaign(organizationId: string, campaign: Record<string, unknown>): Promise<void> {
+  private async updateCampaign(
+    organizationId: string,
+    campaign: Record<string, unknown>
+  ): Promise<void> {
     const org = await this.prisma.organization.findUnique({
       where: { id: organizationId },
       select: { settings: true },
@@ -632,7 +667,7 @@ export class PhishingService {
     const settings = (org?.settings as Record<string, unknown>) || {};
     const campaigns = (settings.phishingCampaigns as Array<Record<string, unknown>>) || [];
 
-    const index = campaigns.findIndex(c => c.id === campaign.id);
+    const index = campaigns.findIndex((c) => c.id === campaign.id);
     if (index !== -1) {
       campaigns[index] = campaign;
     }
@@ -661,10 +696,11 @@ export class PhishingService {
         const trackingUrl = `http://${trackingDomain}/api/phishing/track/click?t=${target.trackingToken}`;
         const openTrackingUrl = `http://${trackingDomain}/api/phishing/track/open?t=${target.trackingToken}`;
 
-        const htmlBody = template.htmlBody
-          .replace(/{{TRACKING_URL}}/g, trackingUrl)
-          .replace(/{{NAME}}/g, (target.name as string) || 'User')
-          + `<img src="${openTrackingUrl}" width="1" height="1" style="display:none;" />`;
+        const htmlBody =
+          template.htmlBody
+            .replace(/{{TRACKING_URL}}/g, trackingUrl)
+            .replace(/{{NAME}}/g, (target.name as string) || 'User') +
+          `<img src="${openTrackingUrl}" width="1" height="1" style="display:none;" />`;
 
         const textBody = template.textBody
           .replace(/{{TRACKING_URL}}/g, trackingUrl)
@@ -681,19 +717,26 @@ export class PhishingService {
         target.status = TargetStatus.SENT;
         (campaign.sentCount as number)++;
 
-        this.logger.log(`Sent phishing email to ${maskEmail(target.email)} for campaign ${campaign.id}`);
+        this.logger.log(
+          `Sent phishing email to ${maskEmail(target.email)} for campaign ${campaign.id}`
+        );
       } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        this.logger.error(`Failed to send phishing email to ${maskEmail(target.email)}: ${errorMessage}`);
+        this.logger.error(
+          `Failed to send phishing email to ${maskEmail(target.email)}: ${errorMessage}`
+        );
         target.status = TargetStatus.BOUNCED;
       }
     }
   }
 
-  private async sendCampaignReport(organizationId: string, campaign: Record<string, unknown>): Promise<void> {
+  private async sendCampaignReport(
+    organizationId: string,
+    campaign: Record<string, unknown>
+  ): Promise<void> {
     // Send summary report to configured recipients
     const results = await this.getCampaignResults(organizationId, campaign.id as string);
-    
+
     const reportHtml = `
       <h2>Phishing Campaign Report: ${campaign.name}</h2>
       <p>Campaign completed on ${new Date().toLocaleDateString()}</p>
@@ -725,18 +768,20 @@ export class PhishingService {
     assignedBy: string
   ): Promise<void> {
     // Create training assignment
-    await this.prisma.trainingAssignment.create({
-      data: {
-        moduleId: trainingId,
-        userId,
-        organizationId,
-        assignedBy,
-        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Due in 7 days
-        status: 'pending',
-      },
-    }).catch(err => {
-      this.logger.warn(`Failed to assign training: ${err.message}`);
-    });
+    await this.prisma.trainingAssignment
+      .create({
+        data: {
+          moduleId: trainingId,
+          userId,
+          organizationId,
+          assignedBy,
+          dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Due in 7 days
+          status: 'pending',
+        },
+      })
+      .catch((err) => {
+        this.logger.warn(`Failed to assign training: ${err.message}`);
+      });
   }
 
   private generateTrackingToken(campaignId: string, userId: string): string {
@@ -764,12 +809,12 @@ export class PhishingService {
       if (!signature || signature.length !== expectedSignature.length) {
         throw new Error('Invalid token signature');
       }
-      
+
       const signatureValid = timingSafeEqual(
         Buffer.from(signature),
         Buffer.from(expectedSignature)
       );
-      
+
       if (!signatureValid) {
         throw new Error('Invalid token signature');
       }
@@ -800,4 +845,3 @@ export class PhishingService {
     };
   }
 }
-

@@ -36,7 +36,11 @@ export class KeycloakAdminService {
     this.baseUrl = process.env.KEYCLOAK_URL || 'http://localhost:8080';
     this.realm = process.env.KEYCLOAK_REALM || 'gigachad-grc';
     this.clientId = process.env.KEYCLOAK_ADMIN_CLIENT_ID || 'grc-services';
-    this.clientSecret = process.env.KEYCLOAK_ADMIN_CLIENT_SECRET || 'grc-services-secret-change-me';
+    const clientSecret = process.env.KEYCLOAK_ADMIN_CLIENT_SECRET;
+    if (!clientSecret) {
+      throw new Error('KEYCLOAK_ADMIN_CLIENT_SECRET environment variable is required');
+    }
+    this.clientSecret = clientSecret;
   }
 
   private async getAccessToken(): Promise<string> {
@@ -63,31 +67,24 @@ export class KeycloakAdminService {
       throw new Error(`Failed to get Keycloak access token: ${response.statusText}`);
     }
 
-    const data = await response.json() as { access_token: string; expires_in: number };
+    const data = (await response.json()) as { access_token: string; expires_in: number };
     this.accessToken = data.access_token;
-    this.tokenExpiry = Date.now() + (data.expires_in * 1000);
+    this.tokenExpiry = Date.now() + data.expires_in * 1000;
 
     return this.accessToken as string;
   }
 
-  private async request<T>(
-    method: string,
-    path: string,
-    body?: unknown
-  ): Promise<T> {
+  private async request<T>(method: string, path: string, body?: unknown): Promise<T> {
     const token = await this.getAccessToken();
-    
-    const response = await fetch(
-      `${this.baseUrl}/admin/realms/${this.realm}${path}`,
-      {
-        method,
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: body ? JSON.stringify(body) : undefined,
-      }
-    );
+
+    const response = await fetch(`${this.baseUrl}/admin/realms/${this.realm}${path}`, {
+      method,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
 
     if (!response.ok) {
       const error = await response.text();
@@ -137,17 +134,14 @@ export class KeycloakAdminService {
         : undefined,
     };
 
-    const response = await fetch(
-      `${this.baseUrl}/admin/realms/${this.realm}/users`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${await this.getAccessToken()}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userData),
-      }
-    );
+    const response = await fetch(`${this.baseUrl}/admin/realms/${this.realm}/users`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${await this.getAccessToken()}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(userData),
+    });
 
     if (!response.ok) {
       const error = await response.text();
@@ -180,37 +174,23 @@ export class KeycloakAdminService {
 
   async assignRealmRoles(userId: string, roleNames: string[]): Promise<void> {
     // Get all realm roles
-    const allRoles = await this.request<{ id: string; name: string }[]>(
-      'GET',
-      '/roles'
-    );
+    const allRoles = await this.request<{ id: string; name: string }[]>('GET', '/roles');
 
     // Filter to requested roles
-    const rolesToAssign = allRoles.filter(r => roleNames.includes(r.name));
+    const rolesToAssign = allRoles.filter((r) => roleNames.includes(r.name));
 
     if (rolesToAssign.length > 0) {
-      await this.request(
-        'POST',
-        `/users/${userId}/role-mappings/realm`,
-        rolesToAssign
-      );
+      await this.request('POST', `/users/${userId}/role-mappings/realm`, rolesToAssign);
     }
   }
 
   async removeRealmRoles(userId: string, roleNames: string[]): Promise<void> {
-    const allRoles = await this.request<{ id: string; name: string }[]>(
-      'GET',
-      '/roles'
-    );
+    const allRoles = await this.request<{ id: string; name: string }[]>('GET', '/roles');
 
-    const rolesToRemove = allRoles.filter(r => roleNames.includes(r.name));
+    const rolesToRemove = allRoles.filter((r) => roleNames.includes(r.name));
 
     if (rolesToRemove.length > 0) {
-      await this.request(
-        'DELETE',
-        `/users/${userId}/role-mappings/realm`,
-        rolesToRemove
-      );
+      await this.request('DELETE', `/users/${userId}/role-mappings/realm`, rolesToRemove);
     }
   }
 
@@ -219,14 +199,10 @@ export class KeycloakAdminService {
       'GET',
       `/users/${userId}/role-mappings/realm`
     );
-    return roles.map(r => r.name);
+    return roles.map((r) => r.name);
   }
 
-  async setUserAttribute(
-    userId: string,
-    key: string,
-    value: string
-  ): Promise<void> {
+  async setUserAttribute(userId: string, key: string, value: string): Promise<void> {
     const user = await this.getUser(userId);
     if (!user) {
       throw new Error('User not found');
@@ -238,11 +214,7 @@ export class KeycloakAdminService {
     await this.updateUser(userId, { attributes });
   }
 
-  async resetPassword(
-    userId: string,
-    password: string,
-    temporary = true
-  ): Promise<void> {
+  async resetPassword(userId: string, password: string, temporary = true): Promise<void> {
     await this.request('PUT', `/users/${userId}/reset-password`, {
       type: 'password',
       value: password,
@@ -250,4 +222,3 @@ export class KeycloakAdminService {
     });
   }
 }
-
