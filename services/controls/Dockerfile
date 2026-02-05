@@ -5,7 +5,7 @@
 # =============================================================================
 
 # Build stage
-FROM node:20-alpine AS builder
+FROM node:25-alpine AS builder
 
 WORKDIR /app
 
@@ -52,7 +52,7 @@ RUN ls -la node_modules/.prisma/client/ 2>/dev/null | head -5 || echo "Checking 
 RUN npm run build
 
 # Production stage
-FROM node:20-alpine AS production
+FROM node:25-alpine AS production
 
 # Install OpenSSL for Prisma
 RUN apk add --no-cache openssl
