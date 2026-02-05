@@ -79,19 +79,19 @@ jobs:
       - name: TypeScript compilation check
         run: npx tsc --noEmit
         working-directory: services/${{ matrix.service }}
-        continue-on-error: true  # Some services have pre-existing type issues
+        continue-on-error: true # Some services have pre-existing type issues
 
       - name: ESLint validation
         run: npm run lint --if-present
         working-directory: services/${{ matrix.service }}
-        continue-on-error: true  # Some services have ESLint config issues
+        continue-on-error: true # Some services have ESLint config issues
 
       - name: Run unit tests
         run: npm test --if-present
         working-directory: services/${{ matrix.service }}
-        continue-on-error: true  # Tests may not be fully implemented yet
+        continue-on-error: true # Tests may not be fully implemented yet
 
-  # Security scanning
+  # Security scanning - BLOCKING: PRs cannot merge with security issues
   security:
     name: Security Scanning
     runs-on: ubuntu-latest
@@ -106,18 +106,22 @@ jobs:
           cache: 'npm'
           cache-dependency-path: package-lock.json
 
-      - name: Run npm audit
-        run: npm audit --audit-level=high
-        continue-on-error: true
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Run Trivy vulnerability scanner
+      - name: Run npm audit (BLOCKING)
+        run: npm audit --audit-level=high
+        # Security check is now blocking - no continue-on-error
+
+      - name: Run Trivy vulnerability scanner (BLOCKING)
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'fs'
           scan-ref: '.'
           severity: 'CRITICAL,HIGH'
-          exit-code: '0'  # Don't fail on vulnerabilities for now
+          exit-code: '1' # BLOCKING: Fail on HIGH/CRITICAL vulnerabilities
           format: 'table'
+          ignore-unfixed: true # Only fail on vulnerabilities with available fixes
 
   # Docker build check
   docker:
@@ -146,7 +150,7 @@ jobs:
           cache-to: type=gha,mode=max
         env:
           DOCKER_BUILDKIT: 1
-        continue-on-error: true  # Some services have TypeScript build issues
+        continue-on-error: true # Some services have TypeScript build issues
 
   # Final status check
   status:
@@ -158,8 +162,9 @@ jobs:
       - name: Check all jobs status
         run: |
           if [ "${{ needs.frontend.result }}" == "failure" ] || \
-             [ "${{ needs.backend.result }}" == "failure" ]; then
+             [ "${{ needs.backend.result }}" == "failure" ] || \
+             [ "${{ needs.security.result }}" == "failure" ]; then
             echo "Required checks failed"
             exit 1
           fi
-          echo "All required checks passed"
+          echo "All required checks passed (frontend, backend, security)"
