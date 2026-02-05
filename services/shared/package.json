@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.450.0",
-    "@aws-sdk/s3-request-presigner": "^3.450.0",
+    "@aws-sdk/s3-request-presigner": "^3.983.0",
     "@azure/storage-blob": "^12.17.0",
     "@nestjs/throttler": "^6.5.0",
     "@prisma/client": "^5.22.0",
