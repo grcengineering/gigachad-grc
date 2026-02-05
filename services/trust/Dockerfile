@@ -1,5 +1,5 @@
 # Build stage - Using Docker Hardened Image
-FROM node:20-alpine AS builder
+FROM node:25-alpine AS builder
 
 WORKDIR /app
 
@@ -40,7 +40,7 @@ RUN npx prisma generate --schema=../shared/prisma/schema.prisma
 RUN npm run build
 
 # Production stage - Using Docker Hardened Image
-FROM node:20-alpine AS production
+FROM node:25-alpine AS production
 
 # Install OpenSSL for Prisma
 USER root
