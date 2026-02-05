@@ -31,9 +31,14 @@ async function bootstrap() {
     })
   );
 
-  // CORS
+  // CORS - fail fast in production if not configured
+  const corsOrigins = process.env.CORS_ORIGINS?.split(',');
+  if (!corsOrigins && process.env.NODE_ENV === 'production') {
+    logger.error('CORS_ORIGINS environment variable is required in production');
+    process.exit(1);
+  }
   app.enableCors({
-    origin: process.env.CORS_ORIGINS?.split(',') || ['http://localhost:3000'],
+    origin: corsOrigins || ['http://localhost:3000'],
     credentials: true,
   });
 

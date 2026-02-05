@@ -3,6 +3,16 @@ variable "name_prefix" {
   type        = string
 }
 
+variable "database_secret_arn" {
+  description = "ARN of the database credentials secret"
+  type        = string
+}
+
+variable "keycloak_secret_arn" {
+  description = "ARN of the Keycloak credentials secret"
+  type        = string
+}
+
 variable "environment" {
   description = "Environment name (dev, staging, prod)"
   type        = string
