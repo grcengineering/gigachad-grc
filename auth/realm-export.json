@@ -3,7 +3,7 @@
   "realm": "gigachad-grc",
   "displayName": "GigaChad GRC",
   "enabled": true,
-  "sslRequired": "none",
+  "sslRequired": "external",
   "registrationAllowed": false,
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,
@@ -69,7 +69,7 @@
   ],
   "defaultRoles": ["viewer"],
   "requiredCredentials": ["password"],
-  "passwordPolicy": "",
+  "passwordPolicy": "length(12) and upperCase(1) and lowerCase(1) and digits(1) and specialChars(1) and notUsername and passwordHistory(5)",
   "clients": [
     {
       "clientId": "grc-frontend",
@@ -79,7 +79,7 @@
       "publicClient": true,
       "standardFlowEnabled": true,
       "implicitFlowEnabled": false,
-      "directAccessGrantsEnabled": true,
+      "directAccessGrantsEnabled": false,
       "serviceAccountsEnabled": false,
       "protocol": "openid-connect",
       "rootUrl": "http://localhost:3000",
@@ -168,65 +168,7 @@
       "defaultClientScopes": ["web-origins", "acr", "profile", "roles", "email"]
     }
   ],
-  "users": [
-    {
-      "username": "admin",
-      "email": "admin@gigachad-grc.local",
-      "emailVerified": true,
-      "enabled": true,
-      "firstName": "System",
-      "lastName": "Administrator",
-      "credentials": [
-        {
-          "type": "password",
-          "value": "admin",
-          "temporary": true
-        }
-      ],
-      "realmRoles": ["admin"],
-      "attributes": {
-        "organization_id": ["default"]
-      }
-    },
-    {
-      "username": "compliance_manager",
-      "email": "compliance@gigachad-grc.local",
-      "emailVerified": true,
-      "enabled": true,
-      "firstName": "Compliance",
-      "lastName": "Manager",
-      "credentials": [
-        {
-          "type": "password",
-          "value": "compliance",
-          "temporary": true
-        }
-      ],
-      "realmRoles": ["compliance_manager"],
-      "attributes": {
-        "organization_id": ["default"]
-      }
-    },
-    {
-      "username": "auditor",
-      "email": "auditor@gigachad-grc.local",
-      "emailVerified": true,
-      "enabled": true,
-      "firstName": "External",
-      "lastName": "Auditor",
-      "credentials": [
-        {
-          "type": "password",
-          "value": "auditor",
-          "temporary": true
-        }
-      ],
-      "realmRoles": ["auditor"],
-      "attributes": {
-        "organization_id": ["default"]
-      }
-    }
-  ],
+  "users": [],
   "browserSecurityHeaders": {
     "contentSecurityPolicyReportOnly": "",
     "xContentTypeOptions": "nosniff",

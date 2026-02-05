@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAuditDto } from './dto/create-audit.dto';
@@ -46,11 +46,14 @@ export class AuditsService {
     });
   }
 
-  async findAll(organizationId: string, filters?: {
-    status?: string;
-    auditType?: string;
-    isExternal?: boolean;
-  }) {
+  async findAll(
+    organizationId: string,
+    filters?: {
+      status?: string;
+      auditType?: string;
+      isExternal?: boolean;
+    }
+  ) {
     const where: Record<string, unknown> = { organizationId, deletedAt: null };
 
     if (filters?.status) {
@@ -102,6 +105,15 @@ export class AuditsService {
   }
 
   async update(id: string, organizationId: string, updateAuditDto: UpdateAuditDto) {
+    // Verify the audit belongs to this organization before updating
+    const existingAudit = await this.prisma.audit.findFirst({
+      where: { id, organizationId, deletedAt: null },
+    });
+
+    if (!existingAudit) {
+      throw new NotFoundException(`Audit with ID ${id} not found`);
+    }
+
     // Update finding counts if status is changing to completed
     let updates: Record<string, unknown> = { ...updateAuditDto };
 
@@ -163,6 +175,15 @@ export class AuditsService {
   }
 
   async delete(id: string, organizationId: string, userId?: string) {
+    // Verify the audit belongs to this organization before deleting
+    const existingAudit = await this.prisma.audit.findFirst({
+      where: { id, organizationId, deletedAt: null },
+    });
+
+    if (!existingAudit) {
+      throw new NotFoundException(`Audit with ID ${id} not found`);
+    }
+
     // Soft delete
     return this.prisma.audit.update({
       where: { id },
@@ -178,7 +199,10 @@ export class AuditsService {
       await Promise.all([
         this.prisma.audit.count({ where: { organizationId } }),
         this.prisma.audit.count({
-          where: { organizationId, status: { in: ['planning', 'fieldwork', 'testing', 'reporting'] } },
+          where: {
+            organizationId,
+            status: { in: ['planning', 'fieldwork', 'testing', 'reporting'] },
+          },
         }),
         this.prisma.audit.count({ where: { organizationId, status: 'completed' } }),
         this.prisma.audit.groupBy({
@@ -237,6 +261,12 @@ export class AuditsService {
   }
 
   private generateAccessCode(): string {
-    return randomBytes(6).toString('hex').toUpperCase().match(/.{1,4}/g)?.join('-') || randomBytes(6).toString('hex').toUpperCase();
+    return (
+      randomBytes(6)
+        .toString('hex')
+        .toUpperCase()
+        .match(/.{1,4}/g)
+        ?.join('-') || randomBytes(6).toString('hex').toUpperCase()
+    );
   }
 }

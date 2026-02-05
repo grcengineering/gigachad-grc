@@ -57,7 +57,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required - set a strong password}
       POSTGRES_DB: ${POSTGRES_DB:-gigachad_grc}
     ports:
-      - '5433:5432' # Using 5433 externally to avoid conflicts
+      - '127.0.0.1:5433:5432' # Using 5433 externally to avoid conflicts
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./database/init:/docker-entrypoint-initdb.d
@@ -89,7 +89,7 @@ services:
     # Run: export REDIS_PASSWORD=$(openssl rand -base64 32)
     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
     ports:
-      - '6380:6379' # Using 6380 externally to avoid conflicts
+      - '127.0.0.1:6380:6379' # Using 6380 externally to avoid conflicts
     volumes:
       - redis_data:/data
     networks:
@@ -202,7 +202,7 @@ services:
       KEYCLOAK_URL: http://keycloak:8080
       KEYCLOAK_REALM: ${KEYCLOAK_REALM:-gigachad-grc}
       # Security secrets
-      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?ENCRYPTION_KEY is required}
       JWT_SECRET: ${JWT_SECRET:-}
       SESSION_SECRET: ${SESSION_SECRET:-}
       PHISHING_TRACKING_SECRET: ${PHISHING_TRACKING_SECRET:?PHISHING_TRACKING_SECRET is required}
@@ -526,7 +526,7 @@ services:
       - prometheus_data:/prometheus
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     ports:
-      - '9090:9090'
+      - '127.0.0.1:9090:9090'
     networks:
       - grc-network
     restart: unless-stopped
