@@ -392,10 +392,6 @@ resource "aws_ecs_task_definition" "controls" {
           value = var.database_username
         },
         {
-          name  = "DATABASE_PASSWORD"
-          value = var.database_password
-        },
-        {
           name  = "DATABASE_URL"
           value = "postgresql://${var.database_username}:${var.database_password}@${var.database_host}:${var.database_port}/${var.database_name}"
         },
@@ -430,10 +426,17 @@ resource "aws_ecs_task_definition" "controls" {
         {
           name  = "KEYCLOAK_CLIENT_ID"
           value = var.keycloak_client_id
+        }
+      ]
+
+      secrets = [
+        {
+          name      = "DATABASE_PASSWORD"
+          valueFrom = "${var.database_secret_arn}:password::"
         },
         {
-          name  = "KEYCLOAK_CLIENT_SECRET"
-          value = var.keycloak_client_secret
+          name      = "KEYCLOAK_CLIENT_SECRET"
+          valueFrom = "${var.keycloak_secret_arn}:client_secret::"
         }
       ]
 
@@ -511,10 +514,6 @@ resource "aws_ecs_task_definition" "frameworks" {
           value = var.database_username
         },
         {
-          name  = "DATABASE_PASSWORD"
-          value = var.database_password
-        },
-        {
           name  = "DATABASE_URL"
           value = "postgresql://${var.database_username}:${var.database_password}@${var.database_host}:${var.database_port}/${var.database_name}"
         },
@@ -551,12 +550,19 @@ resource "aws_ecs_task_definition" "frameworks" {
           value = var.keycloak_client_id
         },
         {
-          name  = "KEYCLOAK_CLIENT_SECRET"
-          value = var.keycloak_client_secret
-        },
-        {
           name  = "CONTROLS_SERVICE_URL"
           value = "http://controls.${var.name_prefix}.local:3001"
+        }
+      ]
+
+      secrets = [
+        {
+          name      = "DATABASE_PASSWORD"
+          valueFrom = "${var.database_secret_arn}:password::"
+        },
+        {
+          name      = "KEYCLOAK_CLIENT_SECRET"
+          valueFrom = "${var.keycloak_secret_arn}:client_secret::"
         }
       ]
 
@@ -634,10 +640,6 @@ resource "aws_ecs_task_definition" "policies" {
           value = var.database_username
         },
         {
-          name  = "DATABASE_PASSWORD"
-          value = var.database_password
-        },
-        {
           name  = "DATABASE_URL"
           value = "postgresql://${var.database_username}:${var.database_password}@${var.database_host}:${var.database_port}/${var.database_name}"
         },
@@ -672,10 +674,17 @@ resource "aws_ecs_task_definition" "policies" {
         {
           name  = "KEYCLOAK_CLIENT_ID"
           value = var.keycloak_client_id
+        }
+      ]
+
+      secrets = [
+        {
+          name      = "DATABASE_PASSWORD"
+          valueFrom = "${var.database_secret_arn}:password::"
         },
         {
-          name  = "KEYCLOAK_CLIENT_SECRET"
-          value = var.keycloak_client_secret
+          name      = "KEYCLOAK_CLIENT_SECRET"
+          valueFrom = "${var.keycloak_secret_arn}:client_secret::"
         }
       ]
 
@@ -753,10 +762,6 @@ resource "aws_ecs_task_definition" "tprm" {
           value = var.database_username
         },
         {
-          name  = "DATABASE_PASSWORD"
-          value = var.database_password
-        },
-        {
           name  = "DATABASE_URL"
           value = "postgresql://${var.database_username}:${var.database_password}@${var.database_host}:${var.database_port}/${var.database_name}"
         },
@@ -793,12 +798,19 @@ resource "aws_ecs_task_definition" "tprm" {
           value = var.keycloak_client_id
         },
         {
-          name  = "KEYCLOAK_CLIENT_SECRET"
-          value = var.keycloak_client_secret
-        },
-        {
           name  = "POLICIES_SERVICE_URL"
           value = "http://policies.${var.name_prefix}.local:3004"
+        }
+      ]
+
+      secrets = [
+        {
+          name      = "DATABASE_PASSWORD"
+          valueFrom = "${var.database_secret_arn}:password::"
+        },
+        {
+          name      = "KEYCLOAK_CLIENT_SECRET"
+          valueFrom = "${var.keycloak_secret_arn}:client_secret::"
         }
       ]
 
@@ -876,10 +888,6 @@ resource "aws_ecs_task_definition" "trust" {
           value = var.database_username
         },
         {
-          name  = "DATABASE_PASSWORD"
-          value = var.database_password
-        },
-        {
           name  = "DATABASE_URL"
           value = "postgresql://${var.database_username}:${var.database_password}@${var.database_host}:${var.database_port}/${var.database_name}"
         },
@@ -914,10 +922,17 @@ resource "aws_ecs_task_definition" "trust" {
         {
           name  = "KEYCLOAK_CLIENT_ID"
           value = var.keycloak_client_id
+        }
+      ]
+
+      secrets = [
+        {
+          name      = "DATABASE_PASSWORD"
+          valueFrom = "${var.database_secret_arn}:password::"
         },
         {
-          name  = "KEYCLOAK_CLIENT_SECRET"
-          value = var.keycloak_client_secret
+          name      = "KEYCLOAK_CLIENT_SECRET"
+          valueFrom = "${var.keycloak_secret_arn}:client_secret::"
         }
       ]
 
@@ -995,10 +1010,6 @@ resource "aws_ecs_task_definition" "audit" {
           value = var.database_username
         },
         {
-          name  = "DATABASE_PASSWORD"
-          value = var.database_password
-        },
-        {
           name  = "DATABASE_URL"
           value = "postgresql://${var.database_username}:${var.database_password}@${var.database_host}:${var.database_port}/${var.database_name}"
         },
@@ -1033,10 +1044,17 @@ resource "aws_ecs_task_definition" "audit" {
         {
           name  = "KEYCLOAK_CLIENT_ID"
           value = var.keycloak_client_id
+        }
+      ]
+
+      secrets = [
+        {
+          name      = "DATABASE_PASSWORD"
+          valueFrom = "${var.database_secret_arn}:password::"
         },
         {
-          name  = "KEYCLOAK_CLIENT_SECRET"
-          value = var.keycloak_client_secret
+          name      = "KEYCLOAK_CLIENT_SECRET"
+          valueFrom = "${var.keycloak_secret_arn}:client_secret::"
         }
       ]
 

@@ -9,11 +9,17 @@ export class RecoveryStrategiesService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly auditService: AuditService,
+    private readonly auditService: AuditService
   ) {}
 
-  async findAll(organizationId: string, filters?: { search?: string; strategyType?: string; processId?: string }) {
+  async findAll(
+    organizationId: string,
+    filters?: { search?: string; strategyType?: string; processId?: string }
+  ) {
     const { search, strategyType, processId } = filters || {};
+
+    // Use parameterized queries with NULL checks for conditional filtering
+    const searchPattern = search ? `%${search}%` : null;
 
     const strategies = await this.prisma.$queryRaw<any[]>`
       SELECT rs.*, 
@@ -22,9 +28,9 @@ export class RecoveryStrategiesService {
       LEFT JOIN bcdr.business_processes bp ON rs.process_id = bp.id
       WHERE rs.organization_id = ${organizationId}::uuid
         AND rs.deleted_at IS NULL
-        ${search ? this.prisma.$queryRaw`AND rs.name ILIKE ${'%' + search + '%'}` : this.prisma.$queryRaw``}
-        ${strategyType ? this.prisma.$queryRaw`AND rs.strategy_type = ${strategyType}` : this.prisma.$queryRaw``}
-        ${processId ? this.prisma.$queryRaw`AND rs.process_id = ${processId}::uuid` : this.prisma.$queryRaw``}
+        AND (${searchPattern}::text IS NULL OR rs.name ILIKE ${searchPattern})
+        AND (${strategyType}::text IS NULL OR rs.strategy_type = ${strategyType})
+        AND (${processId}::text IS NULL OR rs.process_id = ${processId}::uuid)
       ORDER BY rs.name ASC
     `;
 
@@ -74,7 +80,7 @@ export class RecoveryStrategiesService {
     userId: string,
     dto: CreateRecoveryStrategyDto,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     const result = await this.prisma.$queryRaw<any[]>`
       INSERT INTO bcdr.recovery_strategies (
@@ -119,7 +125,7 @@ export class RecoveryStrategiesService {
     userId: string,
     dto: Partial<CreateRecoveryStrategyDto>,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     await this.findOne(id, organizationId);
 
@@ -127,10 +133,23 @@ export class RecoveryStrategiesService {
     // Only these hardcoded column names can be included in the query.
     // This prevents SQL injection even though column names come from code, not user input.
     const ALLOWED_COLUMNS = new Set([
-      'name', 'description', 'strategy_type', 'process_id', 'recovery_location',
-      'recovery_procedure', 'estimated_recovery_time_hours', 'estimated_cost',
-      'required_personnel', 'required_equipment', 'required_data', 'vendor_name',
-      'vendor_contact', 'contract_reference', 'tags', 'updated_by', 'updated_at',
+      'name',
+      'description',
+      'strategy_type',
+      'process_id',
+      'recovery_location',
+      'recovery_procedure',
+      'estimated_recovery_time_hours',
+      'estimated_cost',
+      'required_personnel',
+      'required_equipment',
+      'required_data',
+      'vendor_name',
+      'vendor_contact',
+      'contract_reference',
+      'tags',
+      'updated_by',
+      'updated_at',
     ]);
 
     const updates: string[] = ['updated_by = $2::uuid', 'updated_at = NOW()'];
@@ -200,7 +219,7 @@ export class RecoveryStrategiesService {
     // 3. No user input is interpolated into column names
     const result = await this.prisma.$queryRawUnsafe<any[]>(
       `UPDATE bcdr.recovery_strategies SET ${updates.join(', ')} WHERE id = $1::uuid RETURNING *`,
-      ...values,
+      ...values
     );
 
     const strategy = result[0];
@@ -226,7 +245,7 @@ export class RecoveryStrategiesService {
     organizationId: string,
     userId: string,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     const strategy = await this.findOne(id, organizationId);
 
@@ -286,4 +305,3 @@ export class RecoveryStrategiesService {
     return stats[0];
   }
 }
-

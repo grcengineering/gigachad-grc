@@ -16,6 +16,7 @@ import {
   TrainingStatus,
   AssignmentStatus,
 } from './dto/training.dto';
+import { sanitizeFilename } from '@gigachad-grc/shared';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
@@ -95,7 +96,7 @@ export class TrainingService {
     organizationId: string,
     userId: string,
     moduleId: string,
-    dto: UpdateProgressDto,
+    dto: UpdateProgressDto
   ) {
     const progress = await this.prisma.trainingProgress.findFirst({
       where: { userId, moduleId },
@@ -220,12 +221,13 @@ export class TrainingService {
       },
     });
 
-    const completed = allProgress.filter(p => p.status === TrainingStatus.completed);
-    const inProgress = allProgress.filter(p => p.status === TrainingStatus.in_progress);
+    const completed = allProgress.filter((p) => p.status === TrainingStatus.completed);
+    const inProgress = allProgress.filter((p) => p.status === TrainingStatus.in_progress);
     const totalTime = allProgress.reduce((acc, p) => acc + p.timeSpent, 0);
-    const avgScore = completed.length > 0
-      ? completed.reduce((acc, p) => acc + (p.score || 0), 0) / completed.length
-      : 0;
+    const avgScore =
+      completed.length > 0
+        ? completed.reduce((acc, p) => acc + (p.score || 0), 0) / completed.length
+        : 0;
 
     const xp = completed.length * 100 + inProgress.length * 25;
     const level = Math.floor(xp / 200) + 1;
@@ -561,33 +563,30 @@ export class TrainingService {
       activeCampaigns,
     ] = await Promise.all([
       this.prisma.trainingProgress.count({ where: { organizationId } }),
-      this.prisma.trainingProgress.count({ 
-        where: { organizationId, status: TrainingStatus.completed } 
+      this.prisma.trainingProgress.count({
+        where: { organizationId, status: TrainingStatus.completed },
       }),
       this.prisma.trainingAssignment.count({ where: { organizationId } }),
-      this.prisma.trainingAssignment.count({ 
-        where: { organizationId, status: AssignmentStatus.completed } 
+      this.prisma.trainingAssignment.count({
+        where: { organizationId, status: AssignmentStatus.completed },
       }),
-      this.prisma.trainingAssignment.count({ 
-        where: { organizationId, status: AssignmentStatus.overdue } 
+      this.prisma.trainingAssignment.count({
+        where: { organizationId, status: AssignmentStatus.overdue },
       }),
-      this.prisma.trainingCampaign.count({ 
-        where: { organizationId, isActive: true } 
+      this.prisma.trainingCampaign.count({
+        where: { organizationId, isActive: true },
       }),
     ]);
 
     return {
       totalProgress,
       completedProgress,
-      completionRate: totalProgress > 0 
-        ? Math.round((completedProgress / totalProgress) * 100) 
-        : 0,
+      completionRate: totalProgress > 0 ? Math.round((completedProgress / totalProgress) * 100) : 0,
       totalAssignments,
       completedAssignments,
       overdueAssignments,
-      assignmentCompletionRate: totalAssignments > 0 
-        ? Math.round((completedAssignments / totalAssignments) * 100) 
-        : 0,
+      assignmentCompletionRate:
+        totalAssignments > 0 ? Math.round((completedAssignments / totalAssignments) * 100) : 0,
       activeCampaigns,
     };
   }
@@ -733,7 +732,7 @@ export class TrainingService {
   async uploadScormPackage(
     organizationId: string,
     moduleId: string,
-    file: { buffer: Buffer; originalname: string },
+    file: { buffer: Buffer; originalname: string }
   ) {
     const module = await this.prisma.customTrainingModule.findFirst({
       where: { id: moduleId, organizationId },
@@ -750,8 +749,11 @@ export class TrainingService {
     // Create upload directory
     fs.mkdirSync(uploadDir, { recursive: true });
 
+    // SECURITY: Sanitize filename to prevent path traversal attacks
+    const safeFilename = sanitizeFilename(file.originalname);
+
     // Save the zip file
-    const zipPath = path.join(uploadDir, file.originalname);
+    const zipPath = path.join(uploadDir, safeFilename);
     fs.writeFileSync(zipPath, file.buffer);
 
     // For now, just store the zip - extraction would require a zip library
@@ -762,7 +764,7 @@ export class TrainingService {
       where: { id: moduleId },
       data: {
         scormPath: folderName,
-        originalFileName: file.originalname,
+        originalFileName: safeFilename,
       },
       include: {
         creator: {
@@ -801,7 +803,7 @@ export class TrainingService {
     });
 
     // Built-in modules
-    const builtInModules = VALID_MODULE_IDS.map(id => ({
+    const builtInModules = VALID_MODULE_IDS.map((id) => ({
       id,
       name: this.getModuleName(id),
       description: '',
@@ -815,7 +817,7 @@ export class TrainingService {
 
     return {
       builtIn: builtInModules,
-      custom: customModules.map(m => ({
+      custom: customModules.map((m) => ({
         ...m,
         isBuiltIn: false,
       })),
@@ -873,10 +875,10 @@ export class TrainingService {
    */
   async launchCampaign(organizationId: string, campaignId: string, assignedBy: string) {
     const campaign = await this.getCampaign(organizationId, campaignId);
-    
+
     const moduleIds = campaign.moduleIds as string[];
     const targetGroups = campaign.targetGroups as string[];
-    
+
     // Get target users based on roles
     let users: { id: string }[];
     if (targetGroups.includes('all')) {
@@ -896,7 +898,7 @@ export class TrainingService {
     }
 
     // Create assignments
-    const userIds = users.map(u => u.id);
+    const userIds = users.map((u) => u.id);
     const result = await this.bulkAssign(organizationId, assignedBy, {
       userIds,
       moduleIds,
@@ -927,7 +929,7 @@ export class TrainingService {
     }
 
     const questionBank = this.getQuestionBank(moduleId);
-    
+
     // Shuffle and select random questions
     const shuffled = questionBank.sort(() => Math.random() - 0.5);
     return shuffled.slice(0, Math.min(count, shuffled.length));
@@ -943,7 +945,7 @@ export class TrainingService {
     answers: { questionId: string; selectedOption: number }[]
   ): Promise<QuizResult> {
     const questionBank = this.getQuestionBank(moduleId);
-    const questionMap = new Map(questionBank.map(q => [q.id, q]));
+    const questionMap = new Map(questionBank.map((q) => [q.id, q]));
 
     let correctCount = 0;
     const results: QuizAnswerResult[] = [];
@@ -1006,7 +1008,8 @@ export class TrainingService {
             'To install updates',
           ],
           correctOption: 1,
-          explanation: 'Phishing attacks aim to trick users into revealing sensitive information like passwords, credit card numbers, or personal data.',
+          explanation:
+            'Phishing attacks aim to trick users into revealing sensitive information like passwords, credit card numbers, or personal data.',
         },
         {
           id: 'ph-2',
@@ -1018,11 +1021,13 @@ export class TrainingService {
             'Email includes your name correctly',
           ],
           correctOption: 2,
-          explanation: 'Creating urgency is a common social engineering tactic to pressure victims into acting without thinking.',
+          explanation:
+            'Creating urgency is a common social engineering tactic to pressure victims into acting without thinking.',
         },
         {
           id: 'ph-3',
-          question: 'What should you do if you receive a suspicious email asking for your password?',
+          question:
+            'What should you do if you receive a suspicious email asking for your password?',
           options: [
             'Reply with your password',
             'Click the link to verify your account',
@@ -1030,7 +1035,8 @@ export class TrainingService {
             'Forward it to your colleagues',
           ],
           correctOption: 2,
-          explanation: 'Always report suspicious emails to your IT or security team and delete them without clicking any links.',
+          explanation:
+            'Always report suspicious emails to your IT or security team and delete them without clicking any links.',
         },
         {
           id: 'ph-4',
@@ -1042,7 +1048,8 @@ export class TrainingService {
             'Phishing via video conferencing',
           ],
           correctOption: 1,
-          explanation: 'Smishing is phishing conducted via SMS (text messages), using the same deceptive tactics.',
+          explanation:
+            'Smishing is phishing conducted via SMS (text messages), using the same deceptive tactics.',
         },
         {
           id: 'ph-5',
@@ -1054,7 +1061,8 @@ export class TrainingService {
             'Phishing via VPN',
           ],
           correctOption: 2,
-          explanation: 'Vishing (voice phishing) uses phone calls to trick victims into revealing information.',
+          explanation:
+            'Vishing (voice phishing) uses phone calls to trick victims into revealing information.',
         },
       ],
       'general-cybersecurity': [
@@ -1068,7 +1076,8 @@ export class TrainingService {
             'Having two email accounts',
           ],
           correctOption: 2,
-          explanation: '2FA adds an extra layer of security by requiring two different forms of verification.',
+          explanation:
+            '2FA adds an extra layer of security by requiring two different forms of verification.',
         },
         {
           id: 'gc-2',
@@ -1080,7 +1089,8 @@ export class TrainingService {
             'Your pet name',
           ],
           correctOption: 2,
-          explanation: 'Strong passwords should be complex, using a mix of uppercase, lowercase, numbers, and special characters.',
+          explanation:
+            'Strong passwords should be complex, using a mix of uppercase, lowercase, numbers, and special characters.',
         },
         {
           id: 'gc-3',
@@ -1092,7 +1102,8 @@ export class TrainingService {
             'Save the email for later',
           ],
           correctOption: 1,
-          explanation: 'Hovering over links reveals the actual destination URL, which may differ from the displayed text.',
+          explanation:
+            'Hovering over links reveals the actual destination URL, which may differ from the displayed text.',
         },
         {
           id: 'gc-4',
@@ -1104,7 +1115,8 @@ export class TrainingService {
             'Updates are optional and not important',
           ],
           correctOption: 1,
-          explanation: 'Software updates often patch security vulnerabilities that attackers could exploit.',
+          explanation:
+            'Software updates often patch security vulnerabilities that attackers could exploit.',
         },
         {
           id: 'gc-5',
@@ -1116,7 +1128,8 @@ export class TrainingService {
             'A legitimate backup service',
           ],
           correctOption: 1,
-          explanation: 'Ransomware encrypts your files and demands payment (ransom) for the decryption key.',
+          explanation:
+            'Ransomware encrypts your files and demands payment (ransom) for the decryption key.',
         },
       ],
       'privacy-awareness': [
@@ -1130,31 +1143,24 @@ export class TrainingService {
             'Programming interface information',
           ],
           correctOption: 1,
-          explanation: 'PII is any data that could be used to identify a specific individual, such as SSN, email, or address.',
+          explanation:
+            'PII is any data that could be used to identify a specific individual, such as SSN, email, or address.',
         },
         {
           id: 'pa-2',
           question: 'Which of the following is considered sensitive PII?',
-          options: [
-            'Company name',
-            'Product prices',
-            'Social Security Number',
-            'Weather data',
-          ],
+          options: ['Company name', 'Product prices', 'Social Security Number', 'Weather data'],
           correctOption: 2,
-          explanation: 'Social Security Numbers, along with financial data and health records, are considered sensitive PII.',
+          explanation:
+            'Social Security Numbers, along with financial data and health records, are considered sensitive PII.',
         },
         {
           id: 'pa-3',
           question: 'What principle states you should only collect data that is necessary?',
-          options: [
-            'Data hoarding',
-            'Data maximization',
-            'Data minimization',
-            'Data expansion',
-          ],
+          options: ['Data hoarding', 'Data maximization', 'Data minimization', 'Data expansion'],
           correctOption: 2,
-          explanation: 'Data minimization means collecting only the data necessary for a specific purpose.',
+          explanation:
+            'Data minimization means collecting only the data necessary for a specific purpose.',
         },
       ],
       'ceo-executive-fraud': [
@@ -1168,11 +1174,13 @@ export class TrainingService {
             'Email marketing campaigns',
           ],
           correctOption: 2,
-          explanation: 'BEC is a scam where criminals impersonate executives or trusted partners to trick employees into transferring money or data.',
+          explanation:
+            'BEC is a scam where criminals impersonate executives or trusted partners to trick employees into transferring money or data.',
         },
         {
           id: 'ceo-2',
-          question: 'A request from your "CEO" asks you to buy gift cards urgently. What should you do?',
+          question:
+            'A request from your "CEO" asks you to buy gift cards urgently. What should you do?',
           options: [
             'Buy them immediately',
             'Ask for the CEO exact amount',
@@ -1180,7 +1188,8 @@ export class TrainingService {
             'Email back asking for more details',
           ],
           correctOption: 2,
-          explanation: 'Always verify unusual requests, especially involving money or gift cards, through a separate communication channel.',
+          explanation:
+            'Always verify unusual requests, especially involving money or gift cards, through a separate communication channel.',
         },
       ],
       'secure-coding': [
@@ -1194,7 +1203,8 @@ export class TrainingService {
             'A SQL learning exercise',
           ],
           correctOption: 1,
-          explanation: 'SQL injection is an attack where malicious SQL code is inserted into application queries to manipulate the database.',
+          explanation:
+            'SQL injection is an attack where malicious SQL code is inserted into application queries to manipulate the database.',
         },
         {
           id: 'sc-2',
@@ -1206,7 +1216,8 @@ export class TrainingService {
             'Use plain text passwords',
           ],
           correctOption: 1,
-          explanation: 'Parameterized queries ensure user input is treated as data, not executable code.',
+          explanation:
+            'Parameterized queries ensure user input is treated as data, not executable code.',
         },
       ],
     };
@@ -1284,10 +1295,13 @@ export class TrainingService {
     };
 
     // Store certificate (in production, save to database)
-    const settings = (await this.prisma.organization.findUnique({
-      where: { id: organizationId },
-      select: { settings: true },
-    }))?.settings as Record<string, unknown> || {};
+    const settings =
+      ((
+        await this.prisma.organization.findUnique({
+          where: { id: organizationId },
+          select: { settings: true },
+        })
+      )?.settings as Record<string, unknown>) || {};
 
     const certificates = (settings.trainingCertificates as Certificate[]) || [];
     certificates.push(certificate);
@@ -1325,7 +1339,7 @@ export class TrainingService {
       select: { email: true },
     });
 
-    return certificates.filter(c => c.recipientEmail === user?.email);
+    return certificates.filter((c) => c.recipientEmail === user?.email);
   }
 
   /**
@@ -1344,8 +1358,8 @@ export class TrainingService {
     for (const org of orgs) {
       const settings = (org.settings as Record<string, unknown>) || {};
       const certificates = (settings.trainingCertificates as Certificate[]) || [];
-      
-      const certificate = certificates.find(c => c.id === certificateId);
+
+      const certificate = certificates.find((c) => c.id === certificateId);
       if (certificate) {
         const isExpired = new Date(certificate.expiresAt) < new Date();
         return {
@@ -1370,13 +1384,13 @@ export class TrainingService {
     htmlContent: string;
   }> {
     const result = await this.verifyCertificate(certificateId);
-    
+
     if (!result.valid || !result.certificate) {
       throw new NotFoundException('Certificate not found or invalid');
     }
 
     const cert = result.certificate;
-    
+
     const htmlContent = `
 <!DOCTYPE html>
 <html>
@@ -1501,6 +1515,3 @@ export interface Certificate {
   expiresAt: Date;
   verificationUrl: string;
 }
-
-
-

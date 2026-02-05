@@ -9,22 +9,17 @@ import {
   CopyObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import {
-  StorageProvider,
-  UploadOptions,
-  FileMetadata,
-  StorageConfig,
-} from './storage.interface';
+import { StorageProvider, UploadOptions, FileMetadata, StorageConfig } from './storage.interface';
 
 /**
  * S3-Compatible Storage Provider
- * 
+ *
  * Supports:
  * - Amazon S3
  * - RustFS (https://github.com/rustfs/rustfs) - High-performance, Apache 2.0 licensed
  * - MinIO (legacy)
  * - Any S3-compatible object storage
- * 
+ *
  * RustFS is the recommended self-hosted option due to:
  * - 2.3x faster performance for small object payloads
  * - Apache 2.0 license (no AGPL restrictions)
@@ -66,11 +61,39 @@ export class S3StorageProvider implements StorageProvider {
     this.client = new S3Client(clientConfig);
   }
 
-  async upload(
-    file: Buffer | Readable,
-    path: string,
-    options?: UploadOptions
-  ): Promise<string> {
+  /**
+   * SECURITY: Validate and sanitize storage path to prevent path traversal
+   */
+  private validatePath(path: string): string {
+    // Remove null bytes
+    let sanitized = path.replace(/\0/g, '');
+    // Normalize path separators
+    sanitized = sanitized.replace(/\\/g, '/');
+    // Remove path traversal sequences
+    sanitized = sanitized.replace(/\.\.\//g, '').replace(/^\.\.$/, '');
+    // Remove leading slashes
+    sanitized = sanitized.replace(/^\/+/, '');
+    // Ensure path doesn't start with dangerous patterns
+    if (sanitized.startsWith('../') || sanitized === '..') {
+      throw new Error('Invalid storage path: path traversal detected');
+    }
+    return sanitized;
+  }
+
+  /**
+   * SECURITY: Validate ACL to only allow known safe values
+   */
+  private validateAcl(acl?: 'private' | 'public-read'): 'private' | 'public-read' {
+    // SECURITY: Default to private, only allow explicit 'private' or 'public-read'
+    if (acl === 'public-read') {
+      return 'public-read';
+    }
+    return 'private';
+  }
+
+  async upload(file: Buffer | Readable, path: string, options?: UploadOptions): Promise<string> {
+    // SECURITY: Validate path to prevent path traversal
+    const safePath = this.validatePath(path);
     let body: Buffer;
 
     if (Buffer.isBuffer(file)) {
@@ -86,11 +109,12 @@ export class S3StorageProvider implements StorageProvider {
 
     const command = new PutObjectCommand({
       Bucket: this.bucket,
-      Key: path,
+      Key: safePath,
       Body: body,
       ContentType: options?.contentType,
       Metadata: options?.metadata,
-      ACL: options?.acl,
+      // SECURITY: Always validate and default ACL to private
+      ACL: this.validateAcl(options?.acl),
     });
 
     await this.client.send(command);
@@ -104,7 +128,7 @@ export class S3StorageProvider implements StorageProvider {
     });
 
     const response = await this.client.send(command);
-    
+
     if (!response.Body) {
       throw new Error(`File not found: ${path}`);
     }
@@ -229,6 +253,3 @@ export class S3StorageProvider implements StorageProvider {
     return getSignedUrl(this.client, command, { expiresIn });
   }
 }
-
-
-

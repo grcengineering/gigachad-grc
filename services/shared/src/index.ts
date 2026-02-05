@@ -85,6 +85,7 @@ export {
   getPrismaSkipTake,
   // sanitize
   sanitizeFilename,
+  sanitizeFilenameStrict,
   escapeHtml,
   // error-handler - some renamed to avoid conflicts with types
   ErrorDetails,

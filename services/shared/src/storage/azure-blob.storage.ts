@@ -11,7 +11,7 @@ import { StorageProvider, UploadOptions, FileMetadata, StorageConfig } from './s
 
 /**
  * Azure Blob Storage Provider
- * 
+ *
  * Supports multiple authentication methods:
  * 1. Connection string (recommended for development)
  * 2. Account name + account key
@@ -49,8 +49,8 @@ export class AzureBlobStorage implements StorageProvider {
     } else {
       throw new Error(
         'Azure Blob Storage requires either azureConnectionString, ' +
-        'or azureAccountName with azureAccountKey, ' +
-        'or azureAccountName with azureSasToken'
+          'or azureAccountName with azureAccountKey, ' +
+          'or azureAccountName with azureSasToken'
       );
     }
 
@@ -59,24 +59,42 @@ export class AzureBlobStorage implements StorageProvider {
 
   /**
    * Ensure the container exists, creating it if necessary
+   * SECURITY: Container is created as private by default
    */
   async ensureContainer(): Promise<void> {
     const exists = await this.containerClient.exists();
     if (!exists) {
-      await this.containerClient.create({
-        access: 'blob', // Allow public read access to blobs (not container listing)
-      });
+      // SECURITY: Do NOT set public access - containers should be private
+      // Use signed URLs for temporary access when needed
+      await this.containerClient.create();
     }
   }
 
-  async upload(
-    file: Buffer | Readable,
-    path: string,
-    options?: UploadOptions
-  ): Promise<string> {
+  /**
+   * SECURITY: Validate and sanitize storage path to prevent path traversal
+   */
+  private validatePath(path: string): string {
+    // Remove null bytes
+    let sanitized = path.replace(/\0/g, '');
+    // Normalize path separators
+    sanitized = sanitized.replace(/\\/g, '/');
+    // Remove path traversal sequences
+    sanitized = sanitized.replace(/\.\.\//g, '').replace(/^\.\.$/, '');
+    // Remove leading slashes
+    sanitized = sanitized.replace(/^\/+/, '');
+    // Ensure path doesn't start with dangerous patterns
+    if (sanitized.startsWith('../') || sanitized === '..') {
+      throw new Error('Invalid storage path: path traversal detected');
+    }
+    return sanitized;
+  }
+
+  async upload(file: Buffer | Readable, path: string, options?: UploadOptions): Promise<string> {
+    // SECURITY: Validate path to prevent path traversal
+    const safePath = this.validatePath(path);
     await this.ensureContainer();
 
-    const blockBlobClient = this.containerClient.getBlockBlobClient(path);
+    const blockBlobClient = this.containerClient.getBlockBlobClient(safePath);
 
     const uploadOptions = {
       blobHTTPHeaders: {
@@ -102,14 +120,14 @@ export class AzureBlobStorage implements StorageProvider {
 
   async download(path: string): Promise<Readable> {
     const blobClient = this.containerClient.getBlobClient(path);
-    
+
     const exists = await blobClient.exists();
     if (!exists) {
       throw new Error(`File not found: ${path}`);
     }
 
     const downloadResponse = await blobClient.download();
-    
+
     if (!downloadResponse.readableStreamBody) {
       throw new Error(`Failed to download file: ${path}`);
     }
@@ -139,14 +157,17 @@ export class AzureBlobStorage implements StorageProvider {
       const startsOn = new Date();
       const expiresOn = new Date(startsOn.getTime() + expiresIn * 1000);
 
-      const sasToken = generateBlobSASQueryParameters({
-        containerName: this.containerName,
-        blobName: path,
-        permissions: BlobSASPermissions.parse('r'), // Read only
-        startsOn,
-        expiresOn,
-        protocol: SASProtocol.Https,
-      }, credential).toString();
+      const sasToken = generateBlobSASQueryParameters(
+        {
+          containerName: this.containerName,
+          blobName: path,
+          permissions: BlobSASPermissions.parse('r'), // Read only
+          startsOn,
+          expiresOn,
+          protocol: SASProtocol.Https,
+        },
+        credential
+      ).toString();
 
       return `${blobClient.url}?${sasToken}`;
     }
@@ -158,10 +179,10 @@ export class AzureBlobStorage implements StorageProvider {
 
   async getMetadata(path: string): Promise<FileMetadata | null> {
     const blobClient = this.containerClient.getBlobClient(path);
-    
+
     try {
       const properties = await blobClient.getProperties();
-      
+
       return {
         path,
         size: properties.contentLength || 0,
@@ -266,4 +287,3 @@ export class AzureBlobStorage implements StorageProvider {
     return deleted;
   }
 }
-

@@ -1,5 +1,7 @@
 import { Module, Global } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { VendorsModule } from './vendors/vendors.module';
 import { AssessmentsModule } from './assessments/assessments.module';
 import { ContractsModule } from './contracts/contracts.module';
@@ -17,6 +19,12 @@ import { StorageModule, CacheModule, DevAuthGuard, PRISMA_SERVICE } from '@gigac
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000, // 1 minute
+        limit: 100, // 100 requests per minute
+      },
+    ]),
     StorageModule.forRoot(),
     CacheModule.forRoot({ defaultTtl: 300 }), // 5-minute cache for dashboard widgets
     // RiskAssessmentModule and SecurityScannerModule must be imported BEFORE VendorsModule
@@ -39,6 +47,10 @@ import { StorageModule, CacheModule, DevAuthGuard, PRISMA_SERVICE } from '@gigac
       useExisting: PrismaService,
     },
     DevAuthGuard,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
   ],
   exports: [PrismaService, AuditService, DevAuthGuard, PRISMA_SERVICE],
 })

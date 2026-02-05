@@ -8,19 +8,29 @@ async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
 
-  // SECURITY: Add Helmet for security headers
-  app.use(helmet({
-    contentSecurityPolicy: false, // Disable for API service
-  }));
+  // Security middleware with CSP for API services
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'none'"],
+          frameAncestors: ["'none'"],
+        },
+      },
+      frameguard: { action: 'deny' },
+      noSniff: true,
+      xssFilter: true,
+    })
+  );
 
-  // SECURITY: Configure CORS with explicit origin restrictions
-  // Open CORS (enableCors() without options) is a security risk
-  const corsOrigins = process.env.CORS_ORIGINS?.split(',') || ['http://localhost:3000'];
-  if (process.env.NODE_ENV === 'production' && !process.env.CORS_ORIGINS) {
-    logger.warn('CORS_ORIGINS not set in production - defaulting to localhost');
+  // CORS - fail fast in production if not configured
+  const corsOrigins = process.env.CORS_ORIGINS?.split(',');
+  if (!corsOrigins && process.env.NODE_ENV === 'production') {
+    logger.error('CORS_ORIGINS environment variable is required in production');
+    process.exit(1);
   }
   app.enableCors({
-    origin: corsOrigins,
+    origin: corsOrigins || ['http://localhost:3000'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'x-user-id', 'x-organization-id'],
@@ -31,7 +41,7 @@ async function bootstrap() {
     new ValidationPipe({
       whitelist: true,
       transform: true,
-    }),
+    })
   );
 
   // Swagger documentation

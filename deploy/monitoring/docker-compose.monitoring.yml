@@ -110,22 +110,29 @@ services:
 
   # =============================================================================
   # cAdvisor - Container Metrics
+  # SECURITY: Removed privileged mode to prevent container escape risks
+  # Using specific device access and read-only mounts instead
   # =============================================================================
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:v0.47.0
     container_name: grc-cadvisor
-    privileged: true
+    # SECURITY: Do NOT use privileged mode - use specific capabilities instead
+    devices:
+      - /dev/kmsg:/dev/kmsg
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:ro
       - /sys:/sys:ro
       - /var/lib/docker/:/var/lib/docker:ro
       - /dev/disk/:/dev/disk:ro
+      - /cgroup:/cgroup:ro
     networks:
       - grc-network
     ports:
       - '8081:8080'
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
 
   # =============================================================================
   # Node Exporter - Host Metrics

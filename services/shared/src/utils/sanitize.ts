@@ -30,14 +30,38 @@ const SANITIZE_CONFIGS = {
    */
   rich: {
     allowedTags: [
-      'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-      'p', 'br', 'hr',
-      'b', 'i', 'em', 'strong', 'u', 's', 'strike',
-      'ul', 'ol', 'li',
-      'blockquote', 'code', 'pre',
-      'a', 'img',
-      'table', 'thead', 'tbody', 'tr', 'th', 'td',
-      'div', 'span',
+      'h1',
+      'h2',
+      'h3',
+      'h4',
+      'h5',
+      'h6',
+      'p',
+      'br',
+      'hr',
+      'b',
+      'i',
+      'em',
+      'strong',
+      'u',
+      's',
+      'strike',
+      'ul',
+      'ol',
+      'li',
+      'blockquote',
+      'code',
+      'pre',
+      'a',
+      'img',
+      'table',
+      'thead',
+      'tbody',
+      'tr',
+      'th',
+      'td',
+      'div',
+      'span',
     ],
     allowedAttributes: {
       a: ['href', 'title', 'target', 'rel'],
@@ -67,16 +91,16 @@ export type SanitizeLevel = keyof typeof SANITIZE_CONFIGS;
 
 /**
  * Sanitize user input to prevent XSS attacks
- * 
+ *
  * @param input - The string to sanitize
  * @param level - Sanitization level: 'strict', 'basic', or 'rich'
  * @returns Sanitized string
- * 
+ *
  * @example
  * // Remove all HTML
  * sanitizeInput('<script>alert("xss")</script>Hello', 'strict')
  * // Returns: 'Hello'
- * 
+ *
  * // Allow basic formatting
  * sanitizeInput('<b>Bold</b> <script>bad</script>', 'basic')
  * // Returns: '<b>Bold</b> '
@@ -92,7 +116,7 @@ export function sanitizeInput(input: string, level: SanitizeLevel = 'strict'): s
 
 /**
  * Sanitize an object's string properties recursively
- * 
+ *
  * @param obj - Object to sanitize
  * @param level - Sanitization level
  * @param skipFields - Fields to skip sanitization (e.g., passwords, tokens)
@@ -101,17 +125,19 @@ export function sanitizeInput(input: string, level: SanitizeLevel = 'strict'): s
 export function sanitizeObject<T extends Record<string, unknown>>(
   obj: T,
   level: SanitizeLevel = 'strict',
-  skipFields: string[] = ['password', 'token', 'secret', 'key', 'hash'],
+  skipFields: string[] = ['password', 'token', 'secret', 'key', 'hash']
 ): T {
   if (!obj || typeof obj !== 'object') {
     return obj;
   }
 
-  const sanitized: Record<string, unknown> = Array.isArray(obj) ? [] as unknown as Record<string, unknown> : {};
+  const sanitized: Record<string, unknown> = Array.isArray(obj)
+    ? ([] as unknown as Record<string, unknown>)
+    : {};
 
   for (const [key, value] of Object.entries(obj)) {
     // Skip certain fields
-    if (skipFields.some(field => key.toLowerCase().includes(field.toLowerCase()))) {
+    if (skipFields.some((field) => key.toLowerCase().includes(field.toLowerCase()))) {
       sanitized[key] = value;
       continue;
     }
@@ -119,7 +145,7 @@ export function sanitizeObject<T extends Record<string, unknown>>(
     if (typeof value === 'string') {
       sanitized[key] = sanitizeInput(value, level);
     } else if (Array.isArray(value)) {
-      sanitized[key] = value.map(item =>
+      sanitized[key] = value.map((item) =>
         typeof item === 'string'
           ? sanitizeInput(item, level)
           : typeof item === 'object' && item !== null
@@ -156,7 +182,7 @@ export function escapeHtml(input: string): string {
     '=': '&#x3D;',
   };
 
-  return input.replace(/[&<>"'`=/]/g, char => escapeMap[char] || char);
+  return input.replace(/[&<>"'`=/]/g, (char) => escapeMap[char] || char);
 }
 
 /**
@@ -168,23 +194,31 @@ export function sanitizeFilenameStrict(filename: string): string {
     return 'unnamed';
   }
 
-  return filename
-    // Remove path separators
-    .replace(/[\\/]/g, '')
-    // Remove null bytes (eslint-disable-next-line no-control-regex)
-    // eslint-disable-next-line no-control-regex
-    .replace(/\x00/g, '')
-    // Remove control characters (eslint-disable-next-line no-control-regex)
-    // eslint-disable-next-line no-control-regex
-    .replace(/[\x00-\x1f\x80-\x9f]/g, '')
-    // Replace other special characters
-    .replace(/[<>:"|?*]/g, '_')
-    // Limit length
-    .slice(0, 255)
-    // Trim whitespace
-    .trim()
+  return (
+    filename
+      // Remove path traversal patterns (.. sequences)
+      .replace(/\.{2,}/g, '')
+      // Remove path separators
+      .replace(/[\\/]/g, '')
+      // Remove null bytes (eslint-disable-next-line no-control-regex)
+      // eslint-disable-next-line no-control-regex
+      .replace(/\x00/g, '')
+      // Remove control characters (eslint-disable-next-line no-control-regex)
+      // eslint-disable-next-line no-control-regex
+      .replace(/[\x00-\x1f\x80-\x9f]/g, '')
+      // Remove URL-encoded sequences that could represent traversal
+      .replace(/%2e/gi, '')
+      .replace(/%2f/gi, '')
+      .replace(/%5c/gi, '')
+      // Replace other special characters
+      .replace(/[<>:"|?*]/g, '_')
+      // Limit length
+      .slice(0, 255)
+      // Trim whitespace
+      .trim() ||
     // Default if empty
-    || 'unnamed';
+    'unnamed'
+  );
 }
 
 /**
@@ -200,12 +234,7 @@ export function sanitizeUrl(url: string): string {
   const lower = trimmed.toLowerCase();
 
   // Block dangerous protocols
-  const dangerousProtocols = [
-    'javascript:',
-    'data:',
-    'vbscript:',
-    'file:',
-  ];
+  const dangerousProtocols = ['javascript:', 'data:', 'vbscript:', 'file:'];
 
   for (const protocol of dangerousProtocols) {
     if (lower.startsWith(protocol)) {
@@ -215,9 +244,8 @@ export function sanitizeUrl(url: string): string {
 
   // Allow relative URLs, http, https, mailto
   const allowedProtocols = ['http://', 'https://', 'mailto:', '/', '#', '?'];
-  
-  const isAllowed = allowedProtocols.some(p => lower.startsWith(p)) ||
-                   !lower.includes(':'); // Relative URLs without protocol
+
+  const isAllowed = allowedProtocols.some((p) => lower.startsWith(p)) || !lower.includes(':'); // Relative URLs without protocol
 
   return isAllowed ? trimmed : '';
 }
@@ -232,16 +260,22 @@ export function sanitizeSqlInput(input: string): string {
   }
 
   // Remove SQL comment sequences
-  let sanitized = input
-    .replace(/--/g, '')
-    .replace(/\/\*/g, '')
-    .replace(/\*\//g, '');
+  let sanitized = input.replace(/--/g, '').replace(/\/\*/g, '').replace(/\*\//g, '');
 
   // Remove common SQL keywords that shouldn't appear in user input
   const sqlKeywords = [
-    'DROP', 'DELETE', 'INSERT', 'UPDATE', 'TRUNCATE',
-    'ALTER', 'CREATE', 'EXEC', 'EXECUTE', 'UNION',
-    'GRANT', 'REVOKE',
+    'DROP',
+    'DELETE',
+    'INSERT',
+    'UPDATE',
+    'TRUNCATE',
+    'ALTER',
+    'CREATE',
+    'EXEC',
+    'EXECUTE',
+    'UNION',
+    'GRANT',
+    'REVOKE',
   ];
 
   for (const keyword of sqlKeywords) {
@@ -255,7 +289,7 @@ export function sanitizeSqlInput(input: string): string {
 /**
  * Create a sanitizing pipe for NestJS validation
  * Use with @Transform decorator in DTOs
- * 
+ *
  * @example
  * class CreateCommentDto {
  *   @Transform(sanitizeTransform('basic'))
@@ -271,4 +305,3 @@ export function sanitizeTransform(level: SanitizeLevel = 'strict') {
     return value;
   };
 }
-

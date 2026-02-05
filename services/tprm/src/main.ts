@@ -8,18 +8,29 @@ async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
 
-  // SECURITY: Add Helmet for security headers
-  app.use(helmet({
-    contentSecurityPolicy: false, // Disable for API service
-  }));
+  // Security middleware with CSP for API services
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'none'"],
+          frameAncestors: ["'none'"],
+        },
+      },
+      frameguard: { action: 'deny' },
+      noSniff: true,
+      xssFilter: true,
+    })
+  );
 
-  // Enable CORS - use CORS_ORIGINS (plural) for consistency across services
-  const corsOrigins = process.env.CORS_ORIGINS?.split(',') || process.env.CORS_ORIGIN?.split(',') || ['http://localhost:5173', 'http://localhost:3000'];
-  if (!process.env.CORS_ORIGINS && process.env.NODE_ENV === 'production') {
-    logger.warn('CORS_ORIGINS not set - using localhost defaults. Configure CORS_ORIGINS for production.');
+  // CORS - fail fast in production if not configured
+  const corsOrigins = process.env.CORS_ORIGINS?.split(',');
+  if (!corsOrigins && process.env.NODE_ENV === 'production') {
+    logger.error('CORS_ORIGINS environment variable is required in production');
+    process.exit(1);
   }
   app.enableCors({
-    origin: corsOrigins,
+    origin: corsOrigins || ['http://localhost:5173', 'http://localhost:3000'],
     credentials: true,
   });
 
@@ -27,7 +38,7 @@ async function bootstrap() {
     new ValidationPipe({
       whitelist: true,
       transform: true,
-    }),
+    })
   );
 
   const config = new DocumentBuilder()

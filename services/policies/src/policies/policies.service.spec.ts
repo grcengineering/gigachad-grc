@@ -5,6 +5,7 @@ import { AuditService } from '../audit/audit.service';
 import { NotFoundException } from '@nestjs/common';
 import { STORAGE_PROVIDER } from '@gigachad-grc/shared';
 import { PolicyStatus } from '@prisma/client';
+import { PolicyStatus as PolicyStatusDto } from './dto/policy.dto';
 
 describe('PoliciesService', () => {
   let service: PoliciesService;
@@ -85,7 +86,7 @@ describe('PoliciesService', () => {
       mockPrismaService.policy.findMany.mockResolvedValue([mockPolicies[1]]);
       mockPrismaService.policy.count.mockResolvedValue(1);
 
-      await service.findAll('org-123', { status: ['draft'] });
+      await service.findAll('org-123', { status: [PolicyStatusDto.DRAFT] });
 
       expect(mockPrismaService.policy.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -93,7 +94,7 @@ describe('PoliciesService', () => {
             organizationId: 'org-123',
             deletedAt: null,
           }),
-        }),
+        })
       );
     });
 
@@ -143,9 +144,7 @@ describe('PoliciesService', () => {
     it('should throw NotFoundException if policy not found', async () => {
       mockPrismaService.policy.findFirst.mockResolvedValue(null);
 
-      await expect(service.findOne('nonexistent', 'org-123')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.findOne('nonexistent', 'org-123')).rejects.toThrow(NotFoundException);
     });
   });
 

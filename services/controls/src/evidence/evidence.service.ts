@@ -3,7 +3,12 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationType, NotificationSeverity } from '../notifications/dto/notification.dto';
-import { STORAGE_PROVIDER, StorageProvider, generateId } from '@gigachad-grc/shared';
+import {
+  STORAGE_PROVIDER,
+  StorageProvider,
+  generateId,
+  sanitizeFilename,
+} from '@gigachad-grc/shared';
 import { EvidenceStatus, Prisma } from '@prisma/client';
 import {
   UploadEvidenceDto,
@@ -113,7 +118,9 @@ export class EvidenceService {
     userName?: string
   ) {
     const evidenceId = generateId();
-    const storagePath = `evidence/${organizationId}/${evidenceId}/${file.originalname}`;
+    // SECURITY: Sanitize filename to prevent path traversal attacks
+    const safeFilename = sanitizeFilename(file.originalname);
+    const storagePath = `evidence/${organizationId}/${evidenceId}/${safeFilename}`;
 
     // Upload to storage
     await this.storage.upload(file.buffer, storagePath, {
@@ -130,7 +137,7 @@ export class EvidenceService {
         type: dto.type,
         source: 'manual',
         status: EvidenceStatus.pending_review,
-        filename: file.originalname,
+        filename: safeFilename,
         mimeType: file.mimetype,
         size: file.size,
         storagePath,

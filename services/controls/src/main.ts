@@ -9,15 +9,29 @@ import { GlobalExceptionFilter } from '@gigachad-grc/shared';
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule, {
-    logger: process.env.NODE_ENV === 'production' 
-      ? ['error', 'warn', 'log']
-      : ['error', 'warn', 'log', 'debug', 'verbose'],
+    logger:
+      process.env.NODE_ENV === 'production'
+        ? ['error', 'warn', 'log']
+        : ['error', 'warn', 'log', 'debug', 'verbose'],
   });
 
-  // Security middleware
-  app.use(helmet({
-    contentSecurityPolicy: false, // Disable for API
-  }));
+  // Security middleware with CSP for API services
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'none'"],
+          frameAncestors: ["'none'"],
+        },
+      },
+      // Prevent clickjacking
+      frameguard: { action: 'deny' },
+      // Prevent MIME type sniffing
+      noSniff: true,
+      // Prevent XSS attacks
+      xssFilter: true,
+    })
+  );
 
   // Response compression
   app.use(compression());
@@ -35,16 +49,22 @@ async function bootstrap() {
       transformOptions: {
         enableImplicitConversion: true,
       },
-    }),
+    })
   );
 
-  // CORS
+  // CORS - fail fast in production if not configured
   const corsOrigins = process.env.CORS_ORIGINS?.split(',');
   if (!corsOrigins && process.env.NODE_ENV === 'production') {
-    logger.warn('CORS_ORIGINS not set - using localhost defaults. Set CORS_ORIGINS in production!');
+    logger.error('CORS_ORIGINS environment variable is required in production');
+    process.exit(1);
   }
   app.enableCors({
-    origin: corsOrigins || ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'],
+    origin: corsOrigins || [
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'http://localhost:5174',
+      'http://localhost:5175',
+    ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: [
@@ -84,4 +104,3 @@ async function bootstrap() {
 }
 
 bootstrap();
-

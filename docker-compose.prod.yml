@@ -326,7 +326,7 @@ services:
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       S3_ENDPOINT: rustfs
       S3_PORT: 9000
-      S3_USE_SSL: false
+      S3_USE_SSL: true
       S3_ACCESS_KEY: ${MINIO_ROOT_USER}
       S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
       MINIO_ENDPOINT: rustfs
@@ -426,7 +426,7 @@ services:
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       S3_ENDPOINT: rustfs
       S3_PORT: 9000
-      S3_USE_SSL: false
+      S3_USE_SSL: true
       S3_ACCESS_KEY: ${MINIO_ROOT_USER}
       S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
       MINIO_ENDPOINT: rustfs
@@ -508,7 +508,7 @@ services:
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       S3_ENDPOINT: rustfs
       S3_PORT: 9000
-      S3_USE_SSL: false
+      S3_USE_SSL: true
       S3_ACCESS_KEY: ${MINIO_ROOT_USER}
       S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
       MINIO_ENDPOINT: rustfs
@@ -590,7 +590,7 @@ services:
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       S3_ENDPOINT: rustfs
       S3_PORT: 9000
-      S3_USE_SSL: false
+      S3_USE_SSL: true
       S3_ACCESS_KEY: ${MINIO_ROOT_USER}
       S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
       MINIO_ENDPOINT: rustfs
@@ -674,7 +674,7 @@ services:
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       S3_ENDPOINT: rustfs
       S3_PORT: 9000
-      S3_USE_SSL: false
+      S3_USE_SSL: true
       S3_ACCESS_KEY: ${MINIO_ROOT_USER}
       S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
       MINIO_ENDPOINT: rustfs
@@ -758,7 +758,7 @@ services:
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       S3_ENDPOINT: rustfs
       S3_PORT: 9000
-      S3_USE_SSL: false
+      S3_USE_SSL: true
       S3_ACCESS_KEY: ${MINIO_ROOT_USER}
       S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
       MINIO_ENDPOINT: rustfs

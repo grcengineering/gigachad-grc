@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, ConflictException, Logger, Inject } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
-import { STORAGE_PROVIDER, StorageProvider } from '@gigachad-grc/shared';
+import { STORAGE_PROVIDER, StorageProvider, sanitizeFilename } from '@gigachad-grc/shared';
 import {
   CreateBCDRPlanDto,
   UpdateBCDRPlanDto,
@@ -26,7 +26,7 @@ export class BCDRPlansService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditService: AuditService,
-    @Inject(STORAGE_PROVIDER) private readonly storage: StorageProvider,
+    @Inject(STORAGE_PROVIDER) private readonly storage: StorageProvider
   ) {}
 
   async findAll(organizationId: string, filters: BCDRPlanFilterDto) {
@@ -60,7 +60,7 @@ export class BCDRPlansService {
     ]);
 
     // Convert BigInt fields to numbers for JSON serialization
-    const serializedPlans = plans.map(plan => ({
+    const serializedPlans = plans.map((plan) => ({
       ...plan,
       control_count: plan.control_count ? Number(plan.control_count) : 0,
     }));
@@ -129,7 +129,7 @@ export class BCDRPlansService {
     userId: string,
     dto: CreateBCDRPlanDto,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     // Check for duplicate planId
     const existing = await this.prisma.$queryRaw<IdRecord[]>`
@@ -195,7 +195,7 @@ export class BCDRPlansService {
     userId: string,
     dto: UpdateBCDRPlanDto,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     const _existing = await this.findOne(id, organizationId);
 
@@ -203,11 +203,30 @@ export class BCDRPlansService {
     // Only these hardcoded column names can be included in the query.
     // This prevents SQL injection even though column names come from code, not user input.
     const ALLOWED_COLUMNS = new Set([
-      'title', 'description', 'status', 'approved_at', 'published_at', 'version',
-      'version_notes', 'owner_id', 'approver_id', 'effective_date', 'expiry_date',
-      'scope_description', 'in_scope_processes', 'out_of_scope', 'activation_criteria',
-      'deactivation_criteria', 'objectives', 'assumptions', 'plan_type',
-      'activation_authority', 'review_frequency_months', 'tags', 'updated_by', 'updated_at',
+      'title',
+      'description',
+      'status',
+      'approved_at',
+      'published_at',
+      'version',
+      'version_notes',
+      'owner_id',
+      'approver_id',
+      'effective_date',
+      'expiry_date',
+      'scope_description',
+      'in_scope_processes',
+      'out_of_scope',
+      'activation_criteria',
+      'deactivation_criteria',
+      'objectives',
+      'assumptions',
+      'plan_type',
+      'activation_authority',
+      'review_frequency_months',
+      'tags',
+      'updated_by',
+      'updated_at',
     ]);
 
     const updates: string[] = ['updated_by = $2::uuid', 'updated_at = NOW()'];
@@ -215,7 +234,11 @@ export class BCDRPlansService {
     let paramIndex = 3;
 
     // Helper to safely add column updates - validates column is in allowed list
-    const addUpdate = (column: string, value: string | number | boolean | Date | string[] | null, typeCast?: string) => {
+    const addUpdate = (
+      column: string,
+      value: string | number | boolean | Date | string[] | null,
+      typeCast?: string
+    ) => {
       if (!ALLOWED_COLUMNS.has(column)) {
         throw new Error(`Invalid column name: ${column}`);
       }
@@ -308,7 +331,7 @@ export class BCDRPlansService {
     // 3. No user input is interpolated into column names
     const result = await this.prisma.$queryRawUnsafe<BCDRPlanRecord[]>(
       `UPDATE bcdr.bcdr_plans SET ${updates.join(', ')} WHERE id = $1::uuid RETURNING *`,
-      ...values,
+      ...values
     );
 
     const plan = result[0];
@@ -334,7 +357,7 @@ export class BCDRPlansService {
     organizationId: string,
     userId: string,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     const plan = await this.findOne(id, organizationId);
 
@@ -364,10 +387,12 @@ export class BCDRPlansService {
     organizationId: string,
     userId: string,
     file: Express.Multer.File,
-    versionNumber?: string,
+    versionNumber?: string
   ) {
     const plan = await this.findOne(id, organizationId);
-    const storagePath = `bcdr/plans/${organizationId}/${id}/${file.originalname}`;
+    // SECURITY: Sanitize filename to prevent path traversal attacks
+    const safeFilename = sanitizeFilename(file.originalname);
+    const storagePath = `bcdr/plans/${organizationId}/${id}/${safeFilename}`;
 
     await this.storage.upload(file.buffer, storagePath, {
       contentType: file.mimetype,
@@ -376,13 +401,13 @@ export class BCDRPlansService {
     // Create version record
     await this.prisma.$executeRaw`
       INSERT INTO bcdr.plan_versions (plan_id, version, filename, storage_path, file_size, created_by)
-      VALUES (${id}::uuid, ${versionNumber || plan.version}, ${file.originalname}, ${storagePath}, ${file.size}, ${userId}::uuid)
+      VALUES (${id}::uuid, ${versionNumber || plan.version}, ${safeFilename}, ${storagePath}, ${file.size}, ${userId}::uuid)
     `;
 
     // Update plan
     const result = await this.prisma.$queryRaw<BCDRPlanRecord[]>`
       UPDATE bcdr.bcdr_plans
-      SET filename = ${file.originalname},
+      SET filename = ${safeFilename},
           storage_path = ${storagePath},
           mime_type = ${file.mimetype},
           file_size = ${file.size},
@@ -434,4 +459,3 @@ export class BCDRPlansService {
     return stats[0];
   }
 }
-

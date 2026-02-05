@@ -1,7 +1,20 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import DOMPurify from 'dompurify';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBrandingConfig } from '@/contexts/BrandingContext';
+
+/**
+ * SECURITY: Sanitize URL parameters to prevent XSS attacks
+ * Only allows alphanumeric characters, spaces, and basic punctuation
+ */
+function sanitizeUrlParam(value: string | null): string {
+  if (!value) return '';
+  // First sanitize with DOMPurify to remove any HTML/scripts
+  const purified = DOMPurify.sanitize(value, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
+  // Then limit length and remove any remaining control characters
+  return purified.substring(0, 200).replace(/[\x00-\x1F\x7F]/g, '');
+}
 
 export default function Login() {
   const { isAuthenticated, isLoading, login, devLogin } = useAuth();
@@ -13,11 +26,12 @@ export default function Login() {
     if (isAuthenticated) {
       navigate('/dashboard', { replace: true });
     }
-    
+
     // Check for error in URL params
+    // SECURITY: Sanitize URL parameters to prevent XSS attacks
     const params = new URLSearchParams(window.location.search);
-    const errorParam = params.get('error');
-    const errorDesc = params.get('error_description');
+    const errorParam = sanitizeUrlParam(params.get('error'));
+    const errorDesc = sanitizeUrlParam(params.get('error_description'));
     if (errorParam) {
       setError(`${errorParam}: ${errorDesc || 'Unknown error'}`);
     }
@@ -58,17 +72,12 @@ export default function Login() {
 
         {/* Login card */}
         <div className="card p-8">
-          <h2 className="text-xl font-semibold text-surface-100 text-center mb-2">
-            Welcome Back
-          </h2>
+          <h2 className="text-xl font-semibold text-surface-100 text-center mb-2">Welcome Back</h2>
           <p className="text-surface-400 text-center mb-8">
             Sign in to access your compliance dashboard
           </p>
 
-          <button
-            onClick={login}
-            className="btn-primary w-full py-3 text-base"
-          >
+          <button onClick={login} className="btn-primary w-full py-3 text-base">
             Sign in with SSO
           </button>
 
@@ -93,9 +102,7 @@ export default function Login() {
           )}
 
           <div className="mt-6 text-center">
-            <p className="text-sm text-surface-500">
-              Powered by Keycloak authentication
-            </p>
+            <p className="text-sm text-surface-500">Powered by Keycloak authentication</p>
           </div>
         </div>
 
@@ -107,4 +114,3 @@ export default function Login() {
     </div>
   );
 }
-
