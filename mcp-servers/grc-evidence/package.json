@@ -10,7 +10,7 @@
     "dev": "tsx src/index.ts"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.25.2",
+    "@modelcontextprotocol/sdk": "^1.26.0",
     "@aws-sdk/client-s3": "^3.400.0",
     "@aws-sdk/client-iam": "^3.400.0",
     "@aws-sdk/client-ec2": "^3.400.0",
