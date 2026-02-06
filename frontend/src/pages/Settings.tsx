@@ -1,9 +1,16 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBranding } from '@/contexts/BrandingContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { notificationsConfigApi, customDashboardsApi, employeeComplianceApi, apiKeysApi, type ApiKey, type ApiKeyWithSecret } from '@/lib/api';
+import {
+  notificationsConfigApi,
+  customDashboardsApi,
+  employeeComplianceApi,
+  apiKeysApi,
+  type ApiKey,
+  type ApiKeyWithSecret,
+} from '@/lib/api';
 import { Navigate, Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
@@ -26,17 +33,40 @@ import SystemHealthBanner from '@/components/SystemHealthBanner';
 import ProductionReadiness from '@/components/ProductionReadiness';
 
 interface SettingsProps {
-  section: 'organization' | 'communications' | 'api' | 'dashboard-templates' | 'employee-compliance' | 'ai' | 'modules';
+  section:
+    | 'organization'
+    | 'communications'
+    | 'api'
+    | 'dashboard-templates'
+    | 'employee-compliance'
+    | 'ai'
+    | 'modules';
 }
 
 const SECTION_TITLES: Record<string, { title: string; description: string }> = {
   organization: { title: 'Organization Settings', description: 'Manage your organization details' },
-  communications: { title: 'Communications', description: 'Configure email and Slack notifications' },
+  communications: {
+    title: 'Communications',
+    description: 'Configure email and Slack notifications',
+  },
   api: { title: 'API Keys', description: 'Manage API keys for programmatic access' },
-  'dashboard-templates': { title: 'Dashboard Templates', description: 'Create and manage dashboard templates for your organization' },
-  'employee-compliance': { title: 'Employee Compliance Settings', description: 'Configure scoring weights, thresholds, and requirements for employee compliance tracking' },
-  ai: { title: 'AI Configuration', description: 'Configure AI providers and features for intelligent automation' },
-  modules: { title: 'Module Configuration', description: 'Enable or disable platform modules for this organization' },
+  'dashboard-templates': {
+    title: 'Dashboard Templates',
+    description: 'Create and manage dashboard templates for your organization',
+  },
+  'employee-compliance': {
+    title: 'Employee Compliance Settings',
+    description:
+      'Configure scoring weights, thresholds, and requirements for employee compliance tracking',
+  },
+  ai: {
+    title: 'AI Configuration',
+    description: 'Configure AI providers and features for intelligent automation',
+  },
+  modules: {
+    title: 'Module Configuration',
+    description: 'Enable or disable platform modules for this organization',
+  },
 };
 
 export default function Settings({ section }: SettingsProps) {
@@ -78,10 +108,7 @@ export default function Settings({ section }: SettingsProps) {
         {section === 'employee-compliance' && <EmployeeComplianceSettings />}
         {section === 'modules' && <ModuleSettings />}
         {section === 'ai' && (
-          <ModuleGuard
-            module="ai"
-            fallback={<DisabledModulePage moduleId="ai" />}
-          >
+          <ModuleGuard module="ai" fallback={<DisabledModulePage moduleId="ai" />}>
             <AISettings />
           </ModuleGuard>
         )}
@@ -109,6 +136,50 @@ const DEFAULT_ORG_SETTINGS: OrgSettings = {
   industry: '',
 };
 
+/**
+ * SECURITY: Sanitize URLs to prevent XSS via javascript:, data:, or vbscript: protocols
+ * Only allows http, https, or relative paths for user-provided URLs
+ */
+function sanitizeImageUrl(url: string): string {
+  if (!url || typeof url !== 'string') {
+    return '/logo.png';
+  }
+
+  const trimmed = url.trim();
+  const lower = trimmed.toLowerCase();
+
+  // Allow data: URLs only for images (from file uploads)
+  if (lower.startsWith('data:image/')) {
+    return trimmed;
+  }
+
+  // Block dangerous protocols
+  const dangerousProtocols = ['javascript:', 'vbscript:', 'file:'];
+  for (const protocol of dangerousProtocols) {
+    if (lower.startsWith(protocol)) {
+      return '/logo.png';
+    }
+  }
+
+  // Block data: URLs that aren't images
+  if (lower.startsWith('data:')) {
+    return '/logo.png';
+  }
+
+  // Allow http, https, or relative paths
+  if (lower.startsWith('http://') || lower.startsWith('https://') || lower.startsWith('/')) {
+    return trimmed;
+  }
+
+  // If no protocol and no dangerous pattern, assume it's a relative path
+  if (!lower.includes(':')) {
+    return trimmed;
+  }
+
+  // Block unknown protocols
+  return '/logo.png';
+}
+
 function OrganizationSettings() {
   const { branding, updateBranding } = useBranding();
   const [platformName, setPlatformName] = useState(branding.platformName);
@@ -118,6 +189,11 @@ function OrganizationSettings() {
   const [isSavingOrg, setIsSavingOrg] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // SECURITY: Compute sanitized URL to prevent XSS through img src
+  const safeLogoUrl = useCallback(() => {
+    return sanitizeImageUrl(logoPreview || logoUrl);
+  }, [logoPreview, logoUrl]);
 
   // Organization settings state
   const [orgSettings, setOrgSettings] = useState<OrgSettings>(() => {
@@ -153,7 +229,7 @@ function OrganizationSettings() {
 
   // Update organization setting field
   const updateOrgSetting = (field: keyof OrgSettings, value: string) => {
-    setOrgSettings(prev => ({ ...prev, [field]: value }));
+    setOrgSettings((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -222,14 +298,7 @@ function OrganizationSettings() {
         return res.json();
       };
 
-      const [
-        risks,
-        evidence,
-        controls,
-        vendors,
-        audits,
-        auditLogs,
-      ] = await Promise.all([
+      const [risks, evidence, controls, vendors, audits, auditLogs] = await Promise.all([
         // Full risk data
         fetchJson('/api/risks/full?page=1&limit=1000'),
         // Evidence metadata (no file blobs)
@@ -286,7 +355,9 @@ function OrganizationSettings() {
       <div className="card p-6 space-y-6">
         <div>
           <h2 className="text-lg font-semibold text-surface-100">Platform Branding</h2>
-          <p className="text-surface-400 text-sm mt-1">Customize the look and name of your GRC platform</p>
+          <p className="text-surface-400 text-sm mt-1">
+            Customize the look and name of your GRC platform
+          </p>
         </div>
 
         <div className="space-y-4">
@@ -300,7 +371,9 @@ function OrganizationSettings() {
               className="input mt-1"
               placeholder="GigaChad GRC"
             />
-            <p className="text-surface-500 text-xs mt-1">This name appears in the sidebar, login page, and throughout the platform</p>
+            <p className="text-surface-500 text-xs mt-1">
+              This name appears in the sidebar, login page, and throughout the platform
+            </p>
           </div>
 
           {/* Logo Upload */}
@@ -311,9 +384,9 @@ function OrganizationSettings() {
               <div className="flex-shrink-0">
                 <div className="w-20 h-20 rounded-lg border border-surface-700 bg-surface-800 flex items-center justify-center overflow-hidden">
                   {logoUrl ? (
-                    <img 
-                      src={logoPreview || logoUrl} 
-                      alt="Logo preview" 
+                    <img
+                      src={safeLogoUrl()}
+                      alt="Logo preview"
                       className="w-full h-full object-contain"
                     />
                   ) : (
@@ -352,7 +425,8 @@ function OrganizationSettings() {
                   )}
                 </div>
                 <p className="text-surface-500 text-xs">
-                  Recommended: Square image, at least 128x128 pixels. PNG or SVG with transparent background works best.
+                  Recommended: Square image, at least 128x128 pixels. PNG or SVG with transparent
+                  background works best.
                 </p>
 
                 {/* URL Input (optional) */}
@@ -362,7 +436,9 @@ function OrganizationSettings() {
                     type="url"
                     value={logoUrl.startsWith('data:') ? '' : logoUrl}
                     onChange={(e) => {
-                      setLogoUrl(e.target.value || '/logo.png');
+                      // SECURITY: Sanitize URL to prevent XSS via javascript: or other dangerous protocols
+                      const sanitizedUrl = sanitizeImageUrl(e.target.value || '/logo.png');
+                      setLogoUrl(sanitizedUrl);
                       setLogoPreview(null);
                     }}
                     className="input mt-1 text-sm"
@@ -375,11 +451,7 @@ function OrganizationSettings() {
         </div>
 
         <div className="flex justify-end pt-4 border-t border-surface-800">
-          <button 
-            className="btn-primary"
-            onClick={handleSaveBranding}
-            disabled={isSaving}
-          >
+          <button className="btn-primary" onClick={handleSaveBranding} disabled={isSaving}>
             {isSaving ? 'Saving...' : 'Save Branding'}
           </button>
         </div>
@@ -390,74 +462,70 @@ function OrganizationSettings() {
         <h2 className="text-lg font-semibold text-surface-100">Organization Details</h2>
 
         <div className="space-y-4">
-        <div>
-          <label className="label">Organization Name</label>
-          <input
-            type="text"
-            value={orgSettings.organizationName}
-            onChange={(e) => updateOrgSetting('organizationName', e.target.value)}
-            className="input mt-1"
-          />
-        </div>
-        <div>
-          <label className="label">Description</label>
-          <textarea
-            value={orgSettings.description}
-            onChange={(e) => updateOrgSetting('description', e.target.value)}
-            className="input mt-1"
-            rows={3}
-          />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="label">Primary Contact Email</label>
+            <label className="label">Organization Name</label>
             <input
-              type="email"
-              value={orgSettings.primaryEmail}
-              onChange={(e) => updateOrgSetting('primaryEmail', e.target.value)}
+              type="text"
+              value={orgSettings.organizationName}
+              onChange={(e) => updateOrgSetting('organizationName', e.target.value)}
               className="input mt-1"
-              placeholder="admin@company.com"
             />
           </div>
           <div>
-            <label className="label">Timezone</label>
+            <label className="label">Description</label>
+            <textarea
+              value={orgSettings.description}
+              onChange={(e) => updateOrgSetting('description', e.target.value)}
+              className="input mt-1"
+              rows={3}
+            />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="label">Primary Contact Email</label>
+              <input
+                type="email"
+                value={orgSettings.primaryEmail}
+                onChange={(e) => updateOrgSetting('primaryEmail', e.target.value)}
+                className="input mt-1"
+                placeholder="admin@company.com"
+              />
+            </div>
+            <div>
+              <label className="label">Timezone</label>
+              <select
+                value={orgSettings.timezone}
+                onChange={(e) => updateOrgSetting('timezone', e.target.value)}
+                className="input mt-1"
+              >
+                <option value="UTC">UTC</option>
+                <option value="America/New_York">Eastern Time</option>
+                <option value="America/Los_Angeles">Pacific Time</option>
+                <option value="Europe/London">London</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="label">Industry</label>
             <select
-              value={orgSettings.timezone}
-              onChange={(e) => updateOrgSetting('timezone', e.target.value)}
+              value={orgSettings.industry}
+              onChange={(e) => updateOrgSetting('industry', e.target.value)}
               className="input mt-1"
             >
-              <option value="UTC">UTC</option>
-              <option value="America/New_York">Eastern Time</option>
-              <option value="America/Los_Angeles">Pacific Time</option>
-              <option value="Europe/London">London</option>
+              <option value="">Select industry...</option>
+              <option value="technology">Technology</option>
+              <option value="finance">Finance & Banking</option>
+              <option value="healthcare">Healthcare</option>
+              <option value="retail">Retail</option>
+              <option value="manufacturing">Manufacturing</option>
+              <option value="government">Government</option>
+              <option value="other">Other</option>
             </select>
           </div>
         </div>
-        <div>
-          <label className="label">Industry</label>
-          <select
-            value={orgSettings.industry}
-            onChange={(e) => updateOrgSetting('industry', e.target.value)}
-            className="input mt-1"
-          >
-            <option value="">Select industry...</option>
-            <option value="technology">Technology</option>
-            <option value="finance">Finance & Banking</option>
-            <option value="healthcare">Healthcare</option>
-            <option value="retail">Retail</option>
-            <option value="manufacturing">Manufacturing</option>
-            <option value="government">Government</option>
-            <option value="other">Other</option>
-          </select>
-        </div>
-      </div>
 
         <div className="flex justify-end pt-4 border-t border-surface-800">
-          <button
-            className="btn-primary"
-            onClick={handleSaveOrganization}
-            disabled={isSavingOrg}
-          >
+          <button className="btn-primary" onClick={handleSaveOrganization} disabled={isSavingOrg}>
             {isSavingOrg ? 'Saving...' : 'Save Organization'}
           </button>
         </div>
@@ -470,11 +538,13 @@ function OrganizationSettings() {
       <div className="card p-6 space-y-4">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-lg font-semibold text-surface-100">Data Portability & Offboarding</h2>
+            <h2 className="text-lg font-semibold text-surface-100">
+              Data Portability & Offboarding
+            </h2>
             <p className="text-surface-400 text-sm mt-1">
-              Export a structured JSON snapshot of your organization&apos;s data to support vendor offboarding or
-              migration to another system. Includes risks, controls, evidence metadata, vendors, audits, and recent
-              activity logs.
+              Export a structured JSON snapshot of your organization&apos;s data to support vendor
+              offboarding or migration to another system. Includes risks, controls, evidence
+              metadata, vendors, audits, and recent activity logs.
             </p>
           </div>
           <ExclamationCircleIcon
@@ -494,8 +564,8 @@ function OrganizationSettings() {
             <li>Recent audit log entries for traceability</li>
           </ul>
           <p className="text-xs text-surface-500 pt-1">
-            Evidence files themselves remain in your configured object storage (e.g., RustFS/S3). Those can be exported
-            separately at the storage layer if you need a full archive.
+            Evidence files themselves remain in your configured object storage (e.g., RustFS/S3).
+            Those can be exported separately at the storage layer if you need a full archive.
           </p>
         </div>
 
@@ -530,10 +600,10 @@ function OrganizationSettings() {
 
 function MultiWorkspaceSettings() {
   const navigate = useNavigate();
-  const { 
-    isMultiWorkspaceEnabled, 
+  const {
+    isMultiWorkspaceEnabled,
     workspaces,
-    enableMultiWorkspace, 
+    enableMultiWorkspace,
     disableMultiWorkspace,
     isLoading,
   } = useWorkspace();
@@ -553,9 +623,9 @@ function MultiWorkspaceSettings() {
       try {
         await enableMultiWorkspace();
         toast.success('Multi-workspace mode enabled! A default workspace has been created.');
-    } catch {
-      toast.error('Failed to enable multi-workspace mode');
-    } finally {
+      } catch {
+        toast.error('Failed to enable multi-workspace mode');
+      } finally {
         setIsToggling(false);
       }
     }
@@ -591,9 +661,7 @@ function MultiWorkspaceSettings() {
             onClick={handleToggle}
             disabled={isToggling || isLoading}
             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-              isMultiWorkspaceEnabled 
-                ? 'bg-brand-600' 
-                : 'bg-surface-600'
+              isMultiWorkspaceEnabled ? 'bg-brand-600' : 'bg-surface-600'
             } ${isToggling || isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
           >
             <span
@@ -628,9 +696,7 @@ function MultiWorkspaceSettings() {
 
         {!isMultiWorkspaceEnabled && (
           <div className="bg-surface-800 rounded-lg p-4 text-sm text-surface-400">
-            <p className="mb-2">
-              Multi-workspace mode allows you to:
-            </p>
+            <p className="mb-2">Multi-workspace mode allows you to:</p>
             <ul className="list-disc list-inside space-y-1">
               <li>Track compliance progress separately for each product</li>
               <li>Assign team members to specific workspaces</li>
@@ -645,9 +711,11 @@ function MultiWorkspaceSettings() {
       {showDisableWarning && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-surface-800 rounded-lg shadow-xl w-full max-w-md p-6">
-            <h3 className="text-lg font-semibold text-surface-100 mb-4">Disable Multi-Workspace Mode?</h3>
+            <h3 className="text-lg font-semibold text-surface-100 mb-4">
+              Disable Multi-Workspace Mode?
+            </h3>
             <p className="text-surface-400 mb-6">
-              This will hide all workspace-related features. Your data will be preserved but 
+              This will hide all workspace-related features. Your data will be preserved but
               workspace filtering will be disabled across the platform.
             </p>
             <div className="flex justify-end gap-3">
@@ -704,7 +772,7 @@ function CommunicationsSettings() {
 
   const { data: config, isLoading } = useQuery({
     queryKey: ['notifications-config'],
-    queryFn: () => notificationsConfigApi.get().then(res => res.data),
+    queryFn: () => notificationsConfigApi.get().then((res) => res.data),
   });
 
   const updateEmailMutation = useMutation({
@@ -850,7 +918,9 @@ function CommunicationsSettings() {
                   className="input mt-1"
                   placeholder="noreply@company.com"
                   value={emailForm.emailFromAddress}
-                  onChange={(e) => setEmailForm(f => ({ ...f, emailFromAddress: e.target.value }))}
+                  onChange={(e) =>
+                    setEmailForm((f) => ({ ...f, emailFromAddress: e.target.value }))
+                  }
                 />
               </div>
               <div>
@@ -860,7 +930,7 @@ function CommunicationsSettings() {
                   className="input mt-1"
                   placeholder="GigaChad GRC"
                   value={emailForm.emailFromName}
-                  onChange={(e) => setEmailForm(f => ({ ...f, emailFromName: e.target.value }))}
+                  onChange={(e) => setEmailForm((f) => ({ ...f, emailFromName: e.target.value }))}
                 />
               </div>
             </div>
@@ -874,7 +944,7 @@ function CommunicationsSettings() {
                     className="input mt-1"
                     placeholder="smtp.company.com"
                     value={emailForm.smtpHost}
-                    onChange={(e) => setEmailForm(f => ({ ...f, smtpHost: e.target.value }))}
+                    onChange={(e) => setEmailForm((f) => ({ ...f, smtpHost: e.target.value }))}
                   />
                 </div>
                 <div>
@@ -883,7 +953,9 @@ function CommunicationsSettings() {
                     type="number"
                     className="input mt-1"
                     value={emailForm.smtpPort}
-                    onChange={(e) => setEmailForm(f => ({ ...f, smtpPort: parseInt(e.target.value) }))}
+                    onChange={(e) =>
+                      setEmailForm((f) => ({ ...f, smtpPort: parseInt(e.target.value) }))
+                    }
                   />
                 </div>
                 <div>
@@ -892,7 +964,7 @@ function CommunicationsSettings() {
                     type="text"
                     className="input mt-1"
                     value={emailForm.smtpUser}
-                    onChange={(e) => setEmailForm(f => ({ ...f, smtpUser: e.target.value }))}
+                    onChange={(e) => setEmailForm((f) => ({ ...f, smtpUser: e.target.value }))}
                   />
                 </div>
                 <div>
@@ -902,7 +974,7 @@ function CommunicationsSettings() {
                     className="input mt-1"
                     placeholder="••••••••"
                     value={emailForm.smtpPassword}
-                    onChange={(e) => setEmailForm(f => ({ ...f, smtpPassword: e.target.value }))}
+                    onChange={(e) => setEmailForm((f) => ({ ...f, smtpPassword: e.target.value }))}
                   />
                 </div>
               </div>
@@ -916,7 +988,7 @@ function CommunicationsSettings() {
                   className="input mt-1"
                   placeholder="SG.xxxxxxxxxx"
                   value={emailForm.sendgridApiKey}
-                  onChange={(e) => setEmailForm(f => ({ ...f, sendgridApiKey: e.target.value }))}
+                  onChange={(e) => setEmailForm((f) => ({ ...f, sendgridApiKey: e.target.value }))}
                 />
               </div>
             )}
@@ -928,7 +1000,7 @@ function CommunicationsSettings() {
                   <select
                     className="input mt-1"
                     value={emailForm.sesRegion}
-                    onChange={(e) => setEmailForm(f => ({ ...f, sesRegion: e.target.value }))}
+                    onChange={(e) => setEmailForm((f) => ({ ...f, sesRegion: e.target.value }))}
                   >
                     <option value="us-east-1">US East (N. Virginia)</option>
                     <option value="us-west-2">US West (Oregon)</option>
@@ -942,7 +1014,9 @@ function CommunicationsSettings() {
                     className="input mt-1"
                     placeholder="AKIA..."
                     value={emailForm.sesAccessKeyId}
-                    onChange={(e) => setEmailForm(f => ({ ...f, sesAccessKeyId: e.target.value }))}
+                    onChange={(e) =>
+                      setEmailForm((f) => ({ ...f, sesAccessKeyId: e.target.value }))
+                    }
                   />
                 </div>
                 <div>
@@ -952,7 +1026,9 @@ function CommunicationsSettings() {
                     className="input mt-1"
                     placeholder="••••••••"
                     value={emailForm.sesSecretAccessKey}
-                    onChange={(e) => setEmailForm(f => ({ ...f, sesSecretAccessKey: e.target.value }))}
+                    onChange={(e) =>
+                      setEmailForm((f) => ({ ...f, sesSecretAccessKey: e.target.value }))
+                    }
                   />
                 </div>
               </div>
@@ -1001,7 +1077,7 @@ function CommunicationsSettings() {
             <input
               type="checkbox"
               checked={slackForm.enabled}
-              onChange={(e) => setSlackForm(f => ({ ...f, enabled: e.target.checked }))}
+              onChange={(e) => setSlackForm((f) => ({ ...f, enabled: e.target.checked }))}
               className="sr-only peer"
             />
             <div className="w-11 h-6 bg-surface-700 peer-focus:ring-2 peer-focus:ring-brand-500 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
@@ -1018,9 +1094,11 @@ function CommunicationsSettings() {
                   className="input mt-1"
                   placeholder="https://hooks.slack.com/services/..."
                   value={slackForm.webhookUrl}
-                  onChange={(e) => setSlackForm(f => ({ ...f, webhookUrl: e.target.value }))}
+                  onChange={(e) => setSlackForm((f) => ({ ...f, webhookUrl: e.target.value }))}
                 />
-                <p className="text-surface-500 text-xs mt-1">Create a webhook in your Slack workspace settings</p>
+                <p className="text-surface-500 text-xs mt-1">
+                  Create a webhook in your Slack workspace settings
+                </p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -1030,7 +1108,9 @@ function CommunicationsSettings() {
                     className="input mt-1"
                     placeholder="#grc-alerts"
                     value={slackForm.defaultChannel}
-                    onChange={(e) => setSlackForm(f => ({ ...f, defaultChannel: e.target.value }))}
+                    onChange={(e) =>
+                      setSlackForm((f) => ({ ...f, defaultChannel: e.target.value }))
+                    }
                   />
                 </div>
                 <div>
@@ -1040,7 +1120,7 @@ function CommunicationsSettings() {
                     className="input mt-1"
                     placeholder="Company Workspace"
                     value={slackForm.workspaceName}
-                    onChange={(e) => setSlackForm(f => ({ ...f, workspaceName: e.target.value }))}
+                    onChange={(e) => setSlackForm((f) => ({ ...f, workspaceName: e.target.value }))}
                   />
                 </div>
               </div>
@@ -1152,7 +1232,13 @@ function ApiSettings() {
   };
 
   const keys = keysResponse?.keys || [];
-  const availableScopes = scopesResponse?.scopes || ['all', 'controls:read', 'controls:write', 'evidence:read', 'evidence:write'];
+  const availableScopes = scopesResponse?.scopes || [
+    'all',
+    'controls:read',
+    'controls:write',
+    'evidence:read',
+    'evidence:write',
+  ];
 
   return (
     <div className="card p-6 space-y-6">
@@ -1178,12 +1264,17 @@ function ApiSettings() {
       ) : (
         <div className="space-y-3">
           {keys.map((key: ApiKey) => (
-            <div key={key.id} className="flex items-center justify-between p-4 bg-surface-800/50 rounded-lg">
+            <div
+              key={key.id}
+              className="flex items-center justify-between p-4 bg-surface-800/50 rounded-lg"
+            >
               <div>
                 <div className="flex items-center gap-2">
                   <p className="text-surface-100 font-medium">{key.name}</p>
                   {!key.isActive && (
-                    <span className="px-2 py-0.5 text-xs bg-red-500/20 text-red-400 rounded">Revoked</span>
+                    <span className="px-2 py-0.5 text-xs bg-red-500/20 text-red-400 rounded">
+                      Revoked
+                    </span>
                   )}
                 </div>
                 <p className="text-surface-500 text-sm font-mono">grc_{key.keyPrefix}••••••••</p>
@@ -1191,9 +1282,7 @@ function ApiSettings() {
                   Created {formatDate(key.createdAt)} • Last used {formatDate(key.lastUsedAt)}
                 </p>
                 {key.scopes.length > 0 && (
-                  <p className="text-surface-500 text-xs mt-1">
-                    Scopes: {key.scopes.join(', ')}
-                  </p>
+                  <p className="text-surface-500 text-xs mt-1">Scopes: {key.scopes.join(', ')}</p>
                 )}
               </div>
               <div className="flex items-center gap-2">
@@ -1265,7 +1354,8 @@ function ApiSettings() {
           <div>
             <p className="text-amber-400 font-medium">API Key Security</p>
             <p className="text-surface-400 text-sm mt-1">
-              API keys grant access to your organization's data based on their scopes. Keep them secure and rotate them regularly.
+              API keys grant access to your organization's data based on their scopes. Keep them
+              secure and rotate them regularly.
             </p>
           </div>
         </div>
@@ -1289,7 +1379,9 @@ function ApiSettings() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-1">Description (optional)</label>
+                <label className="block text-sm font-medium text-surface-300 mb-1">
+                  Description (optional)
+                </label>
                 <input
                   type="text"
                   value={newKeyDescription}
@@ -1479,8 +1571,8 @@ function DashboardTemplatesSettings() {
                       <p className="text-surface-500 text-sm">{template.description}</p>
                     )}
                     <p className="text-surface-600 text-xs mt-1">
-                      {template.widgets?.length || 0} widgets •{' '}
-                      Created by {template.creator?.displayName || 'Unknown'}
+                      {template.widgets?.length || 0} widgets • Created by{' '}
+                      {template.creator?.displayName || 'Unknown'}
                     </p>
                   </div>
                 </div>
@@ -1656,10 +1748,11 @@ function EmployeeComplianceSettings() {
 
   // Load existing config
   useEffect(() => {
-    employeeComplianceApi.getConfig()
+    employeeComplianceApi
+      .getConfig()
       .then((res) => {
         if (res.data) {
-          setConfig(prev => ({ ...prev, ...res.data }));
+          setConfig((prev) => ({ ...prev, ...res.data }));
         }
       })
       .catch(() => {
@@ -1668,7 +1761,7 @@ function EmployeeComplianceSettings() {
   }, []);
 
   const updateScoreWeight = (key: keyof ComplianceConfig['scoreWeights'], value: number) => {
-    setConfig(prev => ({
+    setConfig((prev) => ({
       ...prev,
       scoreWeights: { ...prev.scoreWeights, [key]: value },
     }));
@@ -1676,15 +1769,18 @@ function EmployeeComplianceSettings() {
   };
 
   const updateThreshold = (key: keyof ComplianceConfig['thresholds'], value: number) => {
-    setConfig(prev => ({
+    setConfig((prev) => ({
       ...prev,
       thresholds: { ...prev.thresholds, [key]: value },
     }));
     setHasChanges(true);
   };
 
-  const updateRequirement = (key: keyof ComplianceConfig['requirements'], value: boolean | number) => {
-    setConfig(prev => ({
+  const updateRequirement = (
+    key: keyof ComplianceConfig['requirements'],
+    value: boolean | number
+  ) => {
+    setConfig((prev) => ({
       ...prev,
       requirements: { ...prev.requirements, [key]: value },
     }));
@@ -1741,7 +1837,8 @@ function EmployeeComplianceSettings() {
         <div>
           <h2 className="text-lg font-semibold text-surface-100">Compliance Score Weights</h2>
           <p className="text-surface-400 text-sm mt-1">
-            Configure how much each category contributes to the overall compliance score. Weights must total 100%.
+            Configure how much each category contributes to the overall compliance score. Weights
+            must total 100%.
           </p>
         </div>
 
@@ -1804,8 +1901,12 @@ function EmployeeComplianceSettings() {
           </div>
         </div>
 
-        <div className={`p-3 rounded-lg ${isValidWeights ? 'bg-green-500/10 border border-green-500/30' : 'bg-red-500/10 border border-red-500/30'}`}>
-          <p className={`text-sm font-medium ${isValidWeights ? 'text-green-400' : 'text-red-400'}`}>
+        <div
+          className={`p-3 rounded-lg ${isValidWeights ? 'bg-green-500/10 border border-green-500/30' : 'bg-red-500/10 border border-red-500/30'}`}
+        >
+          <p
+            className={`text-sm font-medium ${isValidWeights ? 'text-green-400' : 'text-red-400'}`}
+          >
             Total Weight: {totalWeight}% {isValidWeights ? '✓' : '(must equal 100%)'}
           </p>
         </div>
@@ -1834,7 +1935,9 @@ function EmployeeComplianceSettings() {
               />
               <span className="text-surface-400">% score</span>
             </div>
-            <p className="text-surface-500 text-xs mt-1">Employees scoring at or above this are considered compliant</p>
+            <p className="text-surface-500 text-xs mt-1">
+              Employees scoring at or above this are considered compliant
+            </p>
           </div>
           <div>
             <label className="label">At Risk Threshold (≥)</label>
@@ -1849,7 +1952,9 @@ function EmployeeComplianceSettings() {
               />
               <span className="text-surface-400">% score</span>
             </div>
-            <p className="text-surface-500 text-xs mt-1">Employees scoring between this and compliant are "at risk"</p>
+            <p className="text-surface-500 text-xs mt-1">
+              Employees scoring between this and compliant are "at risk"
+            </p>
           </div>
         </div>
 
@@ -1860,7 +1965,9 @@ function EmployeeComplianceSettings() {
           </div>
           <div className="flex items-center gap-2">
             <span className="w-3 h-3 rounded-full bg-yellow-500"></span>
-            <span>At Risk: {config.thresholds.atRisk}-{config.thresholds.compliant - 1}%</span>
+            <span>
+              At Risk: {config.thresholds.atRisk}-{config.thresholds.compliant - 1}%
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <span className="w-3 h-3 rounded-full bg-red-500"></span>
@@ -1901,7 +2008,12 @@ function EmployeeComplianceSettings() {
                   min="30"
                   max="1095"
                   value={config.requirements.backgroundCheckValidityDays}
-                  onChange={(e) => updateRequirement('backgroundCheckValidityDays', parseInt(e.target.value) || 365)}
+                  onChange={(e) =>
+                    updateRequirement(
+                      'backgroundCheckValidityDays',
+                      parseInt(e.target.value) || 365
+                    )
+                  }
                   className="input w-20 text-sm"
                 />
                 <span className="text-surface-400 text-sm">days</span>
@@ -1917,7 +2029,9 @@ function EmployeeComplianceSettings() {
                 <input
                   type="checkbox"
                   checked={config.requirements.trainingCompletionRequired}
-                  onChange={(e) => updateRequirement('trainingCompletionRequired', e.target.checked)}
+                  onChange={(e) =>
+                    updateRequirement('trainingCompletionRequired', e.target.checked)
+                  }
                   className="sr-only peer"
                 />
                 <div className="w-11 h-6 bg-surface-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
@@ -1931,7 +2045,9 @@ function EmployeeComplianceSettings() {
                   min="1"
                   max="365"
                   value={config.requirements.trainingOverdueDays}
-                  onChange={(e) => updateRequirement('trainingOverdueDays', parseInt(e.target.value) || 30)}
+                  onChange={(e) =>
+                    updateRequirement('trainingOverdueDays', parseInt(e.target.value) || 30)
+                  }
                   className="input w-20 text-sm"
                 />
                 <span className="text-surface-400 text-sm">days past due date</span>
@@ -1961,7 +2077,9 @@ function EmployeeComplianceSettings() {
                   min="30"
                   max="1095"
                   value={config.requirements.attestationValidityDays}
-                  onChange={(e) => updateRequirement('attestationValidityDays', parseInt(e.target.value) || 365)}
+                  onChange={(e) =>
+                    updateRequirement('attestationValidityDays', parseInt(e.target.value) || 365)
+                  }
                   className="input w-20 text-sm"
                 />
                 <span className="text-surface-400 text-sm">days</span>
@@ -1974,7 +2092,9 @@ function EmployeeComplianceSettings() {
             <div className="flex items-center justify-between">
               <div>
                 <label className="text-surface-200 font-medium">MFA Required</label>
-                <p className="text-surface-500 text-xs mt-1">Require multi-factor authentication for all employees</p>
+                <p className="text-surface-500 text-xs mt-1">
+                  Require multi-factor authentication for all employees
+                </p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
@@ -1995,7 +2115,8 @@ function EmployeeComplianceSettings() {
         <div>
           <h2 className="text-lg font-semibold text-surface-100">Data Sources</h2>
           <p className="text-surface-400 text-sm mt-1">
-            Employee compliance data is gathered from configured integrations. Click a category to view or configure integrations.
+            Employee compliance data is gathered from configured integrations. Click a category to
+            view or configure integrations.
           </p>
         </div>
 
@@ -2004,52 +2125,68 @@ function EmployeeComplianceSettings() {
             to="/integrations?search=HR%20Tools"
             className="p-3 bg-surface-800/50 rounded-lg hover:bg-surface-700/50 hover:border-brand-500/50 border border-transparent transition-all cursor-pointer group"
           >
-            <p className="text-surface-400 text-xs uppercase tracking-wider mb-1 group-hover:text-brand-400">HRIS / Employee List</p>
+            <p className="text-surface-400 text-xs uppercase tracking-wider mb-1 group-hover:text-brand-400">
+              HRIS / Employee List
+            </p>
             <p className="text-surface-200 text-sm">BambooHR, Workday, ADP, etc.</p>
-            <p className="text-surface-500 text-xs mt-2 group-hover:text-brand-400">Click to configure →</p>
+            <p className="text-surface-500 text-xs mt-2 group-hover:text-brand-400">
+              Click to configure →
+            </p>
           </Link>
           <Link
             to="/integrations?search=Background%20Check"
             className="p-3 bg-surface-800/50 rounded-lg hover:bg-surface-700/50 hover:border-brand-500/50 border border-transparent transition-all cursor-pointer group"
           >
-            <p className="text-surface-400 text-xs uppercase tracking-wider mb-1 group-hover:text-brand-400">Background Check</p>
+            <p className="text-surface-400 text-xs uppercase tracking-wider mb-1 group-hover:text-brand-400">
+              Background Check
+            </p>
             <p className="text-surface-200 text-sm">Certn, Checkr, Sterling, etc.</p>
-            <p className="text-surface-500 text-xs mt-2 group-hover:text-brand-400">Click to configure →</p>
+            <p className="text-surface-500 text-xs mt-2 group-hover:text-brand-400">
+              Click to configure →
+            </p>
           </Link>
           <Link
             to="/integrations?search=Security%20Awareness"
             className="p-3 bg-surface-800/50 rounded-lg hover:bg-surface-700/50 hover:border-brand-500/50 border border-transparent transition-all cursor-pointer group"
           >
-            <p className="text-surface-400 text-xs uppercase tracking-wider mb-1 group-hover:text-brand-400">Training / LMS</p>
+            <p className="text-surface-400 text-xs uppercase tracking-wider mb-1 group-hover:text-brand-400">
+              Training / LMS
+            </p>
             <p className="text-surface-200 text-sm">KnowBe4, Proofpoint, Curricula, etc.</p>
-            <p className="text-surface-500 text-xs mt-2 group-hover:text-brand-400">Click to configure →</p>
+            <p className="text-surface-500 text-xs mt-2 group-hover:text-brand-400">
+              Click to configure →
+            </p>
           </Link>
           <Link
             to="/integrations?search=MDM"
             className="p-3 bg-surface-800/50 rounded-lg hover:bg-surface-700/50 hover:border-brand-500/50 border border-transparent transition-all cursor-pointer group"
           >
-            <p className="text-surface-400 text-xs uppercase tracking-wider mb-1 group-hover:text-brand-400">MDM / Device</p>
+            <p className="text-surface-400 text-xs uppercase tracking-wider mb-1 group-hover:text-brand-400">
+              MDM / Device
+            </p>
             <p className="text-surface-200 text-sm">Jamf, Kandji, Intune, etc.</p>
-            <p className="text-surface-500 text-xs mt-2 group-hover:text-brand-400">Click to configure →</p>
+            <p className="text-surface-500 text-xs mt-2 group-hover:text-brand-400">
+              Click to configure →
+            </p>
           </Link>
           <Link
             to="/integrations?search=Identity%20Provider"
             className="p-3 bg-surface-800/50 rounded-lg hover:bg-surface-700/50 hover:border-brand-500/50 border border-transparent transition-all cursor-pointer group"
           >
-            <p className="text-surface-400 text-xs uppercase tracking-wider mb-1 group-hover:text-brand-400">Identity Provider</p>
+            <p className="text-surface-400 text-xs uppercase tracking-wider mb-1 group-hover:text-brand-400">
+              Identity Provider
+            </p>
             <p className="text-surface-200 text-sm">Okta, Azure AD, Google Workspace</p>
-            <p className="text-surface-500 text-xs mt-2 group-hover:text-brand-400">Click to configure →</p>
+            <p className="text-surface-500 text-xs mt-2 group-hover:text-brand-400">
+              Click to configure →
+            </p>
           </Link>
         </div>
       </div>
 
       {/* Save Actions */}
       <div className="flex items-center justify-between">
-        <button
-          onClick={handleReset}
-          className="btn btn-ghost"
-          disabled={!hasChanges}
-        >
+        <button onClick={handleReset} className="btn btn-ghost" disabled={!hasChanges}>
           Reset to Defaults
         </button>
         <button
@@ -2084,7 +2221,7 @@ function AISettings() {
   const handleSave = async () => {
     setIsSaving(true);
     // API call to save AI configuration would go here
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     toast.success('AI configuration saved');
     setIsSaving(false);
   };
@@ -2127,7 +2264,10 @@ function AISettings() {
             <p className="text-surface-500 text-sm mt-1">No AI features</p>
           </button>
           <button
-            onClick={() => { setAiProvider('openai'); setModel('gpt-5'); }} // Latest GPT-5
+            onClick={() => {
+              setAiProvider('openai');
+              setModel('gpt-5');
+            }} // Latest GPT-5
             className={`p-4 rounded-lg border-2 transition-all ${
               aiProvider === 'openai'
                 ? 'border-brand-500 bg-brand-500/10'
@@ -2138,7 +2278,10 @@ function AISettings() {
             <p className="text-surface-500 text-sm mt-1">GPT-4, GPT-3.5</p>
           </button>
           <button
-            onClick={() => { setAiProvider('anthropic'); setModel('claude-opus-4-5-20250514'); }} // Latest Claude Opus 4.5
+            onClick={() => {
+              setAiProvider('anthropic');
+              setModel('claude-opus-4-5-20250514');
+            }} // Latest Claude Opus 4.5
             className={`p-4 rounded-lg border-2 transition-all ${
               aiProvider === 'anthropic'
                 ? 'border-brand-500 bg-brand-500/10'
@@ -2172,8 +2315,10 @@ function AISettings() {
                 onChange={(e) => setModel(e.target.value)}
                 className="input mt-1"
               >
-                {(aiProvider === 'openai' ? openaiModels : anthropicModels).map(m => (
-                  <option key={m.id} value={m.id}>{m.name}</option>
+                {(aiProvider === 'openai' ? openaiModels : anthropicModels).map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name}
+                  </option>
                 ))}
               </select>
             </div>
@@ -2192,13 +2337,36 @@ function AISettings() {
 
         <div className="space-y-3">
           {[
-            { key: 'riskScoring', name: 'Risk Scoring', desc: 'AI-suggested risk likelihood and impact scores' },
-            { key: 'categorization', name: 'Auto-Categorization', desc: 'Automatically categorize and tag items' },
-            { key: 'smartSearch', name: 'Smart Search', desc: 'Natural language search across all modules' },
-            { key: 'policyDrafting', name: 'Policy Drafting', desc: 'Generate policy drafts based on requirements' },
-            { key: 'controlSuggestions', name: 'Control Suggestions', desc: 'Recommend controls for risks and requirements' },
-          ].map(feature => (
-            <div key={feature.key} className="flex items-center justify-between p-3 bg-surface-800/50 rounded-lg">
+            {
+              key: 'riskScoring',
+              name: 'Risk Scoring',
+              desc: 'AI-suggested risk likelihood and impact scores',
+            },
+            {
+              key: 'categorization',
+              name: 'Auto-Categorization',
+              desc: 'Automatically categorize and tag items',
+            },
+            {
+              key: 'smartSearch',
+              name: 'Smart Search',
+              desc: 'Natural language search across all modules',
+            },
+            {
+              key: 'policyDrafting',
+              name: 'Policy Drafting',
+              desc: 'Generate policy drafts based on requirements',
+            },
+            {
+              key: 'controlSuggestions',
+              name: 'Control Suggestions',
+              desc: 'Recommend controls for risks and requirements',
+            },
+          ].map((feature) => (
+            <div
+              key={feature.key}
+              className="flex items-center justify-between p-3 bg-surface-800/50 rounded-lg"
+            >
               <div>
                 <p className="text-surface-200 font-medium">{feature.name}</p>
                 <p className="text-surface-500 text-sm">{feature.desc}</p>
@@ -2207,7 +2375,7 @@ function AISettings() {
                 <input
                   type="checkbox"
                   checked={features[feature.key as keyof typeof features]}
-                  onChange={(e) => setFeatures(f => ({ ...f, [feature.key]: e.target.checked }))}
+                  onChange={(e) => setFeatures((f) => ({ ...f, [feature.key]: e.target.checked }))}
                   disabled={aiProvider === 'disabled'}
                   className="sr-only peer"
                 />
@@ -2235,11 +2403,7 @@ function AISettings() {
 
       {/* Save */}
       <div className="flex justify-end">
-        <button
-          onClick={handleSave}
-          className="btn btn-primary"
-          disabled={isSaving}
-        >
+        <button onClick={handleSave} className="btn btn-primary" disabled={isSaving}>
           {isSaving ? 'Saving...' : 'Save AI Configuration'}
         </button>
       </div>

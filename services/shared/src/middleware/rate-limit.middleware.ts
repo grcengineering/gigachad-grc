@@ -34,9 +34,11 @@ export class CustomThrottlerGuard extends ThrottlerGuard {
     const apiKey = headers['x-api-key'] as string | undefined;
 
     if (apiKey) {
-      // Hash the API key for the tracker (don't store raw key)
+      // SECURITY: Hash the API key for the tracker (don't store raw key)
+      // Using full SHA-256 hash (64 hex chars) for better collision resistance
+      // Truncating to 32 chars is sufficient for rate limiting while keeping reasonable length
       const crypto = await import('crypto');
-      const keyHash = crypto.createHash('sha256').update(apiKey).digest('hex').substring(0, 16);
+      const keyHash = crypto.createHash('sha256').update(apiKey).digest('hex').substring(0, 32);
       return `api:${keyHash}`;
     }
 

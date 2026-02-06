@@ -155,6 +155,10 @@ export class PortalController {
     @Body() users: CreatePortalUserDto[],
     @User() user: UserContext
   ) {
+    // Type validation: ensure users is an array before accessing .length
+    if (!Array.isArray(users)) {
+      throw new BadRequestException('Request body must be an array of users');
+    }
     if (users.length > 50) {
       throw new BadRequestException('Maximum 50 users per bulk create operation');
     }

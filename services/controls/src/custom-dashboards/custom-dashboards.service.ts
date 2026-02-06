@@ -1,6 +1,17 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import {
+  validatePropertyName,
+  safePropertySet,
+  safeOrderBy,
+  escapeHtml,
+} from '@gigachad-grc/shared';
 import {
   CreateDashboardDto,
   UpdateDashboardDto,
@@ -16,13 +27,25 @@ import {
 const DATA_SOURCE_FIELDS: Record<DataSourceType, DataSourceDefinitionDto['fields']> = {
   [DataSourceType.CONTROLS]: [
     { name: 'id', type: 'string', label: 'ID', filterable: true, aggregatable: false },
-    { name: 'controlId', type: 'string', label: 'Control ID', filterable: true, aggregatable: false },
+    {
+      name: 'controlId',
+      type: 'string',
+      label: 'Control ID',
+      filterable: true,
+      aggregatable: false,
+    },
     { name: 'title', type: 'string', label: 'Title', filterable: true, aggregatable: false },
     { name: 'status', type: 'enum', label: 'Status', filterable: true, aggregatable: true },
     { name: 'category', type: 'string', label: 'Category', filterable: true, aggregatable: true },
     { name: 'ownerId', type: 'string', label: 'Owner', filterable: true, aggregatable: true },
     { name: 'dueDate', type: 'date', label: 'Due Date', filterable: true, aggregatable: false },
-    { name: 'effectiveness', type: 'number', label: 'Effectiveness', filterable: true, aggregatable: true },
+    {
+      name: 'effectiveness',
+      type: 'number',
+      label: 'Effectiveness',
+      filterable: true,
+      aggregatable: true,
+    },
     { name: 'createdAt', type: 'date', label: 'Created At', filterable: true, aggregatable: false },
   ],
   [DataSourceType.RISKS]: [
@@ -30,7 +53,13 @@ const DATA_SOURCE_FIELDS: Record<DataSourceType, DataSourceDefinitionDto['fields
     { name: 'title', type: 'string', label: 'Title', filterable: true, aggregatable: false },
     { name: 'likelihood', type: 'enum', label: 'Likelihood', filterable: true, aggregatable: true },
     { name: 'impact', type: 'enum', label: 'Impact', filterable: true, aggregatable: true },
-    { name: 'initialSeverity', type: 'enum', label: 'Severity', filterable: true, aggregatable: true },
+    {
+      name: 'initialSeverity',
+      type: 'enum',
+      label: 'Severity',
+      filterable: true,
+      aggregatable: true,
+    },
     { name: 'category', type: 'string', label: 'Category', filterable: true, aggregatable: true },
     { name: 'intakeStatus', type: 'enum', label: 'Status', filterable: true, aggregatable: true },
     { name: 'createdAt', type: 'date', label: 'Created At', filterable: true, aggregatable: false },
@@ -41,7 +70,13 @@ const DATA_SOURCE_FIELDS: Record<DataSourceType, DataSourceDefinitionDto['fields
     { name: 'status', type: 'enum', label: 'Status', filterable: true, aggregatable: true },
     { name: 'category', type: 'string', label: 'Category', filterable: true, aggregatable: true },
     { name: 'ownerId', type: 'string', label: 'Owner', filterable: true, aggregatable: true },
-    { name: 'nextReviewDate', type: 'date', label: 'Next Review Date', filterable: true, aggregatable: false },
+    {
+      name: 'nextReviewDate',
+      type: 'date',
+      label: 'Next Review Date',
+      filterable: true,
+      aggregatable: false,
+    },
     { name: 'createdAt', type: 'date', label: 'Created At', filterable: true, aggregatable: false },
   ],
   [DataSourceType.VENDORS]: [
@@ -50,8 +85,20 @@ const DATA_SOURCE_FIELDS: Record<DataSourceType, DataSourceDefinitionDto['fields
     { name: 'tier', type: 'enum', label: 'Tier', filterable: true, aggregatable: true },
     { name: 'category', type: 'enum', label: 'Category', filterable: true, aggregatable: true },
     { name: 'status', type: 'enum', label: 'Status', filterable: true, aggregatable: true },
-    { name: 'riskScore', type: 'number', label: 'Risk Score', filterable: true, aggregatable: true },
-    { name: 'lastAssessmentDate', type: 'date', label: 'Last Assessment', filterable: true, aggregatable: false },
+    {
+      name: 'riskScore',
+      type: 'number',
+      label: 'Risk Score',
+      filterable: true,
+      aggregatable: true,
+    },
+    {
+      name: 'lastAssessmentDate',
+      type: 'date',
+      label: 'Last Assessment',
+      filterable: true,
+      aggregatable: false,
+    },
     { name: 'createdAt', type: 'date', label: 'Created At', filterable: true, aggregatable: false },
   ],
   [DataSourceType.EVIDENCE]: [
@@ -60,18 +107,60 @@ const DATA_SOURCE_FIELDS: Record<DataSourceType, DataSourceDefinitionDto['fields
     { name: 'type', type: 'string', label: 'Type', filterable: true, aggregatable: true },
     { name: 'status', type: 'enum', label: 'Status', filterable: true, aggregatable: true },
     { name: 'source', type: 'string', label: 'Source', filterable: true, aggregatable: true },
-    { name: 'collectedAt', type: 'date', label: 'Collected At', filterable: true, aggregatable: false },
-    { name: 'validUntil', type: 'date', label: 'Valid Until', filterable: true, aggregatable: false },
-    { name: 'isExpired', type: 'boolean', label: 'Is Expired', filterable: true, aggregatable: true },
+    {
+      name: 'collectedAt',
+      type: 'date',
+      label: 'Collected At',
+      filterable: true,
+      aggregatable: false,
+    },
+    {
+      name: 'validUntil',
+      type: 'date',
+      label: 'Valid Until',
+      filterable: true,
+      aggregatable: false,
+    },
+    {
+      name: 'isExpired',
+      type: 'boolean',
+      label: 'Is Expired',
+      filterable: true,
+      aggregatable: true,
+    },
   ],
   [DataSourceType.EMPLOYEES]: [
     { name: 'id', type: 'string', label: 'ID', filterable: true, aggregatable: false },
     { name: 'name', type: 'string', label: 'Name', filterable: true, aggregatable: false },
     { name: 'email', type: 'string', label: 'Email', filterable: true, aggregatable: false },
-    { name: 'department', type: 'string', label: 'Department', filterable: true, aggregatable: true },
-    { name: 'complianceScore', type: 'number', label: 'Compliance Score', filterable: true, aggregatable: true },
-    { name: 'trainingStatus', type: 'string', label: 'Training Status', filterable: true, aggregatable: true },
-    { name: 'backgroundCheckStatus', type: 'string', label: 'Background Check Status', filterable: true, aggregatable: true },
+    {
+      name: 'department',
+      type: 'string',
+      label: 'Department',
+      filterable: true,
+      aggregatable: true,
+    },
+    {
+      name: 'complianceScore',
+      type: 'number',
+      label: 'Compliance Score',
+      filterable: true,
+      aggregatable: true,
+    },
+    {
+      name: 'trainingStatus',
+      type: 'string',
+      label: 'Training Status',
+      filterable: true,
+      aggregatable: true,
+    },
+    {
+      name: 'backgroundCheckStatus',
+      type: 'string',
+      label: 'Background Check Status',
+      filterable: true,
+      aggregatable: true,
+    },
   ],
   [DataSourceType.AUDITS]: [
     { name: 'id', type: 'string', label: 'ID', filterable: true, aggregatable: false },
@@ -80,7 +169,13 @@ const DATA_SOURCE_FIELDS: Record<DataSourceType, DataSourceDefinitionDto['fields
     { name: 'status', type: 'enum', label: 'Status', filterable: true, aggregatable: true },
     { name: 'startDate', type: 'date', label: 'Start Date', filterable: true, aggregatable: false },
     { name: 'endDate', type: 'date', label: 'End Date', filterable: true, aggregatable: false },
-    { name: 'findingsCount', type: 'number', label: 'Findings Count', filterable: true, aggregatable: true },
+    {
+      name: 'findingsCount',
+      type: 'number',
+      label: 'Findings Count',
+      filterable: true,
+      aggregatable: true,
+    },
   ],
   [DataSourceType.INTEGRATIONS]: [
     { name: 'id', type: 'string', label: 'ID', filterable: true, aggregatable: false },
@@ -88,14 +183,26 @@ const DATA_SOURCE_FIELDS: Record<DataSourceType, DataSourceDefinitionDto['fields
     { name: 'name', type: 'string', label: 'Name', filterable: true, aggregatable: false },
     { name: 'status', type: 'string', label: 'Status', filterable: true, aggregatable: true },
     { name: 'lastSyncAt', type: 'date', label: 'Last Sync', filterable: true, aggregatable: false },
-    { name: 'totalEvidenceCollected', type: 'number', label: 'Evidence Collected', filterable: true, aggregatable: true },
+    {
+      name: 'totalEvidenceCollected',
+      type: 'number',
+      label: 'Evidence Collected',
+      filterable: true,
+      aggregatable: true,
+    },
   ],
   [DataSourceType.FRAMEWORKS]: [
     { name: 'id', type: 'string', label: 'ID', filterable: true, aggregatable: false },
     { name: 'name', type: 'string', label: 'Name', filterable: true, aggregatable: false },
     { name: 'version', type: 'string', label: 'Version', filterable: true, aggregatable: false },
     { name: 'status', type: 'string', label: 'Status', filterable: true, aggregatable: true },
-    { name: 'readinessScore', type: 'number', label: 'Readiness Score', filterable: true, aggregatable: true },
+    {
+      name: 'readinessScore',
+      type: 'number',
+      label: 'Readiness Score',
+      filterable: true,
+      aggregatable: true,
+    },
   ],
 };
 
@@ -131,10 +238,7 @@ export class CustomDashboardsService {
       where: {
         id,
         organizationId,
-        OR: [
-          { userId },
-          { isTemplate: true },
-        ],
+        OR: [{ userId }, { isTemplate: true }],
       },
       include: {
         widgets: {
@@ -339,7 +443,12 @@ export class CustomDashboardsService {
 
   // ==================== Widget CRUD ====================
 
-  async addWidget(dashboardId: string, organizationId: string, userId: string, dto: CreateWidgetDto) {
+  async addWidget(
+    dashboardId: string,
+    organizationId: string,
+    userId: string,
+    dto: CreateWidgetDto
+  ) {
     // Verify dashboard access
     await this.findById(dashboardId, organizationId, userId);
 
@@ -363,7 +472,7 @@ export class CustomDashboardsService {
     dashboardId: string,
     organizationId: string,
     userId: string,
-    dto: UpdateWidgetDto,
+    dto: UpdateWidgetDto
   ) {
     // Verify dashboard access
     await this.findById(dashboardId, organizationId, userId);
@@ -389,7 +498,12 @@ export class CustomDashboardsService {
     });
   }
 
-  async deleteWidget(widgetId: string, dashboardId: string, organizationId: string, userId: string) {
+  async deleteWidget(
+    widgetId: string,
+    dashboardId: string,
+    organizationId: string,
+    userId: string
+  ) {
     // Verify dashboard access
     await this.findById(dashboardId, organizationId, userId);
 
@@ -477,49 +591,58 @@ export class CustomDashboardsService {
       case DataSourceType.FRAMEWORKS:
         return this.queryFrameworks(organizationId, query, limit);
       default:
-        throw new BadRequestException(`Unknown data source: ${query.source}`);
+        // SECURITY: Escape user input to prevent XSS in error responses
+        throw new BadRequestException(
+          `Unknown data source: ${escapeHtml(String(query.source ?? ''))}`
+        );
     }
   }
 
-  private buildPrismaWhere(filters: DataQueryDto['filters'], organizationId: string): Record<string, unknown> {
+  private buildPrismaWhere(
+    filters: DataQueryDto['filters'],
+    organizationId: string
+  ): Record<string, unknown> {
     const where: Record<string, unknown> = { organizationId };
 
     if (!filters || filters.length === 0) return where;
 
     filters.forEach((filter) => {
+      // SECURITY: Validate filter.field to prevent prototype pollution attacks
+      validatePropertyName(filter.field, 'filter field');
+
       switch (filter.operator) {
         case FilterOperator.EQ:
-          where[filter.field] = filter.value;
+          safePropertySet(where, filter.field, filter.value);
           break;
         case FilterOperator.NEQ:
-          where[filter.field] = { not: filter.value };
+          safePropertySet(where, filter.field, { not: filter.value });
           break;
         case FilterOperator.GT:
-          where[filter.field] = { gt: filter.value };
+          safePropertySet(where, filter.field, { gt: filter.value });
           break;
         case FilterOperator.GTE:
-          where[filter.field] = { gte: filter.value };
+          safePropertySet(where, filter.field, { gte: filter.value });
           break;
         case FilterOperator.LT:
-          where[filter.field] = { lt: filter.value };
+          safePropertySet(where, filter.field, { lt: filter.value });
           break;
         case FilterOperator.LTE:
-          where[filter.field] = { lte: filter.value };
+          safePropertySet(where, filter.field, { lte: filter.value });
           break;
         case FilterOperator.CONTAINS:
-          where[filter.field] = { contains: filter.value, mode: 'insensitive' };
+          safePropertySet(where, filter.field, { contains: filter.value, mode: 'insensitive' });
           break;
         case FilterOperator.IN:
-          where[filter.field] = { in: filter.value };
+          safePropertySet(where, filter.field, { in: filter.value });
           break;
         case FilterOperator.NOT_IN:
-          where[filter.field] = { notIn: filter.value };
+          safePropertySet(where, filter.field, { notIn: filter.value });
           break;
         case FilterOperator.IS_NULL:
-          where[filter.field] = null;
+          safePropertySet(where, filter.field, null);
           break;
         case FilterOperator.IS_NOT_NULL:
-          where[filter.field] = { not: null };
+          safePropertySet(where, filter.field, { not: null });
           break;
       }
     });
@@ -533,16 +656,24 @@ export class CustomDashboardsService {
     if (query.groupBy || (query.aggregations && query.aggregations.length > 0)) {
       // Use groupBy for aggregations
       const groupBy = query.groupBy || 'status';
+      // SECURITY: Validate groupBy field to prevent prototype pollution
+      validatePropertyName(groupBy, 'groupBy field');
       const result = await this.prisma.controlImplementation.groupBy({
         by: [groupBy as any],
         where,
         _count: true,
       });
-      return result.map((r) => ({
-        [groupBy]: (r as any)[groupBy],
-        count: r._count,
-      }));
+      return result.map((r) => {
+        const mapped: Record<string, unknown> = { count: r._count };
+        safePropertySet(mapped, groupBy, (r as any)[groupBy]);
+        return mapped;
+      });
     }
+
+    // SECURITY: Validate orderBy field to prevent prototype pollution
+    const orderByClause = query.orderBy
+      ? safeOrderBy(query.orderBy.field, query.orderBy.direction)
+      : { createdAt: 'desc' as const };
 
     const data = await this.prisma.controlImplementation.findMany({
       where,
@@ -554,9 +685,7 @@ export class CustomDashboardsService {
           select: { displayName: true, email: true },
         },
       },
-      orderBy: query.orderBy
-        ? { [query.orderBy.field]: query.orderBy.direction }
-        : { createdAt: 'desc' },
+      orderBy: orderByClause,
       take: limit,
     });
 
@@ -577,16 +706,19 @@ export class CustomDashboardsService {
 
     if (query.groupBy || (query.aggregations && query.aggregations.length > 0)) {
       const groupBy = query.groupBy || 'initialSeverity';
+      // SECURITY: Validate groupBy field to prevent prototype pollution
+      validatePropertyName(groupBy, 'groupBy field');
       try {
         const result = await this.prisma.risk.groupBy({
           by: [groupBy as any],
           where,
           _count: true,
         });
-        return result.map((r) => ({
-          [groupBy]: (r as any)[groupBy],
-          count: r._count,
-        }));
+        return result.map((r) => {
+          const mapped: Record<string, unknown> = { count: r._count };
+          safePropertySet(mapped, groupBy, (r as any)[groupBy]);
+          return mapped;
+        });
       } catch {
         return [];
       }
@@ -604,16 +736,19 @@ export class CustomDashboardsService {
 
     if (query.groupBy || (query.aggregations && query.aggregations.length > 0)) {
       const groupBy = query.groupBy || 'status';
+      // SECURITY: Validate groupBy field to prevent prototype pollution
+      validatePropertyName(groupBy, 'groupBy field');
       try {
         const result = await this.prisma.policy.groupBy({
           by: [groupBy as any],
           where,
           _count: true,
         });
-        return result.map((r) => ({
-          [groupBy]: (r as any)[groupBy],
-          count: r._count,
-        }));
+        return result.map((r) => {
+          const mapped: Record<string, unknown> = { count: r._count };
+          safePropertySet(mapped, groupBy, (r as any)[groupBy]);
+          return mapped;
+        });
       } catch {
         return [];
       }
@@ -631,16 +766,19 @@ export class CustomDashboardsService {
 
     if (query.groupBy || (query.aggregations && query.aggregations.length > 0)) {
       const groupBy = query.groupBy || 'tier';
+      // SECURITY: Validate groupBy field to prevent prototype pollution
+      validatePropertyName(groupBy, 'groupBy field');
       try {
         const result = await this.prisma.vendor.groupBy({
           by: [groupBy as any],
           where,
           _count: true,
         });
-        return result.map((r) => ({
-          [groupBy]: (r as any)[groupBy],
-          count: r._count,
-        }));
+        return result.map((r) => {
+          const mapped: Record<string, unknown> = { count: r._count };
+          safePropertySet(mapped, groupBy, (r as any)[groupBy]);
+          return mapped;
+        });
       } catch {
         return [];
       }
@@ -658,16 +796,19 @@ export class CustomDashboardsService {
 
     if (query.groupBy || (query.aggregations && query.aggregations.length > 0)) {
       const groupBy = query.groupBy || 'status';
+      // SECURITY: Validate groupBy field to prevent prototype pollution
+      validatePropertyName(groupBy, 'groupBy field');
       try {
         const result = await this.prisma.evidence.groupBy({
           by: [groupBy as any],
           where,
           _count: true,
         });
-        return result.map((r) => ({
-          [groupBy]: (r as any)[groupBy],
-          count: r._count,
-        }));
+        return result.map((r) => {
+          const mapped: Record<string, unknown> = { count: r._count };
+          safePropertySet(mapped, groupBy, (r as any)[groupBy]);
+          return mapped;
+        });
       } catch {
         return [];
       }
@@ -685,16 +826,19 @@ export class CustomDashboardsService {
 
     if (query.groupBy || (query.aggregations && query.aggregations.length > 0)) {
       const groupBy = query.groupBy || 'status';
+      // SECURITY: Validate groupBy field to prevent prototype pollution
+      validatePropertyName(groupBy, 'groupBy field');
       try {
         const result = await this.prisma.correlatedEmployee.groupBy({
           by: [groupBy as any],
           where,
           _count: true,
         });
-        return result.map((r) => ({
-          [groupBy]: (r as any)[groupBy],
-          count: r._count,
-        }));
+        return result.map((r) => {
+          const mapped: Record<string, unknown> = { count: r._count };
+          safePropertySet(mapped, groupBy, (r as any)[groupBy]);
+          return mapped;
+        });
       } catch {
         return [];
       }
@@ -712,16 +856,19 @@ export class CustomDashboardsService {
 
     if (query.groupBy || (query.aggregations && query.aggregations.length > 0)) {
       const groupBy = query.groupBy || 'status';
+      // SECURITY: Validate groupBy field to prevent prototype pollution
+      validatePropertyName(groupBy, 'groupBy field');
       try {
         const result = await this.prisma.audit.groupBy({
           by: [groupBy as any],
           where,
           _count: true,
         });
-        return result.map((r) => ({
-          [groupBy]: (r as any)[groupBy],
-          count: r._count,
-        }));
+        return result.map((r) => {
+          const mapped: Record<string, unknown> = { count: r._count };
+          safePropertySet(mapped, groupBy, (r as any)[groupBy]);
+          return mapped;
+        });
       } catch {
         return [];
       }
@@ -739,16 +886,19 @@ export class CustomDashboardsService {
 
     if (query.groupBy || (query.aggregations && query.aggregations.length > 0)) {
       const groupBy = query.groupBy || 'type';
+      // SECURITY: Validate groupBy field to prevent prototype pollution
+      validatePropertyName(groupBy, 'groupBy field');
       try {
         const result = await this.prisma.integration.groupBy({
           by: [groupBy as any],
           where,
           _count: true,
         });
-        return result.map((r) => ({
-          [groupBy]: (r as any)[groupBy],
-          count: r._count,
-        }));
+        return result.map((r) => {
+          const mapped: Record<string, unknown> = { count: r._count };
+          safePropertySet(mapped, groupBy, (r as any)[groupBy]);
+          return mapped;
+        });
       } catch {
         return [];
       }
@@ -776,7 +926,12 @@ export class CustomDashboardsService {
 
   // ==================== Widget Data ====================
 
-  async getWidgetData(widgetId: string, dashboardId: string, organizationId: string, userId: string) {
+  async getWidgetData(
+    widgetId: string,
+    dashboardId: string,
+    organizationId: string,
+    userId: string
+  ) {
     // Verify access
     await this.findById(dashboardId, organizationId, userId);
 
@@ -797,4 +952,3 @@ export class CustomDashboardsService {
     return { data };
   }
 }
-

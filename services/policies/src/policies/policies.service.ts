@@ -15,7 +15,7 @@ export class PoliciesService {
   constructor(
     private prisma: PrismaService,
     private auditService: AuditService,
-    @Inject(STORAGE_PROVIDER) private storage: StorageProvider,
+    @Inject(STORAGE_PROVIDER) private storage: StorageProvider
   ) {}
 
   async findAll(organizationId: string, filters: PolicyFilterDto) {
@@ -27,8 +27,11 @@ export class PoliciesService {
 
     if (filters.search) {
       // Split search into keywords for more flexible matching
-      const keywords = filters.search.trim().split(/\s+/).filter(k => k.length > 0);
-      
+      const keywords = filters.search
+        .trim()
+        .split(/\s+/)
+        .filter((k) => k.length > 0);
+
       // Build OR conditions for each keyword across multiple fields
       const orConditions: Prisma.PolicyWhereInput[] = [];
       for (const keyword of keywords) {
@@ -38,10 +41,10 @@ export class PoliciesService {
           { category: { contains: keyword, mode: Prisma.QueryMode.insensitive } },
           { filename: { contains: keyword, mode: Prisma.QueryMode.insensitive } },
           { tags: { has: keyword } },
-          { tags: { hasSome: [keyword, keyword.toLowerCase(), keyword.toUpperCase()] } },
+          { tags: { hasSome: [keyword, keyword.toLowerCase(), keyword.toUpperCase()] } }
         );
       }
-      
+
       // Match if ANY keyword matches (OR between keywords)
       if (orConditions.length > 0) {
         andConditions.push({ OR: orConditions });
@@ -125,11 +128,21 @@ export class PoliciesService {
 
   async getStats(organizationId: string) {
     const total = await this.prisma.policy.count({ where: { organizationId, deletedAt: null } });
-    const draft = await this.prisma.policy.count({ where: { organizationId, status: PolicyStatus.draft, deletedAt: null } });
-    const inReview = await this.prisma.policy.count({ where: { organizationId, status: PolicyStatus.in_review, deletedAt: null } });
-    const approved = await this.prisma.policy.count({ where: { organizationId, status: PolicyStatus.approved, deletedAt: null } });
-    const published = await this.prisma.policy.count({ where: { organizationId, status: PolicyStatus.published, deletedAt: null } });
-    const retired = await this.prisma.policy.count({ where: { organizationId, status: PolicyStatus.retired, deletedAt: null } });
+    const draft = await this.prisma.policy.count({
+      where: { organizationId, status: PolicyStatus.draft, deletedAt: null },
+    });
+    const inReview = await this.prisma.policy.count({
+      where: { organizationId, status: PolicyStatus.in_review, deletedAt: null },
+    });
+    const approved = await this.prisma.policy.count({
+      where: { organizationId, status: PolicyStatus.approved, deletedAt: null },
+    });
+    const published = await this.prisma.policy.count({
+      where: { organizationId, status: PolicyStatus.published, deletedAt: null },
+    });
+    const retired = await this.prisma.policy.count({
+      where: { organizationId, status: PolicyStatus.retired, deletedAt: null },
+    });
 
     const overdueReview = await this.prisma.policy.count({
       where: {
@@ -149,7 +162,7 @@ export class PoliciesService {
     file: Express.Multer.File,
     dto: UploadPolicyDto,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     const policyId = generateId();
     const versionNumber = dto.version || '1.0';
@@ -238,7 +251,14 @@ export class PoliciesService {
 
     // Link to controls if specified
     if (dto.controlIds?.length) {
-      await this.linkToControls(policy.id, organizationId, userId, dto.controlIds, userEmail, userName);
+      await this.linkToControls(
+        policy.id,
+        organizationId,
+        userId,
+        dto.controlIds,
+        userEmail,
+        userName
+      );
     }
 
     return policy;
@@ -250,7 +270,7 @@ export class PoliciesService {
     userId: string,
     dto: UpdatePolicyDto,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     const before = await this.findOne(id, organizationId);
 
@@ -293,7 +313,7 @@ export class PoliciesService {
     versionNumber: string,
     changeNotes?: string,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     const policy = await this.findOne(id, organizationId);
     const oldVersion = policy.version;
@@ -359,7 +379,7 @@ export class PoliciesService {
     userId: string,
     dto: UpdatePolicyStatusDto,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     const policy = await this.findOne(id, organizationId);
     const fromStatus = policy.status;
@@ -427,7 +447,7 @@ export class PoliciesService {
     organizationId: string,
     userId?: string,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     const policy = await this.findOne(id, organizationId);
 
@@ -475,13 +495,15 @@ export class PoliciesService {
 
   async streamFile(id: string, organizationId: string) {
     const policy = await this.findOne(id, organizationId);
-    
+
     // Check if file exists before attempting to stream
     const fileExists = await this.storage.exists(policy.storagePath);
     if (!fileExists) {
-      throw new NotFoundException(`Policy file not found. The file may not have been uploaded yet.`);
+      throw new NotFoundException(
+        `Policy file not found. The file may not have been uploaded yet.`
+      );
     }
-    
+
     const stream = await this.storage.download(policy.storagePath);
     return { stream, mimetype: policy.mimeType, filename: policy.filename };
   }
@@ -492,17 +514,28 @@ export class PoliciesService {
     userId: string,
     controlIds: string[],
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
+    // Type validation: ensure controlIds is an array of strings
+    if (!Array.isArray(controlIds)) {
+      throw new Error('controlIds must be an array');
+    }
+    const validControlIds = controlIds.filter(
+      (id): id is string => typeof id === 'string' && id.length > 0
+    );
+    if (validControlIds.length === 0) {
+      throw new Error('No valid control IDs provided');
+    }
+
     const policy = await this.findOne(policyId, organizationId);
 
     // Get control info for audit log
     const controls = await this.prisma.control.findMany({
-      where: { id: { in: controlIds }, deletedAt: null },
+      where: { id: { in: validControlIds }, deletedAt: null },
       select: { id: true, controlId: true, title: true },
     });
 
-    const links = controlIds.map((controlId) => ({
+    const links = validControlIds.map((controlId) => ({
       policyId,
       controlId,
       linkedBy: userId,
@@ -514,7 +547,7 @@ export class PoliciesService {
     });
 
     // Audit log
-    const linkedControlNames = controls.map(c => `${c.controlId}: ${c.title}`).join(', ');
+    const linkedControlNames = controls.map((c) => `${c.controlId}: ${c.title}`).join(', ');
     await this.auditService.log({
       organizationId,
       userId,
@@ -526,8 +559,8 @@ export class PoliciesService {
       entityName: policy.title,
       description: `Linked policy "${policy.title}" to controls: ${linkedControlNames}`,
       metadata: {
-        linkedControlIds: controlIds,
-        linkedControlCount: controlIds.length,
+        linkedControlIds: validControlIds,
+        linkedControlCount: validControlIds.length,
       },
     });
 
@@ -540,7 +573,7 @@ export class PoliciesService {
     organizationId: string,
     userId?: string,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     const policy = await this.findOne(policyId, organizationId);
 
@@ -573,4 +606,3 @@ export class PoliciesService {
     return this.findOne(policyId, organizationId);
   }
 }
-

@@ -24,9 +24,12 @@ function registerValidSW(swUrl: string, config?: ServiceWorkerConfig): void {
     .register(swUrl)
     .then((registration) => {
       // Check for updates periodically
-      setInterval(() => {
-        registration.update();
-      }, 60 * 60 * 1000); // Check every hour
+      setInterval(
+        () => {
+          registration.update();
+        },
+        60 * 60 * 1000
+      ); // Check every hour
 
       registration.onupdatefound = () => {
         const installingWorker = registration.installing;
@@ -58,7 +61,7 @@ function registerValidSW(swUrl: string, config?: ServiceWorkerConfig): void {
     window.addEventListener('online', () => {
       config.onOnline?.();
     });
-    
+
     window.addEventListener('offline', () => {
       config.onOffline?.();
     });
@@ -80,14 +83,42 @@ export function unregister(): void {
 // Skip waiting when there's an update
 export function skipWaiting(): void {
   if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-    navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' });
+    // SECURITY: ServiceWorker.postMessage() is inherently same-origin safe
+    // Service workers can only be registered for the same origin, and postMessage
+    // to the controller always goes to the same-origin service worker.
+    // Validate controller scriptURL matches our origin as defense in depth.
+    const controller = navigator.serviceWorker.controller;
+    try {
+      const controllerUrl = new URL(controller.scriptURL);
+      if (controllerUrl.origin !== window.location.origin) {
+        console.warn('[Security] Service worker controller origin mismatch');
+        return;
+      }
+    } catch {
+      console.warn('[Security] Unable to validate service worker controller');
+      return;
+    }
+    controller.postMessage({ type: 'SKIP_WAITING' });
   }
 }
 
 // Clear all service worker caches
 export function clearCache(): void {
   if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-    navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_CACHE' });
+    // SECURITY: ServiceWorker.postMessage() is inherently same-origin safe
+    // Validate controller scriptURL matches our origin as defense in depth.
+    const controller = navigator.serviceWorker.controller;
+    try {
+      const controllerUrl = new URL(controller.scriptURL);
+      if (controllerUrl.origin !== window.location.origin) {
+        console.warn('[Security] Service worker controller origin mismatch');
+        return;
+      }
+    } catch {
+      console.warn('[Security] Unable to validate service worker controller');
+      return;
+    }
+    controller.postMessage({ type: 'CLEAR_CACHE' });
   }
 }
 
@@ -119,11 +150,11 @@ export async function promptInstall(): Promise<boolean> {
     prompt: () => void;
     userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
   };
-  
+
   promptEvent.prompt();
   const { outcome } = await promptEvent.userChoice;
   deferredPrompt = null;
-  
+
   return outcome === 'accepted';
 }
 
@@ -136,4 +167,3 @@ export default {
   setupInstallPrompt,
   promptInstall,
 };
-

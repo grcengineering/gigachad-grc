@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, Inject, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject, Logger } from '@nestjs/common';
 import { PrismaService } from '../common/prisma.service';
 import { AuditService } from '../common/audit.service';
 import { CreateContractDto } from './dto/create-contract.dto';
@@ -15,38 +15,69 @@ type ContractWithVendor = VendorContract & {
 /**
  * SECURITY: Sanitize filename to prevent path traversal attacks
  * Removes path components, null bytes, and special characters
+ * Uses iterative sanitization to prevent bypass via nested patterns
  */
 function sanitizeFilename(filename: string): string {
   if (!filename) return 'file';
-  
-  // Remove path components (prevents ../../../etc/passwd)
-  let sanitized = filename.replace(/^.*[\\/]/, '');
-  
-  // Remove null bytes (prevents null byte injection)
-  // eslint-disable-next-line no-control-regex
-  sanitized = sanitized.replace(/\x00/g, '');
-  sanitized = sanitized.replace(/%00/g, '');
-  
+
+  let sanitized = filename;
+  let previousLength: number;
+
+  // Loop until no more changes - prevents bypass via nested/encoded patterns
+  do {
+    previousLength = sanitized.length;
+
+    // Remove path components (prevents ../../../etc/passwd)
+    sanitized = sanitized.replace(/^.*[\\/]/, '');
+
+    // Remove URL-encoded dangerous sequences BEFORE other sanitization
+    sanitized = sanitized
+      .replace(/%252e/gi, '') // Double-encoded dot
+      .replace(/%252f/gi, '') // Double-encoded forward slash
+      .replace(/%255c/gi, '') // Double-encoded backslash
+      .replace(/%2e/gi, '') // URL-encoded dot
+      .replace(/%2f/gi, '') // URL-encoded forward slash
+      .replace(/%5c/gi, '') // URL-encoded backslash
+      .replace(/%00/gi, ''); // URL-encoded null byte
+
+    // Remove null bytes (prevents null byte injection)
+    // eslint-disable-next-line no-control-regex
+    sanitized = sanitized.replace(/\x00/g, '');
+
+    // Remove path traversal patterns
+    sanitized = sanitized.replace(/\.{2,}/g, '.');
+  } while (sanitized.length !== previousLength);
+
   // Replace special characters with underscore
   sanitized = sanitized.replace(/[^a-zA-Z0-9._-]/g, '_');
-  
-  // Prevent multiple dots that could indicate double extension attacks
-  sanitized = sanitized.replace(/\.{2,}/g, '.');
-  
+
   // Limit length (255 is typical filesystem limit)
   if (sanitized.length > 255) {
     const ext = sanitized.substring(sanitized.lastIndexOf('.'));
     const name = sanitized.substring(0, 255 - ext.length);
     sanitized = name + ext;
   }
-  
+
   return sanitized || 'file';
 }
 
 // Helper to convert string to ContractStatus
-function toContractStatus(status: string | undefined, defaultValue: ContractStatus = 'draft'): ContractStatus {
-  const validStatuses: ContractStatus[] = ['draft', 'pending', 'active', 'expiring_soon', 'expired', 'terminated', 'renewed'];
-  return validStatuses.includes(status as ContractStatus) ? status as ContractStatus : defaultValue;
+function toContractStatus(
+  status: string | undefined,
+  defaultValue: ContractStatus = 'draft'
+): ContractStatus {
+  const validStatuses: ContractStatus[] = [
+    'draft',
+    'pending',
+    'active',
+    'expiring_soon',
+    'expired',
+    'terminated',
+    'renewed',
+  ];
+  return validStatuses.includes(status as ContractStatus)
+    ? (status as ContractStatus)
+    : defaultValue;
 }
 
 @Injectable()
@@ -56,7 +87,7 @@ export class ContractsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
-    @Inject(STORAGE_PROVIDER) private storage: StorageProvider,
+    @Inject(STORAGE_PROVIDER) private storage: StorageProvider
   ) {}
 
   async create(createContractDto: CreateContractDto, userId: string) {
@@ -145,7 +176,7 @@ export class ContractsService {
     // SECURITY: Use findFirst with organizationId to prevent IDOR
     // This ensures users can only access contracts within their organization
     const contract = await this.prisma.vendorContract.findFirst({
-      where: { 
+      where: {
         id,
         organizationId, // Tenant isolation - prevents cross-organization access
       },
@@ -161,10 +192,15 @@ export class ContractsService {
     return contract;
   }
 
-  async update(id: string, updateContractDto: UpdateContractDto, userId: string, organizationId: string) {
+  async update(
+    id: string,
+    updateContractDto: UpdateContractDto,
+    userId: string,
+    organizationId: string
+  ) {
     // SECURITY: Verify contract belongs to user's organization before updating
     const existingContract = await this.findOne(id, organizationId);
-    
+
     const { status, startDate, endDate, renewalDate, ...rest } = updateContractDto;
     const data: Prisma.VendorContractUpdateInput = { ...rest };
 
@@ -251,7 +287,7 @@ export class ContractsService {
     id: string,
     file: Express.Multer.File,
     userId: string,
-    organizationId: string,
+    organizationId: string
   ) {
     // SECURITY: Verify contract belongs to user's organization before uploading
     const contract = await this.findOne(id, organizationId);
@@ -267,7 +303,7 @@ export class ContractsService {
 
     // SECURITY: Sanitize filename to prevent path traversal attacks
     const safeFilename = sanitizeFilename(file.originalname);
-    
+
     // Upload new file
     const storagePath = `contracts/${contract.vendorId}/${id}/${safeFilename}`;
     await this.storage.upload(file.buffer, storagePath, {

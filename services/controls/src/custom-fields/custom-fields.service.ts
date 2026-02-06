@@ -1,4 +1,10 @@
-import { Injectable, Logger, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as crypto from 'crypto';
 import {
@@ -12,10 +18,7 @@ import {
   CustomFieldType,
   CustomFieldEntityType,
 } from './dto/custom-field.dto';
-import { 
-  parsePaginationParams, 
-  createPaginatedResponse,
-} from '@gigachad-grc/shared';
+import { parsePaginationParams, createPaginatedResponse } from '@gigachad-grc/shared';
 
 interface CustomFieldRecord {
   id: string;
@@ -59,16 +62,19 @@ export class CustomFieldsService {
   async createField(
     organizationId: string,
     userId: string,
-    dto: CreateCustomFieldDto,
+    dto: CreateCustomFieldDto
   ): Promise<CustomFieldDto> {
     // Check for duplicate slug
     const existing = Array.from(fieldStore.values()).find(
-      f => f.organizationId === organizationId && 
-           f.entityType === dto.entityType && 
-           f.slug === dto.slug
+      (f) =>
+        f.organizationId === organizationId &&
+        f.entityType === dto.entityType &&
+        f.slug === dto.slug
     );
     if (existing) {
-      throw new ConflictException(`Field with slug '${dto.slug}' already exists for ${dto.entityType}`);
+      throw new ConflictException(
+        `Field with slug '${dto.slug}' already exists for ${dto.entityType}`
+      );
     }
 
     const id = crypto.randomUUID();
@@ -102,7 +108,7 @@ export class CustomFieldsService {
   async updateField(
     organizationId: string,
     fieldId: string,
-    dto: UpdateCustomFieldDto,
+    dto: UpdateCustomFieldDto
   ): Promise<CustomFieldDto> {
     const field = fieldStore.get(fieldId);
     if (!field || field.organizationId !== organizationId) {
@@ -151,24 +157,20 @@ export class CustomFieldsService {
     return this.toFieldDto(field);
   }
 
-  async listFields(
-    organizationId: string,
-    query: CustomFieldListQueryDto,
-  ) {
+  async listFields(organizationId: string, query: CustomFieldListQueryDto) {
     const pagination = parsePaginationParams({
       page: query.page,
       limit: query.limit,
     });
 
-    let fields = Array.from(fieldStore.values())
-      .filter(f => f.organizationId === organizationId);
+    let fields = Array.from(fieldStore.values()).filter((f) => f.organizationId === organizationId);
 
     if (query.entityType) {
-      fields = fields.filter(f => f.entityType === query.entityType);
+      fields = fields.filter((f) => f.entityType === query.entityType);
     }
 
     if (query.activeOnly) {
-      fields = fields.filter(f => f.isActive);
+      fields = fields.filter((f) => f.isActive);
     }
 
     fields.sort((a, b) => a.displayOrder - b.displayOrder);
@@ -178,9 +180,9 @@ export class CustomFieldsService {
     const paginatedFields = fields.slice(offset, offset + pagination.limit);
 
     return createPaginatedResponse(
-      paginatedFields.map(f => this.toFieldDto(f)),
+      paginatedFields.map((f) => this.toFieldDto(f)),
       total,
-      pagination,
+      pagination
     );
   }
 
@@ -189,15 +191,16 @@ export class CustomFieldsService {
     userId: string,
     entityType: CustomFieldEntityType,
     entityId: string,
-    dto: SetCustomFieldValueDto,
+    dto: SetCustomFieldValueDto
   ): Promise<CustomFieldValueDto> {
     // Find field by ID or slug
     let field = fieldStore.get(dto.fieldIdOrSlug);
     if (!field) {
       field = Array.from(fieldStore.values()).find(
-        f => f.organizationId === organizationId && 
-             f.entityType === entityType && 
-             f.slug === dto.fieldIdOrSlug
+        (f) =>
+          f.organizationId === organizationId &&
+          f.entityType === entityType &&
+          f.slug === dto.fieldIdOrSlug
       );
     }
 
@@ -234,10 +237,11 @@ export class CustomFieldsService {
   async getEntityFieldValues(
     organizationId: string,
     entityType: CustomFieldEntityType,
-    entityId: string,
+    entityId: string
   ): Promise<EntityCustomFieldsDto> {
-    const fields = Array.from(fieldStore.values())
-      .filter(f => f.organizationId === organizationId && f.entityType === entityType && f.isActive);
+    const fields = Array.from(fieldStore.values()).filter(
+      (f) => f.organizationId === organizationId && f.entityType === entityType && f.isActive
+    );
 
     const values: CustomFieldValueDto[] = [];
 
@@ -271,14 +275,15 @@ export class CustomFieldsService {
     organizationId: string,
     entityType: CustomFieldEntityType,
     entityId: string,
-    fieldIdOrSlug: string,
+    fieldIdOrSlug: string
   ): Promise<void> {
     let field = fieldStore.get(fieldIdOrSlug);
     if (!field) {
       field = Array.from(fieldStore.values()).find(
-        f => f.organizationId === organizationId && 
-             f.entityType === entityType && 
-             f.slug === fieldIdOrSlug
+        (f) =>
+          f.organizationId === organizationId &&
+          f.entityType === entityType &&
+          f.slug === fieldIdOrSlug
       );
     }
 
@@ -318,16 +323,33 @@ export class CustomFieldsService {
         break;
 
       case CustomFieldType.MULTISELECT: {
-        const values = value.split(',').map(v => v.trim());
-        if (field.options && !values.every(v => field.options!.includes(v))) {
+        const values = value.split(',').map((v) => v.trim());
+        if (field.options && !values.every((v) => field.options!.includes(v))) {
           throw new BadRequestException(`Invalid option for field '${field.name}'`);
         }
         break;
       }
 
       case CustomFieldType.EMAIL: {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(value)) {
+        // SECURITY: Use length limit and structured validation to prevent ReDoS
+        if (value.length > 254) {
+          throw new BadRequestException(`Field '${field.name}' must be a valid email`);
+        }
+        const emailParts = value.split('@');
+        if (emailParts.length !== 2) {
+          throw new BadRequestException(`Field '${field.name}' must be a valid email`);
+        }
+        const [local, domain] = emailParts;
+        // Validate local and domain parts separately with safe patterns
+        const localValid =
+          local && local.length <= 64 && /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+$/.test(local);
+        const domainValid =
+          domain &&
+          domain.length <= 255 &&
+          /^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)+$/.test(
+            domain
+          );
+        if (!localValid || !domainValid) {
           throw new BadRequestException(`Field '${field.name}' must be a valid email`);
         }
         break;
@@ -361,7 +383,7 @@ export class CustomFieldsService {
       case CustomFieldType.CHECKBOX:
         return ['true', '1'].includes(value.toLowerCase());
       case CustomFieldType.MULTISELECT:
-        return value.split(',').map(v => v.trim());
+        return value.split(',').map((v) => v.trim());
       default:
         return value;
     }
@@ -386,7 +408,10 @@ export class CustomFieldsService {
     };
   }
 
-  private toValueDto(field: CustomFieldRecord, valueRecord: CustomFieldValueRecord): CustomFieldValueDto {
+  private toValueDto(
+    field: CustomFieldRecord,
+    valueRecord: CustomFieldValueRecord
+  ): CustomFieldValueDto {
     return {
       fieldId: field.id,
       fieldSlug: field.slug,

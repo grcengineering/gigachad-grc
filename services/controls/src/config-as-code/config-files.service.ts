@@ -1,6 +1,15 @@
-import { Injectable, Logger, NotFoundException, BadRequestException, ConflictException, Inject, forwardRef } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
+import { safePropertySet, isSafePropertyName } from '@gigachad-grc/shared';
 import { ConfigAsCodeService } from './config-as-code.service';
 import { ConfigStateService } from './state/config-state.service';
 import { ControlImplementationStatus, Prisma, ConfigFile } from '@prisma/client';
@@ -28,7 +37,7 @@ export class ConfigFilesService {
     private readonly auditService: AuditService,
     @Inject(forwardRef(() => ConfigAsCodeService))
     private readonly configAsCodeService: ConfigAsCodeService,
-    private readonly stateService: ConfigStateService,
+    private readonly stateService: ConfigStateService
   ) {}
 
   /**
@@ -37,9 +46,11 @@ export class ConfigFilesService {
   async initializeDefaultFiles(
     organizationId: string,
     userId: string,
-    workspaceId?: string,
+    workspaceId?: string
   ): Promise<void> {
-    this.logger.log(`Initializing default config files for organization ${organizationId}, user ${userId}, workspace ${workspaceId || 'none'}`);
+    this.logger.log(
+      `Initializing default config files for organization ${organizationId}, user ${userId}, workspace ${workspaceId || 'none'}`
+    );
 
     // Validate inputs
     if (!organizationId) {
@@ -69,7 +80,11 @@ export class ConfigFilesService {
     } catch (error: unknown) {
       // If table doesn't exist, throw a helpful error
       const err = error as { code?: string; message?: string };
-      if (err.code === '42P01' || err.message?.includes('does not exist') || err.message?.includes('relation') && err.message?.includes('does not exist')) {
+      if (
+        err.code === '42P01' ||
+        err.message?.includes('does not exist') ||
+        (err.message?.includes('relation') && err.message?.includes('does not exist'))
+      ) {
         this.logger.error('ConfigFile table does not exist. Please run Prisma migrations.');
         throw new BadRequestException(
           'Database tables not initialized. Please run: ./scripts/migrate-config-as-code.sh or cd services/shared && npx prisma migrate dev'
@@ -82,28 +97,27 @@ export class ConfigFilesService {
     try {
       this.logger.log('Starting export of current platform state...');
       // Export current state as Terraform
-      const exportData = await this.configAsCodeService.exportConfig(
-        organizationId,
-        userId,
-        {
-          format: ConfigFormat.TERRAFORM,
-          resources: Object.values(ResourceType),
-          workspaceId,
-        },
-      );
+      const exportData = await this.configAsCodeService.exportConfig(organizationId, userId, {
+        format: ConfigFormat.TERRAFORM,
+        resources: Object.values(ResourceType),
+        workspaceId,
+      });
 
-      this.logger.log(`Export completed. Content length: ${exportData.content?.length || 0} characters`);
+      this.logger.log(
+        `Export completed. Content length: ${exportData.content?.length || 0} characters`
+      );
       this.logger.log(`Resource breakdown: ${JSON.stringify(exportData.resourceBreakdown || {})}`);
 
       // Split the Terraform content into organized files
       const files = this.splitTerraformIntoFiles(exportData.content);
-      this.logger.log(`Split into ${files.length} files: ${files.map(f => f.path).join(', ')}`);
+      this.logger.log(`Split into ${files.length} files: ${files.map((f) => f.path).join(', ')}`);
 
       if (files.length === 0) {
         this.logger.warn('No files generated from export - creating empty main.tf');
         files.push({
           path: 'main.tf',
-          content: 'terraform {\n  required_providers {\n    gigachad_grc = {\n      source = "gigachad/grc"\n    }\n  }\n}\n',
+          content:
+            'terraform {\n  required_providers {\n    gigachad_grc = {\n      source = "gigachad/grc"\n    }\n  }\n}\n',
         });
       }
 
@@ -111,13 +125,13 @@ export class ConfigFilesService {
       const createdFiles: string[] = [];
       this.logger.log(`Attempting to create ${files.length} files in batch transaction...`);
       const batchStartTime = Date.now();
-      
+
       try {
         // Use a single transaction to create all files and versions
         await this.prisma.$transaction(async (tx) => {
           for (const file of files) {
             this.logger.log(`Creating file: ${file.path} (${file.content.length} chars)`);
-            
+
             const created = await tx.configFile.create({
               data: {
                 organizationId,
@@ -147,9 +161,11 @@ export class ConfigFilesService {
             createdFiles.push(file.path);
           }
         });
-        
+
         const batchElapsed = Date.now() - batchStartTime;
-        this.logger.log(`Batch transaction completed in ${batchElapsed}ms for ${createdFiles.length} files`);
+        this.logger.log(
+          `Batch transaction completed in ${batchElapsed}ms for ${createdFiles.length} files`
+        );
       } catch (batchError: unknown) {
         this.logger.error('Batch file creation failed:', batchError);
         // Clear created files since transaction rolled back
@@ -160,7 +176,8 @@ export class ConfigFilesService {
         // If no files were created, try to create at least a basic main.tf
         this.logger.warn('No files were created successfully, attempting to create basic main.tf');
         try {
-          const basicContent = 'terraform {\n  required_providers {\n    gigachad_grc = {\n      source = "gigachad/grc"\n    }\n  }\n}\n';
+          const basicContent =
+            'terraform {\n  required_providers {\n    gigachad_grc = {\n      source = "gigachad/grc"\n    }\n  }\n}\n';
           await this.prisma.configFile.create({
             data: {
               organizationId,
@@ -174,7 +191,7 @@ export class ConfigFilesService {
               updatedBy: userId,
             },
           });
-          
+
           const createdFile = await this.prisma.configFile.findFirst({
             where: {
               organizationId,
@@ -198,16 +215,21 @@ export class ConfigFilesService {
           }
         } catch (fallbackError: unknown) {
           this.logger.error('Failed to create fallback main.tf:', fallbackError);
-          const errorMessage = fallbackError instanceof Error ? fallbackError.message : 'Unknown error';
+          const errorMessage =
+            fallbackError instanceof Error ? fallbackError.message : 'Unknown error';
           throw new BadRequestException(
             `Failed to create any config files. Last error: ${errorMessage}. Please check backend logs.`
           );
         }
-        
-        throw new BadRequestException('Failed to create any config files. Please check logs for details.');
+
+        throw new BadRequestException(
+          'Failed to create any config files. Please check logs for details.'
+        );
       }
 
-      this.logger.log(`Created ${createdFiles.length} initial config files: ${createdFiles.join(', ')}`);
+      this.logger.log(
+        `Created ${createdFiles.length} initial config files: ${createdFiles.join(', ')}`
+      );
     } catch (error: unknown) {
       this.logger.error('Error during initialization:', error);
       // Re-throw with more context
@@ -228,34 +250,30 @@ export class ConfigFilesService {
   async refreshFromDatabase(
     organizationId: string,
     userId: string,
-    workspaceId?: string,
+    workspaceId?: string
   ): Promise<{ message: string; filesUpdated: number }> {
     const startTime = Date.now();
     this.logger.log(`Refreshing config files from database for org ${organizationId}`);
 
     try {
       // Export current state as Terraform
-      const exportData = await this.configAsCodeService.exportConfig(
-        organizationId,
-        userId,
-        {
-          format: ConfigFormat.TERRAFORM,
-          resources: Object.values(ResourceType),
-          workspaceId,
-        },
-      );
-      
+      const exportData = await this.configAsCodeService.exportConfig(organizationId, userId, {
+        format: ConfigFormat.TERRAFORM,
+        resources: Object.values(ResourceType),
+        workspaceId,
+      });
+
       const exportElapsed = Date.now() - startTime;
       this.logger.log(`Export completed in ${exportElapsed}ms`);
 
       // Split into files
       const files = this.splitTerraformIntoFiles(exportData.content);
-      
+
       // First, fetch all existing files in one query for better performance
       const existingFilesQuery = await this.prisma.configFile.findMany({
         where: {
           organizationId,
-          path: { in: files.map(f => f.path) },
+          path: { in: files.map((f) => f.path) },
           workspaceId: workspaceId || null,
           deletedAt: null,
         },
@@ -265,13 +283,13 @@ export class ConfigFilesService {
           version: true,
         },
       });
-      
-      const existingFilesMap = new Map(existingFilesQuery.map(f => [f.path, f]));
-      
+
+      const existingFilesMap = new Map(existingFilesQuery.map((f) => [f.path, f]));
+
       // Process all files in a single batch transaction for better performance
       const txStartTime = Date.now();
       let filesUpdated = 0;
-      
+
       await this.prisma.$transaction(async (tx) => {
         for (const file of files) {
           const existing = existingFilesMap.get(file.path);
@@ -288,7 +306,7 @@ export class ConfigFilesService {
                 updatedBy: userId,
               },
             });
-            
+
             await tx.configFileVersion.create({
               data: {
                 configFileId: existing.id,
@@ -328,14 +346,16 @@ export class ConfigFilesService {
 
             this.logger.log(`Created file: ${file.path}`);
           }
-          
+
           filesUpdated++;
         }
       });
-      
+
       const txElapsed = Date.now() - txStartTime;
       const totalElapsed = Date.now() - startTime;
-      this.logger.log(`Transaction completed in ${txElapsed}ms. Total refresh time: ${totalElapsed}ms`);
+      this.logger.log(
+        `Transaction completed in ${txElapsed}ms. Total refresh time: ${totalElapsed}ms`
+      );
 
       // Audit log
       await this.auditService.log({
@@ -364,52 +384,72 @@ export class ConfigFilesService {
    */
   private splitTerraformIntoFiles(content: string): Array<{ path: string; content: string }> {
     const files: Array<{ path: string; content: string }> = [];
-    
+
     if (!content || content.trim().length === 0) {
       this.logger.warn('Empty Terraform content received');
       // Return a minimal main.tf file
       files.push({
         path: 'main.tf',
-        content: 'terraform {\n  required_providers {\n    gigachad_grc = {\n      source = "gigachad/grc"\n    }\n  }\n}\n',
+        content:
+          'terraform {\n  required_providers {\n    gigachad_grc = {\n      source = "gigachad/grc"\n    }\n  }\n}\n',
       });
       return files;
     }
-    
+
     // Extract provider block (should be in all files)
     const providerMatch = content.match(/terraform\s*\{[\s\S]*?\n\}/);
-    const providerBlock = providerMatch ? providerMatch[0] : 'terraform {\n  required_providers {\n    gigachad_grc = {\n      source = "gigachad/grc"\n    }\n  }\n}';
+    const providerBlock = providerMatch
+      ? providerMatch[0]
+      : 'terraform {\n  required_providers {\n    gigachad_grc = {\n      source = "gigachad/grc"\n    }\n  }\n}';
 
     // Split by resource type comments (look for # followed by resource type name)
     const sections = content.split(/(?=#\s+\w+)/);
 
     const resourceMap: Record<string, string[]> = {
-      'controls': [],
-      'frameworks': [],
-      'policies': [],
-      'risks': [],
-      'vendors': [],
+      controls: [],
+      frameworks: [],
+      policies: [],
+      risks: [],
+      vendors: [],
     };
 
     // Categorize resources by comment headers
-    sections.forEach(section => {
+    sections.forEach((section) => {
       const trimmedSection = section.trim();
       if (!trimmedSection) return;
-      
-      if (trimmedSection.includes('# Controls') || trimmedSection.includes('gigachad_grc_control')) {
+
+      if (
+        trimmedSection.includes('# Controls') ||
+        trimmedSection.includes('gigachad_grc_control')
+      ) {
         resourceMap['controls'].push(trimmedSection);
-      } else if (trimmedSection.includes('# Frameworks') || trimmedSection.includes('gigachad_grc_framework')) {
+      } else if (
+        trimmedSection.includes('# Frameworks') ||
+        trimmedSection.includes('gigachad_grc_framework')
+      ) {
         resourceMap['frameworks'].push(trimmedSection);
-      } else if (trimmedSection.includes('# Policies') || trimmedSection.includes('gigachad_grc_policy')) {
+      } else if (
+        trimmedSection.includes('# Policies') ||
+        trimmedSection.includes('gigachad_grc_policy')
+      ) {
         resourceMap['policies'].push(trimmedSection);
-      } else if (trimmedSection.includes('# Risks') || trimmedSection.includes('gigachad_grc_risk')) {
+      } else if (
+        trimmedSection.includes('# Risks') ||
+        trimmedSection.includes('gigachad_grc_risk')
+      ) {
         resourceMap['risks'].push(trimmedSection);
-      } else if (trimmedSection.includes('# Vendors') || trimmedSection.includes('gigachad_grc_vendor')) {
+      } else if (
+        trimmedSection.includes('# Vendors') ||
+        trimmedSection.includes('gigachad_grc_vendor')
+      ) {
         resourceMap['vendors'].push(trimmedSection);
       } else if (trimmedSection.includes('terraform {') && !trimmedSection.includes('resource')) {
         // This is just the provider block, skip it (we'll add it to each file)
       } else if (trimmedSection.length > 0) {
         // Unknown section - add to controls as fallback
-        this.logger.warn(`Unknown section in Terraform content: ${trimmedSection.substring(0, 100)}`);
+        this.logger.warn(
+          `Unknown section in Terraform content: ${trimmedSection.substring(0, 100)}`
+        );
         resourceMap['controls'].push(trimmedSection);
       }
     });
@@ -446,7 +486,7 @@ export class ConfigFilesService {
    */
   async listFiles(
     organizationId: string,
-    workspaceId?: string,
+    workspaceId?: string
   ): Promise<ConfigFileListResponseDto> {
     const where: Prisma.ConfigFileWhereInput = {
       organizationId,
@@ -474,7 +514,7 @@ export class ConfigFilesService {
   async getFile(
     organizationId: string,
     path: string,
-    workspaceId?: string,
+    workspaceId?: string
   ): Promise<ConfigFileResponseDto> {
     const where: Prisma.ConfigFileWhereInput = {
       organizationId,
@@ -500,7 +540,7 @@ export class ConfigFilesService {
   async createFile(
     organizationId: string,
     userId: string,
-    dto: CreateConfigFileDto,
+    dto: CreateConfigFileDto
   ): Promise<ConfigFileResponseDto> {
     // Check if file already exists
     const existing = await this.prisma.configFile.findFirst({
@@ -566,7 +606,7 @@ export class ConfigFilesService {
     userId: string,
     path: string,
     dto: UpdateConfigFileDto,
-    workspaceId?: string,
+    workspaceId?: string
   ): Promise<ConfigFileResponseDto> {
     const where: Prisma.ConfigFileWhereInput = {
       organizationId,
@@ -628,7 +668,7 @@ export class ConfigFilesService {
     organizationId: string,
     userId: string,
     path: string,
-    workspaceId?: string,
+    workspaceId?: string
   ): Promise<void> {
     const where: Prisma.ConfigFileWhereInput = {
       organizationId,
@@ -669,7 +709,7 @@ export class ConfigFilesService {
   async previewChanges(
     organizationId: string,
     dto: PreviewChangesDto,
-    workspaceId?: string,
+    workspaceId?: string
   ): Promise<PreviewChangesResponseDto> {
     this.logger.log(`Previewing changes for ${dto.path}`);
 
@@ -701,18 +741,18 @@ export class ConfigFilesService {
       // Detect conflicts using state service
       const conflictReport = await this.stateService.detectConflicts(
         organizationId,
-        resources.map(r => ({
+        resources.map((r) => ({
           type: r.type,
           id: this.getResourceBusinessId(r),
           attributes: r.attributes,
         })),
-        workspaceId,
+        workspaceId
       );
 
       // Map conflict report to response
       result.hasConflicts = conflictReport.hasConflicts;
       result.conflictCount = conflictReport.conflictCount;
-      result.conflicts = conflictReport.conflicts.map(c => ({
+      result.conflicts = conflictReport.conflicts.map((c) => ({
         resourceType: c.resourceType,
         resourceId: c.resourceId,
         field: c.field,
@@ -728,19 +768,23 @@ export class ConfigFilesService {
 
       // Count actions
       result.toCreate = conflictReport.newResources.length;
-      result.toUpdate = conflictReport.safeToApply.filter(s => s.action === 'update').length;
-      result.noChange = conflictReport.safeToApply.filter(s => s.action === 'no_change').length;
+      result.toUpdate = conflictReport.safeToApply.filter((s) => s.action === 'update').length;
+      result.noChange = conflictReport.safeToApply.filter((s) => s.action === 'no_change').length;
 
       // Add warnings for conflicts
       if (result.hasConflicts) {
-        const errorConflicts = result.conflicts.filter(c => c.severity === 'error');
-        const warningConflicts = result.conflicts.filter(c => c.severity === 'warning');
+        const errorConflicts = result.conflicts.filter((c) => c.severity === 'error');
+        const warningConflicts = result.conflicts.filter((c) => c.severity === 'warning');
 
         if (errorConflicts.length > 0) {
-          result.errors.push(`${errorConflicts.length} resource(s) have conflicting changes that require manual resolution`);
+          result.errors.push(
+            `${errorConflicts.length} resource(s) have conflicting changes that require manual resolution`
+          );
         }
         if (warningConflicts.length > 0) {
-          result.warnings.push(`${warningConflicts.length} resource(s) have been modified in the UI and will be overwritten`);
+          result.warnings.push(
+            `${warningConflicts.length} resource(s) have been modified in the UI and will be overwritten`
+          );
         }
       }
 
@@ -753,16 +797,18 @@ export class ConfigFilesService {
           noChange: result.noChange,
           conflicts: result.conflictCount,
         },
-        resources: resources.map(r => ({
+        resources: resources.map((r) => ({
           type: r.type,
           name: r.name,
           id: this.getResourceBusinessId(r),
-          action: conflictReport.newResources.some(nr => nr.resourceId === this.getResourceBusinessId(r))
+          action: conflictReport.newResources.some(
+            (nr) => nr.resourceId === this.getResourceBusinessId(r)
+          )
             ? 'create'
-            : conflictReport.safeToApply.find(s => s.resourceId === this.getResourceBusinessId(r))?.action || 'conflict',
+            : conflictReport.safeToApply.find((s) => s.resourceId === this.getResourceBusinessId(r))
+                ?.action || 'conflict',
         })),
       };
-
     } catch (error: unknown) {
       this.logger.error('Failed to preview changes:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -775,7 +821,11 @@ export class ConfigFilesService {
   /**
    * Get the business identifier for a resource
    */
-  private getResourceBusinessId(resource: { type: string; name: string; attributes: Record<string, unknown> }): string {
+  private getResourceBusinessId(resource: {
+    type: string;
+    name: string;
+    attributes: Record<string, unknown>;
+  }): string {
     const attrs = resource.attributes;
     switch (resource.type) {
       case 'gigachad_grc_control':
@@ -800,7 +850,7 @@ export class ConfigFilesService {
     organizationId: string,
     userId: string,
     dto: ApplyChangesDto,
-    workspaceId?: string,
+    workspaceId?: string
   ): Promise<ApplyChangesResponseDto> {
     const startTime = Date.now();
     this.logger.log(`Applying changes from ${dto.path} for organization ${organizationId}`);
@@ -829,8 +879,8 @@ export class ConfigFilesService {
       if (lockStatus.isLocked) {
         throw new ConflictException(
           `Apply operation is locked by ${lockStatus.lockedBy}. ` +
-          `Lock expires at ${lockStatus.expiresAt?.toISOString()}. ` +
-          `Reason: ${lockStatus.lockReason || 'No reason provided'}`
+            `Lock expires at ${lockStatus.expiresAt?.toISOString()}. ` +
+            `Reason: ${lockStatus.lockReason || 'No reason provided'}`
         );
       }
 
@@ -839,11 +889,13 @@ export class ConfigFilesService {
         organizationId,
         userId,
         `Applying ${dto.path}`,
-        workspaceId,
+        workspaceId
       );
 
       if (!lockAcquired) {
-        throw new ConflictException('Failed to acquire apply lock. Another apply operation may be in progress.');
+        throw new ConflictException(
+          'Failed to acquire apply lock. Another apply operation may be in progress.'
+        );
       }
     }
 
@@ -860,12 +912,12 @@ export class ConfigFilesService {
       // Detect conflicts
       const conflictReport = await this.stateService.detectConflicts(
         organizationId,
-        resources.map(r => ({
+        resources.map((r) => ({
           type: r.type,
           id: this.getResourceBusinessId(r),
           attributes: r.attributes,
         })),
-        workspaceId,
+        workspaceId
       );
 
       result.conflictsDetected = conflictReport.conflictCount;
@@ -876,7 +928,7 @@ export class ConfigFilesService {
 
         if (conflictResolution === ConflictResolution.ABORT) {
           result.conflictsResolved = 'aborted';
-          result.skippedConflicts = conflictReport.conflicts.map(c => ({
+          result.skippedConflicts = conflictReport.conflicts.map((c) => ({
             resourceType: c.resourceType,
             resourceId: c.resourceId,
             field: c.field,
@@ -886,7 +938,7 @@ export class ConfigFilesService {
             severity: c.severity,
             recommendation: c.recommendation,
           }));
-          
+
           throw new ConflictException({
             message: `Apply aborted due to ${conflictReport.conflictCount} conflict(s). Use 'force' to overwrite or 'skip' to skip conflicting resources.`,
             conflicts: result.skippedConflicts,
@@ -899,10 +951,10 @@ export class ConfigFilesService {
       // If dry run, return early
       if (dryRun) {
         result.created = conflictReport.newResources.length;
-        result.updated = conflictReport.safeToApply.filter(s => s.action === 'update').length;
+        result.updated = conflictReport.safeToApply.filter((s) => s.action === 'update').length;
         if (conflictResolution === ConflictResolution.SKIP) {
           result.skipped = conflictReport.conflictCount;
-          result.skippedConflicts = conflictReport.conflicts.map(c => ({
+          result.skippedConflicts = conflictReport.conflicts.map((c) => ({
             resourceType: c.resourceType,
             resourceId: c.resourceId,
             field: c.field,
@@ -923,7 +975,7 @@ export class ConfigFilesService {
         for (const conflict of conflictReport.conflicts) {
           resourcesToSkip.add(`${conflict.resourceType}/${conflict.resourceId}`);
         }
-        result.skippedConflicts = conflictReport.conflicts.map(c => ({
+        result.skippedConflicts = conflictReport.conflicts.map((c) => ({
           resourceType: c.resourceType,
           resourceId: c.resourceId,
           field: c.field,
@@ -946,10 +998,16 @@ export class ConfigFilesService {
       const existing = await this.prisma.configFile.findFirst({ where });
 
       if (existing) {
-        await this.updateFile(organizationId, userId, dto.path, {
-          content: dto.content,
-          commitMessage: dto.commitMessage || 'Applied changes',
-        }, workspaceId);
+        await this.updateFile(
+          organizationId,
+          userId,
+          dto.path,
+          {
+            content: dto.content,
+            commitMessage: dto.commitMessage || 'Applied changes',
+          },
+          workspaceId
+        );
       } else {
         await this.createFile(organizationId, userId, {
           path: dto.path,
@@ -974,7 +1032,7 @@ export class ConfigFilesService {
 
         try {
           const applied = await this.applyResource(organizationId, userId, resource, workspaceId);
-          
+
           if (applied.created) result.created++;
           if (applied.updated) result.updated++;
 
@@ -989,9 +1047,8 @@ export class ConfigFilesService {
               content: resource.attributes as Prisma.InputJsonValue,
               sourceFile: dto.path,
             },
-            workspaceId,
+            workspaceId
           );
-
         } catch (error: unknown) {
           result.errors++;
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -1018,7 +1075,7 @@ export class ConfigFilesService {
           errorCount: result.errors,
           errors: result.errorDetails.length > 0 ? result.errorDetails : undefined,
         },
-        workspaceId,
+        workspaceId
       );
 
       // Log the apply action
@@ -1030,20 +1087,19 @@ export class ConfigFilesService {
         entityId: dto.path,
         entityName: dto.path,
         description: `Applied config from ${dto.path}: ${result.created} created, ${result.updated} updated, ${result.skipped} skipped, ${result.errors} errors`,
-        metadata: { 
-          path: dto.path, 
+        metadata: {
+          path: dto.path,
           result,
           conflictResolution,
           historyId: result.historyId,
         },
       });
-
     } catch (error: unknown) {
       // Re-throw conflict exceptions as-is
       if (error instanceof ConflictException) {
         throw error;
       }
-      
+
       this.logger.error('Failed to apply changes:', error);
       result.errors++;
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -1062,42 +1118,28 @@ export class ConfigFilesService {
   /**
    * Get drift report - shows changes made via UI since last apply
    */
-  async getDriftReport(
-    organizationId: string,
-    workspaceId?: string,
-  ) {
+  async getDriftReport(organizationId: string, workspaceId?: string) {
     return this.stateService.detectDrift(organizationId, workspaceId);
   }
 
   /**
    * Get apply history
    */
-  async getApplyHistory(
-    organizationId: string,
-    limit: number = 20,
-    workspaceId?: string,
-  ) {
+  async getApplyHistory(organizationId: string, limit: number = 20, workspaceId?: string) {
     return this.stateService.getApplyHistory(organizationId, limit, workspaceId);
   }
 
   /**
    * Get current lock status
    */
-  async getLockStatus(
-    organizationId: string,
-    workspaceId?: string,
-  ) {
+  async getLockStatus(organizationId: string, workspaceId?: string) {
     return this.stateService.getLockStatus(organizationId, workspaceId);
   }
 
   /**
    * Force release a lock (admin only)
    */
-  async forceReleaseLock(
-    organizationId: string,
-    userId: string,
-    workspaceId?: string,
-  ) {
+  async forceReleaseLock(organizationId: string, userId: string, workspaceId?: string) {
     // Delete any existing lock
     await this.prisma.configApplyLock.deleteMany({
       where: {
@@ -1126,8 +1168,9 @@ export class ConfigFilesService {
     name: string;
     attributes: Record<string, unknown>;
   }> {
-    const resources: Array<{ type: string; name: string; attributes: Record<string, unknown> }> = [];
-    
+    const resources: Array<{ type: string; name: string; attributes: Record<string, unknown> }> =
+      [];
+
     // Match resource blocks: resource "type" "name" { ... }
     const resourceRegex = /resource\s+"([^"]+)"\s+"([^"]+)"\s*\{([^}]*(?:\{[^}]*\}[^}]*)*)\}/g;
     let match;
@@ -1135,7 +1178,7 @@ export class ConfigFilesService {
     while ((match = resourceRegex.exec(content)) !== null) {
       const [, resourceType, resourceName, body] = match;
       const attributes = this.parseResourceBody(body);
-      
+
       resources.push({
         type: resourceType,
         name: resourceName,
@@ -1151,41 +1194,56 @@ export class ConfigFilesService {
    */
   private parseResourceBody(body: string): Record<string, unknown> {
     const attributes: Record<string, unknown> = {};
-    
+
     // Match key = value pairs
-    const attrRegex = /(\w+)\s*=\s*("([^"\\]*(?:\\.[^"\\]*)*)"|(\[[^\]]*\])|(\d+(?:\.\d+)?)|(\w+))/g;
+    const attrRegex =
+      /(\w+)\s*=\s*("([^"\\]*(?:\\.[^"\\]*)*)"|(\[[^\]]*\])|(\d+(?:\.\d+)?)|(\w+))/g;
     let match;
 
     while ((match = attrRegex.exec(body)) !== null) {
       const key = match[1];
       const value = match[2];
-      
+
+      // SECURITY: Validate key name to prevent prototype pollution from malicious Terraform content
+      if (!isSafePropertyName(key)) {
+        this.logger.warn(`Skipping blocked property name in parseResourceBody: ${key}`);
+        continue;
+      }
+
       if (value.startsWith('"') && value.endsWith('"')) {
         // String value - unescape quotes and newlines
-        attributes[key] = value.slice(1, -1).replace(/\\"/g, '"').replace(/\\n/g, '\n');
+        safePropertySet(
+          attributes,
+          key,
+          value.slice(1, -1).replace(/\\"/g, '"').replace(/\\n/g, '\n')
+        );
       } else if (value.startsWith('[')) {
         // Array value
         try {
-          const items = value.slice(1, -1).split(',').map(item => {
-            const trimmed = item.trim();
-            if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
-              return trimmed.slice(1, -1);
-            }
-            return trimmed;
-          }).filter(Boolean);
-          attributes[key] = items;
+          const items = value
+            .slice(1, -1)
+            .split(',')
+            .map((item) => {
+              const trimmed = item.trim();
+              if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+                return trimmed.slice(1, -1);
+              }
+              return trimmed;
+            })
+            .filter(Boolean);
+          safePropertySet(attributes, key, items);
         } catch {
-          attributes[key] = [];
+          safePropertySet(attributes, key, []);
         }
       } else if (value === 'true' || value === 'false') {
         // Boolean value
-        attributes[key] = value === 'true';
+        safePropertySet(attributes, key, value === 'true');
       } else if (!isNaN(Number(value))) {
         // Numeric value
-        attributes[key] = Number(value);
+        safePropertySet(attributes, key, Number(value));
       } else {
         // Other value (variable reference, etc.)
-        attributes[key] = value;
+        safePropertySet(attributes, key, value);
       }
     }
 
@@ -1199,7 +1257,7 @@ export class ConfigFilesService {
     organizationId: string,
     userId: string,
     resource: { type: string; name: string; attributes: Record<string, unknown> },
-    workspaceId?: string,
+    workspaceId?: string
   ): Promise<{ created: boolean; updated: boolean; databaseId?: string }> {
     const { type, attributes } = resource;
 
@@ -1227,7 +1285,7 @@ export class ConfigFilesService {
     organizationId: string,
     userId: string,
     attrs: Record<string, unknown>,
-    _workspaceId?: string,
+    _workspaceId?: string
   ): Promise<{ created: boolean; updated: boolean; databaseId?: string }> {
     const controlId = attrs.control_id as string | undefined;
     if (!controlId) {
@@ -1256,7 +1314,7 @@ export class ConfigFilesService {
     };
 
     // Remove undefined values
-    Object.keys(controlUpdateData).forEach(key => {
+    Object.keys(controlUpdateData).forEach((key) => {
       const k = key as keyof typeof controlUpdateData;
       if (controlUpdateData[k] === undefined) delete controlUpdateData[k];
     });
@@ -1286,7 +1344,7 @@ export class ConfigFilesService {
     // Update or create control implementation for status
     if (attrs.status) {
       const mappedStatus = this.mapControlStatus(attrs.status as string);
-      
+
       // Find existing implementation
       const existingImpl = await this.prisma.controlImplementation.findFirst({
         where: {
@@ -1328,7 +1386,7 @@ export class ConfigFilesService {
   private async applyFramework(
     organizationId: string,
     userId: string,
-    attrs: Record<string, unknown>,
+    attrs: Record<string, unknown>
   ): Promise<{ created: boolean; updated: boolean; databaseId?: string }> {
     const name = attrs.name as string | undefined;
     if (!name) {
@@ -1350,7 +1408,7 @@ export class ConfigFilesService {
       isActive: (attrs.is_active as boolean) ?? true,
     };
 
-    Object.keys(frameworkUpdateData).forEach(key => {
+    Object.keys(frameworkUpdateData).forEach((key) => {
       const k = key as keyof typeof frameworkUpdateData;
       if (frameworkUpdateData[k] === undefined) delete frameworkUpdateData[k];
     });
@@ -1382,7 +1440,7 @@ export class ConfigFilesService {
     organizationId: string,
     userId: string,
     attrs: Record<string, unknown>,
-    _workspaceId?: string,
+    _workspaceId?: string
   ): Promise<{ created: boolean; updated: boolean; databaseId?: string }> {
     const title = attrs.title as string | undefined;
     if (!title) {
@@ -1404,7 +1462,7 @@ export class ConfigFilesService {
       tags: (attrs.tags as string[]) || [],
     };
 
-    Object.keys(policyUpdateData).forEach(key => {
+    Object.keys(policyUpdateData).forEach((key) => {
       const k = key as keyof typeof policyUpdateData;
       if (policyUpdateData[k] === undefined) delete policyUpdateData[k];
     });
@@ -1444,7 +1502,7 @@ export class ConfigFilesService {
     organizationId: string,
     userId: string,
     attrs: Record<string, unknown>,
-    _workspaceId?: string,
+    _workspaceId?: string
   ): Promise<{ created: boolean; updated: boolean; databaseId?: string }> {
     const riskId = attrs.risk_id as string | undefined;
     if (!riskId) {
@@ -1466,7 +1524,7 @@ export class ConfigFilesService {
       tags: (attrs.tags as string[]) || [],
     };
 
-    Object.keys(riskUpdateData).forEach(key => {
+    Object.keys(riskUpdateData).forEach((key) => {
       const k = key as keyof typeof riskUpdateData;
       if (riskUpdateData[k] === undefined) delete riskUpdateData[k];
     });
@@ -1483,7 +1541,7 @@ export class ConfigFilesService {
       const riskDescription = (attrs.description as string) || `Risk ${riskId}`;
       const riskCategory = (attrs.category as string) || 'operational';
       const riskTags = (attrs.tags as string[]) || [];
-      
+
       const riskCreateData: Prisma.RiskUncheckedCreateInput = {
         riskId,
         title: riskTitle,
@@ -1493,7 +1551,7 @@ export class ConfigFilesService {
         organizationId,
         createdBy: userId,
       };
-      
+
       const created = await this.prisma.risk.create({
         data: riskCreateData,
       });
@@ -1508,7 +1566,7 @@ export class ConfigFilesService {
   private async applyVendor(
     organizationId: string,
     userId: string,
-    attrs: Record<string, unknown>,
+    attrs: Record<string, unknown>
   ): Promise<{ created: boolean; updated: boolean; databaseId?: string }> {
     const name = attrs.name as string | undefined;
     if (!name) {
@@ -1529,7 +1587,7 @@ export class ConfigFilesService {
       tags: (attrs.tags as string[]) || [],
     };
 
-    Object.keys(vendorUpdateData).forEach(key => {
+    Object.keys(vendorUpdateData).forEach((key) => {
       const k = key as keyof typeof vendorUpdateData;
       if (vendorUpdateData[k] === undefined) delete vendorUpdateData[k];
     });
@@ -1545,7 +1603,7 @@ export class ConfigFilesService {
       const vendorIdValue = (attrs.vendor_id as string) || `VND-${Date.now()}`;
       const vendorDescription = (attrs.description as string) || undefined;
       const vendorTags = (attrs.tags as string[]) || [];
-      
+
       const vendorCreateData: Prisma.VendorUncheckedCreateInput = {
         name,
         vendorId: vendorIdValue,
@@ -1553,11 +1611,11 @@ export class ConfigFilesService {
         organizationId,
         createdBy: userId,
       };
-      
+
       if (vendorDescription) {
         vendorCreateData.description = vendorDescription;
       }
-      
+
       const created = await this.prisma.vendor.create({
         data: vendorCreateData,
       });
@@ -1572,14 +1630,14 @@ export class ConfigFilesService {
   private mapStatus(status?: string): string | undefined {
     if (!status) return undefined;
     const statusMap: Record<string, string> = {
-      'implemented': 'IMPLEMENTED',
-      'in_progress': 'IN_PROGRESS',
-      'not_started': 'NOT_STARTED',
-      'not_applicable': 'NOT_APPLICABLE',
-      'IMPLEMENTED': 'IMPLEMENTED',
-      'IN_PROGRESS': 'IN_PROGRESS',
-      'NOT_STARTED': 'NOT_STARTED',
-      'NOT_APPLICABLE': 'NOT_APPLICABLE',
+      implemented: 'IMPLEMENTED',
+      in_progress: 'IN_PROGRESS',
+      not_started: 'NOT_STARTED',
+      not_applicable: 'NOT_APPLICABLE',
+      IMPLEMENTED: 'IMPLEMENTED',
+      IN_PROGRESS: 'IN_PROGRESS',
+      NOT_STARTED: 'NOT_STARTED',
+      NOT_APPLICABLE: 'NOT_APPLICABLE',
     };
     return statusMap[status] || status.toUpperCase();
   }
@@ -1590,14 +1648,14 @@ export class ConfigFilesService {
   private mapControlStatus(status?: string): ControlImplementationStatus {
     if (!status) return ControlImplementationStatus.not_started;
     const statusMap: Record<string, ControlImplementationStatus> = {
-      'implemented': ControlImplementationStatus.implemented,
-      'in_progress': ControlImplementationStatus.in_progress,
-      'not_started': ControlImplementationStatus.not_started,
-      'not_applicable': ControlImplementationStatus.not_applicable,
-      'IMPLEMENTED': ControlImplementationStatus.implemented,
-      'IN_PROGRESS': ControlImplementationStatus.in_progress,
-      'NOT_STARTED': ControlImplementationStatus.not_started,
-      'NOT_APPLICABLE': ControlImplementationStatus.not_applicable,
+      implemented: ControlImplementationStatus.implemented,
+      in_progress: ControlImplementationStatus.in_progress,
+      not_started: ControlImplementationStatus.not_started,
+      not_applicable: ControlImplementationStatus.not_applicable,
+      IMPLEMENTED: ControlImplementationStatus.implemented,
+      IN_PROGRESS: ControlImplementationStatus.in_progress,
+      NOT_STARTED: ControlImplementationStatus.not_started,
+      NOT_APPLICABLE: ControlImplementationStatus.not_applicable,
     };
     return statusMap[status] || ControlImplementationStatus.not_started;
   }
@@ -1608,16 +1666,16 @@ export class ConfigFilesService {
   private mapLikelihood(likelihood?: string): number | undefined {
     if (!likelihood) return undefined;
     const likelihoodMap: Record<string, number> = {
-      'rare': 1,
-      'unlikely': 2,
-      'possible': 3,
-      'likely': 4,
-      'almost_certain': 5,
-      'RARE': 1,
-      'UNLIKELY': 2,
-      'POSSIBLE': 3,
-      'LIKELY': 4,
-      'ALMOST_CERTAIN': 5,
+      rare: 1,
+      unlikely: 2,
+      possible: 3,
+      likely: 4,
+      almost_certain: 5,
+      RARE: 1,
+      UNLIKELY: 2,
+      POSSIBLE: 3,
+      LIKELY: 4,
+      ALMOST_CERTAIN: 5,
     };
     return likelihoodMap[likelihood] ?? (parseInt(likelihood, 10) || undefined);
   }
@@ -1628,16 +1686,16 @@ export class ConfigFilesService {
   private mapImpact(impact?: string): number | undefined {
     if (!impact) return undefined;
     const impactMap: Record<string, number> = {
-      'negligible': 1,
-      'minor': 2,
-      'moderate': 3,
-      'significant': 4,
-      'catastrophic': 5,
-      'NEGLIGIBLE': 1,
-      'MINOR': 2,
-      'MODERATE': 3,
-      'SIGNIFICANT': 4,
-      'CATASTROPHIC': 5,
+      negligible: 1,
+      minor: 2,
+      moderate: 3,
+      significant: 4,
+      catastrophic: 5,
+      NEGLIGIBLE: 1,
+      MINOR: 2,
+      MODERATE: 3,
+      SIGNIFICANT: 4,
+      CATASTROPHIC: 5,
     };
     return impactMap[impact] ?? (parseInt(impact, 10) || undefined);
   }
@@ -1648,7 +1706,7 @@ export class ConfigFilesService {
   async getVersionHistory(
     organizationId: string,
     path: string,
-    workspaceId?: string,
+    workspaceId?: string
   ): Promise<ConfigFileVersionDto[]> {
     const where: Prisma.ConfigFileWhereInput = {
       organizationId,
@@ -1668,7 +1726,7 @@ export class ConfigFilesService {
       orderBy: { version: 'desc' },
     });
 
-    return versions.map(v => ({
+    return versions.map((v) => ({
       id: v.id,
       version: v.version,
       content: v.content,

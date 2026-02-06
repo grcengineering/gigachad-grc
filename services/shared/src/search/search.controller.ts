@@ -7,7 +7,8 @@ export class SearchController {
 
   @Get('global')
   async globalSearch(@Query('q') query: string) {
-    if (!query || query.length < 2) {
+    // Type validation: ensure query is a string (not an array from multiple query params)
+    if (typeof query !== 'string' || query.length < 2) {
       return { data: [] };
     }
 

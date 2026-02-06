@@ -69,8 +69,13 @@ export class S3StorageProvider implements StorageProvider {
     let sanitized = path.replace(/\0/g, '');
     // Normalize path separators
     sanitized = sanitized.replace(/\\/g, '/');
-    // Remove path traversal sequences
-    sanitized = sanitized.replace(/\.\.\//g, '').replace(/^\.\.$/, '');
+    // Remove path traversal sequences - loop until no more matches
+    // This prevents bypass via patterns like '....//'' which becomes '../' after one pass
+    let previousLength: number;
+    do {
+      previousLength = sanitized.length;
+      sanitized = sanitized.replace(/\.\.\//g, '').replace(/^\.\.$/, '');
+    } while (sanitized.length !== previousLength);
     // Remove leading slashes
     sanitized = sanitized.replace(/^\/+/, '');
     // Ensure path doesn't start with dangerous patterns

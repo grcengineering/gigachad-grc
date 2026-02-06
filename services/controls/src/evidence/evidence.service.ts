@@ -21,6 +21,7 @@ import {
   parsePaginationParams,
   createPaginatedResponse,
   getPrismaSkipTake,
+  safeOrderBy,
 } from '@gigachad-grc/shared';
 
 @Injectable()
@@ -68,6 +69,9 @@ export class EvidenceService {
       }),
     };
 
+    // SECURITY: Use safeOrderBy to prevent prototype pollution from user-controlled sortBy
+    const orderByClause = safeOrderBy(pagination.sortBy, pagination.sortOrder);
+
     const [evidence, total] = await Promise.all([
       this.prisma.evidence.findMany({
         where,
@@ -80,7 +84,7 @@ export class EvidenceService {
           },
         },
         ...getPrismaSkipTake(pagination),
-        orderBy: { [pagination.sortBy]: pagination.sortOrder },
+        orderBy: orderByClause,
       }),
       this.prisma.evidence.count({ where }),
     ]);

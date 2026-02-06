@@ -5,6 +5,9 @@ import { CreateKnowledgeBaseDto } from './dto/create-knowledge-base.dto';
 import { UpdateKnowledgeBaseDto } from './dto/update-knowledge-base.dto';
 import { KnowledgeBaseStatus, Prisma, KnowledgeBaseCategory } from '@prisma/client';
 
+// SECURITY: Maximum number of entries to process in a single bulk operation
+const MAX_BULK_ENTRIES = 500;
+
 interface KnowledgeBaseFilters {
   category?: string;
   status?: string;
@@ -17,11 +20,12 @@ interface KnowledgeBaseFilters {
 export class KnowledgeBaseService {
   constructor(
     private prisma: PrismaService,
-    private audit: AuditService,
+    private audit: AuditService
   ) {}
 
   async create(createKnowledgeBaseDto: CreateKnowledgeBaseDto, userId: string) {
-    const { linkedControls, linkedEvidence, linkedPolicies, status, category, ...createData } = createKnowledgeBaseDto;
+    const { linkedControls, linkedEvidence, linkedPolicies, status, category, ...createData } =
+      createKnowledgeBaseDto;
 
     const entry = await this.prisma.knowledgeBaseEntry.create({
       data: {
@@ -86,7 +90,10 @@ export class KnowledgeBaseService {
     const created = [];
     const errors = [];
 
-    for (let i = 0; i < entries.length; i++) {
+    // SECURITY: Limit iterations to prevent loop bound injection attacks
+    const maxItems = Math.min(entries.length, MAX_BULK_ENTRIES);
+
+    for (let i = 0; i < maxItems; i++) {
       try {
         const entry = await this.create(entries[i], userId);
         created.push(entry);
@@ -141,10 +148,7 @@ export class KnowledgeBaseService {
           },
         },
       },
-      orderBy: [
-        { usageCount: 'desc' },
-        { createdAt: 'desc' },
-      ],
+      orderBy: [{ usageCount: 'desc' }, { createdAt: 'desc' }],
     });
   }
 
@@ -152,8 +156,8 @@ export class KnowledgeBaseService {
     // SECURITY: Include organizationId in query to prevent IDOR
     // This ensures users can only access knowledge base entries within their organization
     const entry = await this.prisma.knowledgeBaseEntry.findFirst({
-      where: { 
-        id, 
+      where: {
+        id,
         organizationId, // Tenant isolation - prevents cross-organization access
         deletedAt: null,
       },
@@ -180,11 +184,24 @@ export class KnowledgeBaseService {
     return entry;
   }
 
-  async update(id: string, updateKnowledgeBaseDto: UpdateKnowledgeBaseDto, userId: string, organizationId: string) {
+  async update(
+    id: string,
+    updateKnowledgeBaseDto: UpdateKnowledgeBaseDto,
+    userId: string,
+    organizationId: string
+  ) {
     // SECURITY: Verify entry belongs to user's organization before updating
     const _entry = await this.findOne(id, organizationId);
 
-    const { linkedControls, linkedEvidence, linkedPolicies, approvedBy, status, category, ...updateData } = updateKnowledgeBaseDto;
+    const {
+      linkedControls,
+      linkedEvidence,
+      linkedPolicies,
+      approvedBy,
+      status,
+      category,
+      ...updateData
+    } = updateKnowledgeBaseDto;
 
     const updated = await this.prisma.knowledgeBaseEntry.update({
       where: { id },
@@ -192,7 +209,9 @@ export class KnowledgeBaseService {
         ...updateData,
         category: category as KnowledgeBaseCategory | undefined,
         status: status as KnowledgeBaseStatus | undefined,
-        approvedAt: updateKnowledgeBaseDto.approvedAt ? new Date(updateKnowledgeBaseDto.approvedAt) : undefined,
+        approvedAt: updateKnowledgeBaseDto.approvedAt
+          ? new Date(updateKnowledgeBaseDto.approvedAt)
+          : undefined,
         ...(userId && { updatedByUser: { connect: { id: userId } } }),
         ...(approvedBy && { approvedByUser: { connect: { id: approvedBy } } }),
       },
@@ -330,11 +349,11 @@ export class KnowledgeBaseService {
     const entry = await this.prisma.knowledgeBaseEntry.findFirst({
       where: { id, organizationId },
     });
-    
+
     if (!entry) {
       throw new NotFoundException(`Knowledge base entry with ID ${id} not found`);
     }
-    
+
     await this.prisma.knowledgeBaseEntry.update({
       where: { id: entry.id },
       data: {
@@ -347,10 +366,13 @@ export class KnowledgeBaseService {
   // Search for relevant knowledge base entries for a question
   async search(organizationId: string, query: string) {
     // Split query into terms for better matching
-    const terms = query.toLowerCase().split(/\s+/).filter(t => t.length > 2);
-    
+    const terms = query
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((t) => t.length > 2);
+
     // Build OR conditions for each term
-    const termConditions = terms.flatMap(term => [
+    const termConditions = terms.flatMap((term) => [
       { title: { contains: term, mode: 'insensitive' as const } },
       { question: { contains: term, mode: 'insensitive' as const } },
       { answer: { contains: term, mode: 'insensitive' as const } },
@@ -361,11 +383,14 @@ export class KnowledgeBaseService {
       where: {
         organizationId,
         deletedAt: null,
-        OR: termConditions.length > 0 ? termConditions : [
-          { title: { contains: query, mode: 'insensitive' } },
-          { question: { contains: query, mode: 'insensitive' } },
-          { answer: { contains: query, mode: 'insensitive' } },
-        ],
+        OR:
+          termConditions.length > 0
+            ? termConditions
+            : [
+                { title: { contains: query, mode: 'insensitive' } },
+                { question: { contains: query, mode: 'insensitive' } },
+                { answer: { contains: query, mode: 'insensitive' } },
+              ],
       },
       select: {
         id: true,
@@ -388,13 +413,13 @@ export class KnowledgeBaseService {
     });
 
     // Score and re-rank results based on relevance
-    const scored = results.map(entry => {
+    const scored = results.map((entry) => {
       let score = 0;
       const titleLower = (entry.title || '').toLowerCase();
       const questionLower = (entry.question || '').toLowerCase();
       const answerLower = (entry.answer || '').toLowerCase();
-      
-      terms.forEach(term => {
+
+      terms.forEach((term) => {
         // Title matches are most valuable
         if (titleLower.includes(term)) score += 10;
         // Question matches are valuable
@@ -402,21 +427,19 @@ export class KnowledgeBaseService {
         // Answer matches
         if (answerLower.includes(term)) score += 2;
         // Tag exact matches
-        if (entry.tags?.some(t => t.toLowerCase() === term)) score += 8;
+        if (entry.tags?.some((t) => t.toLowerCase() === term)) score += 8;
       });
-      
+
       // Bonus for approved status
       if (entry.status === 'approved') score += 5;
       // Bonus for usage (popularity)
       score += Math.min((entry.usageCount || 0) * 0.5, 10);
-      
+
       return { ...entry, relevanceScore: score };
     });
 
     // Sort by relevance score and return top 10
-    return scored
-      .sort((a, b) => b.relevanceScore - a.relevanceScore)
-      .slice(0, 10);
+    return scored.sort((a, b) => b.relevanceScore - a.relevanceScore).slice(0, 10);
   }
 
   // Get public entries for Trust Center
@@ -442,22 +465,13 @@ export class KnowledgeBaseService {
         framework: true,
         tags: true,
       },
-      orderBy: [
-        { category: 'asc' },
-        { title: 'asc' },
-      ],
+      orderBy: [{ category: 'asc' }, { title: 'asc' }],
     });
   }
 
   // Dashboard stats
   async getStats(organizationId: string) {
-    const [
-      total,
-      approved,
-      draft,
-      publicEntries,
-      totalUsage,
-    ] = await Promise.all([
+    const [total, approved, draft, publicEntries, totalUsage] = await Promise.all([
       this.prisma.knowledgeBaseEntry.count({ where: { organizationId } }),
       this.prisma.knowledgeBaseEntry.count({ where: { organizationId, status: 'approved' } }),
       this.prisma.knowledgeBaseEntry.count({ where: { organizationId, status: 'draft' } }),
@@ -480,7 +494,7 @@ export class KnowledgeBaseService {
       draft,
       publicEntries,
       totalUsage: totalUsage._sum.usageCount || 0,
-      byCategory: categories.map(c => ({ category: c.category, count: c._count })),
+      byCategory: categories.map((c) => ({ category: c.category, count: c._count })),
     };
   }
 }

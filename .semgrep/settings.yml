@@ -1,0 +1,20 @@
+# Semgrep settings for gigachad-grc
+# https://semgrep.dev/docs/writing-rules/rule-syntax/
+
+# Global settings
+settings:
+  # Exclude paths from scanning
+  exclude:
+    - "**/dist/**"
+    - "**/build/**"
+    - "**/node_modules/**"
+    - "**/*.test.ts"
+    - "**/*.spec.ts"
+    - "**/__tests__/**"
+    - "**/coverage/**"
+    - "**/*.d.ts"
+    - "**/*.map"
+
+# False positive suppressions with documented rationale
+# Add nosemgrep comments inline for specific suppressions
+# Example: // nosemgrep: javascript.lang.security.audit.xss.dangerouslySetInnerHTML

@@ -9,13 +9,7 @@ const STATIC_CACHE = 'gigachad-static-v1';
 const API_CACHE = 'gigachad-api-v1';
 
 // Static assets to cache on install
-const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/logo.png',
-  '/silent-check-sso.html',
-];
+const STATIC_ASSETS = ['/', '/index.html', '/manifest.json', '/logo.png', '/silent-check-sso.html'];
 
 // API endpoints to cache (GET requests only)
 const CACHEABLE_API_PATTERNS = [
@@ -102,30 +96,27 @@ async function handleApiRequest(request) {
 
   try {
     const response = await fetch(request);
-    
+
     if (response.ok) {
       const cache = await caches.open(API_CACHE);
       cache.put(request, response.clone());
     }
-    
+
     return response;
   } catch {
     // Network failed, try cache
     const cache = await caches.open(API_CACHE);
     const cachedResponse = await cache.match(request);
-    
+
     if (cachedResponse) {
       return cachedResponse;
     }
-    
+
     // Return offline response
-    return new Response(
-      JSON.stringify({ error: 'Offline', message: 'No cached data available' }),
-      {
-        status: 503,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    return new Response(JSON.stringify({ error: 'Offline', message: 'No cached data available' }), {
+      status: 503,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 }
 
@@ -133,11 +124,11 @@ async function handleApiRequest(request) {
 async function fetchAndCache(request, cache) {
   try {
     const response = await fetch(request);
-    
+
     if (response.ok) {
       cache.put(request, response.clone());
     }
-    
+
     return response;
   } catch (error) {
     // Return cached version if available
@@ -145,28 +136,41 @@ async function fetchAndCache(request, cache) {
     if (cachedResponse) {
       return cachedResponse;
     }
-    
+
     // Return offline page for navigation requests
     if (request.mode === 'navigate') {
       return cache.match('/');
     }
-    
+
     throw error;
   }
 }
 
 // Handle messages from the app
 self.addEventListener('message', (event) => {
-  if (event.data.type === 'SKIP_WAITING') {
+  // SECURITY: Validate that the message source is from our own origin
+  // In service workers, event.source is a Client object with a url property
+  if (event.source) {
+    try {
+      const sourceUrl = new URL(event.source.url);
+      if (sourceUrl.origin !== self.location.origin) {
+        console.warn('[Security] Received message from unauthorized origin:', sourceUrl.origin);
+        return;
+      }
+    } catch {
+      // If we can't parse the source URL, reject the message
+      console.warn('[Security] Received message from unknown source');
+      return;
+    }
+  }
+
+  if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
-  
-  if (event.data.type === 'CLEAR_CACHE') {
+
+  if (event.data && event.data.type === 'CLEAR_CACHE') {
     caches.keys().then((names) => {
       names.forEach((name) => caches.delete(name));
     });
   }
 });
-
-
-

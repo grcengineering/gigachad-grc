@@ -79,6 +79,9 @@ export {
   isValidUuid,
   sanitizeString,
   sanitizeObject,
+  validatePathWithinBase,
+  MAX_BATCH_LIMITS,
+  clampArrayForIteration,
   // pagination
   createPaginatedResponse,
   parsePaginationParams,

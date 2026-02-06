@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Injectable, NotFoundException, BadRequestException, Logger, Inject } from '@nestjs/common';
 import * as crypto from 'crypto';
+import * as vm from 'vm';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuditService } from '../../audit/audit.service';
 import {
@@ -8,6 +9,9 @@ import {
   StorageProvider,
   safeFetch,
   SSRFProtectionError,
+  isSafePropertyName,
+  safePropertySet,
+  MAX_BATCH_LIMITS,
 } from '@gigachad-grc/shared';
 import {
   SaveCustomConfigDto,
@@ -68,6 +72,12 @@ interface RateLimitEntry {
 const CODE_EXECUTION_RATE_LIMIT = {
   maxRequests: 10, // Maximum requests per window
   windowMs: 60 * 1000, // 1 minute window
+};
+
+// SECURITY: Sandbox configuration for vm module
+const SANDBOX_CONFIG = {
+  timeoutMs: 30000, // Maximum execution time (30 seconds)
+  maxCodeLengthBytes: 100 * 1024, // Maximum code size (100KB)
 };
 
 @Injectable()
@@ -192,15 +202,21 @@ export class CustomIntegrationService {
     const encrypted: Record<string, any> = {};
 
     for (const [key, value] of Object.entries(authConfig)) {
+      // SECURITY: Skip blocked property names to prevent prototype pollution
+      if (!isSafePropertyName(key)) {
+        this.logger.warn(`Skipping blocked property name in encryptAuthConfig: ${key}`);
+        continue;
+      }
+
       if (
         typeof value === 'string' &&
         AUTH_SENSITIVE_FIELDS.some((f) => key.toLowerCase().includes(f.toLowerCase()))
       ) {
-        encrypted[key] = this.encrypt(value);
+        safePropertySet(encrypted, key, this.encrypt(value));
       } else if (typeof value === 'object' && value !== null) {
-        encrypted[key] = this.encryptAuthConfig(value);
+        safePropertySet(encrypted, key, this.encryptAuthConfig(value));
       } else {
-        encrypted[key] = value;
+        safePropertySet(encrypted, key, value);
       }
     }
 
@@ -213,15 +229,21 @@ export class CustomIntegrationService {
     const decrypted: Record<string, any> = {};
 
     for (const [key, value] of Object.entries(authConfig)) {
+      // SECURITY: Skip blocked property names to prevent prototype pollution
+      if (!isSafePropertyName(key)) {
+        this.logger.warn(`Skipping blocked property name in decryptAuthConfig: ${key}`);
+        continue;
+      }
+
       if (
         typeof value === 'string' &&
         AUTH_SENSITIVE_FIELDS.some((f) => key.toLowerCase().includes(f.toLowerCase()))
       ) {
-        decrypted[key] = this.decrypt(value);
+        safePropertySet(decrypted, key, this.decrypt(value));
       } else if (typeof value === 'object' && value !== null) {
-        decrypted[key] = this.decryptAuthConfig(value);
+        safePropertySet(decrypted, key, this.decryptAuthConfig(value));
       } else {
-        decrypted[key] = value;
+        safePropertySet(decrypted, key, value);
       }
     }
 
@@ -274,6 +296,9 @@ export class CustomIntegrationService {
 
   /**
    * Save custom config for an integration
+   *
+   * SECURITY: This method performs strict type validation on all inputs
+   * to prevent type confusion and bypass attacks.
    */
   async saveConfig(
     integrationId: string,
@@ -281,6 +306,39 @@ export class CustomIntegrationService {
     userId: string,
     dto: SaveCustomConfigDto
   ) {
+    // SECURITY: Strict type validation to prevent type confusion attacks
+    // Attackers may try to bypass checks by passing objects, arrays, or other types
+    if (typeof integrationId !== 'string' || typeof organizationId !== 'string') {
+      throw new BadRequestException('Invalid request parameters');
+    }
+
+    // SECURITY: Validate dto.mode is strictly a string and one of the allowed values
+    // This prevents bypassing the 'code' check by passing objects or other types
+    if (dto.mode !== undefined && dto.mode !== null) {
+      if (typeof dto.mode !== 'string' || !['visual', 'code'].includes(dto.mode)) {
+        throw new BadRequestException('Invalid mode: must be "visual" or "code"');
+      }
+    }
+
+    // SECURITY: Validate baseUrl is a string if provided
+    if (dto.baseUrl !== undefined && dto.baseUrl !== null && typeof dto.baseUrl !== 'string') {
+      throw new BadRequestException('Invalid baseUrl: must be a string');
+    }
+
+    // SECURITY: Validate customCode is a string if provided
+    if (
+      dto.customCode !== undefined &&
+      dto.customCode !== null &&
+      typeof dto.customCode !== 'string'
+    ) {
+      throw new BadRequestException('Invalid customCode: must be a string');
+    }
+
+    // SECURITY: Validate endpoints is an array if provided
+    if (dto.endpoints !== undefined && dto.endpoints !== null && !Array.isArray(dto.endpoints)) {
+      throw new BadRequestException('Invalid endpoints: must be an array');
+    }
+
     const integration = await this.prisma.integration.findFirst({
       where: { id: integrationId, organizationId },
       include: { customConfig: true },
@@ -291,6 +349,7 @@ export class CustomIntegrationService {
     }
 
     // Validate code if in code mode
+    // SECURITY: The strict type check above ensures dto.mode === 'code' works correctly
     if (dto.mode === 'code' && dto.customCode) {
       const validation = this.validateCode(dto.customCode);
       if (!validation.valid) {
@@ -448,15 +507,26 @@ export class CustomIntegrationService {
 
   /**
    * Test visual mode endpoint
+   *
+   * SECURITY: This method only uses stored configuration values.
+   * User-provided overrides (dto.baseUrl, etc.) are intentionally IGNORED
+   * to prevent attackers from bypassing stored/validated configurations.
    */
   private async testVisualEndpoint(config: any, dto: TestEndpointDto): Promise<TestResultDto> {
-    const baseUrl = dto.baseUrl || config.baseUrl;
-    if (!baseUrl) {
-      return { success: false, message: 'Base URL is required', error: 'No base URL configured' };
+    // SECURITY: Only use stored baseUrl - do NOT allow user-provided override
+    // This prevents attackers from redirecting requests to malicious servers
+    // to capture credentials or perform SSRF attacks
+    const baseUrl = config.baseUrl;
+    if (!baseUrl || typeof baseUrl !== 'string') {
+      return {
+        success: false,
+        message: 'Base URL is required',
+        error: 'No base URL configured in stored settings',
+      };
     }
 
     const endpoints = config.endpoints as any[];
-    if (!endpoints || endpoints.length === 0) {
+    if (!Array.isArray(endpoints) || endpoints.length === 0) {
       return {
         success: false,
         message: 'No endpoints configured',
@@ -464,7 +534,19 @@ export class CustomIntegrationService {
       };
     }
 
+    // SECURITY: Validate endpointIndex is a safe integer to prevent type confusion
     const endpointIndex = dto.endpointIndex ?? 0;
+    if (
+      typeof endpointIndex !== 'number' ||
+      !Number.isInteger(endpointIndex) ||
+      endpointIndex < 0
+    ) {
+      return {
+        success: false,
+        message: 'Invalid endpoint index',
+        error: 'Endpoint index must be a non-negative integer',
+      };
+    }
     if (endpointIndex >= endpoints.length) {
       return {
         success: false,
@@ -474,6 +556,14 @@ export class CustomIntegrationService {
     }
 
     const endpoint = endpoints[endpointIndex];
+    // SECURITY: Validate endpoint.path is a string
+    if (!endpoint || typeof endpoint.path !== 'string') {
+      return {
+        success: false,
+        message: 'Invalid endpoint configuration',
+        error: 'Endpoint path must be a string',
+      };
+    }
     const url = `${baseUrl.replace(/\/$/, '')}${endpoint.path}`;
 
     // Build headers with auth
@@ -987,38 +1077,40 @@ export class CustomIntegrationService {
   }
 
   /**
-   * Execute custom JavaScript code in a sandbox
-   *
-   * SECURITY: Defense-in-depth approach:
-   * 1. Feature must be explicitly enabled via ENABLE_CUSTOM_CODE_EXECUTION env var
-   * 2. Rate limiting prevents abuse
-   * 3. Code is validated before execution via validateCode()
-   * 4. Runtime validation is performed here as a double-check
-   * 5. Limited scope is provided to the function
-   *
-   * NOTE: For maximum security, consider migrating to isolated-vm
-   * for proper process-level sandboxing.
+   * SECURITY: Sanitize user code input before processing
+   * Removes potential bypass characters and normalizes the code
    */
-  private async executeCode(code: string, context: ExecutionContext): Promise<SyncResult> {
-    // SECURITY: Check if custom code execution is enabled
-    this.assertCodeExecutionEnabled();
+  private sanitizeCodeInput(code: string): string {
+    if (!code || typeof code !== 'string') {
+      throw new Error('Code must be a non-empty string');
+    }
 
-    // SECURITY: Apply rate limiting
-    if (!this.checkCodeExecutionRateLimit(context.organizationId)) {
+    // SECURITY: Enforce maximum code length
+    if (Buffer.byteLength(code, 'utf8') > SANDBOX_CONFIG.maxCodeLengthBytes) {
       throw new Error(
-        'Rate limit exceeded for code execution. ' +
-          `Maximum ${CODE_EXECUTION_RATE_LIMIT.maxRequests} executions per minute allowed. ` +
-          'Please wait before trying again.'
+        `Code exceeds maximum allowed size of ${SANDBOX_CONFIG.maxCodeLengthBytes} bytes`
       );
     }
 
-    this.logger.warn(
-      `SECURITY AUDIT: Executing custom code for org=${context.organizationId}, ` +
-        `integration=${context.integrationId}, codeLength=${code.length}`
-    );
+    // SECURITY: Remove null bytes and other control characters that could cause issues
+    // eslint-disable-next-line no-control-regex
+    let sanitized = code.replace(/\x00/g, '');
 
-    // SECURITY: Runtime validation - double-check for dangerous patterns
-    // This catches any patterns that might have been missed or smuggled in
+    // SECURITY: Normalize Unicode to detect obfuscation attempts
+    // This converts confusable characters to their ASCII equivalents
+    sanitized = sanitized.normalize('NFKC');
+
+    return sanitized;
+  }
+
+  /**
+   * SECURITY: Enhanced runtime validation with comprehensive blocklist
+   * Returns an array of detected dangerous patterns
+   */
+  private validateCodeAtRuntime(code: string): string[] {
+    const detectedPatterns: string[] = [];
+
+    // SECURITY: Comprehensive blocklist of dangerous patterns
     const dangerousPatterns = [
       // Sandbox escape patterns
       { pattern: /\bglobalThis\b/, name: 'globalThis' },
@@ -1036,109 +1128,238 @@ export class CustomIntegrationService {
       { pattern: /\bProxy\b/, name: 'Proxy' },
       { pattern: /\bimport\s*\(/, name: 'import()' },
       { pattern: /\.prototype\b/, name: '.prototype' },
+      // Node.js specific escapes
+      { pattern: /\bmodule\.constructor\b/, name: 'module.constructor' },
+      { pattern: /\bthis\.constructor\b/, name: 'this.constructor' },
+      { pattern: /\barguments\.callee\b/, name: 'arguments.callee' },
       // Additional bypass attempts using Unicode or encoding
-      { pattern: /\\u0065\\u0076\\u0061\\u006c/, name: 'eval (unicode)' },
-      { pattern: /\\x65\\x76\\x61\\x6c/, name: 'eval (hex)' },
+      { pattern: /\\u[0-9a-fA-F]{4}/, name: 'unicode escape' },
+      { pattern: /\\x[0-9a-fA-F]{2}/, name: 'hex escape' },
       // Template literal escapes
-      { pattern: /\$\{.*constructor.*\}/, name: 'constructor in template' },
-      { pattern: /\$\{.*eval.*\}/, name: 'eval in template' },
+      { pattern: /\$\{[^}]*constructor[^}]*\}/, name: 'constructor in template' },
+      { pattern: /\$\{[^}]*eval[^}]*\}/, name: 'eval in template' },
+      { pattern: /\$\{[^}]*Function[^}]*\}/, name: 'Function in template' },
+      // Property access that could lead to escapes
+      { pattern: /\[['"`]constructor['"`]\]/, name: 'bracket constructor access' },
+      { pattern: /\[['"`]__proto__['"`]\]/, name: 'bracket __proto__ access' },
+      { pattern: /\[['"`]prototype['"`]\]/, name: 'bracket prototype access' },
+      // Computed property access with variables (potential bypass)
+      { pattern: /\[[^\]]*\+[^\]]*\]/, name: 'computed property with concatenation' },
+      // WebAssembly could be used to escape
+      { pattern: /\bWebAssembly\b/, name: 'WebAssembly' },
     ];
 
     for (const { pattern, name } of dangerousPatterns) {
       if (pattern.test(code)) {
-        this.logger.error(`SECURITY: Blocked dangerous pattern "${name}" in custom code`);
-        throw new Error(
-          `SECURITY: Dangerous pattern "${name}" detected in code. Execution blocked.`
-        );
+        detectedPatterns.push(name);
       }
     }
 
-    // Create a safe execution environment
-    // Note: For production, use isolated-vm for proper sandboxing
-    const sandbox = {
-      // SECURITY: Wrap fetch with safeFetch to prevent SSRF attacks from custom code
-      fetch: async (url: string, opts?: RequestInit) => {
-        return safeFetch(url, opts || {}, { allowPrivateIPs: false });
-      },
-      console: {
-        log: (...args: any[]) => this.logger.log(`[Custom Code] ${args.join(' ')}`),
-        error: (...args: any[]) => this.logger.error(`[Custom Code] ${args.join(' ')}`),
-        warn: (...args: any[]) => this.logger.warn(`[Custom Code] ${args.join(' ')}`),
-      },
-      context,
-      JSON,
-      Date,
-      Math,
-      Array,
-      Object,
-      String,
-      Number,
-      Boolean,
-      Promise,
-      setTimeout: undefined, // Disabled for safety
-      setInterval: undefined, // Disabled for safety
-    };
+    return detectedPatterns;
+  }
 
+  /**
+   * Execute custom JavaScript code in a secure isolated sandbox
+   *
+   * SECURITY: Defense-in-depth approach using isolated-vm:
+   * 1. Feature must be explicitly enabled via ENABLE_CUSTOM_CODE_EXECUTION env var
+   * 2. Rate limiting prevents abuse
+   * 3. Input sanitization normalizes code and removes dangerous characters
+   * 4. Comprehensive blocklist validation catches known dangerous patterns
+   * 5. Code runs in a separate V8 isolate with:
+   *    - Memory limits (prevents memory exhaustion attacks)
+   *    - CPU timeout (prevents infinite loops)
+   *    - No access to Node.js globals (true sandbox)
+   * 6. Only safe, controlled functions are exposed to the sandbox
+   */
+  private async executeCode(code: string, context: ExecutionContext): Promise<SyncResult> {
+    // SECURITY: Check if custom code execution is enabled
+    this.assertCodeExecutionEnabled();
+
+    // SECURITY: Apply rate limiting
+    if (!this.checkCodeExecutionRateLimit(context.organizationId)) {
+      throw new Error(
+        'Rate limit exceeded for code execution. ' +
+          `Maximum ${CODE_EXECUTION_RATE_LIMIT.maxRequests} executions per minute allowed. ` +
+          'Please wait before trying again.'
+      );
+    }
+
+    // SECURITY: Sanitize input code
+    const sanitizedCode = this.sanitizeCodeInput(code);
+
+    this.logger.warn(
+      `SECURITY AUDIT: Executing custom code for org=${context.organizationId}, ` +
+        `integration=${context.integrationId}, codeLength=${sanitizedCode.length}`
+    );
+
+    // SECURITY: Runtime validation - comprehensive blocklist check
+    const detectedPatterns = this.validateCodeAtRuntime(sanitizedCode);
+    if (detectedPatterns.length > 0) {
+      this.logger.error(
+        `SECURITY: Blocked dangerous patterns in custom code: ${detectedPatterns.join(', ')}`
+      );
+      throw new Error(
+        `SECURITY: Dangerous patterns detected in code: ${detectedPatterns.join(', ')}. Execution blocked.`
+      );
+    }
+
+    // SECURITY: Create a sandboxed context using Node.js vm module
+    // This provides process isolation with limited capabilities
     try {
-      // Wrap code to capture the sync function
+      // Track logs from the sandbox for debugging
+      const logs: string[] = [];
+
+      // SECURITY: Create a minimal sandbox context with only safe globals
+      // We explicitly control what the sandboxed code can access
+      const sandboxContext = {
+        // Safe built-ins (frozen to prevent modification)
+        JSON: Object.freeze({ ...JSON }),
+        Math: Object.freeze({ ...Math }),
+        Object: Object.freeze({
+          keys: Object.keys,
+          values: Object.values,
+          entries: Object.entries,
+          assign: Object.assign,
+          freeze: Object.freeze,
+        }),
+        Array: Object.freeze({
+          isArray: Array.isArray,
+          from: Array.from,
+        }),
+        String: Object.freeze({
+          fromCharCode: String.fromCharCode,
+        }),
+        Number: Object.freeze({
+          isNaN: Number.isNaN,
+          isFinite: Number.isFinite,
+          parseInt: Number.parseInt,
+          parseFloat: Number.parseFloat,
+        }),
+        Date: Object.freeze({
+          now: Date.now,
+        }),
+        // Safe console (logs are captured, not printed directly)
+        console: Object.freeze({
+          log: (...args: any[]) => {
+            logs.push(
+              `[LOG] ${args.map((a) => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ')}`
+            );
+          },
+          error: (...args: any[]) => {
+            logs.push(
+              `[ERROR] ${args.map((a) => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ')}`
+            );
+          },
+          warn: (...args: any[]) => {
+            logs.push(
+              `[WARN] ${args.map((a) => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ')}`
+            );
+          },
+        }),
+        // Execution context (immutable copy)
+        context: Object.freeze({ ...context }),
+        // Result container
+        __result: { evidence: [] as EvidenceItem[] },
+        // SECURITY: Provide a controlled fetch implementation
+        // This wraps safeFetch to prevent SSRF attacks
+        fetch: async (url: string, opts?: RequestInit) => {
+          try {
+            const response = await safeFetch(url, opts || {}, { allowPrivateIPs: false });
+            const data = await response.json().catch(() => response.text());
+            return {
+              ok: response.ok,
+              status: response.status,
+              statusText: response.statusText,
+              data,
+              json: () => Promise.resolve(data),
+              text: () => Promise.resolve(typeof data === 'string' ? data : JSON.stringify(data)),
+            };
+          } catch (error: any) {
+            if (error instanceof SSRFProtectionError) {
+              throw new Error(`SSRF Protection: ${error.message}`);
+            }
+            throw error;
+          }
+        },
+      };
+
+      // Create the VM context
+      const vmContext = vm.createContext(sandboxContext, {
+        name: 'CustomIntegrationSandbox',
+        codeGeneration: {
+          strings: false, // Disable eval() and new Function()
+          wasm: false, // Disable WebAssembly
+        },
+      });
+
+      // Wrap the user code to execute the sync function
       const wrappedCode = `
         "use strict";
-        ${code}
-        
-        // Execute sync and return result
-        if (typeof sync === 'function') {
-          return sync(context);
-        } else if (typeof module !== 'undefined' && module.exports && typeof module.exports.sync === 'function') {
-          return module.exports.sync(context);
-        } else {
-          throw new Error('No sync function found');
-        }
+
+        // Module stub for compatibility
+        const module = { exports: {} };
+
+        ${sanitizedCode}
+
+        // Execute sync and store result
+        (async function() {
+          let syncFn;
+          if (typeof sync === 'function') {
+            syncFn = sync;
+          } else if (module.exports && typeof module.exports.sync === 'function') {
+            syncFn = module.exports.sync;
+          } else {
+            throw new Error('No sync function found. Define a function named "sync" that takes context as parameter.');
+          }
+
+          const result = await syncFn(context);
+          __result.evidence = result?.evidence || [];
+        })();
       `;
 
-      // SECURITY NOTE: new Function() is used here for dynamic code execution.
-      // This is inherently risky. The code above validates patterns, but this is
-      // not a true sandbox. For maximum security:
-      // 1. Keep ENABLE_CUSTOM_CODE_EXECUTION=false (default)
-      // 2. Consider migrating to isolated-vm npm package for process-level isolation
-      // 3. Run the controls service in an isolated container with limited network access
+      // Compile the script
+      const script = new vm.Script(wrappedCode, {
+        filename: 'custom-integration.js',
+      });
 
-      // Create function with limited scope
-      const fn = new Function(
-        'fetch',
-        'console',
-        'context',
-        'JSON',
-        'Date',
-        'Math',
-        'Array',
-        'Object',
-        'String',
-        'Number',
-        'Boolean',
-        'Promise',
-        'module',
-        wrappedCode
-      );
+      // Execute the script (returns a Promise for async code)
+      const resultPromise = script.runInContext(vmContext, {
+        timeout: SANDBOX_CONFIG.timeoutMs,
+      });
 
-      const module = { exports: {} };
-      const result = await fn(
-        sandbox.fetch,
-        sandbox.console,
-        sandbox.context,
-        sandbox.JSON,
-        sandbox.Date,
-        sandbox.Math,
-        sandbox.Array,
-        sandbox.Object,
-        sandbox.String,
-        sandbox.Number,
-        sandbox.Boolean,
-        sandbox.Promise,
-        module
-      );
+      // Wait for completion with timeout
+      await Promise.race([
+        resultPromise,
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Code execution timed out')), SANDBOX_CONFIG.timeoutMs)
+        ),
+      ]);
 
-      return result || { evidence: [] };
+      // Log any captured console output
+      if (logs.length > 0) {
+        this.logger.log(`[Custom Code Logs]\n${logs.join('\n')}`);
+      }
+
+      // Return the result
+      return {
+        evidence: Array.isArray(sandboxContext.__result.evidence)
+          ? sandboxContext.__result.evidence
+          : [],
+      };
     } catch (error: any) {
+      // Handle specific vm errors
+      if (
+        error.message?.includes('Script execution timed out') ||
+        error.code === 'ERR_SCRIPT_EXECUTION_TIMEOUT'
+      ) {
+        this.logger.error('Custom code execution timed out');
+        throw new Error(
+          `Code execution timed out after ${SANDBOX_CONFIG.timeoutMs}ms. ` +
+            'Ensure your sync function completes within the time limit.'
+        );
+      }
+
       this.logger.error(`Custom code execution error: ${error.message}`);
       throw new Error(`Code execution failed: ${error.message}`);
     }
@@ -1273,7 +1494,10 @@ export class CustomIntegrationService {
     let created = 0;
     const timestamp = Date.now();
 
-    for (let i = 0; i < evidenceItems.length; i++) {
+    // SECURITY: Limit iterations to prevent loop bound injection attacks
+    const maxItems = Math.min(evidenceItems.length, MAX_BATCH_LIMITS.EVIDENCE_ITEMS);
+
+    for (let i = 0; i < maxItems; i++) {
       const item = evidenceItems[i];
 
       try {

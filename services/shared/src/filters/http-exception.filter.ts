@@ -10,33 +10,34 @@ import { Request, Response } from 'express';
 
 /**
  * Patterns to sanitize from error messages
+ * SECURITY: Use bounded quantifiers to prevent ReDoS attacks
  */
 const SENSITIVE_PATTERNS = [
-  // Database connection strings
-  /postgresql:\/\/[^@]+@[^\s]+/gi,
-  /mysql:\/\/[^@]+@[^\s]+/gi,
-  /mongodb(\+srv)?:\/\/[^@]+@[^\s]+/gi,
-  /redis:\/\/[^@]+@[^\s]+/gi,
-  
-  // File paths
-  /\/Users\/[^\s:]+/gi,
-  /\/home\/[^\s:]+/gi,
-  /C:\\Users\\[^\s:]+/gi,
-  /\/app\/[^\s:]+/gi,
-  /\/var\/[^\s:]+/gi,
-  
-  // IP addresses (internal)
+  // Database connection strings - bounded to reasonable URL lengths
+  /postgresql:\/\/[^@]{1,100}@[^\s]{1,200}/gi,
+  /mysql:\/\/[^@]{1,100}@[^\s]{1,200}/gi,
+  /mongodb(\+srv)?:\/\/[^@]{1,100}@[^\s]{1,200}/gi,
+  /redis:\/\/[^@]{1,100}@[^\s]{1,200}/gi,
+
+  // File paths - bounded lengths
+  /\/Users\/[^\s:]{1,200}/gi,
+  /\/home\/[^\s:]{1,200}/gi,
+  /C:\\Users\\[^\s:]{1,200}/gi,
+  /\/app\/[^\s:]{1,200}/gi,
+  /\/var\/[^\s:]{1,200}/gi,
+
+  // IP addresses (internal) - already bounded by digit limits
   /\b10\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g,
   /\b172\.(1[6-9]|2[0-9]|3[0-1])\.\d{1,3}\.\d{1,3}\b/g,
   /\b192\.168\.\d{1,3}\.\d{1,3}\b/g,
-  
-  // API keys and tokens
-  /api[_-]?key[=:]\s*["']?[a-zA-Z0-9_-]+["']?/gi,
-  /bearer\s+[a-zA-Z0-9_.-]+/gi,
-  /token[=:]\s*["']?[a-zA-Z0-9_.-]+["']?/gi,
-  
-  // Environment variable values
-  /process\.env\.[A-Z_]+\s*=\s*["'][^"']+["']/gi,
+
+  // API keys and tokens - bounded lengths
+  /api[_-]?key[=:]\s{0,5}["']?[a-zA-Z0-9_-]{1,200}["']?/gi,
+  /bearer\s{1,5}[a-zA-Z0-9_.-]{1,500}/gi,
+  /token[=:]\s{0,5}["']?[a-zA-Z0-9_.-]{1,200}["']?/gi,
+
+  // Environment variable values - bounded lengths
+  /process\.env\.[A-Z_]{1,50}\s{0,5}=\s{0,5}["'][^"']{1,500}["']/gi,
 ];
 
 /**
@@ -73,7 +74,7 @@ interface ErrorResponse {
 
 /**
  * Global exception filter that sanitizes error messages in production
- * 
+ *
  * Features:
  * - Removes sensitive information (paths, connection strings, tokens)
  * - Uses generic messages in production
@@ -131,9 +132,10 @@ export class GlobalExceptionFilter implements ExceptionFilter {
   } {
     if (exception instanceof HttpException) {
       const response = exception.getResponse();
-      const message = typeof response === 'string' 
-        ? response 
-        : (response as { message?: string | string[] }).message || exception.message;
+      const message =
+        typeof response === 'string'
+          ? response
+          : (response as { message?: string | string[] }).message || exception.message;
 
       return {
         status: exception.getStatus(),
@@ -235,9 +237,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
   private getDetailedMessage(exception: unknown): string {
     if (exception instanceof HttpException) {
       const response = exception.getResponse();
-      return typeof response === 'object' 
-        ? JSON.stringify(response, null, 2)
-        : String(response);
+      return typeof response === 'object' ? JSON.stringify(response, null, 2) : String(response);
     }
 
     if (exception instanceof Error) {
@@ -251,7 +251,9 @@ export class GlobalExceptionFilter implements ExceptionFilter {
    * Log the error with context
    */
   private logError(exception: unknown, request: Request, status: number): void {
-    const authenticatedRequest = request as Request & { user?: { userId?: string; organizationId?: string } };
+    const authenticatedRequest = request as Request & {
+      user?: { userId?: string; organizationId?: string };
+    };
     const userId = authenticatedRequest.user?.userId || 'anonymous';
     const orgId = authenticatedRequest.user?.organizationId || 'unknown';
     const method = request.method;
@@ -276,7 +278,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       } else {
         this.logger.error(
           `${method} ${url} - ${status}`,
-          exception instanceof Error ? exception.stack : String(exception),
+          exception instanceof Error ? exception.stack : String(exception)
         );
       }
     } else if (status >= 400) {

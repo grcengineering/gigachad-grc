@@ -33,11 +33,18 @@ import {
   type TrainingProgress,
   type TrainingStats,
 } from '@/lib/training';
+import { isAllowedOrigin } from '@/lib/constants';
 
 type ViewMode = 'catalog' | 'viewer' | 'progress';
 
 // Icon mapping for module types
-function ModuleIcon({ type, className = "w-6 h-6" }: { type: TrainingModule['iconType']; className?: string }) {
+function ModuleIcon({
+  type,
+  className = 'w-6 h-6',
+}: {
+  type: TrainingModule['iconType'];
+  className?: string;
+}) {
   switch (type) {
     case 'phishing':
       return <EnvelopeIcon className={className} />;
@@ -61,45 +68,46 @@ function ModuleIcon({ type, className = "w-6 h-6" }: { type: TrainingModule['ico
 export default function AwarenessTraining() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
-  
+
   const [viewMode, setViewMode] = useState<ViewMode>('catalog');
   const [selectedModule, setSelectedModule] = useState<TrainingModule | null>(null);
   const [progress, setProgress] = useState<TrainingProgress[]>([]);
   const [stats, setStats] = useState<TrainingStats | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  
+
   const userId = user?.id || 'dev-user';
-  
+
   useEffect(() => {
     setProgress(trainingApi.getProgress(userId));
     setStats(trainingApi.getStats(userId));
   }, [userId]);
-  
+
   useEffect(() => {
     const moduleId = searchParams.get('module');
     if (moduleId) {
-      const module = moduleId === 'combined' 
-        ? COMBINED_TRAINING 
-        : TRAINING_MODULES.find(m => m.id === moduleId);
+      const module =
+        moduleId === 'combined'
+          ? COMBINED_TRAINING
+          : TRAINING_MODULES.find((m) => m.id === moduleId);
       if (module) {
         setSelectedModule(module);
         setViewMode('viewer');
       }
     }
   }, [searchParams]);
-  
+
   const handleStartModule = (module: TrainingModule) => {
     setSelectedModule(module);
     setViewMode('viewer');
     setSearchParams({ module: module.id === 'combined-training' ? 'combined' : module.id });
-    
+
     const existingProgress = trainingApi.getModuleProgress(userId, module.id);
     if (!existingProgress || existingProgress.status === 'not_started') {
       trainingApi.startModule(userId, module.id);
       setProgress(trainingApi.getProgress(userId));
     }
   };
-  
+
   const handleCloseViewer = () => {
     setSelectedModule(null);
     setViewMode('catalog');
@@ -107,7 +115,7 @@ export default function AwarenessTraining() {
     setStats(trainingApi.getStats(userId));
     setProgress(trainingApi.getProgress(userId));
   };
-  
+
   const handleCompleteModule = () => {
     if (selectedModule) {
       trainingApi.completeModule(userId, selectedModule.id, 100);
@@ -115,19 +123,20 @@ export default function AwarenessTraining() {
       setProgress(trainingApi.getProgress(userId));
     }
   };
-  
+
   const getModuleProgress = (moduleId: string): TrainingProgress | undefined => {
-    return progress.find(p => p.moduleId === moduleId);
+    return progress.find((p) => p.moduleId === moduleId);
   };
-  
-  const filteredModules = categoryFilter === 'all' 
-    ? TRAINING_MODULES 
-    : TRAINING_MODULES.filter(m => m.category === categoryFilter);
+
+  const filteredModules =
+    categoryFilter === 'all'
+      ? TRAINING_MODULES
+      : TRAINING_MODULES.filter((m) => m.category === categoryFilter);
 
   if (viewMode === 'viewer' && selectedModule) {
     return (
-      <TrainingViewer 
-        module={selectedModule} 
+      <TrainingViewer
+        module={selectedModule}
         onClose={handleCloseViewer}
         onComplete={handleCompleteModule}
         progress={getModuleProgress(selectedModule.id)}
@@ -140,7 +149,9 @@ export default function AwarenessTraining() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Security Awareness Training</h1>
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
+            Security Awareness Training
+          </h1>
           <p className="text-gray-500 dark:text-surface-400 mt-1">
             Interactive training modules for security, privacy, and compliance
           </p>
@@ -158,24 +169,21 @@ export default function AwarenessTraining() {
       {stats && <StatsOverview stats={stats} />}
 
       {viewMode === 'progress' ? (
-        <ProgressDashboard 
-          progress={progress} 
-          onStartModule={handleStartModule}
-        />
+        <ProgressDashboard progress={progress} onStartModule={handleStartModule} />
       ) : (
         <>
           {/* Featured Training */}
-          <FeaturedTraining 
-            module={COMBINED_TRAINING} 
-            onStart={handleStartModule} 
+          <FeaturedTraining
+            module={COMBINED_TRAINING}
+            onStart={handleStartModule}
             progress={getModuleProgress(COMBINED_TRAINING.id)}
           />
-          
+
           {/* Category Filter */}
           <div className="flex items-center gap-3 border-b border-gray-200 dark:border-surface-700 pb-4">
             <span className="text-gray-500 dark:text-surface-500 text-sm font-medium">Filter:</span>
             <div className="flex gap-1">
-              {['all', 'social-engineering', 'privacy', 'secure-coding', 'general'].map(cat => (
+              {['all', 'social-engineering', 'privacy', 'secure-coding', 'general'].map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setCategoryFilter(cat)}
@@ -193,10 +201,10 @@ export default function AwarenessTraining() {
 
           {/* Training Modules Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filteredModules.map(module => (
-              <TrainingCard 
-                key={module.id} 
-                module={module} 
+            {filteredModules.map((module) => (
+              <TrainingCard
+                key={module.id}
+                module={module}
                 progress={getModuleProgress(module.id)}
                 onStart={() => handleStartModule(module)}
               />
@@ -211,15 +219,17 @@ export default function AwarenessTraining() {
 // Stats Overview Component
 function StatsOverview({ stats }: { stats: TrainingStats }) {
   const completionPercent = Math.round((stats.completedModules / stats.totalModules) * 100);
-  
+
   return (
     <div className="bg-white/50 dark:bg-surface-800/50 rounded-xl border border-gray-200 dark:border-surface-700 p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-medium text-gray-900 dark:text-white">Training Progress</h2>
-        <span className="text-2xl font-bold text-brand-500 dark:text-brand-400">{completionPercent}%</span>
+        <span className="text-2xl font-bold text-brand-500 dark:text-brand-400">
+          {completionPercent}%
+        </span>
       </div>
       <div className="h-2 bg-gray-200 dark:bg-surface-700 rounded-full overflow-hidden mb-6">
-        <div 
+        <div
           className="h-full bg-brand-500 transition-all duration-500"
           style={{ width: `${completionPercent}%` }}
         />
@@ -234,12 +244,22 @@ function StatsOverview({ stats }: { stats: TrainingStats }) {
   );
 }
 
-function StatItem({ label, value, total }: { label: string; value: string | number; total?: number }) {
+function StatItem({
+  label,
+  value,
+  total,
+}: {
+  label: string;
+  value: string | number;
+  total?: number;
+}) {
   return (
     <div>
       <div className="text-2xl font-semibold text-gray-900 dark:text-white">
         {value}
-        {total !== undefined && <span className="text-gray-500 dark:text-surface-500 text-lg">/{total}</span>}
+        {total !== undefined && (
+          <span className="text-gray-500 dark:text-surface-500 text-lg">/{total}</span>
+        )}
       </div>
       <div className="text-sm text-gray-500 dark:text-surface-400">{label}</div>
     </div>
@@ -247,22 +267,25 @@ function StatItem({ label, value, total }: { label: string; value: string | numb
 }
 
 // Featured Training Card
-function FeaturedTraining({ 
-  module, 
-  onStart, 
-  progress 
-}: { 
-  module: TrainingModule; 
+function FeaturedTraining({
+  module,
+  onStart,
+  progress,
+}: {
+  module: TrainingModule;
   onStart: (m: TrainingModule) => void;
   progress?: TrainingProgress;
 }) {
   const isCompleted = progress?.status === 'completed';
-  
+
   return (
     <div className="bg-gradient-to-br from-brand-500/10 via-white dark:via-surface-800 to-white dark:to-surface-800 rounded-xl border border-brand-500/20 p-6">
       <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
         <div className="p-4 bg-brand-500/10 rounded-xl border border-brand-500/20">
-          <ModuleIcon type={module.iconType} className="w-10 h-10 text-brand-500 dark:text-brand-400" />
+          <ModuleIcon
+            type={module.iconType}
+            className="w-10 h-10 text-brand-500 dark:text-brand-400"
+          />
         </div>
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
@@ -275,7 +298,9 @@ function FeaturedTraining({
               </span>
             )}
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">{module.title}</h2>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+            {module.title}
+          </h2>
           <p className="text-gray-500 dark:text-surface-400 mb-4">{module.description}</p>
           <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 dark:text-surface-500">
             <span className="flex items-center gap-1.5">
@@ -284,13 +309,15 @@ function FeaturedTraining({
             <span className="flex items-center gap-1.5">
               <ClockIcon className="w-4 h-4" /> {formatDuration(module.duration)}
             </span>
-            <span className={`px-2 py-0.5 rounded text-xs ${getDifficultyColor(module.difficulty)}`}>
+            <span
+              className={`px-2 py-0.5 rounded text-xs ${getDifficultyColor(module.difficulty)}`}
+            >
               {module.difficulty.charAt(0).toUpperCase() + module.difficulty.slice(1)}
             </span>
           </div>
         </div>
-        <Button 
-          onClick={() => onStart(module)} 
+        <Button
+          onClick={() => onStart(module)}
           size="lg"
           variant={isCompleted ? 'secondary' : 'primary'}
           rightIcon={<ArrowRightIcon className="w-4 h-4" />}
@@ -303,25 +330,28 @@ function FeaturedTraining({
 }
 
 // Training Card Component
-function TrainingCard({ 
-  module, 
-  progress, 
-  onStart 
-}: { 
-  module: TrainingModule; 
-  progress?: TrainingProgress; 
+function TrainingCard({
+  module,
+  progress,
+  onStart,
+}: {
+  module: TrainingModule;
+  progress?: TrainingProgress;
   onStart: () => void;
 }) {
   const isCompleted = progress?.status === 'completed';
   const isInProgress = progress?.status === 'in_progress';
-  
+
   return (
     <div className="bg-white dark:bg-surface-800 rounded-xl border border-gray-200 dark:border-surface-700 overflow-hidden hover:border-gray-300 dark:hover:border-surface-600 transition-all group">
       {/* Header */}
       <div className="p-5 border-b border-gray-200 dark:border-surface-700">
         <div className="flex items-start justify-between mb-3">
           <div className="p-2.5 bg-gray-100 dark:bg-surface-700/50 rounded-lg group-hover:bg-brand-500/10 transition-colors">
-            <ModuleIcon type={module.iconType} className="w-6 h-6 text-gray-500 dark:text-surface-300 group-hover:text-brand-500 dark:group-hover:text-brand-400 transition-colors" />
+            <ModuleIcon
+              type={module.iconType}
+              className="w-6 h-6 text-gray-500 dark:text-surface-300 group-hover:text-brand-500 dark:group-hover:text-brand-400 transition-colors"
+            />
           </div>
           {isCompleted && (
             <div className="flex items-center gap-1.5 text-emerald-400 text-xs font-medium">
@@ -336,13 +366,15 @@ function TrainingCard({
             </div>
           )}
         </div>
-        
+
         <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1.5 group-hover:text-brand-500 dark:group-hover:text-brand-400 transition-colors">
           {module.title}
         </h3>
-        <p className="text-gray-500 dark:text-surface-400 text-sm line-clamp-2">{module.description}</p>
+        <p className="text-gray-500 dark:text-surface-400 text-sm line-clamp-2">
+          {module.description}
+        </p>
       </div>
-      
+
       {/* Content */}
       <div className="p-5">
         {/* Tags */}
@@ -354,7 +386,7 @@ function TrainingCard({
             {module.difficulty}
           </span>
         </div>
-        
+
         {/* Progress bar */}
         {progress && progress.slideProgress > 0 && (
           <div className="mb-4">
@@ -363,14 +395,14 @@ function TrainingCard({
               <span>{progress.slideProgress}%</span>
             </div>
             <div className="h-1.5 bg-gray-200 dark:bg-surface-700 rounded-full overflow-hidden">
-              <div 
+              <div
                 className={`h-full ${isCompleted ? 'bg-emerald-500' : 'bg-brand-500'} transition-all`}
                 style={{ width: `${progress.slideProgress}%` }}
               />
             </div>
           </div>
         )}
-        
+
         {/* Meta info */}
         <div className="flex items-center justify-between text-sm text-gray-500 dark:text-surface-500 mb-4">
           <span className="flex items-center gap-1.5">
@@ -380,12 +412,18 @@ function TrainingCard({
             <ClockIcon className="w-4 h-4" /> {formatDuration(module.duration)}
           </span>
         </div>
-        
-        <Button 
-          onClick={onStart} 
-          variant={isCompleted ? 'secondary' : 'primary'} 
+
+        <Button
+          onClick={onStart}
+          variant={isCompleted ? 'secondary' : 'primary'}
           className="w-full"
-          leftIcon={isCompleted ? <CheckCircleIcon className="w-4 h-4" /> : <PlayCircleIcon className="w-4 h-4" />}
+          leftIcon={
+            isCompleted ? (
+              <CheckCircleIcon className="w-4 h-4" />
+            ) : (
+              <PlayCircleIcon className="w-4 h-4" />
+            )
+          }
         >
           {isCompleted ? 'Review' : isInProgress ? 'Continue' : 'Start'}
         </Button>
@@ -395,33 +433,28 @@ function TrainingCard({
 }
 
 // Training Viewer Component
-function TrainingViewer({ 
-  module, 
-  onClose, 
+function TrainingViewer({
+  module,
+  onClose,
   onComplete,
-  progress 
-}: { 
-  module: TrainingModule; 
+  progress,
+}: {
+  module: TrainingModule;
   onClose: () => void;
   onComplete: () => void;
   progress?: TrainingProgress;
 }) {
   const [isFullscreen, setIsFullscreen] = useState(false);
-  
+
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       // SECURITY: Validate origin to prevent unauthorized postMessage attacks
-      const allowedOrigins = [
-        window.location.origin,
-        import.meta.env.VITE_API_URL,
-        import.meta.env.VITE_TRAINING_CDN_URL,
-      ].filter(Boolean) as string[];
-      
-      if (!allowedOrigins.includes(event.origin)) {
+      // Uses centralized allowed origins from config
+      if (!isAllowedOrigin(event.origin)) {
         console.warn('[Security] Received postMessage from unauthorized origin:', event.origin);
         return;
       }
-      
+
       if (event.data?.type === 'trainingComplete') {
         onComplete();
       }
@@ -429,28 +462,43 @@ function TrainingViewer({
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
   }, [onComplete]);
-  
+
   return (
     <div className={`${isFullscreen ? 'fixed inset-0 z-50' : ''} bg-gray-100 dark:bg-surface-900`}>
       {/* Header */}
       <div className="bg-white dark:bg-surface-800 border-b border-gray-200 dark:border-surface-700 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" onClick={onClose} leftIcon={<ArrowLeftIcon className="w-5 h-5" />}>
+          <Button
+            variant="ghost"
+            onClick={onClose}
+            leftIcon={<ArrowLeftIcon className="w-5 h-5" />}
+          >
             Back
           </Button>
           <div className="flex items-center gap-3">
             <div className="p-2 bg-gray-100 dark:bg-surface-700 rounded-lg">
-              <ModuleIcon type={module.iconType} className="w-5 h-5 text-brand-500 dark:text-brand-400" />
+              <ModuleIcon
+                type={module.iconType}
+                className="w-5 h-5 text-brand-500 dark:text-brand-400"
+              />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-gray-900 dark:text-white">{module.title}</h2>
-              <p className="text-sm text-gray-500 dark:text-surface-500">{formatDuration(module.duration)} • {module.slides} slides</p>
+              <h2 className="text-base font-semibold text-gray-900 dark:text-white">
+                {module.title}
+              </h2>
+              <p className="text-sm text-gray-500 dark:text-surface-500">
+                {formatDuration(module.duration)} • {module.slides} slides
+              </p>
             </div>
           </div>
         </div>
         <div className="flex items-center gap-2">
           {progress?.status !== 'completed' && (
-            <Button variant="secondary" onClick={onComplete} leftIcon={<DocumentCheckIcon className="w-4 h-4" />}>
+            <Button
+              variant="secondary"
+              onClick={onComplete}
+              leftIcon={<DocumentCheckIcon className="w-4 h-4" />}
+            >
               Mark Complete
             </Button>
           )}
@@ -469,13 +517,18 @@ function TrainingViewer({
               <XMarkIcon className="w-5 h-5" />
             ) : (
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
+                />
               </svg>
             )}
           </button>
         </div>
       </div>
-      
+
       {/* Training Content */}
       <div className={`${isFullscreen ? 'h-[calc(100vh-60px)]' : 'h-[calc(100vh-180px)]'}`}>
         <iframe
@@ -491,23 +544,23 @@ function TrainingViewer({
 }
 
 // Progress Dashboard Component
-function ProgressDashboard({ 
-  progress, 
-  onStartModule 
-}: { 
-  progress: TrainingProgress[]; 
+function ProgressDashboard({
+  progress,
+  onStartModule,
+}: {
+  progress: TrainingProgress[];
   onStartModule: (m: TrainingModule) => void;
 }) {
-  const completedModules = TRAINING_MODULES.filter(m => 
-    progress.find(p => p.moduleId === m.id && p.status === 'completed')
+  const completedModules = TRAINING_MODULES.filter((m) =>
+    progress.find((p) => p.moduleId === m.id && p.status === 'completed')
   );
-  const inProgressModules = TRAINING_MODULES.filter(m => 
-    progress.find(p => p.moduleId === m.id && p.status === 'in_progress')
+  const inProgressModules = TRAINING_MODULES.filter((m) =>
+    progress.find((p) => p.moduleId === m.id && p.status === 'in_progress')
   );
-  const notStartedModules = TRAINING_MODULES.filter(m => 
-    !progress.find(p => p.moduleId === m.id)
+  const notStartedModules = TRAINING_MODULES.filter(
+    (m) => !progress.find((p) => p.moduleId === m.id)
   );
-  
+
   return (
     <div className="space-y-8">
       {/* In Progress */}
@@ -516,26 +569,38 @@ function ProgressDashboard({
           <h3 className="text-base font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
             <PlayCircleIcon className="w-5 h-5 text-amber-500 dark:text-amber-400" />
             In Progress
-            <span className="text-gray-500 dark:text-surface-500 font-normal">({inProgressModules.length})</span>
+            <span className="text-gray-500 dark:text-surface-500 font-normal">
+              ({inProgressModules.length})
+            </span>
           </h3>
           <div className="space-y-3">
-            {inProgressModules.map(module => {
-              const moduleProgress = progress.find(p => p.moduleId === module.id);
+            {inProgressModules.map((module) => {
+              const moduleProgress = progress.find((p) => p.moduleId === module.id);
               return (
-                <div key={module.id} className="bg-white dark:bg-surface-800 rounded-xl border border-gray-200 dark:border-surface-700 p-4 flex items-center gap-4">
+                <div
+                  key={module.id}
+                  className="bg-white dark:bg-surface-800 rounded-xl border border-gray-200 dark:border-surface-700 p-4 flex items-center gap-4"
+                >
                   <div className="p-2.5 bg-amber-500/10 rounded-lg">
-                    <ModuleIcon type={module.iconType} className="w-5 h-5 text-amber-500 dark:text-amber-400" />
+                    <ModuleIcon
+                      type={module.iconType}
+                      className="w-5 h-5 text-amber-500 dark:text-amber-400"
+                    />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-gray-900 dark:text-white font-medium truncate">{module.title}</h4>
+                    <h4 className="text-gray-900 dark:text-white font-medium truncate">
+                      {module.title}
+                    </h4>
                     <div className="flex items-center gap-3 mt-2">
                       <div className="flex-1 h-1.5 bg-gray-200 dark:bg-surface-700 rounded-full overflow-hidden">
-                        <div 
+                        <div
                           className="h-full bg-amber-500"
                           style={{ width: `${moduleProgress?.slideProgress || 0}%` }}
                         />
                       </div>
-                      <span className="text-sm text-gray-500 dark:text-surface-500 w-10">{moduleProgress?.slideProgress || 0}%</span>
+                      <span className="text-sm text-gray-500 dark:text-surface-500 w-10">
+                        {moduleProgress?.slideProgress || 0}%
+                      </span>
                     </div>
                   </div>
                   <Button variant="primary" onClick={() => onStartModule(module)}>
@@ -547,26 +612,36 @@ function ProgressDashboard({
           </div>
         </div>
       )}
-      
+
       {/* Completed */}
       {completedModules.length > 0 && (
         <div>
           <h3 className="text-base font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
             <CheckCircleIcon className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
             Completed
-            <span className="text-gray-500 dark:text-surface-500 font-normal">({completedModules.length})</span>
+            <span className="text-gray-500 dark:text-surface-500 font-normal">
+              ({completedModules.length})
+            </span>
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {completedModules.map(module => {
-              const moduleProgress = progress.find(p => p.moduleId === module.id);
+            {completedModules.map((module) => {
+              const moduleProgress = progress.find((p) => p.moduleId === module.id);
               return (
-                <div key={module.id} className="bg-white dark:bg-surface-800 rounded-xl border border-emerald-500/20 p-4">
+                <div
+                  key={module.id}
+                  className="bg-white dark:bg-surface-800 rounded-xl border border-emerald-500/20 p-4"
+                >
                   <div className="flex items-start gap-3 mb-3">
                     <div className="p-2 bg-emerald-500/10 rounded-lg">
-                      <ModuleIcon type={module.iconType} className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
+                      <ModuleIcon
+                        type={module.iconType}
+                        className="w-5 h-5 text-emerald-500 dark:text-emerald-400"
+                      />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-gray-900 dark:text-white font-medium truncate">{module.title}</h4>
+                      <h4 className="text-gray-900 dark:text-white font-medium truncate">
+                        {module.title}
+                      </h4>
                       {moduleProgress?.completedAt && (
                         <p className="text-xs text-gray-500 dark:text-surface-500 mt-0.5">
                           {new Date(moduleProgress.completedAt).toLocaleDateString()}
@@ -588,24 +663,36 @@ function ProgressDashboard({
           </div>
         </div>
       )}
-      
+
       {/* Not Started */}
       {notStartedModules.length > 0 && (
         <div>
           <h3 className="text-base font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
             <BookOpenIcon className="w-5 h-5 text-gray-500 dark:text-surface-500" />
             Not Started
-            <span className="text-gray-500 dark:text-surface-500 font-normal">({notStartedModules.length})</span>
+            <span className="text-gray-500 dark:text-surface-500 font-normal">
+              ({notStartedModules.length})
+            </span>
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {notStartedModules.map(module => (
-              <div key={module.id} className="bg-white dark:bg-surface-800 rounded-xl border border-gray-200 dark:border-surface-700 p-4 flex items-center gap-4">
+            {notStartedModules.map((module) => (
+              <div
+                key={module.id}
+                className="bg-white dark:bg-surface-800 rounded-xl border border-gray-200 dark:border-surface-700 p-4 flex items-center gap-4"
+              >
                 <div className="p-2.5 bg-gray-100 dark:bg-surface-700/50 rounded-lg">
-                  <ModuleIcon type={module.iconType} className="w-5 h-5 text-gray-500 dark:text-surface-400" />
+                  <ModuleIcon
+                    type={module.iconType}
+                    className="w-5 h-5 text-gray-500 dark:text-surface-400"
+                  />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h4 className="text-gray-900 dark:text-white font-medium truncate">{module.title}</h4>
-                  <p className="text-sm text-gray-500 dark:text-surface-500">{formatDuration(module.duration)}</p>
+                  <h4 className="text-gray-900 dark:text-white font-medium truncate">
+                    {module.title}
+                  </h4>
+                  <p className="text-sm text-gray-500 dark:text-surface-500">
+                    {formatDuration(module.duration)}
+                  </p>
                 </div>
                 <Button variant="secondary" onClick={() => onStartModule(module)}>
                   Start

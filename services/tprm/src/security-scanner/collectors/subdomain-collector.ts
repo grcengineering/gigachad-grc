@@ -2,45 +2,11 @@ import { Injectable, Logger } from '@nestjs/common';
 import * as dns from 'dns';
 import * as https from 'https';
 import * as http from 'http';
-import * as net from 'net';
 import { promisify } from 'util';
 import { randomBytes } from 'crypto';
+import { validateUrl } from '@gigachad-grc/shared';
 
 const dnsResolve = promisify(dns.resolve);
-
-// Private IP ranges for SSRF protection
-const PRIVATE_IP_RANGES = [
-  { start: '10.0.0.0', end: '10.255.255.255' },
-  { start: '172.16.0.0', end: '172.31.255.255' },
-  { start: '192.168.0.0', end: '192.168.255.255' },
-  { start: '127.0.0.0', end: '127.255.255.255' },
-  { start: '169.254.0.0', end: '169.254.255.255' },
-  { start: '0.0.0.0', end: '0.255.255.255' },
-];
-
-function ipToNumber(ip: string): number {
-  const parts = ip.split('.').map(Number);
-  return (parts[0] << 24) + (parts[1] << 16) + (parts[2] << 8) + parts[3];
-}
-
-function isPrivateIP(ip: string): boolean {
-  if (!net.isIPv4(ip)) {
-    if (net.isIPv6(ip)) {
-      return ip === '::1' || ip.startsWith('fe80:') || ip.startsWith('fc') || ip.startsWith('fd');
-    }
-    return false;
-  }
-
-  const ipNum = ipToNumber(ip);
-  for (const range of PRIVATE_IP_RANGES) {
-    const start = ipToNumber(range.start);
-    const end = ipToNumber(range.end);
-    if (ipNum >= start && ipNum <= end) {
-      return true;
-    }
-  }
-  return false;
-}
 
 export interface SubdomainInfo {
   subdomain: string;
@@ -257,10 +223,12 @@ export class SubdomainCollector {
           return info;
         }
 
-        // SSRF Protection: Skip HTTP checks if any resolved IP is private
-        const hasPrivateIP = addresses.some((ip) => isPrivateIP(ip));
-        if (hasPrivateIP) {
-          this.logger.debug(`Skipping HTTP check for ${fullDomain} - resolves to private IP`);
+        // SSRF Protection: Use centralized URL validation to check for private IPs
+        const validation = await validateUrl(`https://${fullDomain}`);
+        if (!validation.valid) {
+          this.logger.debug(
+            `Skipping HTTP check for ${fullDomain} - SSRF protection: ${validation.error}`
+          );
           return info;
         }
 
@@ -314,7 +282,13 @@ export class SubdomainCollector {
   /**
    * Perform HEAD request to check accessibility
    */
-  private fetchHead(url: string): Promise<{ status: number; redirectsTo?: string }> {
+  private async fetchHead(url: string): Promise<{ status: number; redirectsTo?: string }> {
+    // SSRF Protection: Validate URL before making request
+    const validation = await validateUrl(url);
+    if (!validation.valid) {
+      throw new Error(`SSRF protection blocked request: ${validation.error}`);
+    }
+
     return new Promise((resolve, reject) => {
       const urlObj = new URL(url);
       const protocol = urlObj.protocol === 'https:' ? https : http;

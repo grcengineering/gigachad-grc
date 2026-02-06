@@ -2,11 +2,29 @@ import { Transform, TransformFnParams } from 'class-transformer';
 
 // Simple HTML stripper (avoids external dependency)
 const stripHtmlTags = (html: string): string => {
-  return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+  return html
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .trim();
 };
 
 // Safe HTML tags whitelist
-const SAFE_TAGS = ['b', 'i', 'em', 'strong', 'a', 'p', 'br', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4'];
+const SAFE_TAGS = [
+  'b',
+  'i',
+  'em',
+  'strong',
+  'a',
+  'p',
+  'br',
+  'ul',
+  'ol',
+  'li',
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+];
 
 const sanitizeHtmlContent = (html: string, allowedTags: string[] = []): string => {
   if (allowedTags.length === 0) {
@@ -180,11 +198,21 @@ export function TrimArray(): PropertyDecorator {
 export function SanitizeFileName(): PropertyDecorator {
   return Transform(({ value }: TransformFnParams) => {
     if (typeof value === 'string') {
-      // Remove path traversal, dangerous chars, and control characters
-      let sanitized = value.replace(/\.\./g, '');
+      // Remove path traversal - loop until no more matches
+      // This prevents bypass via patterns like '....' which becomes '..' after one pass
+      let sanitized = value;
+      let previousLength: number;
+      do {
+        previousLength = sanitized.length;
+        sanitized = sanitized.replace(/\.\./g, '');
+      } while (sanitized.length !== previousLength);
+      // Remove dangerous chars
       sanitized = sanitized.replace(/[<>:"/\\|?*]/g, '');
       // Remove control characters (0x00-0x1F) by filtering
-      sanitized = sanitized.split('').filter(char => char.charCodeAt(0) > 31).join('');
+      sanitized = sanitized
+        .split('')
+        .filter((char) => char.charCodeAt(0) > 31)
+        .join('');
       return sanitized.trim();
     }
     return value;

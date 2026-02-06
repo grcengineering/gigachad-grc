@@ -1,6 +1,6 @@
 /**
  * useFormState Hook
- * 
+ *
  * A generic hook for managing form state with validation, dirty tracking, and reset functionality.
  */
 
@@ -46,7 +46,11 @@ export interface FormActions<T> {
 export function useFormState<T extends Record<string, unknown>>(
   options: UseFormStateOptions<T>
 ): [FormState<T>, FormActions<T>] {
-  const { initialValues, validationRules = {} as Partial<Record<keyof T, FormValidationRule<T>[]>>, onSubmit } = options;
+  const {
+    initialValues,
+    validationRules = {} as Partial<Record<keyof T, FormValidationRule<T>[]>>,
+    onSubmit,
+  } = options;
 
   const [values, setValuesState] = useState<T>(initialValues);
   const [errors, setErrors] = useState<Partial<Record<keyof T, FormFieldError>>>({});
@@ -140,20 +144,26 @@ export function useFormState<T extends Record<string, unknown>>(
   }, []);
 
   // Set field touched state
-  const setTouched = useCallback((field: keyof T, isTouched = true) => {
-    setTouchedState((prev) => ({ ...prev, [field]: isTouched }));
-    if (isTouched) {
-      validateField(field);
-    }
-  }, [validateField]);
+  const setTouched = useCallback(
+    (field: keyof T, isTouched = true) => {
+      setTouchedState((prev) => ({ ...prev, [field]: isTouched }));
+      if (isTouched) {
+        validateField(field);
+      }
+    },
+    [validateField]
+  );
 
   // Reset form to initial or new values
-  const reset = useCallback((newValues?: T) => {
-    setValuesState(newValues || initialValues);
-    setErrors({});
-    setTouchedState({});
-    setIsSubmitting(false);
-  }, [initialValues]);
+  const reset = useCallback(
+    (newValues?: T) => {
+      setValuesState(newValues || initialValues);
+      setErrors({});
+      setTouchedState({});
+      setIsSubmitting(false);
+    },
+    [initialValues]
+  );
 
   // Handle form submission
   const handleSubmit = useCallback(
@@ -210,35 +220,45 @@ export function useFormState<T extends Record<string, unknown>>(
 }
 
 // Common validation rules
-export const required = <T,>(message = 'This field is required'): FormValidationRule<T> => ({
+export const required = <T>(message = 'This field is required'): FormValidationRule<T> => ({
   validate: (value) => value !== undefined && value !== null && value !== '',
   message,
   type: 'required',
 });
 
-export const minLength = <T,>(min: number, message?: string): FormValidationRule<T> => ({
+export const minLength = <T>(min: number, message?: string): FormValidationRule<T> => ({
   validate: (value) => typeof value === 'string' && value.length >= min,
   message: message || `Must be at least ${min} characters`,
   type: 'min',
 });
 
-export const maxLength = <T,>(max: number, message?: string): FormValidationRule<T> => ({
+export const maxLength = <T>(max: number, message?: string): FormValidationRule<T> => ({
   validate: (value) => typeof value === 'string' && value.length <= max,
   message: message || `Must be at most ${max} characters`,
   type: 'max',
 });
 
-export const email = <T,>(message = 'Invalid email address'): FormValidationRule<T> => ({
-  validate: (value) =>
-    typeof value === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value),
+export const email = <T>(message = 'Invalid email address'): FormValidationRule<T> => ({
+  validate: (value) => {
+    // SECURITY: Use structured validation to prevent ReDoS
+    if (typeof value !== 'string' || value.length > 254) return false;
+    const parts = value.split('@');
+    if (parts.length !== 2) return false;
+    const [local, domain] = parts;
+    if (!local || local.length > 64 || !domain || domain.length > 255) return false;
+    // Safe patterns without overlapping quantifiers
+    const localValid = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+$/.test(local);
+    const domainValid =
+      /^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)+$/.test(
+        domain
+      );
+    return localValid && domainValid;
+  },
   message,
   type: 'pattern',
 });
 
-export const pattern = <T,>(
-  regex: RegExp,
-  message = 'Invalid format'
-): FormValidationRule<T> => ({
+export const pattern = <T>(regex: RegExp, message = 'Invalid format'): FormValidationRule<T> => ({
   validate: (value) => typeof value === 'string' && regex.test(value),
   message,
   type: 'pattern',

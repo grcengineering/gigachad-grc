@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import * as tls from 'tls';
 import * as http from 'http';
 import { SSLInfo } from '../dto/security-scan.dto';
+import { validateUrl } from '@gigachad-grc/shared';
 
 @Injectable()
 export class SSLCollector {
@@ -69,15 +70,22 @@ export class SSLCollector {
     daysUntilExpiry?: number;
     grade: SSLInfo['grade'];
   }> {
-    return new Promise((resolve) => {
-      const result = {
-        enabled: false,
-        issuer: undefined as string | undefined,
-        expiry: undefined as string | undefined,
-        daysUntilExpiry: undefined as number | undefined,
-        grade: 'N/A' as SSLInfo['grade'],
-      };
+    const result = {
+      enabled: false,
+      issuer: undefined as string | undefined,
+      expiry: undefined as string | undefined,
+      daysUntilExpiry: undefined as number | undefined,
+      grade: 'N/A' as SSLInfo['grade'],
+    };
 
+    // SSRF Protection: Validate hostname before connecting
+    const validation = await validateUrl(`https://${hostname}:${port}`);
+    if (!validation.valid) {
+      this.logger.warn(`SSRF protection blocked TLS check for ${hostname}: ${validation.error}`);
+      return result;
+    }
+
+    return new Promise((resolve) => {
       const socket = tls.connect(
         {
           host: hostname,
@@ -133,6 +141,15 @@ export class SSLCollector {
   }
 
   private async checkHttpRedirect(hostname: string): Promise<boolean> {
+    // SSRF Protection: Validate hostname before making request
+    const validation = await validateUrl(`http://${hostname}`);
+    if (!validation.valid) {
+      this.logger.warn(
+        `SSRF protection blocked HTTP redirect check for ${hostname}: ${validation.error}`
+      );
+      return false;
+    }
+
     return new Promise((resolve) => {
       const req = http.request(
         {

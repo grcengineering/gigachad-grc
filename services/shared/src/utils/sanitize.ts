@@ -188,28 +188,47 @@ export function escapeHtml(input: string): string {
 /**
  * Sanitize a filename to prevent path traversal attacks (extended version)
  * For basic sanitization, use sanitizeFilename from './validation'
+ * SECURITY: Uses iterative sanitization to prevent bypass via nested/encoded patterns
  */
 export function sanitizeFilenameStrict(filename: string): string {
   if (!filename || typeof filename !== 'string') {
     return 'unnamed';
   }
 
+  let sanitized = filename;
+  let previousLength: number;
+
+  // Loop until no more changes - prevents bypass via patterns like '....', '%252e', etc.
+  do {
+    previousLength = sanitized.length;
+
+    // Remove URL-encoded sequences FIRST (before path traversal check)
+    // This handles both single and double encoding
+    sanitized = sanitized
+      .replace(/%252e/gi, '') // Double-encoded dot
+      .replace(/%252f/gi, '') // Double-encoded forward slash
+      .replace(/%255c/gi, '') // Double-encoded backslash
+      .replace(/%2e/gi, '') // URL-encoded dot
+      .replace(/%2f/gi, '') // URL-encoded forward slash
+      .replace(/%5c/gi, '') // URL-encoded backslash
+      .replace(/%00/gi, ''); // URL-encoded null byte
+
+    // Remove path traversal patterns (.. sequences)
+    sanitized = sanitized.replace(/\.{2,}/g, '');
+
+    // Remove path separators
+    sanitized = sanitized.replace(/[\\/]/g, '');
+
+    // Remove null bytes
+    // eslint-disable-next-line no-control-regex
+    sanitized = sanitized.replace(/\x00/g, '');
+  } while (sanitized.length !== previousLength);
+
   return (
-    filename
-      // Remove path traversal patterns (.. sequences)
-      .replace(/\.{2,}/g, '')
-      // Remove path separators
-      .replace(/[\\/]/g, '')
-      // Remove null bytes (eslint-disable-next-line no-control-regex)
-      // eslint-disable-next-line no-control-regex
-      .replace(/\x00/g, '')
-      // Remove control characters (eslint-disable-next-line no-control-regex)
+    sanitized
+      // Remove control characters
       // eslint-disable-next-line no-control-regex
       .replace(/[\x00-\x1f\x80-\x9f]/g, '')
-      // Remove URL-encoded sequences that could represent traversal
-      .replace(/%2e/gi, '')
-      .replace(/%2f/gi, '')
-      .replace(/%5c/gi, '')
       // Replace other special characters
       .replace(/[<>:"|?*]/g, '_')
       // Limit length

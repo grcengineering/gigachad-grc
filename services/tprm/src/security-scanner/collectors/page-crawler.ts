@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as https from 'https';
 import * as http from 'http';
+import { validateUrl } from '@gigachad-grc/shared';
 
 export interface DiscoveredPage {
   url: string;
@@ -149,6 +150,18 @@ export class PageCrawler {
     contentType?: string;
     size: number;
   } | null> {
+    // SSRF Protection: Validate URL before making request
+    try {
+      const validation = await validateUrl(url);
+      if (!validation.valid) {
+        this.logger.warn(`SSRF protection blocked request to ${url}: ${validation.error}`);
+        return null;
+      }
+    } catch (err) {
+      this.logger.warn(`URL validation failed for ${url}: ${err.message}`);
+      return null;
+    }
+
     return new Promise((resolve) => {
       const isHttps = url.startsWith('https');
       const lib = isHttps ? https : http;
@@ -257,18 +270,21 @@ export class PageCrawler {
       const href = match[1];
       const text = match[2].trim().substring(0, 100);
 
-      // Skip javascript:, mailto:, tel:, #anchors
-      if (
-        href.startsWith('javascript:') ||
-        href.startsWith('mailto:') ||
-        href.startsWith('tel:') ||
-        href.startsWith('#')
-      ) {
+      // Skip anchors
+      if (href.startsWith('#')) {
         continue;
       }
 
       try {
         const resolvedUrl = this.resolveUrl(href, baseUrl);
+        const parsedUrl = new URL(resolvedUrl);
+
+        // SSRF Protection: Only allow http: and https: protocols
+        // This prevents SSRF via protocols like file:, ftp:, gopher:, dict:, etc.
+        if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+          continue;
+        }
+
         const normalized = this.normalizeUrl(resolvedUrl);
 
         if (!seen.has(normalized)) {

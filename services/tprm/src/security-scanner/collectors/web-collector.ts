@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import * as https from 'https';
 import * as http from 'http';
 import { WebPresenceInfo } from '../dto/security-scan.dto';
+import { validateUrl } from '@gigachad-grc/shared';
 
 @Injectable()
 export class WebCollector {
@@ -45,10 +46,7 @@ export class WebCollector {
         }
 
         // Check for privacy policy
-        const privacyPatterns = [
-          /href=["']([^"']*privacy[^"']*)/i,
-          /privacy\s*policy/i,
-        ];
+        const privacyPatterns = [/href=["']([^"']*privacy[^"']*)/i, /privacy\s*policy/i];
         for (const pattern of privacyPatterns) {
           const match = body.match(pattern);
           if (match) {
@@ -61,10 +59,7 @@ export class WebCollector {
         }
 
         // Check for terms of service
-        const tosPatterns = [
-          /terms\s*(of\s*)?(service|use)/i,
-          /href=["']([^"']*terms[^"']*)/i,
-        ];
+        const tosPatterns = [/terms\s*(of\s*)?(service|use)/i, /href=["']([^"']*terms[^"']*)/i];
         for (const pattern of tosPatterns) {
           if (pattern.test(body)) {
             result.hasTermsOfService = true;
@@ -80,6 +75,12 @@ export class WebCollector {
   }
 
   private async fetchPage(url: URL): Promise<{ statusCode: number; body: string }> {
+    // SSRF Protection: Validate URL before making request
+    const validation = await validateUrl(url.toString());
+    if (!validation.valid) {
+      throw new Error(`SSRF protection blocked request: ${validation.error}`);
+    }
+
     return new Promise((resolve, reject) => {
       const protocol = url.protocol === 'https:' ? https : http;
 
@@ -92,15 +93,21 @@ export class WebCollector {
           timeout: 10000,
           headers: {
             'User-Agent': 'GigaChad-GRC Security Scanner/1.0',
-            'Accept': 'text/html,application/xhtml+xml',
+            Accept: 'text/html,application/xhtml+xml',
           },
         },
         (res) => {
           let body = '';
-          
-          // Handle redirects
-          if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+
+          // Handle redirects with SSRF protection
+          if (
+            res.statusCode &&
+            res.statusCode >= 300 &&
+            res.statusCode < 400 &&
+            res.headers.location
+          ) {
             const redirectUrl = new URL(res.headers.location, url);
+            // Redirect URL will be validated by the recursive call to fetchPage
             return this.fetchPage(redirectUrl).then(resolve).catch(reject);
           }
 

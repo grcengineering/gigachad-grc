@@ -20,6 +20,9 @@ import {
   parsePaginationParams,
   createPaginatedResponse,
   getPrismaSkipTake,
+  safeOrderBy,
+  safePropertySet,
+  isSafePropertyName,
 } from '@gigachad-grc/shared';
 
 @Injectable()
@@ -77,6 +80,9 @@ export class ControlsService {
 
     const where: Prisma.ControlWhereInput = { AND: whereConditions };
 
+    // SECURITY: Use safeOrderBy to prevent prototype pollution from user-controlled sortBy
+    const orderByClause = safeOrderBy(pagination.sortBy, pagination.sortOrder);
+
     const [controls, total] = await Promise.all([
       this.prisma.control.findMany({
         where,
@@ -96,7 +102,7 @@ export class ControlsService {
           },
         },
         ...getPrismaSkipTake(pagination),
-        orderBy: { [pagination.sortBy]: pagination.sortOrder },
+        orderBy: orderByClause,
       }),
       this.prisma.control.count({ where }),
     ]);
@@ -192,6 +198,9 @@ export class ControlsService {
 
     const fullWhere: Prisma.ControlWhereInput = { AND: fullWhereConditions };
 
+    // SECURITY: Use safeOrderBy to prevent prototype pollution from user-controlled sortBy
+    const fullOrderByClause = safeOrderBy(pagination.sortBy, pagination.sortOrder);
+
     const [controls, total] = await Promise.all([
       this.prisma.control.findMany({
         where: fullWhere,
@@ -218,7 +227,7 @@ export class ControlsService {
           },
         },
         ...getPrismaSkipTake(pagination),
-        orderBy: { [pagination.sortBy]: pagination.sortOrder },
+        orderBy: fullOrderByClause,
       }),
       this.prisma.control.count({ where: fullWhere }),
     ]);
@@ -722,7 +731,10 @@ export class ControlsService {
 
       const row: Record<string, string> = {};
       headers.forEach((header, index) => {
-        row[header] = values[index];
+        // SECURITY: Validate header names to prevent prototype pollution from malicious CSV
+        if (isSafePropertyName(header)) {
+          safePropertySet(row, header, values[index]);
+        }
       });
 
       // Map CSV columns to DTO

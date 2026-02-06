@@ -1,0 +1,31 @@
+# Semgrep ignore patterns
+# https://semgrep.dev/docs/ignoring-files-folders-code/
+
+# Build outputs (already scanned as source)
+**/dist/**
+**/build/**
+**/node_modules/**
+
+# Test files (intentionally contain vulnerable patterns for testing)
+**/*.test.ts
+**/*.spec.ts
+**/__tests__/**
+**/__mocks__/**
+**/tests/**
+
+# Generated files
+**/*.d.ts
+**/*.map
+**/*.min.js
+
+# Lock files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Documentation
+docs/**/*.md
+*.md
+
+# Coverage reports
+coverage/**

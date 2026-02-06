@@ -16,7 +16,7 @@ import {
   TrainingStatus,
   AssignmentStatus,
 } from './dto/training.dto';
-import { sanitizeFilename } from '@gigachad-grc/shared';
+import { sanitizeFilename, validatePathWithinBase, isValidUuid } from '@gigachad-grc/shared';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
@@ -742,9 +742,23 @@ export class TrainingService {
       throw new NotFoundException(`Custom module ${moduleId} not found`);
     }
 
-    // Generate unique folder name
+    // SECURITY: Validate moduleId is a valid UUID to prevent path injection
+    if (!isValidUuid(moduleId)) {
+      throw new BadRequestException('Invalid module ID format');
+    }
+
+    // Generate unique folder name using validated UUID
     const folderName = `${moduleId}-${crypto.randomBytes(4).toString('hex')}`;
-    const uploadDir = path.join(process.cwd(), 'uploads', 'training', folderName);
+
+    // SECURITY: Define allowed base directory for uploads
+    const uploadsBasePath = path.resolve(process.cwd(), 'uploads', 'training');
+
+    // SECURITY: Validate the upload directory path is within allowed base
+    const uploadDirValidation = validatePathWithinBase(uploadsBasePath, folderName);
+    if (!uploadDirValidation.isValid) {
+      throw new BadRequestException(`Invalid upload path: ${uploadDirValidation.error}`);
+    }
+    const uploadDir = uploadDirValidation.resolvedPath;
 
     // Create upload directory
     fs.mkdirSync(uploadDir, { recursive: true });
@@ -752,8 +766,18 @@ export class TrainingService {
     // SECURITY: Sanitize filename to prevent path traversal attacks
     const safeFilename = sanitizeFilename(file.originalname);
 
-    // Save the zip file
-    const zipPath = path.join(uploadDir, safeFilename);
+    // SECURITY: Block path traversal patterns in filename
+    if (safeFilename.includes('..') || safeFilename.includes('\0')) {
+      throw new BadRequestException('Invalid filename');
+    }
+
+    // SECURITY: Validate the final zip path is within upload directory
+    const zipPathValidation = validatePathWithinBase(uploadDir, safeFilename);
+    if (!zipPathValidation.isValid) {
+      throw new BadRequestException(`Invalid file path: ${zipPathValidation.error}`);
+    }
+    const zipPath = zipPathValidation.resolvedPath;
+
     fs.writeFileSync(zipPath, file.buffer);
 
     // For now, just store the zip - extraction would require a zip library

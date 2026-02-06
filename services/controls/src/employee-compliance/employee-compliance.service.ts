@@ -2,6 +2,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CorrelationService } from './correlation.service';
 import { ComplianceScoreService } from './compliance-score.service';
+import { safeOrderBy } from '@gigachad-grc/shared';
 
 interface ListEmployeesParams {
   organizationId: string;
@@ -50,7 +51,7 @@ export class EmployeeComplianceService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly correlationService: CorrelationService,
-    private readonly complianceScoreService: ComplianceScoreService,
+    private readonly complianceScoreService: ComplianceScoreService
   ) {}
 
   /**
@@ -104,9 +105,8 @@ export class EmployeeComplianceService {
       }
     }
 
-    // Build order by
-    const orderBy: any = {};
-    orderBy[sortBy] = sortOrder;
+    // SECURITY: Use safeOrderBy to prevent prototype pollution from user-controlled sortBy
+    const orderBy = safeOrderBy(sortBy, sortOrder);
 
     const [employees, total] = await Promise.all([
       this.prisma.correlatedEmployee.findMany({
@@ -184,10 +184,7 @@ export class EmployeeComplianceService {
   /**
    * Get detailed employee compliance profile
    */
-  async getEmployeeDetail(
-    organizationId: string,
-    employeeId: string,
-  ): Promise<EmployeeDetail> {
+  async getEmployeeDetail(organizationId: string, employeeId: string): Promise<EmployeeDetail> {
     const employee = await this.prisma.correlatedEmployee.findFirst({
       where: {
         id: employeeId,
@@ -258,7 +255,7 @@ export class EmployeeComplianceService {
 
     const addIntegrationSource = (
       items: { integration: { id: string; name: string; type: string } | null }[],
-      type: string,
+      type: string
     ) => {
       for (const item of items) {
         if (item.integration && !seenIntegrations.has(item.integration.id)) {
@@ -307,16 +304,10 @@ export class EmployeeComplianceService {
    * Get compliance dashboard metrics
    */
   async getDashboardMetrics(organizationId: string) {
-    const metrics = await this.complianceScoreService.getOrganizationMetrics(
-      organizationId,
-    );
+    const metrics = await this.complianceScoreService.getOrganizationMetrics(organizationId);
 
     // Get additional stats
-    const [
-      departmentStats,
-      upcomingDeadlines,
-      recentChanges,
-    ] = await Promise.all([
+    const [departmentStats, upcomingDeadlines, recentChanges] = await Promise.all([
       this.getDepartmentComplianceStats(organizationId),
       this.getUpcomingDeadlines(organizationId),
       this.getRecentChanges(organizationId),
@@ -362,60 +353,59 @@ export class EmployeeComplianceService {
     const thirtyDaysFromNow = new Date();
     thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
 
-    const [expiringBackgroundChecks, overdueTrainings, pendingAttestations] =
-      await Promise.all([
-        // Expiring background checks
-        this.prisma.employeeBackgroundCheck.findMany({
-          where: {
-            correlatedEmployee: { organizationId },
-            expiresAt: { lte: thirtyDaysFromNow, gte: new Date() },
+    const [expiringBackgroundChecks, overdueTrainings, pendingAttestations] = await Promise.all([
+      // Expiring background checks
+      this.prisma.employeeBackgroundCheck.findMany({
+        where: {
+          correlatedEmployee: { organizationId },
+          expiresAt: { lte: thirtyDaysFromNow, gte: new Date() },
+        },
+        include: {
+          correlatedEmployee: {
+            select: { email: true, firstName: true, lastName: true },
           },
-          include: {
-            correlatedEmployee: {
-              select: { email: true, firstName: true, lastName: true },
-            },
-          },
-          orderBy: { expiresAt: 'asc' },
-          take: 10,
-        }),
+        },
+        orderBy: { expiresAt: 'asc' },
+        take: 10,
+      }),
 
-        // Overdue or due soon trainings
-        this.prisma.employeeTrainingRecord.findMany({
-          where: {
-            correlatedEmployee: { organizationId },
-            OR: [
-              { status: 'overdue' },
-              {
-                status: { in: ['assigned', 'in_progress'] },
-                dueDate: { lte: thirtyDaysFromNow },
-              },
-            ],
-          },
-          include: {
-            correlatedEmployee: {
-              select: { email: true, firstName: true, lastName: true },
+      // Overdue or due soon trainings
+      this.prisma.employeeTrainingRecord.findMany({
+        where: {
+          correlatedEmployee: { organizationId },
+          OR: [
+            { status: 'overdue' },
+            {
+              status: { in: ['assigned', 'in_progress'] },
+              dueDate: { lte: thirtyDaysFromNow },
             },
+          ],
+        },
+        include: {
+          correlatedEmployee: {
+            select: { email: true, firstName: true, lastName: true },
           },
-          orderBy: { dueDate: 'asc' },
-          take: 10,
-        }),
+        },
+        orderBy: { dueDate: 'asc' },
+        take: 10,
+      }),
 
-        // Pending attestations
-        this.prisma.employeeAttestation.findMany({
-          where: {
-            correlatedEmployee: { organizationId },
-            status: 'pending',
+      // Pending attestations
+      this.prisma.employeeAttestation.findMany({
+        where: {
+          correlatedEmployee: { organizationId },
+          status: 'pending',
+        },
+        include: {
+          correlatedEmployee: {
+            select: { email: true, firstName: true, lastName: true },
           },
-          include: {
-            correlatedEmployee: {
-              select: { email: true, firstName: true, lastName: true },
-            },
-            policy: { select: { title: true } },
-          },
-          orderBy: { requestedAt: 'asc' },
-          take: 10,
-        }),
-      ]);
+          policy: { select: { title: true } },
+        },
+        orderBy: { requestedAt: 'asc' },
+        take: 10,
+      }),
+    ]);
 
     return {
       expiringBackgroundChecks: expiringBackgroundChecks.map((bc) => ({
@@ -455,56 +445,55 @@ export class EmployeeComplianceService {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-    const [newEmployees, completedTrainings, clearedBackgroundChecks] =
-      await Promise.all([
-        // New employees
-        this.prisma.correlatedEmployee.findMany({
-          where: {
-            organizationId,
-            createdAt: { gte: sevenDaysAgo },
-          },
-          select: {
-            email: true,
-            firstName: true,
-            lastName: true,
-            createdAt: true,
-          },
-          orderBy: { createdAt: 'desc' },
-          take: 10,
-        }),
+    const [newEmployees, completedTrainings, clearedBackgroundChecks] = await Promise.all([
+      // New employees
+      this.prisma.correlatedEmployee.findMany({
+        where: {
+          organizationId,
+          createdAt: { gte: sevenDaysAgo },
+        },
+        select: {
+          email: true,
+          firstName: true,
+          lastName: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+      }),
 
-        // Recently completed trainings
-        this.prisma.employeeTrainingRecord.findMany({
-          where: {
-            correlatedEmployee: { organizationId },
-            status: 'completed',
-            completedAt: { gte: sevenDaysAgo },
+      // Recently completed trainings
+      this.prisma.employeeTrainingRecord.findMany({
+        where: {
+          correlatedEmployee: { organizationId },
+          status: 'completed',
+          completedAt: { gte: sevenDaysAgo },
+        },
+        include: {
+          correlatedEmployee: {
+            select: { email: true, firstName: true, lastName: true },
           },
-          include: {
-            correlatedEmployee: {
-              select: { email: true, firstName: true, lastName: true },
-            },
-          },
-          orderBy: { completedAt: 'desc' },
-          take: 10,
-        }),
+        },
+        orderBy: { completedAt: 'desc' },
+        take: 10,
+      }),
 
-        // Recently cleared background checks
-        this.prisma.employeeBackgroundCheck.findMany({
-          where: {
-            correlatedEmployee: { organizationId },
-            status: 'clear',
-            completedAt: { gte: sevenDaysAgo },
+      // Recently cleared background checks
+      this.prisma.employeeBackgroundCheck.findMany({
+        where: {
+          correlatedEmployee: { organizationId },
+          status: 'clear',
+          completedAt: { gte: sevenDaysAgo },
+        },
+        include: {
+          correlatedEmployee: {
+            select: { email: true, firstName: true, lastName: true },
           },
-          include: {
-            correlatedEmployee: {
-              select: { email: true, firstName: true, lastName: true },
-            },
-          },
-          orderBy: { completedAt: 'desc' },
-          take: 10,
-        }),
-      ]);
+        },
+        orderBy: { completedAt: 'desc' },
+        take: 10,
+      }),
+    ]);
 
     return {
       newEmployees,
@@ -592,4 +581,3 @@ export class EmployeeComplianceService {
     };
   }
 }
-

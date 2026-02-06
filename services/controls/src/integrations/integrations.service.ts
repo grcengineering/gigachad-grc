@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, Logger, Inject } from '@nestjs/common';
 import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
+import { isSafePropertyName, safePropertySet } from '@gigachad-grc/shared';
 import { AuditService } from '../audit/audit.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationType, NotificationSeverity } from '../notifications/dto/notification.dto';
@@ -47,7 +48,7 @@ export interface SyncResult {
   projects?: { total?: number; openIssues?: number; overdueIssues?: number };
   issues?: { total?: number; open?: number };
   securityIssues?: { total?: number };
-  // Snyk properties  
+  // Snyk properties
   vulnerabilities?: { total?: number; critical?: number; high?: number; fixable?: number };
   orgs?: { total?: number };
   policies?: { total?: number };
@@ -57,12 +58,28 @@ export interface SyncResult {
 
 // Sensitive fields that should be encrypted
 const SENSITIVE_FIELDS = [
-  'apiKey', 'api_key', 'apikey',
-  'secret', 'secretKey', 'secret_key', 'secretAccessKey',
-  'password', 'token', 'accessToken', 'access_token',
-  'privateKey', 'private_key', 'clientSecret', 'client_secret',
-  'bearerToken', 'bearer_token', 'refreshToken', 'refresh_token',
-  'credentials', 'authToken', 'auth_token',
+  'apiKey',
+  'api_key',
+  'apikey',
+  'secret',
+  'secretKey',
+  'secret_key',
+  'secretAccessKey',
+  'password',
+  'token',
+  'accessToken',
+  'access_token',
+  'privateKey',
+  'private_key',
+  'clientSecret',
+  'client_secret',
+  'bearerToken',
+  'bearer_token',
+  'refreshToken',
+  'refresh_token',
+  'credentials',
+  'authToken',
+  'auth_token',
 ];
 
 @Injectable()
@@ -74,7 +91,9 @@ export class IntegrationsService {
   private validateEncryptionKey(): string {
     const key = process.env.ENCRYPTION_KEY;
     if (!key) {
-      throw new Error('ENCRYPTION_KEY environment variable is required for secure credential storage');
+      throw new Error(
+        'ENCRYPTION_KEY environment variable is required for secure credential storage'
+      );
     }
     if (key.length < 32) {
       throw new Error('ENCRYPTION_KEY must be at least 32 characters long');
@@ -87,7 +106,7 @@ export class IntegrationsService {
     private prisma: PrismaService,
     private auditService: AuditService,
     private notificationsService: NotificationsService,
-    @Inject(STORAGE_PROVIDER) private storage: StorageProvider,
+    @Inject(STORAGE_PROVIDER) private storage: StorageProvider
   ) {
     this.connectorFactory = new ConnectorFactory();
     this.encryptionKey = this.validateEncryptionKey();
@@ -98,28 +117,28 @@ export class IntegrationsService {
 
   private encrypt(text: string): string {
     if (!text) return text;
-    
+
     const iv = crypto.randomBytes(16);
     // SECURITY FIX: Generate random salt per encryption instead of using hardcoded salt
     const salt = crypto.randomBytes(16);
     const key = crypto.scryptSync(this.encryptionKey, salt, 32);
     const cipher = crypto.createCipheriv(this.algorithm, key, iv);
-    
+
     let encrypted = cipher.update(text, 'utf8', 'hex');
     encrypted += cipher.final('hex');
-    
+
     const authTag = cipher.getAuthTag();
-    
+
     // Return iv:authTag:salt:encrypted (new format with salt)
     return `${iv.toString('hex')}:${authTag.toString('hex')}:${salt.toString('hex')}:${encrypted}`;
   }
 
   private decrypt(encryptedText: string): string {
     if (!encryptedText) return encryptedText;
-    
+
     try {
       const parts = encryptedText.split(':');
-      
+
       // Support both old format (3 parts: iv:authTag:encrypted) and new format (4 parts: iv:authTag:salt:encrypted)
       if (parts.length === 3) {
         // Legacy format without salt - use hardcoded salt for backwards compatibility
@@ -127,13 +146,13 @@ export class IntegrationsService {
         const iv = Buffer.from(ivHex, 'hex');
         const authTag = Buffer.from(authTagHex, 'hex');
         const key = crypto.scryptSync(this.encryptionKey, 'salt', 32); // Legacy salt
-        
+
         const decipher = crypto.createDecipheriv(this.algorithm, key, iv);
         decipher.setAuthTag(authTag);
-        
+
         let decrypted = decipher.update(encrypted, 'hex', 'utf8');
         decrypted += decipher.final('utf8');
-        
+
         return decrypted;
       } else if (parts.length === 4) {
         // New format with random salt
@@ -142,13 +161,13 @@ export class IntegrationsService {
         const authTag = Buffer.from(authTagHex, 'hex');
         const salt = Buffer.from(saltHex, 'hex');
         const key = crypto.scryptSync(this.encryptionKey, salt, 32);
-        
+
         const decipher = crypto.createDecipheriv(this.algorithm, key, iv);
         decipher.setAuthTag(authTag);
-        
+
         let decrypted = decipher.update(encrypted, 'hex', 'utf8');
         decrypted += decipher.final('utf8');
-        
+
         return decrypted;
       } else {
         // Not encrypted or invalid format
@@ -165,21 +184,30 @@ export class IntegrationsService {
    */
   private encryptConfig(config: Record<string, unknown>): Record<string, unknown> {
     if (!config) return config;
-    
+
     const encrypted: Record<string, unknown> = {};
-    
+
     for (const [key, value] of Object.entries(config)) {
+      // SECURITY: Skip blocked property names to prevent prototype pollution
+      if (!isSafePropertyName(key)) {
+        this.logger.warn(`Skipping blocked property name in encryptConfig: ${key}`);
+        continue;
+      }
+
       if (typeof value === 'object' && value !== null) {
         // Recursively encrypt nested objects
-        encrypted[key] = this.encryptConfig(value as Record<string, unknown>);
-      } else if (typeof value === 'string' && SENSITIVE_FIELDS.some(f => key.toLowerCase().includes(f.toLowerCase()))) {
+        safePropertySet(encrypted, key, this.encryptConfig(value as Record<string, unknown>));
+      } else if (
+        typeof value === 'string' &&
+        SENSITIVE_FIELDS.some((f) => key.toLowerCase().includes(f.toLowerCase()))
+      ) {
         // Encrypt sensitive string fields
-        encrypted[key] = this.encrypt(value);
+        safePropertySet(encrypted, key, this.encrypt(value));
       } else {
-        encrypted[key] = value;
+        safePropertySet(encrypted, key, value);
       }
     }
-    
+
     return encrypted;
   }
 
@@ -188,21 +216,30 @@ export class IntegrationsService {
    */
   private decryptConfig(config: Record<string, unknown>): Record<string, unknown> {
     if (!config) return config;
-    
+
     const decrypted: Record<string, unknown> = {};
-    
+
     for (const [key, value] of Object.entries(config)) {
+      // SECURITY: Skip blocked property names to prevent prototype pollution
+      if (!isSafePropertyName(key)) {
+        this.logger.warn(`Skipping blocked property name in decryptConfig: ${key}`);
+        continue;
+      }
+
       if (typeof value === 'object' && value !== null) {
         // Recursively decrypt nested objects
-        decrypted[key] = this.decryptConfig(value as Record<string, unknown>);
-      } else if (typeof value === 'string' && SENSITIVE_FIELDS.some(f => key.toLowerCase().includes(f.toLowerCase()))) {
+        safePropertySet(decrypted, key, this.decryptConfig(value as Record<string, unknown>));
+      } else if (
+        typeof value === 'string' &&
+        SENSITIVE_FIELDS.some((f) => key.toLowerCase().includes(f.toLowerCase()))
+      ) {
         // Decrypt sensitive string fields
-        decrypted[key] = this.decrypt(value);
+        safePropertySet(decrypted, key, this.decrypt(value));
       } else {
-        decrypted[key] = value;
+        safePropertySet(decrypted, key, value);
       }
     }
-    
+
     return decrypted;
   }
 
@@ -243,7 +280,10 @@ export class IntegrationsService {
       ...integration,
       typeMeta: INTEGRATION_TYPES[integration.type as keyof typeof INTEGRATION_TYPES] || null,
       // Don't expose sensitive config values in list
-      config: this.maskSensitiveConfig(integration.type, integration.config as Record<string, unknown>),
+      config: this.maskSensitiveConfig(
+        integration.type,
+        integration.config as Record<string, unknown>
+      ),
     }));
 
     return {
@@ -276,16 +316,19 @@ export class IntegrationsService {
       ...integration,
       typeMeta: INTEGRATION_TYPES[integration.type as keyof typeof INTEGRATION_TYPES] || null,
       // Mask sensitive config values
-      config: this.maskSensitiveConfig(integration.type, integration.config as Record<string, unknown>),
+      config: this.maskSensitiveConfig(
+        integration.type,
+        integration.config as Record<string, unknown>
+      ),
     };
   }
 
   async create(
-    organizationId: string, 
-    userId: string, 
+    organizationId: string,
+    userId: string,
     dto: CreateIntegrationDto,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     // Validate integration type
     if (!INTEGRATION_TYPES[dto.type as keyof typeof INTEGRATION_TYPES]) {
@@ -330,12 +373,12 @@ export class IntegrationsService {
   }
 
   async update(
-    id: string, 
-    organizationId: string, 
-    userId: string, 
+    id: string,
+    organizationId: string,
+    userId: string,
     dto: UpdateIntegrationDto,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     const existing = await this.prisma.integration.findFirst({
       where: { id, organizationId },
@@ -377,24 +420,35 @@ export class IntegrationsService {
       entityName: integration.name,
       description: `Updated integration "${integration.name}"`,
       changes: {
-        before: { name: existing.name, status: existing.status, syncFrequency: existing.syncFrequency },
-        after: { name: integration.name, status: integration.status, syncFrequency: integration.syncFrequency },
+        before: {
+          name: existing.name,
+          status: existing.status,
+          syncFrequency: existing.syncFrequency,
+        },
+        after: {
+          name: integration.name,
+          status: integration.status,
+          syncFrequency: integration.syncFrequency,
+        },
       },
     });
 
     return {
       ...integration,
       typeMeta: INTEGRATION_TYPES[integration.type as keyof typeof INTEGRATION_TYPES] || null,
-      config: this.maskSensitiveConfig(integration.type, integration.config as Record<string, unknown>),
+      config: this.maskSensitiveConfig(
+        integration.type,
+        integration.config as Record<string, unknown>
+      ),
     };
   }
 
   async delete(
-    id: string, 
+    id: string,
     organizationId: string,
     userId?: string,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     const existing = await this.prisma.integration.findFirst({
       where: { id, organizationId },
@@ -426,11 +480,11 @@ export class IntegrationsService {
   }
 
   async testConnection(
-    id: string, 
+    id: string,
     organizationId: string,
     userId?: string,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     const integration = await this.prisma.integration.findFirst({
       where: { id, organizationId },
@@ -443,7 +497,7 @@ export class IntegrationsService {
     // Decrypt config for use in connection testing
     const config = this.decryptConfig(integration.config as Record<string, unknown>);
     const typeMeta = INTEGRATION_TYPES[integration.type as keyof typeof INTEGRATION_TYPES];
-    
+
     if (!typeMeta) {
       return { success: false, message: 'Unknown integration type' };
     }
@@ -461,7 +515,7 @@ export class IntegrationsService {
           lastSyncError: `Missing required fields: ${missingFields.join(', ')}`,
         },
       });
-      
+
       return {
         success: false,
         message: `Missing required configuration: ${missingFields.join(', ')}`,
@@ -500,11 +554,11 @@ export class IntegrationsService {
   }
 
   async triggerSync(
-    id: string, 
-    organizationId: string, 
+    id: string,
+    organizationId: string,
     userId: string,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     const integration = await this.prisma.integration.findFirst({
       where: { id, organizationId },
@@ -515,7 +569,9 @@ export class IntegrationsService {
     }
 
     if (integration.status !== IntegrationStatus.active) {
-      throw new BadRequestException('Integration must be active to sync. Please test the connection first.');
+      throw new BadRequestException(
+        'Integration must be active to sync. Please test the connection first.'
+      );
     }
 
     // Decrypt config for use in sync operations
@@ -539,13 +595,14 @@ export class IntegrationsService {
       this.logger.log(`Starting sync for ${integration.type} integration ${id}`);
 
       // Use the ConnectorFactory to sync all integration types
-      const syncResult = await this.connectorFactory.sync(integration.type, config) as SyncResult;
+      const syncResult = (await this.connectorFactory.sync(integration.type, config)) as SyncResult;
 
       // Calculate items processed from sync result
       if (syncResult.summary) {
         itemsProcessed = syncResult.summary.totalRecords || 0;
       } else if (syncResult.computers || syncResult.mobileDevices) {
-        itemsProcessed = (syncResult.computers?.total || 0) + (syncResult.mobileDevices?.total || 0);
+        itemsProcessed =
+          (syncResult.computers?.total || 0) + (syncResult.mobileDevices?.total || 0);
       } else if (syncResult.suppliers) {
         itemsProcessed = syncResult.suppliers?.total || 0;
       }
@@ -556,7 +613,7 @@ export class IntegrationsService {
         userId,
         integration.id,
         integration.type,
-        syncResult,
+        syncResult
       );
       // Update sync job as completed
       await this.prisma.syncJob.update({
@@ -569,7 +626,10 @@ export class IntegrationsService {
           logs: [
             { timestamp: new Date().toISOString(), message: 'Sync started' },
             { timestamp: new Date().toISOString(), message: `Processed ${itemsProcessed} items` },
-            { timestamp: new Date().toISOString(), message: `Created ${evidenceCreated} evidence records` },
+            {
+              timestamp: new Date().toISOString(),
+              message: `Created ${evidenceCreated} evidence records`,
+            },
             { timestamp: new Date().toISOString(), message: 'Sync completed successfully' },
           ],
         },
@@ -612,7 +672,6 @@ export class IntegrationsService {
         message: `Sync completed: ${itemsProcessed} items processed, ${evidenceCreated} evidence records created`,
         data: syncResult,
       };
-
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Sync failed for integration ${id}`, error);
@@ -706,13 +765,11 @@ export class IntegrationsService {
       };
       const inventoryJson = JSON.stringify(inventoryData, null, 2);
       const inventoryPath = `integrations/jamf/${integrationId}/inventory-${timestamp}.json`;
-      
+
       // Actually save the file to storage
-      await this.storage.upload(
-        Buffer.from(inventoryJson, 'utf-8'),
-        inventoryPath,
-        { contentType: 'application/json' },
-      );
+      await this.storage.upload(Buffer.from(inventoryJson, 'utf-8'), inventoryPath, {
+        contentType: 'application/json',
+      });
 
       await this.prisma.evidence.create({
         data: {
@@ -750,25 +807,29 @@ export class IntegrationsService {
         summary: syncResult.securitySummary,
         totalComputers: syncResult.computers.total,
         compliantComputers: syncResult.computers.compliant,
-        complianceRate: syncResult.computers.total > 0 
-          ? Math.round((syncResult.computers.compliant / syncResult.computers.total) * 100) 
-          : 0,
+        complianceRate:
+          syncResult.computers.total > 0
+            ? Math.round((syncResult.computers.compliant / syncResult.computers.total) * 100)
+            : 0,
         // Include per-device security details for audit
-        deviceDetails: ((syncResult.computers as Record<string, unknown>)?.devices as Array<Record<string, unknown>>)?.map((d) => ({
-          name: d.name,
-          serialNumber: d.serialNumber,
-          security: d.security,
-        })) || [],
+        deviceDetails:
+          (
+            (syncResult.computers as Record<string, unknown>)?.devices as Array<
+              Record<string, unknown>
+            >
+          )?.map((d) => ({
+            name: d.name,
+            serialNumber: d.serialNumber,
+            security: d.security,
+          })) || [],
       };
       const securityJson = JSON.stringify(securityData, null, 2);
       const securityPath = `integrations/jamf/${integrationId}/security-${timestamp}.json`;
-      
+
       // Actually save the file to storage
-      await this.storage.upload(
-        Buffer.from(securityJson, 'utf-8'),
-        securityPath,
-        { contentType: 'application/json' },
-      );
+      await this.storage.upload(Buffer.from(securityJson, 'utf-8'), securityPath, {
+        contentType: 'application/json',
+      });
 
       await this.prisma.evidence.create({
         data: {
@@ -788,9 +849,10 @@ export class IntegrationsService {
             ...syncResult.securitySummary,
             totalComputers: syncResult.computers.total,
             compliantComputers: syncResult.computers.compliant,
-            complianceRate: syncResult.computers.total > 0 
-              ? Math.round((syncResult.computers.compliant / syncResult.computers.total) * 100) 
-              : 0,
+            complianceRate:
+              syncResult.computers.total > 0
+                ? Math.round((syncResult.computers.compliant / syncResult.computers.total) * 100)
+                : 0,
           },
           collectedAt: new Date(),
           validFrom: new Date(),
@@ -813,7 +875,7 @@ export class IntegrationsService {
     userId: string,
     integrationId: string,
     integrationType: string,
-    syncResult: SyncResult,
+    syncResult: SyncResult
   ): Promise<number> {
     const timestamp = Date.now();
     let created = 0;
@@ -831,11 +893,9 @@ export class IntegrationsService {
 
     try {
       // Save to storage
-      await this.storage.upload(
-        Buffer.from(evidenceJson, 'utf-8'),
-        storagePath,
-        { contentType: 'application/json' },
-      );
+      await this.storage.upload(Buffer.from(evidenceJson, 'utf-8'), storagePath, {
+        contentType: 'application/json',
+      });
 
       // Create evidence record
       await this.prisma.evidence.create({
@@ -898,7 +958,10 @@ export class IntegrationsService {
   /**
    * Generate evidence description based on integration type
    */
-  private generateEvidenceDescription(integrationType: string, _syncResult: Record<string, unknown>): string {
+  private generateEvidenceDescription(
+    integrationType: string,
+    _syncResult: Record<string, unknown>
+  ): string {
     const summaries: Record<string, string> = {
       aws: `AWS security and compliance data including Security Hub findings, IAM users and roles, S3 bucket configurations, and AWS Config compliance status.`,
       okta: `Identity and access management data from Okta including user directory, MFA status, application assignments, and security event logs.`,
@@ -930,7 +993,10 @@ export class IntegrationsService {
   /**
    * Extract relevant metadata based on integration type
    */
-  private extractMetadata(integrationType: string, syncResult: SyncResult): Record<string, unknown> {
+  private extractMetadata(
+    integrationType: string,
+    syncResult: SyncResult
+  ): Record<string, unknown> {
     switch (integrationType) {
       case 'aws':
         return {
@@ -996,7 +1062,7 @@ export class IntegrationsService {
     organizationId: string,
     userId: string,
     integrationId: string,
-    zipResult: ZipSyncResult,
+    zipResult: ZipSyncResult
   ): Promise<{ created: number; updated: number; skipped: number }> {
     let created = 0;
     let updated = 0;
@@ -1157,10 +1223,12 @@ export class IntegrationsService {
       }),
     ]);
 
-    const statusCounts = byStatus.reduce(
-      (acc, item) => ({ ...acc, [item.status]: item._count }),
-      { active: 0, inactive: 0, error: 0, pending_setup: 0 }
-    );
+    const statusCounts = byStatus.reduce((acc, item) => ({ ...acc, [item.status]: item._count }), {
+      active: 0,
+      inactive: 0,
+      error: 0,
+      pending_setup: 0,
+    });
 
     return {
       total,
@@ -1175,9 +1243,12 @@ export class IntegrationsService {
   }
 
   // Helper to mask sensitive values in config
-  private maskSensitiveConfig(type: string, config: Record<string, unknown>): Record<string, unknown> {
+  private maskSensitiveConfig(
+    type: string,
+    config: Record<string, unknown>
+  ): Record<string, unknown> {
     if (!config) return {};
-    
+
     const typeMeta = INTEGRATION_TYPES[type as keyof typeof INTEGRATION_TYPES];
     if (!typeMeta) return config;
 
@@ -1186,12 +1257,9 @@ export class IntegrationsService {
       if (field.type === 'password' && masked[field.key]) {
         // Show only last 4 characters
         const value = String(masked[field.key]);
-        masked[field.key] = value.length > 4 
-          ? '••••••••' + value.slice(-4) 
-          : '••••••••';
+        masked[field.key] = value.length > 4 ? '••••••••' + value.slice(-4) : '••••••••';
       }
     }
     return masked;
   }
 }
-

@@ -7,37 +7,37 @@ import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 const MAGIC_BYTES: Record<string, { bytes: number[]; offset?: number }[]> = {
   // Documents
   'application/pdf': [{ bytes: [0x25, 0x50, 0x44, 0x46] }], // %PDF
-  'application/msword': [{ bytes: [0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1] }], // DOC
+  'application/msword': [{ bytes: [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1] }], // DOC
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': [
-    { bytes: [0x50, 0x4B, 0x03, 0x04] }, // DOCX (ZIP)
+    { bytes: [0x50, 0x4b, 0x03, 0x04] }, // DOCX (ZIP)
   ],
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': [
-    { bytes: [0x50, 0x4B, 0x03, 0x04] }, // XLSX (ZIP)
+    { bytes: [0x50, 0x4b, 0x03, 0x04] }, // XLSX (ZIP)
   ],
   'application/vnd.openxmlformats-officedocument.presentationml.presentation': [
-    { bytes: [0x50, 0x4B, 0x03, 0x04] }, // PPTX (ZIP)
+    { bytes: [0x50, 0x4b, 0x03, 0x04] }, // PPTX (ZIP)
   ],
-  
+
   // Images
   'image/jpeg': [
-    { bytes: [0xFF, 0xD8, 0xFF, 0xE0] },
-    { bytes: [0xFF, 0xD8, 0xFF, 0xE1] },
-    { bytes: [0xFF, 0xD8, 0xFF, 0xE8] },
+    { bytes: [0xff, 0xd8, 0xff, 0xe0] },
+    { bytes: [0xff, 0xd8, 0xff, 0xe1] },
+    { bytes: [0xff, 0xd8, 0xff, 0xe8] },
   ],
-  'image/png': [{ bytes: [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A] }],
+  'image/png': [{ bytes: [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a] }],
   'image/gif': [
     { bytes: [0x47, 0x49, 0x46, 0x38, 0x37, 0x61] }, // GIF87a
     { bytes: [0x47, 0x49, 0x46, 0x38, 0x39, 0x61] }, // GIF89a
   ],
   'image/webp': [{ bytes: [0x52, 0x49, 0x46, 0x46], offset: 0 }], // RIFF
-  'image/svg+xml': [{ bytes: [0x3C, 0x3F, 0x78, 0x6D, 0x6C] }], // <?xml or <svg
-  
+  'image/svg+xml': [{ bytes: [0x3c, 0x3f, 0x78, 0x6d, 0x6c] }], // <?xml or <svg
+
   // Archives
-  'application/zip': [{ bytes: [0x50, 0x4B, 0x03, 0x04] }],
-  'application/x-rar-compressed': [{ bytes: [0x52, 0x61, 0x72, 0x21, 0x1A, 0x07] }],
-  'application/gzip': [{ bytes: [0x1F, 0x8B] }],
-  'application/x-7z-compressed': [{ bytes: [0x37, 0x7A, 0xBC, 0xAF, 0x27, 0x1C] }],
-  
+  'application/zip': [{ bytes: [0x50, 0x4b, 0x03, 0x04] }],
+  'application/x-rar-compressed': [{ bytes: [0x52, 0x61, 0x72, 0x21, 0x1a, 0x07] }],
+  'application/gzip': [{ bytes: [0x1f, 0x8b] }],
+  'application/x-7z-compressed': [{ bytes: [0x37, 0x7a, 0xbc, 0xaf, 0x27, 0x1c] }],
+
   // Text (allow without magic bytes check)
   'text/plain': [],
   'text/csv': [],
@@ -65,16 +65,10 @@ export const ALLOWED_FILE_TYPES = {
     'application/json',
     'application/zip',
   ],
-  
+
   // Logo/branding uploads
-  images: [
-    'image/jpeg',
-    'image/png',
-    'image/gif',
-    'image/webp',
-    'image/svg+xml',
-  ],
-  
+  images: ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'],
+
   // Policy documents
   documents: [
     'application/pdf',
@@ -82,7 +76,7 @@ export const ALLOWED_FILE_TYPES = {
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     'text/plain',
   ],
-  
+
   // Imports
   imports: [
     'text/csv',
@@ -95,21 +89,44 @@ export const ALLOWED_FILE_TYPES = {
  * Size limits by category (in bytes)
  */
 export const SIZE_LIMITS = {
-  evidence: 50 * 1024 * 1024,     // 50 MB
-  images: 5 * 1024 * 1024,        // 5 MB
-  documents: 25 * 1024 * 1024,    // 25 MB
-  imports: 10 * 1024 * 1024,      // 10 MB
-  default: 25 * 1024 * 1024,      // 25 MB
+  evidence: 50 * 1024 * 1024, // 50 MB
+  images: 5 * 1024 * 1024, // 5 MB
+  documents: 25 * 1024 * 1024, // 25 MB
+  imports: 10 * 1024 * 1024, // 10 MB
+  default: 25 * 1024 * 1024, // 25 MB
 };
 
 /**
  * Dangerous file extensions to always reject
  */
 const DANGEROUS_EXTENSIONS = [
-  '.exe', '.dll', '.bat', '.cmd', '.sh', '.ps1', '.vbs', '.js',
-  '.msi', '.scr', '.com', '.pif', '.app', '.dmg', '.pkg',
-  '.jar', '.war', '.ear', '.class', '.py', '.rb', '.pl',
-  '.php', '.asp', '.aspx', '.jsp', '.cgi',
+  '.exe',
+  '.dll',
+  '.bat',
+  '.cmd',
+  '.sh',
+  '.ps1',
+  '.vbs',
+  '.js',
+  '.msi',
+  '.scr',
+  '.com',
+  '.pif',
+  '.app',
+  '.dmg',
+  '.pkg',
+  '.jar',
+  '.war',
+  '.ear',
+  '.class',
+  '.py',
+  '.rb',
+  '.pl',
+  '.php',
+  '.asp',
+  '.aspx',
+  '.jsp',
+  '.cgi',
 ];
 
 export interface FileValidationResult {
@@ -131,24 +148,19 @@ export class FileValidatorService {
 
   /**
    * Validate a file upload
-   * 
+   *
    * @param file - The uploaded file (multer file object)
    * @param options - Validation options
    * @returns Validation result with any errors/warnings
    */
   async validateFile(
     file: Express.Multer.File,
-    options: FileValidationOptions = {},
+    options: FileValidationOptions = {}
   ): Promise<FileValidationResult> {
     const errors: string[] = [];
     const warnings: string[] = [];
-    
-    const {
-      category = 'evidence',
-      maxSize,
-      allowedTypes,
-      checkMagicBytes = true,
-    } = options;
+
+    const { category = 'evidence', maxSize, allowedTypes, checkMagicBytes = true } = options;
 
     // 1. Check file exists
     if (!file) {
@@ -181,16 +193,11 @@ export class FileValidatorService {
 
     // 5. Validate magic bytes (file signature)
     if (checkMagicBytes && file.buffer) {
-      const magicBytesValid = await this.validateMagicBytes(
-        file.buffer,
-        file.mimetype,
-      );
-      
+      const magicBytesValid = await this.validateMagicBytes(file.buffer, file.mimetype);
+
       if (!magicBytesValid) {
         errors.push('File content does not match declared type');
-        this.logger.warn(
-          `Magic bytes mismatch for ${filename}: declared ${file.mimetype}`
-        );
+        this.logger.warn(`Magic bytes mismatch for ${filename}: declared ${file.mimetype}`);
       }
     }
 
@@ -228,7 +235,7 @@ export class FileValidatorService {
    */
   async validateMagicBytes(buffer: Buffer, mimeType: string): Promise<boolean> {
     const signatures = MAGIC_BYTES[mimeType];
-    
+
     // If no signatures defined, skip validation (text files, etc.)
     if (!signatures || signatures.length === 0) {
       return true;
@@ -238,7 +245,7 @@ export class FileValidatorService {
     for (const sig of signatures) {
       const offset = sig.offset || 0;
       const bytes = sig.bytes;
-      
+
       if (buffer.length < offset + bytes.length) {
         continue;
       }
@@ -275,25 +282,47 @@ export class FileValidatorService {
 
   /**
    * Sanitize filename to prevent path traversal and special characters
+   * SECURITY: Uses iterative sanitization to prevent bypass via nested patterns
    */
   sanitizeFilename(filename: string): string {
-    // Remove path components
-    let sanitized = filename.replace(/^.*[\\/]/, '');
-    
-    // Remove null bytes
-    // eslint-disable-next-line no-control-regex
-    sanitized = sanitized.replace(/\x00/g, '');
-    
+    let sanitized = filename;
+    let previousLength: number;
+
+    // Loop until no more changes - prevents bypass via nested/encoded patterns
+    do {
+      previousLength = sanitized.length;
+
+      // Remove path components
+      sanitized = sanitized.replace(/^.*[\\/]/, '');
+
+      // Remove URL-encoded dangerous sequences
+      sanitized = sanitized
+        .replace(/%252e/gi, '') // Double-encoded dot
+        .replace(/%252f/gi, '') // Double-encoded forward slash
+        .replace(/%255c/gi, '') // Double-encoded backslash
+        .replace(/%2e/gi, '') // URL-encoded dot
+        .replace(/%2f/gi, '') // URL-encoded forward slash
+        .replace(/%5c/gi, '') // URL-encoded backslash
+        .replace(/%00/gi, ''); // URL-encoded null byte
+
+      // Remove null bytes
+      // eslint-disable-next-line no-control-regex
+      sanitized = sanitized.replace(/\x00/g, '');
+
+      // Remove path traversal patterns
+      sanitized = sanitized.replace(/\.{2,}/g, '.');
+    } while (sanitized.length !== previousLength);
+
     // Replace special characters
     sanitized = sanitized.replace(/[^a-zA-Z0-9._-]/g, '_');
-    
+
     // Limit length
     if (sanitized.length > 255) {
       const ext = sanitized.substring(sanitized.lastIndexOf('.'));
       const name = sanitized.substring(0, 255 - ext.length);
       sanitized = name + ext;
     }
-    
+
     return sanitized;
   }
 
@@ -302,28 +331,33 @@ export class FileValidatorService {
    */
   async validateFiles(
     files: Express.Multer.File[],
-    options: FileValidationOptions & { maxFiles?: number } = {},
+    options: FileValidationOptions & { maxFiles?: number } = {}
   ): Promise<{ valid: boolean; results: Map<string, FileValidationResult> }> {
     const { maxFiles = 10 } = options;
     const results = new Map<string, FileValidationResult>();
-    
+
     if (files.length > maxFiles) {
       return {
         valid: false,
-        results: new Map([['_total', {
-          valid: false,
-          errors: [`Too many files: ${files.length} (max ${maxFiles})`],
-          warnings: [],
-        }]]),
+        results: new Map([
+          [
+            '_total',
+            {
+              valid: false,
+              errors: [`Too many files: ${files.length} (max ${maxFiles})`],
+              warnings: [],
+            },
+          ],
+        ]),
       };
     }
 
     let allValid = true;
-    
+
     for (const file of files) {
       const result = await this.validateFile(file, options);
       results.set(file.originalname, result);
-      
+
       if (!result.valid) {
         allValid = false;
       }
@@ -338,15 +372,15 @@ export class FileValidatorService {
  */
 export function createFileFilter(
   validator: FileValidatorService,
-  options: FileValidationOptions = {},
+  options: FileValidationOptions = {}
 ) {
   return async (
     req: any,
     file: Express.Multer.File,
-    callback: (error: Error | null, acceptFile: boolean) => void,
+    callback: (error: Error | null, acceptFile: boolean) => void
   ) => {
     const result = await validator.validateFile(file, options);
-    
+
     if (result.valid) {
       callback(null, true);
     } else {
@@ -354,4 +388,3 @@ export function createFileFilter(
     }
   };
 }
-

@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import * as https from 'https';
 import * as http from 'http';
 import { SecurityHeaders } from '../dto/security-scan.dto';
+import { validateUrl } from '@gigachad-grc/shared';
 
 @Injectable()
 export class HeadersCollector {
@@ -75,6 +76,12 @@ export class HeadersCollector {
   }
 
   private async fetchHeaders(url: URL): Promise<Record<string, string>> {
+    // SSRF Protection: Validate URL before making request
+    const validation = await validateUrl(url.toString());
+    if (!validation.valid) {
+      throw new Error(`SSRF protection blocked request: ${validation.error}`);
+    }
+
     return new Promise((resolve, reject) => {
       const protocol = url.protocol === 'https:' ? https : http;
 

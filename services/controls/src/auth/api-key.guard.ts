@@ -41,10 +41,10 @@ interface ApiKeyRequest extends Request {
 
 /**
  * API Key Authentication Guard
- * 
+ *
  * Validates API keys and injects organization context into the request.
  * This ensures API key requests are properly scoped to their organization.
- * 
+ *
  * Usage:
  * @UseGuards(ApiKeyAuthGuard)
  * @Controller('api/external')
@@ -71,7 +71,7 @@ export class ApiKeyAuthGuard implements CanActivate {
       // Log failed attempt for security monitoring
       this.logger.warn(
         `Invalid API key attempt from IP: ${request.ip}, ` +
-        `Key prefix: ${apiKey.substring(0, 8)}...`
+          `Key prefix: ${apiKey.substring(0, 8)}...`
       );
       throw new UnauthorizedException('Invalid or expired API key');
     }
@@ -98,14 +98,14 @@ export class ApiKeyAuthGuard implements CanActivate {
     request.headers['x-auth-method'] = 'api-key';
 
     // Update last used timestamp (fire and forget)
-    this.updateLastUsed(apiKeyRecord.id).catch(err => {
+    this.updateLastUsed(apiKeyRecord.id).catch((err) => {
       this.logger.error(`Failed to update API key last used: ${err.message}`);
     });
 
     // Log successful API key usage
     this.logger.log(
       `API key authenticated: org=${apiKeyRecord.organizationId}, ` +
-      `key=${apiKeyRecord.name}, path=${request.url}`
+        `key=${apiKeyRecord.name}, path=${request.url}`
     );
 
     return true;
@@ -113,11 +113,11 @@ export class ApiKeyAuthGuard implements CanActivate {
 
   /**
    * Extract API key from request headers only
-   * 
+   *
    * SECURITY: API keys must ONLY be passed via headers (X-API-Key or Authorization).
    * Query parameter support has been removed due to security risks:
    * - Query params appear in server logs
-   * - Query params appear in browser history  
+   * - Query params appear in browser history
    * - Query params can be leaked via Referer headers
    */
   private extractApiKey(request: ApiKeyRequest): string | null {
@@ -127,11 +127,11 @@ export class ApiKeyAuthGuard implements CanActivate {
     if (queryKey) {
       this.logger.warn(
         `SECURITY: Rejected API key in query parameter from IP: ${request.ip}, ` +
-        `path: ${request.url}. API keys must be passed via X-API-Key or Authorization header.`
+          `path: ${request.url}. API keys must be passed via X-API-Key or Authorization header.`
       );
       throw new UnauthorizedException(
         'API keys in query parameters are not allowed. ' +
-        'Please use the X-API-Key header or Authorization header with ApiKey scheme.'
+          'Please use the X-API-Key header or Authorization header with ApiKey scheme.'
       );
     }
 
@@ -152,9 +152,25 @@ export class ApiKeyAuthGuard implements CanActivate {
 
   /**
    * Validate API key and return the record if valid
+   *
+   * SECURITY: API key hashing uses SHA-256 which is appropriate because:
+   * - API keys are randomly generated with high entropy (unlike passwords)
+   * - bcrypt/argon2 would add ~100-500ms latency to every API request
+   * - SHA-256 provides sufficient security for high-entropy secrets
+   * - The database lookup is indexed, preventing brute-force enumeration
+   *
+   * Note: If migrating to bcrypt/argon2, consider caching validated keys
+   * in memory with TTL to avoid performance degradation.
    */
-  private async validateApiKey(apiKey: string): Promise<(ApiKeyRecord & { scopes: string[] }) | null> {
-    // Hash the provided key
+  private async validateApiKey(
+    apiKey: string
+  ): Promise<(ApiKeyRecord & { scopes: string[] }) | null> {
+    // SECURITY: Validate input is a string to prevent type confusion
+    if (typeof apiKey !== 'string' || apiKey.length === 0) {
+      return null;
+    }
+
+    // Hash the provided key using SHA-256 (appropriate for high-entropy API keys)
     const keyHash = createHash('sha256').update(apiKey).digest('hex');
 
     // Look up the API key
@@ -162,10 +178,7 @@ export class ApiKeyAuthGuard implements CanActivate {
       where: {
         keyHash,
         isActive: true,
-        OR: [
-          { expiresAt: null },
-          { expiresAt: { gt: new Date() } },
-        ],
+        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
       },
       include: {
         organization: {
@@ -182,10 +195,7 @@ export class ApiKeyAuthGuard implements CanActivate {
     }
 
     // Merge scopes from both sources (legacy scopes array and new apiKeyScopes relation)
-    const scopes = [
-      ...apiKeyRecord.scopes,
-      ...apiKeyRecord.apiKeyScopes.map(s => s.scope),
-    ];
+    const scopes = [...apiKeyRecord.scopes, ...apiKeyRecord.apiKeyScopes.map((s) => s.scope)];
 
     return {
       ...apiKeyRecord,
@@ -199,7 +209,7 @@ export class ApiKeyAuthGuard implements CanActivate {
   private buildPermissions(scopes: string[]): string[] {
     // API key scopes are already in permission format
     // e.g., ['read:controls', 'write:evidence']
-    return scopes.map(scope => {
+    return scopes.map((scope) => {
       // Convert scope format if needed
       // read:controls -> controls:read
       const [action, resource] = scope.split(':');
@@ -229,13 +239,11 @@ export class ApiKeyAuthGuard implements CanActivate {
 export class CombinedAuthGuard implements CanActivate {
   private readonly logger = new Logger(CombinedAuthGuard.name);
 
-  constructor(
-    private readonly prisma: PrismaService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
-    
+
     // Check if already authenticated via JWT
     if (request.user?.userId && request.user?.organizationId) {
       return true;
@@ -252,4 +260,3 @@ export class CombinedAuthGuard implements CanActivate {
     throw new UnauthorizedException('Authentication required');
   }
 }
-

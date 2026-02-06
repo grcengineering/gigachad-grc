@@ -20,7 +20,7 @@ interface ThrottlerRequest {
 
 /**
  * Custom throttler guard that extracts client identifier for rate limiting
- * 
+ *
  * Rate limiting is applied based on:
  * 1. IP address for unauthenticated requests
  * 2. User ID + IP for authenticated requests
@@ -38,20 +38,23 @@ export class CustomThrottlerGuard extends ThrottlerGuard {
     const ip = this.getClientIp(req);
 
     // If API key provided, use API key hash as tracker
+    // SECURITY: Hash with SHA-256 for strong collision resistance
     const apiKeyHeader = req.headers?.['x-api-key'];
     const apiKey = Array.isArray(apiKeyHeader) ? apiKeyHeader[0] : apiKeyHeader;
     if (apiKey) {
-      const keyHash = createHash('sha256').update(apiKey).digest('hex').substring(0, 16);
+      // Using 32 hex chars (128 bits) for sufficient collision resistance in rate limiting
+      const keyHash = createHash('sha256').update(apiKey).digest('hex').substring(0, 32);
       return `api:${keyHash}`;
     }
 
     // If authenticated, include user ID for per-user limiting
     const userIdHeader = req.headers?.['x-user-id'];
-    const userId = req.user?.userId || (Array.isArray(userIdHeader) ? userIdHeader[0] : userIdHeader);
+    const userId =
+      req.user?.userId || (Array.isArray(userIdHeader) ? userIdHeader[0] : userIdHeader);
     if (userId) {
       return `user:${userId}:${ip}`;
     }
-    
+
     return `ip:${ip}`;
   }
 
@@ -81,21 +84,19 @@ export class CustomThrottlerGuard extends ThrottlerGuard {
    */
   protected async throwThrottlingException(
     context: ExecutionContext,
-    throttlerLimitDetail: ThrottlerLimitDetail,
+    throttlerLimitDetail: ThrottlerLimitDetail
   ): Promise<void> {
     const req = context.switchToHttp().getRequest();
     const tracker = await this.getTracker(req);
     const path = req.url || req.path;
-    
+
     // Log rate limit hit for monitoring and alerting
     this.logger.warn(
       `Rate limit exceeded: tracker=${tracker}, path=${path}, ` +
-      `limit=${throttlerLimitDetail.limit}, ttl=${throttlerLimitDetail.ttl}ms`
+        `limit=${throttlerLimitDetail.limit}, ttl=${throttlerLimitDetail.ttl}ms`
     );
-    
-    throw new ThrottlerException(
-      'Too many requests. Please slow down and try again later.'
-    );
+
+    throw new ThrottlerException('Too many requests. Please slow down and try again later.');
   }
 
   /**
@@ -104,17 +105,11 @@ export class CustomThrottlerGuard extends ThrottlerGuard {
   protected async shouldSkip(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest();
     const path = req.url || req.path || '';
-    
+
     // Skip rate limiting for health checks, metrics, and docs
-    const skipPaths = [
-      '/health',
-      '/api/health',
-      '/metrics',
-      '/api/docs',
-      '/api/docs/',
-    ];
-    
-    return skipPaths.some(skip => path === skip || path.startsWith(skip + '/'));
+    const skipPaths = ['/health', '/api/health', '/metrics', '/api/docs', '/api/docs/'];
+
+    return skipPaths.some((skip) => path === skip || path.startsWith(skip + '/'));
   }
 }
 
@@ -147,4 +142,3 @@ export class SensitiveOperationThrottlerGuard extends CustomThrottlerGuard {
     return 60000; // 1 minute
   }
 }
-
