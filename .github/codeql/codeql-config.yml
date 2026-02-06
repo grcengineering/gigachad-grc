@@ -1,0 +1,45 @@
+# CodeQL configuration for gigachad-grc
+# https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/customizing-your-advanced-setup-for-code-scanning
+
+name: 'GigaChad GRC CodeQL Config'
+
+# Paths to exclude from analysis
+paths-ignore:
+  # Build outputs (source files are scanned, not compiled output)
+  - '**/dist/**'
+  - '**/build/**'
+  - '**/node_modules/**'
+
+  # Test files (intentionally contain vulnerable patterns for testing)
+  - '**/*.test.ts'
+  - '**/*.spec.ts'
+  - '**/__tests__/**'
+  - '**/__mocks__/**'
+  - '**/tests/**'
+
+  # Generated files
+  - '**/*.d.ts'
+  - '**/*.map'
+  - '**/*.min.js'
+
+  # Documentation
+  - 'docs/**'
+  - '*.md'
+
+  # Coverage and reports
+  - 'coverage/**'
+  - '**/reports/**'
+
+# Query suites to use
+queries:
+  - uses: security-extended
+  - uses: security-and-quality
+
+# Disable specific queries that produce false positives
+query-filters:
+  # Atlassian connector type mappings are flagged as API tokens (false positive)
+  # The strings like 'atlassian_assets: AtlassianAssetsConnector' are just type names
+  - exclude:
+      id: js/hardcoded-credentials
+      tags:
+        - atlassian
