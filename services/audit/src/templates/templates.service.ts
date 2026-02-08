@@ -300,6 +300,7 @@ export class TemplatesService {
     validatePropertyName(dto.itemId, 'checklist item ID');
 
     // Update the item
+    // codeql[js/remote-property-injection] suppressed: itemId is validated above by validatePropertyName()
     progress[dto.itemId] = {
       completed: dto.completed,
       completedAt: dto.completed ? new Date().toISOString() : undefined,

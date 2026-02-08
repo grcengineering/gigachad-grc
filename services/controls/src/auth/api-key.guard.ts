@@ -171,7 +171,7 @@ export class ApiKeyAuthGuard implements CanActivate {
     }
 
     // Hash the provided key using SHA-256 (appropriate for high-entropy API keys)
-    // codeql[js/insufficient-password-hash] - SHA-256 used for API key lookup, not password storage. API keys are high-entropy secrets.
+    // codeql[js/insufficient-password-hash] suppressed: SHA-256 used for high-entropy API key lookup, not password storage
     const keyHash = createHash('sha256').update(apiKey).digest('hex');
 
     // Look up the API key

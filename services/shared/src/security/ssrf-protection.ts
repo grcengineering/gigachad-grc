@@ -168,7 +168,7 @@ export async function safeFetch(
   const maxRedirects = ssrfOptions.maxRedirects ?? DEFAULT_OPTIONS.maxRedirects ?? 5;
 
   while (redirectCount < maxRedirects) {
-    // codeql[js/request-forgery] - URL validated by validateUrl() before fetch; this IS the SSRF protection module
+    // codeql[js/request-forgery] suppressed: This IS the SSRF protection module - URL is validated by validateUrl() before fetch
     const response = await fetch(currentUrl, fetchOptions);
 
     if (response.status >= 300 && response.status < 400) {

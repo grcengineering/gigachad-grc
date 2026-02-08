@@ -38,7 +38,7 @@ export class CustomThrottlerGuard extends ThrottlerGuard {
       // Using full SHA-256 hash (64 hex chars) for better collision resistance
       // Truncating to 32 chars is sufficient for rate limiting while keeping reasonable length
       const crypto = await import('crypto');
-      // codeql[js/insufficient-password-hash] - SHA-256 used for cache key generation, not password storage
+      // codeql[js/insufficient-password-hash] suppressed: SHA-256 used for rate limit cache key generation, not password storage
       const keyHash = crypto.createHash('sha256').update(apiKey).digest('hex').substring(0, 32);
       return `api:${keyHash}`;
     }

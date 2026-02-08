@@ -413,6 +413,7 @@ export class RunbooksService {
     const MAX_STEPS = 1000;
     const safeStepIds = stepIds.slice(0, MAX_STEPS);
 
+    // codeql[js/loop-bound-injection] suppressed: Array is bounded by MAX_STEPS limit above
     for (let i = 0; i < safeStepIds.length; i++) {
       await this.prisma.$executeRaw`
         UPDATE bcdr.runbook_steps

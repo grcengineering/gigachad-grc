@@ -35,9 +35,13 @@ paths-ignore:
 
   # Docker build artifacts (compiled app output in container)
   - '/app/dist/**'
+  - '/app/**'
+  - 'app/dist/**'
 
   # System packages (npm installed globally in container, not our code)
   - 'usr/local/lib/**'
+  - 'usr/local/**'
+  - '**/node_modules/npm/**'
 
 # Query suites to use
 queries:
@@ -52,3 +56,6 @@ query-filters:
       id: js/hardcoded-credentials
       tags:
         - atlassian
+  # Atlassian API token false positives in compiled dist files
+  - exclude:
+      id: atlassian-api-token

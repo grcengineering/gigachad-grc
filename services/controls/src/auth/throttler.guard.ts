@@ -43,7 +43,7 @@ export class CustomThrottlerGuard extends ThrottlerGuard {
     const apiKey = Array.isArray(apiKeyHeader) ? apiKeyHeader[0] : apiKeyHeader;
     if (apiKey) {
       // Using 32 hex chars (128 bits) for sufficient collision resistance in rate limiting
-      // codeql[js/insufficient-password-hash] - SHA-256 used for rate limit tracker key, not password storage
+      // codeql[js/insufficient-password-hash] suppressed: SHA-256 used for rate limit cache key generation, not password storage
       const keyHash = createHash('sha256').update(apiKey).digest('hex').substring(0, 32);
       return `api:${keyHash}`;
     }
