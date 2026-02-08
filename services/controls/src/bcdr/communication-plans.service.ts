@@ -376,6 +376,7 @@ export class CommunicationPlansService {
     const MAX_CONTACTS = 1000;
     const safeContactIds = contactIds.slice(0, MAX_CONTACTS);
 
+    // codeql[js/loop-bound-injection] suppressed: Array is bounded by MAX_CONTACTS limit above
     for (let i = 0; i < safeContactIds.length; i++) {
       await this.prisma.$executeRaw`
         UPDATE bcdr.communication_contacts

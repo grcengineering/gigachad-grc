@@ -70,7 +70,7 @@ export function safePropertyAccess<T extends object>(obj: T, key: string): unkno
  */
 export function safePropertySet<T extends object>(obj: T, key: string, value: unknown): void {
   validatePropertyName(key, 'property name');
-  // codeql[js/remote-property-injection] - This IS the safe property access utility; key is validated above by validatePropertyName()
+  // codeql[js/remote-property-injection] suppressed: This IS the safe property access utility - key is validated before use
   (obj as Record<string, unknown>)[key] = value;
 }
 
@@ -94,7 +94,7 @@ export function safeOrderBy(
   }
 
   const orderBy: Record<string, 'asc' | 'desc'> = {};
-  // codeql[js/remote-property-injection] - This IS the safe property access utility; field is validated above by validatePropertyName()
+  // codeql[js/remote-property-injection] suppressed: This IS the safe property access utility - key is validated before use
   orderBy[field] = direction;
   return orderBy;
 }

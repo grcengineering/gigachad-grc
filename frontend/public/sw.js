@@ -147,6 +147,7 @@ async function fetchAndCache(request, cache) {
 }
 
 // Handle messages from the app
+// codeql[js/missing-origin-check] suppressed: Origin validated via event.source.url check below
 self.addEventListener('message', (event) => {
   // SECURITY: Validate that the message source is from our own origin
   // In service workers, event.source is a Client object with a url property

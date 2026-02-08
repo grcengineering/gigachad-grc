@@ -771,6 +771,7 @@ export class TrainingService {
     }
 
     // Create upload directory
+    // codeql[js/path-injection] suppressed: Path validated by isValidUuid(), validatePathWithinBase(), and explicit traversal check above
     fs.mkdirSync(resolvedUploadDir, { recursive: true });
 
     // SECURITY: Sanitize filename to prevent path traversal attacks
@@ -797,8 +798,8 @@ export class TrainingService {
       throw new BadRequestException('Path traversal detected in file path');
     }
 
-    // lgtm[js/http-to-file-access] - File data comes from validated multipart upload with
-    // path traversal protection (sanitizeFilename, validatePathWithinBase, explicit checks above)
+    // codeql[js/path-injection] suppressed: Path validated by sanitizeFilename(), validatePathWithinBase(), and explicit traversal check above
+    // codeql[js/http-to-file-access] suppressed: File data from validated multipart upload, path validated
     fs.writeFileSync(resolvedZipPath, file.buffer);
 
     // For now, just store the zip - extraction would require a zip library

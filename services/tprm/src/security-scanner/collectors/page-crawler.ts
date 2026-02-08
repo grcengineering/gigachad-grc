@@ -168,7 +168,7 @@ export class PageCrawler {
 
       const timeout = setTimeout(() => resolve(null), this.TIMEOUT);
 
-      // codeql[js/request-forgery] - URL validated by validateUrl() at lines 155-163 before this request
+      // codeql[js/request-forgery] suppressed: URL validated by validateUrl() before request
       const req = lib.get(
         url,
         {

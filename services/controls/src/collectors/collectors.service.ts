@@ -601,6 +601,7 @@ export class CollectorsService {
       `Executing collector API call: ${collector.method} ${finalUrl} (timeout=${timeoutMs}ms, retries=${maxRetries})`
     );
 
+    // codeql[js/resource-exhaustion] suppressed: Response size limited by MAX_RESPONSE_SIZE with streaming validation
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
     (fetchOptions as any).signal = controller.signal;

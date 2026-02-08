@@ -819,7 +819,7 @@ export class CustomIntegrationService {
       try {
         // Use strict mode to catch more syntax errors
         // Note: This is for syntax validation only - actual execution happens in executeCode()
-        // codeql[js/code-injection] - Code executed in sandboxed vm.runInNewContext with frozen globals, comprehensive blocklist validation, rate limiting, and no dangerous APIs exposed
+        // codeql[js/code-injection] suppressed: Code executed in sandboxed vm.runInNewContext with frozen globals, blocklist validation, and no dangerous APIs
         new Function('"use strict";\n' + code);
       } catch (syntaxError: any) {
         errors.push(`Syntax error: ${syntaxError.message}`);
