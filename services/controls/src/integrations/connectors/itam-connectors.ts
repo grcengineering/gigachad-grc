@@ -586,6 +586,16 @@ export class AtlassianAssetsConnector extends BaseConnector {
   }
 
   /**
+   * Detect whether the email belongs to an Atlassian service account.
+   * Service accounts use @serviceaccount.atlassian.com emails and must
+   * authenticate via the API gateway (api.atlassian.com) rather than
+   * the site URL directly.
+   */
+  private isServiceAccount(email: string): boolean {
+    return email.endsWith('@serviceaccount.atlassian.com');
+  }
+
+  /**
    * Build Basic Auth header value from email + API token.
    */
   private basicAuth(email: string, apiToken: string): string {
@@ -594,12 +604,11 @@ export class AtlassianAssetsConnector extends BaseConnector {
 
   /**
    * Auto-discover the Atlassian Cloud ID from the site URL.
-   * Uses the public /_edge/tenant_info endpoint.
+   * Uses the public /_edge/tenant_info endpoint (no auth required).
    */
-  private async discoverCloudId(siteUrl: string, authHeader: string): Promise<{ cloudId?: string; error?: string }> {
+  private async discoverCloudId(siteUrl: string): Promise<{ cloudId?: string; error?: string }> {
     try {
       const resp = await axios.get(`${siteUrl}/_edge/tenant_info`, {
-        headers: { Authorization: authHeader },
         timeout: 15000,
       });
       if (resp.data?.cloudId) {
@@ -607,17 +616,27 @@ export class AtlassianAssetsConnector extends BaseConnector {
       }
       return { error: 'Could not resolve Cloud ID from site' };
     } catch (err: any) {
-      return { error: `Cloud ID discovery failed: ${err.response?.status === 401 ? 'Invalid credentials' : err.message}` };
+      return { error: `Cloud ID discovery failed: ${err.message}` };
     }
   }
 
   /**
-   * Auto-discover the JSM Assets workspace ID.
-   * Uses the /rest/servicedeskapi/assets/workspace endpoint (Basic Auth compatible).
+   * Build the Jira API base URL.
+   * Service accounts must use the API gateway; regular users use the site URL.
    */
-  private async discoverWorkspaceId(siteUrl: string, authHeader: string): Promise<{ workspaceId?: string; error?: string }> {
+  private jiraApiBase(siteUrl: string, cloudId: string, isServiceAcct: boolean): string {
+    if (isServiceAcct) {
+      return `https://api.atlassian.com/ex/jira/${cloudId}`;
+    }
+    return siteUrl;
+  }
+
+  /**
+   * Auto-discover the JSM Assets workspace ID.
+   */
+  private async discoverWorkspaceId(apiBase: string, authHeader: string): Promise<{ workspaceId?: string; error?: string }> {
     try {
-      const resp = await axios.get(`${siteUrl}/rest/servicedeskapi/assets/workspace`, {
+      const resp = await axios.get(`${apiBase}/rest/servicedeskapi/assets/workspace`, {
         headers: {
           Authorization: authHeader,
           Accept: 'application/json',
@@ -631,18 +650,18 @@ export class AtlassianAssetsConnector extends BaseConnector {
       return { error: 'No Assets workspace found — JSM Premium or Enterprise license may be required' };
     } catch (err: any) {
       if (err.response?.status === 401) return { error: 'Invalid credentials' };
-      if (err.response?.status === 403) return { error: 'Insufficient permissions to access Assets' };
+      if (err.response?.status === 403) return { error: 'Insufficient permissions to access Assets — ensure the API token has read:servicedesk-request scope' };
       if (err.response?.status === 404) return { error: 'Assets API not available — ensure JSM Premium or Enterprise is enabled' };
       return { error: `Workspace discovery failed: ${err.message}` };
     }
   }
 
   /**
-   * Verify user credentials by calling /rest/api/3/myself.
+   * Verify credentials by calling /rest/api/3/myself.
    */
-  private async verifyAuth(siteUrl: string, authHeader: string): Promise<{ user?: any; error?: string }> {
+  private async verifyAuth(apiBase: string, authHeader: string): Promise<{ user?: any; error?: string }> {
     try {
-      const resp = await axios.get(`${siteUrl}/rest/api/3/myself`, {
+      const resp = await axios.get(`${apiBase}/rest/api/3/myself`, {
         headers: {
           Authorization: authHeader,
           Accept: 'application/json',
@@ -665,63 +684,57 @@ export class AtlassianAssetsConnector extends BaseConnector {
 
     const normalizedUrl = this.normalizeSiteUrl(siteUrl);
     const authHeader = this.basicAuth(config.email, config.apiToken);
+    const isServiceAcct = this.isServiceAccount(config.email);
 
-    // Step 1: Verify credentials
-    this.logger.log(`Testing auth against ${normalizedUrl}`);
-    const authResult = await this.verifyAuth(normalizedUrl, authHeader);
-    if (authResult.error) {
-      return { success: false, message: authResult.error };
-    }
-
-    // Step 2: Discover Cloud ID
-    const cloudResult = await this.discoverCloudId(normalizedUrl, authHeader);
+    // Step 1: Discover Cloud ID (public endpoint, always uses site URL)
+    const cloudResult = await this.discoverCloudId(normalizedUrl);
     if (cloudResult.error) {
       return { success: false, message: cloudResult.error };
     }
 
+    // Build the API base URL — service accounts use the API gateway
+    const apiBase = this.jiraApiBase(normalizedUrl, cloudResult.cloudId!, isServiceAcct);
+    if (isServiceAcct) {
+      this.logger.log(`Service account detected — routing via API gateway: ${apiBase}`);
+    }
+
+    // Step 2: Verify credentials
+    this.logger.log(`Testing auth against ${apiBase}`);
+    const authResult = await this.verifyAuth(apiBase, authHeader);
+    if (authResult.error) {
+      if (isServiceAcct && authResult.error === 'Invalid email or API token') {
+        return { success: false, message: 'Invalid service account credentials. Ensure the API token was created with read:jira-work scope and uses the API gateway (api.atlassian.com).' };
+      }
+      return { success: false, message: authResult.error };
+    }
+
     // Step 3: Discover Workspace ID (requires JSM Premium/Enterprise)
-    const workspaceResult = await this.discoverWorkspaceId(normalizedUrl, authHeader);
+    const workspaceResult = await this.discoverWorkspaceId(apiBase, authHeader);
     if (workspaceResult.error) {
       return { success: false, message: workspaceResult.error };
     }
 
     // Step 4: Test Assets API by listing object schemas
-    try {
-      const assetsBaseUrl = `${normalizedUrl}/gateway/api/jsm/assets/workspace/${workspaceResult.workspaceId}/v1`;
-      const schemasResp = await axios.get(`${assetsBaseUrl}/objectschema/list`, {
-        headers: {
-          Authorization: authHeader,
-          Accept: 'application/json',
-        },
-        timeout: 15000,
-      });
+    // Service accounts use the gateway path; regular users try the site gateway first
+    const assetsUrls = isServiceAcct
+      ? [`https://api.atlassian.com/jsm/assets/workspace/${workspaceResult.workspaceId}/v1`]
+      : [
+          `${normalizedUrl}/gateway/api/jsm/assets/workspace/${workspaceResult.workspaceId}/v1`,
+          `https://api.atlassian.com/jsm/assets/workspace/${workspaceResult.workspaceId}/v1`,
+        ];
 
-      const schemaCount = schemasResp.data?.objectschemas?.length ?? schemasResp.data?.values?.length ?? 0;
-
-      return {
-        success: true,
-        message: `Connected to Atlassian Assets. Authenticated as ${authResult.user?.displayName}. Found ${schemaCount} object schema(s).`,
-        details: {
-          cloudId: cloudResult.cloudId,
-          workspaceId: workspaceResult.workspaceId,
-          user: authResult.user,
-          schemaCount,
-        },
-      };
-    } catch (err: any) {
-      // If gateway proxy fails, try direct api.atlassian.com path
-      // (some Atlassian deployments route differently)
-      this.logger.warn(`Gateway proxy failed, attempting direct API: ${err.message}`);
+    for (const assetsBaseUrl of assetsUrls) {
       try {
-        const directBaseUrl = `https://api.atlassian.com/jsm/assets/workspace/${workspaceResult.workspaceId}/v1`;
-        const schemasResp = await axios.get(`${directBaseUrl}/objectschema/list`, {
+        const schemasResp = await axios.get(`${assetsBaseUrl}/objectschema/list`, {
           headers: {
             Authorization: authHeader,
             Accept: 'application/json',
           },
           timeout: 15000,
         });
+
         const schemaCount = schemasResp.data?.objectschemas?.length ?? schemasResp.data?.values?.length ?? 0;
+
         return {
           success: true,
           message: `Connected to Atlassian Assets. Authenticated as ${authResult.user?.displayName}. Found ${schemaCount} object schema(s).`,
@@ -730,20 +743,26 @@ export class AtlassianAssetsConnector extends BaseConnector {
             workspaceId: workspaceResult.workspaceId,
             user: authResult.user,
             schemaCount,
+            isServiceAccount: isServiceAcct,
           },
         };
-      } catch (fallbackErr: any) {
-        return {
-          success: false,
-          message: `Authenticated successfully but could not access Assets API: ${fallbackErr.response?.status === 403 ? 'Insufficient permissions' : fallbackErr.message}`,
-          details: {
-            cloudId: cloudResult.cloudId,
-            workspaceId: workspaceResult.workspaceId,
-            user: authResult.user,
-          },
-        };
+      } catch (err: any) {
+        this.logger.warn(`Assets API failed at ${assetsBaseUrl}: ${err.response?.status} ${err.message}`);
+        continue;
       }
     }
+
+    return {
+      success: false,
+      message: isServiceAcct
+        ? 'Authenticated successfully but could not access Assets API. Ensure the API token includes read:servicedesk-request and read:jira-work scopes.'
+        : 'Authenticated successfully but could not access Assets API. Check permissions or JSM license.',
+      details: {
+        cloudId: cloudResult.cloudId,
+        workspaceId: workspaceResult.workspaceId,
+        user: authResult.user,
+      },
+    };
   }
 
   async sync(config: any): Promise<any> {
@@ -759,13 +778,20 @@ export class AtlassianAssetsConnector extends BaseConnector {
 
     const normalizedUrl = this.normalizeSiteUrl(siteUrl);
     const authHeader = this.basicAuth(config.email, config.apiToken);
+    const isServiceAcct = this.isServiceAccount(config.email);
     const objects: any[] = [];
     const schemas: any[] = [];
     const errors: string[] = [];
 
     try {
+      // Discover Cloud ID and build API base
+      const cloudResult = await this.discoverCloudId(normalizedUrl);
+      const apiBase = cloudResult.cloudId
+        ? this.jiraApiBase(normalizedUrl, cloudResult.cloudId, isServiceAcct)
+        : normalizedUrl;
+
       // Discover workspace ID
-      const workspaceResult = await this.discoverWorkspaceId(normalizedUrl, authHeader);
+      const workspaceResult = await this.discoverWorkspaceId(apiBase, authHeader);
       if (workspaceResult.error) {
         return {
           objects: { total: 0, items: [] },
@@ -775,7 +801,9 @@ export class AtlassianAssetsConnector extends BaseConnector {
         };
       }
 
-      const assetsBaseUrl = `${normalizedUrl}/gateway/api/jsm/assets/workspace/${workspaceResult.workspaceId}/v1`;
+      const assetsBaseUrl = isServiceAcct
+        ? `https://api.atlassian.com/jsm/assets/workspace/${workspaceResult.workspaceId}/v1`
+        : `${normalizedUrl}/gateway/api/jsm/assets/workspace/${workspaceResult.workspaceId}/v1`;
       const headers = { Authorization: authHeader, Accept: 'application/json' };
 
       // Fetch object schemas
