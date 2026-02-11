@@ -567,38 +567,246 @@ export class AtlassianAssetsConnector extends BaseConnector {
   constructor() {
     super('AtlassianAssetsConnector');
   }
-  async testConnection(config: any): Promise<{ success: boolean; message: string; details?: any }> {
-    if (!config.cloudId) return { success: false, message: 'Cloud ID required' };
+
+  /**
+   * Normalize the site URL to a clean base (e.g. https://acme.atlassian.net).
+   */
+  private normalizeSiteUrl(url: string): string {
+    let siteUrl = url.trim().replace(/\/+$/, '');
+    if (!/^https?:\/\//i.test(siteUrl)) {
+      siteUrl = `https://${siteUrl}`;
+    }
+    // Strip any path — keep only the origin
     try {
-      const auth = Buffer.from(`${config.email}:${config.apiToken}`).toString('base64');
-      this.setHeaders({ Authorization: `Basic ${auth}`, 'Content-Type': 'application/json' });
-      this.setBaseURL(`https://api.atlassian.com/jsm/assets/workspace/${config.cloudId}/v1`);
-      const result = await this.get<any>('/object');
-      return result.error
-        ? { success: false, message: result.error }
-        : {
-            success: true,
-            message: `Connected to Atlassian Assets. Found ${result.data?.values?.length || 0} objects.`,
-            details: result.data,
-          };
-    } catch (error: any) {
-      return { success: false, message: error.message || 'Connection test failed' };
+      const parsed = new URL(siteUrl);
+      return `${parsed.protocol}//${parsed.host}`;
+    } catch {
+      return siteUrl;
     }
   }
+
+  /**
+   * Build Basic Auth header value from email + API token.
+   */
+  private basicAuth(email: string, apiToken: string): string {
+    return `Basic ${Buffer.from(`${email}:${apiToken}`).toString('base64')}`;
+  }
+
+  /**
+   * Auto-discover the Atlassian Cloud ID from the site URL.
+   * Uses the public /_edge/tenant_info endpoint.
+   */
+  private async discoverCloudId(siteUrl: string, authHeader: string): Promise<{ cloudId?: string; error?: string }> {
+    try {
+      const resp = await axios.get(`${siteUrl}/_edge/tenant_info`, {
+        headers: { Authorization: authHeader },
+        timeout: 15000,
+      });
+      if (resp.data?.cloudId) {
+        return { cloudId: resp.data.cloudId };
+      }
+      return { error: 'Could not resolve Cloud ID from site' };
+    } catch (err: any) {
+      return { error: `Cloud ID discovery failed: ${err.response?.status === 401 ? 'Invalid credentials' : err.message}` };
+    }
+  }
+
+  /**
+   * Auto-discover the JSM Assets workspace ID.
+   * Uses the /rest/servicedeskapi/assets/workspace endpoint (Basic Auth compatible).
+   */
+  private async discoverWorkspaceId(siteUrl: string, authHeader: string): Promise<{ workspaceId?: string; error?: string }> {
+    try {
+      const resp = await axios.get(`${siteUrl}/rest/servicedeskapi/assets/workspace`, {
+        headers: {
+          Authorization: authHeader,
+          Accept: 'application/json',
+        },
+        timeout: 15000,
+      });
+      const workspaceId = resp.data?.values?.[0]?.workspaceId;
+      if (workspaceId) {
+        return { workspaceId };
+      }
+      return { error: 'No Assets workspace found — JSM Premium or Enterprise license may be required' };
+    } catch (err: any) {
+      if (err.response?.status === 401) return { error: 'Invalid credentials' };
+      if (err.response?.status === 403) return { error: 'Insufficient permissions to access Assets' };
+      if (err.response?.status === 404) return { error: 'Assets API not available — ensure JSM Premium or Enterprise is enabled' };
+      return { error: `Workspace discovery failed: ${err.message}` };
+    }
+  }
+
+  /**
+   * Verify user credentials by calling /rest/api/3/myself.
+   */
+  private async verifyAuth(siteUrl: string, authHeader: string): Promise<{ user?: any; error?: string }> {
+    try {
+      const resp = await axios.get(`${siteUrl}/rest/api/3/myself`, {
+        headers: {
+          Authorization: authHeader,
+          Accept: 'application/json',
+        },
+        timeout: 15000,
+      });
+      return { user: { displayName: resp.data?.displayName, email: resp.data?.emailAddress, accountId: resp.data?.accountId } };
+    } catch (err: any) {
+      if (err.response?.status === 401) return { error: 'Invalid email or API token' };
+      if (err.response?.status === 403) return { error: 'Account does not have access to this Jira site' };
+      return { error: `Authentication failed: ${err.message}` };
+    }
+  }
+
+  async testConnection(config: any): Promise<{ success: boolean; message: string; details?: any }> {
+    const siteUrl = config.siteUrl || config.baseUrl;
+    if (!siteUrl) return { success: false, message: 'Jira site URL is required' };
+    if (!config.email) return { success: false, message: 'Email is required' };
+    if (!config.apiToken) return { success: false, message: 'API token is required' };
+
+    const normalizedUrl = this.normalizeSiteUrl(siteUrl);
+    const authHeader = this.basicAuth(config.email, config.apiToken);
+
+    // Step 1: Verify credentials
+    this.logger.log(`Testing auth against ${normalizedUrl}`);
+    const authResult = await this.verifyAuth(normalizedUrl, authHeader);
+    if (authResult.error) {
+      return { success: false, message: authResult.error };
+    }
+
+    // Step 2: Discover Cloud ID
+    const cloudResult = await this.discoverCloudId(normalizedUrl, authHeader);
+    if (cloudResult.error) {
+      return { success: false, message: cloudResult.error };
+    }
+
+    // Step 3: Discover Workspace ID (requires JSM Premium/Enterprise)
+    const workspaceResult = await this.discoverWorkspaceId(normalizedUrl, authHeader);
+    if (workspaceResult.error) {
+      return { success: false, message: workspaceResult.error };
+    }
+
+    // Step 4: Test Assets API by listing object schemas
+    try {
+      const assetsBaseUrl = `${normalizedUrl}/gateway/api/jsm/assets/workspace/${workspaceResult.workspaceId}/v1`;
+      const schemasResp = await axios.get(`${assetsBaseUrl}/objectschema/list`, {
+        headers: {
+          Authorization: authHeader,
+          Accept: 'application/json',
+        },
+        timeout: 15000,
+      });
+
+      const schemaCount = schemasResp.data?.objectschemas?.length ?? schemasResp.data?.values?.length ?? 0;
+
+      return {
+        success: true,
+        message: `Connected to Atlassian Assets. Authenticated as ${authResult.user?.displayName}. Found ${schemaCount} object schema(s).`,
+        details: {
+          cloudId: cloudResult.cloudId,
+          workspaceId: workspaceResult.workspaceId,
+          user: authResult.user,
+          schemaCount,
+        },
+      };
+    } catch (err: any) {
+      // If gateway proxy fails, try direct api.atlassian.com path
+      // (some Atlassian deployments route differently)
+      this.logger.warn(`Gateway proxy failed, attempting direct API: ${err.message}`);
+      try {
+        const directBaseUrl = `https://api.atlassian.com/jsm/assets/workspace/${workspaceResult.workspaceId}/v1`;
+        const schemasResp = await axios.get(`${directBaseUrl}/objectschema/list`, {
+          headers: {
+            Authorization: authHeader,
+            Accept: 'application/json',
+          },
+          timeout: 15000,
+        });
+        const schemaCount = schemasResp.data?.objectschemas?.length ?? schemasResp.data?.values?.length ?? 0;
+        return {
+          success: true,
+          message: `Connected to Atlassian Assets. Authenticated as ${authResult.user?.displayName}. Found ${schemaCount} object schema(s).`,
+          details: {
+            cloudId: cloudResult.cloudId,
+            workspaceId: workspaceResult.workspaceId,
+            user: authResult.user,
+            schemaCount,
+          },
+        };
+      } catch (fallbackErr: any) {
+        return {
+          success: false,
+          message: `Authenticated successfully but could not access Assets API: ${fallbackErr.response?.status === 403 ? 'Insufficient permissions' : fallbackErr.message}`,
+          details: {
+            cloudId: cloudResult.cloudId,
+            workspaceId: workspaceResult.workspaceId,
+            user: authResult.user,
+          },
+        };
+      }
+    }
+  }
+
   async sync(config: any): Promise<any> {
+    const siteUrl = config.siteUrl || config.baseUrl;
+    if (!siteUrl || !config.email || !config.apiToken) {
+      return {
+        objects: { total: 0, items: [] },
+        schemas: { total: 0, items: [] },
+        collectedAt: new Date().toISOString(),
+        errors: ['Missing required configuration: Jira Site URL, Email, or API Token'],
+      };
+    }
+
+    const normalizedUrl = this.normalizeSiteUrl(siteUrl);
+    const authHeader = this.basicAuth(config.email, config.apiToken);
     const objects: any[] = [];
     const schemas: any[] = [];
     const errors: string[] = [];
+
     try {
-      const auth = Buffer.from(`${config.email}:${config.apiToken}`).toString('base64');
-      this.setHeaders({ Authorization: `Basic ${auth}`, 'Content-Type': 'application/json' });
-      this.setBaseURL(`https://api.atlassian.com/jsm/assets/workspace/${config.cloudId}/v1`);
-      const objectsResult = await this.get<any>('/object');
-      if (objectsResult.data?.values) objects.push(...objectsResult.data.values);
-      else if (objectsResult.error) errors.push(objectsResult.error);
-      const schemasResult = await this.get<any>('/objectschema');
-      if (schemasResult.data?.values) schemas.push(...schemasResult.data.values);
-      else if (schemasResult.error) errors.push(schemasResult.error);
+      // Discover workspace ID
+      const workspaceResult = await this.discoverWorkspaceId(normalizedUrl, authHeader);
+      if (workspaceResult.error) {
+        return {
+          objects: { total: 0, items: [] },
+          schemas: { total: 0, items: [] },
+          collectedAt: new Date().toISOString(),
+          errors: [workspaceResult.error],
+        };
+      }
+
+      const assetsBaseUrl = `${normalizedUrl}/gateway/api/jsm/assets/workspace/${workspaceResult.workspaceId}/v1`;
+      const headers = { Authorization: authHeader, Accept: 'application/json' };
+
+      // Fetch object schemas
+      try {
+        const schemasResp = await axios.get(`${assetsBaseUrl}/objectschema/list`, { headers, timeout: 30000 });
+        const schemaList = schemasResp.data?.objectschemas || schemasResp.data?.values || [];
+        schemas.push(...schemaList);
+      } catch (err: any) {
+        errors.push(`Failed to fetch schemas: ${err.message}`);
+      }
+
+      // Fetch objects using AQL (all objects)
+      try {
+        const objectsResp = await axios.post(
+          `${assetsBaseUrl}/object/aql`,
+          { qlQuery: 'objectType != null' },
+          { headers: { ...headers, 'Content-Type': 'application/json' }, timeout: 30000 },
+        );
+        const objectList = objectsResp.data?.values || objectsResp.data?.objectEntries || [];
+        objects.push(...objectList);
+      } catch (err: any) {
+        // Fallback to basic object list
+        try {
+          const objectsResp = await axios.get(`${assetsBaseUrl}/object/navlist/aql?qlQuery=`, { headers, timeout: 30000 });
+          const objectList = objectsResp.data?.values || objectsResp.data?.objectEntries || [];
+          objects.push(...objectList);
+        } catch (fallbackErr: any) {
+          errors.push(`Failed to fetch objects: ${err.message}`);
+        }
+      }
+
       return {
         objects: { total: objects.length, items: objects },
         schemas: { total: schemas.length, items: schemas },
