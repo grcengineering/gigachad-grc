@@ -857,10 +857,21 @@ export class IntegrationsService {
     }
 
     // Decrypt config for use in sync operations (supports secrets manager refs)
-    const config = await this.decryptConfigAsync(
+    const rawSyncConfig = await this.decryptConfigAsync(
       integration.config as Record<string, unknown>,
       organizationId
     );
+
+    // Flatten nested credentials to top level (quick-setup stores fields under credentials.{key})
+    const syncCreds = rawSyncConfig.credentials as Record<string, unknown> | undefined;
+    const config = { ...rawSyncConfig };
+    if (syncCreds && typeof syncCreds === 'object') {
+      for (const [k, v] of Object.entries(syncCreds)) {
+        if (config[k] === undefined) {
+          config[k] = v;
+        }
+      }
+    }
 
     // Create a sync job
     const syncJob = await this.prisma.syncJob.create({
