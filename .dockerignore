@@ -1,0 +1,8 @@
+.env
+.env.*
+!.env.example
+.infisical.json
+.infisical-initialized
+node_modules
+*.pem
+*.key

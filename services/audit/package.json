@@ -30,6 +30,7 @@
     "class-validator": "^0.14.0",
     "helmet": "^7.2.0",
     "reflect-metadata": "^0.1.13",
+    "helmet": "^7.2.0",
     "rxjs": "^7.8.1",
     "uuid": "^9.0.1"
   },
