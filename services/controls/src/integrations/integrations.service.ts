@@ -236,13 +236,25 @@ export class IntegrationsService {
     return false;
   }
 
-  private encrypt(text: string): string {
+  /** Cache for the legacy key derivation (constant inputs: encryptionKey + 'salt') */
+  private legacyDerivedKey: Buffer | null = null;
+
+  private scryptAsync(password: string, salt: string | Buffer, keylen: number): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+      crypto.scrypt(password, salt, keylen, (err, derivedKey) => {
+        if (err) reject(err);
+        else resolve(derivedKey);
+      });
+    });
+  }
+
+  private async encrypt(text: string): Promise<string> {
     if (!text) return text;
 
     const iv = crypto.randomBytes(16);
     // SECURITY FIX: Generate random salt per encryption instead of using hardcoded salt
     const salt = crypto.randomBytes(16);
-    const key = crypto.scryptSync(this.encryptionKey, salt, 32);
+    const key = await this.scryptAsync(this.encryptionKey, salt, 32);
     const cipher = crypto.createCipheriv(this.algorithm, key, iv);
 
     let encrypted = cipher.update(text, 'utf8', 'hex');
@@ -254,7 +266,7 @@ export class IntegrationsService {
     return `${iv.toString('hex')}:${authTag.toString('hex')}:${salt.toString('hex')}:${encrypted}`;
   }
 
-  private decrypt(encryptedText: string, depth = 0): string {
+  private async decrypt(encryptedText: string, depth = 0): Promise<string> {
     if (!encryptedText) return encryptedText;
     // Guard against infinite recursion (max 3 layers should be more than enough)
     if (depth > 3) return encryptedText;
@@ -266,13 +278,15 @@ export class IntegrationsService {
 
       // Support both old format (3 parts: iv:authTag:encrypted) and new format (4 parts: iv:authTag:salt:encrypted)
       if (parts.length === 3) {
-        // Legacy format without salt - use hardcoded salt for backwards compatibility
+        // Legacy format without salt - use cached key for backwards compatibility
         const [ivHex, authTagHex, encrypted] = parts;
         const iv = Buffer.from(ivHex, 'hex');
         const authTag = Buffer.from(authTagHex, 'hex');
-        const key = crypto.scryptSync(this.encryptionKey, 'salt', 32); // Legacy salt
+        if (!this.legacyDerivedKey) {
+          this.legacyDerivedKey = await this.scryptAsync(this.encryptionKey, 'salt', 32);
+        }
 
-        const decipher = crypto.createDecipheriv(this.algorithm, key, iv);
+        const decipher = crypto.createDecipheriv(this.algorithm, this.legacyDerivedKey, iv);
         decipher.setAuthTag(authTag);
 
         decrypted = decipher.update(encrypted, 'hex', 'utf8');
@@ -283,7 +297,7 @@ export class IntegrationsService {
         const iv = Buffer.from(ivHex, 'hex');
         const authTag = Buffer.from(authTagHex, 'hex');
         const salt = Buffer.from(saltHex, 'hex');
-        const key = crypto.scryptSync(this.encryptionKey, salt, 32);
+        const key = await this.scryptAsync(this.encryptionKey, salt, 32);
 
         const decipher = crypto.createDecipheriv(this.algorithm, key, iv);
         decipher.setAuthTag(authTag);
@@ -365,10 +379,10 @@ export class IntegrationsService {
             this.logger.warn(
               `Failed to store ${key} in secrets manager, falling back to local encryption: ${error}`
             );
-            safePropertySet(encrypted, key, this.encrypt(value));
+            safePropertySet(encrypted, key, await this.encrypt(value));
           }
         } else {
-          safePropertySet(encrypted, key, this.encrypt(value));
+          safePropertySet(encrypted, key, await this.encrypt(value));
         }
       } else {
         safePropertySet(encrypted, key, value);
@@ -379,9 +393,9 @@ export class IntegrationsService {
   }
 
   /**
-   * Synchronous encrypt for backward compatibility (no external secrets manager).
+   * Async encrypt for backward compatibility (no external secrets manager).
    */
-  private encryptConfig(config: Record<string, unknown>): Record<string, unknown> {
+  private async encryptConfig(config: Record<string, unknown>): Promise<Record<string, unknown>> {
     if (!config) return config;
 
     const encrypted: Record<string, unknown> = {};
@@ -396,7 +410,7 @@ export class IntegrationsService {
         // Preserve arrays as-is (e.g., evidenceTypes)
         safePropertySet(encrypted, key, value);
       } else if (typeof value === 'object' && value !== null) {
-        safePropertySet(encrypted, key, this.encryptConfig(value as Record<string, unknown>));
+        safePropertySet(encrypted, key, await this.encryptConfig(value as Record<string, unknown>));
       } else if (
         typeof value === 'string' &&
         SENSITIVE_FIELDS.some((f) => key.toLowerCase().includes(f.toLowerCase()))
@@ -405,7 +419,7 @@ export class IntegrationsService {
         if (this.isEncryptedFormat(value)) {
           safePropertySet(encrypted, key, value);
         } else {
-          safePropertySet(encrypted, key, this.encrypt(value));
+          safePropertySet(encrypted, key, await this.encrypt(value));
         }
       } else {
         safePropertySet(encrypted, key, value);
@@ -458,7 +472,7 @@ export class IntegrationsService {
         SENSITIVE_FIELDS.some((f) => key.toLowerCase().includes(f.toLowerCase()))
       ) {
         // Decrypt locally (legacy or fallback)
-        safePropertySet(decrypted, key, this.decrypt(value));
+        safePropertySet(decrypted, key, await this.decrypt(value));
       } else {
         safePropertySet(decrypted, key, value);
       }
@@ -468,9 +482,9 @@ export class IntegrationsService {
   }
 
   /**
-   * Synchronous decrypt for backward compatibility (no secrets manager refs).
+   * Async decrypt for backward compatibility (no secrets manager refs).
    */
-  private decryptConfig(config: Record<string, unknown>): Record<string, unknown> {
+  private async decryptConfig(config: Record<string, unknown>): Promise<Record<string, unknown>> {
     if (!config) return config;
 
     const decrypted: Record<string, unknown> = {};
@@ -485,12 +499,12 @@ export class IntegrationsService {
         // Preserve arrays as-is (e.g., evidenceTypes)
         safePropertySet(decrypted, key, value);
       } else if (typeof value === 'object' && value !== null) {
-        safePropertySet(decrypted, key, this.decryptConfig(value as Record<string, unknown>));
+        safePropertySet(decrypted, key, await this.decryptConfig(value as Record<string, unknown>));
       } else if (
         typeof value === 'string' &&
         SENSITIVE_FIELDS.some((f) => key.toLowerCase().includes(f.toLowerCase()))
       ) {
-        safePropertySet(decrypted, key, this.decrypt(value));
+        safePropertySet(decrypted, key, await this.decrypt(value));
       } else {
         safePropertySet(decrypted, key, value);
       }
@@ -739,7 +753,14 @@ export class IntegrationsService {
       entityId: existing.id,
       entityName: existing.name,
       description: `Deleted integration "${existing.name}" (${existing.type})`,
-      changes: { before: existing },
+      changes: {
+        before: {
+          name: existing.name,
+          type: existing.type,
+          status: existing.status,
+          syncFrequency: existing.syncFrequency,
+        },
+      },
     });
 
     return { success: true };
@@ -1554,9 +1575,9 @@ export class IntegrationsService {
         } else if (
           typeof value === 'string' &&
           SENSITIVE_FIELDS.some((f) => key.toLowerCase().includes(f.toLowerCase())) &&
-          this.isEncryptedFormat(value)
+          (this.isEncryptedFormat(value) || this.isSecretsRef(value))
         ) {
-          // Mask any encrypted sensitive field even if not in configFields
+          // Mask any encrypted or secrets manager-referenced sensitive field
           result[key] = '••••••••';
         } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
           result[key] = maskObject(value as Record<string, unknown>);
