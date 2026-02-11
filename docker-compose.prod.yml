@@ -172,7 +172,7 @@ services:
     environment:
       # Database
       KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
       KC_DB_USERNAME: ${POSTGRES_USER}
       KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
       KC_DB_POOL_INITIAL_SIZE: ${KC_DB_POOL_INITIAL_SIZE:-5}
@@ -316,6 +316,66 @@ services:
           memory: 256M
 
   # ===========================================
+  # Secrets Management - Infisical (Self-Hosted)
+  # Centralized secret management with audit trail
+  # ===========================================
+  infisical:
+    image: infisical/infisical:v0.158.2
+    container_name: grc-infisical
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /etc/ssl/certs
+    environment:
+      ENCRYPTION_KEY: ${INFISICAL_ENCRYPTION_KEY}
+      AUTH_SECRET: ${INFISICAL_AUTH_SECRET}
+      DB_CONNECTION_URI: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/infisical
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/1
+      SITE_URL: https://secrets.${APP_DOMAIN}
+      TELEMETRY_ENABLED: false
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - grc-network
+      - grc-dmz
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.docker.network=grc-dmz'
+      - 'traefik.http.routers.infisical.rule=Host(`secrets.${APP_DOMAIN}`)'
+      - 'traefik.http.routers.infisical.entrypoints=websecure'
+      - 'traefik.http.routers.infisical.tls.certresolver=letsencrypt'
+      - 'traefik.http.services.infisical.loadbalancer.server.port=8080'
+      - 'traefik.http.middlewares.infisical-ipallow.ipallowlist.sourcerange=10.0.0.0/8,172.16.0.0/12'
+      - 'traefik.http.routers.infisical.middlewares=infisical-ipallow'
+    restart: always
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m'
+        max-file: '3'
+    healthcheck:
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:8080/api/status']
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # ===========================================
   # Controls Service - Security Controls Management
   # ===========================================
   controls:
@@ -356,6 +416,8 @@ services:
       keycloak:
         condition: service_healthy
       rustfs:
+        condition: service_healthy
+      infisical:
         condition: service_healthy
     networks:
       - grc-network
@@ -457,6 +519,8 @@ services:
         condition: service_healthy
       rustfs:
         condition: service_healthy
+      infisical:
+        condition: service_healthy
     networks:
       - grc-network
     labels:
@@ -539,6 +603,8 @@ services:
         condition: service_healthy
       rustfs:
         condition: service_healthy
+      infisical:
+        condition: service_healthy
     networks:
       - grc-network
     labels:
@@ -620,6 +686,8 @@ services:
       keycloak:
         condition: service_healthy
       rustfs:
+        condition: service_healthy
+      infisical:
         condition: service_healthy
     networks:
       - grc-network
@@ -705,6 +773,8 @@ services:
         condition: service_healthy
       rustfs:
         condition: service_healthy
+      infisical:
+        condition: service_healthy
     networks:
       - grc-network
     labels:
@@ -788,6 +858,8 @@ services:
       keycloak:
         condition: service_healthy
       rustfs:
+        condition: service_healthy
+      infisical:
         condition: service_healthy
     networks:
       - grc-network

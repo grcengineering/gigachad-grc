@@ -17,6 +17,10 @@ services/policies/storage/
 *.key
 *.p12
 
+# Infisical
+.infisical.json
+.infisical-initialized
+
 # Storage directories - contain user data
 services/*/storage/
 **/storage/evidence/

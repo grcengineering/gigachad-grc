@@ -130,17 +130,20 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     message: string;
     error: string;
   } {
-    if (exception instanceof HttpException) {
-      const response = exception.getResponse();
+    // Use duck-typing to handle HttpException from different @nestjs/common instances
+    // (e.g., shared library vs service may have separate copies in node_modules)
+    if (exception instanceof HttpException || (exception instanceof Error && typeof (exception as any).getStatus === 'function' && typeof (exception as any).getResponse === 'function')) {
+      const httpException = exception as HttpException;
+      const response = httpException.getResponse();
       const message =
         typeof response === 'string'
           ? response
-          : (response as { message?: string | string[] }).message || exception.message;
+          : (response as { message?: string | string[] }).message || httpException.message;
 
       return {
-        status: exception.getStatus(),
+        status: httpException.getStatus(),
         message: Array.isArray(message) ? message.join(', ') : message,
-        error: exception.name || 'Error',
+        error: httpException.name || 'Error',
       };
     }
 

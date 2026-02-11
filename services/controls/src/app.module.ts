@@ -54,7 +54,7 @@ import { AuthModule } from './auth/auth.module';
 import { ModulesController } from './modules/modules.controller';
 import { CustomThrottlerGuard } from './auth/throttler.guard';
 import { CorrelationIdMiddleware } from './common/correlation-id.middleware';
-import { StorageModule, EventsModule, CacheModule, HealthModule } from '@gigachad-grc/shared';
+import { StorageModule, EventsModule, CacheModule, HealthModule, SecretsModule } from '@gigachad-grc/shared';
 
 @Module({
   imports: [
@@ -86,6 +86,7 @@ import { StorageModule, EventsModule, CacheModule, HealthModule } from '@gigacha
       path: 'api/metrics',
     }),
     PrismaModule,
+    SecretsModule.forRoot(),
     StorageModule.forRoot(),
     EventsModule,
     CacheModule.forRoot({

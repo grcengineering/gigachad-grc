@@ -56,6 +56,19 @@ ENV_FILE="$PROJECT_DIR/.env"
 if [ -f "$ENV_FILE" ] && [ "$RESET_MODE" = false ]; then
     echo -e "${YELLOW}[INFO]${NC} .env file already exists"
     echo -e "${YELLOW}[INFO]${NC} Use --reset to regenerate secrets"
+    # Migrate: append Infisical bootstrap secrets if missing from older .env
+    if ! grep -q '^INFISICAL_ENCRYPTION_KEY=' "$ENV_FILE" 2>/dev/null; then
+        echo -e "${GREEN}[SETUP]${NC} Adding missing Infisical secrets to existing .env..."
+        INF_ENC_KEY=$(openssl rand -hex 16)
+        INF_AUTH_SEC=$(openssl rand -base64 32 | tr -d '\n')
+        cat >> "$ENV_FILE" << INFISICAL_EOF
+
+# Infisical Secrets Manager (auto-added)
+INFISICAL_ENCRYPTION_KEY=${INF_ENC_KEY}
+INFISICAL_AUTH_SECRET=${INF_AUTH_SEC}
+INFISICAL_EOF
+        echo -e "${GREEN}[SUCCESS]${NC} Infisical bootstrap secrets added to .env"
+    fi
     echo ""
     read -p "Continue with existing .env? (y/n) " -n 1 -r
     echo
@@ -73,7 +86,9 @@ else
     POSTGRES_PASSWORD=$(openssl rand -base64 24 | tr -d '\n' | tr '+/' '-_')
     REDIS_PASSWORD=$(openssl rand -base64 24 | tr -d '\n' | tr '+/' '-_')
     MINIO_PASSWORD=$(openssl rand -base64 20 | tr -d '\n' | tr '+/' '-_')
-    
+    INFISICAL_ENCRYPTION_KEY=$(openssl rand -hex 16)
+    INFISICAL_AUTH_SECRET=$(openssl rand -base64 32 | tr -d '\n')
+
     echo -e "${GREEN}[SETUP]${NC} Creating .env file..."
     
     cat > "$ENV_FILE" << EOF
@@ -131,6 +146,10 @@ RATE_LIMIT_MAX_REQUESTS=1000
 # Backup
 BACKUP_RETENTION_DAYS=30
 DR_REMOTE_BACKUP_ENABLED=false
+
+# Infisical Secrets Manager
+INFISICAL_ENCRYPTION_KEY=${INFISICAL_ENCRYPTION_KEY}
+INFISICAL_AUTH_SECRET=${INFISICAL_AUTH_SECRET}
 
 # Logging
 LOG_LEVEL=debug

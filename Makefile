@@ -15,6 +15,7 @@
         install build test lint \
         db-shell redis-cli \
         frontend backend services \
+        secrets-ui secrets-seed \
         backup restore
 
 .DEFAULT_GOAL := help
@@ -39,6 +40,9 @@ help: ## Show this help message
 	@echo ""
 	@echo "$(CYAN)Docker Commands:$(NC)"
 	@grep -E '^(up|down|logs|ps|restart):.*##' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  $(GREEN)%-14s$(NC) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(CYAN)Secrets Management:$(NC)"
+	@grep -E '^(secrets-ui|secrets-seed):.*##' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  $(GREEN)%-14s$(NC) %s\n", $$1, $$2}'
 	@echo ""
 	@echo "$(CYAN)Development:$(NC)"
 	@grep -E '^(install|build|test|lint|frontend|backend):.*##' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  $(GREEN)%-14s$(NC) %s\n", $$1, $$2}'
@@ -70,8 +74,12 @@ docker: ## Start all services via Docker only
 # Docker Commands
 # ─────────────────────────────────────────────────────────────────────────────
 
-up: ## Start all Docker containers
-	docker compose up -d
+up: ## Start all Docker containers (with Infisical secret injection)
+	@if command -v infisical >/dev/null 2>&1 && [ -f .infisical.json ]; then \
+		infisical run --env=dev -- docker compose up -d; \
+	else \
+		docker compose up -d; \
+	fi
 
 down: ## Stop all Docker containers
 	docker compose down
@@ -93,11 +101,17 @@ restart: ## Restart containers (use: make restart s=controls)
 		docker compose restart; \
 	fi
 
-infra: ## Start infrastructure only (postgres, redis, keycloak, rustfs)
-	docker compose up -d postgres redis keycloak rustfs
+infra: ## Start infrastructure only (postgres, redis, keycloak, rustfs, infisical)
+	docker compose up -d postgres redis keycloak rustfs infisical
 
 services: ## Start application services only (requires infra running)
 	docker compose up -d controls frameworks policies tprm trust audit
+
+secrets-ui: ## Open Infisical secrets UI
+	@open http://localhost:8443 2>/dev/null || xdg-open http://localhost:8443 2>/dev/null || echo "Visit http://localhost:8443"
+
+secrets-seed: ## Seed secrets into Infisical (first-time setup)
+	@bash scripts/seed-infisical.sh
 
 rebuild: ## Rebuild and restart a service (use: make rebuild s=controls)
 	@if [ -n "$(s)" ]; then \

@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, Logger, Inject } from '@nestjs/common';
 import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
-import { isSafePropertyName, safePropertySet } from '@gigachad-grc/shared';
+import { isSafePropertyName, safePropertySet, SecretsService } from '@gigachad-grc/shared';
 import { AuditService } from '../audit/audit.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationType, NotificationSeverity } from '../notifications/dto/notification.dto';
@@ -106,14 +106,134 @@ export class IntegrationsService {
     private prisma: PrismaService,
     private auditService: AuditService,
     private notificationsService: NotificationsService,
-    @Inject(STORAGE_PROVIDER) private storage: StorageProvider
+    @Inject(STORAGE_PROVIDER) private storage: StorageProvider,
+    private secretsService: SecretsService
   ) {
     this.connectorFactory = new ConnectorFactory();
     this.encryptionKey = this.validateEncryptionKey();
   }
+
+  /** Infisical secret path prefix for integration credentials */
+  private readonly INFISICAL_PREFIX = 'infisical://';
+
+  /**
+   * Generate an opaque Infisical secret name for an integration field
+   */
+  private infisicalSecretName(
+    organizationId: string,
+    integrationId: string,
+    fieldName: string
+  ): string {
+    return `int_${organizationId.slice(0, 8)}_${integrationId.slice(0, 8)}_${fieldName}`;
+  }
+
+  /**
+   * Infisical path for integration credentials
+   */
+  private infisicalSecretPath(organizationId: string): string {
+    return `/integrations/${organizationId}`;
+  }
+
+  /**
+   * Store a sensitive field in Infisical and return a reference string
+   */
+  private async storeInInfisical(
+    organizationId: string,
+    integrationId: string,
+    fieldName: string,
+    value: string
+  ): Promise<string> {
+    const secretName = this.infisicalSecretName(organizationId, integrationId, fieldName);
+    const secretPath = this.infisicalSecretPath(organizationId);
+    await this.secretsService.setSecret(secretName, value, secretPath);
+    return `${this.INFISICAL_PREFIX}${secretName}`;
+  }
+
+  /**
+   * Retrieve a sensitive field from Infisical by its reference string
+   */
+  private async fetchFromInfisical(
+    reference: string,
+    organizationId: string
+  ): Promise<string | undefined> {
+    const secretName = reference.replace(this.INFISICAL_PREFIX, '');
+    const secretPath = this.infisicalSecretPath(organizationId);
+    return this.secretsService.getSecret(secretName, secretPath);
+  }
+
+  /**
+   * Check if a value is an Infisical reference
+   */
+  private isInfisicalRef(value: unknown): value is string {
+    return typeof value === 'string' && value.startsWith(this.INFISICAL_PREFIX);
+  }
+
+  /**
+   * Clean up Infisical secrets for a deleted integration
+   */
+  private async cleanupInfisicalSecrets(
+    organizationId: string,
+    integrationId: string,
+    config: Record<string, unknown>
+  ): Promise<void> {
+    if (!this.secretsService.isEnabled()) return;
+
+    for (const [key, value] of Object.entries(config)) {
+      if (this.isInfisicalRef(value)) {
+        try {
+          const secretName = (value as string).replace(this.INFISICAL_PREFIX, '');
+          const secretPath = this.infisicalSecretPath(organizationId);
+          await this.secretsService.deleteSecret(secretName, secretPath);
+        } catch (error) {
+          this.logger.warn(`Failed to cleanup Infisical secret for ${key}: ${error}`);
+        }
+      } else if (typeof value === 'object' && value !== null) {
+        await this.cleanupInfisicalSecrets(
+          organizationId,
+          integrationId,
+          value as Record<string, unknown>
+        );
+      }
+    }
+  }
   // ============================================
   // Encryption/Decryption for Sensitive Data
   // ============================================
+
+  /**
+   * Check if a string value is already in our encrypted format (iv:authTag:salt:encrypted or legacy iv:authTag:encrypted).
+   * Used to prevent double-encryption when the frontend sends back encrypted values.
+   */
+  private isEncryptedFormat(value: string): boolean {
+    if (!value || typeof value !== 'string') return false;
+    const parts = value.split(':');
+    const hexPattern = /^[0-9a-f]+$/i;
+    if (parts.length === 4) {
+      // New format: iv(32 hex chars):authTag(32):salt(32):encrypted(hex)
+      return (
+        parts[0].length === 32 &&
+        parts[1].length === 32 &&
+        parts[2].length === 32 &&
+        parts[3].length > 0 &&
+        hexPattern.test(parts[0]) &&
+        hexPattern.test(parts[1]) &&
+        hexPattern.test(parts[2]) &&
+        hexPattern.test(parts[3])
+      );
+    }
+    if (parts.length === 3) {
+      // Legacy format: iv(32):authTag(32):encrypted(hex)
+      return (
+        parts[0].length === 32 &&
+        parts[1].length === 32 &&
+        parts[2].length > 0 &&
+        hexPattern.test(parts[0]) &&
+        hexPattern.test(parts[1]) &&
+        hexPattern.test(parts[2])
+      );
+    }
+    return false;
+  }
 
   private encrypt(text: string): string {
     if (!text) return text;
@@ -133,11 +253,15 @@ export class IntegrationsService {
     return `${iv.toString('hex')}:${authTag.toString('hex')}:${salt.toString('hex')}:${encrypted}`;
   }
 
-  private decrypt(encryptedText: string): string {
+  private decrypt(encryptedText: string, depth = 0): string {
     if (!encryptedText) return encryptedText;
+    // Guard against infinite recursion (max 3 layers should be more than enough)
+    if (depth > 3) return encryptedText;
 
     try {
       const parts = encryptedText.split(':');
+
+      let decrypted: string;
 
       // Support both old format (3 parts: iv:authTag:encrypted) and new format (4 parts: iv:authTag:salt:encrypted)
       if (parts.length === 3) {
@@ -150,10 +274,8 @@ export class IntegrationsService {
         const decipher = crypto.createDecipheriv(this.algorithm, key, iv);
         decipher.setAuthTag(authTag);
 
-        let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+        decrypted = decipher.update(encrypted, 'hex', 'utf8');
         decrypted += decipher.final('utf8');
-
-        return decrypted;
       } else if (parts.length === 4) {
         // New format with random salt
         const [ivHex, authTagHex, saltHex, encrypted] = parts;
@@ -165,14 +287,22 @@ export class IntegrationsService {
         const decipher = crypto.createDecipheriv(this.algorithm, key, iv);
         decipher.setAuthTag(authTag);
 
-        let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+        decrypted = decipher.update(encrypted, 'hex', 'utf8');
         decrypted += decipher.final('utf8');
-
-        return decrypted;
       } else {
         // Not encrypted or invalid format
         return encryptedText;
       }
+
+      // Handle double-encrypted values: if decrypted result is still in encrypted format,
+      // decrypt again. This can happen when the frontend sends back raw encrypted values
+      // that get re-encrypted on update.
+      if (this.isEncryptedFormat(decrypted)) {
+        this.logger.warn('Detected double-encrypted value, decrypting inner layer');
+        return this.decrypt(decrypted, depth + 1);
+      }
+
+      return decrypted;
     } catch {
       this.logger.warn('Failed to decrypt value, returning as-is');
       return encryptedText;
@@ -180,9 +310,15 @@ export class IntegrationsService {
   }
 
   /**
-   * Encrypt sensitive fields in config object before storing
+   * Encrypt sensitive fields in config object before storing.
+   * When Infisical is enabled, stores sensitive fields there and saves a reference.
+   * Falls back to local AES-256-GCM encryption otherwise.
    */
-  private encryptConfig(config: Record<string, unknown>): Record<string, unknown> {
+  private async encryptConfigAsync(
+    config: Record<string, unknown>,
+    organizationId: string,
+    integrationId: string
+  ): Promise<Record<string, unknown>> {
     if (!config) return config;
 
     const encrypted: Record<string, unknown> = {};
@@ -194,15 +330,45 @@ export class IntegrationsService {
         continue;
       }
 
-      if (typeof value === 'object' && value !== null) {
+      if (Array.isArray(value)) {
+        // Preserve arrays as-is (e.g., evidenceTypes)
+        safePropertySet(encrypted, key, value);
+      } else if (typeof value === 'object' && value !== null) {
         // Recursively encrypt nested objects
-        safePropertySet(encrypted, key, this.encryptConfig(value as Record<string, unknown>));
+        safePropertySet(
+          encrypted,
+          key,
+          await this.encryptConfigAsync(
+            value as Record<string, unknown>,
+            organizationId,
+            integrationId
+          )
+        );
       } else if (
         typeof value === 'string' &&
         SENSITIVE_FIELDS.some((f) => key.toLowerCase().includes(f.toLowerCase()))
       ) {
-        // Encrypt sensitive string fields
-        safePropertySet(encrypted, key, this.encrypt(value));
+        // Skip already-encrypted values to prevent double encryption
+        // (can happen when frontend sends back raw encrypted values on update)
+        if (this.isEncryptedFormat(value)) {
+          safePropertySet(encrypted, key, value);
+        } else if (this.isInfisicalRef(value)) {
+          // Preserve existing Infisical references
+          safePropertySet(encrypted, key, value);
+        } else if (this.secretsService.isEnabled()) {
+          // Store in Infisical if available, otherwise encrypt locally
+          try {
+            const ref = await this.storeInInfisical(organizationId, integrationId, key, value);
+            safePropertySet(encrypted, key, ref);
+          } catch (error) {
+            this.logger.warn(
+              `Failed to store ${key} in Infisical, falling back to local encryption: ${error}`
+            );
+            safePropertySet(encrypted, key, this.encrypt(value));
+          }
+        } else {
+          safePropertySet(encrypted, key, this.encrypt(value));
+        }
       } else {
         safePropertySet(encrypted, key, value);
       }
@@ -212,9 +378,50 @@ export class IntegrationsService {
   }
 
   /**
-   * Decrypt sensitive fields in config object for internal use
+   * Synchronous encrypt for backward compatibility (no Infisical).
    */
-  private decryptConfig(config: Record<string, unknown>): Record<string, unknown> {
+  private encryptConfig(config: Record<string, unknown>): Record<string, unknown> {
+    if (!config) return config;
+
+    const encrypted: Record<string, unknown> = {};
+
+    for (const [key, value] of Object.entries(config)) {
+      if (!isSafePropertyName(key)) {
+        this.logger.warn(`Skipping blocked property name in encryptConfig: ${key}`);
+        continue;
+      }
+
+      if (Array.isArray(value)) {
+        // Preserve arrays as-is (e.g., evidenceTypes)
+        safePropertySet(encrypted, key, value);
+      } else if (typeof value === 'object' && value !== null) {
+        safePropertySet(encrypted, key, this.encryptConfig(value as Record<string, unknown>));
+      } else if (
+        typeof value === 'string' &&
+        SENSITIVE_FIELDS.some((f) => key.toLowerCase().includes(f.toLowerCase()))
+      ) {
+        // Skip already-encrypted values to prevent double encryption
+        if (this.isEncryptedFormat(value)) {
+          safePropertySet(encrypted, key, value);
+        } else {
+          safePropertySet(encrypted, key, this.encrypt(value));
+        }
+      } else {
+        safePropertySet(encrypted, key, value);
+      }
+    }
+
+    return encrypted;
+  }
+
+  /**
+   * Decrypt sensitive fields in config object for internal use.
+   * Supports both Infisical references (infisical://...) and local encrypted values.
+   */
+  private async decryptConfigAsync(
+    config: Record<string, unknown>,
+    organizationId: string
+  ): Promise<Record<string, unknown>> {
     if (!config) return config;
 
     const decrypted: Record<string, unknown> = {};
@@ -226,14 +433,62 @@ export class IntegrationsService {
         continue;
       }
 
-      if (typeof value === 'object' && value !== null) {
+      if (Array.isArray(value)) {
+        // Preserve arrays as-is (e.g., evidenceTypes)
+        safePropertySet(decrypted, key, value);
+      } else if (typeof value === 'object' && value !== null) {
         // Recursively decrypt nested objects
+        safePropertySet(
+          decrypted,
+          key,
+          await this.decryptConfigAsync(value as Record<string, unknown>, organizationId)
+        );
+      } else if (this.isInfisicalRef(value)) {
+        // Fetch from Infisical
+        try {
+          const fetched = await this.fetchFromInfisical(value, organizationId);
+          safePropertySet(decrypted, key, fetched || value);
+        } catch (error) {
+          this.logger.warn(`Failed to fetch ${key} from Infisical: ${error}`);
+          safePropertySet(decrypted, key, value);
+        }
+      } else if (
+        typeof value === 'string' &&
+        SENSITIVE_FIELDS.some((f) => key.toLowerCase().includes(f.toLowerCase()))
+      ) {
+        // Decrypt locally (legacy or fallback)
+        safePropertySet(decrypted, key, this.decrypt(value));
+      } else {
+        safePropertySet(decrypted, key, value);
+      }
+    }
+
+    return decrypted;
+  }
+
+  /**
+   * Synchronous decrypt for backward compatibility (no Infisical refs).
+   */
+  private decryptConfig(config: Record<string, unknown>): Record<string, unknown> {
+    if (!config) return config;
+
+    const decrypted: Record<string, unknown> = {};
+
+    for (const [key, value] of Object.entries(config)) {
+      if (!isSafePropertyName(key)) {
+        this.logger.warn(`Skipping blocked property name in decryptConfig: ${key}`);
+        continue;
+      }
+
+      if (Array.isArray(value)) {
+        // Preserve arrays as-is (e.g., evidenceTypes)
+        safePropertySet(decrypted, key, value);
+      } else if (typeof value === 'object' && value !== null) {
         safePropertySet(decrypted, key, this.decryptConfig(value as Record<string, unknown>));
       } else if (
         typeof value === 'string' &&
         SENSITIVE_FIELDS.some((f) => key.toLowerCase().includes(f.toLowerCase()))
       ) {
-        // Decrypt sensitive string fields
         safePropertySet(decrypted, key, this.decrypt(value));
       } else {
         safePropertySet(decrypted, key, value);
@@ -335,8 +590,13 @@ export class IntegrationsService {
       throw new BadRequestException(`Invalid integration type: ${dto.type}`);
     }
 
-    // Encrypt sensitive fields in config before storing
-    const encryptedConfig = dto.config ? this.encryptConfig(dto.config) : {};
+    // Generate a temporary ID for Infisical path (will be replaced with actual ID)
+    const tempId = crypto.randomUUID();
+
+    // Encrypt sensitive fields in config before storing (uses Infisical when available)
+    const encryptedConfig = dto.config
+      ? await this.encryptConfigAsync(dto.config, organizationId, tempId)
+      : {};
 
     const integration = await this.prisma.integration.create({
       data: {
@@ -391,8 +651,8 @@ export class IntegrationsService {
     // Merge config if provided (don't overwrite entire config)
     let newConfig = existing.config as Record<string, unknown>;
     if (dto.config) {
-      // Encrypt sensitive fields in the new config before merging
-      const encryptedNewConfig = this.encryptConfig(dto.config);
+      // Encrypt sensitive fields in the new config before merging (uses Infisical when available)
+      const encryptedNewConfig = await this.encryptConfigAsync(dto.config, organizationId, id);
       newConfig = { ...newConfig, ...encryptedNewConfig };
     }
 
@@ -458,6 +718,15 @@ export class IntegrationsService {
       throw new NotFoundException('Integration not found');
     }
 
+    // Clean up Infisical secrets for this integration
+    if (existing.config && this.secretsService.isEnabled()) {
+      await this.cleanupInfisicalSecrets(
+        organizationId,
+        id,
+        existing.config as Record<string, unknown>
+      );
+    }
+
     await this.prisma.integration.delete({
       where: { id },
     });
@@ -494,8 +763,26 @@ export class IntegrationsService {
       throw new NotFoundException('Integration not found');
     }
 
-    // Decrypt config for use in connection testing
-    const config = this.decryptConfig(integration.config as Record<string, unknown>);
+    // Decrypt config for use in connection testing (supports Infisical refs)
+    const rawConfig = await this.decryptConfigAsync(
+      integration.config as Record<string, unknown>,
+      organizationId
+    );
+
+    // Flatten credentials into top-level config so connectors can access fields
+    // directly (quick setup stores them under config.credentials)
+    const credentials = rawConfig.credentials as Record<string, unknown> | undefined;
+    const flattened = credentials
+      ? { ...rawConfig, ...credentials }
+      : { ...rawConfig };
+
+    // Map common field aliases (quick setup may use different names than configFields)
+    if (flattened.baseUrl && !flattened.siteUrl) {
+      flattened.siteUrl = flattened.baseUrl;
+    }
+
+    const config = flattened;
+
     const typeMeta = INTEGRATION_TYPES[integration.type as keyof typeof INTEGRATION_TYPES];
 
     if (!typeMeta) {
@@ -574,8 +861,11 @@ export class IntegrationsService {
       );
     }
 
-    // Decrypt config for use in sync operations
-    const config = this.decryptConfig(integration.config as Record<string, unknown>);
+    // Decrypt config for use in sync operations (supports Infisical refs)
+    const config = await this.decryptConfigAsync(
+      integration.config as Record<string, unknown>,
+      organizationId
+    );
 
     // Create a sync job
     const syncJob = await this.prisma.syncJob.create({
@@ -1252,14 +1542,34 @@ export class IntegrationsService {
     const typeMeta = INTEGRATION_TYPES[type as keyof typeof INTEGRATION_TYPES];
     if (!typeMeta) return config;
 
-    const masked = { ...config };
-    for (const field of typeMeta.configFields) {
-      if (field.type === 'password' && masked[field.key]) {
-        // Show only last 4 characters
-        const value = String(masked[field.key]);
-        masked[field.key] = value.length > 4 ? '••••••••' + value.slice(-4) : '••••••••';
+    const passwordFieldKeys = new Set(
+      typeMeta.configFields.filter((f) => f.type === 'password').map((f) => f.key)
+    );
+
+    const maskValue = (val: unknown): string => {
+      const str = String(val);
+      return str.length > 4 ? '••••••••' + str.slice(-4) : '••••••••';
+    };
+
+    const maskObject = (obj: Record<string, unknown>): Record<string, unknown> => {
+      const result = { ...obj };
+      for (const [key, value] of Object.entries(result)) {
+        if (passwordFieldKeys.has(key) && value) {
+          result[key] = maskValue(value);
+        } else if (
+          typeof value === 'string' &&
+          SENSITIVE_FIELDS.some((f) => key.toLowerCase().includes(f.toLowerCase())) &&
+          this.isEncryptedFormat(value)
+        ) {
+          // Mask any encrypted sensitive field even if not in configFields
+          result[key] = '••••••••';
+        } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+          result[key] = maskObject(value as Record<string, unknown>);
+        }
       }
-    }
-    return masked;
+      return result;
+    };
+
+    return maskObject(config);
   }
 }
