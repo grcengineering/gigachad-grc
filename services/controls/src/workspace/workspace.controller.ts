@@ -50,6 +50,7 @@ export class WorkspaceController {
    * Check if multi-workspace mode is enabled for the organization
    */
   @Get('status')
+  @RequirePermission(Resource.WORKSPACES, Action.READ)
   async getMultiWorkspaceStatus(@Req() req: WorkspaceRequest) {
     const enabled = await this.workspaceService.isMultiWorkspaceEnabled(req.user.organizationId);
     return { enabled };
@@ -72,6 +73,7 @@ export class WorkspaceController {
    * List all workspaces (filtered by user access for non-admins)
    */
   @Get()
+  @RequirePermission(Resource.WORKSPACES, Action.READ)
   async findAll(@Req() req: WorkspaceRequest, @Query() filters: WorkspaceFilterDto) {
     return this.workspaceService.findAll(
       req.user.organizationId,
@@ -94,6 +96,7 @@ export class WorkspaceController {
    * Get a single workspace by ID
    */
   @Get(':id')
+  @RequirePermission(Resource.WORKSPACES, Action.READ)
   async findOne(@Param('id') id: string, @Req() req: WorkspaceRequest) {
     return this.workspaceService.findOne(id, req.user.organizationId, req.user.id || req.user.userId, req.user.role);
   }
@@ -102,6 +105,7 @@ export class WorkspaceController {
    * Get workspace dashboard
    */
   @Get(':id/dashboard')
+  @RequirePermission(Resource.WORKSPACES, Action.READ)
   async getDashboard(@Param('id') id: string, @Req() req: WorkspaceRequest) {
     return this.workspaceService.getDashboard(
       id,
@@ -143,6 +147,7 @@ export class WorkspaceController {
    * List workspace members
    */
   @Get(':id/members')
+  @RequirePermission(Resource.WORKSPACES, Action.READ)
   async listMembers(@Param('id') id: string, @Req() req: WorkspaceRequest) {
     const workspace = await this.workspaceService.findOne(
       id,
