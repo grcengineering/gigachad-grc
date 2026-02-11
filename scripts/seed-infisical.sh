@@ -124,31 +124,30 @@ for secret_name in "${APP_SECRETS[@]}"; do
         continue
     fi
 
+    # Build JSON payload safely using jq to prevent shell injection
+    json_payload=$(jq -n \
+        --arg ws "default" \
+        --arg env "dev" \
+        --arg val "$value" \
+        --arg typ "shared" \
+        '{workspaceId: $ws, environment: $env, secretValue: $val, type: $typ}')
+
     # Create/update secret in Infisical via API
-    response=$(curl -sf -X POST "${INFISICAL_URL}/api/v3/secrets/raw/${secret_name}" \
-        -H "Authorization: Bearer ${TOKEN}" \
+    # Token passed via env var to avoid exposure in process listing
+    response=$(AUTH_TOKEN="$TOKEN" curl -sf -X POST "${INFISICAL_URL}/api/v3/secrets/raw/${secret_name}" \
+        -H "Authorization: Bearer $AUTH_TOKEN" \
         -H "Content-Type: application/json" \
-        -d "{
-            \"workspaceId\": \"default\",
-            \"environment\": \"dev\",
-            \"secretValue\": \"${value}\",
-            \"type\": \"shared\"
-        }" 2>&1) || true
+        -d "$json_payload" 2>&1) || true
 
     if echo "$response" | grep -q '"secret"' 2>/dev/null; then
         echo -e "  ${GREEN}✓${NC} ${secret_name}"
         imported=$((imported + 1))
     else
         # Try updating if create fails (secret may already exist)
-        response=$(curl -sf -X PATCH "${INFISICAL_URL}/api/v3/secrets/raw/${secret_name}" \
-            -H "Authorization: Bearer ${TOKEN}" \
+        response=$(AUTH_TOKEN="$TOKEN" curl -sf -X PATCH "${INFISICAL_URL}/api/v3/secrets/raw/${secret_name}" \
+            -H "Authorization: Bearer $AUTH_TOKEN" \
             -H "Content-Type: application/json" \
-            -d "{
-                \"workspaceId\": \"default\",
-                \"environment\": \"dev\",
-                \"secretValue\": \"${value}\",
-                \"type\": \"shared\"
-            }" 2>&1) || true
+            -d "$json_payload" 2>&1) || true
 
         if echo "$response" | grep -q '"secret"' 2>/dev/null; then
             echo -e "  ${GREEN}✓${NC} ${secret_name} (updated)"
