@@ -123,7 +123,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
                   <WorkspaceProvider>
                     {/* Global UI components */}
                     <NetworkStatus />
-                    <SessionWarning warningThreshold={5 * 60 * 1000} />
+                    <SessionWarning warningThreshold={2 * 60 * 1000} />
                     <App />
                     <Toaster
                       position="top-right"

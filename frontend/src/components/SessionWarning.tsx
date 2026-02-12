@@ -3,50 +3,41 @@ import { ExclamationTriangleIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { useAuth } from '@/contexts/AuthContext';
 
 interface SessionWarningProps {
-  // Time in ms before expiry to show warning (default: 5 minutes)
+  // Time in ms before SSO session expiry to show warning (default: 2 minutes)
   warningThreshold?: number;
   // Callback when user chooses to extend session
   onExtendSession?: () => void;
 }
 
 /**
- * SessionWarning - Warns users before their session expires
- * Shows a dismissible banner with option to extend session
+ * SessionWarning - Warns users before their SSO session expires.
+ *
+ * Tracks the Keycloak SSO session (via refresh token expiry), NOT the
+ * short-lived access token. Access tokens auto-refresh silently every few
+ * minutes — users should never see warnings about those. This component
+ * only shows a warning when the actual SSO session is about to end
+ * (default: 30 minutes of inactivity).
  */
 export default function SessionWarning({
-  warningThreshold = 5 * 60 * 1000, // 5 minutes
+  warningThreshold = 2 * 60 * 1000, // 2 minutes
   onExtendSession,
 }: SessionWarningProps) {
-  const { isAuthenticated, token } = useAuth();
+  const { isAuthenticated, sessionExpiry } = useAuth();
   const [showWarning, setShowWarning] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
   const [dismissed, setDismissed] = useState(false);
 
-  // Parse JWT to get expiration time
-  const getTokenExpiry = useCallback((token: string): number | null => {
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      return payload.exp ? payload.exp * 1000 : null; // Convert to ms
-    } catch {
-      return null;
-    }
-  }, []);
-
   useEffect(() => {
-    if (!isAuthenticated || !token || dismissed) {
+    if (!isAuthenticated || !sessionExpiry || dismissed) {
       setShowWarning(false);
       return;
     }
 
-    const expiry = getTokenExpiry(token);
-    if (!expiry) return;
-
     const checkExpiry = () => {
-      const now = Date.now();
-      const remaining = expiry - now;
+      const remaining = sessionExpiry - Date.now();
 
       if (remaining <= 0) {
-        // Session expired - auth context will handle redirect
+        // Session expired — auth context will handle redirect
         setShowWarning(false);
       } else if (remaining <= warningThreshold) {
         setShowWarning(true);
@@ -57,12 +48,16 @@ export default function SessionWarning({
       }
     };
 
-    // Check immediately and then every 10 seconds
     checkExpiry();
     const interval = setInterval(checkExpiry, 10000);
 
     return () => clearInterval(interval);
-  }, [isAuthenticated, token, warningThreshold, dismissed, getTokenExpiry]);
+  }, [isAuthenticated, sessionExpiry, warningThreshold, dismissed]);
+
+  // Reset dismissed state when sessionExpiry changes (token was refreshed)
+  useEffect(() => {
+    setDismissed(false);
+  }, [sessionExpiry]);
 
   const handleExtend = useCallback(() => {
     onExtendSession?.();
@@ -94,7 +89,7 @@ export default function SessionWarning({
           <div className="flex-1">
             <h4 className="font-semibold">Session Expiring Soon</h4>
             <p className="text-sm text-yellow-100 mt-1">
-              Your session will expire in {formatTime(timeRemaining)}. 
+              Your session will expire in {formatTime(timeRemaining)}.
               Save your work to avoid losing any changes.
             </p>
             <div className="flex gap-2 mt-3">
@@ -125,4 +120,3 @@ export default function SessionWarning({
     </div>
   );
 }
-

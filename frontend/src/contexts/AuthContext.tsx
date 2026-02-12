@@ -24,6 +24,8 @@ interface AuthContextType {
   isLoading: boolean;
   user: User | null;
   token: string | null;
+  /** Epoch ms when the SSO session expires (null if unknown or dev mode) */
+  sessionExpiry: number | null;
   login: () => void;
   logout: () => void;
   devLogin?: () => void;
@@ -58,6 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [sessionExpiry, setSessionExpiry] = useState<number | null>(null);
 
   // BroadcastChannel for cross-tab auth synchronization
   const authChannel = useRef<BroadcastChannel | null>(null);
@@ -200,6 +203,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         setIsAuthenticated(authenticated);
 
+        // Track SSO session expiry from the refresh token
+        // The refresh token exp reflects the SSO session, not the short-lived access token
+        const updateSessionExpiry = () => {
+          const refreshParsed = kc.refreshTokenParsed as Record<string, unknown> | undefined;
+          if (refreshParsed?.exp) {
+            setSessionExpiry((refreshParsed.exp as number) * 1000);
+          }
+        };
+        updateSessionExpiry();
+
         // Token refresh
         kc.onTokenExpired = () => {
           if (import.meta.env.DEV) {
@@ -212,10 +225,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               }
               if (refreshed) {
                 setToken(kc.token || null);
+                updateSessionExpiry();
               }
             })
             .catch(() => {
-              console.error('Failed to refresh token');
+              console.error('Failed to refresh token — SSO session expired');
+              setSessionExpiry(Date.now()); // Mark as expired now
               setIsAuthenticated(false);
               setUser(null);
               setToken(null);
@@ -348,6 +363,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         user,
         token,
+        sessionExpiry,
         login,
         logout,
         devLogin:
@@ -369,6 +385,7 @@ const defaultAuthContext: AuthContextType = {
   isLoading: true,
   user: null,
   token: null,
+  sessionExpiry: null,
   login: () => {},
   logout: () => {},
   hasRole: () => false,
