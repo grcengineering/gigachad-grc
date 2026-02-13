@@ -133,9 +133,9 @@ for secret_name in "${APP_SECRETS[@]}"; do
         '{workspaceId: $ws, environment: $env, secretValue: $val, type: $typ}')
 
     # Create/update secret in Infisical via API
-    # Token passed via env var to avoid exposure in process listing
-    response=$(AUTH_TOKEN="$TOKEN" curl -sf -X POST "${INFISICAL_URL}/api/v3/secrets/raw/${secret_name}" \
-        -H "Authorization: Bearer $AUTH_TOKEN" \
+    # Use curl --config to pass auth header via stdin, avoiding token in process listing
+    response=$(curl -sf -X POST "${INFISICAL_URL}/api/v3/secrets/raw/${secret_name}" \
+        --config <(printf 'header = "Authorization: Bearer %s"\n' "$TOKEN") \
         -H "Content-Type: application/json" \
         -d "$json_payload" 2>&1) || true
 
@@ -144,8 +144,8 @@ for secret_name in "${APP_SECRETS[@]}"; do
         imported=$((imported + 1))
     else
         # Try updating if create fails (secret may already exist)
-        response=$(AUTH_TOKEN="$TOKEN" curl -sf -X PATCH "${INFISICAL_URL}/api/v3/secrets/raw/${secret_name}" \
-            -H "Authorization: Bearer $AUTH_TOKEN" \
+        response=$(curl -sf -X PATCH "${INFISICAL_URL}/api/v3/secrets/raw/${secret_name}" \
+            --config <(printf 'header = "Authorization: Bearer %s"\n' "$TOKEN") \
             -H "Content-Type: application/json" \
             -d "$json_payload" 2>&1) || true
 
