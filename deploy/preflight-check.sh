@@ -124,6 +124,8 @@ if [ -f "$ENV_FILE" ]; then
         "JWT_SECRET"
         "APP_DOMAIN"
         "ACME_EMAIL"
+        "INFISICAL_ENCRYPTION_KEY"
+        "INFISICAL_AUTH_SECRET"
     )
     
     for var in "${REQUIRED_VARS[@]}"; do
@@ -271,10 +273,33 @@ else
 fi
 
 # =============================================================================
-# 8. Check SSL/TLS (Production Only)
+# 8. Check Infisical Secrets Manager
 # =============================================================================
 
-section "Checking SSL/TLS Configuration"
+section "Checking Infisical Secrets Manager"
+
+INFISICAL_PORT="${INFISICAL_PORT:-8443}"
+if curl -sf "http://localhost:${INFISICAL_PORT}/api/status" > /dev/null 2>&1; then
+    check_pass "Infisical is healthy (port ${INFISICAL_PORT})"
+else
+    check_warn "Infisical is not responding on port ${INFISICAL_PORT}"
+    check_info "Start with: docker compose up -d infisical"
+fi
+
+if [ -f "$ENV_FILE" ]; then
+    INFISICAL_KEY=$(grep "^INFISICAL_ENCRYPTION_KEY=" "$ENV_FILE" 2>/dev/null | cut -d '=' -f2)
+    if [ -n "$INFISICAL_KEY" ] && [ ${#INFISICAL_KEY} -ge 32 ]; then
+        check_pass "INFISICAL_ENCRYPTION_KEY is set (${#INFISICAL_KEY} chars)"
+    elif [ -n "$INFISICAL_KEY" ]; then
+        check_warn "INFISICAL_ENCRYPTION_KEY should be at least 32 characters"
+    fi
+fi
+
+# =============================================================================
+# 9. Check SSL/TLS (Production Only)
+# =============================================================================
+
+section "Checking SSL/TLS Configuration (Production)"
 
 if [ -f "$ENV_FILE" ]; then
     DOMAIN=$(grep "^APP_DOMAIN=" "$ENV_FILE" 2>/dev/null | cut -d '=' -f2)

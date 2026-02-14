@@ -57,10 +57,13 @@ export default function IntegrationConfigModal({
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: any) => 
-      existingIntegration 
-        ? integrationsApi.update(existingIntegration.id, data)
-        : integrationsApi.create(data),
+    mutationFn: (data: any) => {
+      if (existingIntegration) {
+        const { type, ...updateData } = data;
+        return integrationsApi.update(existingIntegration.id, updateData);
+      }
+      return integrationsApi.create(data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['integrations'] });
       queryClient.invalidateQueries({ queryKey: ['integrations-stats'] });

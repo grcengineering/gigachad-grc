@@ -182,7 +182,7 @@ setup_environment() {
     POSTGRES_PASSWORD=$(openssl rand -base64 24 2>/dev/null | tr -d '\n' | tr '+/' '-_' || head -c 24 /dev/urandom | base64 | tr '+/' '-_')
     REDIS_PASSWORD=$(openssl rand -base64 24 2>/dev/null | tr -d '\n' | tr '+/' '-_' || head -c 24 /dev/urandom | base64 | tr '+/' '-_')
     MINIO_PASSWORD=$(openssl rand -base64 20 2>/dev/null | tr -d '\n' | tr '+/' '-_' || head -c 20 /dev/urandom | base64 | tr '+/' '-_')
-    
+
     cat > ".env" << EOF
 # ============================================================================
 # GigaChad GRC - Environment Configuration
@@ -229,6 +229,10 @@ RATE_LIMIT_MAX_REQUESTS=1000
 
 # Logging
 LOG_LEVEL=debug
+
+# Secrets Management
+SECRETS_PROVIDER=env
+# SECRETS_CACHE_TTL=300
 
 # Frontend
 VITE_API_URL=http://localhost:3001
@@ -435,7 +439,7 @@ reset_all() {
     docker compose down -v 2>/dev/null || docker-compose down -v 2>/dev/null || true
     
     log_substep "Removing .env..."
-    rm -f .env
+    rm -f .env .infisical-initialized
     
     log_substep "Removing node_modules..."
     rm -rf node_modules
