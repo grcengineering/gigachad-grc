@@ -15,6 +15,7 @@
         install build test lint \
         db-shell redis-cli \
         frontend backend services \
+        secrets-ui secrets-seed \
         backup restore
 
 .DEFAULT_GOAL := help
@@ -39,6 +40,9 @@ help: ## Show this help message
 	@echo ""
 	@echo "$(CYAN)Docker Commands:$(NC)"
 	@grep -E '^(up|down|logs|ps|restart):.*##' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  $(GREEN)%-14s$(NC) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(CYAN)Secrets Management:$(NC)"
+	@grep -E '^(secrets-ui|secrets-seed):.*##' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  $(GREEN)%-14s$(NC) %s\n", $$1, $$2}'
 	@echo ""
 	@echo "$(CYAN)Development:$(NC)"
 	@grep -E '^(install|build|test|lint|frontend|backend):.*##' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  $(GREEN)%-14s$(NC) %s\n", $$1, $$2}'
@@ -98,6 +102,14 @@ infra: ## Start infrastructure only (postgres, redis, keycloak, rustfs)
 
 services: ## Start application services only (requires infra running)
 	docker compose up -d controls frameworks policies tprm trust audit
+
+secrets-ui: ## Open Infisical secrets UI (requires SECRETS_PROVIDER=infisical)
+	@if [ "$$(grep -s '^SECRETS_PROVIDER=' .env | cut -d= -f2)" != "infisical" ]; then echo "SECRETS_PROVIDER is not set to 'infisical'. Set it in .env first."; exit 1; fi
+	@open http://localhost:8443 2>/dev/null || xdg-open http://localhost:8443 2>/dev/null || echo "Visit http://localhost:8443"
+
+secrets-seed: ## Seed secrets into Infisical (requires SECRETS_PROVIDER=infisical)
+	@if [ "$$(grep -s '^SECRETS_PROVIDER=' .env | cut -d= -f2)" != "infisical" ]; then echo "SECRETS_PROVIDER is not set to 'infisical'. Set it in .env first."; exit 1; fi
+	@bash scripts/seed-infisical.sh
 
 rebuild: ## Rebuild and restart a service (use: make rebuild s=controls)
 	@if [ -n "$(s)" ]; then \
