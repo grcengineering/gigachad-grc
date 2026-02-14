@@ -172,3 +172,6 @@ export * from './session';
 
 // Security (Rate Limiting and SSRF protection)
 export * from './security';
+
+// Secrets (Infisical integration)
+export * from './secrets';

@@ -126,6 +126,10 @@ RATE_LIMIT_MAX_REQUESTS=1000
 # Logging
 LOG_LEVEL=debug
 
+# Secrets Management
+SECRETS_PROVIDER=env
+# SECRETS_CACHE_TTL=300
+
 # Frontend
 VITE_API_URL=http://localhost:3001
 VITE_ENABLE_DEV_AUTH=true
