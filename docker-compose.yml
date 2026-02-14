@@ -193,17 +193,20 @@ services:
       start_period: 10s
 
   # ===========================================
-  # Secrets Management - Infisical (Self-Hosted)
-  # Centralized secret management with audit trail
+  # Secrets Management - Infisical (Optional)
+  # Only starts with: docker compose --profile infisical up -d
+  # Set SECRETS_PROVIDER=infisical in .env to use
   # ===========================================
   infisical:
     image: infisical/infisical:v0.158.2
     container_name: grc-infisical
+    profiles:
+      - infisical
     security_opt:
       - no-new-privileges:true
     environment:
-      ENCRYPTION_KEY: ${INFISICAL_ENCRYPTION_KEY:?INFISICAL_ENCRYPTION_KEY is required}
-      AUTH_SECRET: ${INFISICAL_AUTH_SECRET:?INFISICAL_AUTH_SECRET is required}
+      ENCRYPTION_KEY: ${INFISICAL_ENCRYPTION_KEY:-}
+      AUTH_SECRET: ${INFISICAL_AUTH_SECRET:-}
       DB_CONNECTION_URI: postgresql://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@postgres:5432/infisical
       REDIS_URL: redis://:${REDIS_PASSWORD:?}@redis:6379/1
       SITE_URL: http://localhost:8443
@@ -219,7 +222,8 @@ services:
       - grc-network
     restart: unless-stopped
     healthcheck:
-      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:8080/api/status']
+      test:
+        ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:8080/api/status']
       interval: 15s
       timeout: 10s
       retries: 10
@@ -285,8 +289,7 @@ services:
         condition: service_started
       rustfs:
         condition: service_healthy
-      infisical:
-        condition: service_healthy
+
     networks:
       - grc-network
     labels:
@@ -361,8 +364,7 @@ services:
         condition: service_started
       rustfs:
         condition: service_healthy
-      infisical:
-        condition: service_healthy
+
     networks:
       - grc-network
     labels:
@@ -414,8 +416,7 @@ services:
         condition: service_started
       rustfs:
         condition: service_healthy
-      infisical:
-        condition: service_healthy
+
     networks:
       - grc-network
     labels:
@@ -466,8 +467,7 @@ services:
         condition: service_started
       rustfs:
         condition: service_healthy
-      infisical:
-        condition: service_healthy
+
     networks:
       - grc-network
     labels:
@@ -525,8 +525,7 @@ services:
         condition: service_started
       rustfs:
         condition: service_healthy
-      infisical:
-        condition: service_healthy
+
     networks:
       - grc-network
     labels:
@@ -581,8 +580,7 @@ services:
         condition: service_started
       rustfs:
         condition: service_healthy
-      infisical:
-        condition: service_healthy
+
     networks:
       - grc-network
     labels:

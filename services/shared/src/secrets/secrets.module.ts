@@ -1,16 +1,16 @@
 import { Module, DynamicModule, Global } from '@nestjs/common';
-import { SecretsService, SecretsConfig, SECRETS_PROVIDER } from './secrets.service';
+import { SecretsService, SECRETS_PROVIDER } from './secrets.service';
 
 @Global()
 @Module({})
 export class SecretsModule {
-  static forRoot(config?: SecretsConfig): DynamicModule {
+  static forRoot(): DynamicModule {
     return {
       module: SecretsModule,
       providers: [
         {
           provide: SECRETS_PROVIDER,
-          useFactory: () => new SecretsService(config),
+          useFactory: () => new SecretsService(),
         },
         {
           provide: SecretsService,

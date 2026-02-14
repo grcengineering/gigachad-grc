@@ -38,7 +38,7 @@ NC='\033[0m'
 
 # Services to manage
 SERVICES=(shared controls frameworks policies tprm trust audit)
-INFRASTRUCTURE=(postgres redis keycloak rustfs infisical)
+INFRASTRUCTURE=(postgres redis keycloak rustfs)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Helper Functions
@@ -152,20 +152,6 @@ setup_environment() {
     
     if [ -f ".env" ]; then
         log_success ".env file exists (using existing credentials)"
-        # Migrate: append Infisical bootstrap secrets if missing from older .env
-        if ! grep -q '^INFISICAL_ENCRYPTION_KEY=' ".env" 2>/dev/null; then
-            log_substep "Adding missing Infisical secrets to existing .env..."
-            local INF_ENC_KEY INF_AUTH_SEC
-            INF_ENC_KEY=$(openssl rand -hex 16 2>/dev/null || head -c 16 /dev/urandom | xxd -p | tr -d '\n')
-            INF_AUTH_SEC=$(openssl rand -base64 32 2>/dev/null | tr -d '\n' || head -c 32 /dev/urandom | base64 | tr -d '\n')
-            cat >> ".env" << INFISICAL_EOF
-
-# Infisical Secrets Manager (auto-added)
-INFISICAL_ENCRYPTION_KEY=${INF_ENC_KEY}
-INFISICAL_AUTH_SECRET=${INF_AUTH_SEC}
-INFISICAL_EOF
-            log_success "Infisical bootstrap secrets added to .env"
-        fi
         # Source the existing .env to get passwords for health checks
         set -a
         source .env 2>/dev/null || true
@@ -196,8 +182,6 @@ INFISICAL_EOF
     POSTGRES_PASSWORD=$(openssl rand -base64 24 2>/dev/null | tr -d '\n' | tr '+/' '-_' || head -c 24 /dev/urandom | base64 | tr '+/' '-_')
     REDIS_PASSWORD=$(openssl rand -base64 24 2>/dev/null | tr -d '\n' | tr '+/' '-_' || head -c 24 /dev/urandom | base64 | tr '+/' '-_')
     MINIO_PASSWORD=$(openssl rand -base64 20 2>/dev/null | tr -d '\n' | tr '+/' '-_' || head -c 20 /dev/urandom | base64 | tr '+/' '-_')
-    INFISICAL_ENCRYPTION_KEY=$(openssl rand -hex 16 2>/dev/null || head -c 16 /dev/urandom | xxd -p | tr -d '\n')
-    INFISICAL_AUTH_SECRET=$(openssl rand -base64 32 2>/dev/null | tr -d '\n' || head -c 32 /dev/urandom | base64 | tr -d '\n')
 
     cat > ".env" << EOF
 # ============================================================================
@@ -246,9 +230,9 @@ RATE_LIMIT_MAX_REQUESTS=1000
 # Logging
 LOG_LEVEL=debug
 
-# Infisical Secrets Manager
-INFISICAL_ENCRYPTION_KEY=${INFISICAL_ENCRYPTION_KEY}
-INFISICAL_AUTH_SECRET=${INFISICAL_AUTH_SECRET}
+# Secrets Management
+SECRETS_PROVIDER=env
+# SECRETS_CACHE_TTL=300
 
 # Frontend
 VITE_API_URL=http://localhost:3001
@@ -269,8 +253,8 @@ start_infrastructure() {
     
     cd "$PROJECT_ROOT"
     
-    log_substep "Starting PostgreSQL, Redis, Keycloak, RustFS, Infisical..."
-    docker compose up -d postgres redis keycloak rustfs infisical 2>/dev/null || docker-compose up -d postgres redis keycloak rustfs infisical
+    log_substep "Starting PostgreSQL, Redis, Keycloak, RustFS..."
+    docker compose up -d postgres redis keycloak rustfs 2>/dev/null || docker-compose up -d postgres redis keycloak rustfs
     
     # Wait for database
     log_substep "Waiting for PostgreSQL to be ready..."
@@ -313,25 +297,6 @@ start_infrastructure() {
         sleep 2
     done
     
-    # Wait for Infisical
-    log_substep "Waiting for Infisical to be ready..."
-    attempts=0
-    while [ $attempts -lt 30 ]; do
-        if curl -sf http://localhost:8443/api/status > /dev/null 2>&1; then
-            log_success "Infisical is ready"
-            break
-        fi
-        attempts=$((attempts + 1))
-        sleep 2
-    done
-
-    # First-time Infisical setup hint
-    if [ ! -f ".infisical-initialized" ]; then
-        log_info "Visit http://localhost:8443 to create your Infisical admin account"
-        log_info "Then run 'make secrets-seed' to import application secrets"
-        touch .infisical-initialized
-    fi
-
     log_success "All infrastructure services running"
 }
 
@@ -473,7 +438,7 @@ reset_all() {
     log_substep "Stopping containers..."
     docker compose down -v 2>/dev/null || docker-compose down -v 2>/dev/null || true
     
-    log_substep "Removing .env and Infisical state..."
+    log_substep "Removing .env..."
     rm -f .env .infisical-initialized
     
     log_substep "Removing node_modules..."
@@ -504,7 +469,6 @@ print_success_demo() {
     echo -e "   ${CYAN}API Docs${NC}        http://localhost:3001/api/docs"
     echo -e "   ${CYAN}Keycloak${NC}        http://localhost:8080 (admin/admin)"
     echo -e "   ${CYAN}RustFS Console${NC}  http://localhost:9001 (rustfsadmin/...)"
-    echo -e "   ${CYAN}Secrets${NC}         http://localhost:8443 (Infisical)"
     echo -e "   ${CYAN}Grafana${NC}         http://localhost:3003 (admin/admin)"
     echo ""
     echo -e "${BOLD}Quick Login:${NC}"

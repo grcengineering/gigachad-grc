@@ -113,65 +113,68 @@ export class IntegrationsService {
     this.encryptionKey = this.validateEncryptionKey();
   }
 
-  /** Infisical secret path prefix for integration credentials */
-  private readonly INFISICAL_PREFIX = 'infisical://';
+  /** Secret reference URI prefix for externally-stored integration credentials */
+  private readonly SECRETS_PREFIX = 'secrets://';
+  /** Legacy prefix for backwards compatibility with existing database values */
+  private readonly LEGACY_SECRETS_PREFIX = 'infisical://';
 
   /**
-   * Generate an opaque Infisical secret name for an integration field
+   * Generate an opaque secret name for an integration field
    */
-  private infisicalSecretName(
-    organizationId: string,
-    integrationId: string,
-    fieldName: string
-  ): string {
+  private secretRefName(organizationId: string, integrationId: string, fieldName: string): string {
     return `int_${organizationId.slice(0, 8)}_${integrationId.slice(0, 8)}_${fieldName}`;
   }
 
   /**
-   * Infisical path for integration credentials
+   * Secret path for integration credentials
    */
-  private infisicalSecretPath(organizationId: string): string {
+  private secretRefPath(organizationId: string): string {
     return `/integrations/${organizationId}`;
   }
 
   /**
-   * Store a sensitive field in Infisical and return a reference string
+   * Store a sensitive field in the secrets manager and return a reference string
    */
-  private async storeInInfisical(
+  private async storeInSecretsManager(
     organizationId: string,
     integrationId: string,
     fieldName: string,
     value: string
   ): Promise<string> {
-    const secretName = this.infisicalSecretName(organizationId, integrationId, fieldName);
-    const secretPath = this.infisicalSecretPath(organizationId);
+    const secretName = this.secretRefName(organizationId, integrationId, fieldName);
+    const secretPath = this.secretRefPath(organizationId);
     await this.secretsService.setSecret(secretName, value, secretPath);
-    return `${this.INFISICAL_PREFIX}${secretName}`;
+    return `${this.SECRETS_PREFIX}${secretName}`;
   }
 
   /**
-   * Retrieve a sensitive field from Infisical by its reference string
+   * Retrieve a sensitive field from the secrets manager by its reference string
    */
-  private async fetchFromInfisical(
+  private async fetchFromSecretsManager(
     reference: string,
     organizationId: string
   ): Promise<string | undefined> {
-    const secretName = reference.replace(this.INFISICAL_PREFIX, '');
-    const secretPath = this.infisicalSecretPath(organizationId);
+    const secretName = reference
+      .replace(this.SECRETS_PREFIX, '')
+      .replace(this.LEGACY_SECRETS_PREFIX, '');
+    const secretPath = this.secretRefPath(organizationId);
     return this.secretsService.getSecret(secretName, secretPath);
   }
 
   /**
-   * Check if a value is an Infisical reference
+   * Check if a value is a secrets manager reference (current or legacy prefix)
    */
-  private isInfisicalRef(value: unknown): value is string {
-    return typeof value === 'string' && value.startsWith(this.INFISICAL_PREFIX);
+  private isSecretsRef(value: unknown): value is string {
+    return (
+      typeof value === 'string' &&
+      (value.startsWith(this.SECRETS_PREFIX) || value.startsWith(this.LEGACY_SECRETS_PREFIX))
+    );
   }
 
   /**
-   * Clean up Infisical secrets for a deleted integration
+   * Clean up secrets manager entries for a deleted integration
    */
-  private async cleanupInfisicalSecrets(
+  private async cleanupSecrets(
     organizationId: string,
     integrationId: string,
     config: Record<string, unknown>
@@ -179,20 +182,18 @@ export class IntegrationsService {
     if (!this.secretsService.isEnabled()) return;
 
     for (const [key, value] of Object.entries(config)) {
-      if (this.isInfisicalRef(value)) {
+      if (this.isSecretsRef(value)) {
         try {
-          const secretName = (value as string).replace(this.INFISICAL_PREFIX, '');
-          const secretPath = this.infisicalSecretPath(organizationId);
+          const secretName = (value as string)
+            .replace(this.SECRETS_PREFIX, '')
+            .replace(this.LEGACY_SECRETS_PREFIX, '');
+          const secretPath = this.secretRefPath(organizationId);
           await this.secretsService.deleteSecret(secretName, secretPath);
         } catch (error) {
-          this.logger.warn(`Failed to cleanup Infisical secret for ${key}: ${error}`);
+          this.logger.warn(`Failed to cleanup secret for ${key}: ${error}`);
         }
       } else if (typeof value === 'object' && value !== null) {
-        await this.cleanupInfisicalSecrets(
-          organizationId,
-          integrationId,
-          value as Record<string, unknown>
-        );
+        await this.cleanupSecrets(organizationId, integrationId, value as Record<string, unknown>);
       }
     }
   }
@@ -311,7 +312,7 @@ export class IntegrationsService {
 
   /**
    * Encrypt sensitive fields in config object before storing.
-   * When Infisical is enabled, stores sensitive fields there and saves a reference.
+   * When a secrets provider is enabled, stores sensitive fields there and saves a reference.
    * Falls back to local AES-256-GCM encryption otherwise.
    */
   private async encryptConfigAsync(
@@ -352,17 +353,17 @@ export class IntegrationsService {
         // (can happen when frontend sends back raw encrypted values on update)
         if (this.isEncryptedFormat(value)) {
           safePropertySet(encrypted, key, value);
-        } else if (this.isInfisicalRef(value)) {
-          // Preserve existing Infisical references
+        } else if (this.isSecretsRef(value)) {
+          // Preserve existing secrets manager references
           safePropertySet(encrypted, key, value);
         } else if (this.secretsService.isEnabled()) {
-          // Store in Infisical if available, otherwise encrypt locally
+          // Store in secrets manager if available, otherwise encrypt locally
           try {
-            const ref = await this.storeInInfisical(organizationId, integrationId, key, value);
+            const ref = await this.storeInSecretsManager(organizationId, integrationId, key, value);
             safePropertySet(encrypted, key, ref);
           } catch (error) {
             this.logger.warn(
-              `Failed to store ${key} in Infisical, falling back to local encryption: ${error}`
+              `Failed to store ${key} in secrets manager, falling back to local encryption: ${error}`
             );
             safePropertySet(encrypted, key, this.encrypt(value));
           }
@@ -378,7 +379,7 @@ export class IntegrationsService {
   }
 
   /**
-   * Synchronous encrypt for backward compatibility (no Infisical).
+   * Synchronous encrypt for backward compatibility (no external secrets manager).
    */
   private encryptConfig(config: Record<string, unknown>): Record<string, unknown> {
     if (!config) return config;
@@ -416,7 +417,7 @@ export class IntegrationsService {
 
   /**
    * Decrypt sensitive fields in config object for internal use.
-   * Supports both Infisical references (infisical://...) and local encrypted values.
+   * Supports both secrets manager references (secrets://... or infisical://...) and local encrypted values.
    */
   private async decryptConfigAsync(
     config: Record<string, unknown>,
@@ -443,13 +444,13 @@ export class IntegrationsService {
           key,
           await this.decryptConfigAsync(value as Record<string, unknown>, organizationId)
         );
-      } else if (this.isInfisicalRef(value)) {
-        // Fetch from Infisical
+      } else if (this.isSecretsRef(value)) {
+        // Fetch from secrets manager
         try {
-          const fetched = await this.fetchFromInfisical(value, organizationId);
+          const fetched = await this.fetchFromSecretsManager(value, organizationId);
           safePropertySet(decrypted, key, fetched || value);
         } catch (error) {
-          this.logger.warn(`Failed to fetch ${key} from Infisical: ${error}`);
+          this.logger.warn(`Failed to fetch ${key} from secrets manager: ${error}`);
           safePropertySet(decrypted, key, value);
         }
       } else if (
@@ -467,7 +468,7 @@ export class IntegrationsService {
   }
 
   /**
-   * Synchronous decrypt for backward compatibility (no Infisical refs).
+   * Synchronous decrypt for backward compatibility (no secrets manager refs).
    */
   private decryptConfig(config: Record<string, unknown>): Record<string, unknown> {
     if (!config) return config;
@@ -590,10 +591,10 @@ export class IntegrationsService {
       throw new BadRequestException(`Invalid integration type: ${dto.type}`);
     }
 
-    // Generate a temporary ID for Infisical path (will be replaced with actual ID)
+    // Generate a temporary ID for secrets path (will be replaced with actual ID)
     const tempId = crypto.randomUUID();
 
-    // Encrypt sensitive fields in config before storing (uses Infisical when available)
+    // Encrypt sensitive fields in config before storing (uses secrets manager when available)
     const encryptedConfig = dto.config
       ? await this.encryptConfigAsync(dto.config, organizationId, tempId)
       : {};
@@ -651,7 +652,7 @@ export class IntegrationsService {
     // Merge config if provided (don't overwrite entire config)
     let newConfig = existing.config as Record<string, unknown>;
     if (dto.config) {
-      // Encrypt sensitive fields in the new config before merging (uses Infisical when available)
+      // Encrypt sensitive fields in the new config before merging (uses secrets manager when available)
       const encryptedNewConfig = await this.encryptConfigAsync(dto.config, organizationId, id);
       newConfig = { ...newConfig, ...encryptedNewConfig };
     }
@@ -718,13 +719,9 @@ export class IntegrationsService {
       throw new NotFoundException('Integration not found');
     }
 
-    // Clean up Infisical secrets for this integration
+    // Clean up externally-stored secrets for this integration
     if (existing.config && this.secretsService.isEnabled()) {
-      await this.cleanupInfisicalSecrets(
-        organizationId,
-        id,
-        existing.config as Record<string, unknown>
-      );
+      await this.cleanupSecrets(organizationId, id, existing.config as Record<string, unknown>);
     }
 
     await this.prisma.integration.delete({
@@ -763,7 +760,7 @@ export class IntegrationsService {
       throw new NotFoundException('Integration not found');
     }
 
-    // Decrypt config for use in connection testing (supports Infisical refs)
+    // Decrypt config for use in connection testing (supports secrets manager refs)
     const rawConfig = await this.decryptConfigAsync(
       integration.config as Record<string, unknown>,
       organizationId
@@ -772,9 +769,7 @@ export class IntegrationsService {
     // Flatten credentials into top-level config so connectors can access fields
     // directly (quick setup stores them under config.credentials)
     const credentials = rawConfig.credentials as Record<string, unknown> | undefined;
-    const flattened = credentials
-      ? { ...rawConfig, ...credentials }
-      : { ...rawConfig };
+    const flattened = credentials ? { ...rawConfig, ...credentials } : { ...rawConfig };
 
     // Map common field aliases (quick setup may use different names than configFields)
     if (flattened.baseUrl && !flattened.siteUrl) {
@@ -861,7 +856,7 @@ export class IntegrationsService {
       );
     }
 
-    // Decrypt config for use in sync operations (supports Infisical refs)
+    // Decrypt config for use in sync operations (supports secrets manager refs)
     const config = await this.decryptConfigAsync(
       integration.config as Record<string, unknown>,
       organizationId

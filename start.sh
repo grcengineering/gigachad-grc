@@ -62,20 +62,6 @@ setup_env() {
     # Check if .env exists
     if [ -f ".env" ]; then
         echo -e "${GREEN}✓${NC} Using existing .env file"
-        # Migrate: append Infisical bootstrap secrets if missing from older .env
-        if ! grep -q '^INFISICAL_ENCRYPTION_KEY=' ".env" 2>/dev/null; then
-            echo -e "${YELLOW}⚠${NC} Adding missing Infisical secrets to existing .env..."
-            local INF_ENC_KEY INF_AUTH_SEC
-            INF_ENC_KEY=$(openssl rand -hex 16 2>/dev/null || head -c 16 /dev/urandom | xxd -p | tr -d '\n')
-            INF_AUTH_SEC=$(openssl rand -base64 32 2>/dev/null | tr -d '\n' || head -c 32 /dev/urandom | base64 | tr -d '\n')
-            cat >> ".env" << INFISICAL_EOF
-
-# Infisical Secrets Manager (auto-added)
-INFISICAL_ENCRYPTION_KEY=${INF_ENC_KEY}
-INFISICAL_AUTH_SECRET=${INF_AUTH_SEC}
-INFISICAL_EOF
-            echo -e "${GREEN}✓${NC} Infisical bootstrap secrets added to .env"
-        fi
         return 0
     fi
 
@@ -89,8 +75,6 @@ INFISICAL_EOF
     REDIS_PASSWORD=$(openssl rand -base64 24 2>/dev/null | tr -d '\n' | tr '+/' '-_' || head -c 24 /dev/urandom | base64 | tr '+/' '-_')
     MINIO_PASSWORD=$(openssl rand -base64 20 2>/dev/null | tr -d '\n' | tr '+/' '-_' || head -c 20 /dev/urandom | base64 | tr '+/' '-_')
     GRAFANA_PASSWORD=$(openssl rand -base64 32 2>/dev/null | tr -d '\n' | tr '+/' '-_' || head -c 32 /dev/urandom | base64 | tr '+/' '-_')
-    INFISICAL_ENCRYPTION_KEY=$(openssl rand -hex 16 2>/dev/null || head -c 16 /dev/urandom | xxd -p | tr -d '\n')
-    INFISICAL_AUTH_SECRET=$(openssl rand -base64 32 2>/dev/null | tr -d '\n' || head -c 32 /dev/urandom | base64 | tr -d '\n')
 
     cat > ".env" << EOF
 # ============================================================================
@@ -142,9 +126,9 @@ RATE_LIMIT_MAX_REQUESTS=1000
 # Logging
 LOG_LEVEL=debug
 
-# Infisical Secrets Manager
-INFISICAL_ENCRYPTION_KEY=${INFISICAL_ENCRYPTION_KEY}
-INFISICAL_AUTH_SECRET=${INFISICAL_AUTH_SECRET}
+# Secrets Management
+SECRETS_PROVIDER=env
+# SECRETS_CACHE_TTL=300
 
 # Frontend
 VITE_API_URL=http://localhost:3001
@@ -181,7 +165,6 @@ start_services() {
     echo -e "   ${CYAN}Frontend${NC}        http://localhost:3000"
     echo -e "   ${CYAN}API Docs${NC}        http://localhost:3001/api/docs"
     echo -e "   ${CYAN}Keycloak${NC}        http://localhost:8080 (admin/admin)"
-    echo -e "   ${CYAN}Secrets (Infisical)${NC} http://localhost:8443"
     echo -e "   ${CYAN}Grafana${NC}         http://localhost:3003 (admin/admin)"
     echo ""
     echo -e "${BOLD}How to Login:${NC}"
@@ -196,20 +179,6 @@ start_services() {
     echo -e "   ${CYAN}./start.sh logs${NC}    View logs"
     echo -e "   ${CYAN}./start.sh status${NC}  Check service status"
     echo ""
-
-    # Wait for Infisical to be ready (first-time setup)
-    if [ ! -f ".infisical-initialized" ]; then
-        echo -e "${BLUE}Waiting for Infisical secrets manager...${NC}"
-        for i in $(seq 1 30); do
-            if curl -sf http://localhost:8443/api/status > /dev/null 2>&1; then
-                echo -e "${GREEN}✓${NC} Infisical is ready"
-                echo -e "${YELLOW}→ Visit http://localhost:8443 to create your admin account and set up secrets${NC}"
-                touch .infisical-initialized
-                break
-            fi
-            sleep 2
-        done
-    fi
 
     # Open browser on macOS
     if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -256,7 +225,6 @@ reset_all() {
             echo -e "${YELLOW}Removing .env file...${NC}"
             rm -f .env
         fi
-        rm -f .infisical-initialized
         
         echo -e "${GREEN}✓ Reset complete${NC}"
         echo ""

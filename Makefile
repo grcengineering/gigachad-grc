@@ -74,12 +74,8 @@ docker: ## Start all services via Docker only
 # Docker Commands
 # ─────────────────────────────────────────────────────────────────────────────
 
-up: ## Start all Docker containers (with Infisical secret injection)
-	@if command -v infisical >/dev/null 2>&1 && [ -f .infisical.json ]; then \
-		infisical run --env=dev -- docker compose up -d; \
-	else \
-		docker compose up -d; \
-	fi
+up: ## Start all Docker containers
+	docker compose up -d
 
 down: ## Stop all Docker containers
 	docker compose down
@@ -101,16 +97,18 @@ restart: ## Restart containers (use: make restart s=controls)
 		docker compose restart; \
 	fi
 
-infra: ## Start infrastructure only (postgres, redis, keycloak, rustfs, infisical)
-	docker compose up -d postgres redis keycloak rustfs infisical
+infra: ## Start infrastructure only (postgres, redis, keycloak, rustfs)
+	docker compose up -d postgres redis keycloak rustfs
 
 services: ## Start application services only (requires infra running)
 	docker compose up -d controls frameworks policies tprm trust audit
 
-secrets-ui: ## Open Infisical secrets UI
+secrets-ui: ## Open Infisical secrets UI (requires SECRETS_PROVIDER=infisical)
+	@if [ "$$(grep -s '^SECRETS_PROVIDER=' .env | cut -d= -f2)" != "infisical" ]; then echo "SECRETS_PROVIDER is not set to 'infisical'. Set it in .env first."; exit 1; fi
 	@open http://localhost:8443 2>/dev/null || xdg-open http://localhost:8443 2>/dev/null || echo "Visit http://localhost:8443"
 
-secrets-seed: ## Seed secrets into Infisical (first-time setup)
+secrets-seed: ## Seed secrets into Infisical (requires SECRETS_PROVIDER=infisical)
+	@if [ "$$(grep -s '^SECRETS_PROVIDER=' .env | cut -d= -f2)" != "infisical" ]; then echo "SECRETS_PROVIDER is not set to 'infisical'. Set it in .env first."; exit 1; fi
 	@bash scripts/seed-infisical.sh
 
 rebuild: ## Rebuild and restart a service (use: make rebuild s=controls)
