@@ -44,7 +44,7 @@
     "mammoth": "^1.11.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-dropzone": "^14.2.3",
+    "react-dropzone": "^14.4.1",
     "react-grid-layout": "^1.5.3",
     "react-hook-form": "^7.49.2",
     "react-hot-toast": "^2.4.1",
