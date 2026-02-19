@@ -68,6 +68,7 @@
     "minipass": "^7.1.2",
     "@isaacs/brace-expansion": "^5.0.0",
     "lodash": "^4.17.23",
-    "fast-xml-parser": "^5.3.4"
+    "fast-xml-parser": "^5.3.6",
+    "ajv": "^8.18.0"
   }
 }

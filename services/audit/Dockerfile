@@ -42,9 +42,9 @@ RUN npm run build
 # Production stage - Using Docker Hardened Image
 FROM node:20-alpine AS production
 
-# Install OpenSSL for Prisma
+# Install OpenSSL for Prisma and patch npm's bundled tar (CVE-2026-26960)
 USER root
-RUN apk add --no-cache openssl || true
+RUN apk add --no-cache openssl && npm update -g npm
 
 WORKDIR /app
 

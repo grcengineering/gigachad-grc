@@ -54,8 +54,8 @@ RUN npm run build
 # Production stage
 FROM node:20-alpine AS production
 
-# Install OpenSSL for Prisma
-RUN apk add --no-cache openssl
+# Install OpenSSL for Prisma and patch npm's bundled tar (CVE-2026-26960)
+RUN apk add --no-cache openssl && npm update -g npm
 
 WORKDIR /app
 
