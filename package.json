@@ -35,8 +35,8 @@
     "test:load:quick": "./tests/load/run-load-tests.sh quick"
   },
   "devDependencies": {
-    "@eslint/js": "^9.18.0",
-    "eslint": "^9.18.0",
+    "@eslint/js": "^9.39.3",
+    "eslint": "^9.39.3",
     "eslint-config-prettier": "^9.1.0",
     "globals": "^14.0.0",
     "husky": "^9.0.0",

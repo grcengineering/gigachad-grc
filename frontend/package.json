@@ -65,7 +65,7 @@
     "react-i18next": "^14.0.0"
   },
   "devDependencies": {
-    "@eslint/js": "^9.18.0",
+    "@eslint/js": "^9.39.3",
     "@playwright/test": "^1.58.2",
     "@testing-library/jest-dom": "^6.4.0",
     "@testing-library/react": "^14.2.0",
@@ -74,10 +74,10 @@
     "@types/react-dom": "^18.2.18",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.16",
-    "eslint": "^9.18.0",
+    "eslint": "^9.39.3",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-react-hooks": "^5.0.0",
-    "eslint-plugin-react-refresh": "^0.5.0",
+    "eslint-plugin-react-refresh": "^0.5.1",
     "jsdom": "^24.0.0",
     "postcss": "^8.4.33",
     "prettier": "^3.4.0",
