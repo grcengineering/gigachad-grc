@@ -3791,19 +3791,20 @@ export const INTEGRATION_TYPES: Record<string, IntegrationType> = {
   },
   atlassian_assets: {
     name: 'Atlassian Assets',
-    description: 'Integrate Atlassian Assets for CMDB and asset tracking',
+    description: 'Integrate Atlassian Assets (JSM) for CMDB and asset tracking. Cloud ID and Workspace ID are auto-discovered from your site URL.',
     category: 'Asset Management',
     iconSlug: 'atlassian_assets',
     apiDocs: 'https://developer.atlassian.com/cloud/assets/rest/intro/',
     authType: 'basic',
     syncFrequencies: ['daily', 'weekly'],
     configFields: [
-      { key: 'baseUrl', label: 'Jira URL', type: 'url', required: true },
-      { key: 'email', label: 'Email', type: 'text', required: true },
-      { key: 'apiToken', label: 'API Token', type: 'password', required: true },
+      { key: 'siteUrl', label: 'Jira Site URL', type: 'url', required: true, placeholder: 'https://your-domain.atlassian.net', helpText: 'Your Atlassian Cloud site URL. Cloud ID and Workspace ID will be auto-discovered.' },
+      { key: 'email', label: 'Email', type: 'text', required: true, placeholder: 'you@company.com', helpText: 'The email address associated with your Atlassian account.' },
+      { key: 'apiToken', label: 'API Token', type: 'password', required: true, helpText: 'Generate at id.atlassian.com/manage/api-tokens' },
     ],
     evidenceTypes: [
-      { key: 'objects', label: 'Objects', description: 'Asset objects', defaultEnabled: true },
+      { key: 'objects', label: 'Asset Objects', description: 'CMDB objects and configuration items', defaultEnabled: true },
+      { key: 'schemas', label: 'Object Schemas', description: 'Asset object schema definitions', defaultEnabled: true },
     ],
   },
 

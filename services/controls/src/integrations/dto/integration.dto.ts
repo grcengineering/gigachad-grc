@@ -2640,7 +2640,7 @@ export const INTEGRATION_TYPES = {
     category: 'Asset Management',
     apiDocs: 'https://developer.atlassian.com/cloud/assets/',
     configFields: [
-      { key: 'siteUrl', label: 'Site URL', type: 'text', required: true },
+      { key: 'siteUrl', label: 'Jira Site URL', type: 'text', required: true },
       { key: 'email', label: 'Email', type: 'text', required: true },
       { key: 'apiToken', label: 'API Token', type: 'password', required: true },
     ],
