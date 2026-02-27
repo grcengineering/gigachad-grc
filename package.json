@@ -68,10 +68,10 @@
     "minipass": "^7.1.2",
     "@isaacs/brace-expansion": "^5.0.0",
     "lodash": "^4.17.23",
-    "fast-xml-parser": "^5.3.6",
+    "fast-xml-parser": "^5.3.8",
     "ajv": "^8.18.0",
     "axios": "^1.13.5",
-    "minimatch": "^10.2.1",
+    "minimatch": "^10.2.3",
     "rollup": "^4.59.0",
     "@smithy/config-resolver": "^4.4.0"
   }
