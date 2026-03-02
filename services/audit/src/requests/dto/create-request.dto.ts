@@ -4,8 +4,9 @@ export class CreateAuditRequestDto {
   @IsString()
   auditId: string;
 
+  @IsOptional()
   @IsString()
-  organizationId: string;
+  organizationId?: string;
 
   @IsString()
   @IsOptional()
@@ -35,6 +36,10 @@ export class CreateAuditRequestDto {
   @IsString()
   @IsOptional()
   assignedTo?: string;
+
+  @IsString()
+  @IsOptional()
+  assigneeId?: string;
 
   @IsString()
   @IsOptional()

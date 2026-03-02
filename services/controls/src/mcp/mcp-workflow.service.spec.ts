@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Test, TestingModule } from '@nestjs/testing';
 import { Logger } from '@nestjs/common';
 import { MCPWorkflowService } from './mcp-workflow.service';
@@ -108,10 +107,12 @@ describe('MCPWorkflowService - resilience features', () => {
     // Force callTool to be slow but successful
     mcpClient.setFailureMode(0);
     const originalCallTool = mcpClient.callTool.bind(mcpClient);
-    jest.spyOn(mcpClient, 'callTool').mockImplementation(async (serverId: string, toolName: string, args: any) => {
-      await new Promise((resolve) => setTimeout(resolve, 10));
-      return originalCallTool(serverId, toolName, args);
-    });
+    jest
+      .spyOn(mcpClient, 'callTool')
+      .mockImplementation(async (serverId: string, toolName: string, args: any) => {
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        return originalCallTool(serverId, toolName, args);
+      });
 
     (service as any).workflows.set(workflow.id, workflow);
     const execution = await service.executeWorkflow(workflow.id, {});
@@ -194,5 +195,3 @@ describe('MCPWorkflowService - resilience features', () => {
     expect(updatedExecution.steps.find((s) => s.stepId === 'step-2')?.status).toBe('completed');
   });
 });
-
-

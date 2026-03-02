@@ -178,10 +178,8 @@ interface DriveFile {
   webViewLink?: string;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let googleAPIs: any = null;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function loadGoogleAPIs(): Promise<any> {
   if (googleAPIs) return googleAPIs;
 

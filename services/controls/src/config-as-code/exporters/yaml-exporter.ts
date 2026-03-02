@@ -30,14 +30,11 @@ export class YamlExporter implements Exporter {
 
   private cleanData(data: ResourceData): ResourceData {
     const cleaned: ResourceData = {};
-    
+
     for (const [key, value] of Object.entries(data)) {
       if (value !== null && value !== undefined) {
         if (Array.isArray(value)) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (cleaned as any)[key] = value.map(item => 
-            this.removeNullFields(item)
-          );
+          (cleaned as any)[key] = value.map((item) => this.removeNullFields(item));
         }
       }
     }
@@ -51,7 +48,7 @@ export class YamlExporter implements Exporter {
     }
 
     if (Array.isArray(obj)) {
-      return obj.map(item => this.removeNullFields(item));
+      return obj.map((item) => this.removeNullFields(item));
     }
 
     if (typeof obj === 'object') {
@@ -71,4 +68,3 @@ export class YamlExporter implements Exporter {
     return obj;
   }
 }
-

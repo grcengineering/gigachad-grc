@@ -21,18 +21,18 @@ interface LazyLoadOptions {
 
 /**
  * Creates a lazy-loaded component with a loading fallback
- * 
+ *
  * @example
  * // Basic usage
  * const Dashboard = lazyLoad(() => import('@/pages/Dashboard'));
- * 
+ *
  * @example
  * // With custom fallback
  * const Dashboard = lazyLoad(
  *   () => import('@/pages/Dashboard'),
  *   { fallback: <DashboardSkeleton /> }
  * );
- * 
+ *
  * @example
  * // With preloading
  * const Dashboard = lazyLoad(
@@ -45,10 +45,7 @@ export function lazyLoad<T extends ComponentType<unknown>>(
   importFn: () => Promise<{ default: T }>,
   options: LazyLoadOptions = {}
 ): React.LazyExoticComponent<T> & { preload: () => Promise<void> } {
-  const { 
-    fallback = <Loading fullScreen message="Loading..." />,
-    minimumDelay = 0,
-  } = options;
+  const { fallback = <Loading fullScreen message="Loading..." />, minimumDelay = 0 } = options;
 
   let importPromise: Promise<{ default: T }> | null = null;
 
@@ -77,7 +74,7 @@ export function lazyLoad<T extends ComponentType<unknown>>(
   // Create the wrapped component
   const WrappedComponent = React.forwardRef<unknown, React.ComponentProps<T>>((props, ref) => (
     <Suspense fallback={fallback}>
-      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+      {}
       <LazyComponent {...(props as any)} ref={ref} />
     </Suspense>
   )) as unknown as React.LazyExoticComponent<T> & { preload: () => Promise<void> };
@@ -89,7 +86,7 @@ export function lazyLoad<T extends ComponentType<unknown>>(
 
 /**
  * Preloads multiple components
- * 
+ *
  * @example
  * // Preload common routes on app mount
  * useEffect(() => {
@@ -104,7 +101,7 @@ export async function preloadComponents(
 
 /**
  * Creates a component that preloads other components on hover
- * 
+ *
  * @example
  * <PreloadOnHover preload={[Dashboard, Controls]}>
  *   <Link to="/dashboard">Dashboard</Link>
@@ -130,7 +127,7 @@ export function PreloadOnHover({
 
 /**
  * HOC that adds preloading on component mount
- * 
+ *
  * @example
  * const DashboardWithPreload = withPreload(Dashboard, [Controls, Risks]);
  */
@@ -149,7 +146,3 @@ export function withPreload<P extends object>(
 
 // Default export for convenience
 export default lazyLoad;
-
-
-
-

@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { Injectable, Logger } from '@nestjs/common';
 
 /**
  * AWS Integration Configuration
- * 
+ *
  * Credentials must be provided via:
  * - Integration configuration (stored encrypted)
  * - Environment variables (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
@@ -172,7 +172,7 @@ export class AWSConnector {
         config.region || 'us-east-1',
         'GetCallerIdentity',
         {},
-        config,
+        config
       );
 
       if (response.error) {
@@ -205,27 +205,34 @@ export class AWSConnector {
 
     // Collect data from various AWS services in parallel
     const [securityHub, cloudTrail, configRules, iam, s3Buckets, guardDuty] = await Promise.all([
-      this.getSecurityHubFindings(config, region).catch(e => {
+      this.getSecurityHubFindings(config, region).catch((e) => {
         errors.push(`Security Hub: ${e.message}`);
-        return { findings: [], totalFindings: 0, criticalCount: 0, highCount: 0, mediumCount: 0, lowCount: 0 };
+        return {
+          findings: [],
+          totalFindings: 0,
+          criticalCount: 0,
+          highCount: 0,
+          mediumCount: 0,
+          lowCount: 0,
+        };
       }),
-      this.getCloudTrailEvents(config, region).catch(e => {
+      this.getCloudTrailEvents(config, region).catch((e) => {
         errors.push(`CloudTrail: ${e.message}`);
         return { events: [], totalEvents: 0, securityEvents: 0 };
       }),
-      this.getConfigCompliance(config, region).catch(e => {
+      this.getConfigCompliance(config, region).catch((e) => {
         errors.push(`Config: ${e.message}`);
         return { rules: [], compliantCount: 0, nonCompliantCount: 0, compliancePercentage: 0 };
       }),
-      this.getIAMSummary(config).catch(e => {
+      this.getIAMSummary(config).catch((e) => {
         errors.push(`IAM: ${e.message}`);
         return { users: [], roles: [], policies: [] };
       }),
-      this.getS3BucketSecurity(config, region).catch(e => {
+      this.getS3BucketSecurity(config, region).catch((e) => {
         errors.push(`S3: ${e.message}`);
         return { buckets: [] };
       }),
-      this.getGuardDutyFindings(config, region).catch(e => {
+      this.getGuardDutyFindings(config, region).catch((e) => {
         errors.push(`GuardDuty: ${e.message}`);
         return { findings: [], totalFindings: 0 };
       }),
@@ -259,11 +266,11 @@ export class AWSConnector {
         },
         MaxResults: 100,
       },
-      config,
+      config
     );
 
     const findings = response.Findings || [];
-    
+
     return {
       findings: findings.slice(0, 50), // Limit for storage
       totalFindings: findings.length,
@@ -293,22 +300,32 @@ export class AWSConnector {
           { AttributeKey: 'ReadOnly', AttributeValue: 'false' }, // Only write events
         ],
       },
-      config,
+      config
     );
 
     const events = response.Events || [];
     const securityEventNames = [
-      'CreateUser', 'DeleteUser', 'CreateAccessKey', 'DeleteAccessKey',
-      'AttachUserPolicy', 'DetachUserPolicy', 'CreateRole', 'DeleteRole',
-      'PutBucketPolicy', 'DeleteBucketPolicy', 'AuthorizeSecurityGroupIngress',
-      'RevokeSecurityGroupIngress', 'CreateSecurityGroup', 'DeleteSecurityGroup',
+      'CreateUser',
+      'DeleteUser',
+      'CreateAccessKey',
+      'DeleteAccessKey',
+      'AttachUserPolicy',
+      'DetachUserPolicy',
+      'CreateRole',
+      'DeleteRole',
+      'PutBucketPolicy',
+      'DeleteBucketPolicy',
+      'AuthorizeSecurityGroupIngress',
+      'RevokeSecurityGroupIngress',
+      'CreateSecurityGroup',
+      'DeleteSecurityGroup',
     ];
 
     return {
       events,
       totalEvents: events.length,
-      securityEvents: events.filter((e: any) => 
-        securityEventNames.some(name => e.EventName?.includes(name))
+      securityEvents: events.filter((e: any) =>
+        securityEventNames.some((name) => e.EventName?.includes(name))
       ).length,
     };
   }
@@ -322,20 +339,23 @@ export class AWSConnector {
       region,
       'DescribeComplianceByConfigRule',
       {},
-      config,
+      config
     );
 
     const rules = response.ComplianceByConfigRules || [];
-    const compliantCount = rules.filter((r: any) => r.Compliance?.ComplianceType === 'COMPLIANT').length;
-    const nonCompliantCount = rules.filter((r: any) => r.Compliance?.ComplianceType === 'NON_COMPLIANT').length;
+    const compliantCount = rules.filter(
+      (r: any) => r.Compliance?.ComplianceType === 'COMPLIANT'
+    ).length;
+    const nonCompliantCount = rules.filter(
+      (r: any) => r.Compliance?.ComplianceType === 'NON_COMPLIANT'
+    ).length;
 
     return {
       rules,
       compliantCount,
       nonCompliantCount,
-      compliancePercentage: rules.length > 0 
-        ? Math.round((compliantCount / rules.length) * 100) 
-        : 0,
+      compliancePercentage:
+        rules.length > 0 ? Math.round((compliantCount / rules.length) * 100) : 0,
     };
   }
 
@@ -354,15 +374,19 @@ export class AWSConnector {
     const users = await Promise.all(
       (usersResponse.Users || []).slice(0, 20).map(async (user: any) => {
         const mfaResponse = await this.makeAWSRequest(
-          'iam', 'us-east-1', 'ListMFADevices',
+          'iam',
+          'us-east-1',
+          'ListMFADevices',
           { UserName: user.UserName },
-          config,
+          config
         ).catch(() => ({ MFADevices: [] }));
 
         const keysResponse = await this.makeAWSRequest(
-          'iam', 'us-east-1', 'ListAccessKeys',
+          'iam',
+          'us-east-1',
+          'ListAccessKeys',
           { UserName: user.UserName },
-          config,
+          config
         ).catch(() => ({ AccessKeyMetadata: [] }));
 
         return {
@@ -409,20 +433,40 @@ export class AWSConnector {
     const bucketDetails = await Promise.all(
       buckets.slice(0, 20).map(async (bucket: any) => {
         const [publicAccess, encryption, versioning, logging] = await Promise.all([
-          this.makeAWSRequest('s3', region, 'GetPublicAccessBlock', { Bucket: bucket.Name }, config)
-            .catch(() => null),
-          this.makeAWSRequest('s3', region, 'GetBucketEncryption', { Bucket: bucket.Name }, config)
-            .catch(() => null),
-          this.makeAWSRequest('s3', region, 'GetBucketVersioning', { Bucket: bucket.Name }, config)
-            .catch(() => null),
-          this.makeAWSRequest('s3', region, 'GetBucketLogging', { Bucket: bucket.Name }, config)
-            .catch(() => null),
+          this.makeAWSRequest(
+            's3',
+            region,
+            'GetPublicAccessBlock',
+            { Bucket: bucket.Name },
+            config
+          ).catch(() => null),
+          this.makeAWSRequest(
+            's3',
+            region,
+            'GetBucketEncryption',
+            { Bucket: bucket.Name },
+            config
+          ).catch(() => null),
+          this.makeAWSRequest(
+            's3',
+            region,
+            'GetBucketVersioning',
+            { Bucket: bucket.Name },
+            config
+          ).catch(() => null),
+          this.makeAWSRequest(
+            's3',
+            region,
+            'GetBucketLogging',
+            { Bucket: bucket.Name },
+            config
+          ).catch(() => null),
         ]);
 
         return {
           Name: bucket.Name,
           Region: region,
-          PublicAccessBlocked: !!(publicAccess?.PublicAccessBlockConfiguration?.BlockPublicAcls),
+          PublicAccessBlocked: !!publicAccess?.PublicAccessBlockConfiguration?.BlockPublicAcls,
           Encrypted: !!encryption?.ServerSideEncryptionConfiguration,
           VersioningEnabled: versioning?.Status === 'Enabled',
           LoggingEnabled: !!logging?.LoggingEnabled,
@@ -439,7 +483,11 @@ export class AWSConnector {
   private async getGuardDutyFindings(config: AWSConfig, region: string) {
     // First get the detector ID
     const detectorsResponse = await this.makeAWSRequest(
-      'guardduty', region, 'ListDetectors', {}, config,
+      'guardduty',
+      region,
+      'ListDetectors',
+      {},
+      config
     );
 
     const detectorId = detectorsResponse.DetectorIds?.[0];
@@ -449,9 +497,11 @@ export class AWSConnector {
 
     // Get findings
     const findingsResponse = await this.makeAWSRequest(
-      'guardduty', region, 'ListFindings',
+      'guardduty',
+      region,
+      'ListFindings',
       { DetectorId: detectorId, MaxResults: 50 },
-      config,
+      config
     );
 
     const findingIds = findingsResponse.FindingIds || [];
@@ -461,9 +511,11 @@ export class AWSConnector {
 
     // Get finding details
     const detailsResponse = await this.makeAWSRequest(
-      'guardduty', region, 'GetFindings',
+      'guardduty',
+      region,
+      'GetFindings',
       { DetectorId: detectorId, FindingIds: findingIds.slice(0, 20) },
-      config,
+      config
     );
 
     const findings = (detailsResponse.Findings || []).map((f: any) => ({
@@ -490,7 +542,7 @@ export class AWSConnector {
     region: string,
     action: string,
     params: any,
-    config: AWSConfig,
+    config: AWSConfig
   ): Promise<any> {
     // Check if credentials are properly configured
     if (!config.accessKeyId || !config.secretAccessKey) {
@@ -505,10 +557,12 @@ export class AWSConnector {
     } catch (error: any) {
       // If SDK is not installed or call fails, fall back to demo mode
       if (error.code === 'MODULE_NOT_FOUND') {
-        this.logger.warn(`AWS SDK not installed for ${service} - using demo mode. Install @aws-sdk/client-${service} for actual functionality.`);
+        this.logger.warn(
+          `AWS SDK not installed for ${service} - using demo mode. Install @aws-sdk/client-${service} for actual functionality.`
+        );
         return this.getDemoResponse(service, action);
       }
-      
+
       // Re-throw actual API errors
       throw error;
     }
@@ -523,7 +577,7 @@ export class AWSConnector {
     region: string,
     action: string,
     params: any,
-    config: AWSConfig,
+    config: AWSConfig
   ): Promise<any> {
     const credentials = {
       accessKeyId: config.accessKeyId,
@@ -561,12 +615,16 @@ export class AWSConnector {
   /**
    * Dynamically load and call AWS STS service
    */
-  private async callSTS(region: string, action: string, params: any, credentials: any): Promise<any> {
+  private async callSTS(
+    region: string,
+    action: string,
+    params: any,
+    credentials: any
+  ): Promise<any> {
     try {
-       
       const { STSClient, GetCallerIdentityCommand } = require('@aws-sdk/client-sts');
       const client = new STSClient({ region, credentials });
-      
+
       if (action === 'GetCallerIdentity') {
         const response = await client.send(new GetCallerIdentityCommand(params));
         return {
@@ -587,12 +645,16 @@ export class AWSConnector {
   /**
    * Dynamically load and call AWS Security Hub service
    */
-  private async callSecurityHub(region: string, action: string, params: any, credentials: any): Promise<any> {
+  private async callSecurityHub(
+    region: string,
+    action: string,
+    params: any,
+    credentials: any
+  ): Promise<any> {
     try {
-       
       const { SecurityHubClient, GetFindingsCommand } = require('@aws-sdk/client-securityhub');
       const client = new SecurityHubClient({ region, credentials });
-      
+
       if (action === 'GetFindings') {
         const response = await client.send(new GetFindingsCommand(params));
         return { Findings: response.Findings || [] };
@@ -600,7 +662,9 @@ export class AWSConnector {
       return {};
     } catch (error: any) {
       if (error.code === 'MODULE_NOT_FOUND') {
-        throw Object.assign(new Error('AWS Security Hub SDK not installed'), { code: 'MODULE_NOT_FOUND' });
+        throw Object.assign(new Error('AWS Security Hub SDK not installed'), {
+          code: 'MODULE_NOT_FOUND',
+        });
       }
       throw error;
     }
@@ -609,12 +673,16 @@ export class AWSConnector {
   /**
    * Dynamically load and call AWS CloudTrail service
    */
-  private async callCloudTrail(region: string, action: string, params: any, credentials: any): Promise<any> {
+  private async callCloudTrail(
+    region: string,
+    action: string,
+    params: any,
+    credentials: any
+  ): Promise<any> {
     try {
-       
       const { CloudTrailClient, LookupEventsCommand } = require('@aws-sdk/client-cloudtrail');
       const client = new CloudTrailClient({ region, credentials });
-      
+
       if (action === 'LookupEvents') {
         const response = await client.send(new LookupEventsCommand(params));
         return { Events: response.Events || [] };
@@ -622,7 +690,9 @@ export class AWSConnector {
       return {};
     } catch (error: any) {
       if (error.code === 'MODULE_NOT_FOUND') {
-        throw Object.assign(new Error('AWS CloudTrail SDK not installed'), { code: 'MODULE_NOT_FOUND' });
+        throw Object.assign(new Error('AWS CloudTrail SDK not installed'), {
+          code: 'MODULE_NOT_FOUND',
+        });
       }
       throw error;
     }
@@ -631,12 +701,19 @@ export class AWSConnector {
   /**
    * Dynamically load and call AWS Config service
    */
-  private async callConfig(region: string, action: string, params: any, credentials: any): Promise<any> {
+  private async callConfig(
+    region: string,
+    action: string,
+    params: any,
+    credentials: any
+  ): Promise<any> {
     try {
-       
-      const { ConfigServiceClient, DescribeComplianceByConfigRuleCommand } = require('@aws-sdk/client-config-service');
+      const {
+        ConfigServiceClient,
+        DescribeComplianceByConfigRuleCommand,
+      } = require('@aws-sdk/client-config-service');
       const client = new ConfigServiceClient({ region, credentials });
-      
+
       if (action === 'DescribeComplianceByConfigRule') {
         const response = await client.send(new DescribeComplianceByConfigRuleCommand(params));
         return { ComplianceByConfigRules: response.ComplianceByConfigRules || [] };
@@ -644,7 +721,9 @@ export class AWSConnector {
       return {};
     } catch (error: any) {
       if (error.code === 'MODULE_NOT_FOUND') {
-        throw Object.assign(new Error('AWS Config SDK not installed'), { code: 'MODULE_NOT_FOUND' });
+        throw Object.assign(new Error('AWS Config SDK not installed'), {
+          code: 'MODULE_NOT_FOUND',
+        });
       }
       throw error;
     }
@@ -655,19 +734,18 @@ export class AWSConnector {
    */
   private async callIAM(action: string, params: any, credentials: any): Promise<any> {
     try {
-       
-      const { 
-        IAMClient, 
-        ListUsersCommand, 
-        ListRolesCommand, 
+      const {
+        IAMClient,
+        ListUsersCommand,
+        ListRolesCommand,
         ListPoliciesCommand,
         ListMFADevicesCommand,
         ListAccessKeysCommand,
       } = require('@aws-sdk/client-iam');
-      
+
       // IAM is global
       const client = new IAMClient({ region: 'us-east-1', credentials });
-      
+
       switch (action) {
         case 'ListUsers': {
           const usersResponse = await client.send(new ListUsersCommand(params));
@@ -703,20 +781,24 @@ export class AWSConnector {
   /**
    * Dynamically load and call AWS S3 service
    */
-  private async callS3(region: string, action: string, params: any, credentials: any): Promise<any> {
+  private async callS3(
+    region: string,
+    action: string,
+    params: any,
+    credentials: any
+  ): Promise<any> {
     try {
-       
-      const { 
-        S3Client, 
+      const {
+        S3Client,
         ListBucketsCommand,
         GetPublicAccessBlockCommand,
         GetBucketEncryptionCommand,
         GetBucketVersioningCommand,
         GetBucketLoggingCommand,
       } = require('@aws-sdk/client-s3');
-      
+
       const client = new S3Client({ region, credentials });
-      
+
       switch (action) {
         case 'ListBuckets': {
           const bucketsResponse = await client.send(new ListBucketsCommand(params));
@@ -728,7 +810,9 @@ export class AWSConnector {
         }
         case 'GetBucketEncryption': {
           const encResponse = await client.send(new GetBucketEncryptionCommand(params));
-          return { ServerSideEncryptionConfiguration: encResponse.ServerSideEncryptionConfiguration };
+          return {
+            ServerSideEncryptionConfiguration: encResponse.ServerSideEncryptionConfiguration,
+          };
         }
         case 'GetBucketVersioning': {
           const versResponse = await client.send(new GetBucketVersioningCommand(params));
@@ -752,18 +836,22 @@ export class AWSConnector {
   /**
    * Dynamically load and call AWS GuardDuty service
    */
-  private async callGuardDuty(region: string, action: string, params: any, credentials: any): Promise<any> {
+  private async callGuardDuty(
+    region: string,
+    action: string,
+    params: any,
+    credentials: any
+  ): Promise<any> {
     try {
-       
-      const { 
-        GuardDutyClient, 
+      const {
+        GuardDutyClient,
         ListDetectorsCommand,
         ListFindingsCommand,
         GetFindingsCommand,
       } = require('@aws-sdk/client-guardduty');
-      
+
       const client = new GuardDutyClient({ region, credentials });
-      
+
       switch (action) {
         case 'ListDetectors': {
           const detectorsResponse = await client.send(new ListDetectorsCommand(params));
@@ -782,7 +870,9 @@ export class AWSConnector {
       }
     } catch (error: any) {
       if (error.code === 'MODULE_NOT_FOUND') {
-        throw Object.assign(new Error('AWS GuardDuty SDK not installed'), { code: 'MODULE_NOT_FOUND' });
+        throw Object.assign(new Error('AWS GuardDuty SDK not installed'), {
+          code: 'MODULE_NOT_FOUND',
+        });
       }
       throw error;
     }
@@ -804,24 +894,27 @@ export class AWSConnector {
         },
       },
       securityhub: {
-        GetFindings: { 
+        GetFindings: {
           Findings: [],
           _isMockMode: true,
-          _mockModeReason: 'Install @aws-sdk/client-securityhub and configure credentials for Security Hub data',
+          _mockModeReason:
+            'Install @aws-sdk/client-securityhub and configure credentials for Security Hub data',
         },
       },
       cloudtrail: {
-        LookupEvents: { 
+        LookupEvents: {
           Events: [],
           _isMockMode: true,
-          _mockModeReason: 'Install @aws-sdk/client-cloudtrail and configure credentials for CloudTrail data',
+          _mockModeReason:
+            'Install @aws-sdk/client-cloudtrail and configure credentials for CloudTrail data',
         },
       },
       config: {
-        DescribeComplianceByConfigRule: { 
+        DescribeComplianceByConfigRule: {
           ComplianceByConfigRules: [],
           _isMockMode: true,
-          _mockModeReason: 'Install @aws-sdk/client-config-service and configure credentials for AWS Config data',
+          _mockModeReason:
+            'Install @aws-sdk/client-config-service and configure credentials for AWS Config data',
         },
       },
       iam: {
@@ -832,7 +925,7 @@ export class AWSConnector {
         ListAccessKeys: { AccessKeyMetadata: [], _isMockMode: true },
       },
       s3: {
-        ListBuckets: { 
+        ListBuckets: {
           Buckets: [],
           _isMockMode: true,
           _mockModeReason: 'Install @aws-sdk/client-s3 and configure credentials for S3 data',
@@ -848,4 +941,3 @@ export class AWSConnector {
     return demoResponses[service]?.[action] || { _isMockMode: true };
   }
 }
-

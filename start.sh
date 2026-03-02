@@ -75,6 +75,7 @@ setup_env() {
     REDIS_PASSWORD=$(openssl rand -base64 24 2>/dev/null | tr -d '\n' | tr '+/' '-_' || head -c 24 /dev/urandom | base64 | tr '+/' '-_')
     MINIO_PASSWORD=$(openssl rand -base64 20 2>/dev/null | tr -d '\n' | tr '+/' '-_' || head -c 20 /dev/urandom | base64 | tr '+/' '-_')
     GRAFANA_PASSWORD=$(openssl rand -base64 32 2>/dev/null | tr -d '\n' | tr '+/' '-_' || head -c 32 /dev/urandom | base64 | tr '+/' '-_')
+    PHISHING_TRACKING_SECRET=$(openssl rand -base64 32 2>/dev/null | tr -d '\n' | tr '+/' '-_' || head -c 32 /dev/urandom | base64 | tr '+/' '-_')
 
     cat > ".env" << EOF
 # ============================================================================
@@ -115,6 +116,9 @@ KEYCLOAK_ADMIN_PASSWORD=admin
 KEYCLOAK_REALM=gigachad-grc
 USE_DEV_AUTH=true
 
+# Phishing simulation
+PHISHING_TRACKING_SECRET=${PHISHING_TRACKING_SECRET}
+
 # CORS
 CORS_ORIGINS=http://localhost:3000,http://localhost:5173,http://localhost:5174
 
@@ -131,7 +135,7 @@ SECRETS_PROVIDER=env
 # SECRETS_CACHE_TTL=300
 
 # Frontend
-VITE_API_URL=http://localhost:3001
+VITE_API_URL=
 VITE_ENABLE_DEV_AUTH=true
 VITE_ENABLE_AI_MODULE=true
 EOF

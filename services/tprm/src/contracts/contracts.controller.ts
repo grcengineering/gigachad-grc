@@ -25,9 +25,12 @@ import { DevAuthGuard } from '../auth/dev-auth.guard';
  * Prevents header injection attacks via malicious filenames
  */
 function sanitizeFilename(filename: string): string {
-  return filename
-    .replace(/[\r\n\x00-\x1f\x7f]/g, '') // Remove control chars
-    .replace(/["\\/]/g, '_'); // Replace problematic chars
+  return (
+    filename
+      // eslint-disable-next-line no-control-regex
+      .replace(/[\r\n\x00-\x1f\x7f]/g, '') // Remove control chars
+      .replace(/["\\/]/g, '_')
+  ); // Replace problematic chars
 }
 
 @Controller('contracts')
@@ -36,11 +39,14 @@ export class ContractsController {
   constructor(private readonly contractsService: ContractsService) {}
 
   @Post()
-  create(
-    @Body() createContractDto: CreateContractDto,
-    @CurrentUser() user: UserContext,
-  ) {
-    return this.contractsService.create(createContractDto, user.userId);
+  create(@Body() createContractDto: CreateContractDto, @CurrentUser() user: UserContext) {
+    return this.contractsService.create(
+      {
+        ...createContractDto,
+        organizationId: user.organizationId,
+      },
+      user.userId
+    );
   }
 
   @Get()
@@ -48,7 +54,7 @@ export class ContractsController {
     @CurrentUser() user: UserContext,
     @Query('vendorId') vendorId?: string,
     @Query('contractType') contractType?: string,
-    @Query('status') status?: string,
+    @Query('status') status?: string
   ) {
     return this.contractsService.findAll(user.organizationId, { vendorId, contractType, status });
   }
@@ -63,7 +69,7 @@ export class ContractsController {
   update(
     @Param('id') id: string,
     @Body() updateContractDto: UpdateContractDto,
-    @CurrentUser() user: UserContext,
+    @CurrentUser() user: UserContext
   ) {
     // SECURITY: Pass organizationId to ensure tenant isolation
     return this.contractsService.update(id, updateContractDto, user.userId, user.organizationId);
@@ -80,16 +86,23 @@ export class ContractsController {
   uploadDocument(
     @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File,
-    @CurrentUser() user: UserContext,
+    @CurrentUser() user: UserContext
   ) {
     // SECURITY: Pass organizationId to ensure tenant isolation
     return this.contractsService.uploadDocument(id, file, user.userId, user.organizationId);
   }
 
   @Get(':id/document')
-  async downloadDocument(@Param('id') id: string, @CurrentUser() user: UserContext, @Res() res: Response) {
+  async downloadDocument(
+    @Param('id') id: string,
+    @CurrentUser() user: UserContext,
+    @Res() res: Response
+  ) {
     // SECURITY: Pass organizationId to ensure tenant isolation
-    const { buffer, filename, mimetype } = await this.contractsService.downloadDocument(id, user.organizationId);
+    const { buffer, filename, mimetype } = await this.contractsService.downloadDocument(
+      id,
+      user.organizationId
+    );
 
     res.setHeader('Content-Type', mimetype);
     res.setHeader('Content-Disposition', `attachment; filename="${sanitizeFilename(filename)}"`);

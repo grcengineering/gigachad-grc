@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Injectable, Logger } from '@nestjs/common';
 
 export interface PagerDutyConfig {
@@ -63,7 +62,9 @@ export class PagerDutyConnector {
   private readonly logger = new Logger(PagerDutyConnector.name);
   private readonly baseUrl = 'https://api.pagerduty.com';
 
-  async testConnection(config: PagerDutyConfig): Promise<{ success: boolean; message: string; details?: any }> {
+  async testConnection(
+    config: PagerDutyConfig
+  ): Promise<{ success: boolean; message: string; details?: any }> {
     if (!config.apiKey) {
       return { success: false, message: 'API key is required' };
     }
@@ -74,7 +75,10 @@ export class PagerDutyConnector {
       });
 
       if (!response.ok) {
-        return { success: false, message: response.status === 401 ? 'Invalid API key' : `API error: ${response.status}` };
+        return {
+          success: false,
+          message: response.status === 401 ? 'Invalid API key' : `API error: ${response.status}`,
+        };
       }
 
       const data = await response.json();
@@ -92,10 +96,22 @@ export class PagerDutyConnector {
     const errors: string[] = [];
 
     const [services, incidents, users, escalationPolicies] = await Promise.all([
-      this.getServices(config).catch(e => { errors.push(`Services: ${e.message}`); return []; }),
-      this.getIncidents(config).catch(e => { errors.push(`Incidents: ${e.message}`); return []; }),
-      this.getUsers(config).catch(e => { errors.push(`Users: ${e.message}`); return []; }),
-      this.getEscalationPolicies(config).catch(e => { errors.push(`Policies: ${e.message}`); return []; }),
+      this.getServices(config).catch((e) => {
+        errors.push(`Services: ${e.message}`);
+        return [];
+      }),
+      this.getIncidents(config).catch((e) => {
+        errors.push(`Incidents: ${e.message}`);
+        return [];
+      }),
+      this.getUsers(config).catch((e) => {
+        errors.push(`Users: ${e.message}`);
+        return [];
+      }),
+      this.getEscalationPolicies(config).catch((e) => {
+        errors.push(`Policies: ${e.message}`);
+        return [];
+      }),
     ]);
 
     const byPriority: Record<string, number> = {};
@@ -151,8 +167,8 @@ export class PagerDutyConnector {
 
   private buildHeaders(apiKey: string): Record<string, string> {
     return {
-      'Authorization': `Token token=${apiKey}`,
-      'Accept': 'application/json',
+      Authorization: `Token token=${apiKey}`,
+      Accept: 'application/json',
       'Content-Type': 'application/json',
     };
   }
@@ -194,4 +210,3 @@ export class PagerDutyConnector {
     return data.escalation_policies || [];
   }
 }
-

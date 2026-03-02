@@ -11,7 +11,6 @@ import { registerSecretsProvider } from '../secrets.registry';
 export class EnvSecretsProvider implements SecretsProvider {
   private readonly logger = new Logger(EnvSecretsProvider.name);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   constructor(_config: SecretsProviderConfig) {
     // No configuration needed for env provider
   }

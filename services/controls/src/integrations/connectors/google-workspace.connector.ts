@@ -1,9 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Injectable, Logger } from '@nestjs/common';
 
 export interface GoogleWorkspaceConfig {
-  serviceAccountKey: string;  // JSON string
-  adminEmail: string;         // Admin email for domain-wide delegation
+  serviceAccountKey: string; // JSON string
+  adminEmail: string; // Admin email for domain-wide delegation
 }
 
 export interface GoogleWorkspaceSyncResult {
@@ -58,7 +57,9 @@ export class GoogleWorkspaceConnector {
   private readonly logger = new Logger(GoogleWorkspaceConnector.name);
   private readonly adminUrl = 'https://admin.googleapis.com/admin/directory/v1';
 
-  async testConnection(config: GoogleWorkspaceConfig): Promise<{ success: boolean; message: string; details?: any }> {
+  async testConnection(
+    config: GoogleWorkspaceConfig
+  ): Promise<{ success: boolean; message: string; details?: any }> {
     if (!config.serviceAccountKey || !config.adminEmail) {
       return { success: false, message: 'Service Account Key and Admin Email are required' };
     }
@@ -68,7 +69,10 @@ export class GoogleWorkspaceConnector {
       const token = await this.getAccessToken(credentials, config.adminEmail);
 
       if (!token) {
-        return { success: false, message: 'Authentication failed - check service account and domain-wide delegation' };
+        return {
+          success: false,
+          message: 'Authentication failed - check service account and domain-wide delegation',
+        };
       }
 
       const response = await fetch(`${this.adminUrl}/users?maxResults=1&customer=my_customer`, {
@@ -99,9 +103,18 @@ export class GoogleWorkspaceConnector {
     }
 
     const [users, groups, orgUnits] = await Promise.all([
-      this.getUsers(token).catch(e => { errors.push(`Users: ${e.message}`); return []; }),
-      this.getGroups(token).catch(e => { errors.push(`Groups: ${e.message}`); return []; }),
-      this.getOrgUnits(token).catch(e => { errors.push(`OrgUnits: ${e.message}`); return []; }),
+      this.getUsers(token).catch((e) => {
+        errors.push(`Users: ${e.message}`);
+        return [];
+      }),
+      this.getGroups(token).catch((e) => {
+        errors.push(`Groups: ${e.message}`);
+        return [];
+      }),
+      this.getOrgUnits(token).catch((e) => {
+        errors.push(`OrgUnits: ${e.message}`);
+        return [];
+      }),
     ]);
 
     const activeUsers = users.filter((u: any) => !u.suspended);
@@ -200,4 +213,3 @@ export class GoogleWorkspaceConnector {
     return data.organizationUnits || [];
   }
 }
-

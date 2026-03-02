@@ -590,7 +590,7 @@ services:
       - 'traefik.http.routers.audit-audits.middlewares=api-security@file'
       - 'traefik.http.routers.audit-requests.rule=PathPrefix(`/api/audit-requests`)'
       - 'traefik.http.routers.audit-requests.middlewares=api-security@file'
-      - 'traefik.http.routers.audit-findings.rule=PathPrefix(`/api/audit-findings`)'
+      - 'traefik.http.routers.audit-findings.rule=PathPrefix(`/api/findings`)'
       - 'traefik.http.routers.audit-findings.middlewares=api-security@file'
       - 'traefik.http.routers.audit-portal.rule=PathPrefix(`/api/audit-portal`)'
       - 'traefik.http.routers.audit-portal.middlewares=api-security@file'
@@ -620,6 +620,8 @@ services:
     build:
       context: .
       dockerfile: frontend/Dockerfile
+      args:
+        VITE_ENABLE_DEV_AUTH: 'true'
     container_name: grc-frontend
     # SECURITY: Prevent privilege escalation attacks
     security_opt:
@@ -629,7 +631,7 @@ services:
       # Direct port access only for local development/debugging
       - '127.0.0.1:3000:80'
     environment:
-      - VITE_API_URL=http://localhost:3001
+      - VITE_API_URL=
       - VITE_ENABLE_DEV_AUTH=true
     depends_on:
       - controls

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Injectable, Logger } from '@nestjs/common';
 
 export interface MicrosoftTeamsConfig {
@@ -55,7 +54,9 @@ export class MicrosoftTeamsConnector {
   private readonly logger = new Logger(MicrosoftTeamsConnector.name);
   private readonly graphUrl = 'https://graph.microsoft.com/v1.0';
 
-  async testConnection(config: MicrosoftTeamsConfig): Promise<{ success: boolean; message: string; details?: any }> {
+  async testConnection(
+    config: MicrosoftTeamsConfig
+  ): Promise<{ success: boolean; message: string; details?: any }> {
     if (!config.tenantId || !config.clientId || !config.clientSecret) {
       return { success: false, message: 'Tenant ID, Client ID, and Client Secret are required' };
     }
@@ -92,7 +93,10 @@ export class MicrosoftTeamsConnector {
       throw new Error('Failed to authenticate');
     }
 
-    const teams = await this.getTeams(token).catch(e => { errors.push(`Teams: ${e.message}`); return []; });
+    const teams = await this.getTeams(token).catch((e) => {
+      errors.push(`Teams: ${e.message}`);
+      return [];
+    });
 
     return {
       teams: {
@@ -113,7 +117,11 @@ export class MicrosoftTeamsConnector {
       channels: { total: 0, standard: 0, private: 0, shared: 0 },
       apps: { installed: 0, orgWide: 0 },
       meetings: { scheduledLast30Days: 0, avgDuration: 0 },
-      security: { guestAccessEnabled: false, externalSharingEnabled: false, anonymousJoinEnabled: false },
+      security: {
+        guestAccessEnabled: false,
+        externalSharingEnabled: false,
+        anonymousJoinEnabled: false,
+      },
       collectedAt: new Date().toISOString(),
       errors,
     };
@@ -121,16 +129,19 @@ export class MicrosoftTeamsConnector {
 
   private async getAccessToken(config: MicrosoftTeamsConfig): Promise<string | null> {
     try {
-      const response = await fetch(`https://login.microsoftonline.com/${config.tenantId}/oauth2/v2.0/token`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          client_id: config.clientId,
-          client_secret: config.clientSecret,
-          scope: 'https://graph.microsoft.com/.default',
-          grant_type: 'client_credentials',
-        }),
-      });
+      const response = await fetch(
+        `https://login.microsoftonline.com/${config.tenantId}/oauth2/v2.0/token`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            client_id: config.clientId,
+            client_secret: config.clientSecret,
+            scope: 'https://graph.microsoft.com/.default',
+            grant_type: 'client_credentials',
+          }),
+        }
+      );
       if (!response.ok) return null;
       const data = await response.json();
       return data.access_token;
@@ -140,12 +151,14 @@ export class MicrosoftTeamsConnector {
   }
 
   private async getTeams(token: string): Promise<any[]> {
-    const response = await fetch(`${this.graphUrl}/groups?$filter=resourceProvisioningOptions/Any(x:x eq 'Team')&$top=999`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const response = await fetch(
+      `${this.graphUrl}/groups?$filter=resourceProvisioningOptions/Any(x:x eq 'Team')&$top=999`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
     if (!response.ok) throw new Error(`Failed: ${response.status}`);
     const data = await response.json();
     return data.value || [];
   }
 }
-

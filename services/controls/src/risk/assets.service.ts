@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Injectable, NotFoundException, Logger, BadRequestException } from '@nestjs/common';
 import { safeFetch, SSRFProtectionError } from '@gigachad-grc/shared';
 import { PrismaService } from '../prisma/prisma.service';

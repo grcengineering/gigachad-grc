@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Injectable, Logger } from '@nestjs/common';
 import {
   BaseCollector,
@@ -9,7 +8,7 @@ import {
 
 /**
  * GitHub Evidence Collector
- * 
+ *
  * Collects evidence from GitHub:
  * - Repository security settings
  * - Branch protection rules
@@ -25,7 +24,8 @@ export class GitHubCollector extends BaseCollector {
 
   readonly name = 'github';
   readonly displayName = 'GitHub';
-  readonly description = 'Collect evidence from GitHub repositories, security settings, and audit logs';
+  readonly description =
+    'Collect evidence from GitHub repositories, security settings, and audit logs';
   readonly icon = 'github';
 
   readonly requiredCredentials = [
@@ -64,12 +64,12 @@ export class GitHubCollector extends BaseCollector {
 
     try {
       const { accessToken, organization } = config.credentials;
-      
+
       // Test API access
       const response = await fetch(`${this.API_BASE}/orgs/${organization}`, {
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Accept': 'application/vnd.github.v3+json',
+          Authorization: `Bearer ${accessToken}`,
+          Accept: 'application/vnd.github.v3+json',
         },
       });
 
@@ -79,19 +79,16 @@ export class GitHubCollector extends BaseCollector {
       }
 
       const org = await response.json();
-      return { 
-        success: true, 
-        message: `Successfully connected to ${org.name || organization}` 
+      return {
+        success: true,
+        message: `Successfully connected to ${org.name || organization}`,
       };
     } catch (error) {
       return { success: false, message: `Connection failed: ${error.message}` };
     }
   }
 
-  async collect(
-    organizationId: string,
-    config: CollectorConfig
-  ): Promise<CollectionResult> {
+  async collect(organizationId: string, config: CollectorConfig): Promise<CollectionResult> {
     const startTime = new Date();
     const evidence: CollectedEvidence[] = [];
     const errors: string[] = [];
@@ -121,7 +118,6 @@ export class GitHubCollector extends BaseCollector {
       // Collect audit log
       const auditEvidence = await this.collectAuditLog(config);
       evidence.push(...auditEvidence.evidence);
-
     } catch (error) {
       errors.push(`GitHub collection failed: ${error.message}`);
     }
@@ -129,11 +125,13 @@ export class GitHubCollector extends BaseCollector {
     return this.createResult(evidence, errors, warnings, startTime);
   }
 
-  async getAvailableEvidenceTypes(): Promise<{
-    type: string;
-    description: string;
-    category: string;
-  }[]> {
+  async getAvailableEvidenceTypes(): Promise<
+    {
+      type: string;
+      description: string;
+      category: string;
+    }[]
+  > {
     return [
       {
         type: 'repo_security_settings',
@@ -187,22 +185,19 @@ export class GitHubCollector extends BaseCollector {
 
     try {
       // Fetch repositories
-      const response = await fetch(
-        `${this.API_BASE}/orgs/${organization}/repos?per_page=100`,
-        {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Accept': 'application/vnd.github.v3+json',
-          },
-        }
-      );
+      const response = await fetch(`${this.API_BASE}/orgs/${organization}/repos?per_page=100`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          Accept: 'application/vnd.github.v3+json',
+        },
+      });
 
       if (!response.ok) {
         throw new Error(`Failed to fetch repositories: ${response.status}`);
       }
 
       const repos = await response.json();
-      
+
       // Analyze security settings
       const securityAnalysis = {
         totalRepos: repos.length,
@@ -237,7 +232,6 @@ export class GitHubCollector extends BaseCollector {
         },
         tags: ['github', 'repositories', 'security'],
       });
-
     } catch (error) {
       errors.push(`Repository settings collection failed: ${error.message}`);
     }
@@ -278,15 +272,10 @@ export class GitHubCollector extends BaseCollector {
             requireLinearHistory: 3,
             allowForcePushes: 0,
           },
-          unprotectedRepositories: [
-            'docs-internal',
-            'playground',
-            'temp-project',
-          ],
+          unprotectedRepositories: ['docs-internal', 'playground', 'temp-project'],
         },
         tags: ['github', 'branch-protection', 'access-control'],
       });
-
     } catch (error) {
       warnings.push(`Branch protection collection had issues: ${error.message}`);
     }
@@ -346,7 +335,6 @@ export class GitHubCollector extends BaseCollector {
         },
         tags: ['github', 'dependabot', 'code-scanning', 'vulnerabilities'],
       });
-
     } catch (error) {
       warnings.push(`Security alerts collection had issues: ${error.message}`);
     }
@@ -393,4 +381,3 @@ export class GitHubCollector extends BaseCollector {
     return { evidence };
   }
 }
-

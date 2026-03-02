@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { RISK_SCENARIO_LIBRARY } from './risk-scenario-library';
@@ -25,7 +24,7 @@ export class RiskScenarioLibraryService implements OnModuleInit {
    */
   async seedLibrary(): Promise<{ created: number; updated: number; total: number }> {
     this.logger.log('Checking risk scenario library...');
-    
+
     let created = 0;
     const updated = 0;
 
@@ -93,7 +92,9 @@ export class RiskScenarioLibraryService implements OnModuleInit {
     if (created > 0) {
       this.logger.log(`Risk scenario library seeded: ${created} new templates created`);
     } else {
-      this.logger.log(`Risk scenario library is up to date (${RISK_SCENARIO_LIBRARY.length} templates)`);
+      this.logger.log(
+        `Risk scenario library is up to date (${RISK_SCENARIO_LIBRARY.length} templates)`
+      );
     }
 
     return { created, updated, total: RISK_SCENARIO_LIBRARY.length };
@@ -109,10 +110,7 @@ export class RiskScenarioLibraryService implements OnModuleInit {
         isTemplate: true,
         deletedAt: null,
       },
-      orderBy: [
-        { category: 'asc' },
-        { title: 'asc' },
-      ],
+      orderBy: [{ category: 'asc' }, { title: 'asc' }],
     });
   }
 
@@ -121,7 +119,7 @@ export class RiskScenarioLibraryService implements OnModuleInit {
    */
   async getLibraryByCategory(): Promise<Record<string, any[]>> {
     const templates = await this.getLibraryTemplates();
-    
+
     const grouped: Record<string, any[]> = {};
     for (const template of templates) {
       if (!grouped[template.category]) {
@@ -129,7 +127,7 @@ export class RiskScenarioLibraryService implements OnModuleInit {
       }
       grouped[template.category].push(template);
     }
-    
+
     return grouped;
   }
 
@@ -138,12 +136,12 @@ export class RiskScenarioLibraryService implements OnModuleInit {
    */
   async getLibraryCategories(): Promise<{ category: string; count: number }[]> {
     const templates = await this.getLibraryTemplates();
-    
+
     const categoryMap = new Map<string, number>();
     for (const template of templates) {
       categoryMap.set(template.category, (categoryMap.get(template.category) || 0) + 1);
     }
-    
+
     return Array.from(categoryMap.entries())
       .map(([category, count]) => ({ category, count }))
       .sort((a, b) => a.category.localeCompare(b.category));
@@ -179,7 +177,3 @@ export class RiskScenarioLibraryService implements OnModuleInit {
     });
   }
 }
-
-
-
-

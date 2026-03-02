@@ -52,7 +52,7 @@ export interface SyncResult {
   vulnerabilities?: { total?: number; critical?: number; high?: number; fixable?: number };
   orgs?: { total?: number };
   policies?: { total?: number };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   [key: string]: any;
 }
 
@@ -1254,7 +1254,6 @@ export class IntegrationsService {
   private generateSyncSummary(integrationType: string, syncResult: SyncResult): string {
     switch (integrationType) {
       case 'aws':
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return `AWS: ${syncResult.securityHub?.totalFindings || 0} Security Hub findings, ${(syncResult.iam as any)?.users?.length || 0} IAM users, ${syncResult.config?.compliancePercentage || 0}% Config compliance`;
       case 'okta':
         return `Okta: ${syncResult.users?.total || 0} users (${syncResult.users?.withMFA || 0} with MFA), ${syncResult.applications?.total || 0} applications`;
@@ -1263,7 +1262,6 @@ export class IntegrationsService {
       case 'crowdstrike':
         return `CrowdStrike: ${syncResult.devices?.total || 0} devices (${syncResult.devices?.online || 0} online), ${syncResult.detections?.total || 0} detections`;
       case 'jira':
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return `Jira: ${(syncResult.issues as any)?.total || 0} issues (${(syncResult.issues as any)?.open || 0} open), ${(syncResult.securityIssues as any)?.total || 0} security-related`;
       case 'snyk':
         return `Snyk: ${syncResult.projects?.total || 0} projects, ${syncResult.vulnerabilities?.total || 0} vulnerabilities (${syncResult.vulnerabilities?.critical || 0} critical)`;
@@ -1348,14 +1346,13 @@ export class IntegrationsService {
           protectionRate: syncResult.prevention?.protectionPercentage || 0,
         };
       case 'jira': {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const jiraIssues = syncResult.issues as any;
         return {
           totalIssues: jiraIssues?.total || 0,
           openIssues: jiraIssues?.openIssues || jiraIssues?.open || 0,
           overdueIssues: jiraIssues?.overdueIssues || 0,
           securityIssues: syncResult.securityIssues?.total || 0,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
           avgResolutionDays: (syncResult.slaMetrics as any)?.avgResolutionTime || 0,
         };
       }
@@ -1411,16 +1408,16 @@ export class IntegrationsService {
             data: {
               name: supplier.name,
               legalName: supplier.legalName,
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
               category: this.mapZipCategory(supplier.category) as any,
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
               tier: this.determineZipVendorTier(supplier) as any,
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
               status: this.mapZipStatus(supplier.status) as any,
               website: supplier.website,
               primaryContact: supplier.primaryContactName,
               primaryContactEmail: supplier.primaryContactEmail,
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
               inherentRiskScore: (supplier.riskLevel ?? null) as any,
               certifications,
               tags: ['zip-synced', 'auto-imported'],
@@ -1436,16 +1433,16 @@ export class IntegrationsService {
               vendorId: zipVendorId,
               name: supplier.name,
               legalName: supplier.legalName,
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
               category: this.mapZipCategory(supplier.category) as any,
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
               tier: this.determineZipVendorTier(supplier) as any,
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
               status: this.mapZipStatus(supplier.status) as any,
               website: supplier.website,
               primaryContact: supplier.primaryContactName,
               primaryContactEmail: supplier.primaryContactEmail,
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
               inherentRiskScore: (supplier.riskLevel ?? null) as any,
               certifications,
               tags: ['zip-synced', 'auto-imported'],

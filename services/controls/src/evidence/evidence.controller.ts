@@ -49,9 +49,12 @@ import { DevAuthGuard } from '../auth/dev-auth.guard';
  * Prevents header injection attacks via malicious filenames
  */
 function sanitizeFilename(filename: string): string {
-  return filename
-    .replace(/[\r\n\x00-\x1f\x7f]/g, '') // Remove control chars
-    .replace(/["\\/]/g, '_'); // Replace problematic chars
+  return (
+    filename
+      // eslint-disable-next-line no-control-regex
+      .replace(/[\r\n\u0000-\u001F\u007F]/g, '') // Remove control chars
+      .replace(/["\\/]/g, '_')
+  ); // Replace problematic chars
 }
 
 @ApiTags('evidence')
@@ -64,10 +67,7 @@ export class EvidenceController {
   @Get()
   @ApiOperation({ summary: 'List all evidence' })
   @ApiResponse({ status: 200, description: 'Returns paginated evidence list' })
-  async findAll(
-    @CurrentUser() user: UserContext,
-    @Query() filters: EvidenceFilterDto,
-  ) {
+  async findAll(@CurrentUser() user: UserContext, @Query() filters: EvidenceFilterDto) {
     return this.evidenceService.findAll(user.organizationId, filters);
   }
 
@@ -79,45 +79,33 @@ export class EvidenceController {
 
   @Get('folders')
   @ApiOperation({ summary: 'List folders' })
-  async getFolders(
-    @CurrentUser() user: UserContext,
-    @Query('parentId') parentId?: string,
-  ) {
+  async getFolders(@CurrentUser() user: UserContext, @Query('parentId') parentId?: string) {
     return this.evidenceService.getFolders(user.organizationId, parentId);
   }
 
   @Post('folders')
   @Roles('admin', 'compliance_manager')
   @ApiOperation({ summary: 'Create a folder' })
-  async createFolder(
-    @CurrentUser() user: UserContext,
-    @Body() dto: CreateFolderDto,
-  ) {
+  async createFolder(@CurrentUser() user: UserContext, @Body() dto: CreateFolderDto) {
     return this.evidenceService.createFolder(
       user.organizationId,
       user.userId,
       dto.name,
-      dto.parentId,
+      dto.parentId
     );
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get evidence by ID' })
   @ApiParam({ name: 'id', description: 'Evidence ID' })
-  async findOne(
-    @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser() user: UserContext,
-  ) {
+  async findOne(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: UserContext) {
     return this.evidenceService.findOne(id, user.organizationId);
   }
 
   @Get(':id/download')
   @ApiOperation({ summary: 'Get download URL for evidence' })
   @ApiParam({ name: 'id', description: 'Evidence ID' })
-  async getDownloadUrl(
-    @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser() user: UserContext,
-  ) {
+  async getDownloadUrl(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: UserContext) {
     return this.evidenceService.getDownloadUrl(id, user.organizationId);
   }
 
@@ -127,9 +115,12 @@ export class EvidenceController {
   async preview(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: UserContext,
-    @Res() res: Response,
+    @Res() res: Response
   ) {
-    const { stream, mimeType, filename } = await this.evidenceService.getFileStream(id, user.organizationId);
+    const { stream, mimeType, filename } = await this.evidenceService.getFileStream(
+      id,
+      user.organizationId
+    );
     res.set({
       'Content-Type': mimeType || 'application/octet-stream',
       'Content-Disposition': `inline; filename="${sanitizeFilename(filename)}"`,
@@ -163,14 +154,9 @@ export class EvidenceController {
   async upload(
     @CurrentUser() user: UserContext,
     @UploadedFile() file: Express.Multer.File,
-    @Body() dto: UploadEvidenceDto,
+    @Body() dto: UploadEvidenceDto
   ) {
-    return this.evidenceService.upload(
-      user.organizationId,
-      user.userId,
-      file,
-      dto,
-    );
+    return this.evidenceService.upload(user.organizationId, user.userId, file, dto);
   }
 
   @Put(':id')
@@ -180,24 +166,16 @@ export class EvidenceController {
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: UserContext,
-    @Body() dto: UpdateEvidenceDto,
+    @Body() dto: UpdateEvidenceDto
   ) {
-    return this.evidenceService.update(
-      id,
-      user.organizationId,
-      user.userId,
-      dto,
-    );
+    return this.evidenceService.update(id, user.organizationId, user.userId, dto);
   }
 
   @Delete(':id')
   @Roles('admin', 'compliance_manager')
   @ApiOperation({ summary: 'Delete evidence' })
   @ApiParam({ name: 'id', description: 'Evidence ID' })
-  async delete(
-    @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser() user: UserContext,
-  ) {
+  async delete(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: UserContext) {
     return this.evidenceService.delete(id, user.organizationId);
   }
 
@@ -208,14 +186,9 @@ export class EvidenceController {
   async review(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: UserContext,
-    @Body() dto: ReviewEvidenceDto,
+    @Body() dto: ReviewEvidenceDto
   ) {
-    return this.evidenceService.review(
-      id,
-      user.organizationId,
-      user.userId,
-      dto,
-    );
+    return this.evidenceService.review(id, user.organizationId, user.userId, dto);
   }
 
   @Post(':id/link')
@@ -225,14 +198,9 @@ export class EvidenceController {
   async linkToControls(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: UserContext,
-    @Body() dto: LinkEvidenceDto,
+    @Body() dto: LinkEvidenceDto
   ) {
-    return this.evidenceService.linkToControls(
-      id,
-      user.organizationId,
-      user.userId,
-      dto,
-    );
+    return this.evidenceService.linkToControls(id, user.organizationId, user.userId, dto);
   }
 
   @Delete(':id/link/:controlId')
@@ -241,13 +209,8 @@ export class EvidenceController {
   async unlinkFromControl(
     @Param('id', ParseUUIDPipe) id: string,
     @Param('controlId', ParseUUIDPipe) controlId: string,
-    @CurrentUser() user: UserContext,
+    @CurrentUser() user: UserContext
   ) {
-    return this.evidenceService.unlinkFromControl(
-      id,
-      controlId,
-      user.organizationId,
-    );
+    return this.evidenceService.unlinkFromControl(id, controlId, user.organizationId);
   }
 }
-

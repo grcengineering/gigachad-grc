@@ -1,8 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Injectable, Logger } from '@nestjs/common';
 
 export interface ServiceNowConfig {
-  instanceUrl: string;  // e.g., https://company.service-now.com
+  instanceUrl: string; // e.g., https://company.service-now.com
   username: string;
   password: string;
 }
@@ -65,7 +64,9 @@ export interface ServiceNowSyncResult {
 export class ServiceNowConnector {
   private readonly logger = new Logger(ServiceNowConnector.name);
 
-  async testConnection(config: ServiceNowConfig): Promise<{ success: boolean; message: string; details?: any }> {
+  async testConnection(
+    config: ServiceNowConfig
+  ): Promise<{ success: boolean; message: string; details?: any }> {
     if (!config.instanceUrl || !config.username || !config.password) {
       return { success: false, message: 'Instance URL, username, and password are required' };
     }
@@ -77,7 +78,11 @@ export class ServiceNowConnector {
       });
 
       if (!response.ok) {
-        return { success: false, message: response.status === 401 ? 'Invalid credentials' : `API error: ${response.status}` };
+        return {
+          success: false,
+          message:
+            response.status === 401 ? 'Invalid credentials' : `API error: ${response.status}`,
+        };
       }
 
       return {
@@ -95,10 +100,22 @@ export class ServiceNowConnector {
     const errors: string[] = [];
 
     const [incidents, changes, problems, cmdb] = await Promise.all([
-      this.getIncidents(baseUrl, config).catch(e => { errors.push(`Incidents: ${e.message}`); return []; }),
-      this.getChanges(baseUrl, config).catch(e => { errors.push(`Changes: ${e.message}`); return []; }),
-      this.getProblems(baseUrl, config).catch(e => { errors.push(`Problems: ${e.message}`); return []; }),
-      this.getCMDBItems(baseUrl, config).catch(e => { errors.push(`CMDB: ${e.message}`); return { totalCIs: 0, servers: 0, applications: 0, databases: 0 }; }),
+      this.getIncidents(baseUrl, config).catch((e) => {
+        errors.push(`Incidents: ${e.message}`);
+        return [];
+      }),
+      this.getChanges(baseUrl, config).catch((e) => {
+        errors.push(`Changes: ${e.message}`);
+        return [];
+      }),
+      this.getProblems(baseUrl, config).catch((e) => {
+        errors.push(`Problems: ${e.message}`);
+        return [];
+      }),
+      this.getCMDBItems(baseUrl, config).catch((e) => {
+        errors.push(`CMDB: ${e.message}`);
+        return { totalCIs: 0, servers: 0, applications: 0, databases: 0 };
+      }),
     ]);
 
     const openIncidents = incidents.filter((i: any) => ['1', '2', '3'].includes(i.state));
@@ -151,8 +168,8 @@ export class ServiceNowConnector {
   private buildHeaders(config: ServiceNowConfig): Record<string, string> {
     const auth = Buffer.from(`${config.username}:${config.password}`).toString('base64');
     return {
-      'Authorization': `Basic ${auth}`,
-      'Accept': 'application/json',
+      Authorization: `Basic ${auth}`,
+      Accept: 'application/json',
       'Content-Type': 'application/json',
     };
   }
@@ -168,20 +185,18 @@ export class ServiceNowConnector {
   }
 
   private async getChanges(baseUrl: string, config: ServiceNowConfig): Promise<any[]> {
-    const response = await fetch(
-      `${baseUrl}/api/now/table/change_request?sysparm_limit=500`,
-      { headers: this.buildHeaders(config) }
-    );
+    const response = await fetch(`${baseUrl}/api/now/table/change_request?sysparm_limit=500`, {
+      headers: this.buildHeaders(config),
+    });
     if (!response.ok) throw new Error(`Failed: ${response.status}`);
     const data = await response.json();
     return data.result || [];
   }
 
   private async getProblems(baseUrl: string, config: ServiceNowConfig): Promise<any[]> {
-    const response = await fetch(
-      `${baseUrl}/api/now/table/problem?sysparm_limit=200`,
-      { headers: this.buildHeaders(config) }
-    );
+    const response = await fetch(`${baseUrl}/api/now/table/problem?sysparm_limit=200`, {
+      headers: this.buildHeaders(config),
+    });
     if (!response.ok) throw new Error(`Failed: ${response.status}`);
     const data = await response.json();
     return data.result || [];
@@ -189,9 +204,15 @@ export class ServiceNowConnector {
 
   private async getCMDBItems(baseUrl: string, config: ServiceNowConfig) {
     const [serversResp, appsResp, dbsResp] = await Promise.all([
-      fetch(`${baseUrl}/api/now/table/cmdb_ci_server?sysparm_limit=1&sysparm_fields=sys_id`, { headers: this.buildHeaders(config) }),
-      fetch(`${baseUrl}/api/now/table/cmdb_ci_appl?sysparm_limit=1&sysparm_fields=sys_id`, { headers: this.buildHeaders(config) }),
-      fetch(`${baseUrl}/api/now/table/cmdb_ci_database?sysparm_limit=1&sysparm_fields=sys_id`, { headers: this.buildHeaders(config) }),
+      fetch(`${baseUrl}/api/now/table/cmdb_ci_server?sysparm_limit=1&sysparm_fields=sys_id`, {
+        headers: this.buildHeaders(config),
+      }),
+      fetch(`${baseUrl}/api/now/table/cmdb_ci_appl?sysparm_limit=1&sysparm_fields=sys_id`, {
+        headers: this.buildHeaders(config),
+      }),
+      fetch(`${baseUrl}/api/now/table/cmdb_ci_database?sysparm_limit=1&sysparm_fields=sys_id`, {
+        headers: this.buildHeaders(config),
+      }),
     ]);
 
     return {
@@ -202,4 +223,3 @@ export class ServiceNowConnector {
     };
   }
 }
-

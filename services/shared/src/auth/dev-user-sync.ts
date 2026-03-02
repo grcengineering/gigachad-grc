@@ -31,9 +31,8 @@ interface LoggerLike {
  * ```
  */
 export async function ensureDevUserExists(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   prisma: { organization: any; user: any },
-  logger: LoggerLike,
+  logger: LoggerLike
 ): Promise<void> {
   try {
     // Upsert organization - creates if not exists, no-op if exists
@@ -74,7 +73,7 @@ export async function ensureDevUserExists(
   } catch (error) {
     // Log but don't throw - the dev user might already exist via another path
     logger.warn(
-      `Dev user sync warning: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      `Dev user sync warning: ${error instanceof Error ? error.message : 'Unknown error'}`
     );
   }
 }

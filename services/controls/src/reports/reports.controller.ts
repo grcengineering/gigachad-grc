@@ -1,19 +1,5 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Query,
-  Res,
-  UseGuards,
-} from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Query, Res, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { Response } from 'express';
 import { ReportsService, GenerateReportDto } from './reports.service';
 import { CurrentUser, UserContext } from '@gigachad-grc/shared';
@@ -27,9 +13,12 @@ import { Resource, Action } from '../permissions/dto/permission.dto';
  * Prevents header injection attacks via malicious filenames
  */
 function sanitizeFilename(filename: string): string {
-  return filename
-    .replace(/[\r\n\x00-\x1f\x7f]/g, '') // Remove control chars
-    .replace(/["\\/]/g, '_'); // Replace problematic chars
+  return (
+    filename
+      // eslint-disable-next-line no-control-regex
+      .replace(/[\r\n\u0000-\u001F\u007F]/g, '') // Remove control chars
+      .replace(/["\\/]/g, '_')
+  ); // Replace problematic chars
 }
 
 @ApiTags('reports')
@@ -55,14 +44,14 @@ export class ReportsController {
   async generateReport(
     @CurrentUser() user: UserContext,
     @Body() dto: GenerateReportDto,
-    @Res() res: Response,
+    @Res() res: Response
   ) {
     const { buffer, filename } = await this.reportsService.generateReport(
       user.organizationId,
       user.userId,
       dto,
       user.email,
-      user.name,
+      user.name
     );
 
     res.set({
@@ -81,7 +70,7 @@ export class ReportsController {
   async generateComplianceSummary(
     @CurrentUser() user: UserContext,
     @Query('confidential') confidential: string,
-    @Res() res: Response,
+    @Res() res: Response
   ) {
     const { buffer, filename } = await this.reportsService.generateReport(
       user.organizationId,
@@ -91,7 +80,7 @@ export class ReportsController {
         confidential: confidential !== 'false',
       },
       user.email,
-      user.name,
+      user.name
     );
 
     res.set({
@@ -112,7 +101,7 @@ export class ReportsController {
     @CurrentUser() user: UserContext,
     @Query('frameworkId') frameworkId: string,
     @Query('confidential') confidential: string,
-    @Res() res: Response,
+    @Res() res: Response
   ) {
     const { buffer, filename } = await this.reportsService.generateReport(
       user.organizationId,
@@ -123,7 +112,7 @@ export class ReportsController {
         confidential: confidential !== 'false',
       },
       user.email,
-      user.name,
+      user.name
     );
 
     res.set({
@@ -142,7 +131,7 @@ export class ReportsController {
   async generateRiskRegister(
     @CurrentUser() user: UserContext,
     @Query('confidential') confidential: string,
-    @Res() res: Response,
+    @Res() res: Response
   ) {
     const { buffer, filename } = await this.reportsService.generateReport(
       user.organizationId,
@@ -152,7 +141,7 @@ export class ReportsController {
         confidential: confidential !== 'false',
       },
       user.email,
-      user.name,
+      user.name
     );
 
     res.set({
@@ -171,7 +160,7 @@ export class ReportsController {
   async generateControlStatus(
     @CurrentUser() user: UserContext,
     @Query('confidential') confidential: string,
-    @Res() res: Response,
+    @Res() res: Response
   ) {
     const { buffer, filename } = await this.reportsService.generateReport(
       user.organizationId,
@@ -181,7 +170,7 @@ export class ReportsController {
         confidential: confidential !== 'false',
       },
       user.email,
-      user.name,
+      user.name
     );
 
     res.set({
@@ -193,4 +182,3 @@ export class ReportsController {
     res.end(buffer);
   }
 }
-

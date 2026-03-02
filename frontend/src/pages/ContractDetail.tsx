@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeftIcon, TrashIcon, PencilIcon, DocumentArrowDownIcon } from '@heroicons/react/24/outline';
+import {
+  ArrowLeftIcon,
+  TrashIcon,
+  PencilIcon,
+  DocumentArrowDownIcon,
+} from '@heroicons/react/24/outline';
 import { contractsApi } from '../lib/api';
-import { useAuth } from '@/contexts/AuthContext';
 import toast from 'react-hot-toast';
 
 interface Contract {
@@ -50,7 +54,9 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
     currency: contract?.currency || 'USD',
     startDate: contract?.startDate ? new Date(contract.startDate).toISOString().split('T')[0] : '',
     endDate: contract?.endDate ? new Date(contract.endDate).toISOString().split('T')[0] : '',
-    renewalDate: contract?.renewalDate ? new Date(contract.renewalDate).toISOString().split('T')[0] : '',
+    renewalDate: contract?.renewalDate
+      ? new Date(contract.renewalDate).toISOString().split('T')[0]
+      : '',
     autoRenew: contract?.autoRenew ?? false,
     status: contract?.status || 'active',
     requiresSoc2: contract?.requiresSoc2 ?? false,
@@ -102,9 +108,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-surface-400 mb-1">
-                Status *
-              </label>
+              <label className="block text-sm font-medium text-surface-400 mb-1">Status *</label>
               <select
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
@@ -118,9 +122,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-surface-400 mb-1">
-                Vendor ID *
-              </label>
+              <label className="block text-sm font-medium text-surface-400 mb-1">Vendor ID *</label>
               <input
                 type="text"
                 value={formData.vendorId}
@@ -134,9 +136,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
 
         {/* Description */}
         <div>
-          <label className="block text-sm font-medium text-surface-400 mb-1">
-            Description
-          </label>
+          <label className="block text-sm font-medium text-surface-400 mb-1">Description</label>
           <textarea
             value={formData.description || ''}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -156,14 +156,17 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
               <input
                 type="number"
                 value={formData.contractValue || ''}
-                onChange={(e) => setFormData({ ...formData, contractValue: parseFloat(e.target.value) || undefined })}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    contractValue: parseFloat(e.target.value) || undefined,
+                  })
+                }
                 className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-surface-400 mb-1">
-                Currency
-              </label>
+              <label className="block text-sm font-medium text-surface-400 mb-1">Currency</label>
               <select
                 value={formData.currency}
                 onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
@@ -194,9 +197,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-surface-400 mb-1">
-                End Date *
-              </label>
+              <label className="block text-sm font-medium text-surface-400 mb-1">End Date *</label>
               <input
                 type="date"
                 value={formData.endDate}
@@ -294,7 +295,15 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
   );
 }
 
-function ContractView({ contract, onEdit, onDelete }: { contract: Contract; onEdit: () => void; onDelete: () => void }) {
+function ContractView({
+  contract,
+  onEdit,
+  onDelete,
+}: {
+  contract: Contract;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
   return (
     <div className="space-y-6">
       <div className="bg-surface-900 border border-surface-800 rounded-lg p-6 space-y-6">
@@ -331,12 +340,17 @@ function ContractView({ contract, onEdit, onDelete }: { contract: Contract; onEd
             <div>
               <dt className="text-sm font-medium text-surface-400 mb-1">Status</dt>
               <dd>
-                <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full capitalize ${
-                  contract.status === 'active' ? 'bg-green-500/20 text-green-400' :
-                  contract.status === 'expired' ? 'bg-red-500/20 text-red-400' :
-                  contract.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
-                  'bg-surface-700 text-surface-400'
-                }`}>
+                <span
+                  className={`inline-flex px-2 py-1 text-xs font-medium rounded-full capitalize ${
+                    contract.status === 'active'
+                      ? 'bg-green-500/20 text-green-400'
+                      : contract.status === 'expired'
+                        ? 'bg-red-500/20 text-red-400'
+                        : contract.status === 'pending'
+                          ? 'bg-yellow-500/20 text-yellow-400'
+                          : 'bg-surface-700 text-surface-400'
+                  }`}
+                >
                   {contract.status}
                 </span>
               </dd>
@@ -392,7 +406,8 @@ function ContractView({ contract, onEdit, onDelete }: { contract: Contract; onEd
           </div>
           <div className="mt-4">
             <span className="text-sm text-surface-400">
-              Auto-renew: <span className="text-surface-100">{contract.autoRenew ? 'Yes' : 'No'}</span>
+              Auto-renew:{' '}
+              <span className="text-surface-100">{contract.autoRenew ? 'Yes' : 'No'}</span>
             </span>
           </div>
         </div>
@@ -421,9 +436,14 @@ function ContractView({ contract, onEdit, onDelete }: { contract: Contract; onEd
                 GDPR
               </span>
             )}
-            {!contract.requiresSoc2 && !contract.requiresIso27001 && !contract.requiresHipaa && !contract.requiresGdpr && (
-              <span className="text-sm text-surface-500">No compliance requirements specified</span>
-            )}
+            {!contract.requiresSoc2 &&
+              !contract.requiresIso27001 &&
+              !contract.requiresHipaa &&
+              !contract.requiresGdpr && (
+                <span className="text-sm text-surface-500">
+                  No compliance requirements specified
+                </span>
+              )}
           </div>
         </div>
 
@@ -436,7 +456,9 @@ function ContractView({ contract, onEdit, onDelete }: { contract: Contract; onEd
               <div className="flex-1">
                 <p className="text-sm font-medium text-surface-100">{contract.filename}</p>
                 <p className="text-xs text-surface-500">
-                  {contract.size ? `${(contract.size / 1024 / 1024).toFixed(2)} MB` : 'Unknown size'}
+                  {contract.size
+                    ? `${(contract.size / 1024 / 1024).toFixed(2)} MB`
+                    : 'Unknown size'}
                 </p>
               </div>
               <button className="px-3 py-1 text-sm text-brand-400 hover:text-brand-300 transition-colors">
@@ -453,7 +475,6 @@ function ContractView({ contract, onEdit, onDelete }: { contract: Contract; onEd
 export default function ContractDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [contract, setContract] = useState<Contract | null>(null);
   const [loading, setLoading] = useState(true);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -470,9 +491,11 @@ export default function ContractDetail() {
 
   const fetchContract = async () => {
     try {
-      const response = await fetch(`/api/contracts/${id}`);
-      const data = await response.json();
-      setContract(data);
+      if (!id) {
+        return;
+      }
+      const response = await contractsApi.get(id);
+      setContract(response.data as unknown as Contract);
     } catch (error) {
       console.error('Error fetching contract:', error);
     } finally {
@@ -482,29 +505,13 @@ export default function ContractDetail() {
 
   const handleSave = async (formData: Partial<Contract>) => {
     try {
-      const url = id === 'new'
-        ? '/api/contracts'
-        : `/api/contracts/${id}`;
-      const method = id === 'new' ? 'POST' : 'PATCH';
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'x-user-id': user?.id || '',
-          'x-organization-id': user?.organizationId || '',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (id === 'new') {
-          navigate(`/contracts/${data.id}`);
-        } else {
-          setContract(data);
-          setEditing(false);
-        }
+      if (id === 'new') {
+        const response = await contractsApi.create(formData as any);
+        navigate(`/contracts/${response.data.id}`);
+      } else if (id) {
+        const response = await contractsApi.update(id, formData as any);
+        setContract(response.data as unknown as Contract);
+        setEditing(false);
       }
     } catch (error) {
       console.error('Error saving contract:', error);
@@ -566,11 +573,7 @@ export default function ContractDetail() {
           }}
         />
       ) : contract ? (
-        <ContractView
-          contract={contract}
-          onEdit={() => setEditing(true)}
-          onDelete={handleDelete}
-        />
+        <ContractView contract={contract} onEdit={() => setEditing(true)} onDelete={handleDelete} />
       ) : null}
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
@@ -590,7 +593,9 @@ export default function ContractDetail() {
               <button
                 onClick={async () => {
                   try {
-                    await fetch(`/api/contracts/${id}`, { method: 'DELETE', headers: { 'x-user-id': 'system' } });
+                    if (id) {
+                      await contractsApi.delete(id);
+                    }
                     toast.success('Contract deleted successfully');
                     navigate('/contracts');
                   } catch (error) {
@@ -606,7 +611,6 @@ export default function ContractDetail() {
           </div>
         </div>
       )}
-
     </div>
   );
 }

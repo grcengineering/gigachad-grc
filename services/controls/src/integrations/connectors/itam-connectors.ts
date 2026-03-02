@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Injectable } from '@nestjs/common';
 import { BaseConnector } from './base-connector';
 import axios from 'axios';
@@ -634,7 +633,10 @@ export class AtlassianAssetsConnector extends BaseConnector {
   /**
    * Auto-discover the JSM Assets workspace ID.
    */
-  private async discoverWorkspaceId(apiBase: string, authHeader: string): Promise<{ workspaceId?: string; error?: string }> {
+  private async discoverWorkspaceId(
+    apiBase: string,
+    authHeader: string
+  ): Promise<{ workspaceId?: string; error?: string }> {
     try {
       const resp = await axios.get(`${apiBase}/rest/servicedeskapi/assets/workspace`, {
         headers: {
@@ -647,11 +649,18 @@ export class AtlassianAssetsConnector extends BaseConnector {
       if (workspaceId) {
         return { workspaceId };
       }
-      return { error: 'No Assets workspace found — JSM Premium or Enterprise license may be required' };
+      return {
+        error: 'No Assets workspace found — JSM Premium or Enterprise license may be required',
+      };
     } catch (err: any) {
       if (err.response?.status === 401) return { error: 'Invalid credentials' };
-      if (err.response?.status === 403) return { error: 'Insufficient permissions to access Assets — ensure the API token has read:servicedesk-request scope' };
-      if (err.response?.status === 404) return { error: 'Assets API not available — ensure JSM Premium or Enterprise is enabled' };
+      if (err.response?.status === 403)
+        return {
+          error:
+            'Insufficient permissions to access Assets — ensure the API token has read:servicedesk-request scope',
+        };
+      if (err.response?.status === 404)
+        return { error: 'Assets API not available — ensure JSM Premium or Enterprise is enabled' };
       return { error: `Workspace discovery failed: ${err.message}` };
     }
   }
@@ -662,13 +671,22 @@ export class AtlassianAssetsConnector extends BaseConnector {
    * back to /rest/api/3/project (requires read:jira-work scope) which
    * is more commonly available on service account tokens.
    */
-  private async verifyAuth(apiBase: string, authHeader: string): Promise<{ user?: any; error?: string }> {
+  private async verifyAuth(
+    apiBase: string,
+    authHeader: string
+  ): Promise<{ user?: any; error?: string }> {
     const headers = { Authorization: authHeader, Accept: 'application/json' };
 
     // Try /myself first (provides user details)
     try {
       const resp = await axios.get(`${apiBase}/rest/api/3/myself`, { headers, timeout: 15000 });
-      return { user: { displayName: resp.data?.displayName, email: resp.data?.emailAddress, accountId: resp.data?.accountId } };
+      return {
+        user: {
+          displayName: resp.data?.displayName,
+          email: resp.data?.emailAddress,
+          accountId: resp.data?.accountId,
+        },
+      };
     } catch (err: any) {
       // If scope mismatch, fall back to /project to verify credentials
       if (err.response?.status === 401 && err.response?.data?.message?.includes('scope')) {
@@ -685,10 +703,18 @@ export class AtlassianAssetsConnector extends BaseConnector {
     // Fallback: verify via /project (read:jira-work scope)
     try {
       const resp = await axios.get(`${apiBase}/rest/api/3/project`, { headers, timeout: 15000 });
-      return { user: { displayName: 'Service Account', email: undefined, accountId: undefined, projectCount: resp.data?.length } };
+      return {
+        user: {
+          displayName: 'Service Account',
+          email: undefined,
+          accountId: undefined,
+          projectCount: resp.data?.length,
+        },
+      };
     } catch (err: any) {
       if (err.response?.status === 401) return { error: 'Invalid email or API token' };
-      if (err.response?.status === 403) return { error: 'Account does not have access to this Jira site' };
+      if (err.response?.status === 403)
+        return { error: 'Account does not have access to this Jira site' };
       return { error: `Authentication failed: ${err.message}` };
     }
   }
@@ -733,7 +759,11 @@ export class AtlassianAssetsConnector extends BaseConnector {
     const authResult = await this.verifyAuth(apiBase, authHeader);
     if (authResult.error) {
       if (isServiceAcct && authResult.error === 'Invalid email or API token') {
-        return { success: false, message: 'Invalid service account credentials. Ensure the API token was created with read:jira-work scope and uses the API gateway (api.atlassian.com).' };
+        return {
+          success: false,
+          message:
+            'Invalid service account credentials. Ensure the API token was created with read:jira-work scope and uses the API gateway (api.atlassian.com).',
+        };
       }
       return { success: false, message: authResult.error };
     }
@@ -742,7 +772,10 @@ export class AtlassianAssetsConnector extends BaseConnector {
     const headers = { Authorization: authHeader, Accept: 'application/json' };
     let projectCount = 0;
     try {
-      const projectResp = await axios.get(`${apiBase}/rest/api/3/project`, { headers, timeout: 15000 });
+      const projectResp = await axios.get(`${apiBase}/rest/api/3/project`, {
+        headers,
+        timeout: 15000,
+      });
       projectCount = projectResp.data?.length ?? 0;
     } catch {
       // Non-fatal — project list is supplementary
@@ -771,11 +804,14 @@ export class AtlassianAssetsConnector extends BaseConnector {
             headers,
             timeout: 15000,
           });
-          schemaCount = schemasResp.data?.objectschemas?.length ?? schemasResp.data?.values?.length ?? 0;
+          schemaCount =
+            schemasResp.data?.objectschemas?.length ?? schemasResp.data?.values?.length ?? 0;
           assetsAvailable = true;
           break;
         } catch (err: any) {
-          this.logger.warn(`Assets API failed at ${assetsBaseUrl}: ${err.response?.status} ${err.message}`);
+          this.logger.warn(
+            `Assets API failed at ${assetsBaseUrl}: ${err.response?.status} ${err.message}`
+          );
         }
       }
     } else {
@@ -839,17 +875,22 @@ export class AtlassianAssetsConnector extends BaseConnector {
 
       // Always sync Jira projects (works with read:jira-work scope)
       try {
-        const projectResp = await axios.get(`${apiBase}/rest/api/3/project?expand=description,lead`, { headers, timeout: 30000 });
+        const projectResp = await axios.get(
+          `${apiBase}/rest/api/3/project?expand=description,lead`,
+          { headers, timeout: 30000 }
+        );
         if (Array.isArray(projectResp.data)) {
-          projects.push(...projectResp.data.map((p: any) => ({
-            id: p.id,
-            key: p.key,
-            name: p.name,
-            description: p.description,
-            projectTypeKey: p.projectTypeKey,
-            lead: p.lead?.displayName,
-            style: p.style,
-          })));
+          projects.push(
+            ...projectResp.data.map((p: any) => ({
+              id: p.id,
+              key: p.key,
+              name: p.name,
+              description: p.description,
+              projectTypeKey: p.projectTypeKey,
+              lead: p.lead?.displayName,
+              style: p.style,
+            }))
+          );
         }
       } catch (err: any) {
         errors.push(`Failed to fetch projects: ${err.message}`);
@@ -865,7 +906,10 @@ export class AtlassianAssetsConnector extends BaseConnector {
 
         // Fetch object schemas
         try {
-          const schemasResp = await axios.get(`${assetsBaseUrl}/objectschema/list`, { headers, timeout: 30000 });
+          const schemasResp = await axios.get(`${assetsBaseUrl}/objectschema/list`, {
+            headers,
+            timeout: 30000,
+          });
           const schemaList = schemasResp.data?.objectschemas || schemasResp.data?.values || [];
           schemas.push(...schemaList);
         } catch (err: any) {
@@ -877,22 +921,27 @@ export class AtlassianAssetsConnector extends BaseConnector {
           const objectsResp = await axios.post(
             `${assetsBaseUrl}/object/aql`,
             { qlQuery: 'objectType != null' },
-            { headers: { ...headers, 'Content-Type': 'application/json' }, timeout: 30000 },
+            { headers: { ...headers, 'Content-Type': 'application/json' }, timeout: 30000 }
           );
           const objectList = objectsResp.data?.values || objectsResp.data?.objectEntries || [];
           objects.push(...objectList);
         } catch (err: any) {
           // Fallback to basic object list
           try {
-            const objectsResp = await axios.get(`${assetsBaseUrl}/object/navlist/aql?qlQuery=`, { headers, timeout: 30000 });
+            const objectsResp = await axios.get(`${assetsBaseUrl}/object/navlist/aql?qlQuery=`, {
+              headers,
+              timeout: 30000,
+            });
             const objectList = objectsResp.data?.values || objectsResp.data?.objectEntries || [];
             objects.push(...objectList);
-          } catch (fallbackErr: any) {
+          } catch {
             errors.push(`Failed to fetch objects: ${err.message}`);
           }
         }
       } else {
-        this.logger.log(`Assets workspace unavailable (${workspaceResult.error}) — syncing Jira data only`);
+        this.logger.log(
+          `Assets workspace unavailable (${workspaceResult.error}) — syncing Jira data only`
+        );
       }
 
       return {

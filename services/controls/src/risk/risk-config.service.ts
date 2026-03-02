@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
@@ -30,12 +29,32 @@ const DEFAULT_IMPACT_SCALE: ImpactScaleItemDto[] = [
 ];
 
 const DEFAULT_CATEGORIES: RiskCategoryDto[] = [
-  { id: 'cat-1', name: 'Security', description: 'Information security and cybersecurity risks', color: '#ef4444' },
-  { id: 'cat-2', name: 'Compliance', description: 'Regulatory and compliance risks', color: '#f59e0b' },
-  { id: 'cat-3', name: 'Operational', description: 'Business operations and process risks', color: '#3b82f6' },
+  {
+    id: 'cat-1',
+    name: 'Security',
+    description: 'Information security and cybersecurity risks',
+    color: '#ef4444',
+  },
+  {
+    id: 'cat-2',
+    name: 'Compliance',
+    description: 'Regulatory and compliance risks',
+    color: '#f59e0b',
+  },
+  {
+    id: 'cat-3',
+    name: 'Operational',
+    description: 'Business operations and process risks',
+    color: '#3b82f6',
+  },
   { id: 'cat-4', name: 'Financial', description: 'Financial and monetary risks', color: '#10b981' },
   { id: 'cat-5', name: 'Strategic', description: 'Strategic and business risks', color: '#8b5cf6' },
-  { id: 'cat-6', name: 'Third Party', description: 'Vendor and third-party risks', color: '#ec4899' },
+  {
+    id: 'cat-6',
+    name: 'Third Party',
+    description: 'Vendor and third-party risks',
+    color: '#ec4899',
+  },
 ];
 
 const DEFAULT_RISK_LEVEL_THRESHOLDS: RiskLevelThresholdsDto = {
@@ -59,8 +78,16 @@ const DEFAULT_WORKFLOW_SETTINGS: WorkflowSettingsDto = {
 
 const DEFAULT_RISK_APPETITE: RiskAppetiteDto[] = [
   { category: 'Security', level: 'low', description: 'Minimal tolerance for security risks' },
-  { category: 'Compliance', level: 'low', description: 'Very low tolerance for compliance violations' },
-  { category: 'Operational', level: 'medium', description: 'Moderate tolerance for operational disruptions' },
+  {
+    category: 'Compliance',
+    level: 'low',
+    description: 'Very low tolerance for compliance violations',
+  },
+  {
+    category: 'Operational',
+    level: 'medium',
+    description: 'Moderate tolerance for operational disruptions',
+  },
   { category: 'Financial', level: 'medium', description: 'Moderate tolerance for financial risks' },
   { category: 'Strategic', level: 'high', description: 'Higher tolerance for strategic risks' },
   { category: 'Third Party', level: 'low', description: 'Low tolerance for vendor risks' },
@@ -104,12 +131,11 @@ export class RiskConfigService {
   async updateConfiguration(
     organizationId: string,
     dto: UpdateRiskConfigurationDto,
-    userId: string,
+    userId: string
   ): Promise<RiskConfigurationResponseDto> {
     // Ensure configuration exists
     const _existing = await this.getConfiguration(organizationId);
 
-     
     const updateData: Record<string, any> = {
       updatedBy: userId,
     };
@@ -147,7 +173,10 @@ export class RiskConfigService {
   /**
    * Reset configuration to defaults
    */
-  async resetToDefaults(organizationId: string, userId: string): Promise<RiskConfigurationResponseDto> {
+  async resetToDefaults(
+    organizationId: string,
+    userId: string
+  ): Promise<RiskConfigurationResponseDto> {
     const config = await this.prisma.riskConfiguration.upsert({
       where: { organizationId },
       update: {
@@ -181,14 +210,14 @@ export class RiskConfigService {
   async addCategory(
     organizationId: string,
     category: Omit<RiskCategoryDto, 'id'>,
-    userId: string,
+    userId: string
   ): Promise<RiskConfigurationResponseDto> {
     const config = await this.getConfiguration(organizationId);
     const newCategory: RiskCategoryDto = {
       ...category,
       id: `cat-${Date.now()}`,
     };
-    
+
     const categories = [...config.categories, newCategory];
 
     return this.updateConfiguration(organizationId, { categories }, userId);
@@ -200,10 +229,10 @@ export class RiskConfigService {
   async removeCategory(
     organizationId: string,
     categoryId: string,
-    userId: string,
+    userId: string
   ): Promise<RiskConfigurationResponseDto> {
     const config = await this.getConfiguration(organizationId);
-    const categories = config.categories.filter(c => c.id !== categoryId);
+    const categories = config.categories.filter((c) => c.id !== categoryId);
 
     return this.updateConfiguration(organizationId, { categories }, userId);
   }
@@ -216,13 +245,13 @@ export class RiskConfigService {
     category: string,
     level: string,
     description?: string,
-    userId?: string,
+    userId?: string
   ): Promise<RiskConfigurationResponseDto> {
     const config = await this.getConfiguration(organizationId);
-    
-    const existingIndex = config.riskAppetite.findIndex(a => a.category === category);
+
+    const existingIndex = config.riskAppetite.findIndex((a) => a.category === category);
     const riskAppetite = [...config.riskAppetite];
-    
+
     if (existingIndex >= 0) {
       riskAppetite[existingIndex] = { category, level, description };
     } else {
@@ -232,7 +261,6 @@ export class RiskConfigService {
     return this.updateConfiguration(organizationId, { riskAppetite }, userId || 'system');
   }
 
-   
   private mapToResponse(config: Record<string, any>): RiskConfigurationResponseDto {
     return {
       id: config.id,
@@ -250,6 +278,3 @@ export class RiskConfigService {
     };
   }
 }
-
-
-

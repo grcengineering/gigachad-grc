@@ -1,8 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Injectable, Logger } from '@nestjs/common';
 
 export interface SlackConfig {
-  botToken: string;  // xoxb-...
+  botToken: string; // xoxb-...
 }
 
 export interface SlackSyncResult {
@@ -60,7 +59,9 @@ export class SlackConnector {
   private readonly logger = new Logger(SlackConnector.name);
   private readonly baseUrl = 'https://slack.com/api';
 
-  async testConnection(config: SlackConfig): Promise<{ success: boolean; message: string; details?: any }> {
+  async testConnection(
+    config: SlackConfig
+  ): Promise<{ success: boolean; message: string; details?: any }> {
     if (!config.botToken) {
       return { success: false, message: 'Bot token is required' };
     }
@@ -90,9 +91,18 @@ export class SlackConnector {
     const errors: string[] = [];
 
     const [teamInfo, users, channels] = await Promise.all([
-      this.getTeamInfo(config).catch(e => { errors.push(`Team: ${e.message}`); return null; }),
-      this.getUsers(config).catch(e => { errors.push(`Users: ${e.message}`); return []; }),
-      this.getChannels(config).catch(e => { errors.push(`Channels: ${e.message}`); return []; }),
+      this.getTeamInfo(config).catch((e) => {
+        errors.push(`Team: ${e.message}`);
+        return null;
+      }),
+      this.getUsers(config).catch((e) => {
+        errors.push(`Users: ${e.message}`);
+        return [];
+      }),
+      this.getChannels(config).catch((e) => {
+        errors.push(`Channels: ${e.message}`);
+        return [];
+      }),
     ]);
 
     const activeUsers = users.filter((u: any) => !u.deleted);
@@ -144,7 +154,7 @@ export class SlackConnector {
 
   private buildHeaders(token: string): Record<string, string> {
     return {
-      'Authorization': `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     };
   }
@@ -164,12 +174,15 @@ export class SlackConnector {
     let cursor = '';
 
     do {
-      const response = await fetch(`${this.baseUrl}/users.list?limit=200${cursor ? `&cursor=${cursor}` : ''}`, {
-        headers: this.buildHeaders(config.botToken),
-      });
+      const response = await fetch(
+        `${this.baseUrl}/users.list?limit=200${cursor ? `&cursor=${cursor}` : ''}`,
+        {
+          headers: this.buildHeaders(config.botToken),
+        }
+      );
       const data = await response.json();
       if (!data.ok) throw new Error(data.error);
-      
+
       users.push(...(data.members || []));
       cursor = data.response_metadata?.next_cursor || '';
     } while (cursor && users.length < 1000);
@@ -182,12 +195,15 @@ export class SlackConnector {
     let cursor = '';
 
     do {
-      const response = await fetch(`${this.baseUrl}/conversations.list?limit=200&types=public_channel,private_channel${cursor ? `&cursor=${cursor}` : ''}`, {
-        headers: this.buildHeaders(config.botToken),
-      });
+      const response = await fetch(
+        `${this.baseUrl}/conversations.list?limit=200&types=public_channel,private_channel${cursor ? `&cursor=${cursor}` : ''}`,
+        {
+          headers: this.buildHeaders(config.botToken),
+        }
+      );
       const data = await response.json();
       if (!data.ok) throw new Error(data.error);
-      
+
       channels.push(...(data.channels || []));
       cursor = data.response_metadata?.next_cursor || '';
     } while (cursor && channels.length < 1000);
@@ -195,4 +211,3 @@ export class SlackConnector {
     return channels;
   }
 }
-

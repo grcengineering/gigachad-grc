@@ -39,7 +39,7 @@ export class DomainError extends Error {
     message: string,
     code: string = 'DOMAIN_ERROR',
     statusCode: number = 400,
-    details?: Record<string, unknown>,
+    details?: Record<string, unknown>
   ) {
     super(message);
     this.name = 'DomainError';
@@ -74,7 +74,9 @@ export function isPrismaError(error: unknown): error is Error & { code?: string 
 /**
  * Error type guard for Axios errors.
  */
-export function isAxiosError(error: unknown): error is Error & { response?: { status: number; data?: unknown }; code?: string } {
+export function isAxiosError(
+  error: unknown
+): error is Error & { response?: { status: number; data?: unknown }; code?: string } {
   return isError(error) && ('response' in error || 'code' in error);
 }
 
@@ -145,7 +147,7 @@ export function toErrorDetails(error: unknown, includeStack = false): ErrorDetai
 /**
  * Centralized error handler for async operations.
  * Logs the error and returns a standardized error response.
- * 
+ *
  * @example
  * ```typescript
  * try {
@@ -159,14 +161,12 @@ export function handleError(
   error: unknown,
   logger: Logger,
   context?: string,
-  includeStack = process.env.NODE_ENV !== 'production',
+  includeStack = process.env.NODE_ENV !== 'production'
 ): ErrorDetails {
   const errorDetails = toErrorDetails(error, includeStack);
-  
+
   // Log the error with context
-  const logMessage = context
-    ? `${context}: ${errorDetails.message}`
-    : errorDetails.message;
+  const logMessage = context ? `${context}: ${errorDetails.message}` : errorDetails.message;
 
   if ((errorDetails.statusCode ?? 500) >= 500) {
     logger.error(logMessage, isError(error) ? error.stack : undefined);
@@ -179,7 +179,7 @@ export function handleError(
 
 /**
  * Wrap an async function with error handling.
- * 
+ *
  * @example
  * ```typescript
  * const result = await withErrorHandling(
@@ -192,7 +192,7 @@ export function handleError(
 export async function withErrorHandling<T>(
   fn: () => Promise<T>,
   logger: Logger,
-  context?: string,
+  context?: string
 ): Promise<T> {
   try {
     return await fn();
@@ -201,7 +201,7 @@ export async function withErrorHandling<T>(
       getErrorMessage(error),
       getErrorCode(error) || 'OPERATION_FAILED',
       getStatusCode(error),
-      { context, originalError: getErrorMessage(error) },
+      { context, originalError: getErrorMessage(error) }
     );
   }
 }
@@ -209,7 +209,7 @@ export async function withErrorHandling<T>(
 /**
  * Create a safe async wrapper that catches errors and returns null.
  * Useful for non-critical operations that shouldn't block the main flow.
- * 
+ *
  * @example
  * ```typescript
  * const result = await safeAsync(
@@ -223,7 +223,7 @@ export async function withErrorHandling<T>(
 export async function safeAsync<T>(
   fn: () => Promise<T>,
   logger: Logger,
-  context?: string,
+  context?: string
 ): Promise<T | null> {
   try {
     return await fn();
@@ -235,7 +235,7 @@ export async function safeAsync<T>(
 
 /**
  * Retry an async operation with exponential backoff.
- * 
+ *
  * @example
  * ```typescript
  * const result = await retryAsync(
@@ -250,7 +250,7 @@ export async function retryAsync<T>(
   fn: () => Promise<T>,
   options: { maxRetries: number; baseDelayMs: number; maxDelayMs?: number },
   logger: Logger,
-  context?: string,
+  context?: string
 ): Promise<T> {
   const { maxRetries, baseDelayMs, maxDelayMs = 30000 } = options;
   let lastError: unknown;
@@ -260,30 +260,27 @@ export async function retryAsync<T>(
       return await fn();
     } catch (error: unknown) {
       lastError = error;
-      
+
       if (attempt < maxRetries) {
         const delayMs = Math.min(baseDelayMs * Math.pow(2, attempt), maxDelayMs);
-        logger.warn(`${context || 'Operation'} failed (attempt ${attempt + 1}/${maxRetries + 1}), retrying in ${delayMs}ms...`);
-        await new Promise(resolve => setTimeout(resolve, delayMs));
+        logger.warn(
+          `${context || 'Operation'} failed (attempt ${attempt + 1}/${maxRetries + 1}), retrying in ${delayMs}ms...`
+        );
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
       }
     }
   }
 
-  throw new DomainError(
-    getErrorMessage(lastError),
-    'RETRY_EXHAUSTED',
-    getStatusCode(lastError),
-    { context, attempts: maxRetries + 1 },
-  );
+  throw new DomainError(getErrorMessage(lastError), 'RETRY_EXHAUSTED', getStatusCode(lastError), {
+    context,
+    attempts: maxRetries + 1,
+  });
 }
 
 /**
  * Create a standardized API error response.
  */
-export function createApiErrorResponse(
-  error: unknown,
-  correlationId?: string,
-): ApiErrorResponse {
+export function createApiErrorResponse(error: unknown, correlationId?: string): ApiErrorResponse {
   const errorDetails = toErrorDetails(error);
   const id = correlationId || uuidv4();
 
@@ -315,13 +312,13 @@ export interface CatchErrorsOptions {
 
 /**
  * Method decorator that wraps async methods with standardized error handling.
- * 
+ *
  * Features:
  * - Automatic logging with correlation ID
  * - Converts unknown errors to HttpException
  * - Preserves original HTTP status codes
  * - Adds correlation ID to error response
- * 
+ *
  * @example
  * ```typescript
  * @CatchErrors({ context: 'UserService.findById' })
@@ -331,11 +328,7 @@ export interface CatchErrorsOptions {
  * ```
  */
 export function CatchErrors(options: CatchErrorsOptions = {}): MethodDecorator {
-  return function (
-    _target: object,
-    propertyKey: string | symbol,
-    descriptor: PropertyDescriptor,
-  ) {
+  return function (_target: object, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value;
     const methodName = String(propertyKey);
 
@@ -350,11 +343,11 @@ export function CatchErrors(options: CatchErrorsOptions = {}): MethodDecorator {
         // Log the error with correlation ID
         const errorMessage = getErrorMessage(error);
         const statusCode = getStatusCode(error);
-        
+
         if (statusCode >= 500) {
           logger.error(
             `[${correlationId}] ${context}: ${errorMessage}`,
-            isError(error) ? error.stack : undefined,
+            isError(error) ? error.stack : undefined
           );
         } else {
           logger.warn(`[${correlationId}] ${context}: ${errorMessage}`);
@@ -364,10 +357,7 @@ export function CatchErrors(options: CatchErrorsOptions = {}): MethodDecorator {
         if (error instanceof HttpException) {
           const response = error.getResponse();
           if (typeof response === 'object') {
-            throw new HttpException(
-              { ...response, correlationId },
-              error.getStatus(),
-            );
+            throw new HttpException({ ...response, correlationId }, error.getStatus());
           }
           throw error;
         }
@@ -384,7 +374,7 @@ export function CatchErrors(options: CatchErrorsOptions = {}): MethodDecorator {
               correlationId,
               details: error.details,
             },
-            error.statusCode,
+            error.statusCode
           );
         }
 
@@ -411,15 +401,14 @@ export function CatchErrors(options: CatchErrorsOptions = {}): MethodDecorator {
               code: `PRISMA_${prismaCode}`,
               correlationId,
             },
-            prismaStatusCode,
+            prismaStatusCode
           );
         }
 
         // Default to internal server error
         throw new InternalServerErrorException({
-          message: process.env.NODE_ENV === 'production' 
-            ? 'An internal error occurred' 
-            : finalMessage,
+          message:
+            process.env.NODE_ENV === 'production' ? 'An internal error occurred' : finalMessage,
           code: finalCode,
           correlationId,
         });
@@ -432,7 +421,7 @@ export function CatchErrors(options: CatchErrorsOptions = {}): MethodDecorator {
 
 /**
  * Class decorator that applies CatchErrors to all methods in a service.
- * 
+ *
  * @example
  * ```typescript
  * @CatchErrorsClass({ context: 'UserService' })
@@ -443,6 +432,7 @@ export function CatchErrors(options: CatchErrorsOptions = {}): MethodDecorator {
  * ```
  */
 export function CatchErrorsClass(options: CatchErrorsOptions = {}): ClassDecorator {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
   return function (target: Function) {
     const prototype = target.prototype;
     const propertyNames = Object.getOwnPropertyNames(prototype);
@@ -458,11 +448,7 @@ export function CatchErrorsClass(options: CatchErrorsOptions = {}): ClassDecorat
         context: options.context ? `${options.context}.${propertyName}` : propertyName,
       };
 
-      const decoratedDescriptor = CatchErrors(methodOptions)(
-        prototype,
-        propertyName,
-        descriptor,
-      );
+      const decoratedDescriptor = CatchErrors(methodOptions)(prototype, propertyName, descriptor);
 
       if (decoratedDescriptor) {
         Object.defineProperty(prototype, propertyName, decoratedDescriptor);

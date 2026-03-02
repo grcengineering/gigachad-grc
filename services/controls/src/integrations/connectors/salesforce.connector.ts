@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Injectable, Logger } from '@nestjs/common';
 
 export interface SalesforceConfig {
@@ -61,9 +60,20 @@ export interface SalesforceSyncResult {
 export class SalesforceConnector {
   private readonly logger = new Logger(SalesforceConnector.name);
 
-  async testConnection(config: SalesforceConfig): Promise<{ success: boolean; message: string; details?: any }> {
-    if (!config.instanceUrl || !config.clientId || !config.clientSecret || !config.username || !config.password) {
-      return { success: false, message: 'Instance URL, Client ID, Client Secret, Username, and Password are required' };
+  async testConnection(
+    config: SalesforceConfig
+  ): Promise<{ success: boolean; message: string; details?: any }> {
+    if (
+      !config.instanceUrl ||
+      !config.clientId ||
+      !config.clientSecret ||
+      !config.username ||
+      !config.password
+    ) {
+      return {
+        success: false,
+        message: 'Instance URL, Client ID, Client Secret, Username, and Password are required',
+      };
     }
 
     try {
@@ -91,9 +101,18 @@ export class SalesforceConnector {
     }
 
     const [users, profiles, auditTrail] = await Promise.all([
-      this.getUsers(auth).catch(e => { errors.push(`Users: ${e.message}`); return []; }),
-      this.getProfiles(auth).catch(e => { errors.push(`Profiles: ${e.message}`); return []; }),
-      this.getSetupAuditTrail(auth).catch(e => { errors.push(`Audit: ${e.message}`); return []; }),
+      this.getUsers(auth).catch((e) => {
+        errors.push(`Users: ${e.message}`);
+        return [];
+      }),
+      this.getProfiles(auth).catch((e) => {
+        errors.push(`Profiles: ${e.message}`);
+        return [];
+      }),
+      this.getSetupAuditTrail(auth).catch((e) => {
+        errors.push(`Audit: ${e.message}`);
+        return [];
+      }),
     ]);
 
     const activeUsers = users.filter((u: any) => u.IsActive);
@@ -150,7 +169,7 @@ export class SalesforceConnector {
   }
 
   private async authenticate(config: SalesforceConfig): Promise<any> {
-    const loginUrl = config.instanceUrl.includes('sandbox') 
+    const loginUrl = config.instanceUrl.includes('sandbox')
       ? 'https://test.salesforce.com/services/oauth2/token'
       : 'https://login.salesforce.com/services/oauth2/token';
 
@@ -200,4 +219,3 @@ export class SalesforceConnector {
     return data.records || [];
   }
 }
-

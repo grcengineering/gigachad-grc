@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
@@ -17,11 +16,14 @@ import {
 } from './dto/notification.dto';
 
 // Notification type metadata for UI display
-const NOTIFICATION_TYPE_METADATA: Record<string, { name: string; category: string; description: string }> = {
+const NOTIFICATION_TYPE_METADATA: Record<
+  string,
+  { name: string; category: string; description: string }
+> = {
   [NotificationType.CONTROL_STATUS_CHANGED]: {
     name: 'Control Status Changed',
     category: 'Controls',
-    description: 'When a control\'s compliance status changes',
+    description: "When a control's compliance status changes",
   },
   [NotificationType.CONTROL_DUE_SOON]: {
     name: 'Control Due Soon',
@@ -76,7 +78,7 @@ const NOTIFICATION_TYPE_METADATA: Record<string, { name: string; category: strin
   [NotificationType.POLICY_STATUS_CHANGED]: {
     name: 'Policy Status Changed',
     category: 'Policies',
-    description: 'When a policy\'s status changes',
+    description: "When a policy's status changes",
   },
   [NotificationType.POLICY_APPROVED]: {
     name: 'Policy Approved',
@@ -167,7 +169,7 @@ export class NotificationsService {
   constructor(
     private prisma: PrismaService,
     private emailService: EmailService,
-    private emailTemplates: EmailTemplatesService,
+    private emailTemplates: EmailTemplatesService
   ) {}
 
   // ===========================
@@ -221,7 +223,10 @@ export class NotificationsService {
     return { id: notificationId };
   }
 
-  async createBulk(organizationId: string, dto: BulkCreateNotificationDto): Promise<{ count: number }> {
+  async createBulk(
+    organizationId: string,
+    dto: BulkCreateNotificationDto
+  ): Promise<{ count: number }> {
     const { userIds, type, severity = NotificationSeverity.INFO, ...rest } = dto;
 
     let createdCount = 0;
@@ -331,8 +336,8 @@ export class NotificationsService {
     const [total, unread, recentCount, byType, bySeverity] = await Promise.all([
       this.prisma.notification.count({ where: { userId } }),
       this.prisma.notification.count({ where: { userId, isRead: false } }),
-      this.prisma.notification.count({ 
-        where: { userId, createdAt: { gte: last24Hours } } 
+      this.prisma.notification.count({
+        where: { userId, createdAt: { gte: last24Hours } },
       }),
       this.prisma.notification.groupBy({
         by: ['type'],
@@ -350,14 +355,20 @@ export class NotificationsService {
       total,
       unread,
       recentCount,
-      byType: byType.reduce((acc, item) => {
-        acc[item.type] = item._count.type;
-        return acc;
-      }, {} as Record<string, number>),
-      bySeverity: bySeverity.reduce((acc, item) => {
-        acc[item.severity] = item._count.severity;
-        return acc;
-      }, {} as Record<string, number>),
+      byType: byType.reduce(
+        (acc, item) => {
+          acc[item.type] = item._count.type;
+          return acc;
+        },
+        {} as Record<string, number>
+      ),
+      bySeverity: bySeverity.reduce(
+        (acc, item) => {
+          acc[item.severity] = item._count.severity;
+          return acc;
+        },
+        {} as Record<string, number>
+      ),
     };
   }
 
@@ -442,7 +453,7 @@ export class NotificationsService {
     });
 
     // Create a map for quick lookup
-    const prefMap = new Map(preferences.map(p => [p.notificationType, p]));
+    const prefMap = new Map(preferences.map((p) => [p.notificationType, p]));
 
     // Return all notification types with their preferences (or defaults)
     return Object.entries(NOTIFICATION_TYPE_METADATA).map(([type, meta]) => {
@@ -461,7 +472,7 @@ export class NotificationsService {
   async updatePreferences(userId: string, preferences: NotificationPreferenceDto[]): Promise<void> {
     // Use a transaction to update all preferences
     await this.prisma.$transaction(
-      preferences.map(pref =>
+      preferences.map((pref) =>
         this.prisma.notificationPreference.upsert({
           where: {
             userId_notificationType: {
@@ -494,7 +505,7 @@ export class NotificationsService {
     title: string,
     message: string,
     severity: NotificationSeverity,
-    metadata?: Record<string, unknown>,
+    metadata?: Record<string, unknown>
   ): Promise<void> {
     try {
       // 1. Look up user's email from the User table
@@ -514,7 +525,7 @@ export class NotificationsService {
         title,
         message,
         severity,
-        metadata,
+        metadata
       );
 
       // 3. Send email via email service
@@ -632,9 +643,7 @@ export class NotificationsService {
       select: { id: true },
     });
 
-    const userIds = users
-      .map(u => u.id)
-      .filter(id => !params.excludeUserIds?.includes(id));
+    const userIds = users.map((u) => u.id).filter((id) => !params.excludeUserIds?.includes(id));
 
     await this.createBulk(params.organizationId, {
       userIds,
@@ -648,4 +657,3 @@ export class NotificationsService {
     });
   }
 }
-

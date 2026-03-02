@@ -17,30 +17,37 @@ type AssessmentWithVendorFrequency = VendorAssessment & {
 };
 
 // Helper to convert string to VendorAssessmentStatus
-function toAssessmentStatus(status: string | undefined, defaultValue: VendorAssessmentStatus = 'pending'): VendorAssessmentStatus {
+function toAssessmentStatus(
+  status: string | undefined,
+  defaultValue: VendorAssessmentStatus = 'pending'
+): VendorAssessmentStatus {
   const validStatuses: VendorAssessmentStatus[] = ['pending', 'in_progress', 'completed'];
-  return validStatuses.includes(status as VendorAssessmentStatus) ? status as VendorAssessmentStatus : defaultValue;
+  return validStatuses.includes(status as VendorAssessmentStatus)
+    ? (status as VendorAssessmentStatus)
+    : defaultValue;
 }
 
 @Injectable()
 export class AssessmentsService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly audit: AuditService,
+    private readonly audit: AuditService
   ) {}
 
   async create(createAssessmentDto: CreateAssessmentDto, userId: string) {
     const { status, dueDate, completedAt, responses, findings, ...rest } = createAssessmentDto;
+    const data: Prisma.VendorAssessmentUncheckedCreateInput = {
+      ...rest,
+      organizationId: createAssessmentDto.organizationId!,
+      status: toAssessmentStatus(status),
+      dueDate: dueDate ? new Date(dueDate) : undefined,
+      completedAt: completedAt ? new Date(completedAt) : undefined,
+      responses: responses as Prisma.InputJsonValue,
+      findings: findings as Prisma.InputJsonValue,
+      createdBy: userId,
+    };
     const assessment = await this.prisma.vendorAssessment.create({
-      data: {
-        ...rest,
-        status: toAssessmentStatus(status),
-        dueDate: dueDate ? new Date(dueDate) : undefined,
-        completedAt: completedAt ? new Date(completedAt) : undefined,
-        responses: responses as Prisma.InputJsonValue,
-        findings: findings as Prisma.InputJsonValue,
-        createdBy: userId,
-      },
+      data,
       include: {
         vendor: {
           select: {
@@ -115,7 +122,7 @@ export class AssessmentsService {
     // SECURITY: Use findFirst with organizationId to prevent IDOR
     // This ensures users can only access assessments within their organization
     const assessment = await this.prisma.vendorAssessment.findFirst({
-      where: { 
+      where: {
         id,
         organizationId, // Tenant isolation - prevents cross-organization access
       },
@@ -131,10 +138,15 @@ export class AssessmentsService {
     return assessment;
   }
 
-  async update(id: string, updateAssessmentDto: UpdateAssessmentDto, userId: string, organizationId: string) {
+  async update(
+    id: string,
+    updateAssessmentDto: UpdateAssessmentDto,
+    userId: string,
+    organizationId: string
+  ) {
     // SECURITY: Verify assessment belongs to user's organization before updating
     const currentAssessment = await this.findOne(id, organizationId);
-    
+
     const { status, dueDate, completedAt, responses, findings, ...rest } = updateAssessmentDto;
     const data: Prisma.VendorAssessmentUpdateInput = { ...rest };
 
@@ -178,10 +190,7 @@ export class AssessmentsService {
     });
 
     // If assessment was just completed, update vendor's review dates
-    if (
-      updateAssessmentDto.status === 'completed' &&
-      currentAssessment.status !== 'completed'
-    ) {
+    if (updateAssessmentDto.status === 'completed' && currentAssessment.status !== 'completed') {
       const now = new Date();
       const assessmentWithFrequency = assessment as AssessmentWithVendorFrequency;
       const reviewFrequency = assessmentWithFrequency.vendor.reviewFrequency || 'annual';
@@ -335,8 +344,7 @@ export class AssessmentsService {
     return overdue.map((assessment) => ({
       ...assessment,
       daysOverdue: Math.ceil(
-        (now.getTime() - new Date(assessment.dueDate!).getTime()) /
-          (1000 * 60 * 60 * 24)
+        (now.getTime() - new Date(assessment.dueDate!).getTime()) / (1000 * 60 * 60 * 24)
       ),
     }));
   }

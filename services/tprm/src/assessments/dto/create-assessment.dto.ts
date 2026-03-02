@@ -2,8 +2,9 @@ import { IsString, IsOptional, IsDateString, IsInt, Min, Max, IsObject } from 'c
 import { Prisma } from '@prisma/client';
 
 export class CreateAssessmentDto {
+  @IsOptional()
   @IsString()
-  organizationId: string;
+  organizationId?: string;
 
   @IsString()
   vendorId: string;

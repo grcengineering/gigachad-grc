@@ -123,7 +123,7 @@ git checkout v1.0.0  # or your desired version
 
 ```bash
 # Copy production environment template
-cp .env.example.prod .env.prod
+cp env.example.production .env.prod
 
 # Generate secure secrets
 openssl rand -base64 64 > /tmp/jwt_secret
@@ -185,11 +185,13 @@ SMTP_PASSWORD=your-app-password
 The docker-compose configuration automatically handles SSL certificate generation using Let's Encrypt.
 
 **Requirements:**
+
 - Domain must be publicly accessible
 - DNS A records must point to your server
 - Ports 80 and 443 must be open
 
 The certificates will be automatically:
+
 - Generated on first startup
 - Renewed automatically before expiration
 - Stored in the `traefik_letsencrypt` Docker volume
@@ -326,12 +328,14 @@ cd /opt/gigachad-grc/deploy
 ```
 
 Backup includes:
+
 - PostgreSQL database dump
 - RustFS/S3 object storage files
 - Configuration files
 - Docker volumes
 
 Backups are stored in:
+
 - Local: `/backups/gigachad-grc/`
 - Retention: 30 days (configurable)
 
@@ -404,6 +408,7 @@ docker compose -f docker-compose.prod.yml logs -f -t
 ```
 
 Log rotation is configured automatically:
+
 - Max size: 10MB per file
 - Max files: 3 (30MB total per service)
 
@@ -423,7 +428,7 @@ scrape_configs:
   - job_name: 'grc-services'
     static_configs:
       - targets:
-        - 'grc.example.com:9090'
+          - 'grc.example.com:9090'
 ```
 
 ### Application Performance Monitoring (APM)

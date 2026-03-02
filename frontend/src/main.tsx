@@ -14,6 +14,8 @@ import NetworkStatus from './components/NetworkStatus';
 import SessionWarning from './components/SessionWarning';
 // Error tracking auto-initializes on import (see lib/errorTracking.ts)
 import './lib/errorTracking';
+// Ensure legacy fetch calls include auth headers/interceptors semantics.
+import './lib/setupFetchAuth';
 // Service worker for PWA support
 import * as serviceWorker from './lib/serviceWorker';
 import './index.css';
@@ -37,27 +39,27 @@ function shouldRetryQuery(failureCount: number, error: unknown): boolean {
 
   // Check for axios error response
   const axiosError = error as { response?: { status: number }; code?: string };
-  
+
   // Never retry on client errors (4xx) except 408 (timeout) and 429 (rate limit)
   if (axiosError.response?.status) {
     const status = axiosError.response.status;
-    
+
     // Don't retry on client errors (except timeout and rate limit)
     if (status >= 400 && status < 500 && status !== 408 && status !== 429) {
       return false;
     }
-    
+
     // Retry on server errors (5xx) and specific recoverable errors
     if ([408, 429, 500, 502, 503, 504].includes(status)) {
       return true;
     }
   }
-  
+
   // Retry on network errors (no response)
   if (axiosError.code === 'ERR_NETWORK' || axiosError.code === 'ECONNABORTED') {
     return true;
   }
-  
+
   // Default: retry once for unknown errors
   return failureCount < 1;
 }
@@ -161,6 +163,3 @@ if (import.meta.env.PROD) {
     },
   });
 }
-
-
-

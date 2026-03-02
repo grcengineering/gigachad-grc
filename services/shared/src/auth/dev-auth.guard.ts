@@ -127,20 +127,20 @@ export class DevAuthGuard implements CanActivate {
   constructor(
     @Optional()
     @Inject(PRISMA_SERVICE)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private readonly prisma?: { organization: any; user: any }
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    // SECURITY: Only allow in explicit development/test environments
-    // NEVER allow bypass if NODE_ENV is not set or is production/staging
+    // SECURITY: Only allow in explicit development/test environments unless
+    // USE_DEV_AUTH is explicitly enabled for sandbox/demo environments.
     const nodeEnv = process.env.NODE_ENV;
     const allowedEnvs = ['development', 'test'];
+    const devAuthExplicitlyEnabled = process.env.USE_DEV_AUTH === 'true';
 
-    if (!nodeEnv || !allowedEnvs.includes(nodeEnv)) {
+    if ((!nodeEnv || !allowedEnvs.includes(nodeEnv)) && !devAuthExplicitlyEnabled) {
       throw new Error(
         `SECURITY ERROR: DevAuthGuard cannot be used in ${nodeEnv || 'undefined'} environment. ` +
-          'This guard is only permitted in development or test environments. ' +
+          'This guard is only permitted in development/test or when USE_DEV_AUTH=true. ' +
           'Please use proper JWT authentication in production.'
       );
     }

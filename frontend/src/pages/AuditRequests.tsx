@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/Button';
 import { SkeletonGrid } from '@/components/Skeleton';
 import { EmptyState, NoResultsEmptyState } from '@/components/EmptyState';
+import { auditsApi, auditRequestsApi } from '@/lib/api';
 import toast from 'react-hot-toast';
 
 interface AuditRequest {
@@ -92,14 +93,9 @@ export default function AuditRequests() {
 
   const fetchAudits = async () => {
     try {
-      const response = await fetch('/api/audits', {
-        headers: {
-          'x-organization-id': 'default-org',
-          'x-user-id': 'system',
-        },
-      });
-      const data = await response.json();
-      setAudits(Array.isArray(data) ? data : data.data || []);
+      const response = await auditsApi.list();
+      const data = response.data;
+      setAudits(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error fetching audits:', error);
     }
@@ -117,16 +113,7 @@ export default function AuditRequests() {
     }
     setIsCreating(true);
     try {
-      const response = await fetch('/api/audit-requests', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-organization-id': 'default-org',
-          'x-user-id': 'system',
-        },
-        body: JSON.stringify(createForm),
-      });
-      if (!response.ok) throw new Error('Failed to create request');
+      await auditRequestsApi.create(createForm);
       toast.success('Audit request created successfully');
       navigate('/audit-requests');
     } catch (error) {
@@ -139,19 +126,13 @@ export default function AuditRequests() {
 
   const fetchRequests = async () => {
     try {
-      const params = new URLSearchParams();
-      if (statusFilter) params.append('status', statusFilter);
-      if (auditFilter) params.append('auditId', auditFilter);
-      if (priorityFilter) params.append('priority', priorityFilter);
-
-      const response = await fetch(`/api/audit-requests?${params}`, {
-        headers: {
-          'x-organization-id': 'default-org',
-          'x-user-id': 'system',
-        },
+      const response = await auditRequestsApi.list({
+        status: statusFilter || undefined,
+        auditId: auditFilter || undefined,
+        assignedTo: undefined,
       });
-      const data = await response.json();
-      setRequests(data);
+      const data = response.data;
+      setRequests(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error fetching requests:', error);
       toast.error('Failed to load audit requests');
@@ -160,11 +141,15 @@ export default function AuditRequests() {
     }
   };
 
-  const filteredRequests = requests.filter((request) =>
-    request.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    request.requestNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    request.audit.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredRequests = requests.filter((request) => {
+    const matchesSearch =
+      (request.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (request.requestNumber || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (request.audit?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesPriority = priorityFilter ? request.priority === priorityFilter : true;
+    const matchesStatus = statusFilter ? request.status === statusFilter : true;
+    return matchesSearch && matchesPriority && matchesStatus;
+  });
 
   const isOverdue = (dueDate?: string) => {
     if (!dueDate) return false;
@@ -214,7 +199,9 @@ export default function AuditRequests() {
               >
                 <option value="">Select an audit...</option>
                 {audits.map((audit) => (
-                  <option key={audit.id} value={audit.id}>{audit.name}</option>
+                  <option key={audit.id} value={audit.id}>
+                    {audit.name}
+                  </option>
                 ))}
               </select>
               {audits.length === 0 && (
@@ -226,24 +213,22 @@ export default function AuditRequests() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-1">
-                  Category
-                </label>
+                <label className="block text-sm font-medium text-surface-300 mb-1">Category</label>
                 <select
                   value={createForm.category}
                   onChange={(e) => setCreateForm({ ...createForm, category: e.target.value })}
                   className="w-full bg-surface-700 border border-surface-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
                 >
                   {Object.entries(categoryLabels).map(([value, label]) => (
-                    <option key={value} value={value}>{label}</option>
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-1">
-                  Priority
-                </label>
+                <label className="block text-sm font-medium text-surface-300 mb-1">Priority</label>
                 <select
                   value={createForm.priority}
                   onChange={(e) => setCreateForm({ ...createForm, priority: e.target.value })}
@@ -257,9 +242,7 @@ export default function AuditRequests() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-1">
-                  Due Date
-                </label>
+                <label className="block text-sm font-medium text-surface-300 mb-1">Due Date</label>
                 <input
                   type="date"
                   value={createForm.dueDate}
@@ -270,9 +253,7 @@ export default function AuditRequests() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-surface-300 mb-1">
-                Description
-              </label>
+              <label className="block text-sm font-medium text-surface-300 mb-1">Description</label>
               <textarea
                 value={createForm.description}
                 onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
@@ -283,11 +264,7 @@ export default function AuditRequests() {
             </div>
 
             <div className="flex justify-end gap-3 pt-4">
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => navigate('/audit-requests')}
-              >
+              <Button type="button" variant="secondary" onClick={() => navigate('/audit-requests')}>
                 Cancel
               </Button>
               <Button
@@ -309,7 +286,9 @@ export default function AuditRequests() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-surface-100">Audit Requests</h1>
-          <p className="text-surface-400 mt-1">Manage evidence and documentation requests from auditors</p>
+          <p className="text-surface-400 mt-1">
+            Manage evidence and documentation requests from auditors
+          </p>
         </div>
         <Button
           onClick={() => navigate('/audit-requests/new')}
@@ -369,7 +348,7 @@ export default function AuditRequests() {
           title="No audit requests yet"
           description="Create audit requests to track evidence and documentation requirements from auditors."
           action={{
-            label: "New Request",
+            label: 'New Request',
             onClick: () => navigate('/audit-requests/new'),
             icon: <PlusIcon className="w-5 h-5" />,
           }}
@@ -402,7 +381,7 @@ export default function AuditRequests() {
                   </div>
                   <div className="flex items-center gap-4 text-sm text-surface-400">
                     <span>{categoryLabels[request.category]}</span>
-                    <span>• Audit: {request.audit.name}</span>
+                    <span>• Audit: {request.audit?.name || 'Unknown audit'}</span>
                     {request.dueDate && (
                       <span className={isOverdue(request.dueDate) ? 'text-red-400' : ''}>
                         • Due: {new Date(request.dueDate).toLocaleDateString()}
@@ -410,8 +389,11 @@ export default function AuditRequests() {
                     )}
                   </div>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[request.status]}`}>
-                  {request.status.replace('_', ' ').charAt(0).toUpperCase() + request.status.replace('_', ' ').slice(1)}
+                <span
+                  className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[request.status]}`}
+                >
+                  {request.status.replace('_', ' ').charAt(0).toUpperCase() +
+                    request.status.replace('_', ' ').slice(1)}
                 </span>
               </div>
 
@@ -422,7 +404,12 @@ export default function AuditRequests() {
                 </div>
                 <div className="flex items-center gap-2">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                    />
                   </svg>
                   <span>{request._count.comments} comments</span>
                 </div>

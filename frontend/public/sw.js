@@ -155,12 +155,15 @@ self.addEventListener('message', (event) => {
     try {
       const sourceUrl = new URL(event.source.url);
       if (sourceUrl.origin !== self.location.origin) {
-        console.warn('[Security] Received message from unauthorized origin:', sourceUrl.origin);
+        self.console.warn(
+          '[Security] Received message from unauthorized origin:',
+          sourceUrl.origin
+        );
         return;
       }
     } catch {
       // If we can't parse the source URL, reject the message
-      console.warn('[Security] Received message from unknown source');
+      self.console.warn('[Security] Received message from unknown source');
       return;
     }
   }

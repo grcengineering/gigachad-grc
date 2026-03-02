@@ -21,7 +21,7 @@ import { registerSecretsProvider } from '../secrets.registry';
  */
 export class InfisicalSecretsProvider implements SecretsProvider {
   private readonly logger = new Logger(InfisicalSecretsProvider.name);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   private client: any = null;
   private enabled = false;
 

@@ -310,7 +310,7 @@ function OrganizationSettings() {
         // Audit records
         fetchJson('/api/audits?page=1&limit=1000'),
         // Recent audit log entries (activity trail)
-        fetchJson('/api/audit-logs?page=1&limit=1000'),
+        fetchJson('/api/audit?page=1&limit=1000'),
       ]);
 
       const payload = {

@@ -358,7 +358,6 @@ export class AssetsService {
   // Helper Methods
   // ============================================
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private toAssetDto(asset: any): AssetDto {
     return {
       id: asset.id,

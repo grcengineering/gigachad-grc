@@ -133,11 +133,11 @@ echo -e "${YELLOW}[2/7] Setting up environment...${NC}"
 
 cd "$PROJECT_ROOT"
 
-# Check if .env exists, create from template if not
+# Check if .env exists, create from development template if not
 if [ ! -f ".env" ]; then
-    if [ -f "deploy/env.example" ]; then
+    if [ -f ".env.example" ]; then
         echo "   Creating .env from template..."
-        cp deploy/env.example .env
+        cp .env.example .env
         echo -e "${GREEN}   ✓ Created .env file${NC}"
     else
         echo -e "${YELLOW}   ⚠ No .env template found, using defaults${NC}"

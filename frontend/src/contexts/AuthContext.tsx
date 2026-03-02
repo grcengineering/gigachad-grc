@@ -145,12 +145,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (storedAuth) {
           try {
             const devUser = JSON.parse(storedAuth) as User;
-            // Suppress dev auth session log
-            // console.log('Restoring dev auth session');
             setUser(devUser);
             setToken('dev-token-not-for-production');
             setIsAuthenticated(true);
-            // Ensure userId and organizationId are set for API calls
             secureStorage.set(STORAGE_KEYS.USER_ID, devUser.id);
             secureStorage.set(STORAGE_KEYS.ORGANIZATION_ID, devUser.organizationId);
             secureStorage.set(STORAGE_KEYS.TOKEN, 'dev-token-not-for-production');
@@ -160,6 +157,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             localStorage.removeItem('grc-dev-auth');
           }
         }
+        // Dev mode with no stored session — skip Keycloak entirely
+        // and let the user reach the login page with the dev login button
+        setIsLoading(false);
+        return;
       }
 
       const kc = getKeycloak();

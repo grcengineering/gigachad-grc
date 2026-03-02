@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -26,7 +25,7 @@ export class RiskWorkflowTasksService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
-    private readonly slack: SlackService,
+    private readonly slack: SlackService
   ) {
     this.appUrl = process.env.APP_URL || 'http://localhost:3000';
   }
@@ -42,7 +41,7 @@ export class RiskWorkflowTasksService {
     riskId: string,
     organizationId: string,
     dto: CreateRiskWorkflowTaskDto,
-    createdById: string,
+    createdById: string
   ): Promise<RiskWorkflowTaskResponseDto> {
     // Verify risk exists
     const risk = await this.prisma.risk.findFirst({
@@ -105,7 +104,7 @@ export class RiskWorkflowTasksService {
     organizationId: string,
     transitionType: string,
     assigneeId: string,
-    assignedById: string,
+    assignedById: string
   ): Promise<RiskWorkflowTaskResponseDto | null> {
     const config = WORKFLOW_TASK_CONFIGS[transitionType];
     if (!config) {
@@ -202,7 +201,7 @@ export class RiskWorkflowTasksService {
    */
   async getTasksForRisk(
     riskId: string,
-    organizationId: string,
+    organizationId: string
   ): Promise<RiskWorkflowTaskResponseDto[]> {
     const tasks = await this.prisma.riskWorkflowTask.findMany({
       where: { riskId, organizationId },
@@ -220,7 +219,7 @@ export class RiskWorkflowTasksService {
       orderBy: { createdAt: 'desc' },
     });
 
-    return tasks.map(t => this.toResponseDto(t));
+    return tasks.map((t) => this.toResponseDto(t));
   }
 
   /**
@@ -231,9 +230,8 @@ export class RiskWorkflowTasksService {
     organizationId: string,
     filters: RiskWorkflowTaskFilterDto = {},
     page: number = 1,
-    limit: number = 25,
+    limit: number = 25
   ): Promise<{ tasks: RiskWorkflowTaskResponseDto[]; total: number; page: number; limit: number }> {
-     
     const where: Record<string, any> = {
       organizationId,
       assigneeId: userId,
@@ -275,11 +273,7 @@ export class RiskWorkflowTasksService {
             select: { id: true, email: true, firstName: true, lastName: true },
           },
         },
-        orderBy: [
-          { priority: 'desc' },
-          { dueDate: 'asc' },
-          { createdAt: 'desc' },
-        ],
+        orderBy: [{ priority: 'desc' }, { dueDate: 'asc' }, { createdAt: 'desc' }],
         skip: (page - 1) * limit,
         take: limit,
       }),
@@ -287,7 +281,7 @@ export class RiskWorkflowTasksService {
     ]);
 
     return {
-      tasks: tasks.map(t => this.toResponseDto(t)),
+      tasks: tasks.map((t) => this.toResponseDto(t)),
       total,
       page,
       limit,
@@ -301,9 +295,8 @@ export class RiskWorkflowTasksService {
     organizationId: string,
     filters: RiskWorkflowTaskFilterDto = {},
     page: number = 1,
-    limit: number = 25,
+    limit: number = 25
   ): Promise<{ tasks: RiskWorkflowTaskResponseDto[]; total: number; page: number; limit: number }> {
-     
     const where: Record<string, any> = { organizationId };
 
     if (filters.status) {
@@ -340,11 +333,7 @@ export class RiskWorkflowTasksService {
             select: { id: true, email: true, firstName: true, lastName: true },
           },
         },
-        orderBy: [
-          { priority: 'desc' },
-          { dueDate: 'asc' },
-          { createdAt: 'desc' },
-        ],
+        orderBy: [{ priority: 'desc' }, { dueDate: 'asc' }, { createdAt: 'desc' }],
         skip: (page - 1) * limit,
         take: limit,
       }),
@@ -352,7 +341,7 @@ export class RiskWorkflowTasksService {
     ]);
 
     return {
-      tasks: tasks.map(t => this.toResponseDto(t)),
+      tasks: tasks.map((t) => this.toResponseDto(t)),
       total,
       page,
       limit,
@@ -366,7 +355,7 @@ export class RiskWorkflowTasksService {
     taskId: string,
     organizationId: string,
     dto: UpdateRiskWorkflowTaskDto,
-    _userId: string,
+    _userId: string
   ): Promise<RiskWorkflowTaskResponseDto> {
     const task = await this.prisma.riskWorkflowTask.findFirst({
       where: { id: taskId, organizationId },
@@ -376,7 +365,10 @@ export class RiskWorkflowTasksService {
       throw new NotFoundException('Task not found');
     }
 
-    if (task.status === RiskWorkflowTaskStatus.COMPLETED || task.status === RiskWorkflowTaskStatus.CANCELLED) {
+    if (
+      task.status === RiskWorkflowTaskStatus.COMPLETED ||
+      task.status === RiskWorkflowTaskStatus.CANCELLED
+    ) {
       throw new BadRequestException('Cannot update a completed or cancelled task');
     }
 
@@ -411,7 +403,7 @@ export class RiskWorkflowTasksService {
   async startTask(
     taskId: string,
     organizationId: string,
-    userId: string,
+    userId: string
   ): Promise<RiskWorkflowTaskResponseDto> {
     const task = await this.prisma.riskWorkflowTask.findFirst({
       where: { id: taskId, organizationId },
@@ -458,7 +450,7 @@ export class RiskWorkflowTasksService {
     taskId: string,
     organizationId: string,
     dto: CompleteTaskDto,
-    userId: string,
+    userId: string
   ): Promise<RiskWorkflowTaskResponseDto> {
     const task = await this.prisma.riskWorkflowTask.findFirst({
       where: { id: taskId, organizationId },
@@ -468,7 +460,10 @@ export class RiskWorkflowTasksService {
       throw new NotFoundException('Task not found');
     }
 
-    if (task.status === RiskWorkflowTaskStatus.COMPLETED || task.status === RiskWorkflowTaskStatus.CANCELLED) {
+    if (
+      task.status === RiskWorkflowTaskStatus.COMPLETED ||
+      task.status === RiskWorkflowTaskStatus.CANCELLED
+    ) {
       throw new BadRequestException('Task is already completed or cancelled');
     }
 
@@ -512,7 +507,7 @@ export class RiskWorkflowTasksService {
     taskId: string,
     organizationId: string,
     dto: ReassignTaskDto,
-    reassignedById: string,
+    reassignedById: string
   ): Promise<RiskWorkflowTaskResponseDto> {
     const task = await this.prisma.riskWorkflowTask.findFirst({
       where: { id: taskId, organizationId },
@@ -522,7 +517,10 @@ export class RiskWorkflowTasksService {
       throw new NotFoundException('Task not found');
     }
 
-    if (task.status === RiskWorkflowTaskStatus.COMPLETED || task.status === RiskWorkflowTaskStatus.CANCELLED) {
+    if (
+      task.status === RiskWorkflowTaskStatus.COMPLETED ||
+      task.status === RiskWorkflowTaskStatus.CANCELLED
+    ) {
       throw new BadRequestException('Cannot reassign a completed or cancelled task');
     }
 
@@ -575,7 +573,7 @@ export class RiskWorkflowTasksService {
     taskId: string,
     organizationId: string,
     reason: string,
-    userId: string,
+    userId: string
   ): Promise<RiskWorkflowTaskResponseDto> {
     const task = await this.prisma.riskWorkflowTask.findFirst({
       where: { id: taskId, organizationId },
@@ -616,14 +614,16 @@ export class RiskWorkflowTasksService {
   /**
    * Get task statistics for dashboard
    */
-  async getTaskStats(organizationId: string, userId?: string): Promise<{
+  async getTaskStats(
+    organizationId: string,
+    userId?: string
+  ): Promise<{
     pending: number;
     inProgress: number;
     overdue: number;
     completedThisWeek: number;
     total: number;
   }> {
-     
     const where: Record<string, any> = { organizationId };
     if (userId) {
       where.assigneeId = userId;
@@ -681,8 +681,10 @@ export class RiskWorkflowTasksService {
     }
   }
 
-   
-  private async sendTaskAssignedNotification(task: Record<string, any>, assignee: Record<string, any>): Promise<void> {
+  private async sendTaskAssignedNotification(
+    task: Record<string, any>,
+    assignee: Record<string, any>
+  ): Promise<void> {
     try {
       // Check user notification preferences
       const prefs = await this.prisma.userNotificationPreferences.findUnique({
@@ -730,14 +732,17 @@ export class RiskWorkflowTasksService {
 
       // Email notification is handled by the notifications service based on sendEmail preference
       // The notifications.create call above will trigger email if configured
-      
-      this.logger.log(`Task assigned notification sent to ${assignee.email} (in-app: ${sendInApp}, slack: ${sendSlack && !!slackUserId})`);
+
+      this.logger.log(
+        `Task assigned notification sent to ${assignee.email} (in-app: ${sendInApp}, slack: ${sendSlack && !!slackUserId})`
+      );
     } catch (error: unknown) {
-      this.logger.error(`Failed to send task assigned notification: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Failed to send task assigned notification: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
-   
   private async sendTaskCompletedNotification(task: Record<string, any>): Promise<void> {
     try {
       // Check user notification preferences for the person who assigned the task
@@ -770,24 +775,25 @@ export class RiskWorkflowTasksService {
 
       // Slack notification
       if (sendSlack && slackUserId && this.slack.isEnabled()) {
-        const completedBy = task.completedBy 
+        const completedBy = task.completedBy
           ? `${task.completedBy.firstName} ${task.completedBy.lastName}`
           : 'Someone';
-        
+
         await this.slack.sendTaskCompletedNotification(
           slackUserId,
           task.title,
           task.risk?.riskId || 'Unknown',
           completedBy,
-          task.resultingAction,
+          task.resultingAction
         );
       }
     } catch (error: unknown) {
-      this.logger.error(`Failed to send task completed notification: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Failed to send task completed notification: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
-   
   private toResponseDto(task: Record<string, any>): RiskWorkflowTaskResponseDto {
     return {
       id: task.id,

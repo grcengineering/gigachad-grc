@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Injectable, Logger } from '@nestjs/common';
 
 export interface SonarQubeConfig {
@@ -56,7 +55,9 @@ export interface SonarQubeSyncResult {
 export class SonarQubeConnector {
   private readonly logger = new Logger(SonarQubeConnector.name);
 
-  async testConnection(config: SonarQubeConfig): Promise<{ success: boolean; message: string; details?: any }> {
+  async testConnection(
+    config: SonarQubeConfig
+  ): Promise<{ success: boolean; message: string; details?: any }> {
     if (!config.baseUrl || !config.token) {
       return { success: false, message: 'Base URL and token are required' };
     }
@@ -68,7 +69,10 @@ export class SonarQubeConnector {
       });
 
       if (!response.ok) {
-        return { success: false, message: response.status === 401 ? 'Invalid token' : `API error: ${response.status}` };
+        return {
+          success: false,
+          message: response.status === 401 ? 'Invalid token' : `API error: ${response.status}`,
+        };
       }
 
       const data = await response.json();
@@ -87,15 +91,24 @@ export class SonarQubeConnector {
     const baseUrl = config.baseUrl.replace(/\/+$/, '');
 
     const [projects, issues, qualityGates] = await Promise.all([
-      this.getProjects(baseUrl, config.token).catch(e => { errors.push(`Projects: ${e.message}`); return []; }),
-      this.getIssues(baseUrl, config.token).catch(e => { errors.push(`Issues: ${e.message}`); return { total: 0, facets: [] }; }),
-      this.getQualityGates(baseUrl, config.token).catch(e => { errors.push(`QG: ${e.message}`); return []; }),
+      this.getProjects(baseUrl, config.token).catch((e) => {
+        errors.push(`Projects: ${e.message}`);
+        return [];
+      }),
+      this.getIssues(baseUrl, config.token).catch((e) => {
+        errors.push(`Issues: ${e.message}`);
+        return { total: 0, facets: [] };
+      }),
+      this.getQualityGates(baseUrl, config.token).catch((e) => {
+        errors.push(`QG: ${e.message}`);
+        return [];
+      }),
     ]);
 
     const bySeverity: Record<string, number> = {};
     const typeFacet = issues.facets?.find((f: any) => f.property === 'types');
     const severityFacet = issues.facets?.find((f: any) => f.property === 'severities');
-    
+
     severityFacet?.values?.forEach((v: any) => {
       bySeverity[v.val] = v.count;
     });
@@ -138,7 +151,7 @@ export class SonarQubeConnector {
 
   private buildHeaders(token: string): Record<string, string> {
     const auth = Buffer.from(`${token}:`).toString('base64');
-    return { 'Authorization': `Basic ${auth}` };
+    return { Authorization: `Basic ${auth}` };
   }
 
   private async getProjects(baseUrl: string, token: string): Promise<any[]> {
@@ -151,9 +164,12 @@ export class SonarQubeConnector {
   }
 
   private async getIssues(baseUrl: string, token: string): Promise<any> {
-    const response = await fetch(`${baseUrl}/api/issues/search?ps=1&facets=types,severities,statuses`, {
-      headers: this.buildHeaders(token),
-    });
+    const response = await fetch(
+      `${baseUrl}/api/issues/search?ps=1&facets=types,severities,statuses`,
+      {
+        headers: this.buildHeaders(token),
+      }
+    );
     if (!response.ok) throw new Error(`Failed: ${response.status}`);
     return response.json();
   }
@@ -167,4 +183,3 @@ export class SonarQubeConnector {
     return data.qualitygates || [];
   }
 }
-

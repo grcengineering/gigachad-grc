@@ -28,7 +28,7 @@ interface AuthenticatedRequest extends Request {
 
 @ApiTags('Findings')
 @ApiBearerAuth()
-@Controller('findings')
+@Controller('api/findings')
 @UseGuards(DevAuthGuard)
 export class FindingsController {
   constructor(private readonly findingsService: FindingsService) {}

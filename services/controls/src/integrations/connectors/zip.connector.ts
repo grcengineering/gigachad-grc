@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Injectable, Logger } from '@nestjs/common';
 
 /**
@@ -184,17 +183,17 @@ export interface MappedVendor {
 @Injectable()
 export class ZipConnector {
   private readonly logger = new Logger(ZipConnector.name);
-  
+
   private readonly DEFAULT_BASE_URL = 'https://api.ziphq.com/v1';
   private readonly SANDBOX_BASE_URL = 'https://api.sandbox.ziphq.com/v1';
 
   /**
    * Test connection to Zip API
    */
-  async testConnection(config: ZipConfig): Promise<{ 
-    success: boolean; 
-    message: string; 
-    details?: any 
+  async testConnection(config: ZipConfig): Promise<{
+    success: boolean;
+    message: string;
+    details?: any;
   }> {
     // Validate config
     if (!config.apiKey) {
@@ -212,35 +211,35 @@ export class ZipConnector {
 
       if (!response.ok) {
         const errorText = await response.text();
-        
+
         if (response.status === 401) {
           return { success: false, message: 'Invalid API key' };
         }
         if (response.status === 403) {
           return { success: false, message: 'API key does not have sufficient permissions' };
         }
-        
-        return { 
-          success: false, 
-          message: `API request failed: ${response.status} - ${errorText.substring(0, 200)}` 
+
+        return {
+          success: false,
+          message: `API request failed: ${response.status} - ${errorText.substring(0, 200)}`,
         };
       }
 
       const data = await response.json();
-      
+
       // Try to get supplier count
       const suppliersResponse = await fetch(`${baseUrl}/suppliers?limit=1`, {
         headers: this.buildHeaders(config.apiKey),
       });
-      
+
       let supplierCount = 0;
       if (suppliersResponse.ok) {
         const suppliersData = await suppliersResponse.json();
         supplierCount = suppliersData.total || suppliersData.data?.length || 0;
       }
 
-      return { 
-        success: true, 
+      return {
+        success: true,
         message: `Connected to Zip successfully. Found ${supplierCount} suppliers.`,
         details: {
           organization: data.organization?.name || data.name,
@@ -250,15 +249,15 @@ export class ZipConnector {
       };
     } catch (error: any) {
       this.logger.error('Zip connection test failed', error);
-      
+
       let message = error.message || 'Connection failed';
-      
+
       if (message.includes('ENOTFOUND') || message.includes('getaddrinfo')) {
         message = 'Cannot reach Zip API - check your network connection';
       } else if (message.includes('ECONNREFUSED')) {
         message = 'Connection refused by Zip API';
       }
-      
+
       return { success: false, message };
     }
   }
@@ -269,17 +268,17 @@ export class ZipConnector {
   async sync(config: ZipConfig): Promise<ZipSyncResult> {
     const baseUrl = this.getBaseUrl(config);
     const errors: string[] = [];
-    
+
     this.logger.log('Starting Zip sync...');
 
     // Fetch all data in parallel
     const [suppliers, contracts, spendData] = await Promise.all([
       this.fetchAllSuppliers(baseUrl, config.apiKey),
-      this.fetchAllContracts(baseUrl, config.apiKey).catch(e => {
+      this.fetchAllContracts(baseUrl, config.apiKey).catch((e) => {
         errors.push(`Failed to fetch contracts: ${e.message}`);
         return [] as ZipContract[];
       }),
-      this.fetchSpendSummary(baseUrl, config.apiKey).catch(e => {
+      this.fetchSpendSummary(baseUrl, config.apiKey).catch((e) => {
         errors.push(`Failed to fetch spend data: ${e.message}`);
         return [] as ZipSpendSummary[];
       }),
@@ -300,11 +299,11 @@ export class ZipConnector {
     }
 
     // Process suppliers into vendor summaries
-    const vendorSummaries: ZipVendorSummary[] = suppliers.map(supplier => {
+    const vendorSummaries: ZipVendorSummary[] = suppliers.map((supplier) => {
       const spend = spendBySupplier.get(supplier.id);
       const supplierContracts = contractsBySupplier.get(supplier.id) || [];
-      const primaryContact = supplier.contacts?.find(c => c.is_primary) || supplier.contacts?.[0];
-      
+      const primaryContact = supplier.contacts?.find((c) => c.is_primary) || supplier.contacts?.[0];
+
       return {
         zipId: supplier.id,
         name: supplier.display_name || supplier.name,
@@ -315,7 +314,7 @@ export class ZipConnector {
         primaryContactName: primaryContact?.name,
         primaryContactEmail: primaryContact?.email,
         riskLevel: supplier.risk_level,
-        hasActiveContract: supplierContracts.some(c => c.status === 'active'),
+        hasActiveContract: supplierContracts.some((c) => c.status === 'active'),
         totalSpend: spend?.total_spend,
         soc2Certified: supplier.soc2_certified || false,
         iso27001Certified: supplier.iso27001_certified || false,
@@ -325,28 +324,26 @@ export class ZipConnector {
 
     // Calculate compliance stats
     const compliance = {
-      soc2Certified: suppliers.filter(s => s.soc2_certified).length,
-      iso27001Certified: suppliers.filter(s => s.iso27001_certified).length,
-      gdprCompliant: suppliers.filter(s => s.gdpr_compliant).length,
-      hasInsurance: suppliers.filter(s => 
-        s.insurance?.has_general_liability || 
-        s.insurance?.has_cyber_insurance
+      soc2Certified: suppliers.filter((s) => s.soc2_certified).length,
+      iso27001Certified: suppliers.filter((s) => s.iso27001_certified).length,
+      gdprCompliant: suppliers.filter((s) => s.gdpr_compliant).length,
+      hasInsurance: suppliers.filter(
+        (s) => s.insurance?.has_general_liability || s.insurance?.has_cyber_insurance
       ).length,
-      highRisk: suppliers.filter(s => 
-        s.risk_level === 'high' || s.risk_level === 'critical'
-      ).length,
+      highRisk: suppliers.filter((s) => s.risk_level === 'high' || s.risk_level === 'critical')
+        .length,
     };
 
     // Calculate spend stats
     const totalSpend = spendData.reduce((sum, s) => sum + (s.total_spend || 0), 0);
     const spendYTD = spendData.reduce((sum, s) => sum + (s.spend_ytd || 0), 0);
-    
+
     // Get top suppliers by spend
     const topSuppliers = [...spendData]
       .sort((a, b) => (b.total_spend || 0) - (a.total_spend || 0))
       .slice(0, 10)
-      .map(s => {
-        const supplier = suppliers.find(sup => sup.id === s.supplier_id);
+      .map((s) => {
+        const supplier = suppliers.find((sup) => sup.id === s.supplier_id);
         return {
           name: supplier?.name || 'Unknown',
           spend: s.total_spend || 0,
@@ -356,18 +353,20 @@ export class ZipConnector {
     // Count contract stats
     const now = new Date();
     const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-    const expiringSoon = contracts.filter(c => {
+    const expiringSoon = contracts.filter((c) => {
       if (!c.end_date) return false;
       const endDate = new Date(c.end_date);
       return endDate > now && endDate <= thirtyDaysFromNow;
     }).length;
 
-    this.logger.log(`Zip sync complete: ${suppliers.length} suppliers, ${contracts.length} contracts`);
+    this.logger.log(
+      `Zip sync complete: ${suppliers.length} suppliers, ${contracts.length} contracts`
+    );
 
     return {
       suppliers: {
         total: suppliers.length,
-        active: suppliers.filter(s => s.status === 'active').length,
+        active: suppliers.filter((s) => s.status === 'active').length,
         synced: vendorSummaries.length,
         created: 0, // Set by caller after TPRM sync
         updated: 0,
@@ -377,7 +376,7 @@ export class ZipConnector {
       },
       contracts: {
         total: contracts.length,
-        active: contracts.filter(c => c.status === 'active').length,
+        active: contracts.filter((c) => c.status === 'active').length,
         expiringSoon,
       },
       spend: {
@@ -395,14 +394,14 @@ export class ZipConnector {
    * Map Zip suppliers to GRC vendor format for TPRM import
    */
   mapToVendors(
-    suppliers: ZipSupplier[], 
+    suppliers: ZipSupplier[],
     spendData: Map<string, ZipSpendSummary>,
-    contracts: Map<string, ZipContract[]>,
+    contracts: Map<string, ZipContract[]>
   ): MappedVendor[] {
-    return suppliers.map(supplier => {
+    return suppliers.map((supplier) => {
       const spend = spendData.get(supplier.id);
       const supplierContracts = contracts.get(supplier.id) || [];
-      const primaryContact = supplier.contacts?.find(c => c.is_primary) || supplier.contacts?.[0];
+      const primaryContact = supplier.contacts?.find((c) => c.is_primary) || supplier.contacts?.[0];
 
       return {
         externalId: supplier.id,
@@ -424,7 +423,9 @@ export class ZipConnector {
           soc2Certified: supplier.soc2_certified || false,
           iso27001Certified: supplier.iso27001_certified || false,
           gdprCompliant: supplier.gdpr_compliant || false,
-          hasInsurance: !!(supplier.insurance?.has_general_liability || supplier.insurance?.has_cyber_insurance),
+          hasInsurance: !!(
+            supplier.insurance?.has_general_liability || supplier.insurance?.has_cyber_insurance
+          ),
           totalSpend: spend?.total_spend,
           spendYTD: spend?.spend_ytd,
           contractCount: supplierContracts.length,
@@ -567,17 +568,17 @@ export class ZipConnector {
     if (!zipCategory) return 'software_vendor';
 
     const categoryMap: Record<string, string> = {
-      'software': 'software_vendor',
-      'saas': 'software_vendor',
-      'cloud': 'cloud_provider',
-      'infrastructure': 'cloud_provider',
-      'hosting': 'cloud_provider',
-      'consulting': 'consultant',
-      'professional_services': 'professional_services',
-      'legal': 'professional_services',
-      'accounting': 'professional_services',
-      'hardware': 'hardware_vendor',
-      'equipment': 'hardware_vendor',
+      software: 'software_vendor',
+      saas: 'software_vendor',
+      cloud: 'cloud_provider',
+      infrastructure: 'cloud_provider',
+      hosting: 'cloud_provider',
+      consulting: 'consultant',
+      professional_services: 'professional_services',
+      legal: 'professional_services',
+      accounting: 'professional_services',
+      hardware: 'hardware_vendor',
+      equipment: 'hardware_vendor',
     };
 
     const lowerCategory = zipCategory.toLowerCase();
@@ -596,16 +597,16 @@ export class ZipConnector {
   private determineTier(supplier: ZipSupplier, spend?: ZipSpendSummary): string {
     // Tier based on spend
     const totalSpend = spend?.total_spend || 0;
-    
+
     if (totalSpend >= 1000000) return 'tier_1'; // $1M+
-    if (totalSpend >= 100000) return 'tier_2';  // $100K+
-    if (totalSpend >= 10000) return 'tier_3';   // $10K+
-    
+    if (totalSpend >= 100000) return 'tier_2'; // $100K+
+    if (totalSpend >= 10000) return 'tier_3'; // $10K+
+
     // Also consider risk level
     if (supplier.risk_level === 'critical' || supplier.risk_level === 'high') {
       return 'tier_2';
     }
-    
+
     return 'tier_4';
   }
 
@@ -614,15 +615,15 @@ export class ZipConnector {
    */
   private mapStatus(zipStatus: string): string {
     const statusMap: Record<string, string> = {
-      'active': 'active',
-      'approved': 'active',
-      'inactive': 'inactive',
-      'pending': 'pending_onboarding',
-      'pending_approval': 'pending_onboarding',
-      'onboarding': 'pending_onboarding',
-      'blocked': 'terminated',
-      'terminated': 'terminated',
-      'offboarding': 'offboarding',
+      active: 'active',
+      approved: 'active',
+      inactive: 'inactive',
+      pending: 'pending_onboarding',
+      pending_approval: 'pending_onboarding',
+      onboarding: 'pending_onboarding',
+      blocked: 'terminated',
+      terminated: 'terminated',
+      offboarding: 'offboarding',
     };
 
     return statusMap[zipStatus?.toLowerCase()] || 'active';
@@ -635,12 +636,12 @@ export class ZipConnector {
     if (!riskLevel) return 'medium';
 
     const riskMap: Record<string, string> = {
-      'critical': 'critical',
-      'high': 'high',
-      'medium': 'medium',
-      'moderate': 'medium',
-      'low': 'low',
-      'minimal': 'low',
+      critical: 'critical',
+      high: 'high',
+      medium: 'medium',
+      moderate: 'medium',
+      low: 'low',
+      minimal: 'low',
     };
 
     return riskMap[riskLevel.toLowerCase()] || 'medium';
@@ -653,9 +654,7 @@ export class ZipConnector {
     if (config.baseUrl) {
       return config.baseUrl.replace(/\/+$/, '');
     }
-    return config.environment === 'sandbox' 
-      ? this.SANDBOX_BASE_URL 
-      : this.DEFAULT_BASE_URL;
+    return config.environment === 'sandbox' ? this.SANDBOX_BASE_URL : this.DEFAULT_BASE_URL;
   }
 
   /**
@@ -663,11 +662,10 @@ export class ZipConnector {
    */
   private buildHeaders(apiKey: string): Record<string, string> {
     return {
-      'Authorization': `Bearer ${apiKey}`,
+      Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
-      'Accept': 'application/json',
+      Accept: 'application/json',
       'User-Agent': 'GigaChad-GRC/1.0',
     };
   }
 }
-

@@ -1,8 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Injectable, Logger } from '@nestjs/common';
-import { 
-  CircuitBreaker, 
-  CircuitBreakerRegistry, 
+import {
+  CircuitBreaker,
+  CircuitBreakerRegistry,
   CircuitState,
   withRetry,
   RetryPolicies,
@@ -328,7 +327,10 @@ export class ConnectorFactory {
     this.connectors.set('flexera', new ITAMConnectors.FlexeraConnector());
     this.connectors.set('snow_software', new ITAMConnectors.SnowSoftwareConnector());
     this.connectors.set('oomnitza', new ITAMConnectors.OomnitzaConnector());
-    this.connectors.set('manageengine_assetexplorer', new ITAMConnectors.ManageEngineAssetExplorerConnector());
+    this.connectors.set(
+      'manageengine_assetexplorer',
+      new ITAMConnectors.ManageEngineAssetExplorerConnector()
+    );
     this.connectors.set('atlassian_assets', new ITAMConnectors.AtlassianAssetsConnector());
 
     // Knowledge Management
@@ -352,7 +354,10 @@ export class ConnectorFactory {
     // Security Awareness
     this.connectors.set('knowbe4', new AdditionalConnectors.KnowBe4Connector());
     this.connectors.set('proofpoint_sat', new AdditionalConnectors.ProofpointSATConnector());
-    this.connectors.set('mimecast_awareness', new AdditionalConnectors.MimecastAwarenessConnector());
+    this.connectors.set(
+      'mimecast_awareness',
+      new AdditionalConnectors.MimecastAwarenessConnector()
+    );
     this.connectors.set('cofense', new AdditionalConnectors.CofenseConnector());
     this.connectors.set('hoxhunt', new AdditionalConnectors.HoxhuntConnector());
     this.connectors.set('curricula', new AdditionalConnectors.CurriculaConnector());
@@ -388,13 +393,16 @@ export class ConnectorFactory {
   /**
    * Test connection with circuit breaker and retry protection
    */
-  async testConnection(integrationType: string, config: any): Promise<{ success: boolean; message: string; details?: any }> {
+  async testConnection(
+    integrationType: string,
+    config: any
+  ): Promise<{ success: boolean; message: string; details?: any }> {
     const connector = this.getConnector(integrationType);
-    
+
     if (!connector) {
-      return { 
-        success: true, 
-        message: `Configuration validated (${integrationType} connector pending implementation)` 
+      return {
+        success: true,
+        message: `Configuration validated (${integrationType} connector pending implementation)`,
       };
     }
 
@@ -403,48 +411,47 @@ export class ConnectorFactory {
     // Check if circuit is open (failing fast)
     if (circuitBreaker.getState() === CircuitState.OPEN) {
       this.logger.warn(`Circuit breaker is OPEN for ${integrationType}, failing fast`);
-      return { 
-        success: false, 
+      return {
+        success: false,
         message: `Integration temporarily unavailable (circuit breaker open). Try again later.`,
-        details: { circuitState: 'OPEN' }
+        details: { circuitState: 'OPEN' },
       };
     }
 
     try {
       // Execute with circuit breaker and retry
       const result = await circuitBreaker.fire(async () => {
-        return await withRetry(
-          () => connector.testConnection(config),
-          {
-            ...RetryPolicies.fast,
-            operationName: `testConnection:${integrationType}`,
-            onRetry: (error, attempt) => {
-              this.logger.warn(`Retrying testConnection for ${integrationType} (attempt ${attempt}): ${error.message}`);
-            },
-          }
-        );
+        return await withRetry(() => connector.testConnection(config), {
+          ...RetryPolicies.fast,
+          operationName: `testConnection:${integrationType}`,
+          onRetry: (error, attempt) => {
+            this.logger.warn(
+              `Retrying testConnection for ${integrationType} (attempt ${attempt}): ${error.message}`
+            );
+          },
+        });
       });
-      
+
       return result;
     } catch (error: any) {
       this.logger.error(`Connection test failed for ${integrationType}`, error);
-      
+
       // Provide helpful error message based on error type
       if (error.name === 'CircuitBreakerOpenError') {
-        return { 
-          success: false, 
+        return {
+          success: false,
           message: 'Integration temporarily unavailable. Please try again later.',
-          details: { circuitState: 'OPEN' }
+          details: { circuitState: 'OPEN' },
         };
       }
       if (error.name === 'CircuitBreakerTimeoutError') {
-        return { 
-          success: false, 
+        return {
+          success: false,
           message: 'Connection timed out. The external service may be slow or unresponsive.',
-          details: { timeout: CONNECTOR_RESILIENCE_CONFIG.timeout }
+          details: { timeout: CONNECTOR_RESILIENCE_CONFIG.timeout },
         };
       }
-      
+
       return { success: false, message: error.message || 'Connection test failed' };
     }
   }
@@ -454,13 +461,13 @@ export class ConnectorFactory {
    */
   async sync(integrationType: string, config: any): Promise<any> {
     const connector = this.getConnector(integrationType);
-    
+
     if (!connector) {
-      return { 
-        success: false, 
+      return {
+        success: false,
         message: `No connector available for ${integrationType}`,
         collectedAt: new Date().toISOString(),
-        errors: [`Connector not implemented for ${integrationType}`]
+        errors: [`Connector not implemented for ${integrationType}`],
       };
     }
 
@@ -469,22 +476,23 @@ export class ConnectorFactory {
     // Check if circuit is open (failing fast)
     if (circuitBreaker.getState() === CircuitState.OPEN) {
       this.logger.warn(`Circuit breaker is OPEN for ${integrationType}, failing fast`);
-      throw new Error(`Integration ${integrationType} is temporarily unavailable (circuit breaker open). Try again later.`);
+      throw new Error(
+        `Integration ${integrationType} is temporarily unavailable (circuit breaker open). Try again later.`
+      );
     }
 
     try {
       // Execute with circuit breaker and retry (use standard policy for sync operations)
       return await circuitBreaker.fire(async () => {
-        return await withRetry(
-          () => connector.sync(config),
-          {
-            ...RetryPolicies.standard,
-            operationName: `sync:${integrationType}`,
-            onRetry: (error, attempt) => {
-              this.logger.warn(`Retrying sync for ${integrationType} (attempt ${attempt}): ${error.message}`);
-            },
-          }
-        );
+        return await withRetry(() => connector.sync(config), {
+          ...RetryPolicies.standard,
+          operationName: `sync:${integrationType}`,
+          onRetry: (error, attempt) => {
+            this.logger.warn(
+              `Retrying sync for ${integrationType} (attempt ${attempt}): ${error.message}`
+            );
+          },
+        });
       });
     } catch (error: any) {
       this.logger.error(`Sync failed for ${integrationType}`, error);
@@ -516,4 +524,3 @@ export class ConnectorFactory {
     this.logger.log('All circuit breakers manually reset');
   }
 }
-

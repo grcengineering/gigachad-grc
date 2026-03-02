@@ -1,12 +1,17 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { Injectable, NotFoundException, ConflictException, BadRequestException, Logger, Inject, forwardRef } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  BadRequestException,
+  Logger,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { CacheService, CacheKeys } from '@gigachad-grc/shared';
 import { RiskWorkflowTasksService } from './risk-workflow-tasks.service';
-import {
-  RiskLevel as PrismaRiskLevel,
-} from '@prisma/client';
+import { RiskLevel as PrismaRiskLevel } from '@prisma/client';
 import {
   CreateRiskDto,
   UpdateRiskDto,
@@ -50,7 +55,7 @@ export class RiskService {
     private auditService: AuditService,
     private cache: CacheService,
     @Inject(forwardRef(() => RiskWorkflowTasksService))
-    private riskWorkflowTasksService: RiskWorkflowTasksService,
+    private riskWorkflowTasksService: RiskWorkflowTasksService
   ) {}
 
   // ===========================
@@ -64,18 +69,28 @@ export class RiskService {
     organizationId: string,
     filters: RiskFilterDto,
     page: number = 1,
-    limit: number = 25,
+    limit: number = 25
   ) {
     const where: Record<string, unknown> = { organizationId, deletedAt: null };
 
     if (filters.workspaceId) {
-      where.workspaceId = filters.workspaceId;
+      where.AND = [
+        ...((where.AND as Array<unknown>) || []),
+        {
+          OR: [{ workspaceId: filters.workspaceId }, { workspaceId: null }],
+        },
+      ];
     }
 
     if (filters.search) {
-      where.OR = [
-        { title: { contains: filters.search, mode: 'insensitive' } },
-        { riskId: { contains: filters.search, mode: 'insensitive' } },
+      where.AND = [
+        ...((where.AND as Array<unknown>) || []),
+        {
+          OR: [
+            { title: { contains: filters.search, mode: 'insensitive' } },
+            { riskId: { contains: filters.search, mode: 'insensitive' } },
+          ],
+        },
       ];
     }
 
@@ -114,7 +129,7 @@ export class RiskService {
     ]);
 
     return {
-      risks: risks.map(risk => ({
+      risks: risks.map((risk) => ({
         id: risk.id,
         riskId: risk.riskId,
         title: risk.title,
@@ -135,13 +150,18 @@ export class RiskService {
     organizationId: string,
     filters: RiskFilterDto,
     page: number = 1,
-    limit: number = 50,
+    limit: number = 50
   ) {
     const where: Record<string, unknown> = { organizationId, deletedAt: null };
 
     // Workspace filter for multi-workspace mode
     if (filters.workspaceId) {
-      where.workspaceId = filters.workspaceId;
+      where.AND = [
+        ...((where.AND as Array<unknown>) || []),
+        {
+          OR: [{ workspaceId: filters.workspaceId }, { workspaceId: null }],
+        },
+      ];
     }
 
     if (filters.search) {
@@ -223,9 +243,7 @@ export class RiskService {
             },
           },
         },
-        orderBy: [
-          { createdAt: 'desc' },
-        ],
+        orderBy: [{ createdAt: 'desc' }],
         skip: (page - 1) * limit,
         take: limit,
       }),
@@ -233,7 +251,7 @@ export class RiskService {
     ]);
 
     return {
-      risks: risks.map(risk => this.toResponseDto(risk)),
+      risks: risks.map((risk) => this.toResponseDto(risk)),
       total,
       page,
       limit,
@@ -286,7 +304,7 @@ export class RiskService {
 
     return {
       ...this.toResponseDto(risk),
-      assets: risk.assets.map(ra => ({
+      assets: risk.assets.map((ra) => ({
         id: ra.asset.id,
         name: ra.asset.name,
         type: ra.asset.type,
@@ -294,7 +312,7 @@ export class RiskService {
         source: ra.asset.source,
         notes: ra.notes || undefined,
       })),
-      controls: risk.controls.map(rc => ({
+      controls: risk.controls.map((rc) => ({
         id: rc.control.id,
         controlId: rc.control.controlId,
         title: rc.control.title,
@@ -302,7 +320,7 @@ export class RiskService {
         effectiveness: rc.effectiveness,
         notes: rc.notes || undefined,
       })),
-      scenarios: risk.scenarios.map(s => ({
+      scenarios: risk.scenarios.map((s) => ({
         id: s.id,
         title: s.title,
         description: s.description,
@@ -312,7 +330,7 @@ export class RiskService {
         impact: s.impact,
         createdAt: s.createdAt,
       })),
-      history: risk.history.map(h => ({
+      history: risk.history.map((h) => ({
         id: h.id,
         action: h.action,
         changes: (h.changes as Record<string, unknown>) || {},
@@ -320,78 +338,83 @@ export class RiskService {
         changedBy: h.changedBy,
         changedAt: h.changedAt,
       })),
-      assessment: risk.assessment ? {
-        id: risk.assessment.id,
-        status: risk.assessment.status,
-        riskAssessorId: risk.assessment.riskAssessorId || undefined,
-        grcSmeId: risk.assessment.grcSmeId || undefined,
-        threatDescription: risk.assessment.threatDescription || undefined,
-        affectedAssets: risk.assets?.map(ra => ra.assetId) || [],
-        existingControls: risk.controls?.map(rc => rc.controlId) || [],
-        vulnerabilities: risk.assessment.vulnerabilities || undefined,
-        likelihoodScore: risk.assessment.likelihoodScore || undefined,
-        likelihoodRationale: risk.assessment.likelihoodRationale || undefined,
-        impactScore: risk.assessment.impactScore || undefined,
-        impactRationale: risk.assessment.impactRationale || undefined,
-        impactCategories: (risk.assessment.impactCategories as Record<string, unknown>) || undefined,
-        calculatedRiskScore: risk.assessment.calculatedRiskScore || undefined,
-        recommendedOwnerId: risk.assessment.recommendedOwnerId || undefined,
-        assessmentNotes: risk.assessment.assessmentNotes || undefined,
-        treatmentRecommendation: risk.assessment.treatmentRecommendation || undefined,
-        grcReviewNotes: risk.assessment.grcReviewNotes || undefined,
-        grcApprovedAt: risk.assessment.grcApprovedAt || undefined,
-        grcDeclinedReason: risk.assessment.grcDeclinedReason || undefined,
-        assessorSubmittedAt: risk.assessment.assessorSubmittedAt || undefined,
-        completedAt: risk.assessment.completedAt || undefined,
-        createdAt: risk.assessment.createdAt,
-        updatedAt: risk.assessment.updatedAt,
-      } : undefined,
-      treatment: risk.treatment ? {
-        id: risk.treatment.id,
-        status: risk.treatment.status,
-        riskOwnerId: risk.treatment.riskOwnerId || undefined,
-        executiveApproverId: risk.treatment.executiveApproverId || undefined,
-        grcSmeId: risk.treatment.grcSmeId || undefined,
-        treatmentDecision: risk.treatment.treatmentDecision || undefined,
-        treatmentJustification: risk.treatment.treatmentJustification || undefined,
-        treatmentPlan: risk.treatment.treatmentPlan || undefined,
-        mitigationDescription: risk.treatment.mitigationDescription || undefined,
-        mitigationTargetDate: risk.treatment.mitigationTargetDate || undefined,
-        mitigationActualDate: risk.treatment.mitigationActualDate || undefined,
-        transferTo: risk.treatment.transferTo || undefined,
-        transferCost: risk.treatment.transferCost || undefined,
-        avoidStrategy: risk.treatment.avoidStrategy || undefined,
-        acceptanceRationale: risk.treatment.acceptanceRationale || undefined,
-        acceptanceExpiresAt: risk.treatment.acceptanceExpiresAt || undefined,
-        executiveApprovalRequired: risk.treatment.executiveApprovalRequired,
-        executiveApprovalStatus: risk.treatment.executiveApprovalStatus || undefined,
-        executiveApprovalNotes: risk.treatment.executiveApprovalNotes || undefined,
-        executiveApprovedAt: risk.treatment.executiveApprovedAt || undefined,
-        executiveDeniedReason: risk.treatment.executiveDeniedReason || undefined,
-        mitigationStatus: risk.treatment.mitigationStatus || undefined,
-        mitigationProgress: risk.treatment.mitigationProgress,
-        lastProgressUpdate: risk.treatment.lastProgressUpdate || undefined,
-        nextReviewDate: risk.treatment.nextReviewDate || undefined,
-        residualLikelihood: risk.treatment.residualLikelihood || undefined,
-        residualImpact: risk.treatment.residualImpact || undefined,
-        residualRiskScore: risk.treatment.residualRiskScore || undefined,
-        completedAt: risk.treatment.completedAt || undefined,
-        createdAt: risk.treatment.createdAt,
-        updatedAt: risk.treatment.updatedAt,
-        updates: risk.treatment.updates.map(u => ({
-          id: u.id,
-          updateType: u.updateType,
-          previousStatus: u.previousStatus || undefined,
-          newStatus: u.newStatus || undefined,
-          progress: u.progress || undefined,
-          notes: u.notes || undefined,
-          newTargetDate: u.newTargetDate || undefined,
-          delayReason: u.delayReason || undefined,
-          cancellationReason: u.cancellationReason || undefined,
-          createdBy: u.createdBy,
-          createdAt: u.createdAt,
-        })),
-      } : undefined,
+      assessment: risk.assessment
+        ? {
+            id: risk.assessment.id,
+            status: risk.assessment.status,
+            riskAssessorId: risk.assessment.riskAssessorId || undefined,
+            grcSmeId: risk.assessment.grcSmeId || undefined,
+            threatDescription: risk.assessment.threatDescription || undefined,
+            affectedAssets: risk.assets?.map((ra) => ra.assetId) || [],
+            existingControls: risk.controls?.map((rc) => rc.controlId) || [],
+            vulnerabilities: risk.assessment.vulnerabilities || undefined,
+            likelihoodScore: risk.assessment.likelihoodScore || undefined,
+            likelihoodRationale: risk.assessment.likelihoodRationale || undefined,
+            impactScore: risk.assessment.impactScore || undefined,
+            impactRationale: risk.assessment.impactRationale || undefined,
+            impactCategories:
+              (risk.assessment.impactCategories as Record<string, unknown>) || undefined,
+            calculatedRiskScore: risk.assessment.calculatedRiskScore || undefined,
+            recommendedOwnerId: risk.assessment.recommendedOwnerId || undefined,
+            assessmentNotes: risk.assessment.assessmentNotes || undefined,
+            treatmentRecommendation: risk.assessment.treatmentRecommendation || undefined,
+            grcReviewNotes: risk.assessment.grcReviewNotes || undefined,
+            grcApprovedAt: risk.assessment.grcApprovedAt || undefined,
+            grcDeclinedReason: risk.assessment.grcDeclinedReason || undefined,
+            assessorSubmittedAt: risk.assessment.assessorSubmittedAt || undefined,
+            completedAt: risk.assessment.completedAt || undefined,
+            createdAt: risk.assessment.createdAt,
+            updatedAt: risk.assessment.updatedAt,
+          }
+        : undefined,
+      treatment: risk.treatment
+        ? {
+            id: risk.treatment.id,
+            status: risk.treatment.status,
+            riskOwnerId: risk.treatment.riskOwnerId || undefined,
+            executiveApproverId: risk.treatment.executiveApproverId || undefined,
+            grcSmeId: risk.treatment.grcSmeId || undefined,
+            treatmentDecision: risk.treatment.treatmentDecision || undefined,
+            treatmentJustification: risk.treatment.treatmentJustification || undefined,
+            treatmentPlan: risk.treatment.treatmentPlan || undefined,
+            mitigationDescription: risk.treatment.mitigationDescription || undefined,
+            mitigationTargetDate: risk.treatment.mitigationTargetDate || undefined,
+            mitigationActualDate: risk.treatment.mitigationActualDate || undefined,
+            transferTo: risk.treatment.transferTo || undefined,
+            transferCost: risk.treatment.transferCost || undefined,
+            avoidStrategy: risk.treatment.avoidStrategy || undefined,
+            acceptanceRationale: risk.treatment.acceptanceRationale || undefined,
+            acceptanceExpiresAt: risk.treatment.acceptanceExpiresAt || undefined,
+            executiveApprovalRequired: risk.treatment.executiveApprovalRequired,
+            executiveApprovalStatus: risk.treatment.executiveApprovalStatus || undefined,
+            executiveApprovalNotes: risk.treatment.executiveApprovalNotes || undefined,
+            executiveApprovedAt: risk.treatment.executiveApprovedAt || undefined,
+            executiveDeniedReason: risk.treatment.executiveDeniedReason || undefined,
+            mitigationStatus: risk.treatment.mitigationStatus || undefined,
+            mitigationProgress: risk.treatment.mitigationProgress,
+            lastProgressUpdate: risk.treatment.lastProgressUpdate || undefined,
+            nextReviewDate: risk.treatment.nextReviewDate || undefined,
+            residualLikelihood: risk.treatment.residualLikelihood || undefined,
+            residualImpact: risk.treatment.residualImpact || undefined,
+            residualRiskScore: risk.treatment.residualRiskScore || undefined,
+            completedAt: risk.treatment.completedAt || undefined,
+            createdAt: risk.treatment.createdAt,
+            updatedAt: risk.treatment.updatedAt,
+            updates: risk.treatment.updates.map((u) => ({
+              id: u.id,
+              updateType: u.updateType,
+              previousStatus: u.previousStatus || undefined,
+              newStatus: u.newStatus || undefined,
+              progress: u.progress || undefined,
+              notes: u.notes || undefined,
+              newTargetDate: u.newTargetDate || undefined,
+              delayReason: u.delayReason || undefined,
+              cancellationReason: u.cancellationReason || undefined,
+              createdBy: u.createdBy,
+              createdAt: u.createdAt,
+            })),
+          }
+        : undefined,
     };
   }
 
@@ -409,7 +432,7 @@ export class RiskService {
     organizationId: string,
     dto: CreateRiskDto,
     userId: string,
-    userEmail?: string,
+    userEmail?: string
   ): Promise<RiskResponseDto> {
     // Generate risk ID
     const count = await this.prisma.risk.count({ where: { organizationId, deletedAt: null } });
@@ -423,12 +446,15 @@ export class RiskService {
         description: dto.description,
         category: 'security', // Default category - will be refined during assessment
         source: dto.source,
-         
+
         initialSeverity: dto.initialSeverity as any,
-         
+
         status: RiskIntakeStatus.RISK_IDENTIFIED as any,
-        documentation: dto.documentation ? JSON.parse(JSON.stringify(dto.documentation)) : undefined,
+        documentation: dto.documentation
+          ? JSON.parse(JSON.stringify(dto.documentation))
+          : undefined,
         tags: dto.tags || [],
+        workspaceId: dto.workspaceId,
         reporterId: userId,
         createdBy: userId,
       },
@@ -472,7 +498,7 @@ export class RiskService {
     organizationId: string,
     dto: UpdateRiskDto,
     userId: string,
-    userEmail?: string,
+    userEmail?: string
   ): Promise<RiskResponseDto> {
     const existing = await this.prisma.risk.findFirst({
       where: { id, organizationId, deletedAt: null },
@@ -489,7 +515,7 @@ export class RiskService {
         description: dto.description,
         category: dto.category,
         source: dto.source,
-         
+
         initialSeverity: dto.initialSeverity as any,
         tags: dto.tags,
       },
@@ -535,7 +561,7 @@ export class RiskService {
     id: string,
     organizationId: string,
     userId: string,
-    userEmail?: string,
+    userEmail?: string
   ): Promise<void> {
     const risk = await this.prisma.risk.findFirst({
       where: { id, organizationId, deletedAt: null },
@@ -580,7 +606,7 @@ export class RiskService {
     organizationId: string,
     dto: ValidateRiskDto,
     userId: string,
-    userEmail?: string,
+    userEmail?: string
   ): Promise<RiskResponseDto> {
     const risk = await this.prisma.risk.findFirst({
       where: { id, organizationId, deletedAt: null },
@@ -594,14 +620,11 @@ export class RiskService {
       throw new BadRequestException('Risk is not in the correct status for validation');
     }
 
-    const newStatus = dto.approved
-      ? RiskIntakeStatus.ACTUAL_RISK
-      : RiskIntakeStatus.NOT_A_RISK;
+    const newStatus = dto.approved ? RiskIntakeStatus.ACTUAL_RISK : RiskIntakeStatus.NOT_A_RISK;
 
     const updated = await this.prisma.risk.update({
       where: { id },
       data: {
-         
         status: newStatus as any,
         grcSmeId: userId,
         riskAssessorId: dto.riskAssessorId,
@@ -647,10 +670,12 @@ export class RiskService {
           organizationId,
           'risk_validated',
           assigneeId,
-          userId,
+          userId
         );
       } catch (error: unknown) {
-        this.logger.error(`Failed to auto-create task for risk validation: ${error instanceof Error ? error.message : String(error)}`);
+        this.logger.error(
+          `Failed to auto-create task for risk validation: ${error instanceof Error ? error.message : String(error)}`
+        );
       }
     }
 
@@ -663,7 +688,7 @@ export class RiskService {
     organizationId: string,
     riskAssessorId: string,
     userId: string,
-    userEmail?: string,
+    userEmail?: string
   ): Promise<RiskResponseDto> {
     const risk = await this.prisma.risk.findFirst({
       where: { id, organizationId, deletedAt: null },
@@ -682,7 +707,6 @@ export class RiskService {
       this.prisma.risk.update({
         where: { id },
         data: {
-           
           status: RiskIntakeStatus.RISK_ANALYSIS_IN_PROGRESS as any,
           riskAssessorId,
         },
@@ -695,7 +719,7 @@ export class RiskService {
       this.prisma.riskAssessment.create({
         data: {
           riskId: id,
-           
+
           status: RiskAssessmentStatus.RISK_ASSESSOR_ANALYSIS as any,
           riskAssessorId,
           grcSmeId: risk.grcSmeId,
@@ -736,7 +760,7 @@ export class RiskService {
     organizationId: string,
     dto: SubmitAssessmentDto,
     userId: string,
-    userEmail?: string,
+    userEmail?: string
   ): Promise<RiskResponseDto> {
     const risk = await this.prisma.risk.findFirst({
       where: { id, organizationId, deletedAt: null },
@@ -754,25 +778,24 @@ export class RiskService {
     // Calculate risk score
     const calculatedRiskScore = calculateRiskLevel(
       dto.likelihoodScore as Likelihood,
-      dto.impactScore as Impact,
+      dto.impactScore as Impact
     );
 
     // Update assessment
     await this.prisma.riskAssessment.update({
       where: { id: risk.assessment.id },
       data: {
-         
         status: RiskAssessmentStatus.GRC_APPROVAL as any,
         threatDescription: dto.threatDescription,
         vulnerabilities: dto.vulnerabilities,
-         
+
         likelihoodScore: dto.likelihoodScore as any,
         likelihoodRationale: dto.likelihoodRationale,
-         
+
         impactScore: dto.impactScore as any,
         impactRationale: dto.impactRationale,
         impactCategories: dto.impactCategories || {},
-         
+
         calculatedRiskScore: calculatedRiskScore as any,
         recommendedOwnerId: dto.recommendedOwnerId,
         assessmentNotes: dto.assessmentNotes,
@@ -830,7 +853,11 @@ export class RiskService {
       data: {
         riskId: id,
         action: 'assessment_submitted',
-        changes: { calculatedRiskScore, likelihoodScore: dto.likelihoodScore, impactScore: dto.impactScore },
+        changes: {
+          calculatedRiskScore,
+          likelihoodScore: dto.likelihoodScore,
+          impactScore: dto.impactScore,
+        },
         notes: 'Assessment submitted for GRC approval',
         changedBy: userId,
       },
@@ -855,10 +882,12 @@ export class RiskService {
         organizationId,
         'assessment_submitted',
         risk.grcSmeId || userId,
-        userId,
+        userId
       );
     } catch (error: unknown) {
-      this.logger.error(`Failed to auto-create task for assessment submission: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Failed to auto-create task for assessment submission: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
 
     return this.toResponseDto(updated);
@@ -870,7 +899,7 @@ export class RiskService {
     organizationId: string,
     dto: ReviewAssessmentDto,
     userId: string,
-    userEmail?: string,
+    userEmail?: string
   ): Promise<RiskResponseDto> {
     const risk = await this.prisma.risk.findFirst({
       where: { id, organizationId, deletedAt: null },
@@ -891,7 +920,6 @@ export class RiskService {
         this.prisma.riskAssessment.update({
           where: { id: risk.assessment.id },
           data: {
-             
             status: RiskAssessmentStatus.DONE as any,
             grcReviewNotes: dto.notes,
             grcApprovedAt: new Date(),
@@ -901,13 +929,12 @@ export class RiskService {
         this.prisma.risk.update({
           where: { id },
           data: {
-             
             status: RiskIntakeStatus.RISK_ANALYZED as any,
-             
+
             likelihood: risk.assessment.likelihoodScore as any,
-             
+
             impact: risk.assessment.impactScore as any,
-             
+
             inherentRisk: risk.assessment.calculatedRiskScore as any,
             riskOwnerId: risk.assessment.recommendedOwnerId,
           },
@@ -916,9 +943,9 @@ export class RiskService {
         this.prisma.riskTreatment.create({
           data: {
             riskId: id,
-           
-          status: RiskTreatmentStatus.TREATMENT_DECISION_REVIEW as any,
-          riskOwnerId: risk.assessment.recommendedOwnerId,
+
+            status: RiskTreatmentStatus.TREATMENT_DECISION_REVIEW as any,
+            riskOwnerId: risk.assessment.recommendedOwnerId,
             grcSmeId: userId,
           },
         }),
@@ -937,7 +964,6 @@ export class RiskService {
         this.prisma.riskAssessment.update({
           where: { id: risk.assessment.id },
           data: {
-             
             status: RiskAssessmentStatus.GRC_REVISION as any,
             grcDeclinedReason: dto.declinedReason,
           },
@@ -985,10 +1011,12 @@ export class RiskService {
           organizationId,
           'assessment_approved',
           assigneeId,
-          userId,
+          userId
         );
       } catch (error: unknown) {
-        this.logger.error(`Failed to auto-create task for assessment approval: ${error instanceof Error ? error.message : String(error)}`);
+        this.logger.error(
+          `Failed to auto-create task for assessment approval: ${error instanceof Error ? error.message : String(error)}`
+        );
       }
     }
 
@@ -1001,7 +1029,7 @@ export class RiskService {
     organizationId: string,
     dto: ReviseAssessmentDto,
     userId: string,
-    userEmail?: string,
+    userEmail?: string
   ): Promise<RiskResponseDto> {
     const risk = await this.prisma.risk.findFirst({
       where: { id, organizationId, deletedAt: null },
@@ -1029,18 +1057,17 @@ export class RiskService {
       this.prisma.riskAssessment.update({
         where: { id: risk.assessment.id },
         data: {
-           
           status: RiskAssessmentStatus.DONE as any,
-           
+
           likelihoodScore: dto.likelihoodScore as any,
           likelihoodRationale: dto.likelihoodRationale,
-           
+
           impactScore: dto.impactScore as any,
           impactRationale: dto.impactRationale,
           impactCategories: dto.impactCategories,
           recommendedOwnerId: dto.recommendedOwnerId,
           assessmentNotes: dto.assessmentNotes,
-           
+
           calculatedRiskScore: calculatedRiskScore as any,
           completedAt: new Date(),
         },
@@ -1048,13 +1075,12 @@ export class RiskService {
       this.prisma.risk.update({
         where: { id },
         data: {
-           
           status: RiskIntakeStatus.RISK_ANALYZED as any,
-           
+
           likelihood: (dto.likelihoodScore || risk.assessment.likelihoodScore) as any,
-           
+
           impact: (dto.impactScore || risk.assessment.impactScore) as any,
-           
+
           inherentRisk: calculatedRiskScore as any,
           riskOwnerId: dto.recommendedOwnerId || risk.assessment.recommendedOwnerId,
         },
@@ -1063,7 +1089,7 @@ export class RiskService {
       this.prisma.riskTreatment.create({
         data: {
           riskId: id,
-           
+
           status: RiskTreatmentStatus.TREATMENT_DECISION_REVIEW as any,
           riskOwnerId: dto.recommendedOwnerId || risk.assessment.recommendedOwnerId,
           grcSmeId: userId,
@@ -1114,7 +1140,7 @@ export class RiskService {
     organizationId: string,
     dto: SubmitTreatmentDecisionDto,
     userId: string,
-    userEmail?: string,
+    userEmail?: string
   ): Promise<RiskResponseDto> {
     const risk = await this.prisma.risk.findFirst({
       where: { id, organizationId, deletedAt: null },
@@ -1138,28 +1164,32 @@ export class RiskService {
       this.prisma.riskTreatment.update({
         where: { id: risk.treatment.id },
         data: {
-           
           status: nextStatus as any,
-           
+
           treatmentDecision: dto.decision as any,
           treatmentJustification: dto.justification,
           treatmentPlan: dto.mitigationDescription,
           mitigationDescription: dto.mitigationDescription,
-          mitigationTargetDate: dto.mitigationTargetDate ? new Date(dto.mitigationTargetDate) : undefined,
+          mitigationTargetDate: dto.mitigationTargetDate
+            ? new Date(dto.mitigationTargetDate)
+            : undefined,
           transferTo: dto.transferTo,
           transferCost: dto.transferCost,
           avoidStrategy: dto.avoidStrategy,
           acceptanceRationale: dto.acceptanceRationale,
-          acceptanceExpiresAt: dto.acceptanceExpiresAt ? new Date(dto.acceptanceExpiresAt) : undefined,
+          acceptanceExpiresAt: dto.acceptanceExpiresAt
+            ? new Date(dto.acceptanceExpiresAt)
+            : undefined,
           executiveApprovalRequired: needsExecutiveApproval,
-           
-          mitigationStatus: (dto.decision === TreatmentDecision.MITIGATE ? MitigationProgressStatus.ON_TRACK : undefined) as any,
+
+          mitigationStatus: (dto.decision === TreatmentDecision.MITIGATE
+            ? MitigationProgressStatus.ON_TRACK
+            : undefined) as any,
         },
       }),
       this.prisma.risk.update({
         where: { id },
         data: {
-           
           treatmentPlan: dto.decision as any,
           treatmentStatus: 'in_progress',
           treatmentNotes: dto.justification,
@@ -1206,7 +1236,7 @@ export class RiskService {
     organizationId: string,
     dto: AssignExecutiveApproverDto,
     userId: string,
-    userEmail?: string,
+    userEmail?: string
   ): Promise<RiskResponseDto> {
     const risk = await this.prisma.risk.findFirst({
       where: { id, organizationId, deletedAt: null },
@@ -1225,10 +1255,9 @@ export class RiskService {
       this.prisma.riskTreatment.update({
         where: { id: risk.treatment.id },
         data: {
-           
           status: RiskTreatmentStatus.EXECUTIVE_APPROVAL as any,
           executiveApproverId: dto.executiveApproverId,
-           
+
           executiveApprovalStatus: 'pending' as any,
         },
       }),
@@ -1270,10 +1299,12 @@ export class RiskService {
         organizationId,
         'executive_approver_assigned',
         dto.executiveApproverId,
-        userId,
+        userId
       );
     } catch (error: unknown) {
-      this.logger.error(`Failed to auto-create task for executive approval: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Failed to auto-create task for executive approval: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
 
     return this.toResponseDto(updated);
@@ -1285,7 +1316,7 @@ export class RiskService {
     organizationId: string,
     dto: ExecutiveApprovalDto,
     userId: string,
-    userEmail?: string,
+    userEmail?: string
   ): Promise<RiskResponseDto> {
     const risk = await this.prisma.risk.findFirst({
       where: { id, organizationId, deletedAt: null },
@@ -1307,21 +1338,23 @@ export class RiskService {
       : RiskTreatmentStatus.TREATMENT_DECISION_REVIEW;
 
     const treatmentStatus = dto.approved
-      ? (decision === TreatmentDecision.MITIGATE ? 'in_progress' : 'completed')
+      ? decision === TreatmentDecision.MITIGATE
+        ? 'in_progress'
+        : 'completed'
       : 'pending';
 
     await this.prisma.$transaction([
       this.prisma.riskTreatment.update({
         where: { id: risk.treatment.id },
         data: {
-           
           status: nextStatus as any,
-           
+
           executiveApprovalStatus: (dto.approved ? 'approved' : 'denied') as any,
           executiveApprovalNotes: dto.notes,
           executiveApprovedAt: dto.approved ? new Date() : undefined,
           executiveDeniedReason: dto.deniedReason,
-          completedAt: dto.approved && decision !== TreatmentDecision.MITIGATE ? new Date() : undefined,
+          completedAt:
+            dto.approved && decision !== TreatmentDecision.MITIGATE ? new Date() : undefined,
         },
       }),
       this.prisma.risk.update({
@@ -1372,7 +1405,7 @@ export class RiskService {
     organizationId: string,
     dto: UpdateMitigationStatusDto,
     userId: string,
-    userEmail?: string,
+    userEmail?: string
   ): Promise<RiskResponseDto> {
     const risk = await this.prisma.risk.findFirst({
       where: { id, organizationId, deletedAt: null },
@@ -1383,11 +1416,13 @@ export class RiskService {
       throw new NotFoundException('Risk or treatment not found');
     }
 
-    if (![
-      RiskTreatmentStatus.RISK_MITIGATION_IN_PROGRESS,
-      RiskTreatmentStatus.MITIGATION_STATUS_UPDATE,
-      RiskTreatmentStatus.MITIGATION_STATUS_ROUTING,
-    ].includes(risk.treatment.status as RiskTreatmentStatus)) {
+    if (
+      ![
+        RiskTreatmentStatus.RISK_MITIGATION_IN_PROGRESS,
+        RiskTreatmentStatus.MITIGATION_STATUS_UPDATE,
+        RiskTreatmentStatus.MITIGATION_STATUS_ROUTING,
+      ].includes(risk.treatment.status as RiskTreatmentStatus)
+    ) {
       throw new BadRequestException('Treatment is not in mitigation phase');
     }
 
@@ -1421,20 +1456,22 @@ export class RiskService {
       this.prisma.riskTreatment.update({
         where: { id: risk.treatment.id },
         data: {
-           
           status: nextStatus as any,
-           
+
           mitigationStatus: dto.status as any,
           mitigationProgress: dto.progress ?? risk.treatment.mitigationProgress,
           lastProgressUpdate: new Date(),
-          mitigationTargetDate: dto.newTargetDate ? new Date(dto.newTargetDate) : risk.treatment.mitigationTargetDate,
-           
+          mitigationTargetDate: dto.newTargetDate
+            ? new Date(dto.newTargetDate)
+            : risk.treatment.mitigationTargetDate,
+
           residualLikelihood: dto.residualLikelihood as any,
-           
+
           residualImpact: dto.residualImpact as any,
-           
+
           residualRiskScore: residualRiskScore as any,
-          mitigationActualDate: dto.status === MitigationProgressStatus.DONE ? new Date() : undefined,
+          mitigationActualDate:
+            dto.status === MitigationProgressStatus.DONE ? new Date() : undefined,
           completedAt,
         },
       }),
@@ -1442,20 +1479,24 @@ export class RiskService {
         where: { id },
         data: {
           treatmentStatus,
-           
+
           residualRisk: residualRiskScore as any,
         },
       }),
       this.prisma.riskTreatmentUpdate.create({
         data: {
           treatmentId: risk.treatment.id,
-          updateType: dto.status === MitigationProgressStatus.DONE ? 'completion'
-            : dto.status === MitigationProgressStatus.DELAYED ? 'delay'
-            : dto.status === MitigationProgressStatus.CANCELLED ? 'cancellation'
-            : 'progress',
-           
+          updateType:
+            dto.status === MitigationProgressStatus.DONE
+              ? 'completion'
+              : dto.status === MitigationProgressStatus.DELAYED
+                ? 'delay'
+                : dto.status === MitigationProgressStatus.CANCELLED
+                  ? 'cancellation'
+                  : 'progress',
+
           previousStatus: risk.treatment.mitigationStatus as any,
-           
+
           newStatus: dto.status as any,
           progress: dto.progress,
           notes: dto.notes,
@@ -1506,7 +1547,7 @@ export class RiskService {
     organizationId: string,
     dto: UpdateTreatmentDto,
     userId: string,
-    userEmail?: string,
+    userEmail?: string
   ): Promise<RiskResponseDto> {
     const risk = await this.prisma.risk.findFirst({
       where: { id, organizationId, deletedAt: null },
@@ -1519,16 +1560,18 @@ export class RiskService {
     // Calculate residual risk if provided
     let residualRisk: PrismaRiskLevel | undefined;
     if (dto.residualLikelihood && dto.residualImpact) {
-      residualRisk = calculateRiskLevel(dto.residualLikelihood, dto.residualImpact) as PrismaRiskLevel;
+      residualRisk = calculateRiskLevel(
+        dto.residualLikelihood,
+        dto.residualImpact
+      ) as PrismaRiskLevel;
     }
 
     const updated = await this.prisma.risk.update({
       where: { id },
       data: {
-         
         treatmentPlan: dto.treatmentPlan as any,
         treatmentNotes: dto.treatmentNotes,
-         
+
         residualRisk: residualRisk as any,
       },
       include: {
@@ -1570,7 +1613,7 @@ export class RiskService {
     organizationId: string,
     userId: string,
     userEmail?: string,
-    notes?: string,
+    notes?: string
   ): Promise<RiskResponseDto> {
     const risk = await this.prisma.risk.findFirst({
       where: { id, organizationId, deletedAt: null },
@@ -1629,7 +1672,7 @@ export class RiskService {
     organizationId: string,
     assetIds: string[],
     userId: string,
-    userEmail?: string,
+    userEmail?: string
   ): Promise<void> {
     const risk = await this.prisma.risk.findFirst({
       where: { id, organizationId, deletedAt: null },
@@ -1648,7 +1691,7 @@ export class RiskService {
     }
 
     await this.prisma.riskAsset.createMany({
-      data: assetIds.map(assetId => ({
+      data: assetIds.map((assetId) => ({
         riskId: id,
         assetId,
       })),
@@ -1673,7 +1716,7 @@ export class RiskService {
     assetId: string,
     organizationId: string,
     userId: string,
-    userEmail?: string,
+    userEmail?: string
   ): Promise<void> {
     const risk = await this.prisma.risk.findFirst({
       where: { id, organizationId, deletedAt: null },
@@ -1709,7 +1752,7 @@ export class RiskService {
     organizationId: string,
     dto: LinkControlDto,
     userId: string,
-    userEmail?: string,
+    userEmail?: string
   ): Promise<void> {
     const risk = await this.prisma.risk.findFirst({
       where: { id, organizationId, deletedAt: null },
@@ -1765,7 +1808,7 @@ export class RiskService {
     organizationId: string,
     dto: UpdateControlEffectivenessDto,
     userId: string,
-    userEmail?: string,
+    userEmail?: string
   ): Promise<void> {
     const risk = await this.prisma.risk.findFirst({
       where: { id, organizationId, deletedAt: null },
@@ -1802,7 +1845,7 @@ export class RiskService {
     controlId: string,
     organizationId: string,
     userId: string,
-    userEmail?: string,
+    userEmail?: string
   ): Promise<void> {
     const risk = await this.prisma.risk.findFirst({
       where: { id, organizationId, deletedAt: null },
@@ -1853,7 +1896,7 @@ export class RiskService {
     organizationId: string,
     dto: CreateScenarioDto,
     userId: string,
-    userEmail?: string,
+    userEmail?: string
   ) {
     const risk = await this.prisma.risk.findFirst({
       where: { id, organizationId, deletedAt: null },
@@ -1870,9 +1913,9 @@ export class RiskService {
         description: dto.description,
         threatActor: dto.threatActor,
         attackVector: dto.attackVector,
-         
+
         likelihood: dto.likelihood as any,
-         
+
         impact: dto.impact as any,
         notes: dto.notes,
         createdBy: userId,
@@ -1911,7 +1954,7 @@ export class RiskService {
     organizationId: string,
     dto: UpdateScenarioDto,
     userId: string,
-    userEmail?: string,
+    userEmail?: string
   ) {
     const risk = await this.prisma.risk.findFirst({
       where: { id, organizationId, deletedAt: null },
@@ -1928,9 +1971,9 @@ export class RiskService {
         description: dto.description,
         threatActor: dto.threatActor,
         attackVector: dto.attackVector,
-         
+
         likelihood: dto.likelihood as any,
-         
+
         impact: dto.impact as any,
         notes: dto.notes,
       },
@@ -1972,7 +2015,7 @@ export class RiskService {
     scenarioId: string,
     organizationId: string,
     userId: string,
-    userEmail?: string,
+    userEmail?: string
   ): Promise<void> {
     const risk = await this.prisma.risk.findFirst({
       where: { id, organizationId, deletedAt: null },
@@ -2010,12 +2053,12 @@ export class RiskService {
 
   async getDashboard(organizationId: string): Promise<RiskDashboardDto> {
     const cacheKey = `risk:dashboard:${organizationId}`;
-    
+
     // Cache risk dashboard for 5 minutes (dashboard data doesn't change frequently)
     return this.cache.getOrSet(
       cacheKey,
       async () => this.getDashboardUncached(organizationId),
-      300,
+      300
     );
   }
 
@@ -2059,14 +2102,16 @@ export class RiskService {
     // 3. Treatment counts (join required)
     const [aggregates, riskLists, treatmentCounts] = await Promise.all([
       // Query 1: All counts and aggregations in a single SQL query using CTEs
-      this.prisma.$queryRaw<Array<{
-        total_risks: number;
-        open_risks: number;
-        status_counts: Record<string, number>;
-        category_counts: Record<string, number>;
-        risk_level_counts: Record<string, number>;
-        source_counts: Record<string, number>;
-      }>>`
+      this.prisma.$queryRaw<
+        Array<{
+          total_risks: number;
+          open_risks: number;
+          status_counts: Record<string, number>;
+          category_counts: Record<string, number>;
+          risk_level_counts: Record<string, number>;
+          source_counts: Record<string, number>;
+        }>
+      >`
         WITH base_risks AS (
           SELECT * FROM risks 
           WHERE organization_id = ${organizationId} AND deleted_at IS NULL
@@ -2139,7 +2184,7 @@ export class RiskService {
             deletedAt: null,
             treatment: {
               mitigationTargetDate: { lt: now },
-               
+
               status: { notIn: completedTreatmentStatuses as any },
             },
           },
@@ -2154,12 +2199,14 @@ export class RiskService {
       ]),
 
       // Query 3: All workflow counts in a single query
-      this.prisma.$queryRaw<Array<{
-        pending_assessments: number;
-        pending_treatment_decisions: number;
-        pending_executive_approvals: number;
-        mitigations_in_progress: number;
-      }>>`
+      this.prisma.$queryRaw<
+        Array<{
+          pending_assessments: number;
+          pending_treatment_decisions: number;
+          pending_executive_approvals: number;
+          mitigations_in_progress: number;
+        }>
+      >`
         SELECT
           (SELECT COUNT(*)::int FROM risk_assessments ra 
            JOIN risks r ON r.id = ra.risk_id 
@@ -2197,28 +2244,38 @@ export class RiskService {
       mitigations_in_progress: 0,
     };
 
-    this.logger.debug(`Risk dashboard built in ${Date.now() - startTime}ms (3 queries instead of 13)`);
+    this.logger.debug(
+      `Risk dashboard built in ${Date.now() - startTime}ms (3 queries instead of 13)`
+    );
 
     // Convert aggregates to expected format
-    const byStatus = Object.entries(agg.status_counts as Record<string, number>).map(([status, count]) => ({
-      status,
-      count,
-    }));
+    const byStatus = Object.entries(agg.status_counts as Record<string, number>).map(
+      ([status, count]) => ({
+        status,
+        count,
+      })
+    );
 
-    const byCategory = Object.entries(agg.category_counts as Record<string, number>).map(([category, count]) => ({
-      category,
-      count,
-    }));
+    const byCategory = Object.entries(agg.category_counts as Record<string, number>).map(
+      ([category, count]) => ({
+        category,
+        count,
+      })
+    );
 
-    const byRiskLevel = Object.entries(agg.risk_level_counts as Record<string, number>).map(([level, count]) => ({
-      level,
-      count,
-    }));
+    const byRiskLevel = Object.entries(agg.risk_level_counts as Record<string, number>).map(
+      ([level, count]) => ({
+        level,
+        count,
+      })
+    );
 
-    const bySource = Object.entries(agg.source_counts as Record<string, number>).map(([source, count]) => ({
-      source,
-      count,
-    }));
+    const bySource = Object.entries(agg.source_counts as Record<string, number>).map(
+      ([source, count]) => ({
+        source,
+        count,
+      })
+    );
 
     return {
       totalRisks: agg.total_risks,
@@ -2227,9 +2284,9 @@ export class RiskService {
       byCategory,
       byRiskLevel,
       bySource,
-      recentRisks: recentRisks.map(r => this.toResponseDto(r)),
-      upcomingReviews: upcomingReviews.map(r => this.toResponseDto(r)),
-      treatmentOverdue: treatmentOverdue.map(r => this.toResponseDto(r)),
+      recentRisks: recentRisks.map((r) => this.toResponseDto(r)),
+      upcomingReviews: upcomingReviews.map((r) => this.toResponseDto(r)),
+      treatmentOverdue: treatmentOverdue.map((r) => this.toResponseDto(r)),
       pendingAssessments: tc.pending_assessments,
       pendingTreatmentDecisions: tc.pending_treatment_decisions,
       pendingExecutiveApprovals: tc.pending_executive_approvals,
@@ -2239,13 +2296,9 @@ export class RiskService {
 
   async getHeatmap(organizationId: string): Promise<RiskHeatmapDto> {
     const cacheKey = CacheKeys.riskMatrix(organizationId);
-    
+
     // Cache heatmap for 2 minutes
-    return this.cache.getOrSet(
-      cacheKey,
-      async () => this.getHeatmapUncached(organizationId),
-      120,
-    );
+    return this.cache.getOrSet(cacheKey, async () => this.getHeatmapUncached(organizationId), 120);
   }
 
   private async getHeatmapUncached(organizationId: string): Promise<RiskHeatmapDto> {
@@ -2268,13 +2321,13 @@ export class RiskService {
     for (const likelihood of likelihoods) {
       for (const impact of impacts) {
         const matchingRisks = risks.filter(
-          r => r.likelihood === likelihood && r.impact === impact,
+          (r) => r.likelihood === likelihood && r.impact === impact
         );
         matrix.push({
           likelihood,
           impact,
           count: matchingRisks.length,
-          risks: matchingRisks.map(r => ({
+          risks: matchingRisks.map((r) => ({
             id: r.id,
             riskId: r.riskId,
             title: r.title,
@@ -2293,7 +2346,9 @@ export class RiskService {
       where: {
         risk: { organizationId, deletedAt: null },
         changedAt: { gte: startDate },
-        action: { in: ['risk_submitted', 'assessment_approved', 'mitigation_done', 'executive_approved'] },
+        action: {
+          in: ['risk_submitted', 'assessment_approved', 'mitigation_done', 'executive_approved'],
+        },
       },
       orderBy: { changedAt: 'asc' },
       select: {
@@ -2303,7 +2358,10 @@ export class RiskService {
       },
     });
 
-    const weeks: Record<string, { created: number; assessed: number; mitigated: number; accepted: number }> = {};
+    const weeks: Record<
+      string,
+      { created: number; assessed: number; mitigated: number; accepted: number }
+    > = {};
 
     for (const entry of history) {
       const weekStart = this.getWeekStart(entry.changedAt);
@@ -2339,7 +2397,6 @@ export class RiskService {
   // Helpers
   // ===========================
 
-   
   private toResponseDto(risk: Record<string, any>): RiskResponseDto {
     return {
       id: risk.id,

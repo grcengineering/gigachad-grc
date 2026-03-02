@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Injectable, Logger } from '@nestjs/common';
 
 export interface IntuneConfig {
@@ -56,7 +55,9 @@ export class IntuneConnector {
   private readonly logger = new Logger(IntuneConnector.name);
   private readonly graphUrl = 'https://graph.microsoft.com/v1.0';
 
-  async testConnection(config: IntuneConfig): Promise<{ success: boolean; message: string; details?: any }> {
+  async testConnection(
+    config: IntuneConfig
+  ): Promise<{ success: boolean; message: string; details?: any }> {
     if (!config.tenantId || !config.clientId || !config.clientSecret) {
       return { success: false, message: 'Tenant ID, Client ID, and Client Secret are required' };
     }
@@ -94,9 +95,18 @@ export class IntuneConnector {
     }
 
     const [devices, compliancePolicies, apps] = await Promise.all([
-      this.getManagedDevices(token).catch(e => { errors.push(`Devices: ${e.message}`); return []; }),
-      this.getCompliancePolicies(token).catch(e => { errors.push(`Policies: ${e.message}`); return []; }),
-      this.getApps(token).catch(e => { errors.push(`Apps: ${e.message}`); return []; }),
+      this.getManagedDevices(token).catch((e) => {
+        errors.push(`Devices: ${e.message}`);
+        return [];
+      }),
+      this.getCompliancePolicies(token).catch((e) => {
+        errors.push(`Policies: ${e.message}`);
+        return [];
+      }),
+      this.getApps(token).catch((e) => {
+        errors.push(`Apps: ${e.message}`);
+        return [];
+      }),
     ]);
 
     const byPlatform: Record<string, number> = {};
@@ -147,7 +157,9 @@ export class IntuneConnector {
       },
       security: {
         devicesWithoutEncryption: devices.length - encryptedDevices.length,
-        devicesWithoutPasscode: devices.filter((d: any) => !d.isSupervised && !d.deviceEnrollmentType?.includes('mdm')).length,
+        devicesWithoutPasscode: devices.filter(
+          (d: any) => !d.isSupervised && !d.deviceEnrollmentType?.includes('mdm')
+        ).length,
         jailbrokenDevices: devices.filter((d: any) => d.jailBroken === 'True').length,
       },
       collectedAt: new Date().toISOString(),
@@ -157,16 +169,19 @@ export class IntuneConnector {
 
   private async getAccessToken(config: IntuneConfig): Promise<string | null> {
     try {
-      const response = await fetch(`https://login.microsoftonline.com/${config.tenantId}/oauth2/v2.0/token`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          client_id: config.clientId,
-          client_secret: config.clientSecret,
-          scope: 'https://graph.microsoft.com/.default',
-          grant_type: 'client_credentials',
-        }),
-      });
+      const response = await fetch(
+        `https://login.microsoftonline.com/${config.tenantId}/oauth2/v2.0/token`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            client_id: config.clientId,
+            client_secret: config.clientSecret,
+            scope: 'https://graph.microsoft.com/.default',
+            grant_type: 'client_credentials',
+          }),
+        }
+      );
       if (!response.ok) return null;
       const data = await response.json();
       return data.access_token;
@@ -185,9 +200,12 @@ export class IntuneConnector {
   }
 
   private async getCompliancePolicies(token: string): Promise<any[]> {
-    const response = await fetch(`${this.graphUrl}/deviceManagement/deviceCompliancePolicies?$expand=assignments`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const response = await fetch(
+      `${this.graphUrl}/deviceManagement/deviceCompliancePolicies?$expand=assignments`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
     if (!response.ok) throw new Error(`Failed: ${response.status}`);
     const data = await response.json();
     return data.value || [];
@@ -202,4 +220,3 @@ export class IntuneConnector {
     return data.value || [];
   }
 }
-

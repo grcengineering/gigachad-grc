@@ -1,4 +1,3 @@
-
 ![gigachad grc](https://github.com/user-attachments/assets/22d32df8-2e61-420e-bc98-df7c291ac8a4)
 
 # GigaChad GRC
@@ -19,11 +18,11 @@ A comprehensive, modular, containerized Governance, Risk, and Compliance (GRC) p
 
 You only need **one thing**: [**Docker Desktop**](https://www.docker.com/products/docker-desktop)
 
-| Platform | Install Docker |
-|----------|----------------|
-| **macOS** | [Download for Mac](https://www.docker.com/products/docker-desktop/) (Apple Silicon or Intel) |
-| **Windows** | [Download for Windows](https://www.docker.com/products/docker-desktop/) (requires WSL 2) |
-| **Linux** | `curl -fsSL https://get.docker.com \| sh` |
+| Platform    | Install Docker                                                                               |
+| ----------- | -------------------------------------------------------------------------------------------- |
+| **macOS**   | [Download for Mac](https://www.docker.com/products/docker-desktop/) (Apple Silicon or Intel) |
+| **Windows** | [Download for Windows](https://www.docker.com/products/docker-desktop/) (requires WSL 2)     |
+| **Linux**   | `curl -fsSL https://get.docker.com \| sh`                                                    |
 
 > **No Node.js, npm, or other development tools required!**
 
@@ -36,6 +35,7 @@ cd gigachad-grc
 ```
 
 **Windows Users:**
+
 ```cmd
 start.bat
 ```
@@ -46,11 +46,11 @@ That's it! Your browser opens to http://localhost:3000 — click **"Dev Login"**
 
 ### Available Commands
 
-| Command | Description |
-|---------|-------------|
-| `./start.sh` | Start the platform |
-| `./start.sh stop` | Stop all services |
-| `./start.sh logs` | View live logs |
+| Command             | Description          |
+| ------------------- | -------------------- |
+| `./start.sh`        | Start the platform   |
+| `./start.sh stop`   | Stop all services    |
+| `./start.sh logs`   | View live logs       |
 | `./start.sh status` | Check service health |
 
 ### Need Help Getting Started?
@@ -81,54 +81,54 @@ make help         # See all Makefile commands
 
 ### Getting Started
 
-| Document | Description |
-|----------|-------------|
+| Document                                        | Description                                               |
+| ----------------------------------------------- | --------------------------------------------------------- |
 | **[Getting Started Guide](GETTING_STARTED.md)** | **Start here!** Complete setup guide for all skill levels |
-| [Quick Start Guide](docs/QUICK_START.md) | Fast-track setup for experienced users |
-| [Demo & Sandbox](docs/DEMO.md) | Try with sample data, one-click demo setup |
-| [Troubleshooting](docs/TROUBLESHOOTING.md) | Common issues and solutions |
+| [Quick Start Guide](docs/QUICK_START.md)        | Fast-track setup for experienced users                    |
+| [Demo & Sandbox](docs/DEMO.md)                  | Try with sample data, one-click demo setup                |
+| [Troubleshooting](docs/TROUBLESHOOTING.md)      | Common issues and solutions                               |
 
 ### Core Documentation
 
-| Document | Description |
-|----------|-------------|
-| [Architecture Guide](docs/ARCHITECTURE.md) | System architecture, API gateway, microservices, network topology |
-| [API Reference](docs/API.md) | Complete API documentation with endpoints, authentication, examples |
-| [Configuration Reference](docs/CONFIGURATION.md) | Environment variables, service configuration, Traefik, database |
-| [Development Guide](docs/DEVELOPMENT.md) | Local setup, project structure, coding standards, testing |
-| [Deployment Guide](docs/DEPLOYMENT.md) | Production deployment, CI/CD, monitoring, backups |
-| [Upgrade Guide](docs/UPGRADE.md) | Upgrading between versions, migration steps |
+| Document                                         | Description                                                         |
+| ------------------------------------------------ | ------------------------------------------------------------------- |
+| [Architecture Guide](docs/ARCHITECTURE.md)       | System architecture, API gateway, microservices, network topology   |
+| [API Reference](docs/API.md)                     | Complete API documentation with endpoints, authentication, examples |
+| [Configuration Reference](docs/CONFIGURATION.md) | Environment variables, service configuration, Traefik, database     |
+| [Development Guide](docs/DEVELOPMENT.md)         | Local setup, project structure, coding standards, testing           |
+| [Deployment Guide](docs/DEPLOYMENT.md)           | Production deployment, CI/CD, monitoring, backups                   |
+| [Upgrade Guide](docs/UPGRADE.md)                 | Upgrading between versions, migration steps                         |
 
 ### Security & Compliance
 
-| Document | Description |
-|----------|-------------|
-| [Security Policy](SECURITY.md) | Security vulnerability reporting and policies |
-| [Security Audit](docs/SECURITY_AUDIT.md) | Dependency audit findings, vulnerability status, remediation |
-| [Security Model](docs/SECURITY_MODEL.md) | Comprehensive security architecture, authentication, authorization, and hardening |
-| [Permissions Matrix](docs/PERMISSIONS_MATRIX.md) | Role-based access control and permission definitions |
-| [MCP Credential Security](docs/security/mcp-credential-security.md) | Secure handling of MCP server credentials |
+| Document                                                            | Description                                                                       |
+| ------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| [Security Policy](SECURITY.md)                                      | Security vulnerability reporting and policies                                     |
+| [Security Audit](docs/SECURITY_AUDIT.md)                            | Dependency audit findings, vulnerability status, remediation                      |
+| [Security Model](docs/SECURITY_MODEL.md)                            | Comprehensive security architecture, authentication, authorization, and hardening |
+| [Permissions Matrix](docs/PERMISSIONS_MATRIX.md)                    | Role-based access control and permission definitions                              |
+| [MCP Credential Security](docs/security/mcp-credential-security.md) | Secure handling of MCP server credentials                                         |
 
 ### Configuration & Operations
 
-| Document | Description |
-|----------|-------------|
+| Document                                               | Description                             |
+| ------------------------------------------------------ | --------------------------------------- |
 | [Environment Configuration](docs/ENV_CONFIGURATION.md) | Detailed environment variable reference |
-| [Module Configuration](docs/MODULE_CONFIGURATION.md) | Enable/disable platform modules |
-| [Production Deployment](docs/PRODUCTION_DEPLOYMENT.md) | Production-ready deployment checklist |
+| [Module Configuration](docs/MODULE_CONFIGURATION.md)   | Enable/disable platform modules         |
+| [Production Deployment](docs/PRODUCTION_DEPLOYMENT.md) | Production-ready deployment checklist   |
 
 ### Platform Guides
 
-| Document | Description |
-|----------|-------------|
-| [Platform Review](docs/PLATFORM_REVIEW.md) | Comprehensive platform capabilities overview |
-| [Help Center](docs/help/README.md) | User guides and how-to documentation |
-| [MCP Quick Start](docs/guides/mcp-quick-start.md) | Getting started with MCP server integration |
+| Document                                          | Description                                  |
+| ------------------------------------------------- | -------------------------------------------- |
+| [Platform Review](docs/PLATFORM_REVIEW.md)        | Comprehensive platform capabilities overview |
+| [Help Center](docs/help/README.md)                | User guides and how-to documentation         |
+| [MCP Quick Start](docs/guides/mcp-quick-start.md) | Getting started with MCP server integration  |
 
 ### Audit & Stability Reports
 
-| Document | Description |
-|----------|-------------|
+| Document                                                         | Description                                |
+| ---------------------------------------------------------------- | ------------------------------------------ |
 | [Stability Audit Phase 1](docs/STABILITY_AUDIT_PHASE1_REPORT.md) | Phase 1 stability audit findings and fixes |
 | [Stability Audit Phase 2](docs/STABILITY_AUDIT_PHASE2_REPORT.md) | Phase 2 stability audit findings and fixes |
 
@@ -159,9 +159,11 @@ GigaChad GRC is a complete enterprise GRC solution organized into specialized mo
 ### 1. Compliance Module
 
 #### Controls Management (Port 3001)
+
 Complete lifecycle management for security controls across all frameworks.
 
 **Features:**
+
 - Control library with pre-loaded SOC 2 and ISO 27001 controls
 - Implementation status tracking (Not Started, In Progress, Implemented, Validated)
 - Testing history with evidence collection
@@ -172,15 +174,18 @@ Complete lifecycle management for security controls across all frameworks.
 - Cross-framework mapping
 
 **API Endpoints:**
+
 - `GET/POST /api/controls` - List and create controls
 - `GET/PATCH/DELETE /api/controls/:id` - Manage individual controls
 - `GET /api/controls/:id/evidence` - View linked evidence
 - `POST /api/controls/:id/test` - Record testing activities
 
 #### Frameworks (Port 3002)
+
 Framework readiness assessment and gap analysis for major compliance standards.
 
 **Pre-loaded Frameworks:**
+
 - SOC 2 Type II (Trust Services Criteria)
 - ISO 27001:2022 (with Annex A controls)
 - NIST CSF 2.0 (ready)
@@ -189,6 +194,7 @@ Framework readiness assessment and gap analysis for major compliance standards.
 - Custom frameworks
 
 **Features:**
+
 - Real-time readiness scoring
 - Gap analysis with prioritized recommendations
 - Control mapping across frameworks
@@ -198,6 +204,7 @@ Framework readiness assessment and gap analysis for major compliance standards.
 - Framework comparison and overlap analysis
 
 **API Endpoints:**
+
 - `GET /api/frameworks` - List all frameworks
 - `GET /api/frameworks/:id` - Framework details with requirements
 - `GET /api/frameworks/:id/readiness` - Calculate readiness score
@@ -206,9 +213,11 @@ Framework readiness assessment and gap analysis for major compliance standards.
 ### 2. Data Management Module
 
 #### Evidence Library
+
 Centralized repository for all compliance evidence with intelligent organization.
 
 **Features:**
+
 - Multi-backend storage (Local, RustFS/S3, Azure Blob)
 - Document versioning and history
 - Evidence types (Policy, Procedure, Screenshot, Report, Log, Certificate)
@@ -219,14 +228,17 @@ Centralized repository for all compliance evidence with intelligent organization
 - Evidence review workflows
 
 **API Endpoints:**
+
 - `GET/POST /api/evidence` - List and upload evidence
 - `GET/DELETE /api/evidence/:id` - Manage evidence items
 - `GET /api/evidence/:id/download` - Download evidence files
 
 #### Policies (Port 3004)
+
 Policy lifecycle management with versioning and approval workflows.
 
 **Features:**
+
 - Policy document management with versions
 - Approval workflows (Draft → Review → Approved → Published)
 - Review scheduling and reminders
@@ -236,15 +248,18 @@ Policy lifecycle management with versioning and approval workflows.
 - Policy categories and tagging
 
 **API Endpoints:**
+
 - `GET/POST /api/policies` - List and create policies
 - `GET /api/policies/:id` - Policy details
 - `POST /api/policies/:id/approve` - Approve policy version
 - `GET /api/policies/:id/versions` - Version history
 
 #### Assets
+
 IT asset inventory with security metadata and classification.
 
 **Features:**
+
 - Asset inventory management (Hardware, Software, Data, People, Services)
 - Criticality classification (Critical, High, Medium, Low)
 - Data sensitivity classification (Public, Internal, Confidential, Restricted)
@@ -255,14 +270,17 @@ IT asset inventory with security metadata and classification.
 - Custom metadata and tagging
 
 **API Endpoints:**
+
 - `GET/POST /api/assets` - List and create assets
 - `GET/PATCH/DELETE /api/assets/:id` - Manage individual assets
 - `POST /api/assets/:id/link` - Link assets to risks/controls
 
 #### Integrations
+
 External tool integrations for automated evidence collection.
 
 **Supported Integrations:**
+
 - **AWS**: S3 bucket configs, IAM policies, EC2 security groups, VPC flow logs, Config rules
 - **Azure**: Resource inventory, security center findings, compliance policies
 - **GitHub**: Branch protection rules, Dependabot alerts, secrets scanning, code scanning
@@ -271,6 +289,7 @@ External tool integrations for automated evidence collection.
 - **Jamf**: Device encryption status, OS versions, security patch compliance
 
 **Features:**
+
 - Scheduled evidence collection (hourly, daily, weekly)
 - Credential management with encryption
 - Collection history and status tracking
@@ -278,6 +297,7 @@ External tool integrations for automated evidence collection.
 - Integration health monitoring
 
 **API Endpoints:**
+
 - `GET/POST /api/integrations` - Integration management
 - `POST /api/integrations/:id/test` - Test connection
 - `POST /api/integrations/:id/collect` - Trigger manual collection
@@ -287,9 +307,11 @@ External tool integrations for automated evidence collection.
 Complete enterprise risk management with quantitative and qualitative approaches.
 
 #### Risk Dashboard
+
 Executive overview of organizational risk posture.
 
 **Metrics:**
+
 - Total risks by severity
 - Risk trend analysis
 - Treatment status
@@ -298,9 +320,11 @@ Executive overview of organizational risk posture.
 - Top risk categories
 
 #### Risk Register
+
 Central repository for all identified risks with comprehensive tracking.
 
 **Features:**
+
 - Risk identification and documentation
 - Likelihood and impact scoring (1-5 scale)
 - Inherent vs. residual risk calculation
@@ -311,15 +335,18 @@ Central repository for all identified risks with comprehensive tracking.
 - Risk categories and tagging
 
 **Risk Scoring:**
+
 - Quantitative: Likelihood × Impact (1-25 scale)
 - Qualitative: Low, Medium, High, Critical
 - Customizable risk matrices
 - Automated risk level calculations
 
 #### Risk Heatmap
+
 Visual risk matrix showing risk distribution by likelihood and impact.
 
 **Features:**
+
 - Interactive heat map visualization
 - Risk clustering by category
 - Drill-down to risk details
@@ -327,27 +354,33 @@ Visual risk matrix showing risk distribution by likelihood and impact.
 - Export to PDF/PNG
 
 #### Risk Scenarios
+
 Scenario-based risk modeling and planning.
 
 **Features:**
+
 - Threat scenario modeling
 - Impact analysis
 - Mitigation strategy planning
 - Scenario libraries (Cyber attacks, Data breaches, Disasters)
 
 #### My Risk Queue
+
 Personal task list for assigned risks and actions.
 
 **Features:**
+
 - Assigned risks requiring action
 - Overdue treatment plans
 - Upcoming risk reviews
 - Evidence collection tasks
 
 #### Risk Reports
+
 Comprehensive risk reporting and analytics.
 
 **Report Types:**
+
 - Executive risk summary
 - Risk register report
 - Treatment effectiveness
@@ -356,6 +389,7 @@ Comprehensive risk reporting and analytics.
 - Custom reports with filters
 
 **API Endpoints:**
+
 - `GET/POST /api/risks` - List and create risks
 - `GET/PATCH /api/risks/:id` - Manage risks
 - `POST /api/risks/:id/assess` - Update risk assessment
@@ -367,9 +401,11 @@ Comprehensive risk reporting and analytics.
 Complete vendor risk management lifecycle.
 
 #### Vendor Management
+
 Centralized vendor database with risk profiles.
 
 **Features:**
+
 - Vendor contact information
 - Risk tier classification (Critical, High, Medium, Low)
 - Vendor categories (Cloud, SaaS, Consultant, etc.)
@@ -379,15 +415,18 @@ Centralized vendor database with risk profiles.
 - Relationship owners
 
 #### Assessments
+
 Security assessments and questionnaires for vendors.
 
 **Assessment Types:**
+
 - Initial due diligence
 - Annual reviews
 - Incident-triggered assessments
 - Ad-hoc assessments
 
 **Features:**
+
 - Customizable questionnaire templates
 - Assessment scoring and risk rating
 - Finding tracking and remediation
@@ -396,9 +435,11 @@ Security assessments and questionnaires for vendors.
 - Approval workflows
 
 #### Contracts
+
 Contract lifecycle management for vendor relationships.
 
 **Features:**
+
 - Contract metadata (dates, value, terms)
 - SLA tracking
 - Renewal reminders
@@ -408,6 +449,7 @@ Contract lifecycle management for vendor relationships.
 - Vendor linking
 
 **API Endpoints:**
+
 - `GET/POST /api/vendors` - Vendor management
 - `GET/POST /api/assessments` - Assessment workflows
 - `GET/POST /api/contracts` - Contract management
@@ -417,9 +459,11 @@ Contract lifecycle management for vendor relationships.
 Build and maintain customer trust through transparency and responsiveness.
 
 #### Questionnaires
+
 Security questionnaire response management system.
 
 **Features:**
+
 - Questionnaire templates (SOC 2, ISO 27001, Custom)
 - Question bank with reusable answers
 - Response history and versioning
@@ -429,9 +473,11 @@ Security questionnaire response management system.
 - Auto-population from knowledge base
 
 #### Knowledge Base
+
 Centralized security knowledge repository for consistent responses.
 
 **Features:**
+
 - Question and answer library
 - Categories and tagging
 - Search and filtering
@@ -441,15 +487,18 @@ Centralized security knowledge repository for consistent responses.
 - Confidence scoring
 
 **Use Cases:**
+
 - Pre-populate questionnaire responses
 - Sales engineering reference
 - Customer FAQ
 - Internal training
 
 #### Trust Center
+
 Public-facing security and compliance transparency portal.
 
 **Features:**
+
 - Customizable branding (logo, colors, description)
 - Section-based content management:
   - **Overview**: Company security commitment
@@ -464,6 +513,7 @@ Public-facing security and compliance transparency portal.
 - Responsive design
 
 **API Endpoints:**
+
 - `GET/POST /api/questionnaires` - Questionnaire management
 - `GET/POST /api/knowledge-base` - Knowledge base entries
 - `GET/PATCH /api/trust-center/config` - Trust center configuration
@@ -475,15 +525,18 @@ Public-facing security and compliance transparency portal.
 Comprehensive audit management for internal and external compliance audits.
 
 #### Audits
+
 Central audit management with support for multiple audit types.
 
 **Audit Types:**
+
 - Internal audits
 - External audits (SOC 2, ISO 27001)
 - Surveillance audits
 - Certification audits
 
 **Features:**
+
 - Audit planning and scoping
 - Framework selection (SOC 2, ISO 27001, HIPAA, PCI DSS)
 - Audit team management
@@ -495,6 +548,7 @@ Central audit management with support for multiple audit types.
 - FieldGuide integration ready
 
 **Auditor Portal:**
+
 - Secure access code generation
 - Temporary access with expiration
 - Document request submission
@@ -502,9 +556,11 @@ Central audit management with support for multiple audit types.
 - Comment threads on requests
 
 #### Audit Requests
+
 Evidence and documentation request tracking.
 
 **Request Categories:**
+
 - Control documentation
 - Policy review
 - Evidence collection
@@ -513,6 +569,7 @@ Evidence and documentation request tracking.
 - Walkthroughs
 
 **Features:**
+
 - Request assignment to internal team
 - Priority levels (Low, Medium, High, Critical)
 - Due date tracking with overdue alerts
@@ -523,15 +580,18 @@ Evidence and documentation request tracking.
 - Control/requirement linking
 
 #### Findings
+
 Audit finding and observation management.
 
 **Finding Types:**
+
 - Control deficiencies
 - Documentation gaps
 - Process issues
 - Compliance gaps
 
 **Features:**
+
 - Severity classification (Critical, High, Medium, Low, Observation)
 - Root cause analysis
 - Impact assessment
@@ -543,12 +603,14 @@ Audit finding and observation management.
 - Control/requirement linking
 
 #### Additional Capabilities:
+
 - **Test Results**: Control testing with sampling methodologies
 - **Meetings**: Audit kickoffs, status updates, interviews, closing meetings
 - **Activity Log**: Complete audit trail of all actions
 - **Dashboard**: Real-time audit statistics and progress
 
 **API Endpoints:**
+
 - `GET/POST /api/audits` - Audit management
 - `GET /api/audits/dashboard` - Audit statistics
 - `POST /api/audits/:id/portal/enable` - Enable auditor portal
@@ -557,6 +619,7 @@ Audit finding and observation management.
 - `GET/POST /api/audit-findings` - Finding management
 
 **FieldGuide Integration:**
+
 - OAuth 2.0 authentication with FieldGuide
 - Bi-directional sync with FieldGuide platform
 - Audit data synchronization
@@ -567,6 +630,7 @@ Audit finding and observation management.
 - Sync history and audit logging
 
 **FieldGuide API Endpoints:**
+
 - `GET /api/fieldguide/connect` - Initiate OAuth connection
 - `GET /api/fieldguide/callback` - OAuth callback handler
 - `POST /api/fieldguide/sync` - Trigger bi-directional sync
@@ -575,9 +639,11 @@ Audit finding and observation management.
 ### 7. Tools Module
 
 #### Awareness & Training
+
 Comprehensive security awareness training program management.
 
 **Features:**
+
 - Training course management (Security Basics, Phishing Awareness, Data Protection, etc.)
 - Training assignment to users and groups
 - Progress tracking and completion status
@@ -587,6 +653,7 @@ Comprehensive security awareness training program management.
 - Training content management
 
 **Quiz Engine:**
+
 - Multiple choice, true/false, and multi-select questions
 - Configurable passing scores
 - Question randomization
@@ -594,21 +661,25 @@ Comprehensive security awareness training program management.
 - Retake policies
 
 **Certificate Features:**
+
 - Automatic generation on course completion
 - PDF download
 - Unique certificate IDs for verification
 - Expiration dates for recurring training
 
 **API Endpoints:**
+
 - `GET/POST /api/training/courses` - Course management
 - `GET/POST /api/training/assignments` - Assign training
 - `POST /api/training/:courseId/quiz` - Take quiz
 - `GET /api/training/:courseId/certificate` - Download certificate
 
 #### Phishing Simulations
+
 Security awareness through realistic phishing simulations.
 
 **Campaign Features:**
+
 - Campaign creation with templates
 - Target group selection
 - Scheduling (immediate, scheduled, recurring)
@@ -617,6 +688,7 @@ Security awareness through realistic phishing simulations.
 - Real-time tracking and analytics
 
 **Analytics & Reporting:**
+
 - Click rates by department
 - Report rates
 - Training completion correlation
@@ -625,12 +697,14 @@ Security awareness through realistic phishing simulations.
 - Department benchmarking
 
 **Template Library:**
+
 - Pre-built phishing templates (Credential harvesting, Malware, Gift card scams, etc.)
 - Custom template creation
 - Template difficulty ratings
 - Industry-specific templates
 
 **API Endpoints:**
+
 - `GET/POST /api/phishing/campaigns` - Campaign management
 - `GET /api/phishing/campaigns/:id/analytics` - Campaign analytics
 - `GET/POST /api/phishing/templates` - Template management
@@ -641,13 +715,16 @@ Security awareness through realistic phishing simulations.
 Enterprise AI capabilities and MCP (Model Context Protocol) server integration for intelligent GRC operations.
 
 #### AI Configuration
+
 AI-powered features using GPT-5 (OpenAI) or Claude Opus 4.5 (Anthropic).
 
 **Supported AI Providers**:
+
 - **OpenAI**: GPT-5 (Most Capable), GPT-5 Mini, o3 (Advanced Reasoning), o3-mini
 - **Anthropic**: Claude Opus 4.5 (Most Capable), Claude Sonnet 4, Claude 3.5 Sonnet, Claude 3.5 Haiku
 
 **AI Features**:
+
 - **Risk Scoring**: AI-suggested risk likelihood and impact with rationale
 - **Auto-Categorization**: Automatic categorization and tagging of controls, risks, policies
 - **Smart Search**: Natural language search across all GRC modules
@@ -655,9 +732,11 @@ AI-powered features using GPT-5 (OpenAI) or Claude Opus 4.5 (Anthropic).
 - **Control Suggestions**: AI-recommended controls for risks and compliance requirements
 
 #### MCP Server Integration
+
 Model Context Protocol servers for automated GRC workflows.
 
 **Available MCP Servers**:
+
 - **grc-evidence**: Automated evidence collection from cloud providers and security tools
   - AWS (S3, IAM, EC2, VPC, Config)
   - Azure resources
@@ -685,6 +764,7 @@ Model Context Protocol servers for automated GRC workflows.
   - Vendor risk assessment
 
 **API Endpoints**:
+
 - `GET /api/ai/config` - Get AI configuration
 - `POST /api/ai/risk-scoring` - AI risk scoring suggestions
 - `POST /api/ai/categorize` - Auto-categorization
@@ -696,9 +776,11 @@ Model Context Protocol servers for automated GRC workflows.
 ### 9. Settings & Administration
 
 #### User Management
+
 User account and access control management via Keycloak.
 
 **Features:**
+
 - User provisioning and deactivation
 - Role assignment (Admin, Compliance Manager, Auditor, Viewer)
 - SSO integration via Keycloak
@@ -706,9 +788,11 @@ User account and access control management via Keycloak.
 - Session management
 
 #### Permissions
+
 Role-based access control and permission groups.
 
 **Default Roles:**
+
 - **Admin**: Full system access
 - **Compliance Manager**: Manage controls, evidence, frameworks
 - **Risk Manager**: Manage risks and treatments
@@ -716,9 +800,11 @@ Role-based access control and permission groups.
 - **Viewer**: Limited read access
 
 #### Audit Log
+
 Complete system audit trail for compliance and forensics.
 
 **Tracked Events:**
+
 - User actions (login, logout, changes)
 - Entity changes (create, update, delete)
 - Access attempts
@@ -727,6 +813,7 @@ Complete system audit trail for compliance and forensics.
 - Approval actions
 
 **Features:**
+
 - Search and filtering
 - Export to CSV
 - Date range queries
@@ -734,9 +821,11 @@ Complete system audit trail for compliance and forensics.
 - Change history with before/after values
 
 #### Risk Configuration
+
 Risk management system configuration.
 
 **Settings:**
+
 - Risk scoring methodology
 - Likelihood definitions (1-5)
 - Impact definitions (1-5)
@@ -750,6 +839,7 @@ Risk management system configuration.
 The main dashboard provides an executive overview of your entire GRC program:
 
 **Compliance Metrics:**
+
 - Overall compliance score
 - Control implementation status
 - Framework readiness percentages
@@ -757,18 +847,21 @@ The main dashboard provides an executive overview of your entire GRC program:
 - Upcoming control tests
 
 **Risk Metrics:**
+
 - Risk distribution by severity
 - High-priority risks requiring attention
 - Risk treatment progress
 - Top risk categories
 
 **Audit Metrics:**
+
 - Active audits
 - Open audit requests
 - Pending findings
 - Upcoming audit activities
 
 **Recent Activity:**
+
 - Control updates
 - Evidence uploads
 - Risk assessments
@@ -839,6 +932,7 @@ cd gigachad-grc
 ```
 
 This single command:
+
 - Generates secure secrets and creates `.env`
 - Starts all infrastructure (PostgreSQL, Redis, Keycloak, RustFS)
 - Builds and starts all backend services
@@ -850,7 +944,7 @@ This single command:
 
 ```bash
 make demo      # One-click demo
-make dev       # Development setup  
+make dev       # Development setup
 make up        # Start containers
 make down      # Stop containers
 make logs      # View logs
@@ -863,7 +957,7 @@ If you prefer manual control:
 
 ```bash
 # 1. Create environment
-cp env.example .env
+cp .env.example .env
 
 # 2. Start infrastructure
 docker compose up -d postgres redis keycloak rustfs
@@ -899,6 +993,7 @@ npm run validate:production:strict
 ```
 
 The script validates:
+
 - Security configuration (encryption keys, passwords, auth mode)
 - Database connections and SSL
 - Backup configuration
@@ -917,23 +1012,23 @@ Administrators can view real-time system health in **Settings > Organization Set
 
 When running with Docker, the entrypoint script provides:
 
-| Feature | Environment Variable | Description |
-|---------|---------------------|-------------|
-| Auto-backup scheduling | `AUTO_BACKUP_ENABLED=true` | Schedules daily backups via cron |
-| Database migrations | `AUTO_MIGRATE=true` | Runs migrations on startup |
-| Dependency wait | `WAIT_FOR_DB=true` | Waits for PostgreSQL before starting |
-| Config warnings | Always enabled | Logs warnings for production misconfigurations |
+| Feature                | Environment Variable       | Description                                    |
+| ---------------------- | -------------------------- | ---------------------------------------------- |
+| Auto-backup scheduling | `AUTO_BACKUP_ENABLED=true` | Schedules daily backups via cron               |
+| Database migrations    | `AUTO_MIGRATE=true`        | Runs migrations on startup                     |
+| Dependency wait        | `WAIT_FOR_DB=true`         | Waits for PostgreSQL before starting           |
+| Config warnings        | Always enabled             | Logs warnings for production misconfigurations |
 
 ### Data Persistence
 
 All critical data is stored in Docker named volumes that survive container restarts:
 
-| Data Type | Volume | Survives Crash |
-|-----------|--------|----------------|
-| Database | `postgres_data` | ✅ Yes |
-| Evidence Files | `rustfs_data` | ✅ Yes |
-| Cache/Sessions | `redis_data` | ✅ Yes |
-| Metrics | `prometheus_data` | ✅ Yes |
+| Data Type      | Volume            | Survives Crash |
+| -------------- | ----------------- | -------------- |
+| Database       | `postgres_data`   | ✅ Yes         |
+| Evidence Files | `rustfs_data`     | ✅ Yes         |
+| Cache/Sessions | `redis_data`      | ✅ Yes         |
+| Metrics        | `prometheus_data` | ✅ Yes         |
 
 **Important**: Running `docker-compose down -v` will delete volumes. Always run backups before maintenance.
 
@@ -1053,49 +1148,51 @@ gigachad-grc/
 
 Each microservice runs on its own port with Swagger API documentation:
 
-| Service | Port | Swagger Docs | Description |
-|---------|------|--------------|-------------|
-| **Frontend** | 5173 | N/A | React SPA (Vite dev server) |
-| **Controls** | 3001 | http://localhost:3001/api/docs | Controls, Evidence, Testing |
-| **Frameworks** | 3002 | http://localhost:3002/api/docs | Frameworks, Risk Management |
-| **Policies** | 3004 | http://localhost:3004/api/docs | Policy Lifecycle Management |
-| **TPRM** | 3005 | http://localhost:3005/api/docs | Vendor Risk Management |
-| **Trust** | 3006 | http://localhost:3006/api/docs | Questionnaires, KB, Trust Center |
-| **Audit** | 3007 | http://localhost:3007/api/docs | Audit Management |
-| **PostgreSQL** | 5433 | N/A | Primary database |
-| **Redis** | 6380 | N/A | Cache & sessions |
-| **Keycloak** | 8080 | http://localhost:8080 | Auth & SSO (admin/admin) |
-| **Traefik** | 80/443 | http://localhost:8090 | API Gateway dashboard |
-| **RustFS API** | 9000 | N/A | S3-compatible object storage API |
-| **RustFS Console** | 9001 | http://localhost:9001 | Storage admin UI (rustfsadmin/rustfsadmin) |
+| Service            | Port   | Swagger Docs                   | Description                                |
+| ------------------ | ------ | ------------------------------ | ------------------------------------------ |
+| **Frontend**       | 5173   | N/A                            | React SPA (Vite dev server)                |
+| **Controls**       | 3001   | http://localhost:3001/api/docs | Controls, Evidence, Testing                |
+| **Frameworks**     | 3002   | http://localhost:3002/api/docs | Frameworks, Risk Management                |
+| **Policies**       | 3004   | http://localhost:3004/api/docs | Policy Lifecycle Management                |
+| **TPRM**           | 3005   | http://localhost:3005/api/docs | Vendor Risk Management                     |
+| **Trust**          | 3006   | http://localhost:3006/api/docs | Questionnaires, KB, Trust Center           |
+| **Audit**          | 3007   | http://localhost:3007/api/docs | Audit Management                           |
+| **PostgreSQL**     | 5433   | N/A                            | Primary database                           |
+| **Redis**          | 6380   | N/A                            | Cache & sessions                           |
+| **Keycloak**       | 8080   | http://localhost:8080          | Auth & SSO (admin/admin)                   |
+| **Traefik**        | 80/443 | http://localhost:8090          | API Gateway dashboard                      |
+| **RustFS API**     | 9000   | N/A                            | S3-compatible object storage API           |
+| **RustFS Console** | 9001   | http://localhost:9001          | Storage admin UI (rustfsadmin/rustfsadmin) |
 
 ## Configuration
 
 ### Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `POSTGRES_USER` | Database user | grc |
-| `POSTGRES_PASSWORD` | Database password | grc_secret |
-| `POSTGRES_DB` | Database name | gigachad_grc |
-| `REDIS_PASSWORD` | Redis password | redis_secret |
-| `KEYCLOAK_ADMIN` | Keycloak admin user | admin |
-| `KEYCLOAK_ADMIN_PASSWORD` | Keycloak admin password | admin |
-| `MINIO_ROOT_USER` | RustFS/S3 root user | rustfsadmin |
-| `MINIO_ROOT_PASSWORD` | RustFS/S3 root password | (secure password) |
-| `STORAGE_TYPE` | Storage backend (local/s3/minio) | s3 |
+| Variable                  | Description                      | Default           |
+| ------------------------- | -------------------------------- | ----------------- |
+| `POSTGRES_USER`           | Database user                    | grc               |
+| `POSTGRES_PASSWORD`       | Database password                | grc_secret        |
+| `POSTGRES_DB`             | Database name                    | gigachad_grc      |
+| `REDIS_PASSWORD`          | Redis password                   | redis_secret      |
+| `KEYCLOAK_ADMIN`          | Keycloak admin user              | admin             |
+| `KEYCLOAK_ADMIN_PASSWORD` | Keycloak admin password          | admin             |
+| `MINIO_ROOT_USER`         | RustFS/S3 root user              | rustfsadmin       |
+| `MINIO_ROOT_PASSWORD`     | RustFS/S3 root password          | (secure password) |
+| `STORAGE_TYPE`            | Storage backend (local/s3/minio) | s3                |
 
 ### Storage Configuration
 
 The platform supports multiple storage backends:
 
 **Local Storage:**
+
 ```env
 STORAGE_TYPE=local
 LOCAL_STORAGE_PATH=./storage
 ```
 
 **RustFS/S3 (Recommended):**
+
 ```env
 # RustFS is a high-performance, Apache 2.0 licensed S3-compatible storage
 # https://github.com/rustfs/rustfs
@@ -1130,12 +1227,14 @@ Each service is designed to run independently. To extract a module:
 This project is licensed under the **Elastic License 2.0 (ELv2)**.
 
 ### What You CAN Do:
+
 - Use internally at your company for commercial purposes
 - Modify the software for your own use
 - Self-host on your own infrastructure
 - Contribute improvements back to the project
 
 ### What You CANNOT Do:
+
 - Offer this software as a hosted/managed service to third parties
 - Sell the software or derivatives to others
 - Create a competing commercial GRC product based on this code
@@ -1152,6 +1251,7 @@ We welcome contributions! Please read our [Contributing Guide](CONTRIBUTING.md) 
 By contributing, you agree that your contributions will be licensed under the same Elastic License 2.0. Please also review our [Code of Conduct](CODE_OF_CONDUCT.md).
 
 **Quick Start:**
+
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Make your changes following our [coding standards](CONTRIBUTING.md#coding-standards)
@@ -1164,6 +1264,3 @@ By contributing, you agree that your contributions will be licensed under the sa
 - **Issues**: Use the [GitHub issue tracker](../../issues) for bugs and feature requests
 - **Security**: Report vulnerabilities privately via [GitHub Security Advisories](../../security/advisories/new)
 - **Discussions**: Use [GitHub Discussions](../../discussions) for questions and ideas
-
-
-

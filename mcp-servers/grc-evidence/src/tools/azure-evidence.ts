@@ -29,7 +29,8 @@ interface ComplianceCheck {
 }
 
 export async function collectAzureEvidence(params: AzureEvidenceParams): Promise<EvidenceResult> {
-  const { subscriptionId, resourceTypes = ['security-center', 'key-vault', 'network', 'storage'] } = params;
+  const { subscriptionId, resourceTypes = ['security-center', 'key-vault', 'network', 'storage'] } =
+    params;
   const findings: unknown[] = [];
   let compliantCount = 0;
   let nonCompliantCount = 0;
@@ -59,7 +60,7 @@ export async function collectAzureEvidence(params: AzureEvidenceParams): Promise
     for (const resourceType of resourceTypes) {
       try {
         let result: { finding: unknown; compliant: number; nonCompliant: number };
-        
+
         switch (resourceType.toLowerCase()) {
           case 'security-center':
             result = await collectSecurityCenterEvidence(credential, subscriptionId);
@@ -80,7 +81,7 @@ export async function collectAzureEvidence(params: AzureEvidenceParams): Promise
               nonCompliant: 0,
             };
         }
-        
+
         findings.push(result.finding);
         compliantCount += result.compliant;
         nonCompliantCount += result.nonCompliant;
@@ -115,12 +116,13 @@ export async function collectAzureEvidence(params: AzureEvidenceParams): Promise
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    const isAuthError = errorMessage.includes('credential') || 
-                        errorMessage.includes('authentication') ||
-                        errorMessage.includes('AZURE_');
-    
+    const isAuthError =
+      errorMessage.includes('credential') ||
+      errorMessage.includes('authentication') ||
+      errorMessage.includes('AZURE_');
+
     console.warn(`Azure evidence collection failed: ${errorMessage}`);
-    
+
     return {
       service: 'azure',
       collectedAt: new Date().toISOString(),
@@ -132,11 +134,11 @@ export async function collectAzureEvidence(params: AzureEvidenceParams): Promise
         nonCompliantResources: 0,
       },
       isMockMode: true,
-      mockModeReason: isAuthError 
+      mockModeReason: isAuthError
         ? 'Azure credentials not configured. Set AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, and AZURE_TENANT_ID environment variables, or run on Azure with managed identity.'
         : `Azure evidence collection failed: ${errorMessage}`,
-      requiredCredentials: isAuthError 
-        ? ['AZURE_CLIENT_ID', 'AZURE_CLIENT_SECRET', 'AZURE_TENANT_ID'] 
+      requiredCredentials: isAuthError
+        ? ['AZURE_CLIENT_ID', 'AZURE_CLIENT_SECRET', 'AZURE_TENANT_ID']
         : undefined,
     };
   }
@@ -152,9 +154,9 @@ async function collectSecurityCenterEvidence(
   try {
     // Dynamic import to handle missing SDK gracefully
     const { SecurityCenter } = await import('@azure/arm-security');
-    
+
     const client = new SecurityCenter(credential, subscriptionId);
-    
+
     // Collect secure score
     const secureScores: unknown[] = [];
     for await (const score of client.secureScores.list()) {
@@ -164,12 +166,12 @@ async function collectSecurityCenterEvidence(
         max: score.max,
         percentage: score.percentage,
       });
-      
+
       // Score above 70% is considered compliant
       if ((score.percentage || 0) >= 0.7) compliant++;
       else nonCompliant++;
     }
-    
+
     // Collect security assessments
     const assessments: unknown[] = [];
     try {
@@ -181,14 +183,14 @@ async function collectSecurityCenterEvidence(
           resourceId: assessment.resourceDetails,
           description: assessment.status?.description,
         });
-        
+
         if (status === 'Healthy') compliant++;
         else if (status === 'Unhealthy') nonCompliant++;
       }
     } catch {
       // Assessments API may not be available in all subscriptions
     }
-    
+
     // Collect alerts
     const alerts: unknown[] = [];
     try {
@@ -200,15 +202,18 @@ async function collectSecurityCenterEvidence(
           timeGenerated: alert.timeGeneratedUtc,
           description: alert.description,
         });
-        
-        if (alert.status === 'Active' && (alert.severity === 'High' || alert.severity === 'Medium')) {
+
+        if (
+          alert.status === 'Active' &&
+          (alert.severity === 'High' || alert.severity === 'Medium')
+        ) {
           nonCompliant++;
         }
       }
     } catch {
       // Alerts API may require additional permissions
     }
-    
+
     return {
       finding: {
         type: 'security_center',
@@ -223,10 +228,17 @@ async function collectSecurityCenterEvidence(
           alertCount: alerts.length,
         },
         compliance: {
-          overallScore: secureScores[0] ? (secureScores[0] as { percentage: number }).percentage * 100 : 0,
-          healthyAssessments: assessments.filter((a: unknown) => (a as { status: string }).status === 'Healthy').length,
-          unhealthyAssessments: assessments.filter((a: unknown) => (a as { status: string }).status === 'Unhealthy').length,
-          activeAlerts: alerts.filter((a: unknown) => (a as { status: string }).status === 'Active').length,
+          overallScore: secureScores[0]
+            ? (secureScores[0] as { percentage: number }).percentage * 100
+            : 0,
+          healthyAssessments: assessments.filter(
+            (a: unknown) => (a as { status: string }).status === 'Healthy'
+          ).length,
+          unhealthyAssessments: assessments.filter(
+            (a: unknown) => (a as { status: string }).status === 'Unhealthy'
+          ).length,
+          activeAlerts: alerts.filter((a: unknown) => (a as { status: string }).status === 'Active')
+            .length,
         },
       },
       compliant,
@@ -235,11 +247,13 @@ async function collectSecurityCenterEvidence(
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const err = error as { code?: string };
-    const isModuleError = err.code === 'MODULE_NOT_FOUND' || 
-                          errorMessage.includes('Cannot find module');
-    
-    console.warn(`Security Center evidence collection: ${isModuleError ? 'SDK not installed' : errorMessage}`);
-    
+    const isModuleError =
+      err.code === 'MODULE_NOT_FOUND' || errorMessage.includes('Cannot find module');
+
+    console.warn(
+      `Security Center evidence collection: ${isModuleError ? 'SDK not installed' : errorMessage}`
+    );
+
     return {
       finding: {
         type: 'security_center',
@@ -252,7 +266,7 @@ async function collectSecurityCenterEvidence(
           alerts: [],
         },
         isMockMode: true,
-        mockModeReason: isModuleError 
+        mockModeReason: isModuleError
           ? 'Install @azure/arm-security SDK: npm install @azure/arm-security'
           : `Security Center collection failed: ${errorMessage}`,
       },
@@ -292,7 +306,7 @@ async function collectKeyVaultEvidence(
 
     for await (const vault of kvClient.vaults.list()) {
       const vaultName = vault.name || 'unknown';
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const properties = (vault as any).properties;
 
       // Check soft delete
@@ -456,22 +470,22 @@ async function collectNetworkEvidence(
     for await (const nsg of networkClient.networkSecurityGroups.listAll()) {
       const nsgName = nsg.name || 'unknown';
       const rules = nsg.securityRules || [];
-      
+
       // Check for overly permissive rules
       for (const rule of rules) {
         if (rule.access === 'Allow' && rule.direction === 'Inbound') {
-          const isOverlyPermissive = 
-            rule.sourceAddressPrefix === '*' || 
+          const isOverlyPermissive =
+            rule.sourceAddressPrefix === '*' ||
             rule.sourceAddressPrefix === 'Internet' ||
             rule.sourceAddressPrefix === '0.0.0.0/0';
-          
-          const isSensitivePort = 
+
+          const isSensitivePort =
             rule.destinationPortRange === '*' ||
             rule.destinationPortRange === '22' ||
             rule.destinationPortRange === '3389' ||
             rule.destinationPortRange === '3306' ||
             rule.destinationPortRange === '1433';
-          
+
           if (isOverlyPermissive && isSensitivePort) {
             complianceChecks.push({
               name: 'Overly Permissive Inbound Rule',
@@ -485,18 +499,20 @@ async function collectNetworkEvidence(
       }
 
       // Check for SSH/RDP from internet
-      const hasSshFromInternet = rules.some(r => 
-        r.access === 'Allow' && 
-        r.direction === 'Inbound' && 
-        (r.sourceAddressPrefix === '*' || r.sourceAddressPrefix === 'Internet') &&
-        r.destinationPortRange === '22'
+      const hasSshFromInternet = rules.some(
+        (r) =>
+          r.access === 'Allow' &&
+          r.direction === 'Inbound' &&
+          (r.sourceAddressPrefix === '*' || r.sourceAddressPrefix === 'Internet') &&
+          r.destinationPortRange === '22'
       );
-      
-      const hasRdpFromInternet = rules.some(r => 
-        r.access === 'Allow' && 
-        r.direction === 'Inbound' && 
-        (r.sourceAddressPrefix === '*' || r.sourceAddressPrefix === 'Internet') &&
-        r.destinationPortRange === '3389'
+
+      const hasRdpFromInternet = rules.some(
+        (r) =>
+          r.access === 'Allow' &&
+          r.direction === 'Inbound' &&
+          (r.sourceAddressPrefix === '*' || r.sourceAddressPrefix === 'Internet') &&
+          r.destinationPortRange === '3389'
       );
 
       if (!hasSshFromInternet && !hasRdpFromInternet) {
@@ -691,7 +707,8 @@ async function collectStorageEvidence(
     complianceChecks.push({
       name: 'Detailed Storage Checks',
       status: 'unknown',
-      description: 'Install @azure/arm-storage for detailed compliance checks: npm install @azure/arm-storage',
+      description:
+        'Install @azure/arm-storage for detailed compliance checks: npm install @azure/arm-storage',
     });
   }
 

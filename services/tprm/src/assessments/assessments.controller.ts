@@ -23,7 +23,13 @@ export class AssessmentsController {
 
   @Post()
   create(@Body() createAssessmentDto: CreateAssessmentDto, @CurrentUser() user: UserContext) {
-    return this.assessmentsService.create(createAssessmentDto, user.userId);
+    return this.assessmentsService.create(
+      {
+        ...createAssessmentDto,
+        organizationId: user.organizationId,
+      },
+      user.userId
+    );
   }
 
   @Get()

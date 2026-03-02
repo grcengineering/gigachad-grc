@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
@@ -58,7 +57,7 @@ export class RiskScenariosService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly auditService: AuditService,
+    private readonly auditService: AuditService
   ) {}
 
   /**
@@ -83,7 +82,7 @@ export class RiskScenariosService {
    */
   async listScenarios(
     organizationId: string,
-    query: ListRiskScenariosQueryDto,
+    query: ListRiskScenariosQueryDto
   ): Promise<{
     data: RiskScenario[];
     total: number;
@@ -93,7 +92,6 @@ export class RiskScenariosService {
   }> {
     const { search, category, threatActor, attackVector, isTemplate, page = 1, limit = 25 } = query;
 
-     
     const where: Record<string, any> = {
       organizationId,
       deletedAt: null,
@@ -145,7 +143,10 @@ export class RiskScenariosService {
   /**
    * Get a single risk scenario by ID
    */
-  async getScenario(organizationId: string, id: string): Promise<RiskScenario & { riskScore: number; riskLevel: string }> {
+  async getScenario(
+    organizationId: string,
+    id: string
+  ): Promise<RiskScenario & { riskScore: number; riskLevel: string }> {
     const scenario = await this.prisma.riskScenarioTemplate.findFirst({
       where: {
         id,
@@ -160,7 +161,7 @@ export class RiskScenariosService {
 
     const riskScore = this.calculateRiskScore(
       scenario.likelihood as Likelihood,
-      scenario.impact as Impact,
+      scenario.impact as Impact
     );
 
     return {
@@ -176,7 +177,7 @@ export class RiskScenariosService {
   async createScenario(
     organizationId: string,
     userId: string,
-    dto: CreateRiskScenarioDto,
+    dto: CreateRiskScenarioDto
   ): Promise<RiskScenario> {
     const scenario = await this.prisma.riskScenarioTemplate.create({
       data: {
@@ -224,7 +225,7 @@ export class RiskScenariosService {
     organizationId: string,
     userId: string,
     id: string,
-    dto: UpdateRiskScenarioDto,
+    dto: UpdateRiskScenarioDto
   ): Promise<RiskScenario> {
     const existing = await this.prisma.riskScenarioTemplate.findFirst({
       where: { id, organizationId, deletedAt: null },
@@ -298,7 +299,7 @@ export class RiskScenariosService {
     organizationId: string,
     userId: string,
     id: string,
-    newTitle?: string,
+    newTitle?: string
   ): Promise<RiskScenario> {
     const original = await this.prisma.riskScenarioTemplate.findFirst({
       where: { id, deletedAt: null },
@@ -354,7 +355,10 @@ export class RiskScenariosService {
       select: { category: true },
     });
 
-    return scenarios.map((s) => s.category).filter(Boolean).sort();
+    return scenarios
+      .map((s) => s.category)
+      .filter(Boolean)
+      .sort();
   }
 
   /**
@@ -397,7 +401,7 @@ export class RiskScenariosService {
    */
   async getLibraryByCategory(): Promise<{ category: string; templates: RiskScenario[] }[]> {
     const templates = await this.getLibraryTemplates();
-    
+
     const grouped = new Map<string, RiskScenario[]>();
     for (const template of templates) {
       if (!grouped.has(template.category)) {
@@ -405,7 +409,7 @@ export class RiskScenariosService {
       }
       grouped.get(template.category)!.push(template);
     }
-    
+
     return Array.from(grouped.entries())
       .map(([category, templates]) => ({ category, templates }))
       .sort((a, b) => a.category.localeCompare(b.category));
@@ -417,7 +421,7 @@ export class RiskScenariosService {
   async bulkCreateFromTemplates(
     organizationId: string,
     userId: string,
-    templateIds: string[],
+    templateIds: string[]
   ): Promise<RiskScenario[]> {
     const results: RiskScenario[] = [];
 
@@ -426,7 +430,9 @@ export class RiskScenariosService {
         const cloned = await this.cloneScenario(organizationId, userId, templateId);
         results.push(cloned);
       } catch (error: unknown) {
-        this.logger.warn(`Failed to clone template ${templateId}: ${error instanceof Error ? error.message : String(error)}`);
+        this.logger.warn(
+          `Failed to clone template ${templateId}: ${error instanceof Error ? error.message : String(error)}`
+        );
       }
     }
 
@@ -442,7 +448,7 @@ export class RiskScenariosService {
     simulationParams: {
       controlEffectiveness?: number;
       mitigations?: string[];
-    },
+    }
   ): Promise<{
     inherentRisk: { score: number; level: string };
     residualRisk: { score: number; level: string };
@@ -453,7 +459,7 @@ export class RiskScenariosService {
 
     const inherentScore = this.calculateRiskScore(
       scenario.likelihood as Likelihood,
-      scenario.impact as Impact,
+      scenario.impact as Impact
     );
 
     // Calculate residual risk based on control effectiveness
@@ -559,4 +565,3 @@ export class RiskScenariosService {
     };
   }
 }
-

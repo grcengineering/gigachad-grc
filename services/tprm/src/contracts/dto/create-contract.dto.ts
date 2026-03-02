@@ -1,8 +1,9 @@
 import { IsString, IsOptional, IsDateString, IsNumber, IsBoolean, IsInt } from 'class-validator';
 
 export class CreateContractDto {
+  @IsOptional()
   @IsString()
-  organizationId: string;
+  organizationId?: string;
 
   @IsString()
   vendorId: string;
@@ -74,6 +75,14 @@ export class CreateContractDto {
   @IsBoolean()
   @IsOptional()
   dataProcessingAddendum?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  requiresHipaa?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  requiresGdpr?: boolean;
 
   @IsInt()
   @IsOptional()

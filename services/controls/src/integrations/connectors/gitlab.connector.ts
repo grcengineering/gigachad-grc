@@ -1,8 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Injectable, Logger } from '@nestjs/common';
 
 export interface GitLabConfig {
-  baseUrl?: string;  // For self-hosted, defaults to gitlab.com
+  baseUrl?: string; // For self-hosted, defaults to gitlab.com
   accessToken: string;
   groupId?: string;
 }
@@ -64,7 +63,9 @@ export interface GitLabSyncResult {
 export class GitLabConnector {
   private readonly logger = new Logger(GitLabConnector.name);
 
-  async testConnection(config: GitLabConfig): Promise<{ success: boolean; message: string; details?: any }> {
+  async testConnection(
+    config: GitLabConfig
+  ): Promise<{ success: boolean; message: string; details?: any }> {
     if (!config.accessToken) {
       return { success: false, message: 'Access token is required' };
     }
@@ -76,7 +77,11 @@ export class GitLabConnector {
       });
 
       if (!response.ok) {
-        return { success: false, message: response.status === 401 ? 'Invalid access token' : `API error: ${response.status}` };
+        return {
+          success: false,
+          message:
+            response.status === 401 ? 'Invalid access token' : `API error: ${response.status}`,
+        };
       }
 
       const user = await response.json();
@@ -95,8 +100,14 @@ export class GitLabConnector {
     const errors: string[] = [];
 
     const [projects, vulnerabilities] = await Promise.all([
-      this.getProjects(baseUrl, config).catch(e => { errors.push(`Projects: ${e.message}`); return []; }),
-      this.getVulnerabilities(baseUrl, config).catch(e => { errors.push(`Vulns: ${e.message}`); return []; }),
+      this.getProjects(baseUrl, config).catch((e) => {
+        errors.push(`Projects: ${e.message}`);
+        return [];
+      }),
+      this.getVulnerabilities(baseUrl, config).catch((e) => {
+        errors.push(`Vulns: ${e.message}`);
+        return [];
+      }),
     ]);
 
     const privateProjects = projects.filter((p: any) => p.visibility === 'private');
@@ -155,7 +166,7 @@ export class GitLabConnector {
     const endpoint = config.groupId
       ? `${baseUrl}/api/v4/groups/${config.groupId}/projects`
       : `${baseUrl}/api/v4/projects?membership=true`;
-    
+
     const response = await fetch(`${endpoint}&per_page=100`, {
       headers: { 'PRIVATE-TOKEN': config.accessToken },
     });
@@ -165,11 +176,13 @@ export class GitLabConnector {
 
   private async getVulnerabilities(baseUrl: string, config: GitLabConfig): Promise<any[]> {
     if (!config.groupId) return [];
-    const response = await fetch(`${baseUrl}/api/v4/groups/${config.groupId}/vulnerability_findings?per_page=100`, {
-      headers: { 'PRIVATE-TOKEN': config.accessToken },
-    });
+    const response = await fetch(
+      `${baseUrl}/api/v4/groups/${config.groupId}/vulnerability_findings?per_page=100`,
+      {
+        headers: { 'PRIVATE-TOKEN': config.accessToken },
+      }
+    );
     if (!response.ok) return [];
     return response.json();
   }
 }
-

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectMetric } from '@willsoto/nestjs-prometheus';
 import type { Counter } from 'prom-client';
@@ -15,14 +14,21 @@ interface DueItem {
   ownerId?: string;
   ownerEmail?: string;
   ownerName?: string;
-  type: 'control_test' | 'evidence_expiry' | 'risk_review' | 'policy_review' | 'dr_test' | 'bcdr_plan_review' | 'process_review';
+  type:
+    | 'control_test'
+    | 'evidence_expiry'
+    | 'risk_review'
+    | 'policy_review'
+    | 'dr_test'
+    | 'bcdr_plan_review'
+    | 'process_review';
   entityId: string;
   entityType: string;
 }
 
 interface NotificationSettings {
-  dueSoonDays: number;       // Days before due date to send "due soon" notification
-  overdueDays: number;       // Days after due date to send "overdue" notification
+  dueSoonDays: number; // Days before due date to send "due soon" notification
+  overdueDays: number; // Days after due date to send "overdue" notification
   reminderIntervalDays: number; // How often to send reminders
   enableEmailNotifications: boolean;
   enableInAppNotifications: boolean;
@@ -46,7 +52,7 @@ export class ScheduledNotificationsService implements OnModuleInit {
     private readonly emailService: EmailService,
     private readonly notificationsService: NotificationsService,
     @InjectMetric('scheduled_notifications_runs_total')
-    private readonly notificationRunsCounter: Counter<string>,
+    private readonly notificationRunsCounter: Counter<string>
   ) {}
 
   onModuleInit() {
@@ -60,7 +66,7 @@ export class ScheduledNotificationsService implements OnModuleInit {
   startScheduler() {
     // Run immediately on startup (if in production)
     if (process.env.NODE_ENV === 'production') {
-      this.runScheduledNotifications().catch(err => {
+      this.runScheduledNotifications().catch((err) => {
         this.logger.error('Failed to run scheduled notifications on startup', err);
       });
     }
@@ -68,7 +74,7 @@ export class ScheduledNotificationsService implements OnModuleInit {
     // Run every 24 hours
     const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
     this.intervalId = setInterval(() => {
-      this.runScheduledNotifications().catch(err => {
+      this.runScheduledNotifications().catch((err) => {
         this.logger.error('Failed to run scheduled notifications', err);
       });
     }, TWENTY_FOUR_HOURS);
@@ -111,7 +117,7 @@ export class ScheduledNotificationsService implements OnModuleInit {
           : organizations;
 
       this.logger.log(
-        `Processing scheduled notifications for ${orgsToProcess.length} organizations (of ${organizations.length} total)`,
+        `Processing scheduled notifications for ${orgsToProcess.length} organizations (of ${organizations.length} total)`
       );
 
       for (const org of orgsToProcess) {
@@ -119,7 +125,7 @@ export class ScheduledNotificationsService implements OnModuleInit {
         await this.processOrganizationNotifications(org.id, org.name);
         const durationMs = Date.now() - startedAt;
         this.logger.log(
-          `Processed notifications for org ${org.name} (${org.id}) in ${durationMs}ms`,
+          `Processed notifications for org ${org.name} (${org.id}) in ${durationMs}ms`
         );
       }
 
@@ -137,7 +143,7 @@ export class ScheduledNotificationsService implements OnModuleInit {
    */
   private async processOrganizationNotifications(
     organizationId: string,
-    organizationName: string,
+    organizationName: string
   ): Promise<void> {
     // Get notification settings for org (or use defaults)
     const settings = await this.getNotificationSettings(organizationId);
@@ -155,7 +161,7 @@ export class ScheduledNotificationsService implements OnModuleInit {
         items,
         organizationId,
         organizationName,
-        settings,
+        settings
       );
     }
 
@@ -169,7 +175,7 @@ export class ScheduledNotificationsService implements OnModuleInit {
    */
   private async checkDRTestCompliance(
     organizationId: string,
-    organizationName: string,
+    organizationName: string
   ): Promise<void> {
     const DR_TEST_INTERVAL_DAYS = 90; // Quarterly
 
@@ -191,7 +197,7 @@ export class ScheduledNotificationsService implements OnModuleInit {
       if (testCount === 0) {
         // No recent DR tests - notify GRC admins
         this.logger.warn(
-          `Organization ${organizationName} has not completed a DR test in ${DR_TEST_INTERVAL_DAYS} days`,
+          `Organization ${organizationName} has not completed a DR test in ${DR_TEST_INTERVAL_DAYS} days`
         );
 
         // Find GRC admins to notify
@@ -288,7 +294,9 @@ export class ScheduledNotificationsService implements OnModuleInit {
         };
       }
     } catch {
-      this.logger.warn(`Failed to get notification settings for org ${organizationId}, using defaults`);
+      this.logger.warn(
+        `Failed to get notification settings for org ${organizationId}, using defaults`
+      );
     }
 
     return DEFAULT_SETTINGS;
@@ -299,7 +307,7 @@ export class ScheduledNotificationsService implements OnModuleInit {
    */
   private async getAllDueItems(
     organizationId: string,
-    settings: NotificationSettings,
+    settings: NotificationSettings
   ): Promise<DueItem[]> {
     const now = new Date();
     const dueSoonDate = addDays(now, settings.dueSoonDays);
@@ -536,21 +544,22 @@ export class ScheduledNotificationsService implements OnModuleInit {
     items: DueItem[],
     organizationId: string,
     organizationName: string,
-    settings: NotificationSettings,
+    settings: NotificationSettings
   ): Promise<void> {
     if (items.length === 0) return;
 
     const now = new Date();
-    const overdue = items.filter(i => i.dueDate < now);
-    const dueSoon = items.filter(i => i.dueDate >= now);
+    const overdue = items.filter((i) => i.dueDate < now);
+    const dueSoon = items.filter((i) => i.dueDate >= now);
 
     // Get user info
-    const user = userId !== 'unassigned' 
-      ? await this.prisma.user.findUnique({
-          where: { id: userId },
-          select: { email: true, displayName: true },
-        })
-      : null;
+    const user =
+      userId !== 'unassigned'
+        ? await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: { email: true, displayName: true },
+          })
+        : null;
 
     // Send in-app notifications
     if (settings.enableInAppNotifications && userId !== 'unassigned') {
@@ -598,7 +607,7 @@ export class ScheduledNotificationsService implements OnModuleInit {
         user.displayName || 'User',
         overdue,
         dueSoon,
-        organizationName,
+        organizationName
       );
     }
   }
@@ -611,7 +620,7 @@ export class ScheduledNotificationsService implements OnModuleInit {
     userName: string,
     overdueItems: DueItem[],
     dueSoonItems: DueItem[],
-    organizationName: string,
+    organizationName: string
   ): Promise<void> {
     const appUrl = process.env.APP_URL || 'http://localhost:3000';
 
@@ -680,9 +689,10 @@ export class ScheduledNotificationsService implements OnModuleInit {
       </div>
     `;
 
-    const subject = overdueItems.length > 0
-      ? `⚠️ Compliance Alert: ${overdueItems.length} overdue items require attention`
-      : `📅 Compliance Reminder: ${dueSoonItems.length} items due soon`;
+    const subject =
+      overdueItems.length > 0
+        ? `⚠️ Compliance Alert: ${overdueItems.length} overdue items require attention`
+        : `📅 Compliance Reminder: ${dueSoonItems.length} items due soon`;
 
     try {
       await this.emailService.sendEmail({
@@ -764,4 +774,3 @@ export class ScheduledNotificationsService implements OnModuleInit {
     return { processed: 1 };
   }
 }
-

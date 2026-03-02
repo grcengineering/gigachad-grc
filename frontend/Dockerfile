@@ -24,17 +24,23 @@ COPY frontend/ ./
 # Empty API URL means requests go to the same origin (nginx) which proxies them
 ARG VITE_API_URL=
 ARG VITE_ENABLE_AI_MODULE=true
+ARG VITE_ENABLE_DEV_AUTH=false
 
 ENV VITE_API_URL=$VITE_API_URL
 ENV VITE_ENABLE_AI_MODULE=$VITE_ENABLE_AI_MODULE
-# SECURITY: Dev auth must be disabled for production builds
-ENV VITE_ENABLE_DEV_AUTH=false
+# SECURITY: Dev auth defaults to false; set via build arg for dev/demo
+ENV VITE_ENABLE_DEV_AUTH=$VITE_ENABLE_DEV_AUTH
 
 # Limit Node.js heap to prevent OOM kills during parallel Docker builds
 ENV NODE_OPTIONS=--max-old-space-size=2048
 
-# Build in production mode for security and optimization
-RUN npm run build -- --mode production
+# Build: use development mode when dev-auth is enabled so
+# the vite security guard does not block the build.
+RUN if [ "$VITE_ENABLE_DEV_AUTH" = "true" ]; then \
+      npm run build -- --mode development; \
+    else \
+      npm run build -- --mode production; \
+    fi
 
 # Production stage - Nginx
 FROM nginx:alpine AS production

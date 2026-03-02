@@ -1,12 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Injectable, Logger } from '@nestjs/common';
 
 /**
  * GitHub Integration Configuration
  */
 export interface GitHubConfig {
-  accessToken: string;    // Personal access token or GitHub App token
-  organization?: string;  // Organization name (optional, for org-level data)
+  accessToken: string; // Personal access token or GitHub App token
+  organization?: string; // Organization name (optional, for org-level data)
 }
 
 /**
@@ -210,9 +209,9 @@ export class GitHubConnector {
         });
 
         if (!orgResponse.ok) {
-          return { 
-            success: false, 
-            message: `Cannot access organization '${config.organization}'. Check token permissions.` 
+          return {
+            success: false,
+            message: `Cannot access organization '${config.organization}'. Check token permissions.`,
           };
         }
 
@@ -253,84 +252,96 @@ export class GitHubConnector {
     this.logger.log('Starting GitHub sync...');
 
     // Get repositories
-    const repos = await this.getRepositories(config).catch(e => {
+    const repos = await this.getRepositories(config).catch((e) => {
       errors.push(`Repositories: ${e.message}`);
       return [] as GitHubRepo[];
     });
 
     // Get branch protection for each repo
-    const reposWithProtection = await this.checkBranchProtection(config, repos).catch(e => {
+    const reposWithProtection = await this.checkBranchProtection(config, repos).catch((e) => {
       errors.push(`Branch protection: ${e.message}`);
-      return repos.map(r => ({ ...r, branchProtection: null }));
+      return repos.map((r) => ({ ...r, branchProtection: null }));
     });
 
     // Get security alerts (Dependabot)
-    const securityAlerts = await this.getSecurityAlerts(config, repos).catch(e => {
+    const securityAlerts = await this.getSecurityAlerts(config, repos).catch((e) => {
       errors.push(`Security alerts: ${e.message}`);
       return [] as Array<SecurityAlert & { repo: string }>;
     });
 
     // Get code scanning alerts
-    const codeScanningAlerts = await this.getCodeScanningAlerts(config, repos).catch(e => {
+    const codeScanningAlerts = await this.getCodeScanningAlerts(config, repos).catch((e) => {
       errors.push(`Code scanning: ${e.message}`);
       return [] as Array<CodeScanningAlert & { repo: string }>;
     });
 
     // Get secret scanning alerts count
-    const secretScanningStats = await this.getSecretScanningStats(config, repos).catch(e => {
+    const secretScanningStats = await this.getSecretScanningStats(config, repos).catch((e) => {
       errors.push(`Secret scanning: ${e.message}`);
       return { total: 0, open: 0, resolved: 0 };
     });
 
     // Get workflow runs stats
-    const actionsStats = await this.getActionsStats(config, repos.slice(0, 10)).catch(e => {
+    const actionsStats = await this.getActionsStats(config, repos.slice(0, 10)).catch((e) => {
       errors.push(`Actions: ${e.message}`);
       return { workflowRuns: 0, successRate: 0, failedRuns: 0 };
     });
 
     // Process data
-    const protectedRepos = reposWithProtection.filter(r => r.branchProtection);
-    const criticalAlerts = securityAlerts.filter(a => a.security_advisory?.severity === 'critical');
-    const highAlerts = securityAlerts.filter(a => a.security_advisory?.severity === 'high');
+    const protectedRepos = reposWithProtection.filter((r) => r.branchProtection);
+    const criticalAlerts = securityAlerts.filter(
+      (a) => a.security_advisory?.severity === 'critical'
+    );
+    const highAlerts = securityAlerts.filter((a) => a.security_advisory?.severity === 'high');
 
     this.logger.log(`GitHub sync complete: ${repos.length} repos, ${securityAlerts.length} alerts`);
 
     return {
       repositories: {
         total: repos.length,
-        private: repos.filter(r => r.private).length,
-        public: repos.filter(r => !r.private).length,
-        archived: repos.filter(r => r.archived).length,
-        withSecretScanning: repos.filter(r => r.security_and_analysis?.secret_scanning?.status === 'enabled').length,
-        withDependabot: repos.filter(r => r.security_and_analysis?.dependabot_security_updates?.status === 'enabled').length,
-        items: reposWithProtection.slice(0, 50).map(r => ({
+        private: repos.filter((r) => r.private).length,
+        public: repos.filter((r) => !r.private).length,
+        archived: repos.filter((r) => r.archived).length,
+        withSecretScanning: repos.filter(
+          (r) => r.security_and_analysis?.secret_scanning?.status === 'enabled'
+        ).length,
+        withDependabot: repos.filter(
+          (r) => r.security_and_analysis?.dependabot_security_updates?.status === 'enabled'
+        ).length,
+        items: reposWithProtection.slice(0, 50).map((r) => ({
           name: r.full_name,
           visibility: r.visibility || (r.private ? 'private' : 'public'),
           defaultBranch: r.default_branch,
           lastPush: r.pushed_at,
           branchProtection: !!r.branchProtection,
           secretScanning: r.security_and_analysis?.secret_scanning?.status === 'enabled',
-          dependabotAlerts: r.security_and_analysis?.dependabot_security_updates?.status === 'enabled',
+          dependabotAlerts:
+            r.security_and_analysis?.dependabot_security_updates?.status === 'enabled',
         })),
       },
       branchProtection: {
         protected: protectedRepos.length,
         unprotected: repos.length - protectedRepos.length,
-        requiresPR: protectedRepos.filter(r => r.branchProtection?.required_pull_request_reviews).length,
-        requiresApprovals: protectedRepos.filter(r => 
-          (r.branchProtection?.required_pull_request_reviews?.required_approving_review_count || 0) > 0
+        requiresPR: protectedRepos.filter((r) => r.branchProtection?.required_pull_request_reviews)
+          .length,
+        requiresApprovals: protectedRepos.filter(
+          (r) =>
+            (r.branchProtection?.required_pull_request_reviews?.required_approving_review_count ||
+              0) > 0
         ).length,
-        requiresSignedCommits: protectedRepos.filter(r => r.branchProtection?.required_signatures?.enabled).length,
+        requiresSignedCommits: protectedRepos.filter(
+          (r) => r.branchProtection?.required_signatures?.enabled
+        ).length,
       },
       securityAlerts: {
         total: securityAlerts.length,
         critical: criticalAlerts.length,
         high: highAlerts.length,
-        medium: securityAlerts.filter(a => a.security_advisory?.severity === 'medium').length,
-        low: securityAlerts.filter(a => a.security_advisory?.severity === 'low').length,
-        open: securityAlerts.filter(a => a.state === 'open').length,
-        fixed: securityAlerts.filter(a => a.state === 'fixed').length,
-        items: securityAlerts.slice(0, 100).map(a => ({
+        medium: securityAlerts.filter((a) => a.security_advisory?.severity === 'medium').length,
+        low: securityAlerts.filter((a) => a.security_advisory?.severity === 'low').length,
+        open: securityAlerts.filter((a) => a.state === 'open').length,
+        fixed: securityAlerts.filter((a) => a.state === 'fixed').length,
+        items: securityAlerts.slice(0, 100).map((a) => ({
           repo: a.repo,
           package: a.dependency?.package?.name || 'Unknown',
           severity: a.security_advisory?.severity || 'unknown',
@@ -342,11 +353,13 @@ export class GitHubConnector {
       },
       codeScanningAlerts: {
         total: codeScanningAlerts.length,
-        critical: codeScanningAlerts.filter(a => a.rule?.security_severity_level === 'critical').length,
-        high: codeScanningAlerts.filter(a => a.rule?.security_severity_level === 'high').length,
-        medium: codeScanningAlerts.filter(a => a.rule?.security_severity_level === 'medium').length,
-        low: codeScanningAlerts.filter(a => a.rule?.security_severity_level === 'low').length,
-        items: codeScanningAlerts.slice(0, 50).map(a => ({
+        critical: codeScanningAlerts.filter((a) => a.rule?.security_severity_level === 'critical')
+          .length,
+        high: codeScanningAlerts.filter((a) => a.rule?.security_severity_level === 'high').length,
+        medium: codeScanningAlerts.filter((a) => a.rule?.security_severity_level === 'medium')
+          .length,
+        low: codeScanningAlerts.filter((a) => a.rule?.security_severity_level === 'low').length,
+        items: codeScanningAlerts.slice(0, 50).map((a) => ({
           repo: a.repo,
           rule: a.rule?.id || '',
           severity: a.rule?.security_severity_level || a.rule?.severity || 'unknown',
@@ -375,10 +388,9 @@ export class GitHubConnector {
       : `${this.baseUrl}/user/repos`;
 
     while (repos.length < 500) {
-      const response = await fetch(
-        `${endpoint}?per_page=${perPage}&page=${page}&sort=updated`,
-        { headers: this.buildHeaders(config.accessToken) },
-      );
+      const response = await fetch(`${endpoint}?per_page=${perPage}&page=${page}&sort=updated`, {
+        headers: this.buildHeaders(config.accessToken),
+      });
 
       if (!response.ok) break;
 
@@ -399,14 +411,14 @@ export class GitHubConnector {
    */
   private async checkBranchProtection(
     config: GitHubConfig,
-    repos: GitHubRepo[],
+    repos: GitHubRepo[]
   ): Promise<Array<GitHubRepo & { branchProtection: BranchProtection | null }>> {
     return Promise.all(
       repos.slice(0, 50).map(async (repo) => {
         try {
           const response = await fetch(
             `${this.baseUrl}/repos/${repo.full_name}/branches/${repo.default_branch}/protection`,
-            { headers: this.buildHeaders(config.accessToken) },
+            { headers: this.buildHeaders(config.accessToken) }
           );
 
           if (!response.ok) {
@@ -427,7 +439,7 @@ export class GitHubConnector {
    */
   private async getSecurityAlerts(
     config: GitHubConfig,
-    repos: GitHubRepo[],
+    repos: GitHubRepo[]
   ): Promise<Array<SecurityAlert & { repo: string }>> {
     const alerts: Array<SecurityAlert & { repo: string }> = [];
 
@@ -435,7 +447,7 @@ export class GitHubConnector {
       try {
         const response = await fetch(
           `${this.baseUrl}/repos/${repo.full_name}/dependabot/alerts?state=open&per_page=50`,
-          { headers: this.buildHeaders(config.accessToken) },
+          { headers: this.buildHeaders(config.accessToken) }
         );
 
         if (response.ok) {
@@ -455,7 +467,7 @@ export class GitHubConnector {
    */
   private async getCodeScanningAlerts(
     config: GitHubConfig,
-    repos: GitHubRepo[],
+    repos: GitHubRepo[]
   ): Promise<Array<CodeScanningAlert & { repo: string }>> {
     const alerts: Array<CodeScanningAlert & { repo: string }> = [];
 
@@ -463,7 +475,7 @@ export class GitHubConnector {
       try {
         const response = await fetch(
           `${this.baseUrl}/repos/${repo.full_name}/code-scanning/alerts?state=open&per_page=50`,
-          { headers: this.buildHeaders(config.accessToken) },
+          { headers: this.buildHeaders(config.accessToken) }
         );
 
         if (response.ok) {
@@ -483,7 +495,7 @@ export class GitHubConnector {
    */
   private async getSecretScanningStats(
     config: GitHubConfig,
-    repos: GitHubRepo[],
+    repos: GitHubRepo[]
   ): Promise<{ total: number; open: number; resolved: number }> {
     let total = 0;
     let open = 0;
@@ -493,7 +505,7 @@ export class GitHubConnector {
       try {
         const response = await fetch(
           `${this.baseUrl}/repos/${repo.full_name}/secret-scanning/alerts?per_page=100`,
-          { headers: this.buildHeaders(config.accessToken) },
+          { headers: this.buildHeaders(config.accessToken) }
         );
 
         if (response.ok) {
@@ -515,7 +527,7 @@ export class GitHubConnector {
    */
   private async getActionsStats(
     config: GitHubConfig,
-    repos: GitHubRepo[],
+    repos: GitHubRepo[]
   ): Promise<{ workflowRuns: number; successRate: number; failedRuns: number }> {
     let totalRuns = 0;
     let successfulRuns = 0;
@@ -525,7 +537,7 @@ export class GitHubConnector {
       try {
         const response = await fetch(
           `${this.baseUrl}/repos/${repo.full_name}/actions/runs?per_page=100`,
-          { headers: this.buildHeaders(config.accessToken) },
+          { headers: this.buildHeaders(config.accessToken) }
         );
 
         if (response.ok) {
@@ -552,10 +564,9 @@ export class GitHubConnector {
    */
   private buildHeaders(accessToken: string): Record<string, string> {
     return {
-      'Authorization': `Bearer ${accessToken}`,
-      'Accept': 'application/vnd.github+json',
+      Authorization: `Bearer ${accessToken}`,
+      Accept: 'application/vnd.github+json',
       'X-GitHub-Api-Version': '2022-11-28',
     };
   }
 }
-

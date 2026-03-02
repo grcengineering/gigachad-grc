@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Injectable, Logger } from '@nestjs/common';
 
 export interface AzureADConfig {
@@ -64,7 +63,9 @@ export class AzureADConnector {
   private readonly logger = new Logger(AzureADConnector.name);
   private readonly graphUrl = 'https://graph.microsoft.com/v1.0';
 
-  async testConnection(config: AzureADConfig): Promise<{ success: boolean; message: string; details?: any }> {
+  async testConnection(
+    config: AzureADConfig
+  ): Promise<{ success: boolean; message: string; details?: any }> {
     if (!config.tenantId || !config.clientId || !config.clientSecret) {
       return { success: false, message: 'Tenant ID, Client ID, and Client Secret are required' };
     }
@@ -103,11 +104,26 @@ export class AzureADConnector {
     }
 
     const [users, groups, apps, conditionalAccess, signIns] = await Promise.all([
-      this.getUsers(token).catch(e => { errors.push(`Users: ${e.message}`); return []; }),
-      this.getGroups(token).catch(e => { errors.push(`Groups: ${e.message}`); return []; }),
-      this.getApplications(token).catch(e => { errors.push(`Apps: ${e.message}`); return { enterprise: [], registrations: [] }; }),
-      this.getConditionalAccessPolicies(token).catch(e => { errors.push(`CA: ${e.message}`); return []; }),
-      this.getSignInLogs(token).catch(e => { errors.push(`Sign-ins: ${e.message}`); return []; }),
+      this.getUsers(token).catch((e) => {
+        errors.push(`Users: ${e.message}`);
+        return [];
+      }),
+      this.getGroups(token).catch((e) => {
+        errors.push(`Groups: ${e.message}`);
+        return [];
+      }),
+      this.getApplications(token).catch((e) => {
+        errors.push(`Apps: ${e.message}`);
+        return { enterprise: [], registrations: [] };
+      }),
+      this.getConditionalAccessPolicies(token).catch((e) => {
+        errors.push(`CA: ${e.message}`);
+        return [];
+      }),
+      this.getSignInLogs(token).catch((e) => {
+        errors.push(`Sign-ins: ${e.message}`);
+        return [];
+      }),
     ]);
 
     const enabledUsers = users.filter((u: any) => u.accountEnabled);
@@ -147,8 +163,10 @@ export class AzureADConnector {
       conditionalAccess: {
         policies: conditionalAccess.length,
         enabled: conditionalAccess.filter((p: any) => p.state === 'enabled').length,
-        reportOnly: conditionalAccess.filter((p: any) => p.state === 'enabledForReportingButNotEnforced').length,
-        mfaRequired: conditionalAccess.filter((p: any) => 
+        reportOnly: conditionalAccess.filter(
+          (p: any) => p.state === 'enabledForReportingButNotEnforced'
+        ).length,
+        mfaRequired: conditionalAccess.filter((p: any) =>
           p.grantControls?.builtInControls?.includes('mfa')
         ).length,
       },
@@ -170,16 +188,19 @@ export class AzureADConnector {
 
   private async getAccessToken(config: AzureADConfig): Promise<string | null> {
     try {
-      const response = await fetch(`https://login.microsoftonline.com/${config.tenantId}/oauth2/v2.0/token`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          client_id: config.clientId,
-          client_secret: config.clientSecret,
-          scope: 'https://graph.microsoft.com/.default',
-          grant_type: 'client_credentials',
-        }),
-      });
+      const response = await fetch(
+        `https://login.microsoftonline.com/${config.tenantId}/oauth2/v2.0/token`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            client_id: config.clientId,
+            client_secret: config.clientSecret,
+            scope: 'https://graph.microsoft.com/.default',
+            grant_type: 'client_credentials',
+          }),
+        }
+      );
 
       if (!response.ok) return null;
       const data = await response.json();
@@ -190,9 +211,12 @@ export class AzureADConnector {
   }
 
   private async getUsers(token: string): Promise<any[]> {
-    const response = await fetch(`${this.graphUrl}/users?$top=999&$select=id,displayName,mail,userPrincipalName,accountEnabled,userType,signInActivity`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const response = await fetch(
+      `${this.graphUrl}/users?$top=999&$select=id,displayName,mail,userPrincipalName,accountEnabled,userType,signInActivity`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
     if (!response.ok) throw new Error('Failed to fetch users');
     const data = await response.json();
     return data.value || [];
@@ -207,10 +231,16 @@ export class AzureADConnector {
     return data.value || [];
   }
 
-  private async getApplications(token: string): Promise<{ enterprise: any[]; registrations: any[] }> {
+  private async getApplications(
+    token: string
+  ): Promise<{ enterprise: any[]; registrations: any[] }> {
     const [enterpriseResp, registrationsResp] = await Promise.all([
-      fetch(`${this.graphUrl}/servicePrincipals?$top=999`, { headers: { Authorization: `Bearer ${token}` } }),
-      fetch(`${this.graphUrl}/applications?$top=999`, { headers: { Authorization: `Bearer ${token}` } }),
+      fetch(`${this.graphUrl}/servicePrincipals?$top=999`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+      fetch(`${this.graphUrl}/applications?$top=999`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
     ]);
 
     return {
@@ -237,4 +267,3 @@ export class AzureADConnector {
     return data.value || [];
   }
 }
-

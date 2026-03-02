@@ -1,6 +1,6 @@
 /**
  * API Types - Comprehensive TypeScript interfaces for all API operations
- * 
+ *
  * This file provides type safety for the entire API layer, eliminating `any` types.
  */
 
@@ -39,12 +39,10 @@ export interface ApiErrorResponse {
 /**
  * Type guard to check if an error is an Axios error with a response
  */
-export function isApiError(error: unknown): error is { response?: { status: number; data?: ApiErrorResponse }; code?: string } {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    ('response' in error || 'code' in error)
-  );
+export function isApiError(
+  error: unknown
+): error is { response?: { status: number; data?: ApiErrorResponse }; code?: string } {
+  return typeof error === 'object' && error !== null && ('response' in error || 'code' in error);
 }
 
 /**
@@ -112,7 +110,7 @@ export interface UserListParams extends PaginationParams {
 // ===========================================
 
 // Must match backend ControlCategory enum exactly
-export type ControlCategory = 
+export type ControlCategory =
   | 'access_control'
   | 'data_protection'
   | 'network_security'
@@ -140,9 +138,19 @@ export interface Control {
   isCustom?: boolean;
   implementation?: ControlImplementation; // Single implementation (convenience accessor)
   implementations?: ControlImplementation[];
-  evidenceLinks?: { id: string; evidenceId: string; evidence?: { id: string; title: string; type: string } }[];
+  evidenceLinks?: {
+    id: string;
+    evidenceId: string;
+    evidence?: { id: string; title: string; type: string };
+  }[];
   policyLinks?: { id: string; policyId: string; policy?: { id: string; title: string } }[];
-  mappings?: { id: string; frameworkId: string; requirementId: string; framework?: { name: string }; requirement?: { code: string; title: string } }[];
+  mappings?: {
+    id: string;
+    frameworkId: string;
+    requirementId: string;
+    framework?: { name: string };
+    requirement?: { code: string; title: string };
+  }[];
   organizationId: string;
   createdAt: string;
   updatedAt: string;
@@ -195,7 +203,7 @@ export interface BulkControlUploadData {
 // Control Implementation Types
 // ===========================================
 
-export type ImplementationStatus = 
+export type ImplementationStatus =
   | 'not_implemented'
   | 'planned'
   | 'in_progress'
@@ -273,7 +281,11 @@ export interface Evidence {
   folder?: { id: string; name: string };
   folderId?: string;
   controlIds?: string[];
-  controlLinks?: { id: string; controlId: string; control?: { id: string; controlId: string; title: string } }[];
+  controlLinks?: {
+    id: string;
+    controlId: string;
+    control?: { id: string; controlId: string; title: string };
+  }[];
   source?: string;
   collectedAt?: string;
   validFrom?: string;
@@ -410,7 +422,12 @@ export interface UpdateRequirementData {
 // ===========================================
 
 export type AssessmentStatus = 'draft' | 'in_progress' | 'completed' | 'archived';
-export type RequirementAssessmentStatus = 'not_assessed' | 'compliant' | 'partially_compliant' | 'non_compliant' | 'not_applicable';
+export type RequirementAssessmentStatus =
+  | 'not_assessed'
+  | 'compliant'
+  | 'partially_compliant'
+  | 'non_compliant'
+  | 'not_applicable';
 
 export interface Assessment {
   id: string;
@@ -548,9 +565,25 @@ export interface Policy {
   nextReviewDue?: string;
   tags?: string[];
   controlIds?: string[];
-  controlLinks?: { id: string; controlId: string; control?: { id: string; controlId: string; title: string } }[];
-  versions?: { id: string; version: string; filename: string; createdAt: string; createdBy?: string }[];
-  statusHistory?: { id: string; status: string; changedBy: string; changedAt: string; notes?: string }[];
+  controlLinks?: {
+    id: string;
+    controlId: string;
+    control?: { id: string; controlId: string; title: string };
+  }[];
+  versions?: {
+    id: string;
+    version: string;
+    filename: string;
+    createdAt: string;
+    createdBy?: string;
+  }[];
+  statusHistory?: {
+    id: string;
+    status: string;
+    changedBy: string;
+    changedAt: string;
+    notes?: string;
+  }[];
   organizationId: string;
   createdAt: string;
   updatedAt: string;
@@ -603,11 +636,11 @@ export interface PolicyVersion {
 export type RiskLevel = 'critical' | 'high' | 'medium' | 'low' | 'minimal';
 export type RiskLikelihood = 'very_high' | 'high' | 'medium' | 'low' | 'very_low';
 export type RiskImpact = 'critical' | 'high' | 'medium' | 'low' | 'minimal';
-export type RiskStatus = 
-  | 'identified' 
-  | 'assessed' 
-  | 'mitigating' 
-  | 'accepted' 
+export type RiskStatus =
+  | 'identified'
+  | 'assessed'
+  | 'mitigating'
+  | 'accepted'
   | 'closed'
   | 'risk_intake'
   | 'risk_analysis_in_progress'
@@ -678,7 +711,13 @@ export interface RiskDetail extends Risk {
   lastReviewedAt?: string;
   // Related entities
   assets?: { id: string; name: string; type: string; criticality: string; source: string }[];
-  controls?: { id: string; controlId: string; title: string; status: string; effectiveness: string }[];
+  controls?: {
+    id: string;
+    controlId: string;
+    title: string;
+    status: string;
+    effectiveness: string;
+  }[];
   scenarios?: {
     id: string;
     title: string;
@@ -744,7 +783,8 @@ export interface CreateRiskData {
   title: string;
   description: string;
   source?: string;
-  initialSeverity?: RiskLevel;
+  initialSeverity?: string;
+  workspaceId?: string;
   smeId?: string;
   documentation?: { title: string; url: string }[];
   tags?: string[];
@@ -766,6 +806,7 @@ export interface RiskListParams extends PaginationParams {
   category?: string;
   status?: RiskStatus;
   riskLevel?: RiskLevel;
+  workspaceId?: string;
   ownerId?: string;
   tag?: string;
 }
@@ -882,7 +923,14 @@ export interface RiskScenarioListParams extends PaginationParams {
 // Asset Types
 // ===========================================
 
-export type AssetType = 'hardware' | 'software' | 'data' | 'network' | 'facility' | 'personnel' | 'service';
+export type AssetType =
+  | 'hardware'
+  | 'software'
+  | 'data'
+  | 'network'
+  | 'facility'
+  | 'personnel'
+  | 'service';
 export type AssetCriticality = 'critical' | 'high' | 'medium' | 'low';
 export type AssetStatus = 'active' | 'inactive' | 'retired' | 'maintenance';
 
@@ -947,7 +995,13 @@ export interface AssetListParams extends PaginationParams {
 // ===========================================
 
 export type VendorTier = 'tier_1' | 'tier_2' | 'tier_3' | 'tier_4';
-export type VendorCategory = 'software_vendor' | 'cloud_provider' | 'service_provider' | 'contractor' | 'supplier' | 'partner';
+export type VendorCategory =
+  | 'software_vendor'
+  | 'cloud_provider'
+  | 'service_provider'
+  | 'contractor'
+  | 'supplier'
+  | 'partner';
 export type VendorStatus = 'active' | 'pending_review' | 'approved' | 'rejected' | 'inactive';
 
 export interface Vendor {
@@ -1030,9 +1084,24 @@ export interface VendorListParams extends PaginationParams {
 // ===========================================
 
 export type VendorAssessmentStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled';
-export type VendorAssessmentType = 'initial_onboarding' | 'annual_review' | 'continuous_monitoring' | 'incident_triggered' | 'contract_renewal' | 'security_review' | 'privacy_assessment' | 'compliance_audit' | 'vendor_questionnaire' | 'on_site_audit' | 'penetration_test';
+export type VendorAssessmentType =
+  | 'initial_onboarding'
+  | 'annual_review'
+  | 'continuous_monitoring'
+  | 'incident_triggered'
+  | 'contract_renewal'
+  | 'security_review'
+  | 'privacy_assessment'
+  | 'compliance_audit'
+  | 'vendor_questionnaire'
+  | 'on_site_audit'
+  | 'penetration_test';
 export type VendorRiskLevel = 'very_low' | 'low' | 'medium' | 'high' | 'critical';
-export type AssessmentOutcome = 'approved' | 'approved_with_conditions' | 'rejected' | 'requires_remediation';
+export type AssessmentOutcome =
+  | 'approved'
+  | 'approved_with_conditions'
+  | 'rejected'
+  | 'requires_remediation';
 
 export interface VendorAssessment {
   id: string;
@@ -1110,7 +1179,13 @@ export interface UpdateVendorAssessmentData {
 // ===========================================
 
 export type ContractStatus = 'draft' | 'active' | 'expired' | 'terminated' | 'pending_renewal';
-export type ContractType = 'subscription' | 'license' | 'service' | 'consulting' | 'maintenance' | 'other';
+export type ContractType =
+  | 'subscription'
+  | 'license'
+  | 'service'
+  | 'consulting'
+  | 'maintenance'
+  | 'other';
 
 export interface Contract {
   id: string;
@@ -1341,7 +1416,7 @@ export interface CustomEndpoint {
 // Notification Types
 // ===========================================
 
-export type NotificationType = 
+export type NotificationType =
   | 'compliance_drift'
   | 'evidence_expiring'
   | 'policy_review'
@@ -1387,7 +1462,14 @@ export interface NotificationPreference {
 // ===========================================
 
 export type QuestionnaireStatus = 'draft' | 'sent' | 'in_progress' | 'completed' | 'expired';
-export type QuestionType = 'text' | 'textarea' | 'select' | 'multiselect' | 'boolean' | 'date' | 'file';
+export type QuestionType =
+  | 'text'
+  | 'textarea'
+  | 'select'
+  | 'multiselect'
+  | 'boolean'
+  | 'date'
+  | 'file';
 
 export interface Questionnaire {
   id: string;
@@ -1918,16 +2000,9 @@ export interface UpdateRiskConfigData {
 // Dashboard Widget Types
 // ===========================================
 
-export type WidgetType = 
-  | 'stat'
-  | 'chart'
-  | 'list'
-  | 'table'
-  | 'progress'
-  | 'heatmap'
-  | 'gauge';
+export type WidgetType = 'stat' | 'chart' | 'list' | 'table' | 'progress' | 'heatmap' | 'gauge';
 
-export type WidgetDataSource = 
+export type WidgetDataSource =
   | 'risks'
   | 'controls'
   | 'evidence'
@@ -2007,4 +2082,3 @@ export interface SeedOptions {
   vendors?: boolean;
   evidence?: boolean;
 }
-

@@ -21,7 +21,15 @@ export class UpdateAuditRequestDto {
   @IsOptional()
   requirementRef?: string;
 
-  @IsEnum(['open', 'in_progress', 'submitted', 'under_review', 'approved', 'rejected', 'clarification_needed'])
+  @IsEnum([
+    'open',
+    'in_progress',
+    'submitted',
+    'under_review',
+    'approved',
+    'rejected',
+    'clarification_needed',
+  ])
   @IsOptional()
   status?: string;
 
@@ -32,6 +40,10 @@ export class UpdateAuditRequestDto {
   @IsString()
   @IsOptional()
   assignedTo?: string;
+
+  @IsString()
+  @IsOptional()
+  assigneeId?: string;
 
   @IsString()
   @IsOptional()

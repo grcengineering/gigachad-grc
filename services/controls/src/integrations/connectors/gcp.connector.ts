@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Injectable, Logger } from '@nestjs/common';
 
 export interface GCPConfig {
@@ -49,7 +48,9 @@ export interface GCPSyncResult {
 export class GCPConnector {
   private readonly logger = new Logger(GCPConnector.name);
 
-  async testConnection(config: GCPConfig): Promise<{ success: boolean; message: string; details?: any }> {
+  async testConnection(
+    config: GCPConfig
+  ): Promise<{ success: boolean; message: string; details?: any }> {
     if (!config.projectId || !config.serviceAccountKey) {
       return { success: false, message: 'Project ID and Service Account Key are required' };
     }
@@ -57,7 +58,7 @@ export class GCPConnector {
     try {
       const credentials = JSON.parse(config.serviceAccountKey);
       const token = await this.getAccessToken(credentials);
-      
+
       if (!token) {
         return { success: false, message: 'Failed to authenticate with GCP' };
       }
@@ -74,26 +75,26 @@ export class GCPConnector {
 
   async sync(config: GCPConfig): Promise<GCPSyncResult> {
     const errors: string[] = [];
-    
+
     try {
       const credentials = JSON.parse(config.serviceAccountKey);
       const token = await this.getAccessToken(credentials);
-      
+
       if (!token) {
         throw new Error('Failed to authenticate');
       }
 
       // Collect from GCP APIs
       const [securityFindings, iamData, computeData] = await Promise.all([
-        this.getSecurityFindings(token, config.projectId).catch(e => {
+        this.getSecurityFindings(token, config.projectId).catch((e) => {
           errors.push(`Security: ${e.message}`);
           return { findings: 0, critical: 0, high: 0, medium: 0, low: 0, sources: [] };
         }),
-        this.getIAMData(token, config.projectId).catch(e => {
+        this.getIAMData(token, config.projectId).catch((e) => {
           errors.push(`IAM: ${e.message}`);
           return { serviceAccounts: 0, roles: 0, bindings: 0, excessivePermissions: 0 };
         }),
-        this.getComputeData(token, config.projectId).catch(e => {
+        this.getComputeData(token, config.projectId).catch((e) => {
           errors.push(`Compute: ${e.message}`);
           return { total: 0, running: 0, withPublicIp: 0, withShieldedVm: 0 };
         }),
@@ -112,7 +113,14 @@ export class GCPConnector {
     } catch (error: any) {
       errors.push(error.message);
       return {
-        securityCommandCenter: { findings: 0, critical: 0, high: 0, medium: 0, low: 0, sources: [] },
+        securityCommandCenter: {
+          findings: 0,
+          critical: 0,
+          high: 0,
+          medium: 0,
+          low: 0,
+          sources: [],
+        },
         iamPolicies: { serviceAccounts: 0, roles: 0, bindings: 0, excessivePermissions: 0 },
         computeInstances: { total: 0, running: 0, withPublicIp: 0, withShieldedVm: 0 },
         cloudStorage: { buckets: 0, publicBuckets: 0, uniformAccessBuckets: 0 },
@@ -163,4 +171,3 @@ export class GCPConnector {
     return { total: 0, running: 0, withPublicIp: 0, withShieldedVm: 0 };
   }
 }
-

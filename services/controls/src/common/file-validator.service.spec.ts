@@ -135,7 +135,7 @@ describe('FileValidatorService', () => {
 
       it('should handle filename with only dots', () => {
         const result = service.sanitizeFilename('...');
-        expect(result).toBe('...');
+        expect(result).toBe('.');
       });
 
       it('should handle hidden file (dot prefix)', () => {

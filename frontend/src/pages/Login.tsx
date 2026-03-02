@@ -13,6 +13,7 @@ function sanitizeUrlParam(value: string | null): string {
   // First sanitize with DOMPurify to remove any HTML/scripts
   const purified = DOMPurify.sanitize(value, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
   // Then limit length and remove any remaining control characters
+  // eslint-disable-next-line no-control-regex
   return purified.substring(0, 200).replace(/[\x00-\x1F\x7F]/g, '');
 }
 

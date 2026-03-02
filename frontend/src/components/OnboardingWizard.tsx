@@ -65,9 +65,10 @@ export function OnboardingWizard({ onDismiss }: OnboardingWizardProps) {
   const hasFramework = (frameworks?.length || 0) > 0;
   const hasControls = (controls?.meta?.total || 0) > 0;
   // Handle both old (controlStats) and new (controls) property paths
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   const summaryAny = summary as any;
-  const hasImplementations = (summary?.controls?.byStatus?.implemented || summaryAny?.controlStats?.implemented || 0) > 0;
+  const hasImplementations =
+    (summary?.controls?.byStatus?.implemented || summaryAny?.controlStats?.implemented || 0) > 0;
   const hasEvidence = (summary?.evidence?.total || summaryAny?.evidenceStats?.total || 0) > 0;
 
   const steps: OnboardingStep[] = [
@@ -109,7 +110,7 @@ export function OnboardingWizard({ onDismiss }: OnboardingWizardProps) {
     },
   ];
 
-  const completedSteps = steps.filter(s => s.isComplete).length;
+  const completedSteps = steps.filter((s) => s.isComplete).length;
   const progress = Math.round((completedSteps / steps.length) * 100);
 
   const handleDismiss = () => {
@@ -129,17 +130,13 @@ export function OnboardingWizard({ onDismiss }: OnboardingWizardProps) {
         <div className="flex items-center gap-4">
           <CheckCircleIcon className="h-12 w-12 text-green-500" />
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-green-400">
-              Setup Complete! 🎉
-            </h3>
+            <h3 className="text-lg font-semibold text-green-400">Setup Complete! 🎉</h3>
             <p className="text-green-300 text-sm mt-1">
-              Your GRC program is up and running. Keep monitoring your compliance dashboard for ongoing progress.
+              Your GRC program is up and running. Keep monitoring your compliance dashboard for
+              ongoing progress.
             </p>
           </div>
-          <button
-            onClick={handleDismiss}
-            className="text-green-400 hover:text-green-300"
-          >
+          <button onClick={handleDismiss} className="text-green-400 hover:text-green-300">
             <XMarkIcon className="h-6 w-6" />
           </button>
         </div>
@@ -151,9 +148,7 @@ export function OnboardingWizard({ onDismiss }: OnboardingWizardProps) {
     <div className="bg-surface-800 border border-surface-700 rounded-xl p-6 mb-6">
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h2 className="text-xl font-semibold text-surface-100">
-            Welcome to GigaChad GRC! 🚀
-          </h2>
+          <h2 className="text-xl font-semibold text-surface-100">Welcome to GigaChad GRC! 🚀</h2>
           <p className="text-surface-400 mt-1">
             Complete these steps to set up your compliance program
           </p>
@@ -187,30 +182,28 @@ export function OnboardingWizard({ onDismiss }: OnboardingWizardProps) {
       <div className="space-y-3">
         {steps.map((step, index) => {
           const Icon = step.icon;
-          const isNext = !step.isComplete && steps.slice(0, index).every(s => s.isComplete);
+          const isNext = !step.isComplete && steps.slice(0, index).every((s) => s.isComplete);
 
           return (
             <div
               key={step.id}
               className={`
                 flex items-center gap-4 p-4 rounded-lg border transition-colors
-                ${step.isComplete
-                  ? 'bg-green-900/20 border-green-800'
-                  : isNext
-                    ? 'bg-blue-900/20 border-blue-700'
-                    : 'bg-surface-900 border-surface-700'
+                ${
+                  step.isComplete
+                    ? 'bg-green-900/20 border-green-800'
+                    : isNext
+                      ? 'bg-blue-900/20 border-blue-700'
+                      : 'bg-surface-900 border-surface-700'
                 }
               `}
             >
-              <div className={`
+              <div
+                className={`
                 p-2 rounded-lg
-                ${step.isComplete
-                  ? 'bg-green-800'
-                  : isNext
-                    ? 'bg-blue-800'
-                    : 'bg-surface-700'
-                }
-              `}>
+                ${step.isComplete ? 'bg-green-800' : isNext ? 'bg-blue-800' : 'bg-surface-700'}
+              `}
+              >
                 {step.isComplete ? (
                   <CheckCircleIcon className="h-6 w-6 text-green-400" />
                 ) : (
@@ -219,12 +212,12 @@ export function OnboardingWizard({ onDismiss }: OnboardingWizardProps) {
               </div>
 
               <div className="flex-1">
-                <h4 className={`font-medium ${step.isComplete ? 'text-green-400' : 'text-surface-100'}`}>
+                <h4
+                  className={`font-medium ${step.isComplete ? 'text-green-400' : 'text-surface-100'}`}
+                >
                   {step.title}
                 </h4>
-                <p className="text-sm text-surface-400 mt-0.5">
-                  {step.description}
-                </p>
+                <p className="text-sm text-surface-400 mt-0.5">{step.description}</p>
               </div>
 
               {!step.isComplete && (
@@ -233,9 +226,10 @@ export function OnboardingWizard({ onDismiss }: OnboardingWizardProps) {
                   className={`
                     flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm
                     transition-colors
-                    ${isNext
-                      ? 'bg-blue-600 text-white hover:bg-blue-700'
-                      : 'bg-surface-700 text-surface-300 hover:bg-surface-600'
+                    ${
+                      isNext
+                        ? 'bg-blue-600 text-white hover:bg-blue-700'
+                        : 'bg-surface-700 text-surface-300 hover:bg-surface-600'
                     }
                   `}
                 >
@@ -245,9 +239,7 @@ export function OnboardingWizard({ onDismiss }: OnboardingWizardProps) {
               )}
 
               {step.isComplete && (
-                <span className="text-green-400 text-sm font-medium">
-                  Complete ✓
-                </span>
+                <span className="text-green-400 text-sm font-medium">Complete ✓</span>
               )}
             </div>
           );
@@ -258,10 +250,7 @@ export function OnboardingWizard({ onDismiss }: OnboardingWizardProps) {
       <div className="mt-6 pt-4 border-t border-surface-700">
         <p className="text-surface-400 text-sm">
           Need help getting started?{' '}
-          <button
-            onClick={() => navigate('/help')}
-            className="text-blue-400 hover:text-blue-300"
-          >
+          <button onClick={() => navigate('/help')} className="text-blue-400 hover:text-blue-300">
             Visit our Help Center
           </button>
         </p>
@@ -271,4 +260,3 @@ export function OnboardingWizard({ onDismiss }: OnboardingWizardProps) {
 }
 
 export default OnboardingWizard;
-

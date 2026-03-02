@@ -2,13 +2,14 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAuditRequestDto } from './dto/create-request.dto';
 import { UpdateAuditRequestDto } from './dto/update-request.dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class RequestsService {
   constructor(private prisma: PrismaService) {}
 
   async create(createRequestDto: CreateAuditRequestDto, createdBy: string) {
-    const { auditId } = createRequestDto;
+    const { auditId, assigneeId, ...rest } = createRequestDto;
 
     // Generate request number if not provided
     const requestCount = await this.prisma.auditRequest.count({
@@ -17,13 +18,18 @@ export class RequestsService {
     const requestNumber =
       createRequestDto.requestNumber || `REQ-${String(requestCount + 1).padStart(3, '0')}`;
 
+    const data: Prisma.AuditRequestUncheckedCreateInput = {
+      ...rest,
+      auditId,
+      organizationId: createRequestDto.organizationId!,
+      assignedTo: createRequestDto.assignedTo || assigneeId,
+      requestNumber,
+      dueDate: createRequestDto.dueDate ? new Date(createRequestDto.dueDate) : undefined,
+      createdBy,
+    };
+
     return this.prisma.auditRequest.create({
-      data: {
-        ...createRequestDto,
-        requestNumber,
-        dueDate: createRequestDto.dueDate ? new Date(createRequestDto.dueDate) : undefined,
-        createdBy,
-      },
+      data,
       include: {
         evidence: true,
         comments: true,
@@ -100,6 +106,10 @@ export class RequestsService {
     }
 
     const updates: Record<string, unknown> = { ...updateRequestDto };
+    if (updateRequestDto.assigneeId && !updates.assignedTo) {
+      updates.assignedTo = updateRequestDto.assigneeId;
+    }
+    delete updates.assigneeId;
 
     // Update timestamps based on status changes
     if (updateRequestDto.status === 'submitted' && !updates.submittedAt) {

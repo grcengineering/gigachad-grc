@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Injectable, Logger } from '@nestjs/common';
 
 export interface AzureConfig {
@@ -53,7 +52,9 @@ export class AzureConnector {
   private readonly loginUrl = 'https://login.microsoftonline.com';
   private readonly managementUrl = 'https://management.azure.com';
 
-  async testConnection(config: AzureConfig): Promise<{ success: boolean; message: string; details?: any }> {
+  async testConnection(
+    config: AzureConfig
+  ): Promise<{ success: boolean; message: string; details?: any }> {
     if (!config.tenantId || !config.clientId || !config.clientSecret) {
       return { success: false, message: 'Tenant ID, Client ID, and Client Secret are required' };
     }
@@ -77,22 +78,34 @@ export class AzureConnector {
   async sync(config: AzureConfig): Promise<AzureSyncResult> {
     const errors: string[] = [];
     const token = await this.getAccessToken(config);
-    
+
     if (!token) {
       throw new Error('Failed to authenticate with Azure');
     }
 
     // Collect data from Azure APIs
     const [securityCenter, policyCompliance, resources] = await Promise.all([
-      this.getSecurityCenterData(token, config.subscriptionId).catch(e => {
+      this.getSecurityCenterData(token, config.subscriptionId).catch((e) => {
         errors.push(`Security Center: ${e.message}`);
-        return { secureScore: 0, recommendations: 0, activeAlerts: 0, highSeverity: 0, mediumSeverity: 0, lowSeverity: 0 };
+        return {
+          secureScore: 0,
+          recommendations: 0,
+          activeAlerts: 0,
+          highSeverity: 0,
+          mediumSeverity: 0,
+          lowSeverity: 0,
+        };
       }),
-      this.getPolicyCompliance(token, config.subscriptionId).catch(e => {
+      this.getPolicyCompliance(token, config.subscriptionId).catch((e) => {
         errors.push(`Policy: ${e.message}`);
-        return { compliantResources: 0, nonCompliantResources: 0, compliancePercentage: 0, policies: [] };
+        return {
+          compliantResources: 0,
+          nonCompliantResources: 0,
+          compliancePercentage: 0,
+          policies: [],
+        };
       }),
-      this.getResources(token, config.subscriptionId).catch(e => {
+      this.getResources(token, config.subscriptionId).catch((e) => {
         errors.push(`Resources: ${e.message}`);
         return { total: 0, byType: {}, byLocation: {} };
       }),
@@ -133,15 +146,26 @@ export class AzureConnector {
 
   private async getSecurityCenterData(_token: string, _subscriptionId?: string) {
     // Simulated - would call Azure Security Center API
-    return { secureScore: 0, recommendations: 0, activeAlerts: 0, highSeverity: 0, mediumSeverity: 0, lowSeverity: 0 };
+    return {
+      secureScore: 0,
+      recommendations: 0,
+      activeAlerts: 0,
+      highSeverity: 0,
+      mediumSeverity: 0,
+      lowSeverity: 0,
+    };
   }
 
   private async getPolicyCompliance(_token: string, _subscriptionId?: string) {
-    return { compliantResources: 0, nonCompliantResources: 0, compliancePercentage: 0, policies: [] };
+    return {
+      compliantResources: 0,
+      nonCompliantResources: 0,
+      compliancePercentage: 0,
+      policies: [],
+    };
   }
 
   private async getResources(_token: string, _subscriptionId?: string) {
     return { total: 0, byType: {}, byLocation: {} };
   }
 }
-

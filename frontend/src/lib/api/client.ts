@@ -1,6 +1,6 @@
 /**
  * Core API Client Module
- * 
+ *
  * This module provides the shared axios instance and interceptors for all API calls.
  * Import this module in other API modules to make HTTP requests.
  */
@@ -13,7 +13,8 @@ import { isApiError } from '../apiTypes';
 migrateLegacyStorage();
 
 // API URL configuration
-export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+// Default to same-origin so gateway/proxy routing works for all services.
+export const API_URL = import.meta.env.VITE_API_URL || '';
 
 /**
  * Retry configuration for API requests
@@ -76,7 +77,7 @@ export function calculateRetryDelay(attempt: number): number {
  * Sleep utility
  */
 export function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
@@ -103,15 +104,16 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-  
+
   // Add user ID for notifications and other user-specific endpoints
   const userId = secureStorage.get(STORAGE_KEYS.USER_ID) || localStorage.getItem('userId');
   if (userId) {
     config.headers['x-user-id'] = userId;
   }
-  
+
   // Add organization ID
-  const orgId = secureStorage.get(STORAGE_KEYS.ORGANIZATION_ID) || localStorage.getItem('organizationId');
+  const orgId =
+    secureStorage.get(STORAGE_KEYS.ORGANIZATION_ID) || localStorage.getItem('organizationId');
   if (orgId) {
     config.headers['x-organization-id'] = orgId;
   }
@@ -128,12 +130,12 @@ api.interceptors.response.use(
       secureStorage.remove(STORAGE_KEYS.TOKEN);
       secureStorage.remove(STORAGE_KEYS.USER_ID);
       secureStorage.remove(STORAGE_KEYS.ORGANIZATION_ID);
-      
+
       // Also clear legacy storage
       localStorage.removeItem('token');
       localStorage.removeItem('userId');
       localStorage.removeItem('organizationId');
-      
+
       // Redirect to login if not already there
       if (window.location.pathname !== '/login') {
         window.location.href = '/login';
@@ -156,38 +158,42 @@ export async function requestWithRetry<T>(
   requestFn: () => Promise<AxiosResponse<T>>
 ): Promise<AxiosResponse<T>> {
   let lastError: AxiosError | null = null;
-  
+
   for (let attempt = 0; attempt <= RETRY_CONFIG.maxRetries; attempt++) {
     try {
       return await requestFn();
     } catch (error) {
       lastError = error as AxiosError;
-      
+
       if (shouldRetry(lastError, attempt)) {
         const delay = calculateRetryDelay(attempt);
-        console.warn(`Request failed, retrying in ${delay}ms (attempt ${attempt + 1}/${RETRY_CONFIG.maxRetries + 1})`);
+        console.warn(
+          `Request failed, retrying in ${delay}ms (attempt ${attempt + 1}/${RETRY_CONFIG.maxRetries + 1})`
+        );
         await sleep(delay);
       } else {
         throw error;
       }
     }
   }
-  
+
   throw lastError;
 }
 
 /**
  * Helper to build query string from params object
  */
-export function buildQueryString(params: Record<string, string | number | boolean | undefined | null>): string {
+export function buildQueryString(
+  params: Record<string, string | number | boolean | undefined | null>
+): string {
   const searchParams = new URLSearchParams();
-  
+
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== '') {
       searchParams.append(key, String(value));
     }
   });
-  
+
   const queryString = searchParams.toString();
   return queryString ? `?${queryString}` : '';
 }
@@ -201,12 +207,12 @@ export function createFormData(
 ): FormData {
   const formData = new FormData();
   formData.append('file', file);
-  
+
   if (metadata) {
     Object.entries(metadata).forEach(([key, value]) => {
       formData.append(key, String(value));
     });
   }
-  
+
   return formData;
 }

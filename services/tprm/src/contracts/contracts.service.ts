@@ -91,16 +91,21 @@ export class ContractsService {
   ) {}
 
   async create(createContractDto: CreateContractDto, userId: string) {
-    const { status, startDate, endDate, renewalDate, ...rest } = createContractDto;
+    const { status, startDate, endDate, renewalDate, requiresHipaa, requiresGdpr, ...rest } =
+      createContractDto;
+    const data: Prisma.VendorContractUncheckedCreateInput = {
+      ...rest,
+      organizationId: createContractDto.organizationId!,
+      dataProcessingAddendum: rest.dataProcessingAddendum ?? requiresHipaa,
+      requiresRightToAudit: rest.requiresRightToAudit ?? requiresGdpr,
+      status: toContractStatus(status),
+      startDate: new Date(startDate),
+      endDate: new Date(endDate),
+      renewalDate: renewalDate ? new Date(renewalDate) : undefined,
+      createdBy: userId,
+    };
     const contract = await this.prisma.vendorContract.create({
-      data: {
-        ...rest,
-        status: toContractStatus(status),
-        startDate: new Date(startDate),
-        endDate: new Date(endDate),
-        renewalDate: renewalDate ? new Date(renewalDate) : undefined,
-        createdBy: userId,
-      },
+      data,
       include: {
         vendor: {
           select: {
@@ -201,8 +206,17 @@ export class ContractsService {
     // SECURITY: Verify contract belongs to user's organization before updating
     const existingContract = await this.findOne(id, organizationId);
 
-    const { status, startDate, endDate, renewalDate, ...rest } = updateContractDto;
+    const { status, startDate, endDate, renewalDate, requiresHipaa, requiresGdpr, ...rest } =
+      updateContractDto;
     const data: Prisma.VendorContractUpdateInput = { ...rest };
+
+    if (requiresHipaa !== undefined && data.dataProcessingAddendum === undefined) {
+      data.dataProcessingAddendum = requiresHipaa;
+    }
+
+    if (requiresGdpr !== undefined && data.requiresRightToAudit === undefined) {
+      data.requiresRightToAudit = requiresGdpr;
+    }
 
     if (status) {
       data.status = toContractStatus(status);

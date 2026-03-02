@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Injectable, Logger } from '@nestjs/common';
 
 /**
@@ -6,7 +5,7 @@ import { Injectable, Logger } from '@nestjs/common';
  */
 export interface SnykConfig {
   apiToken: string;
-  organizationId?: string;  // Snyk org ID (optional, will list orgs if not provided)
+  organizationId?: string; // Snyk org ID (optional, will list orgs if not provided)
 }
 
 /**
@@ -26,8 +25,8 @@ interface SnykOrg {
 interface SnykProject {
   id: string;
   name: string;
-  origin: string;          // github, gitlab, etc.
-  type: string;            // npm, maven, pip, etc.
+  origin: string; // github, gitlab, etc.
+  type: string; // npm, maven, pip, etc.
   branch?: string;
   targetReference?: string;
   created: string;
@@ -224,20 +223,20 @@ export class SnykConnector {
     this.logger.log('Starting Snyk sync...');
 
     // Get organizations
-    const orgs = await this.getOrganizations(config).catch(e => {
+    const orgs = await this.getOrganizations(config).catch((e) => {
       errors.push(`Organizations: ${e.message}`);
       return [] as SnykOrg[];
     });
 
     // Filter to specific org if configured
-    const targetOrgs = config.organizationId 
-      ? orgs.filter(o => o.id === config.organizationId)
+    const targetOrgs = config.organizationId
+      ? orgs.filter((o) => o.id === config.organizationId)
       : orgs;
 
     // Get projects for each org
     const allProjects: SnykProject[] = [];
     for (const org of targetOrgs) {
-      const projects = await this.getProjects(config, org.id).catch(e => {
+      const projects = await this.getProjects(config, org.id).catch((e) => {
         errors.push(`Projects for ${org.name}: ${e.message}`);
         return [] as SnykProject[];
       });
@@ -247,11 +246,11 @@ export class SnykConnector {
     // Get issues for projects (sample of first 20)
     const allIssues: Array<SnykIssue & { projectName: string }> = [];
     for (const project of allProjects.slice(0, 20)) {
-      const issues = await this.getProjectIssues(config, project).catch(e => {
+      const issues = await this.getProjectIssues(config, project).catch((e) => {
         errors.push(`Issues for ${project.name}: ${e.message}`);
         return [] as SnykIssue[];
       });
-      allIssues.push(...issues.map(i => ({ ...i, projectName: project.name })));
+      allIssues.push(...issues.map((i) => ({ ...i, projectName: project.name })));
     }
 
     // Process projects
@@ -265,7 +264,7 @@ export class SnykConnector {
     for (const project of allProjects) {
       byOrigin[project.origin] = (byOrigin[project.origin] || 0) + 1;
       byType[project.type] = (byType[project.type] || 0) + 1;
-      
+
       totalCritical += project.issueCountsBySeverity?.critical || 0;
       totalHigh += project.issueCountsBySeverity?.high || 0;
       totalMedium += project.issueCountsBySeverity?.medium || 0;
@@ -273,10 +272,11 @@ export class SnykConnector {
     }
 
     // Process issues
-    const fixableIssues = allIssues.filter(i => i.fixInfo?.isFixable);
-    const exploitableIssues = allIssues.filter(i => 
-      i.issueData?.exploitMaturity === 'mature' || 
-      i.issueData?.exploitMaturity === 'proof-of-concept'
+    const fixableIssues = allIssues.filter((i) => i.fixInfo?.isFixable);
+    const exploitableIssues = allIssues.filter(
+      (i) =>
+        i.issueData?.exploitMaturity === 'mature' ||
+        i.issueData?.exploitMaturity === 'proof-of-concept'
     );
 
     // Group by package
@@ -289,7 +289,10 @@ export class SnykConnector {
       packageCounts[pkg].count++;
       // Keep highest severity
       const severityOrder = ['critical', 'high', 'medium', 'low'];
-      if (severityOrder.indexOf(issue.issueData?.severity) < severityOrder.indexOf(packageCounts[pkg].severity)) {
+      if (
+        severityOrder.indexOf(issue.issueData?.severity) <
+        severityOrder.indexOf(packageCounts[pkg].severity)
+      ) {
         packageCounts[pkg].severity = issue.issueData?.severity;
       }
     }
@@ -300,33 +303,40 @@ export class SnykConnector {
       .slice(0, 20);
 
     // Compliance stats
-    const projectsWithCritical = allProjects.filter(p => (p.issueCountsBySeverity?.critical || 0) > 0).length;
-    const projectsWithHigh = allProjects.filter(p => (p.issueCountsBySeverity?.high || 0) > 0).length;
-    const projectsClean = allProjects.filter(p => 
-      (p.issueCountsBySeverity?.critical || 0) === 0 &&
-      (p.issueCountsBySeverity?.high || 0) === 0 &&
-      (p.issueCountsBySeverity?.medium || 0) === 0 &&
-      (p.issueCountsBySeverity?.low || 0) === 0
+    const projectsWithCritical = allProjects.filter(
+      (p) => (p.issueCountsBySeverity?.critical || 0) > 0
+    ).length;
+    const projectsWithHigh = allProjects.filter(
+      (p) => (p.issueCountsBySeverity?.high || 0) > 0
+    ).length;
+    const projectsClean = allProjects.filter(
+      (p) =>
+        (p.issueCountsBySeverity?.critical || 0) === 0 &&
+        (p.issueCountsBySeverity?.high || 0) === 0 &&
+        (p.issueCountsBySeverity?.medium || 0) === 0 &&
+        (p.issueCountsBySeverity?.low || 0) === 0
     ).length;
 
-    this.logger.log(`Snyk sync complete: ${allProjects.length} projects, ${allIssues.length} issues sampled`);
+    this.logger.log(
+      `Snyk sync complete: ${allProjects.length} projects, ${allIssues.length} issues sampled`
+    );
 
     return {
       organizations: {
         total: orgs.length,
-        items: targetOrgs.map(o => ({
+        items: targetOrgs.map((o) => ({
           id: o.id,
           name: o.name,
-          projectCount: allProjects.filter(_p => true).length, // Would need org ID on project
+          projectCount: allProjects.filter((_p) => true).length, // Would need org ID on project
         })),
       },
       projects: {
         total: allProjects.length,
-        monitored: allProjects.filter(p => p.isMonitored).length,
-        unmonitored: allProjects.filter(p => !p.isMonitored).length,
+        monitored: allProjects.filter((p) => p.isMonitored).length,
+        unmonitored: allProjects.filter((p) => !p.isMonitored).length,
         byOrigin,
         byType,
-        items: allProjects.slice(0, 50).map(p => ({
+        items: allProjects.slice(0, 50).map((p) => ({
           id: p.id,
           name: p.name,
           origin: p.origin,
@@ -348,7 +358,7 @@ export class SnykConnector {
         unfixable: allIssues.length - fixableIssues.length,
         exploitable: exploitableIssues.length,
         byPackage,
-        items: allIssues.slice(0, 100).map(i => ({
+        items: allIssues.slice(0, 100).map((i) => ({
           id: i.id,
           title: i.issueData?.title || '',
           severity: i.issueData?.severity || 'unknown',
@@ -437,7 +447,7 @@ export class SnykConnector {
           includeDescription: true,
           includeIntroducedThrough: false,
         }),
-      },
+      }
     );
 
     if (!response.ok) {
@@ -453,10 +463,9 @@ export class SnykConnector {
    */
   private buildHeaders(apiToken: string): Record<string, string> {
     return {
-      'Authorization': `token ${apiToken}`,
-      'Accept': 'application/json',
+      Authorization: `token ${apiToken}`,
+      Accept: 'application/json',
       'Content-Type': 'application/json',
     };
   }
 }
-

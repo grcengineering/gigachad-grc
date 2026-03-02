@@ -39,9 +39,12 @@ import { Response } from 'express';
  * Prevents header injection attacks via malicious filenames
  */
 function sanitizeFilename(filename: string): string {
-  return filename
-    .replace(/[\r\n\x00-\x1f\x7f]/g, '') // Remove control chars
-    .replace(/["\\/]/g, '_'); // Replace problematic chars
+  return (
+    filename
+      // eslint-disable-next-line no-control-regex
+      .replace(/[\r\n\x00-\x1f\x7f]/g, '') // Remove control chars
+      .replace(/["\\/]/g, '_')
+  ); // Replace problematic chars
 }
 
 @ApiTags('policies')
@@ -54,10 +57,7 @@ export class PoliciesController {
   @Get()
   @ApiOperation({ summary: 'List all policies' })
   @ApiResponse({ status: 200, description: 'Returns a paginated list of policies' })
-  async findAll(
-    @CurrentUser() user: UserContext,
-    @Query() filters: PolicyFilterDto,
-  ) {
+  async findAll(@CurrentUser() user: UserContext, @Query() filters: PolicyFilterDto) {
     return this.policiesService.findAll(user.organizationId, filters);
   }
 
@@ -77,10 +77,7 @@ export class PoliciesController {
   @Get(':id/download')
   @ApiOperation({ summary: 'Get download URL for policy' })
   @ApiParam({ name: 'id', description: 'Policy ID' })
-  async getDownloadUrl(
-    @Param('id') id: string,
-    @CurrentUser() user: UserContext,
-  ) {
+  async getDownloadUrl(@Param('id') id: string, @CurrentUser() user: UserContext) {
     return this.policiesService.getDownloadUrl(id, user.organizationId);
   }
 
@@ -90,11 +87,11 @@ export class PoliciesController {
   async streamPreview(
     @Param('id') id: string,
     @CurrentUser() user: UserContext,
-    @Res({ passthrough: true }) res: Response,
+    @Res({ passthrough: true }) res: Response
   ): Promise<StreamableFile> {
     const { stream, mimetype, filename } = await this.policiesService.streamFile(
       id,
-      user.organizationId,
+      user.organizationId
     );
     res.set({
       'Content-Type': mimetype,
@@ -128,7 +125,7 @@ export class PoliciesController {
   async upload(
     @CurrentUser() user: UserContext,
     @UploadedFile() file: Express.Multer.File,
-    @Body() dto: UploadPolicyDto,
+    @Body() dto: UploadPolicyDto
   ) {
     return this.policiesService.upload(user.organizationId, user.userId, file, dto);
   }
@@ -139,7 +136,7 @@ export class PoliciesController {
   async update(
     @Param('id') id: string,
     @CurrentUser() user: UserContext,
-    @Body() dto: UpdatePolicyDto,
+    @Body() dto: UpdatePolicyDto
   ) {
     return this.policiesService.update(id, user.organizationId, user.userId, dto);
   }
@@ -165,7 +162,7 @@ export class PoliciesController {
     @CurrentUser() user: UserContext,
     @UploadedFile() file: Express.Multer.File,
     @Body('versionNumber') versionNumber: string,
-    @Body('changeNotes') changeNotes?: string,
+    @Body('changeNotes') changeNotes?: string
   ) {
     return this.policiesService.uploadNewVersion(
       id,
@@ -173,7 +170,7 @@ export class PoliciesController {
       user.userId,
       file,
       versionNumber,
-      changeNotes,
+      changeNotes
     );
   }
 
@@ -183,7 +180,7 @@ export class PoliciesController {
   async updateStatus(
     @Param('id') id: string,
     @CurrentUser() user: UserContext,
-    @Body() dto: UpdatePolicyStatusDto,
+    @Body() dto: UpdatePolicyStatusDto
   ) {
     return this.policiesService.updateStatus(id, user.organizationId, user.userId, dto);
   }
@@ -201,7 +198,7 @@ export class PoliciesController {
   async linkToControls(
     @Param('id') id: string,
     @CurrentUser() user: UserContext,
-    @Body('controlIds') controlIds: string[],
+    @Body('controlIds') controlIds: string[]
   ) {
     return this.policiesService.linkToControls(id, user.organizationId, user.userId, controlIds);
   }
@@ -213,11 +210,8 @@ export class PoliciesController {
   async unlinkFromControl(
     @Param('id') id: string,
     @Param('controlId') controlId: string,
-    @CurrentUser() user: UserContext,
+    @CurrentUser() user: UserContext
   ) {
     return this.policiesService.unlinkFromControl(id, controlId, user.organizationId);
   }
 }
-
-
-

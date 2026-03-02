@@ -36,7 +36,12 @@ export class RequestsController {
   @ApiOperation({ summary: 'Create a new audit request' })
   @ApiResponse({ status: 201, description: 'Request created successfully' })
   create(@Body() createRequestDto: CreateAuditRequestDto, @Req() req: AuthenticatedRequest) {
-    return this.requestsService.create(createRequestDto, req.user.userId);
+    const normalizedDto = {
+      ...createRequestDto,
+      organizationId: req.user.organizationId,
+      assignedTo: createRequestDto.assignedTo || createRequestDto.assigneeId,
+    };
+    return this.requestsService.create(normalizedDto, req.user.userId);
   }
 
   @Get()
@@ -75,7 +80,10 @@ export class RequestsController {
     @Req() req: AuthenticatedRequest
   ) {
     const { organizationId } = req.user;
-    return this.requestsService.update(id, organizationId, updateRequestDto);
+    return this.requestsService.update(id, organizationId, {
+      ...updateRequestDto,
+      assignedTo: updateRequestDto.assignedTo || updateRequestDto.assigneeId,
+    });
   }
 
   @Delete(':id')
