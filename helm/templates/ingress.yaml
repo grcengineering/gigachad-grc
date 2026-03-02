@@ -1,0 +1,201 @@
+{{- if .Values.ingress.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "gigachad-grc.fullname" . }}
+  labels:
+    {{- include "gigachad-grc.labels" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.ingress.className }}
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- end }}
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        - {{ .Values.ingress.host }}
+      secretName: {{ .Values.ingress.tls.secretName }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.ingress.host }}
+      http:
+        paths:
+          # Frontend (catch-all, lowest priority)
+          {{- if .Values.frontend.enabled }}
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "gigachad-grc.fullname" . }}-frontend
+                port:
+                  number: 80
+          {{- end }}
+          # Controls API routes
+          {{- if .Values.controls.enabled }}
+          - path: /api/controls
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "gigachad-grc.fullname" . }}-controls
+                port:
+                  number: {{ .Values.controls.port }}
+          - path: /api/evidence
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "gigachad-grc.fullname" . }}-controls
+                port:
+                  number: {{ .Values.controls.port }}
+          - path: /api/risks
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "gigachad-grc.fullname" . }}-controls
+                port:
+                  number: {{ .Values.controls.port }}
+          - path: /api/risk-config
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "gigachad-grc.fullname" . }}-controls
+                port:
+                  number: {{ .Values.controls.port }}
+          - path: /api/risk-tasks
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "gigachad-grc.fullname" . }}-controls
+                port:
+                  number: {{ .Values.controls.port }}
+          - path: /api/workspaces
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "gigachad-grc.fullname" . }}-controls
+                port:
+                  number: {{ .Values.controls.port }}
+          - path: /api/bcdr
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "gigachad-grc.fullname" . }}-controls
+                port:
+                  number: {{ .Values.controls.port }}
+          {{- end }}
+          # Frameworks API routes
+          {{- if .Values.frameworks.enabled }}
+          - path: /api/frameworks
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "gigachad-grc.fullname" . }}-frameworks
+                port:
+                  number: {{ .Values.frameworks.port }}
+          {{- end }}
+          # Policies API routes
+          {{- if .Values.policies.enabled }}
+          - path: /api/policies
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "gigachad-grc.fullname" . }}-policies
+                port:
+                  number: {{ .Values.policies.port }}
+          {{- end }}
+          # TPRM API routes
+          {{- if .Values.tprm.enabled }}
+          - path: /api/vendors
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "gigachad-grc.fullname" . }}-tprm
+                port:
+                  number: {{ .Values.tprm.port }}
+          - path: /api/assessments
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "gigachad-grc.fullname" . }}-tprm
+                port:
+                  number: {{ .Values.tprm.port }}
+          - path: /api/contracts
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "gigachad-grc.fullname" . }}-tprm
+                port:
+                  number: {{ .Values.tprm.port }}
+          - path: /api/tprm-config
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "gigachad-grc.fullname" . }}-tprm
+                port:
+                  number: {{ .Values.tprm.port }}
+          {{- end }}
+          # Trust API routes
+          {{- if .Values.trust.enabled }}
+          - path: /api/questionnaires
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "gigachad-grc.fullname" . }}-trust
+                port:
+                  number: {{ .Values.trust.port }}
+          - path: /api/knowledge-base
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "gigachad-grc.fullname" . }}-trust
+                port:
+                  number: {{ .Values.trust.port }}
+          - path: /api/trust-center
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "gigachad-grc.fullname" . }}-trust
+                port:
+                  number: {{ .Values.trust.port }}
+          {{- end }}
+          # Audit API routes
+          {{- if .Values.audit.enabled }}
+          - path: /api/audits
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "gigachad-grc.fullname" . }}-audit
+                port:
+                  number: {{ .Values.audit.port }}
+          - path: /api/audit-requests
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "gigachad-grc.fullname" . }}-audit
+                port:
+                  number: {{ .Values.audit.port }}
+          - path: /api/findings
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "gigachad-grc.fullname" . }}-audit
+                port:
+                  number: {{ .Values.audit.port }}
+          - path: /api/audit-portal
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "gigachad-grc.fullname" . }}-audit
+                port:
+                  number: {{ .Values.audit.port }}
+          - path: /api/audit
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "gigachad-grc.fullname" . }}-audit
+                port:
+                  number: {{ .Values.audit.port }}
+          {{- end }}
+{{- end }}

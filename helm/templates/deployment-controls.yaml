@@ -1,0 +1,131 @@
+{{- if .Values.controls.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "gigachad-grc.fullname" . }}-controls
+  labels:
+    {{- include "gigachad-grc.labels" . | nindent 4 }}
+    {{- include "gigachad-grc.selectorLabels" (dict "context" . "component" "controls") | nindent 4 }}
+spec:
+  replicas: {{ .Values.controls.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "gigachad-grc.selectorLabels" (dict "context" . "component" "controls") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "gigachad-grc.labels" . | nindent 8 }}
+        {{- include "gigachad-grc.selectorLabels" (dict "context" . "component" "controls") | nindent 8 }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "gigachad-grc.serviceAccountName" . }}
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: controls
+          image: {{ include "gigachad-grc.image" (dict "image" .Values.controls.image "global" .Values.global) }}
+          imagePullPolicy: {{ include "gigachad-grc.imagePullPolicy" .Values.controls.image }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - containerPort: {{ .Values.controls.port }}
+              name: http
+              protocol: TCP
+          env:
+            - name: PORT
+              value: {{ .Values.controls.port | quote }}
+            {{- include "gigachad-grc.backendEnv" . | nindent 12 }}
+            - name: ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "gigachad-grc.secretName" . }}
+                  key: encryption-key
+                  optional: true
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "gigachad-grc.secretName" . }}
+                  key: jwt-secret
+            - name: SESSION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "gigachad-grc.secretName" . }}
+                  key: session-secret
+            - name: PHISHING_TRACKING_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "gigachad-grc.secretName" . }}
+                  key: phishing-tracking-secret
+                  optional: true
+            - name: BACKUP_RETENTION_DAYS
+              value: {{ .Values.controls.env.backupRetentionDays | quote }}
+            - name: DR_REMOTE_BACKUP_ENABLED
+              value: {{ .Values.controls.env.drRemoteBackupEnabled | quote }}
+            {{- if .Values.controls.env.drRemoteBackupS3Bucket }}
+            - name: DR_REMOTE_BACKUP_S3_BUCKET
+              value: {{ .Values.controls.env.drRemoteBackupS3Bucket | quote }}
+            {{- end }}
+            {{- with .Values.controls.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+          resources:
+            {{- toYaml .Values.controls.resources | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 64Mi
+      {{- with .Values.controls.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.controls.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.controls.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "gigachad-grc.fullname" . }}-controls
+  labels:
+    {{- include "gigachad-grc.labels" . | nindent 4 }}
+    {{- include "gigachad-grc.selectorLabels" (dict "context" . "component" "controls") | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.controls.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "gigachad-grc.selectorLabels" (dict "context" . "component" "controls") | nindent 4 }}
+{{- end }}

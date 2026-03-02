@@ -1,0 +1,101 @@
+{{- if .Values.audit.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "gigachad-grc.fullname" . }}-audit
+  labels:
+    {{- include "gigachad-grc.labels" . | nindent 4 }}
+    {{- include "gigachad-grc.selectorLabels" (dict "context" . "component" "audit") | nindent 4 }}
+spec:
+  replicas: {{ .Values.audit.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "gigachad-grc.selectorLabels" (dict "context" . "component" "audit") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "gigachad-grc.labels" . | nindent 8 }}
+        {{- include "gigachad-grc.selectorLabels" (dict "context" . "component" "audit") | nindent 8 }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "gigachad-grc.serviceAccountName" . }}
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: audit
+          image: {{ include "gigachad-grc.image" (dict "image" .Values.audit.image "global" .Values.global) }}
+          imagePullPolicy: {{ include "gigachad-grc.imagePullPolicy" .Values.audit.image }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - containerPort: {{ .Values.audit.port }}
+              name: http
+              protocol: TCP
+          env:
+            - name: PORT
+              value: {{ .Values.audit.port | quote }}
+            {{- include "gigachad-grc.backendEnv" . | nindent 12 }}
+            {{- with .Values.audit.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+          resources:
+            {{- toYaml .Values.audit.resources | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 64Mi
+      {{- with .Values.audit.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.audit.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.audit.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "gigachad-grc.fullname" . }}-audit
+  labels:
+    {{- include "gigachad-grc.labels" . | nindent 4 }}
+    {{- include "gigachad-grc.selectorLabels" (dict "context" . "component" "audit") | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.audit.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "gigachad-grc.selectorLabels" (dict "context" . "component" "audit") | nindent 4 }}
+{{- end }}

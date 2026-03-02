@@ -1,0 +1,128 @@
+{{- if .Values.grafana.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "gigachad-grc.fullname" . }}-grafana
+  labels:
+    {{- include "gigachad-grc.labels" . | nindent 4 }}
+    {{- include "gigachad-grc.selectorLabels" (dict "context" . "component" "grafana") | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "gigachad-grc.selectorLabels" (dict "context" . "component" "grafana") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "gigachad-grc.labels" . | nindent 8 }}
+        {{- include "gigachad-grc.selectorLabels" (dict "context" . "component" "grafana") | nindent 8 }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "gigachad-grc.serviceAccountName" . }}
+      securityContext:
+        fsGroup: 472
+        runAsUser: 472
+        runAsNonRoot: true
+      containers:
+        - name: grafana
+          image: "{{ .Values.grafana.image.repository }}:{{ .Values.grafana.image.tag }}"
+          imagePullPolicy: {{ include "gigachad-grc.imagePullPolicy" .Values.grafana.image }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - containerPort: 3000
+              name: http
+              protocol: TCP
+          env:
+            - name: GF_SECURITY_ADMIN_USER
+              value: {{ .Values.grafana.auth.adminUser | quote }}
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "gigachad-grc.secretName" . }}
+                  key: grafana-admin-password
+            - name: GF_USERS_ALLOW_SIGN_UP
+              value: "false"
+            - name: GF_AUTH_ANONYMOUS_ENABLED
+              value: "false"
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            {{- toYaml .Values.grafana.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/grafana
+      {{- with .Values.grafana.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.grafana.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.grafana.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        {{- if .Values.grafana.persistence.enabled }}
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "gigachad-grc.fullname" . }}-grafana
+        {{- else }}
+        - name: data
+          emptyDir: {}
+        {{- end }}
+---
+{{- if .Values.grafana.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "gigachad-grc.fullname" . }}-grafana
+  labels:
+    {{- include "gigachad-grc.labels" . | nindent 4 }}
+    {{- include "gigachad-grc.selectorLabels" (dict "context" . "component" "grafana") | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  {{- if or .Values.grafana.persistence.storageClass .Values.global.storageClass }}
+  storageClassName: {{ .Values.grafana.persistence.storageClass | default .Values.global.storageClass }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.grafana.persistence.size }}
+---
+{{- end }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "gigachad-grc.fullname" . }}-grafana
+  labels:
+    {{- include "gigachad-grc.labels" . | nindent 4 }}
+    {{- include "gigachad-grc.selectorLabels" (dict "context" . "component" "grafana") | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3000
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "gigachad-grc.selectorLabels" (dict "context" . "component" "grafana") | nindent 4 }}
+{{- end }}
