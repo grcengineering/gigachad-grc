@@ -68,10 +68,22 @@
     "minipass": "^7.1.2",
     "@isaacs/brace-expansion": "^5.0.0",
     "lodash": "^4.17.23",
-    "fast-xml-parser": "^5.3.8",
+    "fast-xml-parser": ">=4.5.4",
     "axios": "^1.13.5",
     "minimatch": "^10.2.3",
     "rollup": "^4.59.0",
-    "@smithy/config-resolver": "^4.4.0"
+    "@smithy/config-resolver": "^4.4.0",
+    "multer": ">=2.1.0",
+    "serialize-javascript": ">=7.0.3",
+    "@nestjs/cli": {
+      "@angular-devkit/core": {
+        "ajv": "8.18.0"
+      },
+      "@nestjs/schematics": {
+        "@angular-devkit/core": {
+          "ajv": "8.18.0"
+        }
+      }
+    }
   }
 }
