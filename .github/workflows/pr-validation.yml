@@ -132,7 +132,7 @@ jobs:
         # Security check is now blocking - no continue-on-error
 
       - name: Run Trivy vulnerability scanner (BLOCKING)
-        uses: aquasecurity/trivy-action@1bd062560b422f5944df1de50abd05162bea079e # master
+        uses: aquasecurity/trivy-action@97e0b3872f55f89b95b2f65b3dbab56962816478 # master
         with:
           scan-type: 'fs'
           scan-ref: '.'

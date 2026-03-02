@@ -133,7 +133,7 @@ jobs:
           provenance: false
 
       - name: Scan image for vulnerabilities
-        uses: aquasecurity/trivy-action@1bd062560b422f5944df1de50abd05162bea079e # master
+        uses: aquasecurity/trivy-action@97e0b3872f55f89b95b2f65b3dbab56962816478 # master
         with:
           image-ref: '${{ env.ECR_REGISTRY }}/grc-${{ matrix.service }}:${{ needs.prepare.outputs.version }}'
           format: 'sarif'
