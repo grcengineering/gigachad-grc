@@ -1,0 +1,38 @@
+GigaChad GRC has been deployed to namespace {{ .Release.Namespace }}.
+
+{{- if .Values.ingress.enabled }}
+
+Access the platform at:
+  {{- if .Values.ingress.tls.enabled }}
+  https://{{ .Values.ingress.host }}
+  {{- else }}
+  http://{{ .Values.ingress.host }}
+  {{- end }}
+{{- else }}
+
+To access the frontend, run:
+  kubectl port-forward svc/{{ include "gigachad-grc.fullname" . }}-frontend 3000:80 -n {{ .Release.Namespace }}
+  Then open http://localhost:3000
+
+To access the Controls API (Swagger):
+  kubectl port-forward svc/{{ include "gigachad-grc.fullname" . }}-controls 3001:{{ .Values.controls.port }} -n {{ .Release.Namespace }}
+  Then open http://localhost:3001/api/docs
+{{- end }}
+
+{{- if .Values.keycloak.enabled }}
+
+Keycloak Admin Console:
+  kubectl port-forward svc/{{ include "gigachad-grc.fullname" . }}-keycloak 8080:8080 -n {{ .Release.Namespace }}
+  Then open http://localhost:8080
+  Username: {{ .Values.keycloak.auth.adminUser }}
+  Password: (set in your values file)
+{{- end }}
+
+Deployed services:
+  {{- if .Values.controls.enabled }}  - Controls  (port {{ .Values.controls.port }}){{ end }}
+  {{- if .Values.frameworks.enabled }}  - Frameworks (port {{ .Values.frameworks.port }}){{ end }}
+  {{- if .Values.policies.enabled }}  - Policies  (port {{ .Values.policies.port }}){{ end }}
+  {{- if .Values.tprm.enabled }}  - TPRM      (port {{ .Values.tprm.port }}){{ end }}
+  {{- if .Values.trust.enabled }}  - Trust     (port {{ .Values.trust.port }}){{ end }}
+  {{- if .Values.audit.enabled }}  - Audit     (port {{ .Values.audit.port }}){{ end }}
+  {{- if .Values.frontend.enabled }}  - Frontend  (port 80){{ end }}

@@ -1,0 +1,388 @@
+# GigaChad GRC Helm Chart - Default Values
+# Override these in your own values file or via --set flags
+
+# -- Global settings applied to all components
+global:
+  # -- Container image registry prefix (e.g., "ghcr.io/grcengineering")
+  imageRegistry: ''
+  # -- Image pull secrets for private registries
+  imagePullSecrets: []
+  # -- Storage class for all PVCs (empty = cluster default)
+  storageClass: ''
+
+# =============================================================================
+# Backend Services
+# =============================================================================
+
+# Each backend service follows the same structure. They share a database,
+# Redis cache, Keycloak auth, and RustFS storage.
+
+controls:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: gigachad-grc/controls
+    tag: latest
+    pullPolicy: IfNotPresent
+  port: 3001
+  resources:
+    limits:
+      cpu: '1'
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 128Mi
+  # -- Extra environment variables (list of {name, value} or {name, valueFrom})
+  extraEnv: []
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  # -- Controls-specific env vars
+  env:
+    encryptionKey: ''
+    jwtSecret: ''
+    sessionSecret: ''
+    phishingTrackingSecret: ''
+    backupRetentionDays: '30'
+    drRemoteBackupEnabled: 'false'
+    drRemoteBackupS3Bucket: ''
+
+frameworks:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: gigachad-grc/frameworks
+    tag: latest
+    pullPolicy: IfNotPresent
+  port: 3002
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  extraEnv: []
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+policies:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: gigachad-grc/policies
+    tag: latest
+    pullPolicy: IfNotPresent
+  port: 3004
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  extraEnv: []
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+tprm:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: gigachad-grc/tprm
+    tag: latest
+    pullPolicy: IfNotPresent
+  port: 3005
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  extraEnv: []
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+trust:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: gigachad-grc/trust
+    tag: latest
+    pullPolicy: IfNotPresent
+  port: 3006
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  extraEnv: []
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+audit:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: gigachad-grc/audit
+    tag: latest
+    pullPolicy: IfNotPresent
+  port: 3007
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  extraEnv: []
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# =============================================================================
+# Frontend
+# =============================================================================
+
+frontend:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: gigachad-grc/frontend
+    tag: latest
+    pullPolicy: IfNotPresent
+  port: 80
+  resources:
+    limits:
+      cpu: 250m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+  extraEnv: []
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  # -- Set to "true" to enable dev login bypass (no Keycloak required)
+  devAuth: 'false'
+
+# =============================================================================
+# Infrastructure - PostgreSQL
+# =============================================================================
+
+postgresql:
+  # -- Deploy PostgreSQL within the chart. Set to false to use an external database.
+  enabled: true
+  image:
+    repository: postgres
+    tag: '16-alpine'
+    pullPolicy: IfNotPresent
+  auth:
+    username: grc
+    # -- Password for the database user. MUST be set.
+    password: ''
+    database: gigachad_grc
+    # -- Keycloak uses its own database on the same PostgreSQL instance
+    keycloakDatabase: keycloak
+  persistence:
+    enabled: true
+    size: 10Gi
+    # -- Storage class (empty = cluster default)
+    storageClass: ''
+  resources:
+    limits:
+      cpu: '2'
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 256Mi
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# -- Use an external PostgreSQL database instead of deploying one
+externalDatabase:
+  # -- Full connection string: postgresql://user:pass@host:5432/dbname
+  url: ''
+
+# =============================================================================
+# Infrastructure - Redis
+# =============================================================================
+
+redis:
+  # -- Deploy Redis within the chart. Set to false to use an external Redis.
+  enabled: true
+  image:
+    repository: redis
+    tag: '7-alpine'
+    pullPolicy: IfNotPresent
+  auth:
+    # -- Redis password. MUST be set.
+    password: ''
+  persistence:
+    enabled: true
+    size: 2Gi
+    storageClass: ''
+  resources:
+    limits:
+      cpu: '1'
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 128Mi
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# -- Use an external Redis instead of deploying one
+externalRedis:
+  # -- Full connection string: redis://:password@host:6379
+  url: ''
+
+# =============================================================================
+# Infrastructure - Keycloak
+# =============================================================================
+
+keycloak:
+  # -- Deploy Keycloak within the chart. Set to false if using external IdP or dev auth only.
+  enabled: true
+  image:
+    repository: quay.io/keycloak/keycloak
+    tag: '25.0'
+    pullPolicy: IfNotPresent
+  auth:
+    adminUser: admin
+    # -- Keycloak admin password. MUST be set.
+    adminPassword: ''
+  realm: gigachad-grc
+  resources:
+    limits:
+      cpu: '1'
+      memory: 1Gi
+    requests:
+      cpu: 250m
+      memory: 512Mi
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# =============================================================================
+# Infrastructure - RustFS (S3-compatible object storage)
+# =============================================================================
+
+rustfs:
+  # -- Deploy RustFS within the chart. Set to false to use external S3.
+  enabled: true
+  image:
+    repository: rustfs/rustfs
+    tag: latest
+    pullPolicy: IfNotPresent
+  auth:
+    rootUser: rustfsadmin
+    # -- RustFS root password. MUST be set.
+    rootPassword: ''
+  persistence:
+    enabled: true
+    size: 20Gi
+    storageClass: ''
+  resources:
+    limits:
+      cpu: '1'
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 128Mi
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# -- Use external S3-compatible storage instead of RustFS
+externalS3:
+  endpoint: ''
+  port: '443'
+  useSSL: 'true'
+  accessKey: ''
+  secretKey: ''
+  bucket: grc-evidence
+
+# =============================================================================
+# Monitoring (optional)
+# =============================================================================
+
+prometheus:
+  enabled: false
+  image:
+    repository: prom/prometheus
+    tag: 'v2.47.1'
+    pullPolicy: IfNotPresent
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: ''
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+grafana:
+  enabled: false
+  image:
+    repository: grafana/grafana
+    tag: '10.2.0'
+    pullPolicy: IfNotPresent
+  auth:
+    adminUser: admin
+    # -- Grafana admin password
+    adminPassword: ''
+  persistence:
+    enabled: true
+    size: 5Gi
+    storageClass: ''
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# =============================================================================
+# Ingress
+# =============================================================================
+
+ingress:
+  enabled: false
+  className: nginx
+  annotations: {}
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
+    # nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+  # -- Hostname for the GRC platform
+  host: grc.example.com
+  tls:
+    enabled: false
+    secretName: grc-tls
+
+# =============================================================================
+# Service Account
+# =============================================================================
+
+serviceAccount:
+  create: true
+  name: ''
+  annotations: {}

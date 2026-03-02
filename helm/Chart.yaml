@@ -1,0 +1,20 @@
+apiVersion: v2
+name: gigachad-grc
+description: A comprehensive Governance, Risk, and Compliance (GRC) platform
+type: application
+version: 0.1.0
+appVersion: '1.0.0'
+home: https://github.com/grcengineering/gigachad-grc
+sources:
+  - https://github.com/grcengineering/gigachad-grc
+maintainers:
+  - name: GRC Engineering
+    url: https://github.com/grcengineering
+keywords:
+  - grc
+  - governance
+  - risk
+  - compliance
+  - security
+  - soc2
+  - iso27001

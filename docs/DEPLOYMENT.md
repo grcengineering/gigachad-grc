@@ -29,6 +29,7 @@ The simplest and most cost-effective deployment option uses Supabase for databas
 ### Detailed Guide
 
 For complete step-by-step instructions, see:
+
 - **[Supabase + Vercel Migration Guide](deployment/supabase-vercel-migration.md)** - Full technical documentation
 - **[Cloud Deployment Guide](help/deployment/cloud-deployment.md)** - User-friendly overview
 
@@ -59,6 +60,7 @@ ENCRYPTION_KEY=your-32-byte-hex-key
 ### Steps
 
 1. Clone and configure:
+
 ```bash
 git clone https://github.com/grcengineering/gigachad-grc.git
 cd gigachad-grc
@@ -66,11 +68,13 @@ cp env.example .env
 ```
 
 2. Start services:
+
 ```bash
 docker-compose up -d
 ```
 
 3. Initialize database:
+
 ```bash
 # Wait for services to be healthy
 docker-compose ps
@@ -83,6 +87,7 @@ docker-compose exec frameworks npm run seed
 ```
 
 4. Access services:
+
 - Frontend: http://localhost:3000
 - Keycloak: http://localhost:8080
 - Traefik Dashboard: http://localhost:8090
@@ -92,6 +97,7 @@ docker-compose exec frameworks npm run seed
 ### Security Hardening
 
 1. Update environment variables:
+
 ```bash
 # Generate strong passwords
 POSTGRES_PASSWORD=$(openssl rand -base64 32)
@@ -102,6 +108,7 @@ ENCRYPTION_KEY=$(openssl rand -base64 32)
 ```
 
 2. Create production compose file:
+
 ```yaml
 # docker-compose.prod.yml
 version: '3.8'
@@ -110,16 +117,16 @@ services:
   traefik:
     image: docker.io/dockerhardened/traefik:3
     command:
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
-      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
-      - "--certificatesresolvers.letsencrypt.acme.email=admin@yourdomain.com"
-      - "--certificatesresolvers.letsencrypt.acme.storage=/etc/traefik/acme.json"
+      - '--providers.docker=true'
+      - '--providers.docker.exposedbydefault=false'
+      - '--entrypoints.web.address=:80'
+      - '--entrypoints.websecure.address=:443'
+      - '--certificatesresolvers.letsencrypt.acme.tlschallenge=true'
+      - '--certificatesresolvers.letsencrypt.acme.email=admin@yourdomain.com'
+      - '--certificatesresolvers.letsencrypt.acme.storage=/etc/traefik/acme.json'
     ports:
-      - "80:80"
-      - "443:443"
+      - '80:80'
+      - '443:443'
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - traefik_certs:/etc/traefik
@@ -139,7 +146,7 @@ services:
       - grc-network
     restart: always
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER}']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -158,6 +165,7 @@ networks:
 ```
 
 3. Deploy:
+
 ```bash
 docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 ```
@@ -165,12 +173,13 @@ docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 ### TLS Configuration
 
 Add to Traefik labels for each service:
+
 ```yaml
 labels:
-  - "traefik.enable=true"
-  - "traefik.http.routers.myservice.rule=Host(`api.yourdomain.com`)"
-  - "traefik.http.routers.myservice.entrypoints=websecure"
-  - "traefik.http.routers.myservice.tls.certresolver=letsencrypt"
+  - 'traefik.enable=true'
+  - 'traefik.http.routers.myservice.rule=Host(`api.yourdomain.com`)'
+  - 'traefik.http.routers.myservice.entrypoints=websecure'
+  - 'traefik.http.routers.myservice.tls.certresolver=letsencrypt'
 ```
 
 ### Backup Strategy
@@ -189,95 +198,127 @@ docker run --rm -v gigachad-grc_postgres_data:/data -v $(pwd):/backup alpine tar
 
 ## Kubernetes
 
-### Helm Chart Structure
+A Helm chart is included at `helm/` for deploying GigaChad GRC to Kubernetes.
+
+### Prerequisites
+
+- Kubernetes 1.24+
+- Helm 3.x
+- Container images pushed to a registry accessible from your cluster
+
+### Quick Deploy
+
+```bash
+kubectl create namespace gigachad-grc
+
+helm install gigachad-grc ./helm \
+  -n gigachad-grc \
+  --set postgresql.auth.password="$(openssl rand -base64 24)" \
+  --set redis.auth.password="$(openssl rand -base64 24)" \
+  --set keycloak.auth.adminPassword="$(openssl rand -base64 24)" \
+  --set rustfs.auth.rootPassword="$(openssl rand -base64 24)" \
+  --set controls.env.encryptionKey="$(openssl rand -hex 32)" \
+  --set controls.env.phishingTrackingSecret="$(openssl rand -base64 24)"
+```
+
+### Using a Custom Values File
+
+Create a `my-values.yaml` to override defaults:
+
+```yaml
+global:
+  imageRegistry: 'ghcr.io/your-org'
+
+controls:
+  replicaCount: 2
+  image:
+    tag: 'v1.0.0'
+
+ingress:
+  enabled: true
+  className: nginx
+  host: grc.yourdomain.com
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  tls:
+    enabled: true
+    secretName: grc-tls
+
+frontend:
+  devAuth: 'false'
+```
+
+```bash
+helm install gigachad-grc ./helm -n gigachad-grc -f my-values.yaml
+```
+
+### Using External Infrastructure
+
+To use existing PostgreSQL, Redis, or S3 instead of the chart-managed instances:
+
+```yaml
+postgresql:
+  enabled: false
+externalDatabase:
+  url: 'postgresql://grc:password@your-rds.amazonaws.com:5432/gigachad_grc'
+
+redis:
+  enabled: false
+externalRedis:
+  url: 'redis://:password@your-elasticache.amazonaws.com:6379'
+
+rustfs:
+  enabled: false
+externalS3:
+  endpoint: 's3.amazonaws.com'
+  port: '443'
+  useSSL: 'true'
+  accessKey: 'AKIAIOSFODNN7EXAMPLE'
+  secretKey: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY'
+  bucket: 'grc-evidence'
+```
+
+### Chart Structure
 
 ```
 helm/
 ├── Chart.yaml
 ├── values.yaml
-├── templates/
-│   ├── _helpers.tpl
-│   ├── configmap.yaml
-│   ├── secret.yaml
-│   ├── deployment-controls.yaml
-│   ├── deployment-frameworks.yaml
-│   ├── deployment-frontend.yaml
-│   ├── service-controls.yaml
-│   ├── service-frameworks.yaml
-│   ├── service-frontend.yaml
-│   ├── ingress.yaml
-│   └── pvc.yaml
+└── templates/
+    ├── _helpers.tpl
+    ├── NOTES.txt
+    ├── secret.yaml
+    ├── serviceaccount.yaml
+    ├── ingress.yaml
+    ├── postgresql.yaml          # Optional StatefulSet
+    ├── redis.yaml               # Optional StatefulSet
+    ├── keycloak.yaml            # Optional Deployment
+    ├── rustfs.yaml              # Optional StatefulSet
+    ├── deployment-controls.yaml
+    ├── deployment-frameworks.yaml
+    ├── deployment-policies.yaml
+    ├── deployment-tprm.yaml
+    ├── deployment-trust.yaml
+    ├── deployment-audit.yaml
+    ├── deployment-frontend.yaml
+    ├── prometheus.yaml          # Optional
+    └── grafana.yaml             # Optional
 ```
 
-### Sample values.yaml
+### Monitoring
+
+Prometheus and Grafana are disabled by default. Enable them with:
 
 ```yaml
-# values.yaml
-replicaCount: 2
-
-image:
-  repository: your-registry/gigachad-grc
-  tag: latest
-  pullPolicy: Always
-
-database:
-  host: postgres.default.svc.cluster.local
-  port: 5432
-  name: gigachad_grc
-
-redis:
-  host: redis.default.svc.cluster.local
-  port: 6379
-
-keycloak:
-  url: https://auth.yourdomain.com
-  realm: gigachad-grc
-  clientId: grc-frontend
-
-rustfs:
-  endpoint: rustfs.default.svc.cluster.local
-  port: 9000
-  bucket: grc-evidence
-
-ingress:
+prometheus:
   enabled: true
-  className: nginx
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-prod
-  hosts:
-    - host: grc.yourdomain.com
-      paths:
-        - path: /
-          pathType: Prefix
-  tls:
-    - secretName: grc-tls
-      hosts:
-        - grc.yourdomain.com
-
-resources:
-  limits:
-    cpu: 500m
-    memory: 512Mi
-  requests:
-    cpu: 100m
-    memory: 256Mi
+grafana:
+  enabled: true
+  auth:
+    adminPassword: 'your-grafana-password'
 ```
 
-### Deploy to Kubernetes
-
-```bash
-# Create namespace
-kubectl create namespace gigachad-grc
-
-# Create secrets
-kubectl create secret generic grc-secrets \
-  --from-literal=POSTGRES_PASSWORD=your-password \
-  --from-literal=REDIS_PASSWORD=your-password \
-  -n gigachad-grc
-
-# Install with Helm
-helm install gigachad-grc ./helm -n gigachad-grc -f values.yaml
-```
+For full configuration options, see `helm/values.yaml`.
 
 ## Module Extraction
 
@@ -286,6 +327,7 @@ Each service can be deployed independently.
 ### Extract Controls Service
 
 1. Copy necessary files:
+
 ```bash
 mkdir my-controls-service
 cp -r services/controls/* my-controls-service/
@@ -294,6 +336,7 @@ cp services/shared/prisma/schema.prisma my-controls-service/prisma/
 ```
 
 2. Update Dockerfile:
+
 ```dockerfile
 FROM node:20-alpine
 
@@ -318,6 +361,7 @@ CMD ["node", "dist/main"]
 ```
 
 3. Configure environment:
+
 ```env
 DATABASE_URL=postgresql://user:pass@host:5432/db
 REDIS_URL=redis://host:6379
@@ -327,6 +371,7 @@ MINIO_ENDPOINT=storage.yourdomain.com
 ```
 
 4. Build and run:
+
 ```bash
 docker build -t my-controls-service .
 docker run -p 3001:3001 --env-file .env my-controls-service
@@ -346,12 +391,14 @@ npx prisma migrate dev --name controls-init --schema=./prisma/schema-controls.pr
 ### Health Checks
 
 Each service exposes health endpoints:
+
 - `GET /health` - Basic health check
 - `GET /health/ready` - Readiness (includes DB connection)
 
 ### Prometheus Metrics
 
 Add to each service:
+
 ```typescript
 // main.ts
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
@@ -366,6 +413,7 @@ import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 ### Logging
 
 Configure structured logging:
+
 ```typescript
 // Use the shared logger
 import { getLogger } from '@gigachad-grc/shared';
@@ -379,6 +427,7 @@ logger.info('Service started', { port: 3001 });
 ### Common Issues
 
 **Database connection failed:**
+
 ```bash
 # Check if postgres is running
 docker-compose ps postgres
@@ -391,12 +440,14 @@ docker-compose exec postgres psql -U grc -d gigachad_grc
 ```
 
 **Keycloak not redirecting:**
+
 ```bash
 # Check Keycloak realm configuration
 # Ensure redirect URIs match your frontend URL
 ```
 
 **RustFS/S3 access denied:**
+
 ```bash
 # Verify RustFS is running
 docker-compose ps rustfs
@@ -434,6 +485,3 @@ docker-compose down -v
 docker-compose build --no-cache
 docker-compose up -d
 ```
-
-
-
