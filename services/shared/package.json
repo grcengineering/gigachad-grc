@@ -18,7 +18,7 @@
     "@nestjs/throttler": "^6.5.0",
     "@prisma/client": "^5.22.0",
     "class-transformer": "^0.5.1",
-    "file-type": "^20.4.1",
+    "file-type": "^21.3.1",
     "ioredis": "^5.9.3",
     "jsonwebtoken": "^9.0.2",
     "jwks-rsa": "^3.1.0",
