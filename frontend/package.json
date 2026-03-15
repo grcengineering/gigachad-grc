@@ -41,7 +41,7 @@
     "jspdf": "^4.2.0",
     "jwt-decode": "^4.0.0",
     "keycloak-js": "^25.0.0",
-    "lucide-react": "^0.576.0",
+    "lucide-react": "^0.577.0",
     "mammoth": "^1.11.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
