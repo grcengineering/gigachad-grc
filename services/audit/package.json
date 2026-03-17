@@ -17,10 +17,10 @@
   "dependencies": {
     "@gigachad-grc/shared": "file:../shared",
     "@nestjs/axios": "^4.0.0",
-    "@nestjs/common": "^11.1.16",
+    "@nestjs/common": "^11.1.17",
     "@nestjs/config": "^4.0.3",
-    "@nestjs/core": "^11.1.16",
-    "@nestjs/platform-express": "^11.1.16",
+    "@nestjs/core": "^11.1.17",
+    "@nestjs/platform-express": "^11.1.17",
     "@nestjs/swagger": "^11.2.6",
     "@nestjs/throttler": "^6.4.0",
     "@prisma/client": "^5.22.0",
