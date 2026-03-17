@@ -38,7 +38,7 @@ cd gigachad-grc
 
 1. Checks that Docker is installed and running
 2. Generates a `.env` file with secure random secrets (if one doesn't exist)
-3. Builds and starts all containers with `docker compose up`
+3. Builds and starts all containers with `docker compose up -d --build`
 4. Opens your browser to `http://localhost:3000`
 
 **First run takes 3-5 minutes** while Docker builds the images. Subsequent starts take ~30 seconds.
@@ -151,6 +151,20 @@ This was a Vite code-splitting issue that has been fixed. Pull the latest code:
 ```bash
 git pull origin main
 ./start.sh
+```
+
+### `pull access denied for grc-trust` (or other service)
+
+```
+pull access denied for grc-trust, repository does not exist or may require 'docker login'
+```
+
+All application services (controls, frameworks, trust, etc.) are built locally from Dockerfiles -- they don't exist on Docker Hub. This error means Docker tried to pull the image instead of building it, which happens when you run `docker compose up` without the `--build` flag.
+
+**Fix:** Use `./start.sh` (which includes `--build` automatically), or run:
+
+```bash
+docker compose up -d --build
 ```
 
 ### Port already in use
