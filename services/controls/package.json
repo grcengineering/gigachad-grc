@@ -35,7 +35,7 @@
     "axios": "^1.13.6",
     "bullmq": "^5.70.4",
     "class-transformer": "^0.5.1",
-    "class-validator": "^0.14.0",
+    "class-validator": "^0.15.1",
     "compression": "^1.7.4",
     "cron-parser": "^4.9.0",
     "date-fns": "^4.1.0",
