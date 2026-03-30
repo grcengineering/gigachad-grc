@@ -36,5 +36,11 @@
     "@types/node": "^20.19.37",
     "prisma": "^5.22.0",
     "typescript": "^5.3.3"
+  },
+  "overrides": {
+    "fast-xml-parser": ">=5.5.7",
+    "path-to-regexp": ">=8.4.0",
+    "picomatch": ">=2.3.2",
+    "brace-expansion": ">=5.0.5"
   }
 }

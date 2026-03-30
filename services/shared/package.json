@@ -48,5 +48,11 @@
   "files": [
     "dist"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "overrides": {
+    "fast-xml-parser": ">=5.5.7",
+    "path-to-regexp": ">=8.4.0",
+    "picomatch": ">=2.3.2",
+    "brace-expansion": ">=5.0.5"
+  }
 }
