@@ -136,6 +136,7 @@ jobs:
         with:
           scan-type: 'fs'
           scan-ref: '.'
+          scanners: 'vuln'
           severity: 'CRITICAL,HIGH'
           exit-code: '1' # BLOCKING: Fail on HIGH/CRITICAL vulnerabilities
           format: 'table'
