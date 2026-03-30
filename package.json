@@ -81,7 +81,6 @@
     "path-to-regexp": ">=8.4.0",
     "picomatch": ">=2.3.2",
     "yaml": ">=2.8.3",
-    "ajv": ">=8.18.0",
     "@nestjs/cli": {
       "@angular-devkit/core": {
         "ajv": "8.18.0"
