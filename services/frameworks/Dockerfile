@@ -42,8 +42,9 @@ RUN npm run build
 # Production stage
 FROM node:20-alpine@sha256:b88333c42c23fbd91596ebd7fd10de239cedab9617de04142dde7315e3bc0afa AS production
 
-# Patch OS-level CVEs (zlib CVE-2026-22184, CVE-2026-27171), install OpenSSL for Prisma
-RUN apk upgrade --no-cache && apk add --no-cache openssl && npm update -g npm
+# Patch OS-level CVEs, install OpenSSL for Prisma, remove npm (not needed at runtime)
+RUN apk upgrade --no-cache && apk add --no-cache openssl && \
+    rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
 
 WORKDIR /app
 

@@ -18,7 +18,7 @@ sleep 5
 # Run database migrations
 echo "[2/2] Synchronizing database schema..."
 cd /app
-npx prisma db push --schema=/app/shared/prisma/schema.prisma --accept-data-loss --skip-generate 2>&1 || {
+./node_modules/.bin/prisma db push --schema=/app/shared/prisma/schema.prisma --accept-data-loss --skip-generate 2>&1 || {
   echo "  Note: Schema may already be up to date."
 }
 

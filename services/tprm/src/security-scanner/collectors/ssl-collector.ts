@@ -98,7 +98,10 @@ export class SSLCollector {
           const cert = socket.getPeerCertificate();
           if (cert && cert.valid_to) {
             result.enabled = true;
-            result.issuer = cert.issuer?.CN || cert.issuer?.O || 'Unknown';
+            const cn = cert.issuer?.CN;
+            const org = cert.issuer?.O;
+            result.issuer =
+              (Array.isArray(cn) ? cn[0] : cn) || (Array.isArray(org) ? org[0] : org) || 'Unknown';
             result.expiry = cert.valid_to;
 
             // Calculate days until expiry
