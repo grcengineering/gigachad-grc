@@ -17,10 +17,10 @@
   "dependencies": {
     "@gigachad-grc/shared": "file:../shared",
     "@nestjs/axios": "^4.0.0",
-    "@nestjs/common": "^11.1.17",
+    "@nestjs/common": "^11.1.18",
     "@nestjs/config": "^4.0.3",
-    "@nestjs/core": "^11.1.17",
-    "@nestjs/platform-express": "^11.1.17",
+    "@nestjs/core": "^11.1.18",
+    "@nestjs/platform-express": "^11.1.18",
     "@nestjs/swagger": "^11.2.6",
     "@nestjs/throttler": "^6.4.0",
     "@prisma/client": "^5.22.0",
@@ -35,8 +35,8 @@
     "uuid": "^9.0.1"
   },
   "devDependencies": {
-    "@nestjs/cli": "^11.0.14",
-    "@nestjs/schematics": "^11.0.0",
+    "@nestjs/cli": "^11.0.17",
+    "@nestjs/schematics": "^11.0.10",
     "@types/bcrypt": "^5.0.2",
     "@types/express": "^4.17.21",
     "@types/multer": "^2.1.0",
