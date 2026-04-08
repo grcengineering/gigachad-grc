@@ -58,7 +58,7 @@
     "zod": "^3.22.4"
   },
   "optionalDependencies": {
-    "@okta/okta-auth-js": "^7.5.1",
+    "@okta/okta-auth-js": "^7.14.2",
     "@okta/okta-react": "^6.11.0",
     "@sentry/react": "^7.98.0",
     "i18next": "^23.7.16",
