@@ -168,7 +168,7 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:25.0
     container_name: grc-keycloak
-    command: start --optimized --import-realm
+    command: start --import-realm
     environment:
       # Database
       KC_DB: postgres
@@ -179,24 +179,21 @@ services:
       KC_DB_POOL_MIN_SIZE: ${KC_DB_POOL_MIN_SIZE:-5}
       KC_DB_POOL_MAX_SIZE: ${KC_DB_POOL_MAX_SIZE:-20}
 
-      # Hostname
+      # Hostname — Traefik handles TLS, so Keycloak serves HTTP behind the proxy
       KC_HOSTNAME: ${KEYCLOAK_HOSTNAME}
       KC_HOSTNAME_STRICT: 'true'
       KC_HOSTNAME_STRICT_HTTPS: 'true'
-      KC_PROXY: edge
+      KC_PROXY_HEADERS: xforwarded
 
-      # HTTP/HTTPS
+      # HTTP only — TLS is terminated by Traefik
       KC_HTTP_ENABLED: 'true'
-      KC_HTTPS_CERTIFICATE_FILE: /opt/keycloak/conf/server.crt.pem
-      KC_HTTPS_CERTIFICATE_KEY_FILE: /opt/keycloak/conf/server.key.pem
 
       # Admin
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
 
-      # Performance
+      # Performance — default ispn cache with udp discovery for Docker Compose
       KC_CACHE: ispn
-      KC_CACHE_STACK: kubernetes
 
       # Logging
       KC_LOG_LEVEL: ${KC_LOG_LEVEL:-info}
@@ -209,7 +206,6 @@ services:
     volumes:
       - ./auth/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
       - keycloak_data:/opt/keycloak/data
-      - keycloak_certs:/opt/keycloak/conf:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -239,12 +235,12 @@ services:
       test:
         [
           'CMD-SHELL',
-          "exec 3<>/dev/tcp/127.0.0.1/8080 && echo -e 'GET /auth/health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200 OK'",
+          "exec 3<>/dev/tcp/127.0.0.1/9000 && echo -e 'GET /auth/health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200 OK'",
         ]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 90s
+      start_period: 120s
     deploy:
       resources:
         limits:
@@ -903,6 +899,67 @@ services:
           memory: 256M
 
   # ===========================================
+  # Frontend - React SPA with Nginx
+  # ===========================================
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        VITE_API_URL: ''
+        VITE_ENABLE_DEV_AUTH: 'false'
+    image: grc-frontend:${IMAGE_TAG:-latest}
+    container_name: grc-frontend
+    depends_on:
+      - controls
+    networks:
+      - grc-network
+      - grc-dmz
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.docker.network=grc-dmz'
+      - 'traefik.http.routers.frontend.rule=Host(`${APP_DOMAIN}`)'
+      - 'traefik.http.routers.frontend.entrypoints=websecure'
+      - 'traefik.http.routers.frontend.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.frontend.priority=1'
+      - 'traefik.http.services.frontend.loadbalancer.server.port=80'
+      - 'traefik.http.middlewares.frontend-headers.headers.stsSeconds=31536000'
+      - 'traefik.http.middlewares.frontend-headers.headers.stsIncludeSubdomains=true'
+      - 'traefik.http.middlewares.frontend-headers.headers.stsPreload=true'
+      - 'traefik.http.middlewares.frontend-headers.headers.contentTypeNosniff=true'
+      - 'traefik.http.middlewares.frontend-headers.headers.frameDeny=true'
+      - 'traefik.http.routers.frontend.middlewares=frontend-headers'
+    restart: always
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/cache/nginx
+      - /run
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m'
+        max-file: '3'
+    healthcheck:
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:80/']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+
+  # ===========================================
   # Backup Scheduler - Automated Backups
   # ===========================================
   backup-scheduler:
@@ -977,8 +1034,6 @@ volumes:
   rustfs_logs:
     driver: local
   keycloak_data:
-    driver: local
-  keycloak_certs:
     driver: local
   traefik_letsencrypt:
     driver: local
