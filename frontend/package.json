@@ -35,7 +35,7 @@
     "axios": "^1.15.0",
     "clsx": "^2.1.0",
     "date-fns": "^3.2.0",
-    "dompurify": "^3.3.3",
+    "dompurify": "^3.4.0",
     "exceljs": "^4.4.0",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
