@@ -20,7 +20,7 @@
     "@nestjs/core": "^11.1.19",
     "@nestjs/platform-express": "^11.1.19",
     "@nestjs/mapped-types": "^2.0.0",
-    "@nestjs/swagger": "^11.2.7",
+    "@nestjs/swagger": "^11.3.2",
     "@nestjs/throttler": "^6.4.0",
     "@prisma/client": "^5.22.0",
     "class-transformer": "^0.5.1",
