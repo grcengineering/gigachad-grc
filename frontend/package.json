@@ -52,7 +52,7 @@
     "react-icons": "^5.5.0",
     "react-markdown": "^10.1.0",
     "react-router-dom": "^6.21.1",
-    "react-toastify": "^11.0.5",
+    "react-toastify": "^11.1.0",
     "recharts": "^2.10.3",
     "tailwind-merge": "^2.2.0",
     "zod": "^3.22.4"
