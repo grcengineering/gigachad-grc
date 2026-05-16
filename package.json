@@ -13,6 +13,8 @@
   ],
   "scripts": {
     "prepare": "husky",
+    "setup": "npm run db:generate && npm run prepare",
+    "db:generate": "npm run prisma:generate --workspaces --if-present",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "lint:check": "eslint . --max-warnings=0",

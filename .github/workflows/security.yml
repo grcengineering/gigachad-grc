@@ -123,6 +123,10 @@ jobs:
         # checksum fetch on hardened runners.
         run: npm ci --ignore-scripts
 
+      - name: Verify npm package signatures (BLOCKING)
+        # Sigstore attestation check. See pr-validation.yml for rationale.
+        run: npm audit signatures
+
       - name: Run npm audit (blocking on high/critical)
         run: |
           echo "## Dependency Audit Results" >> $GITHUB_STEP_SUMMARY

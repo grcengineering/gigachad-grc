@@ -86,6 +86,12 @@ jobs:
       - name: Install all dependencies
         run: npm ci
 
+      # Lifecycle scripts are disabled globally via .npmrc as a supply-chain
+      # defense. The Prisma client is required for the per-service TS
+      # compilation below, so generate it explicitly here.
+      - name: Generate Prisma client
+        run: npm run db:generate
+
       - name: Build shared module
         run: npm run build --workspace=@gigachad-grc/shared
 
@@ -130,6 +136,13 @@ jobs:
       - name: Run npm audit (BLOCKING)
         run: npm audit --audit-level=high
         # Security check is now blocking - no continue-on-error
+
+      - name: Verify npm package signatures (BLOCKING)
+        # Checks sigstore attestations for installed packages. Catches
+        # package takeovers where a malicious version is published without
+        # a valid signature from the maintainer's published key. Skips
+        # gracefully for packages that have not yet enabled attestations.
+        run: npm audit signatures
 
       - name: Run Trivy vulnerability scanner (BLOCKING)
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # master
