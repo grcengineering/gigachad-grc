@@ -20,6 +20,12 @@
     "postinstall": "prisma generate --schema=../shared/prisma/schema.prisma"
   },
   "dependencies": {
+    "@aws-sdk/client-cloudtrail": "^3.1048.0",
+    "@aws-sdk/client-cognito-identity-provider": "^3.1048.0",
+    "@aws-sdk/client-config-service": "^3.1048.0",
+    "@aws-sdk/client-iam": "^3.1048.0",
+    "@aws-sdk/client-securityhub": "^3.1048.0",
+    "@aws-sdk/client-sts": "^3.1047.0",
     "@gigachad-grc/shared": "file:../shared",
     "@nestjs/common": "^11.1.19",
     "@nestjs/config": "^4.0.4",
