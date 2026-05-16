@@ -15,7 +15,7 @@
     "@aws-sdk/client-iam": "^3.1002.0",
     "@aws-sdk/client-ec2": "^3.1002.0",
     "@aws-sdk/client-config-service": "^3.1002.0",
-    "@azure/identity": "^4.0.0",
+    "@azure/identity": "^4.13.1",
     "@azure/arm-resources": "^5.0.0",
     "@azure/arm-security": "^5.0.0",
     "@azure/arm-keyvault": "^3.0.0",
@@ -23,7 +23,7 @@
     "@azure/arm-storage": "^18.0.0",
     "@octokit/rest": "^20.0.0",
     "axios": "^1.15.0",
-    "googleapis": "^144.0.0",
+    "googleapis": "^171.4.0",
     "puppeteer": "^24.0.0",
     "zod": "^3.22.0"
   },
