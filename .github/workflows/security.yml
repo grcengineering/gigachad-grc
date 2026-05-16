@@ -117,7 +117,15 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        # --ignore-scripts skips prisma generate (and other postinstall hooks).
+        # npm audit only needs the dep tree; skipping postinstall avoids
+        # the "Unexpected end of JSON input" error from Prisma's engine
+        # checksum fetch on hardened runners.
+        run: npm ci --ignore-scripts
+
+      - name: Verify npm package signatures (BLOCKING)
+        # Sigstore attestation check. See pr-validation.yml for rationale.
+        run: npm audit signatures
 
       - name: Run npm audit (blocking on high/critical)
         run: |
@@ -188,6 +196,10 @@ jobs:
           severity: 'CRITICAL,HIGH'
           exit-code: '1' # BLOCKING: Fail on critical/high vulnerabilities
           ignore-unfixed: true
+          # .trivyignore at the repo root mirrors the GitHub code-scanning
+          # dismissals that Trivy itself does not honor. Each entry there
+          # documents the rationale for the dismissal.
+          trivyignores: '.trivyignore'
         continue-on-error: false
 
       - name: Upload Trivy scan results
@@ -284,7 +296,10 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        # --ignore-scripts skips prisma generate (and other postinstall hooks).
+        # license-checker reads package.json + node_modules layout; it doesn't
+        # need generated Prisma client. Avoids the same Prisma JSON error.
+        run: npm ci --ignore-scripts
 
       - name: Check licenses
         run: |
