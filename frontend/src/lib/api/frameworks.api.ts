@@ -16,6 +16,8 @@ import type {
   UpdateMappingData,
   BulkMappingData,
   MappingListParams,
+  MappingSuggestRequest,
+  MappingSuggestResponse,
 } from '../apiTypes';
 
 export const frameworksApi = {
@@ -200,6 +202,14 @@ export const frameworksApi = {
      */
     getRequirementCoverage: async (frameworkId: string) => {
       const response = await api.get(`/api/mappings/requirement-coverage/${frameworkId}`);
+      return response.data;
+    },
+
+    /**
+     * Get AI-generated mapping suggestions for a requirement or control anchor
+     */
+    suggest: async (data: MappingSuggestRequest): Promise<MappingSuggestResponse> => {
+      const response = await api.post('/api/mappings/suggest', data);
       return response.data;
     },
   },
