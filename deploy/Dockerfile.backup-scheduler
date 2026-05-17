@@ -1,5 +1,10 @@
 # GigaChad GRC Backup Scheduler
-# Runs automated backups on a configurable schedule
+# Runs automated backups on a configurable schedule.
+#
+# This container connects to other services on the docker-compose grc-network
+# as a normal network peer (pg_dump over TCP, redis-cli over TCP, aws s3
+# against the rustfs S3 API). It does NOT need access to /var/run/docker.sock
+# and the docker CLI is intentionally absent from this image.
 
 FROM alpine:3.23
 
@@ -7,11 +12,10 @@ FROM alpine:3.23
 RUN apk upgrade --no-cache && apk add --no-cache \
     bash \
     curl \
-    docker-cli \
-    docker-compose \
     gzip \
     tar \
     postgresql16-client \
+    redis \
     aws-cli \
     jq \
     tzdata \
