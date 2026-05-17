@@ -292,7 +292,7 @@ export default function EmployeeComplianceDashboard() {
             <ArrowPathIcon className={`h-5 w-5 ${syncMutation.isPending ? 'animate-spin' : ''}`} />
             {syncMutation.isPending ? 'Syncing...' : 'Sync All'}
           </button>
-          <Link to="/employees" className="btn btn-primary">View All Employees</Link>
+          <Link to="/people" className="btn btn-primary">View All Employees</Link>
         </div>
       </div>
 
@@ -488,7 +488,7 @@ export default function EmployeeComplianceDashboard() {
                       {missingData.noBackgroundCheck?.length || 0} employees missing background checks, {' '}
                       {missingData.noTrainingData?.length || 0} missing training data
                     </p>
-                    <Link to="/employees?filter=missing-data" className="text-xs text-amber-700 dark:text-yellow-300 hover:text-amber-800 dark:hover:text-yellow-200 mt-1 inline-block">
+                    <Link to="/people?filter=missing-data" className="text-xs text-amber-700 dark:text-yellow-300 hover:text-amber-800 dark:hover:text-yellow-200 mt-1 inline-block">
                       View details →
                     </Link>
                   </div>
@@ -531,7 +531,7 @@ export default function EmployeeComplianceDashboard() {
                         </div>
                       ))}
                       {metrics.upcomingDeadlines.overdueTrainings.length > 5 && (
-                        <Link to="/employees?filter=overdue-training" className="text-xs text-brand-400 hover:text-brand-300 block text-center mt-2">
+                        <Link to="/people?filter=overdue-training" className="text-xs text-brand-400 hover:text-brand-300 block text-center mt-2">
                           View all {metrics.upcomingDeadlines.overdueTrainings.length} →
                         </Link>
                       )}
@@ -562,7 +562,7 @@ export default function EmployeeComplianceDashboard() {
                         </div>
                       ))}
                       {metrics.upcomingDeadlines.expiringBackgroundChecks.length > 5 && (
-                        <Link to="/employees?filter=expiring-background" className="text-xs text-brand-400 hover:text-brand-300 block text-center mt-2">
+                        <Link to="/people?filter=expiring-background" className="text-xs text-brand-400 hover:text-brand-300 block text-center mt-2">
                           View all {metrics.upcomingDeadlines.expiringBackgroundChecks.length} →
                         </Link>
                       )}
@@ -593,7 +593,7 @@ export default function EmployeeComplianceDashboard() {
                         </div>
                       ))}
                       {metrics.upcomingDeadlines.pendingAttestations.length > 5 && (
-                        <Link to="/employees?filter=pending-attestation" className="text-xs text-brand-400 hover:text-brand-300 block text-center mt-2">
+                        <Link to="/people?filter=pending-attestation" className="text-xs text-brand-400 hover:text-brand-300 block text-center mt-2">
                           View all {metrics.upcomingDeadlines.pendingAttestations.length} →
                         </Link>
                       )}
