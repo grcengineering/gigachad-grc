@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { test, expect, request as pwRequest, APIRequestContext, APIResponse } from '@playwright/test';
 
 /**
@@ -69,7 +68,7 @@ test.describe('Tenant isolation @adminA-only', () => {
   // chromium-adminA project pins it; other projects skip so we don't
   // run identical isolation probes from contexts (viewerA, adminB) that
   // would just retest the same backend in inconsistent ways.
-  test.beforeEach(({}, testInfo) => {
+  test.beforeEach((_, testInfo) => {
     test.skip(
       testInfo.project.name !== 'chromium-adminA',
       'Tenant-isolation suite only runs in the chromium-adminA project.'
