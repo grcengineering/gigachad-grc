@@ -240,15 +240,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Bring up dev stack (docker compose --wait)
-        # --wait polls each service's healthcheck until healthy or timeout.
-        # The dev compose file defines health checks for postgres, redis,
-        # keycloak, rustfs, and each backend service.
-        run: docker compose up -d --wait
+      - name: Bring up dev stack
+        # Plain `up -d` (no --wait). The polling step below handles
+        # readiness gating with a 5 min budget. We don't use --wait
+        # because the frontend's nginx healthcheck has a tight retry
+        # budget (5s start period + 3 retries at 30s interval) and the
+        # first build of all 7 images on a cold runner can exceed it.
+        # --wait then exits non-zero before the poll has a chance to
+        # confirm actual HTTP readiness.
+        run: docker compose up -d
 
       - name: Poll backend + frontend readiness (5 min max)
-        # Belt-and-suspenders on top of --wait: services may report healthy
-        # but still be a beat behind on HTTP. Loop until both the controls
+        # Loop until both the controls API and the nginx-served frontend
+        # respond 2xx/3xx, or 5 minutes elapse. This is the real gate;
+        # see comment on the previous step. Loop until both the controls
         # API and the nginx-served frontend respond 2xx/3xx, or 5 minutes
         # elapse.
         run: |
