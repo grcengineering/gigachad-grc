@@ -1,6 +1,6 @@
 /**
  * Frameworks API Module
- * 
+ *
  * Handles all API calls related to compliance frameworks and mappings.
  */
 
@@ -13,6 +13,7 @@ import type {
   CreateRequirementData,
   UpdateRequirementData,
   CreateMappingData,
+  UpdateMappingData,
   BulkMappingData,
   MappingListParams,
 } from '../apiTypes';
@@ -131,7 +132,9 @@ export const frameworksApi = {
      * List all mappings with optional filtering
      */
     list: async (params?: MappingListParams) => {
-      const queryString = params ? buildQueryString(params as Record<string, string | number | boolean | undefined>) : '';
+      const queryString = params
+        ? buildQueryString(params as Record<string, string | number | boolean | undefined>)
+        : '';
       const response = await api.get(`/api/mappings${queryString}`);
       return response.data;
     },
@@ -141,6 +144,14 @@ export const frameworksApi = {
      */
     create: async (data: CreateMappingData) => {
       const response = await api.post('/api/mappings', data);
+      return response.data;
+    },
+
+    /**
+     * Update an existing mapping (mappingType and/or notes)
+     */
+    update: async (id: string, data: UpdateMappingData) => {
+      const response = await api.patch(`/api/mappings/${id}`, data);
       return response.data;
     },
 
