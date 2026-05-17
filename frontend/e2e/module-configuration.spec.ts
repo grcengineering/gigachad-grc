@@ -30,15 +30,21 @@ test.describe('Module Configuration - Disabled AI Module', () => {
 test.describe('Module Configuration - BC/DR Module', () => {
   test('BC/DR dashboard either loads or shows disabled module page', async ({ page }) => {
     await page.goto('/bcdr');
-    await page.waitForLoadState('networkidle');
 
-    const bcdrHeading = page.locator('h1, h2').filter({ hasText: /BC\/DR|Business Continuity|Disaster Recovery/i });
-    const disabledHeading = page.locator('text=Module Not Enabled');
-
-    const bcdrVisible = await bcdrHeading.first().isVisible().catch(() => false);
-    const disabledVisible = await disabledHeading.first().isVisible().catch(() => false);
-
-    expect(bcdrVisible || disabledVisible).toBeTruthy();
+    // BCDRDashboard renders a skeleton (no h1/h2) while its two
+    // useQuery calls are in flight, so `networkidle` is not enough —
+    // poll for the heading or the disabled-module page to actually
+    // appear in the DOM. The expect.toPass retries the inner check
+    // until the 10s default expect timeout.
+    await expect(async () => {
+      const bcdrHeading = page
+        .locator('h1, h2')
+        .filter({ hasText: /BC\/DR|Business Continuity|Disaster Recovery/i });
+      const disabledHeading = page.locator('text=Module Not Enabled');
+      const bcdrVisible = await bcdrHeading.first().isVisible().catch(() => false);
+      const disabledVisible = await disabledHeading.first().isVisible().catch(() => false);
+      expect(bcdrVisible || disabledVisible).toBeTruthy();
+    }).toPass({ timeout: 15_000 });
   });
 });
 

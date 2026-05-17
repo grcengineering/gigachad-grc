@@ -17,9 +17,11 @@ test.describe('Help Center', () => {
 
   test('shows help categories', async ({ page }) => {
     await page.waitForTimeout(1000);
-    
-    // Should have category sections
-    const categories = page.locator('[class*="card"], [class*="category"], section');
+
+    // Categories render as buttons inside main content (one per category like
+    // "Compliance", "Integrations", etc.) plus article links. Either form
+    // satisfies "has categories".
+    const categories = page.locator('main button, main a[href*="/help/"], [class*="card"], [class*="category"], section');
     expect(await categories.count()).toBeGreaterThan(0);
   });
 

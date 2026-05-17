@@ -7,7 +7,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('User Management', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/settings/users');
+    await page.goto('/users');
     await page.waitForLoadState('networkidle');
   });
 
@@ -69,7 +69,7 @@ test.describe('User Management', () => {
 
 test.describe('User Invite Modal', () => {
   test('can open invite modal', async ({ page }) => {
-    await page.goto('/settings/users');
+    await page.goto('/users');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
     
@@ -89,7 +89,7 @@ test.describe('User Invite Modal', () => {
   });
 
   test('invite modal has email field', async ({ page }) => {
-    await page.goto('/settings/users');
+    await page.goto('/users');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
     
@@ -108,7 +108,7 @@ test.describe('User Invite Modal', () => {
   });
 
   test('invite modal has role selection', async ({ page }) => {
-    await page.goto('/settings/users');
+    await page.goto('/users');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
     

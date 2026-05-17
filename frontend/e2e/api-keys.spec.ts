@@ -12,7 +12,7 @@ test.describe('API Keys', () => {
   });
 
   test('displays API keys page', async ({ page }) => {
-    await expect(page.locator('h1, h2').filter({ hasText: /API|Key/i })).toBeVisible();
+    await expect(page.locator('h1, h2').filter({ hasText: /API|Key/i }).first()).toBeVisible();
   });
 
   test('shows API key list or empty state', async ({ page }) => {

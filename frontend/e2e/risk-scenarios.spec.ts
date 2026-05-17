@@ -25,10 +25,10 @@ test.describe('Risk Scenarios', () => {
   });
 
   test('has search and filter functionality', async ({ page }) => {
-    // Check for search input
-    const searchInput = page.locator('input[placeholder*="Search"], input[type="search"]');
+    // Check for search input (scope to main; site-wide search lives in header)
+    const searchInput = page.locator('main').locator('input[placeholder*="Search"], input[type="search"]').first();
     await expect(searchInput).toBeVisible();
-    
+
     // Check for filter dropdowns
     const filterSelects = page.locator('select');
     expect(await filterSelects.count()).toBeGreaterThan(0);

@@ -72,45 +72,49 @@ test.describe('Integrations - Configuration', () => {
   });
 
   test('can open integration configuration modal', async ({ page }) => {
-    // Find a "Configure" or integration card button
-    const configureBtn = page.locator('button').filter({ hasText: /configure|connect|setup/i }).first();
-    
+    // Find the "Configure" action button on an integration card within main
+    // content. Use exact text to avoid matching the "Configured" stats button
+    // or sidebar "Configuration" toggle.
+    const configureBtn = page.locator('main button', { hasText: /^Configure$/ }).first();
+
     if (await configureBtn.count() > 0) {
       await configureBtn.click();
       await page.waitForTimeout(1000);
-      
-      // Modal should open
-      const modal = page.locator('[role="dialog"], .modal, [class*="modal"]');
+
+      // Modal renders with a "Configure <name>" heading inside the overlay.
+      const modal = page.locator('[role="dialog"], .modal, [class*="modal"], h2:has-text("Configure")');
       await expect(modal.first()).toBeVisible();
     }
   });
 
   test('integration modal has configuration tabs', async ({ page }) => {
-    const configureBtn = page.locator('button').filter({ hasText: /configure|connect|setup/i }).first();
-    
+    const configureBtn = page.locator('main button', { hasText: /^Configure$/ }).first();
+
     if (await configureBtn.count() > 0) {
       await configureBtn.click();
       await page.waitForTimeout(1000);
-      
-      // Look for tabs (Quick Setup, Advanced, Raw API, etc.)
-      const tabs = page.locator('[role="tab"], button[role="tab"], [class*="tab"]');
+
+      // Tabs are plain buttons labeled "Quick Setup", "Advanced Builder", "Raw API".
+      const tabs = page.locator(
+        '[role="tab"], button[role="tab"], [class*="tab"], button:has-text("Quick Setup"), button:has-text("Advanced Builder"), button:has-text("Raw API")'
+      );
       expect(await tabs.count()).toBeGreaterThan(0);
     }
   });
 
   test('can close integration modal', async ({ page }) => {
-    const configureBtn = page.locator('button').filter({ hasText: /configure|connect|setup/i }).first();
-    
+    const configureBtn = page.locator('main button', { hasText: /^Configure$/ }).first();
+
     if (await configureBtn.count() > 0) {
       await configureBtn.click();
       await page.waitForTimeout(1000);
-      
+
       // Find close button
       const closeBtn = page.locator('button').filter({ hasText: /close|cancel|×/i }).first();
       if (await closeBtn.count() > 0) {
         await closeBtn.click();
         await page.waitForTimeout(500);
-        
+
         // Modal should be closed
         const modal = page.locator('[role="dialog"]:visible, .modal:visible');
         expect(await modal.count()).toBe(0);

@@ -8,28 +8,23 @@ import { test, expect } from '@playwright/test';
 test.describe('Dashboard', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/dashboard');
-    await page.waitForLoadState('networkidle');
+    // The dashboard renders an empty <main> until its queries settle and
+    // React commits the rendered widgets. networkidle alone is not enough,
+    // so wait until the actual main-content heading is visible.
+    await page.locator('main h1, main h2').first().waitFor({ state: 'visible', timeout: 20_000 });
   });
 
   test('displays dashboard title and main elements', async ({ page }) => {
-    // Check page title/header
-    await expect(page.locator('h1, h2').first()).toBeVisible();
-    
-    // Check for dashboard content area
-    const mainContent = page.locator('main, [role="main"], .dashboard-content');
-    await expect(mainContent.first()).toBeVisible();
+    // Heading inside <main> (sidebar nav has no h1/h2, so scope is enough).
+    await expect(page.locator('main h1, main h2').first()).toBeVisible();
+    await expect(page.locator('main').first()).toBeVisible();
   });
 
   test('displays dashboard widgets', async ({ page }) => {
-    // Wait for widgets to load
-    await page.waitForTimeout(2000);
-    
-    // Check for widget containers (cards, panels, etc.)
+    // beforeEach already waited for the heading; widgets should be in
+    // the DOM by now. Match the card / widget primitives Tailwind uses.
     const widgets = page.locator('[class*="widget"], [class*="card"], [data-testid*="widget"]');
-    const widgetCount = await widgets.count();
-    
-    // Should have at least one widget/card
-    expect(widgetCount).toBeGreaterThan(0);
+    expect(await widgets.count()).toBeGreaterThan(0);
   });
 
   test('framework readiness widget shows data', async ({ page }) => {
@@ -51,14 +46,16 @@ test.describe('Dashboard', () => {
   });
 
   test('can access dashboard customization', async ({ page }) => {
-    // Look for customize/settings button
-    const customizeBtn = page.locator('button').filter({ hasText: /customize|settings|configure/i }).first();
-    
+    // Look for customize/settings button within main content (sidebar also has
+    // "Settings"/"Configuration" toggles which would otherwise match first).
+    const customizeBtn = page.locator('main button').filter({ hasText: /customize|settings|configure/i }).first();
+
     if (await customizeBtn.count() > 0) {
       await customizeBtn.click();
-      
-      // Should open a modal or panel
-      const modal = page.locator('[role="dialog"], .modal, [class*="modal"]');
+
+      // Should open a modal or panel. The customize modal renders a heading
+      // with the same name; match its overlay/container by heading.
+      const modal = page.locator('[role="dialog"], .modal, [class*="modal"], h3:has-text("Customize Dashboard")');
       await expect(modal.first()).toBeVisible({ timeout: 5000 });
     }
   });

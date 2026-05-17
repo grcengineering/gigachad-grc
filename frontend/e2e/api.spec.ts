@@ -59,8 +59,8 @@ test.describe('API Health Checks', () => {
       { timeout: 30000 }
     ).catch(() => null);
 
-    await page.goto('/settings/users');
-    
+    await page.goto('/users');
+
     const response = await apiResponse;
     if (response) {
       expect(response.status()).toBe(200);
@@ -90,9 +90,9 @@ test.describe('API Error Handling', () => {
 
     await page.goto('/controls');
     await page.waitForLoadState('networkidle');
-    
+
     // Should still render the page (possibly with error state)
-    await expect(page.locator('main, body')).toBeVisible();
+    await expect(page.locator('main').first()).toBeVisible();
   });
 });
 
@@ -166,9 +166,9 @@ test.describe('Network Resilience', () => {
 
     await page.goto('/dashboard', { timeout: 60000 });
     await page.waitForLoadState('networkidle', { timeout: 60000 });
-    
+
     // Page should still load
-    await expect(page.locator('main, body')).toBeVisible();
+    await expect(page.locator('main').first()).toBeVisible();
   });
 });
 

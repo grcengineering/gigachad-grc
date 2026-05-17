@@ -76,8 +76,9 @@ test.describe('Risks - Risk Reports', () => {
   test('can navigate to risk reports', async ({ page }) => {
     await page.goto('/risk-reports');
     await page.waitForLoadState('networkidle');
-    
-    await expect(page.locator('h1, h2').filter({ hasText: /Report/i })).toBeVisible();
+
+    // Multiple headings match /Report/i (h1 "Risk Reports" and h2 "Report Templates")
+    await expect(page.locator('h1, h2').filter({ hasText: /Report/i }).first()).toBeVisible();
   });
 
   test('can generate new report', async ({ page }) => {

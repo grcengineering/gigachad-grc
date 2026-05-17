@@ -7,7 +7,16 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Assets', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/assets');
+    // Direct nav to /assets hits an nginx 301→`/assets/` redirect (the
+    // built `dist/assets/` directory conflicts with the SPA route). Bootstrap
+    // the SPA on /dashboard, then push the target URL into history so React
+    // Router handles it client-side.
+    await page.goto('/dashboard');
+    await page.waitForLoadState('networkidle');
+    await page.evaluate(() => {
+      window.history.pushState({}, '', '/assets');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
     await page.waitForLoadState('networkidle');
   });
 
@@ -81,13 +90,13 @@ test.describe('Asset Detail', () => {
     await page.goto('/assets');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
-    
+
     const assetLink = page.locator('a[href*="asset"], tr, [class*="card"]').first();
-    
+
     if (await assetLink.count() > 0) {
       await assetLink.click();
       await page.waitForLoadState('networkidle');
-      
+
       await expect(page.locator('body')).toBeVisible();
     }
   });
@@ -98,10 +107,10 @@ test.describe('Asset Risk Association', () => {
     await page.goto('/assets');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
-    
+
     // Look for risk association section
     const riskSection = page.locator('text=/Risk|Threat|Vulnerability/i');
-    
+
     if (await riskSection.count() > 0) {
       await expect(riskSection.first()).toBeVisible();
     }
