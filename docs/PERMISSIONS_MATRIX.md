@@ -7,6 +7,16 @@ and is intended as a human-readable reference for administrators.
 > **Note:** This matrix shows default permissions. Actual effective permissions
 > may differ if you customize permission groups or add user-specific overrides.
 
+> **Enforced by CI (v1.3.0+).** The role × action matrix below is
+> machine-verified on every PR by
+> [`frontend/e2e/rbac.spec.ts`](../frontend/e2e/rbac.spec.ts), which
+> drives the backend's `RolesGuard` / `PermissionGuard` decorators as
+> each of the four seeded fixture users. Breaking the matrix —
+> for example, removing a `@Roles(...)` decorator or shipping a new
+> mutation route without one — fails the `e2e-tenant-rbac` CI job
+> and blocks merge. Cross-tenant isolation is verified in parallel by
+> [`tenant-isolation.spec.ts`](../frontend/e2e/tenant-isolation.spec.ts).
+
 ---
 
 ### Resources and Actions

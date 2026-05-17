@@ -537,18 +537,26 @@ npm test -- --coverage
 
 ### Backend Testing
 
+All six services (`controls`, `frameworks`, `audit`, `policies`,
+`tprm`, `trust`) now have Jest wired with the same scripts. Run from
+the workspace root or per-service:
+
 ```bash
-cd services/controls
+# Per service
+cd services/<service>
+npm test                # one-shot
+npm run test:watch      # watch mode
+npm run test:ci         # CI flags (--ci --runInBand)
+npm run test:cov        # with coverage (controls only by default)
 
-# Unit tests
-npm test
-
-# E2E tests
-npm run test:e2e
-
-# Coverage
-npm run test:cov
+# All services from the repo root
+for svc in controls frameworks audit policies tprm trust; do
+  (cd services/$svc && npm test) || break
+done
 ```
+
+The CI `backend` matrix runs `npm test --if-present` in every service —
+adding a new service or a new spec is picked up automatically.
 
 ### Test Patterns
 

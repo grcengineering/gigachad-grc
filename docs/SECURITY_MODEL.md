@@ -197,6 +197,32 @@ Security improvements to the deployment infrastructure:
 - **Referrer-Policy**: strict-origin-when-cross-origin
 - **Permissions-Policy**: Comprehensive policy restricting browser APIs
 
+#### Backup Scheduler Privilege Reduction (v1.3.0+)
+
+The `backup-scheduler` service no longer mounts `/var/run/docker.sock`.
+A compromised backup container previously had read-only access to the
+host docker socket, which is enough to enumerate every other container,
+read their inspect metadata (env vars, secret bind mounts, network
+topology), and — depending on the runtime — escape to the host.
+
+Data-plane movement is now over the network only:
+
+- **Postgres**: `pg_dump` against the postgres service hostname.
+- **Redis**: `redis-cli --rdb` over TCP.
+- **RustFS / S3**: `mc mirror` over the S3 API (unchanged).
+
+The container also runs with `cap_drop: ALL`. The only remaining
+docker.sock mount in `docker-compose.prod.yml` is on Traefik, where it
+is required for Docker-provider service discovery.
+
+Trade-off: **Redis cold restore** is not possible over the network
+because redis only loads `dump.rdb` at server startup. `restore.sh`
+no-ops with a clear warning for that path; the manual host-side
+procedure is documented in [`deploy/README.md`](../deploy/README.md).
+This is acceptable because Redis is cache-only in this product — keys
+repopulate from postgres / rustfs on demand. Postgres and S3 restore
+are unaffected.
+
 #### TLS Configuration
 
 - Traefik configured for TLS 1.2+ only
@@ -541,6 +567,36 @@ request.headers['x-user-id'] = decodedToken.sub;
 - No API endpoint accepts `organizationId` as a parameter
 - Organization context is derived exclusively from authenticated token
 - Database constraints enforce foreign key relationships
+- Controllers that previously accepted `organizationId` in the request
+  body (Questionnaires, Knowledge Base) now spread `user.organizationId`
+  over the DTO before persistence, so a body-supplied value is silently
+  overridden by the authenticated context.
+
+### E2E Enforcement (v1.3.0+)
+
+Multi-tenant isolation is enforced by a required CI gate, not just by
+code review. [`frontend/e2e/tenant-isolation.spec.ts`](../frontend/e2e/tenant-isolation.spec.ts)
+seeds two organizations (Org A + Org B with stable UUIDs in
+[`services/shared/src/seed/seed-constants.ts`](../services/shared/src/seed/seed-constants.ts))
+and, for each of 10 resource types (controls, risks, vendors, contracts,
+evidence, audits, frameworks, policies, questionnaires, knowledge-base
+entries), asserts:
+
+- `GET /api/<resource>` as adminA returns Org A IDs only.
+- `GET /api/<resource>/<orgB-id>` as adminA returns **404** (we
+  intentionally do not return 403, to avoid leaking existence).
+- `PUT`/`DELETE` on Org B records returns 404.
+- `POST` with a body-supplied `organizationId: <orgB>` is rejected
+  or silently scoped to the caller's org.
+
+Breaking any of these — for example, omitting `where: { organizationId }`
+in a service method — fails the `e2e-tenant-rbac` job and blocks merge.
+
+Role-based access control is similarly enforced by
+[`frontend/e2e/rbac.spec.ts`](../frontend/e2e/rbac.spec.ts), which
+exercises the role × action matrix from
+[docs/PERMISSIONS_MATRIX.md](PERMISSIONS_MATRIX.md) against the
+backend's `RolesGuard` / `PermissionGuard` decorators.
 
 ---
 
@@ -671,6 +727,27 @@ The `FileValidatorService` provides comprehensive validation:
 - **Size limits enforced**: Per-category limits (e.g., 50MB for evidence)
 - **Double extension detection**: Flags suspicious patterns like `.pdf.exe`
 
+### Upload Endpoint Allowlist Pattern (v1.3.0+)
+
+Every controller using `FileInterceptor` must declare an explicit MIME
+allowlist and size cap at the route definition. The pattern mirrors
+[`services/tprm/src/contracts/contracts.controller.ts`](../services/tprm/src/contracts/contracts.controller.ts)
+and is applied across all upload endpoints:
+
+| Controller | MIME allowlist | Size cap |
+|------------|----------------|----------|
+| `tprm/contracts` | pdf, docx | 25 MB |
+| `controls/evidence` | pdf, png, jpeg, csv, xlsx, docx, txt, json | 50 MB |
+| `controls/bcdr-plans` | pdf, docx, txt | 25 MB |
+| `controls/training` | mp4, pdf, jpg, png, SCORM zip | 25 MB |
+| `frameworks` (control imports) | csv, xlsx | 25 MB |
+| `policies` | pdf, docx, md, txt | 25 MB |
+
+Each controller exports `*_MIME_ALLOWLIST` and `*_MAX_BYTES` constants
+alongside a named `fileFilter` function, so the policy is reviewable
+in source and unit-testable. Disallowed MIMEs return 400 from the
+`FileInterceptor` layer before the file ever reaches the service.
+
 ---
 
 ## SSRF Protection (v1.2.0+)
@@ -682,6 +759,14 @@ Server-Side Request Forgery (SSRF) protection is applied to all outbound HTTP re
 - **Webhooks**: User-configured webhook URLs
 - **Custom Integrations**: User-provided API endpoints
 - **Collectors**: Evidence collection endpoints
+- **Connector Library** (May 2026): all 8 connector families in
+  `services/controls/src/integrations/connectors/` route operator-supplied
+  `baseUrl` / `tokenUrl` values through `safeFetch`. Affected families:
+  generic, cloud, ITAM, HR, productivity, devops, finance, and additional
+  (Mimecast, etc.). `SSRFProtectionError` is caught per-endpoint and
+  surfaced as a structured connector failure rather than an unhandled
+  exception, so a single malicious config can't crash a sync run for
+  unrelated connectors.
 
 ### Validation Rules
 
