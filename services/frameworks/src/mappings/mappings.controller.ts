@@ -1,19 +1,39 @@
 import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Delete,
+  BadRequestException,
   Body,
+  Controller,
+  Delete,
+  Get,
   Param,
+  Patch,
+  Post,
   Query,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { MappingsService } from './mappings.service';
 import { CreateMappingDto, BulkCreateMappingsDto, UpdateMappingDto } from './dto/mapping.dto';
 import { Roles, RolesGuard, CurrentUser, UserContext } from '@gigachad-grc/shared';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
+
+export const MAPPING_IMPORT_MIME_ALLOWLIST = [
+  'text/csv',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+];
+export const MAPPING_IMPORT_MAX_BYTES = 25 * 1024 * 1024;
+
+export function mappingImportFileFilter(
+  _req: unknown,
+  file: { mimetype: string },
+  cb: (err: Error | null, acceptFile: boolean) => void
+): void {
+  if (MAPPING_IMPORT_MIME_ALLOWLIST.includes(file.mimetype)) cb(null, true);
+  else cb(new BadRequestException(`Unsupported file type: ${file.mimetype}`), false);
+}
 
 @ApiTags('mappings')
 @ApiBearerAuth()
@@ -70,6 +90,31 @@ export class MappingsController {
   @ApiOperation({ summary: 'Bulk create mappings' })
   async bulkCreate(@CurrentUser() user: UserContext, @Body() dto: BulkCreateMappingsDto) {
     return this.mappingsService.bulkCreate(user.userId, user.organizationId, dto.mappings);
+  }
+
+  @Post('import')
+  @Roles('admin', 'compliance_manager')
+  @ApiOperation({ summary: 'Import control-to-requirement mappings from CSV or XLSX' })
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: MAPPING_IMPORT_MAX_BYTES },
+      fileFilter: mappingImportFileFilter,
+    })
+  )
+  async import(
+    @CurrentUser() user: UserContext,
+    @UploadedFile() file: Express.Multer.File,
+    @Query('dryRun') dryRun?: string
+  ) {
+    if (!file) throw new BadRequestException('No file uploaded');
+    return this.mappingsService.importMappings(
+      file.buffer,
+      file.mimetype,
+      file.originalname,
+      dryRun === 'true',
+      user.userId,
+      user.organizationId
+    );
   }
 
   @Patch(':id')
