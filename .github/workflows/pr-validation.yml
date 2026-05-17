@@ -222,6 +222,30 @@ jobs:
       - name: Install dependencies (skip lifecycle scripts)
         run: npm ci --ignore-scripts
 
+      - name: Write throwaway .env for compose
+        # docker-compose.yml uses `${VAR:?...}` on ~10 required vars
+        # (postgres, redis, keycloak admin, MinIO/RustFS, encryption
+        # key, phishing tracking secret). These are throwaway values
+        # for the ephemeral CI stack — the entire stack is torn down
+        # at the end of the job and contains only seeded demo data.
+        run: |
+          cat > .env <<'ENVEOF'
+          POSTGRES_USER=grc
+          POSTGRES_PASSWORD=ci-throwaway-pg-pw
+          POSTGRES_DB=gigachad_grc
+          REDIS_PASSWORD=ci-throwaway-redis-pw
+          KEYCLOAK_ADMIN=admin
+          KEYCLOAK_ADMIN_PASSWORD=ci-throwaway-kc-admin-pw
+          MINIO_ROOT_USER=rustfsadmin
+          MINIO_ROOT_PASSWORD=ci-throwaway-minio-pw
+          ENCRYPTION_KEY=ci-throwaway-encryption-key-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+          PHISHING_TRACKING_SECRET=ci-throwaway-phishing-secret-bbbbbbbbbbbb
+          GRAFANA_ADMIN_USER=admin
+          GRAFANA_ADMIN_PASSWORD=ci-throwaway-grafana-pw
+          VITE_ENABLE_DEV_AUTH=true
+          ALLOW_DEV_AUTH=true
+          ENVEOF
+
       - name: Bring up dev stack
         # Plain `up -d` (no --wait). The polling step below handles the
         # readiness gate. The frontend nginx healthcheck has a tight
