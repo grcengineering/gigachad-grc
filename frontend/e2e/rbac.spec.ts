@@ -5,7 +5,7 @@ import { test, expect, request as playwrightRequest, APIRequestContext } from '@
 // it under multiple projects (chromium, chromium-adminA, ...) — to avoid
 // running the same checks 6x (and hammering rate-limited list endpoints),
 // short-circuit when we are not in the default `chromium` project.
-test.beforeEach((_, testInfo) => {
+test.beforeEach(({}, testInfo) => {
   test.skip(
     testInfo.project.name !== 'chromium',
     'rbac.spec is project-agnostic and only needs to run once',
@@ -235,7 +235,7 @@ async function getWithRetry(
   return res!;
 }
 
-test.beforeAll(async (_, testInfo) => {
+test.beforeAll(async ({}, testInfo) => {
   if (testInfo.project.name !== 'chromium') {
     // Other projects skip every test; don't bother hitting the API.
     return;

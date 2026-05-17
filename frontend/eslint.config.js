@@ -63,6 +63,14 @@ export default [
         context: 'readonly',
       },
     },
+    rules: {
+      // Playwright's test.beforeEach / beforeAll signatures take a fixtures
+      // object as the first argument; when no fixtures are needed the
+      // idiomatic form is `({}, testInfo) => {}`. The runtime parser
+      // enforces destructuring — `(_, testInfo)` throws
+      // "First argument must use the object destructuring pattern".
+      'no-empty-pattern': 'off',
+    },
   },
 
   // Disable rules that conflict with Prettier
