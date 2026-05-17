@@ -17,16 +17,18 @@ global:
 # Each backend service follows the same structure. They share a database,
 # Redis cache, Keycloak auth, and RustFS storage.
 #
-# IMPORTANT: Pin image tags to specific versions for production (e.g., "v1.0.0").
-# The "latest" tag with IfNotPresent will cache stale images. If using "latest",
-# set pullPolicy to "Always".
+# IMPORTANT: image.tag is intentionally empty by default. You MUST set
+# a version pin (e.g., "v1.0.0") per service in your own values file or
+# via --set <component>.image.tag=<version>. The helm template will fail
+# with a clear "image.tag is required" error if a tag is left unset, so
+# an unintended `:latest` rollout can no longer happen by accident.
 
 controls:
   enabled: true
   replicaCount: 1
   image:
     repository: gigachad-grc/controls
-    tag: latest
+    tag: ''
     pullPolicy: IfNotPresent
   port: 3001
   resources:
@@ -60,7 +62,7 @@ frameworks:
   replicaCount: 1
   image:
     repository: gigachad-grc/frameworks
-    tag: latest
+    tag: ''
     pullPolicy: IfNotPresent
   port: 3002
   resources:
@@ -80,7 +82,7 @@ policies:
   replicaCount: 1
   image:
     repository: gigachad-grc/policies
-    tag: latest
+    tag: ''
     pullPolicy: IfNotPresent
   port: 3004
   resources:
@@ -100,7 +102,7 @@ tprm:
   replicaCount: 1
   image:
     repository: gigachad-grc/tprm
-    tag: latest
+    tag: ''
     pullPolicy: IfNotPresent
   port: 3005
   resources:
@@ -120,7 +122,7 @@ trust:
   replicaCount: 1
   image:
     repository: gigachad-grc/trust
-    tag: latest
+    tag: ''
     pullPolicy: IfNotPresent
   port: 3006
   resources:
@@ -140,7 +142,7 @@ audit:
   replicaCount: 1
   image:
     repository: gigachad-grc/audit
-    tag: latest
+    tag: ''
     pullPolicy: IfNotPresent
   port: 3007
   resources:
@@ -164,7 +166,7 @@ frontend:
   replicaCount: 1
   image:
     repository: gigachad-grc/frontend
-    tag: latest
+    tag: ''
     pullPolicy: IfNotPresent
   port: 80
   resources:
@@ -294,7 +296,7 @@ rustfs:
   enabled: true
   image:
     repository: rustfs/rustfs
-    tag: latest
+    tag: ''
     pullPolicy: IfNotPresent
   auth:
     rootUser: rustfsadmin

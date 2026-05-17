@@ -163,9 +163,10 @@ services:
   # Object Storage - RustFS (S3-Compatible, Apache 2.0)
   # High-performance Rust-based object storage
   # https://github.com/rustfs/rustfs
+  # Pinned by digest to match docker-compose.prod.yml.
   # ===========================================
   rustfs:
-    image: rustfs/rustfs:latest
+    image: rustfs/rustfs@sha256:8e467b32af3ff83e70c70dddb0c36b5e611f46e89a3075db8770aea4f30b2fe3
     container_name: grc-rustfs
     # SECURITY: Prevent privilege escalation attacks
     security_opt:

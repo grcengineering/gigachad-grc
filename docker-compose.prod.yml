@@ -254,9 +254,13 @@ services:
   # Object Storage - RustFS (S3-Compatible, Apache 2.0)
   # High-performance Rust-based object storage
   # https://github.com/rustfs/rustfs
+  # Pinned by digest so a compromised upstream `:latest` tag cannot
+  # silently swap the image at pull time. Reviewers: verify this digest
+  # matches the RustFS image currently running in production via
+  # `docker image inspect rustfs/rustfs --format '{{.RepoDigests}}'`.
   # ===========================================
   rustfs:
-    image: rustfs/rustfs:latest
+    image: rustfs/rustfs@sha256:8e467b32af3ff83e70c70dddb0c36b5e611f46e89a3075db8770aea4f30b2fe3
     container_name: grc-rustfs
     environment:
       RUSTFS_ROOT_USER: ${MINIO_ROOT_USER}

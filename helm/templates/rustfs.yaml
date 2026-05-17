@@ -29,7 +29,7 @@ spec:
         runAsNonRoot: true
       containers:
         - name: rustfs
-          image: "{{ .Values.rustfs.image.repository }}:{{ .Values.rustfs.image.tag }}"
+          image: "{{ .Values.rustfs.image.repository }}:{{ required "rustfs.image.tag is required (pin to a specific version, e.g., a digest like 'sha256:8e467b…'; an empty tag would render as `rustfs/rustfs:` which fails to pull). See docker-compose.prod.yml for the SHA we are currently pinning." .Values.rustfs.image.tag }}"
           imagePullPolicy: {{ include "gigachad-grc.imagePullPolicy" .Values.rustfs.image }}
           securityContext:
             allowPrivilegeEscalation: false

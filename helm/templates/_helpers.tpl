@@ -50,14 +50,19 @@ app.kubernetes.io/component: {{ .component }}
 
 {{/*
 Full image reference with optional global registry prefix.
+The tag is `required` so a deployment without an explicit version pin
+fails at template time rather than silently rolling out `:` (or a
+cached stale image). Reach the error by looking at .image.repository
+in the message to identify which component is missing its tag.
 Usage: {{ include "gigachad-grc.image" (dict "image" .Values.controls.image "global" .Values.global) }}
 */}}
 {{- define "gigachad-grc.image" -}}
 {{- $registry := .global.imageRegistry | default "" -}}
+{{- $tag := required (printf "image.tag is required for repository %q (set <component>.image.tag=<version> in your values file or via --set)" .image.repository) .image.tag -}}
 {{- if $registry }}
-{{- printf "%s/%s:%s" $registry .image.repository .image.tag }}
+{{- printf "%s/%s:%s" $registry .image.repository $tag }}
 {{- else }}
-{{- printf "%s:%s" .image.repository .image.tag }}
+{{- printf "%s:%s" .image.repository $tag }}
 {{- end }}
 {{- end }}
 

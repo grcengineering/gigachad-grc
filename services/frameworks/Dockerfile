@@ -13,9 +13,13 @@ COPY services/frameworks/package*.json ./
 # Install without running postinstall
 RUN npm install --ignore-scripts --legacy-peer-deps
 
-# Copy shared source and build it
+# Copy shared source and build it. --ignore-scripts blocks postinstall
+# hooks; the explicit `npx prisma generate` below replaces what the
+# shared library's postinstall would have done. The repo .npmrc sets
+# ignore-scripts=true but isn't COPY'd into the build context, so we
+# pass the flag explicitly here.
 WORKDIR /app/shared
-RUN npm install
+RUN npm install --ignore-scripts --legacy-peer-deps
 RUN npm run build
 
 # Build frameworks service
