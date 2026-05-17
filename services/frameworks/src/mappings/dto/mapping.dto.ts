@@ -42,3 +42,10 @@ export class UpdateMappingDto {
   @IsString()
   notes?: string;
 }
+
+export class RestoreMappingDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  reason?: string;
+}
