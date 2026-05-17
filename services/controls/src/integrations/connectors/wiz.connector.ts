@@ -83,6 +83,9 @@ export class WizConnector {
         details: { endpoint: config.apiEndpoint || this.defaultEndpoint },
       };
     } catch (error: any) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
       return { success: false, message: error.message };
     }
   }
@@ -96,20 +99,33 @@ export class WizConnector {
     }
 
     const endpoint = config.apiEndpoint || this.defaultEndpoint;
-    const [issues, vulnerabilities, resources] = await Promise.all([
-      this.getIssues(endpoint, token).catch((e) => {
-        errors.push(`Issues: ${e.message}`);
-        return [];
-      }),
-      this.getVulnerabilities(endpoint, token).catch((e) => {
-        errors.push(`Vulns: ${e.message}`);
-        return { total: 0, critical: 0, high: 0, exploitable: 0, fixAvailable: 0 };
-      }),
-      this.getCloudResources(endpoint, token).catch((e) => {
-        errors.push(`Resources: ${e.message}`);
-        return { total: 0, byProvider: {}, byType: {} };
-      }),
-    ]);
+    const [issues, vulnerabilities, resources, frameworks, entitlements, containers] =
+      await Promise.all([
+        this.getIssues(endpoint, token).catch((e) => {
+          errors.push(`Issues: ${e.message}`);
+          return [];
+        }),
+        this.getVulnerabilities(endpoint, token).catch((e) => {
+          errors.push(`Vulns: ${e.message}`);
+          return { total: 0, critical: 0, high: 0, exploitable: 0, fixAvailable: 0 };
+        }),
+        this.getCloudResources(endpoint, token).catch((e) => {
+          errors.push(`Resources: ${e.message}`);
+          return { total: 0, byProvider: {}, byType: {} };
+        }),
+        this.getSecurityFrameworks(endpoint, token).catch((e) => {
+          errors.push(`Frameworks: ${e.message}`);
+          return { compliance: [] };
+        }),
+        this.getCloudEntitlements(endpoint, token).catch((e) => {
+          errors.push(`Entitlements: ${e.message}`);
+          return { excessivePermissions: 0, unusedIdentities: 0 };
+        }),
+        this.getContainers(endpoint, token).catch((e) => {
+          errors.push(`Containers: ${e.message}`);
+          return { total: 0, vulnerable: 0 };
+        }),
+      ]);
 
     return {
       issues: {
@@ -133,18 +149,29 @@ export class WizConnector {
       },
       vulnerabilities,
       cloudResources: resources,
-      securityFrameworks: { compliance: [] },
-      cloudEntitlements: { excessivePermissions: 0, unusedIdentities: 0 },
-      containers: { total: 0, vulnerable: 0 },
+      securityFrameworks: frameworks,
+      cloudEntitlements: entitlements,
+      containers,
       collectedAt: new Date().toISOString(),
       errors,
     };
   }
 
+  private async ssrfFetch(url: string, init?: RequestInit): Promise<Response> {
+    try {
+      return await safeFetch(url, init);
+    } catch (error) {
+      if (error instanceof SSRFProtectionError) {
+        throw new BadRequestException(`SSRF protection blocked: ${error.message}`);
+      }
+      throw error;
+    }
+  }
+
   private async getAccessToken(config: WizConfig): Promise<string | null> {
     try {
       const authUrl = 'https://auth.app.wiz.io/oauth/token';
-      const response = await fetch(authUrl, {
+      const response = await this.ssrfFetch(authUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
@@ -163,33 +190,106 @@ export class WizConnector {
     }
   }
 
-  private async getIssues(endpoint: string, token: string): Promise<any[]> {
-    const query = `query { issues(first: 100, filterBy: { status: [OPEN, IN_PROGRESS] }) { nodes { id severity status type createdAt control { name } entity { name type } } } }`;
-    let response: Response;
-    try {
-      response = await safeFetch(`${endpoint}/graphql`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query }),
-      });
-    } catch (error) {
-      if (error instanceof SSRFProtectionError) {
-        throw new BadRequestException(`SSRF protection blocked: ${error.message}`);
-      }
-      throw error;
-    }
+  private async graphqlQuery(endpoint: string, token: string, query: string): Promise<any> {
+    const response = await this.ssrfFetch(`${endpoint}/graphql`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query }),
+    });
     if (!response.ok) throw new Error(`Failed: ${response.status}`);
     const data = await response.json();
-    return data.data?.issues?.nodes || [];
+    if (data.errors && data.errors.length > 0) {
+      throw new Error(data.errors[0].message || 'GraphQL error');
+    }
+    return data.data;
   }
 
-  private async getVulnerabilities(_endpoint: string, _token: string) {
-    // Would use Wiz GraphQL API for vulnerabilities
-    return { total: 0, critical: 0, high: 0, exploitable: 0, fixAvailable: 0 };
+  private async getIssues(endpoint: string, token: string): Promise<any[]> {
+    const query = `query { issues(first: 100, filterBy: { status: [OPEN, IN_PROGRESS] }) { nodes { id severity status type createdAt control { name } entity { name type } } } }`;
+    const data = await this.graphqlQuery(endpoint, token, query);
+    return data?.issues?.nodes || [];
   }
 
-  private async getCloudResources(_endpoint: string, _token: string) {
-    // Would use Wiz GraphQL API for cloud resources
-    return { total: 0, byProvider: {}, byType: {} };
+  private async getVulnerabilities(endpoint: string, token: string) {
+    const query = `query { vulnerabilityFindings(first: 500) { nodes { id severity hasExploit hasFix } } }`;
+    const data = await this.graphqlQuery(endpoint, token, query);
+    const nodes: any[] = data?.vulnerabilityFindings?.nodes || [];
+    return {
+      total: nodes.length,
+      critical: nodes.filter((n) => n.severity === 'CRITICAL').length,
+      high: nodes.filter((n) => n.severity === 'HIGH').length,
+      exploitable: nodes.filter((n) => n.hasExploit).length,
+      fixAvailable: nodes.filter((n) => n.hasFix).length,
+    };
+  }
+
+  private async getCloudResources(endpoint: string, token: string) {
+    const query = `query { cloudResources(first: 500) { nodes { id type cloudProvider { name } } } }`;
+    const data = await this.graphqlQuery(endpoint, token, query);
+    const nodes: any[] = data?.cloudResources?.nodes || [];
+    const byProvider: Record<string, number> = {};
+    const byType: Record<string, number> = {};
+    for (const node of nodes) {
+      const provider = node.cloudProvider?.name || 'unknown';
+      byProvider[provider] = (byProvider[provider] || 0) + 1;
+      const type = node.type || 'unknown';
+      byType[type] = (byType[type] || 0) + 1;
+    }
+    return {
+      total: nodes.length,
+      byProvider,
+      byType,
+    };
+  }
+
+  private async getSecurityFrameworks(endpoint: string, token: string) {
+    const query = `query { complianceFrameworks { nodes { name passedControls failedControls } } }`;
+    const data = await this.graphqlQuery(endpoint, token, query);
+    const nodes: any[] = data?.complianceFrameworks?.nodes || [];
+    return {
+      compliance: nodes.map((n) => {
+        const passed = Number(n.passedControls) || 0;
+        const failed = Number(n.failedControls) || 0;
+        const total = passed + failed;
+        return {
+          name: n.name || '',
+          score: total > 0 ? (passed / total) * 100 : 0,
+          passedControls: passed,
+          failedControls: failed,
+        };
+      }),
+    };
+  }
+
+  private async getCloudEntitlements(endpoint: string, token: string) {
+    const query = `query { cloudEntitlementFindings(first: 100) { nodes { type principal { id type } } } }`;
+    const data = await this.graphqlQuery(endpoint, token, query);
+    const nodes: any[] = data?.cloudEntitlementFindings?.nodes || [];
+    const excessive = nodes.filter(
+      (n) => typeof n.type === 'string' && /EXCESSIVE|OVERPERMISSIVE|EXCESS/i.test(n.type)
+    ).length;
+    const unused = nodes.filter(
+      (n) => typeof n.type === 'string' && /UNUSED|INACTIVE/i.test(n.type)
+    ).length;
+    return {
+      excessivePermissions: excessive,
+      unusedIdentities: unused,
+    };
+  }
+
+  private async getContainers(endpoint: string, token: string) {
+    // Best-effort: Wiz container API varies by tenant
+    const query = `query { graphSearch(query: { type: [CONTAINER] }) { nodes { id vulnerabilities } } }`;
+    const data = await this.graphqlQuery(endpoint, token, query);
+    const nodes: any[] = data?.graphSearch?.nodes || [];
+    return {
+      total: nodes.length,
+      vulnerable: nodes.filter((n) => {
+        const v = n.vulnerabilities;
+        if (Array.isArray(v)) return v.length > 0;
+        if (typeof v === 'number') return v > 0;
+        return false;
+      }).length,
+    };
   }
 }

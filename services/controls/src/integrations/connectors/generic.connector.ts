@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { BaseConnector } from './base-connector';
+import axios from 'axios';
 
 /**
  * Generic connector for integrations that follow standard patterns
@@ -31,25 +32,113 @@ export interface GenericSyncResult {
 
 @Injectable()
 export class GenericConnector {
-  // Kept for backward compatibility - individual connectors now extend BaseConnector
   async testConnection(
-    _integrationType: string,
-    _config: GenericConfig,
-    _testEndpoint?: string
+    integrationType: string,
+    config: GenericConfig,
+    testEndpoint?: string,
   ): Promise<{ success: boolean; message: string; details?: any }> {
-    return { success: true, message: `Configuration saved` };
+    if (!config.apiUrl && !config.baseUrl) {
+      return { success: false, message: `${integrationType}: apiUrl (or baseUrl) is required` };
+    }
+    if (!config.apiKey && !config.apiToken && !config.accessToken) {
+      return { success: false, message: `${integrationType}: apiKey, apiToken, or accessToken is required` };
+    }
+
+    const bearer = (config.apiKey || config.apiToken || config.accessToken) as string;
+    const base = (config.apiUrl || config.baseUrl) as string;
+    const target = this.joinUrl(base, testEndpoint || '');
+
+    try {
+      const response = await axios.get(target, {
+        headers: {
+          Authorization: `Bearer ${bearer}`,
+          Accept: 'application/json',
+        },
+        validateStatus: () => true,
+      });
+      if (response.status >= 200 && response.status < 300) {
+        return {
+          success: true,
+          message: `Connected to ${integrationType} at ${target}`,
+          details: { status: response.status },
+        };
+      }
+      const snippet = typeof response.data === 'string'
+        ? response.data.slice(0, 200)
+        : JSON.stringify(response.data || {}).slice(0, 200);
+      return {
+        success: false,
+        message: `${integrationType} API returned ${response.status}: ${snippet}`,
+      };
+    } catch (error: any) {
+      return { success: false, message: error.message || `${integrationType} connection failed` };
+    }
   }
+
   async sync(
-    _integrationType: string,
-    _config: GenericConfig,
-    _endpoints: Array<{ name: string; path: string }>
+    integrationType: string,
+    config: GenericConfig,
+    endpoints: Array<{ name: string; path: string }>,
   ): Promise<GenericSyncResult> {
+    const errors: string[] = [];
+
+    if (!config.apiUrl && !config.baseUrl) {
+      errors.push(`${integrationType}: apiUrl (or baseUrl) is required`);
+    }
+    if (!config.apiKey && !config.apiToken && !config.accessToken) {
+      errors.push(`${integrationType}: apiKey, apiToken, or accessToken is required`);
+    }
+    if (!endpoints || endpoints.length === 0) {
+      errors.push(`${integrationType}: at least one endpoint is required for sync`);
+    }
+    if (errors.length > 0) {
+      return { data: {}, summary: { totalItems: 0 }, collectedAt: new Date().toISOString(), errors };
+    }
+
+    const bearer = (config.apiKey || config.apiToken || config.accessToken) as string;
+    const base = (config.apiUrl || config.baseUrl) as string;
+    const data: Record<string, any> = {};
+    let totalItems = 0;
+
+    for (const endpoint of endpoints) {
+      const url = this.joinUrl(base, endpoint.path);
+      try {
+        const response = await axios.get(url, {
+          headers: {
+            Authorization: `Bearer ${bearer}`,
+            Accept: 'application/json',
+          },
+          validateStatus: () => true,
+        });
+        if (response.status < 200 || response.status >= 300) {
+          errors.push(`${endpoint.name}: HTTP ${response.status}`);
+          continue;
+        }
+        data[endpoint.name] = response.data;
+        if (Array.isArray(response.data)) {
+          totalItems += response.data.length;
+        } else if (response.data && typeof response.data === 'object') {
+          const arrayField = Object.values(response.data).find((v) => Array.isArray(v));
+          if (Array.isArray(arrayField)) totalItems += arrayField.length;
+          else totalItems += 1;
+        }
+      } catch (error: any) {
+        errors.push(`${endpoint.name}: ${error.message || 'request failed'}`);
+      }
+    }
+
     return {
-      data: {},
-      summary: { totalItems: 0 },
+      data,
+      summary: { totalItems },
       collectedAt: new Date().toISOString(),
-      errors: [],
+      errors,
     };
+  }
+
+  private joinUrl(base: string, path: string): string {
+    if (!path) return base;
+    if (/^https?:\/\//i.test(path)) return path;
+    return `${base.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
   }
 }
 

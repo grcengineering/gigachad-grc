@@ -15,8 +15,12 @@ export interface HubSpotSyncResult {
   };
   integrations: { total: number; connected: number };
   security: {
-    twoFactorEnforced: boolean;
-    ssoEnabled: boolean;
+    // Derived from per-user 2FA status of super admins via /settings/v3/users.
+    // null when no super admins were retrieved (so we cannot determine enforcement).
+    twoFactorEnforced: boolean | null;
+    // ssoEnabled is intentionally omitted: HubSpot's public API does not expose
+    // organization-level SSO configuration. Returning a default would be a
+    // misleading compliance claim (see PATTERN.md rule 7 & 8).
   };
   collectedAt: string;
   errors: string[];
@@ -27,24 +31,18 @@ export class HubSpotConnector {
   private readonly logger = new Logger(HubSpotConnector.name);
   private readonly baseUrl = 'https://api.hubapi.com';
 
-  async testConnection(
-    config: HubSpotConfig
-  ): Promise<{ success: boolean; message: string; details?: any }> {
+  async testConnection(config: HubSpotConfig): Promise<{ success: boolean; message: string; details?: any }> {
     if (!config.accessToken) {
       return { success: false, message: 'Access token is required' };
     }
 
     try {
       const response = await fetch(`${this.baseUrl}/account-info/v3/details`, {
-        headers: { Authorization: `Bearer ${config.accessToken}` },
+        headers: { 'Authorization': `Bearer ${config.accessToken}` },
       });
 
       if (!response.ok) {
-        return {
-          success: false,
-          message:
-            response.status === 401 ? 'Invalid access token' : `API error: ${response.status}`,
-        };
+        return { success: false, message: response.status === 401 ? 'Invalid access token' : `API error: ${response.status}` };
       }
 
       const data = await response.json();
@@ -60,26 +58,26 @@ export class HubSpotConnector {
 
   async sync(config: HubSpotConfig): Promise<HubSpotSyncResult> {
     const errors: string[] = [];
-    const headers = { Authorization: `Bearer ${config.accessToken}` };
+    const headers = { 'Authorization': `Bearer ${config.accessToken}` };
 
-    const [contacts, companies, deals, users] = await Promise.all([
-      this.getContacts(headers).catch((e) => {
-        errors.push(`Contacts: ${e.message}`);
-        return { total: 0 };
-      }),
-      this.getCompanies(headers).catch((e) => {
-        errors.push(`Companies: ${e.message}`);
-        return { total: 0 };
-      }),
-      this.getDeals(headers).catch((e) => {
-        errors.push(`Deals: ${e.message}`);
-        return [];
-      }),
-      this.getUsers(headers).catch((e) => {
-        errors.push(`Users: ${e.message}`);
-        return [];
-      }),
+    const [contacts, companies, deals, users, integrations] = await Promise.all([
+      this.getContacts(headers).catch(e => { errors.push(`Contacts: ${e.message}`); return { total: 0 }; }),
+      this.getCompanies(headers).catch(e => { errors.push(`Companies: ${e.message}`); return { total: 0 }; }),
+      this.getDeals(headers).catch(e => { errors.push(`Deals: ${e.message}`); return []; }),
+      this.getUsers(headers).catch(e => { errors.push(`Users: ${e.message}`); return []; }),
+      this.getIntegrations(headers).catch(e => { errors.push(`Integrations: ${e.message}`); return { total: 0, connected: 0 }; }),
     ]);
+
+    const superAdmins = users.filter((u: any) => u.superAdmin);
+    // Compute 2FA enforcement from per-user data on super admins. If we have
+    // no super admins we cannot determine enforcement (return null instead of
+    // a misleading boolean).
+    let twoFactorEnforced: boolean | null = null;
+    if (superAdmins.length > 0) {
+      twoFactorEnforced = superAdmins.every(
+        (u: any) => u.twoFactorEnabled === true || u.twoFactorAuthentication === true,
+      );
+    }
 
     return {
       contacts: { total: contacts.total, recentlyCreated: 0 },
@@ -87,28 +85,35 @@ export class HubSpotConnector {
       deals: {
         total: deals.length,
         open: deals.filter((d: any) => !d.properties?.hs_is_closed).length,
-        won: deals.filter(
-          (d: any) =>
-            d.properties?.hs_is_closed === 'true' && d.properties?.hs_is_closed_won === 'true'
-        ).length,
-        lost: deals.filter(
-          (d: any) =>
-            d.properties?.hs_is_closed === 'true' && d.properties?.hs_is_closed_won !== 'true'
-        ).length,
+        won: deals.filter((d: any) => d.properties?.hs_is_closed === 'true' && d.properties?.hs_is_closed_won === 'true').length,
+        lost: deals.filter((d: any) => d.properties?.hs_is_closed === 'true' && d.properties?.hs_is_closed_won !== 'true').length,
       },
       users: {
         total: users.length,
-        superAdmins: users.filter((u: any) => u.superAdmin).length,
+        superAdmins: superAdmins.length,
         items: users.slice(0, 50).map((u: any) => ({
           id: u.id,
           email: u.email,
           role: u.superAdmin ? 'Super Admin' : 'User',
         })),
       },
-      integrations: { total: 0, connected: 0 },
-      security: { twoFactorEnforced: false, ssoEnabled: false },
+      integrations,
+      security: { twoFactorEnforced },
       collectedAt: new Date().toISOString(),
       errors,
+    };
+  }
+
+  private async getIntegrations(headers: Record<string, string>): Promise<{ total: number; connected: number }> {
+    const response = await fetch(`${this.baseUrl}/integrations/v1/me`, { headers });
+    if (!response.ok) throw new Error(`Failed: ${response.status}`);
+    const data = await response.json();
+    // /integrations/v1/me returns app/portal pairing info. Treat each enabled
+    // app as connected; total is the count returned.
+    const items: any[] = Array.isArray(data.results) ? data.results : (Array.isArray(data) ? data : []);
+    return {
+      total: items.length || (data.appId ? 1 : 0),
+      connected: items.filter((i: any) => i.enabled !== false).length || (data.appId ? 1 : 0),
     };
   }
 
@@ -127,10 +132,7 @@ export class HubSpotConnector {
   }
 
   private async getDeals(headers: Record<string, string>): Promise<any[]> {
-    const response = await fetch(
-      `${this.baseUrl}/crm/v3/objects/deals?limit=100&properties=hs_is_closed,hs_is_closed_won`,
-      { headers }
-    );
+    const response = await fetch(`${this.baseUrl}/crm/v3/objects/deals?limit=100&properties=hs_is_closed,hs_is_closed_won`, { headers });
     if (!response.ok) throw new Error(`Failed: ${response.status}`);
     const data = await response.json();
     return data.results || [];

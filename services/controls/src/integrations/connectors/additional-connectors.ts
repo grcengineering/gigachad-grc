@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { BaseConnector } from './base-connector';
 import axios from 'axios';
+import * as crypto from 'crypto';
 
 // =============================================================================
 // Additional Integration Connectors - Fully Implemented
@@ -144,45 +145,139 @@ export class ProofpointSATConnector extends BaseConnector {
 
 @Injectable()
 export class MimecastAwarenessConnector extends BaseConnector {
-  constructor() {
-    super('MimecastAwarenessConnector');
+  private mimecastConfig: { appId: string; appKey: string; accessKey: string; secretKey: string } | null = null;
+  constructor() { super('MimecastAwarenessConnector'); }
+
+  private mimecastSign(method: string, uri: string): { headers: Record<string, string>; reqId: string; date: string } {
+    if (!this.mimecastConfig) throw new Error('Mimecast config not initialized');
+    const { appId, appKey, accessKey, secretKey } = this.mimecastConfig;
+    const reqId = crypto.randomUUID();
+    const date = new Date().toUTCString();
+    const dataToSign = `${date}:${reqId}:${uri}:${appKey}`;
+    const key = Buffer.from(secretKey, 'base64');
+    const hmac = crypto.createHmac('sha1', key).update(dataToSign).digest('base64');
+    return {
+      reqId,
+      date,
+      headers: {
+        'Authorization': `MC ${accessKey}:${hmac}`,
+        'x-mc-app-id': appId,
+        'x-mc-date': date,
+        'x-mc-req-id': reqId,
+        'Content-Type': 'application/json',
+      },
+    };
   }
+
   async testConnection(config: any): Promise<{ success: boolean; message: string; details?: any }> {
-    if (!config.appId) return { success: false, message: 'Credentials required' };
+    if (!config.appId || !config.appKey || !config.accessKey || !config.secretKey) {
+      return { success: false, message: 'appId, appKey, accessKey, and secretKey are required' };
+    }
+    this.mimecastConfig = config;
     try {
-      // Mimecast uses HMAC authentication - simplified for this implementation
-      this.setHeaders({ 'Content-Type': 'application/json' });
-      this.setBaseURL('https://api.mimecast.com');
-      return {
-        success: true,
-        message: 'Mimecast Awareness connection configured (requires HMAC auth)',
-        details: {},
-      };
+      const uri = '/api/awareness-training/company/get-safe-score-details';
+      const { headers } = this.mimecastSign('POST', uri);
+      const response = await axios.post(`https://api.mimecast.com${uri}`, { data: [] }, {
+        headers,
+        timeout: 30000,
+        validateStatus: (s) => s < 500,
+      });
+      if (response.status >= 400) {
+        return { success: false, message: `HTTP ${response.status}: ${JSON.stringify(response.data?.fail || response.data || response.statusText)}` };
+      }
+      return { success: true, message: 'Connected to Mimecast Awareness Training', details: response.data };
     } catch (error: any) {
       return { success: false, message: error.message || 'Connection test failed' };
     }
   }
-  async sync(_config: any): Promise<any> {
+
+  async sync(config: any): Promise<any> {
+    if (!config.appId || !config.appKey || !config.accessKey || !config.secretKey) {
+      throw new Error('Mimecast credentials missing: appId, appKey, accessKey, secretKey required');
+    }
+    this.mimecastConfig = config;
     const users: any[] = [];
     const modules: any[] = [];
-    const _errors: string[] = [];
+    const errors: string[] = [];
+    let completionRate = 0;
+
+    // Fetch safe score details (users)
     try {
-      return {
-        users: { total: users.length, items: users },
-        modules: { total: modules.length, items: modules },
-        completionRate: 0,
-        collectedAt: new Date().toISOString(),
-        errors: ['Mimecast requires HMAC authentication'],
-      };
+      const uri = '/api/awareness-training/company/get-safe-score-details';
+      const { headers } = this.mimecastSign('POST', uri);
+      const response = await axios.post(`https://api.mimecast.com${uri}`, { data: [] }, {
+        headers,
+        timeout: 30000,
+        validateStatus: (s) => s < 500,
+      });
+      if (response.status >= 400) {
+        errors.push(`safe-score-details: HTTP ${response.status}`);
+      } else {
+        const safeScoreData = response.data?.data || [];
+        for (const entry of safeScoreData) {
+          const userList = entry?.userDetails || entry?.users || [];
+          if (Array.isArray(userList)) {
+            for (const u of userList) {
+              users.push({
+                emailAddress: u.emailAddress || u.email,
+                userName: u.userName || u.name,
+                completionRate: u.completionPercentage ?? u.completionRate ?? null,
+                safeScore: u.safeScore ?? null,
+                ...u,
+              });
+            }
+          } else if (entry?.emailAddress || entry?.userName) {
+            users.push({
+              emailAddress: entry.emailAddress,
+              userName: entry.userName,
+              completionRate: entry.completionPercentage ?? entry.completionRate ?? null,
+              safeScore: entry.safeScore ?? null,
+              ...entry,
+            });
+          }
+        }
+      }
     } catch (error: any) {
-      return {
-        users: { total: 0, items: [] },
-        modules: { total: 0, items: [] },
-        completionRate: 0,
-        collectedAt: new Date().toISOString(),
-        errors: [error.message],
-      };
+      errors.push(`safe-score-details: ${error.message}`);
     }
+
+    // Fetch awareness campaigns (modules)
+    try {
+      const uri = '/api/awareness-training/campaign/get-campaigns';
+      const { headers } = this.mimecastSign('POST', uri);
+      const response = await axios.post(`https://api.mimecast.com${uri}`, { data: [] }, {
+        headers,
+        timeout: 30000,
+        validateStatus: (s) => s < 500,
+      });
+      if (response.status >= 400) {
+        errors.push(`get-campaigns: HTTP ${response.status}`);
+      } else {
+        const campaigns = response.data?.data || [];
+        for (const c of campaigns) {
+          modules.push(c);
+        }
+      }
+    } catch (error: any) {
+      errors.push(`get-campaigns: ${error.message}`);
+    }
+
+    if (users.length > 0) {
+      const rates = users
+        .map((u) => Number(u.completionRate))
+        .filter((n) => !isNaN(n));
+      if (rates.length > 0) {
+        completionRate = rates.reduce((a, b) => a + b, 0) / rates.length;
+      }
+    }
+
+    return {
+      users: { total: users.length, items: users },
+      modules: { total: modules.length, items: modules },
+      completionRate,
+      collectedAt: new Date().toISOString(),
+      errors,
+    };
   }
 }
 

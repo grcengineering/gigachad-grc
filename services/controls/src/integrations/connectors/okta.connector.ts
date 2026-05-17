@@ -91,15 +91,22 @@ export interface OktaSyncResult {
     active: number;
     suspended: number;
     deprovisioned: number;
+    // withMFA counts users with at least one ACTIVE factor.
+    // mfaUnknown counts users whose factor lookup failed — they are NOT
+    // rolled into withMFA or noMFA because doing so would assert MFA state
+    // we never actually observed.
     withMFA: number;
     noMFA: number;
+    mfaUnknown: number;
     items: Array<{
       id: string;
       email: string;
       name: string;
       status: string;
       lastLogin: string;
-      mfaEnabled: boolean;
+      // mfaEnabled is null when the per-user /factors call failed —
+      // PATTERN.md forbids defaulting security state to false.
+      mfaEnabled: boolean | null;
     }>;
   };
   groups: {
@@ -142,6 +149,14 @@ export interface OktaSyncResult {
     signOn: number;
     password: number;
     mfa: number;
+    // Aggregated session controls collected by walking each sign-on policy's
+    // rules (Okta keeps session settings on rule.actions.signon.session, not
+    // on the policy itself). Strictest values win across all rules.
+    signOnSession: {
+      maxSessionLifetimeMinutes: number | null;
+      maxSessionIdleMinutes: number | null;
+      usePersistentCookie: boolean | null;
+    };
   };
   collectedAt: string;
   errors: string[];
@@ -167,17 +182,9 @@ export class OktaConnector {
       const baseUrl = this.getBaseUrl(config.domain);
 
       // Test by getting current user (API token owner)
-      let response: Response;
-      try {
-        response = await safeFetch(`${baseUrl}/api/v1/users/me`, {
-          headers: this.buildHeaders(config.apiToken),
-        });
-      } catch (error) {
-        if (error instanceof SSRFProtectionError) {
-          throw new BadRequestException(`SSRF protection blocked: ${error.message}`);
-        }
-        throw error;
-      }
+      const response = await this.ssrfFetch(`${baseUrl}/api/v1/users/me`, {
+        headers: this.buildHeaders(config.apiToken),
+      });
 
       if (!response.ok) {
         if (response.status === 401) {
@@ -193,17 +200,9 @@ export class OktaConnector {
       const user = await response.json();
 
       // Get org info
-      let orgResponse: Response;
-      try {
-        orgResponse = await safeFetch(`${baseUrl}/api/v1/org`, {
-          headers: this.buildHeaders(config.apiToken),
-        });
-      } catch (error) {
-        if (error instanceof SSRFProtectionError) {
-          throw new BadRequestException(`SSRF protection blocked: ${error.message}`);
-        }
-        throw error;
-      }
+      const orgResponse = await this.ssrfFetch(`${baseUrl}/api/v1/org`, {
+        headers: this.buildHeaders(config.apiToken),
+      });
       const org = orgResponse.ok ? await orgResponse.json() : null;
 
       return {
@@ -234,31 +233,63 @@ export class OktaConnector {
     this.logger.log('Starting Okta sync...');
 
     // Collect data in parallel
-    const [users, groups, applications, logs] = await Promise.all([
-      this.getUsers(baseUrl, config.apiToken).catch((e) => {
-        errors.push(`Users: ${e.message}`);
-        return [];
-      }),
-      this.getGroups(baseUrl, config.apiToken).catch((e) => {
-        errors.push(`Groups: ${e.message}`);
-        return [];
-      }),
-      this.getApplications(baseUrl, config.apiToken).catch((e) => {
-        errors.push(`Applications: ${e.message}`);
-        return [];
-      }),
-      this.getSecurityLogs(baseUrl, config.apiToken).catch((e) => {
-        errors.push(`Logs: ${e.message}`);
-        return [];
-      }),
-    ]);
+    const [users, groups, applications, logs, signOnPolicies, passwordPolicies, mfaPolicies] =
+      await Promise.all([
+        this.getUsers(baseUrl, config.apiToken).catch((e) => {
+          errors.push(`Users: ${e.message}`);
+          return [];
+        }),
+        this.getGroups(baseUrl, config.apiToken).catch((e) => {
+          errors.push(`Groups: ${e.message}`);
+          return [];
+        }),
+        this.getApplications(baseUrl, config.apiToken).catch((e) => {
+          errors.push(`Applications: ${e.message}`);
+          return [];
+        }),
+        this.getSecurityLogs(baseUrl, config.apiToken).catch((e) => {
+          errors.push(`Logs: ${e.message}`);
+          return [];
+        }),
+        this.getPolicies(baseUrl, config.apiToken, 'OKTA_SIGN_ON').catch((e) => {
+          errors.push(`SignOn Policies: ${e.message}`);
+          return [] as any[];
+        }),
+        this.getPolicies(baseUrl, config.apiToken, 'PASSWORD').catch((e) => {
+          errors.push(`Password Policies: ${e.message}`);
+          return [] as any[];
+        }),
+        this.getPolicies(baseUrl, config.apiToken, 'MFA_ENROLL').catch((e) => {
+          errors.push(`MFA Policies: ${e.message}`);
+          return [] as any[];
+        }),
+      ]);
 
-    // Get MFA factors for users
+    // Get MFA factors for users — mfaEnabled is now boolean | null where
+    // null means the factor lookup failed and the state is genuinely unknown.
     const usersWithMFA = await this.checkUserMFA(baseUrl, config.apiToken, users.slice(0, 50));
 
     // Process users
     const activeUsers = users.filter((u) => u.status === 'ACTIVE');
-    const mfaEnabledUsers = usersWithMFA.filter((u) => u.mfaEnabled);
+    const mfaEnabledUsers = usersWithMFA.filter((u) => u.mfaEnabled === true);
+    const mfaDisabledUsers = usersWithMFA.filter((u) => u.mfaEnabled === false);
+    const mfaUnknownUsers = usersWithMFA.filter((u) => u.mfaEnabled === null);
+
+    // Aggregate sign-on session settings from each policy's rules.
+    // Strictest wins: smallest maxSessionLifetime, smallest maxSessionIdle,
+    // usePersistentCookie=false beats =true.
+    const signOnSessionAggregate = await this.aggregateSignOnSessionFromRules(
+      baseUrl,
+      config.apiToken,
+      signOnPolicies
+    ).catch((e) => {
+      errors.push(`SignOn Rules: ${e.message}`);
+      return {
+        maxSessionLifetimeMinutes: null as number | null,
+        maxSessionIdleMinutes: null as number | null,
+        usePersistentCookie: null as boolean | null,
+      };
+    });
 
     // Process logs
     const failedLogins = logs.filter(
@@ -283,14 +314,18 @@ export class OktaConnector {
         suspended: users.filter((u) => u.status === 'SUSPENDED').length,
         deprovisioned: users.filter((u) => u.status === 'DEPROVISIONED').length,
         withMFA: mfaEnabledUsers.length,
-        noMFA: usersWithMFA.filter((u) => !u.mfaEnabled).length,
+        // noMFA only counts users we confirmed have no active factor.
+        // mfaUnknown is reported separately so consumers don't silently
+        // bucket "lookup failed" as "no MFA".
+        noMFA: mfaDisabledUsers.length,
+        mfaUnknown: mfaUnknownUsers.length,
         items: usersWithMFA.slice(0, 100).map((u) => ({
           id: u.id,
           email: u.profile?.email || '',
           name: `${u.profile?.firstName || ''} ${u.profile?.lastName || ''}`.trim(),
           status: u.status,
           lastLogin: u.lastLogin,
-          mfaEnabled: u.mfaEnabled || false,
+          mfaEnabled: u.mfaEnabled,
         })),
       },
       groups: {
@@ -330,13 +365,38 @@ export class OktaConnector {
         })),
       },
       policies: {
-        signOn: 0, // Would need separate API calls
-        password: 0,
-        mfa: 0,
+        signOn: signOnPolicies.length,
+        password: passwordPolicies.length,
+        mfa: mfaPolicies.length,
+        signOnSession: signOnSessionAggregate,
       },
       collectedAt: new Date().toISOString(),
       errors,
     };
+  }
+
+  private async ssrfFetch(url: string, init?: RequestInit): Promise<Response> {
+    try {
+      return await safeFetch(url, init);
+    } catch (error) {
+      if (error instanceof SSRFProtectionError) {
+        throw new BadRequestException(`SSRF protection blocked: ${error.message}`);
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Get policies by type (OKTA_SIGN_ON, PASSWORD, MFA_ENROLL)
+   */
+  private async getPolicies(baseUrl: string, apiToken: string, type: string): Promise<any[]> {
+    const response = await this.ssrfFetch(`${baseUrl}/api/v1/policies?type=${type}`, {
+      headers: this.buildHeaders(apiToken),
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to fetch ${type} policies: ${response.status}`);
+    }
+    return response.json();
   }
 
   /**
@@ -347,7 +407,7 @@ export class OktaConnector {
     let url: string | null = `${baseUrl}/api/v1/users?limit=200`;
 
     while (url && users.length < 1000) {
-      const response = await fetch(url, {
+      const response = await this.ssrfFetch(url, {
         headers: this.buildHeaders(apiToken),
       });
 
@@ -370,17 +430,9 @@ export class OktaConnector {
    * Get all groups
    */
   private async getGroups(baseUrl: string, apiToken: string): Promise<OktaGroup[]> {
-    let response: Response;
-    try {
-      response = await safeFetch(`${baseUrl}/api/v1/groups?limit=200`, {
-        headers: this.buildHeaders(apiToken),
-      });
-    } catch (error) {
-      if (error instanceof SSRFProtectionError) {
-        throw new BadRequestException(`SSRF protection blocked: ${error.message}`);
-      }
-      throw error;
-    }
+    const response = await this.ssrfFetch(`${baseUrl}/api/v1/groups?limit=200`, {
+      headers: this.buildHeaders(apiToken),
+    });
 
     if (!response.ok) {
       throw new Error(`Failed to fetch groups: ${response.status}`);
@@ -393,17 +445,9 @@ export class OktaConnector {
    * Get all applications
    */
   private async getApplications(baseUrl: string, apiToken: string): Promise<OktaApplication[]> {
-    let response: Response;
-    try {
-      response = await safeFetch(`${baseUrl}/api/v1/apps?limit=200`, {
-        headers: this.buildHeaders(apiToken),
-      });
-    } catch (error) {
-      if (error instanceof SSRFProtectionError) {
-        throw new BadRequestException(`SSRF protection blocked: ${error.message}`);
-      }
-      throw error;
-    }
+    const response = await this.ssrfFetch(`${baseUrl}/api/v1/apps?limit=200`, {
+      headers: this.buildHeaders(apiToken),
+    });
 
     if (!response.ok) {
       throw new Error(`Failed to fetch applications: ${response.status}`);
@@ -418,7 +462,7 @@ export class OktaConnector {
   private async getSecurityLogs(baseUrl: string, apiToken: string): Promise<OktaLogEvent[]> {
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
-    const response = await fetch(
+    const response = await this.ssrfFetch(
       `${baseUrl}/api/v1/logs?since=${since}&limit=100&filter=eventType sw "user.session" or eventType sw "user.authentication" or eventType sw "security" or eventType sw "policy"`,
       { headers: this.buildHeaders(apiToken) }
     );
@@ -431,33 +475,110 @@ export class OktaConnector {
   }
 
   /**
-   * Check MFA status for users
+   * Check MFA status for users.
+   *
+   * mfaEnabled is:
+   *   true  — at least one ACTIVE factor was returned
+   *   false — call succeeded and the user has no ACTIVE factor
+   *   null  — the factor lookup failed; state is unknown and MUST NOT be
+   *           treated as either enrolled or not enrolled (PATTERN.md).
    */
   private async checkUserMFA(
     baseUrl: string,
     apiToken: string,
     users: OktaUser[]
-  ): Promise<Array<OktaUser & { mfaEnabled: boolean }>> {
+  ): Promise<Array<OktaUser & { mfaEnabled: boolean | null }>> {
     return Promise.all(
       users.map(async (user) => {
         try {
-          const response = await fetch(`${baseUrl}/api/v1/users/${user.id}/factors`, {
+          const response = await this.ssrfFetch(`${baseUrl}/api/v1/users/${user.id}/factors`, {
             headers: this.buildHeaders(apiToken),
           });
 
           if (!response.ok) {
-            return { ...user, mfaEnabled: false };
+            return { ...user, mfaEnabled: null as boolean | null };
           }
 
           const factors = await response.json();
-          const activeFactors = factors.filter((f: any) => f.status === 'ACTIVE');
+          const activeFactors = Array.isArray(factors)
+            ? factors.filter((f: any) => f.status === 'ACTIVE')
+            : [];
 
           return { ...user, mfaEnabled: activeFactors.length > 0 };
         } catch {
-          return { ...user, mfaEnabled: false };
+          return { ...user, mfaEnabled: null as boolean | null };
         }
       })
     );
+  }
+
+  /**
+   * Aggregate session controls across all sign-on policies' rules.
+   *
+   * Okta puts session settings on rule.actions.signon.session (not at the
+   * policy level the way `signOnPolicies` is read elsewhere). For each
+   * policy, fetch /api/v1/policies/{id}/rules and combine:
+   *   maxSessionLifetimeMinutes -> smallest wins (strictest)
+   *   maxSessionIdleMinutes     -> smallest wins (strictest)
+   *   usePersistentCookie       -> false wins (strictest)
+   *
+   * Returns null fields when no rule supplied that value, distinguishing
+   * "no rules say anything" from "rules permit liberal sessions".
+   */
+  private async aggregateSignOnSessionFromRules(
+    baseUrl: string,
+    apiToken: string,
+    policies: any[]
+  ): Promise<{
+    maxSessionLifetimeMinutes: number | null;
+    maxSessionIdleMinutes: number | null;
+    usePersistentCookie: boolean | null;
+  }> {
+    let maxLifetime: number | null = null;
+    let maxIdle: number | null = null;
+    let persistentCookie: boolean | null = null;
+
+    for (const policy of policies || []) {
+      const policyId = policy?.id;
+      if (!policyId) continue;
+      try {
+        const response = await this.ssrfFetch(`${baseUrl}/api/v1/policies/${policyId}/rules`, {
+          headers: this.buildHeaders(apiToken),
+        });
+        if (!response.ok) continue;
+        const rules = await response.json();
+        if (!Array.isArray(rules)) continue;
+        for (const rule of rules) {
+          const session = rule?.actions?.signon?.session;
+          if (!session) continue;
+          if (typeof session.maxSessionLifetimeMinutes === 'number') {
+            maxLifetime =
+              maxLifetime === null
+                ? session.maxSessionLifetimeMinutes
+                : Math.min(maxLifetime, session.maxSessionLifetimeMinutes);
+          }
+          if (typeof session.maxSessionIdleMinutes === 'number') {
+            maxIdle =
+              maxIdle === null
+                ? session.maxSessionIdleMinutes
+                : Math.min(maxIdle, session.maxSessionIdleMinutes);
+          }
+          if (typeof session.usePersistentCookie === 'boolean') {
+            // false (strictest) wins.
+            if (persistentCookie === null) persistentCookie = session.usePersistentCookie;
+            else if (session.usePersistentCookie === false) persistentCookie = false;
+          }
+        }
+      } catch {
+        // Skip — partial aggregation is acceptable; null preserved otherwise.
+      }
+    }
+
+    return {
+      maxSessionLifetimeMinutes: maxLifetime,
+      maxSessionIdleMinutes: maxIdle,
+      usePersistentCookie: persistentCookie,
+    };
   }
 
   /**

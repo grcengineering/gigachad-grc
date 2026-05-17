@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 
 export interface SlackConfig {
-  botToken: string; // xoxb-...
+  botToken: string;  // xoxb-...
 }
 
 export interface SlackSyncResult {
@@ -42,13 +42,19 @@ export interface SlackSyncResult {
     restricted: number;
   };
   fileSharing: {
-    externalSharingEnabled: boolean;
+    // externalSharingEnabled is omitted: it cannot be reliably derived from
+    // the Slack public Web API without admin-tier scopes that aren't part of
+    // standard bot scopes. We don't claim it to avoid a misleading default.
     publicFileLinks: number;
   };
   security: {
-    ssoEnabled: boolean;
-    sessionDuration: number;
-    domainRestriction: boolean;
+    // null when the workspace's team.info response doesn't include the field
+    // (e.g., non-Enterprise plans, or missing admin scope). Per PATTERN.md
+    // rule 7 we surface "unknown" rather than a default boolean.
+    ssoEnabled: boolean | null;
+    sessionDuration: number | null;
+    // The team.info `email_domain` field, or null if not exposed.
+    emailDomain: string | null;
   };
   collectedAt: string;
   errors: string[];
@@ -59,9 +65,7 @@ export class SlackConnector {
   private readonly logger = new Logger(SlackConnector.name);
   private readonly baseUrl = 'https://slack.com/api';
 
-  async testConnection(
-    config: SlackConfig
-  ): Promise<{ success: boolean; message: string; details?: any }> {
+  async testConnection(config: SlackConfig): Promise<{ success: boolean; message: string; details?: any }> {
     if (!config.botToken) {
       return { success: false, message: 'Bot token is required' };
     }
@@ -90,19 +94,12 @@ export class SlackConnector {
   async sync(config: SlackConfig): Promise<SlackSyncResult> {
     const errors: string[] = [];
 
-    const [teamInfo, users, channels] = await Promise.all([
-      this.getTeamInfo(config).catch((e) => {
-        errors.push(`Team: ${e.message}`);
-        return null;
-      }),
-      this.getUsers(config).catch((e) => {
-        errors.push(`Users: ${e.message}`);
-        return [];
-      }),
-      this.getChannels(config).catch((e) => {
-        errors.push(`Channels: ${e.message}`);
-        return [];
-      }),
+    const [teamInfo, users, channels, apps, files] = await Promise.all([
+      this.getTeamInfo(config).catch(e => { errors.push(`Team: ${e.message}`); return null; }),
+      this.getUsers(config).catch(e => { errors.push(`Users: ${e.message}`); return []; }),
+      this.getChannels(config).catch(e => { errors.push(`Channels: ${e.message}`); return []; }),
+      this.getApps(config).catch(e => { errors.push(`Apps: ${e.message}`); return null; }),
+      this.getFiles(config).catch(e => { errors.push(`Files: ${e.message}`); return null; }),
     ]);
 
     const activeUsers = users.filter((u: any) => !u.deleted);
@@ -144,17 +141,83 @@ export class SlackConnector {
         archived: channels.filter((c: any) => c.is_archived).length,
         externallyShared: channels.filter((c: any) => c.is_ext_shared).length,
       },
-      apps: { installed: 0, approved: 0, restricted: 0 },
-      fileSharing: { externalSharingEnabled: false, publicFileLinks: 0 },
-      security: { ssoEnabled: false, sessionDuration: 0, domainRestriction: false },
+      apps: {
+        installed: apps?.installed ?? 0,
+        approved: apps?.approved ?? 0,
+        restricted: apps?.restricted ?? 0,
+      },
+      fileSharing: {
+        publicFileLinks: files?.publicFileLinks ?? 0,
+      },
+      security: {
+        // `sso_enabled` is only present on the Enterprise Grid team.info payload.
+        // Returning null avoids the misleading default of `false` for plans
+        // that simply don't expose the field.
+        ssoEnabled:
+          typeof teamInfo?.team?.sso_enabled === 'boolean'
+            ? teamInfo.team.sso_enabled
+            : null,
+        sessionDuration:
+          typeof teamInfo?.team?.session_duration === 'number'
+            ? teamInfo.team.session_duration
+            : null,
+        emailDomain: teamInfo?.team?.email_domain ?? null,
+      },
       collectedAt: new Date().toISOString(),
       errors,
     };
   }
 
+  private async getApps(config: SlackConfig): Promise<{ installed: number; approved: number; restricted: number } | null> {
+    // admin.apps.* methods require admin scopes (admin.apps:read). Bots without
+    // these scopes get not_allowed_token_type or missing_scope — surface as error.
+    const response = await fetch(`${this.baseUrl}/admin.apps.approved.list?limit=100`, {
+      headers: this.buildHeaders(config.botToken),
+    });
+    const approvedData: any = await response.json().catch(() => ({ ok: false }));
+
+    const restrictedResp = await fetch(`${this.baseUrl}/admin.apps.restricted.list?limit=100`, {
+      headers: this.buildHeaders(config.botToken),
+    });
+    const restrictedData: any = await restrictedResp.json().catch(() => ({ ok: false }));
+
+    if (!approvedData.ok && !restrictedData.ok) {
+      throw new Error(approvedData.error || restrictedData.error || 'admin.apps.* not authorized');
+    }
+
+    const approved = Array.isArray(approvedData.approved_apps) ? approvedData.approved_apps.length : 0;
+    const restricted = Array.isArray(restrictedData.restricted_apps) ? restrictedData.restricted_apps.length : 0;
+    return {
+      installed: approved + restricted,
+      approved,
+      restricted,
+    };
+  }
+
+  private async getFiles(config: SlackConfig): Promise<{ publicFileLinks: number } | null> {
+    // files.list returns a paginated list. We bucket files whose
+    // public_url_shared flag is set. Cap iteration to 5 pages.
+    let publicFileLinks = 0;
+    let page = 1;
+    const maxPages = 5;
+    while (page <= maxPages) {
+      const response = await fetch(`${this.baseUrl}/files.list?count=1000&page=${page}`, {
+        headers: this.buildHeaders(config.botToken),
+      });
+      const data: any = await response.json();
+      if (!data.ok) throw new Error(data.error || 'files.list failed');
+      const files = Array.isArray(data.files) ? data.files : [];
+      publicFileLinks += files.filter((f: any) => f.public_url_shared === true).length;
+      const pages = data.paging?.pages ?? 1;
+      if (page >= pages) break;
+      page += 1;
+    }
+    return { publicFileLinks };
+  }
+
   private buildHeaders(token: string): Record<string, string> {
     return {
-      Authorization: `Bearer ${token}`,
+      'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
     };
   }
@@ -174,12 +237,9 @@ export class SlackConnector {
     let cursor = '';
 
     do {
-      const response = await fetch(
-        `${this.baseUrl}/users.list?limit=200${cursor ? `&cursor=${cursor}` : ''}`,
-        {
-          headers: this.buildHeaders(config.botToken),
-        }
-      );
+      const response = await fetch(`${this.baseUrl}/users.list?limit=200${cursor ? `&cursor=${cursor}` : ''}`, {
+        headers: this.buildHeaders(config.botToken),
+      });
       const data = await response.json();
       if (!data.ok) throw new Error(data.error);
 
@@ -195,12 +255,9 @@ export class SlackConnector {
     let cursor = '';
 
     do {
-      const response = await fetch(
-        `${this.baseUrl}/conversations.list?limit=200&types=public_channel,private_channel${cursor ? `&cursor=${cursor}` : ''}`,
-        {
-          headers: this.buildHeaders(config.botToken),
-        }
-      );
+      const response = await fetch(`${this.baseUrl}/conversations.list?limit=200&types=public_channel,private_channel${cursor ? `&cursor=${cursor}` : ''}`, {
+        headers: this.buildHeaders(config.botToken),
+      });
       const data = await response.json();
       if (!data.ok) throw new Error(data.error);
 

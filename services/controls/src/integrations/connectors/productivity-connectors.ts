@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { BaseConnector } from './base-connector';
 import axios from 'axios';
+import { createGoogleServiceAccountJwt, exchangeGoogleJwtForAccessToken, parseServiceAccountKey } from './utils/google-jwt';
 
 // =============================================================================
 // Productivity & Knowledge Management Connectors - Fully Implemented
@@ -1283,41 +1284,80 @@ export class GoToMeetingConnector extends BaseConnector {
 
 @Injectable()
 export class GoogleMeetConnector extends BaseConnector {
-  constructor() {
-    super('GoogleMeetConnector');
+  constructor() { super('GoogleMeetConnector'); }
+
+  private async getCalendarToken(config: { serviceAccountKey: string; adminEmail?: string }): Promise<string> {
+    const credentials = parseServiceAccountKey(config.serviceAccountKey);
+    const jwt = createGoogleServiceAccountJwt(credentials, {
+      scope: 'https://www.googleapis.com/auth/calendar.readonly',
+      subject: config.adminEmail,
+    });
+    return exchangeGoogleJwtForAccessToken(jwt, credentials.token_uri);
   }
+
   async testConnection(config: any): Promise<{ success: boolean; message: string; details?: any }> {
-    if (!config.serviceAccountKey)
-      return { success: false, message: 'Service account key required' };
+    if (!config.serviceAccountKey) return { success: false, message: 'serviceAccountKey is required' };
     try {
-      // Google Meet uses Google Calendar API for meeting data
-      const _serviceAccount = JSON.parse(config.serviceAccountKey);
-      // OAuth2 flow would be implemented here
-      return {
-        success: true,
-        message: 'Connected to Google Meet (requires OAuth2 setup)',
-        details: {},
-      };
+      const token = await this.getCalendarToken(config);
+      const response = await axios.get('https://www.googleapis.com/calendar/v3/users/me/calendarList?maxResults=1', {
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 30000,
+        validateStatus: (s) => s < 500,
+      });
+      if (response.status >= 400) {
+        return { success: false, message: `HTTP ${response.status}: ${JSON.stringify(response.data || response.statusText)}` };
+      }
+      return { success: true, message: 'Connected to Google Meet (via Calendar API)', details: response.data };
     } catch (error: any) {
       return { success: false, message: error.message || 'Connection test failed' };
     }
   }
-  async sync(_config: any): Promise<any> {
-    const meetings: any[] = [];
-    const _errors: string[] = [];
-    try {
-      return {
-        meetings: { total: meetings.length, items: meetings },
-        collectedAt: new Date().toISOString(),
-        errors: ['Google Meet requires OAuth2 authentication'],
-      };
-    } catch (error: any) {
-      return {
-        meetings: { total: 0, items: [] },
-        collectedAt: new Date().toISOString(),
-        errors: [error.message],
-      };
+
+  async sync(config: any): Promise<any> {
+    if (!config.serviceAccountKey) {
+      throw new Error('Google Meet credentials missing: serviceAccountKey required');
     }
+    const token = await this.getCalendarToken(config);
+    const meetings: any[] = [];
+    const errors: string[] = [];
+
+    const timeMin = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    try {
+      let pageToken: string | undefined;
+      do {
+        const params = new URLSearchParams({
+          timeMin,
+          singleEvents: 'true',
+          maxResults: '2500',
+          q: 'meet.google.com',
+        });
+        if (pageToken) params.set('pageToken', pageToken);
+        const url = `https://www.googleapis.com/calendar/v3/calendars/primary/events?${params.toString()}`;
+        const response = await axios.get(url, {
+          headers: { Authorization: `Bearer ${token}` },
+          timeout: 30000,
+          validateStatus: (s) => s < 500,
+        });
+        if (response.status >= 400) {
+          throw new Error(`HTTP ${response.status}: ${JSON.stringify(response.data || response.statusText)}`);
+        }
+        const events: any[] = response.data?.items || [];
+        const meetEvents = events.filter(
+          (e: any) => e?.conferenceData?.conferenceSolution?.key?.type === 'hangoutsMeet',
+        );
+        meetings.push(...meetEvents);
+        pageToken = response.data?.nextPageToken;
+        if (meetings.length >= 5000) break;
+      } while (pageToken);
+    } catch (error: any) {
+      errors.push(`meetings: ${error.message}`);
+    }
+
+    return {
+      meetings: { total: meetings.length, items: meetings },
+      collectedAt: new Date().toISOString(),
+      errors,
+    };
   }
 }
 

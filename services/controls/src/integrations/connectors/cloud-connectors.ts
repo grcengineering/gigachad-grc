@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { BaseConnector } from './base-connector';
 import axios from 'axios';
+import * as crypto from 'crypto';
+import { URL } from 'url';
 
 // =============================================================================
 // Additional Cloud Provider Connectors - Fully Implemented
@@ -74,46 +76,94 @@ export class DigitalOceanConnector extends BaseConnector {
 
 @Injectable()
 export class OracleCloudConnector extends BaseConnector {
-  constructor() {
-    super('OracleCloudConnector');
+  private ociConfig: { tenancyOcid: string; userOcid: string; fingerprint: string; privateKey: string; region: string } | null = null;
+  constructor() { super('OracleCloudConnector'); }
+
+  private ociSign(method: string, urlString: string): Record<string, string> {
+    if (!this.ociConfig) throw new Error('OCI config not initialized');
+    const { tenancyOcid, userOcid, fingerprint, privateKey } = this.ociConfig;
+    const keyId = `${tenancyOcid}/${userOcid}/${fingerprint}`;
+    const parsed = new URL(urlString);
+    const date = new Date().toUTCString();
+    const requestTarget = `${method.toLowerCase()} ${parsed.pathname}${parsed.search}`;
+    const signingString = `(request-target): ${requestTarget}\nhost: ${parsed.host}\ndate: ${date}`;
+    const signer = crypto.createSign('RSA-SHA256');
+    signer.update(signingString);
+    const signature = signer.sign(privateKey, 'base64');
+    const headers = '(request-target) host date';
+    return {
+      'Authorization': `Signature version="1",keyId="${keyId}",algorithm="rsa-sha256",headers="${headers}",signature="${signature}"`,
+      'date': date,
+      'host': parsed.host,
+      'Accept': 'application/json',
+    };
   }
+
   async testConnection(config: any): Promise<{ success: boolean; message: string; details?: any }> {
-    if (!config.tenancyOcid) return { success: false, message: 'Tenancy OCID required' };
+    if (!config.tenancyOcid || !config.userOcid || !config.fingerprint || !config.privateKey || !config.region) {
+      return { success: false, message: 'tenancyOcid, userOcid, fingerprint, privateKey, and region are required' };
+    }
+    this.ociConfig = config;
     try {
-      // Oracle Cloud uses signature-based auth - simplified test
-      this.setBaseURL(`https://iaas.${config.region}.oraclecloud.com`);
-      return {
-        success: true,
-        message: 'Oracle Cloud connection configured (requires signature-based authentication)',
-        details: {},
-      };
+      const url = `https://identity.${config.region}.oraclecloud.com/20160918/compartments?compartmentId=${encodeURIComponent(config.tenancyOcid)}&limit=1`;
+      const headers = this.ociSign('GET', url);
+      const response = await axios.get(url, { headers, timeout: 30000, validateStatus: (s) => s < 500 });
+      if (response.status >= 400) {
+        return { success: false, message: `HTTP ${response.status}: ${JSON.stringify(response.data || response.statusText)}` };
+      }
+      return { success: true, message: 'Connected to Oracle Cloud', details: { compartments: Array.isArray(response.data) ? response.data.length : 0 } };
     } catch (error: any) {
       return { success: false, message: error.message || 'Connection test failed' };
     }
   }
-  async sync(_config: any): Promise<any> {
+
+  async sync(config: any): Promise<any> {
+    if (!config.tenancyOcid || !config.userOcid || !config.fingerprint || !config.privateKey || !config.region) {
+      throw new Error('Oracle Cloud credentials missing: tenancyOcid, userOcid, fingerprint, privateKey, region required');
+    }
+    this.ociConfig = config;
     const compartments: any[] = [];
     const instances: any[] = [];
     const databases: any[] = [];
-    const _errors: string[] = [];
+    const errors: string[] = [];
+
+    const callOci = async (url: string): Promise<any> => {
+      const headers = this.ociSign('GET', url);
+      const response = await axios.get(url, { headers, timeout: 30000, validateStatus: (s) => s < 500 });
+      if (response.status >= 400) {
+        throw new Error(`HTTP ${response.status}: ${JSON.stringify(response.data || response.statusText)}`);
+      }
+      return response.data;
+    };
+
     try {
-      // Oracle Cloud requires complex signature-based authentication
-      return {
-        compartments: { total: compartments.length, items: compartments },
-        instances: { total: instances.length, items: instances },
-        databases: { total: databases.length, items: databases },
-        collectedAt: new Date().toISOString(),
-        errors: ['Oracle Cloud requires signature-based authentication'],
-      };
+      const data = await callOci(`https://identity.${config.region}.oraclecloud.com/20160918/compartments?compartmentId=${encodeURIComponent(config.tenancyOcid)}`);
+      if (Array.isArray(data)) compartments.push(...data);
     } catch (error: any) {
-      return {
-        compartments: { total: 0, items: [] },
-        instances: { total: 0, items: [] },
-        databases: { total: 0, items: [] },
-        collectedAt: new Date().toISOString(),
-        errors: [error.message],
-      };
+      errors.push(`compartments: ${error.message}`);
     }
+
+    try {
+      const data = await callOci(`https://iaas.${config.region}.oraclecloud.com/20160918/instances?compartmentId=${encodeURIComponent(config.tenancyOcid)}`);
+      if (Array.isArray(data)) instances.push(...data);
+    } catch (error: any) {
+      errors.push(`instances: ${error.message}`);
+    }
+
+    try {
+      const data = await callOci(`https://database.${config.region}.oraclecloud.com/20160918/dbSystems?compartmentId=${encodeURIComponent(config.tenancyOcid)}`);
+      if (Array.isArray(data)) databases.push(...data);
+    } catch (error: any) {
+      errors.push(`databases: ${error.message}`);
+    }
+
+    return {
+      compartments: { total: compartments.length, items: compartments },
+      instances: { total: instances.length, items: instances },
+      databases: { total: databases.length, items: databases },
+      collectedAt: new Date().toISOString(),
+      errors,
+    };
   }
 }
 
@@ -212,46 +262,155 @@ export class IBMCloudConnector extends BaseConnector {
 
 @Injectable()
 export class AlibabaCloudConnector extends BaseConnector {
-  constructor() {
-    super('AlibabaCloudConnector');
+  private alibabaConfig: { accessKeyId: string; accessKeySecret: string; region: string } | null = null;
+  constructor() { super('AlibabaCloudConnector'); }
+
+  private percentEncode(s: string): string {
+    return encodeURIComponent(s)
+      .replace(/!/g, '%21')
+      .replace(/'/g, '%27')
+      .replace(/\(/g, '%28')
+      .replace(/\)/g, '%29')
+      .replace(/\*/g, '%2A');
   }
+
+  /**
+   * Alibaba Cloud ACS3 signature (HMAC-SHA256 over canonical request).
+   * Returns headers (including Authorization) for a signed request.
+   * action — API action (e.g., 'DescribeInstances')
+   * host   — full host (e.g., 'ecs.cn-hangzhou.aliyuncs.com')
+   * params — query parameters (Action, RegionId, Version already merged by caller).
+   */
+  private alibabaSign(method: string, host: string, params: Record<string, string>, body: string = ''): { url: string; headers: Record<string, string> } {
+    if (!this.alibabaConfig) throw new Error('Alibaba Cloud config not initialized');
+    const { accessKeyId, accessKeySecret } = this.alibabaConfig;
+    const dateIso = new Date().toISOString().replace(/[:\-]|\.\d{3}/g, '');
+    const nonce = crypto.randomUUID();
+    const payloadHash = crypto.createHash('sha256').update(body).digest('hex');
+
+    const headers: Record<string, string> = {
+      'host': host,
+      'x-acs-action': params.Action,
+      'x-acs-version': params.Version || '2014-05-26',
+      'x-acs-date': dateIso,
+      'x-acs-signature-nonce': nonce,
+      'x-acs-content-sha256': payloadHash,
+    };
+
+    // Build canonical query string (sorted)
+    const queryKeys = Object.keys(params).sort();
+    const canonicalQuery = queryKeys
+      .map((k) => `${this.percentEncode(k)}=${this.percentEncode(params[k])}`)
+      .join('&');
+
+    // Canonical headers (lowercase keys, sorted). All our header keys are already lowercase.
+    const headerKeys = Object.keys(headers).sort();
+    const canonicalHeaders = headerKeys
+      .map((k) => `${k}:${headers[k]}\n`)
+      .join('');
+    const signedHeaders = headerKeys.join(';');
+
+    const canonicalRequest = [
+      method.toUpperCase(),
+      '/',
+      canonicalQuery,
+      canonicalHeaders,
+      signedHeaders,
+      payloadHash,
+    ].join('\n');
+
+    const hashedCanonical = crypto.createHash('sha256').update(canonicalRequest).digest('hex');
+    const stringToSign = `ACS3-HMAC-SHA256\n${hashedCanonical}`;
+    const signature = crypto.createHmac('sha256', accessKeySecret).update(stringToSign).digest('hex');
+
+    headers['Authorization'] = `ACS3-HMAC-SHA256 Credential=${accessKeyId}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
+
+    return {
+      url: `https://${host}/?${canonicalQuery}`,
+      headers,
+    };
+  }
+
   async testConnection(config: any): Promise<{ success: boolean; message: string; details?: any }> {
-    if (!config.accessKeyId) return { success: false, message: 'Access key required' };
+    if (!config.accessKeyId || !config.accessKeySecret || !config.region) {
+      return { success: false, message: 'accessKeyId, accessKeySecret, and region are required' };
+    }
+    this.alibabaConfig = config;
     try {
-      // Alibaba Cloud uses signature-based auth - simplified test
-      this.setBaseURL(`https://ecs.${config.region}.aliyuncs.com`);
-      return {
-        success: true,
-        message: 'Alibaba Cloud connection configured (requires signature-based authentication)',
-        details: {},
-      };
+      const host = `ecs.${config.region}.aliyuncs.com`;
+      const { url, headers } = this.alibabaSign('GET', host, {
+        Action: 'DescribeRegions',
+        Version: '2014-05-26',
+      });
+      const response = await axios.get(url, { headers, timeout: 30000, validateStatus: (s) => s < 500 });
+      if (response.status >= 400) {
+        return { success: false, message: `HTTP ${response.status}: ${JSON.stringify(response.data || response.statusText)}` };
+      }
+      return { success: true, message: 'Connected to Alibaba Cloud', details: response.data };
     } catch (error: any) {
       return { success: false, message: error.message || 'Connection test failed' };
     }
   }
-  async sync(_config: any): Promise<any> {
+
+  async sync(config: any): Promise<any> {
+    if (!config.accessKeyId || !config.accessKeySecret || !config.region) {
+      throw new Error('Alibaba Cloud credentials missing: accessKeyId, accessKeySecret, region required');
+    }
+    this.alibabaConfig = config;
     const instances: any[] = [];
     const databases: any[] = [];
     const storage: any[] = [];
-    const _errors: string[] = [];
+    const errors: string[] = [];
+
+    // ECS instances
     try {
-      // Alibaba Cloud requires complex signature-based authentication
-      return {
-        instances: { total: instances.length, items: instances },
-        databases: { total: databases.length, items: databases },
-        storage: { total: storage.length, items: storage },
-        collectedAt: new Date().toISOString(),
-        errors: ['Alibaba Cloud requires signature-based authentication'],
-      };
+      const host = `ecs.${config.region}.aliyuncs.com`;
+      const { url, headers } = this.alibabaSign('GET', host, {
+        Action: 'DescribeInstances',
+        Version: '2014-05-26',
+        RegionId: config.region,
+      });
+      const response = await axios.get(url, { headers, timeout: 30000, validateStatus: (s) => s < 500 });
+      if (response.status >= 400) {
+        errors.push(`ECS DescribeInstances: HTTP ${response.status}: ${JSON.stringify(response.data || '')}`);
+      } else {
+        const items = response.data?.Instances?.Instance || response.data?.Instances || [];
+        if (Array.isArray(items)) instances.push(...items);
+      }
     } catch (error: any) {
-      return {
-        instances: { total: 0, items: [] },
-        databases: { total: 0, items: [] },
-        storage: { total: 0, items: [] },
-        collectedAt: new Date().toISOString(),
-        errors: [error.message],
-      };
+      errors.push(`ECS DescribeInstances: ${error.message}`);
     }
+
+    // RDS databases
+    try {
+      const host = `rds.${config.region}.aliyuncs.com`;
+      const { url, headers } = this.alibabaSign('GET', host, {
+        Action: 'DescribeDBInstances',
+        Version: '2014-08-15',
+        RegionId: config.region,
+      });
+      const response = await axios.get(url, { headers, timeout: 30000, validateStatus: (s) => s < 500 });
+      if (response.status >= 400) {
+        errors.push(`RDS DescribeDBInstances: HTTP ${response.status}: ${JSON.stringify(response.data || '')}`);
+      } else {
+        const items = response.data?.Items?.DBInstance || response.data?.Items || [];
+        if (Array.isArray(items)) databases.push(...items);
+      }
+    } catch (error: any) {
+      errors.push(`RDS DescribeDBInstances: ${error.message}`);
+    }
+
+    // OSS uses a separate, older signature scheme (HMAC-SHA1 with a different canonical request).
+    // Not implemented here; surface the gap rather than fake success.
+    errors.push('OSS list buckets not implemented: requires legacy OSS signature scheme (HMAC-SHA1, different canonical format)');
+
+    return {
+      instances: { total: instances.length, items: instances },
+      databases: { total: databases.length, items: databases },
+      storage: { total: storage.length, items: storage },
+      collectedAt: new Date().toISOString(),
+      errors,
+    };
   }
 }
 
