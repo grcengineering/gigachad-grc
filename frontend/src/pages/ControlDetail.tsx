@@ -756,6 +756,15 @@ export default function ControlDetail() {
                           <p className="text-xs text-surface-400 mt-1">
                             {mapping.requirement.reference} - {mapping.requirement.title}
                           </p>
+                          <span
+                            className={
+                              mapping.mappingType === 'supporting'
+                                ? 'inline-block mt-1 text-xs text-surface-400 uppercase tracking-wide'
+                                : 'inline-block mt-1 text-xs text-brand-400 uppercase tracking-wide'
+                            }
+                          >
+                            {mapping.mappingType || 'primary'}
+                          </span>
                         </div>
                         {showKebab && (
                           <div className="relative">
@@ -765,7 +774,7 @@ export default function ControlDetail() {
                               aria-haspopup="menu"
                               aria-expanded={isMenuOpen}
                               onClick={() => setMappingMenuOpenId(isMenuOpen ? null : mapping.id)}
-                              className="opacity-0 group-hover:opacity-100 focus:opacity-100 p-1 rounded hover:bg-surface-700 transition-opacity"
+                              className="opacity-60 group-hover:opacity-100 focus:opacity-100 p-1 rounded hover:bg-surface-700 transition-opacity"
                             >
                               <EllipsisVerticalIcon className="w-4 h-4 text-surface-400" />
                             </button>

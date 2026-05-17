@@ -695,6 +695,8 @@ function RequirementRow({
         {hasChildren ? (
           <button
             className="p-1 -ml-1"
+            aria-label={`Toggle ${requirement.reference}`}
+            aria-expanded={isExpanded}
             onClick={(e) => {
               e.stopPropagation();
               onToggle(requirement.id);
@@ -1113,6 +1115,15 @@ function RequirementDetailPanel({
                             <p className="text-sm text-surface-200 truncate">
                               {mapping.control?.title}
                             </p>
+                            <span
+                              className={
+                                mapping.mappingType === 'supporting'
+                                  ? 'inline-block mt-1 text-xs text-surface-400 uppercase tracking-wide'
+                                  : 'inline-block mt-1 text-xs text-brand-400 uppercase tracking-wide'
+                              }
+                            >
+                              {mapping.mappingType || 'primary'}
+                            </span>
                           </div>
                         </Link>
                         {showKebab && (
@@ -1131,7 +1142,7 @@ function RequirementDetailPanel({
                                 setOpenMenuId(isMenuOpen ? null : mapping.id);
                                 setPendingDeleteId(null);
                               }}
-                              className="p-1 rounded hover:bg-surface-700 text-surface-400 hover:text-surface-200 opacity-0 group-hover:opacity-100 focus:opacity-100 focus:outline-none focus:ring-1 focus:ring-brand-500 transition-opacity"
+                              className="p-1 rounded hover:bg-surface-700 text-surface-400 hover:text-surface-200 opacity-60 group-hover:opacity-100 focus:opacity-100 focus:outline-none focus:ring-1 focus:ring-brand-500 transition-opacity"
                             >
                               <EllipsisVerticalIcon className="w-4 h-4" />
                             </button>
@@ -1189,7 +1200,11 @@ function RequirementDetailPanel({
                       </div>
                       {isConfirmingDelete && (
                         <div className="px-3 pb-3 -mt-1">
-                          <div className="bg-surface-900/60 border border-red-500/30 rounded-md p-2 text-xs text-surface-200">
+                          <div
+                            role="alertdialog"
+                            aria-label="Confirm mapping deletion"
+                            className="bg-surface-900/60 border border-red-500/30 rounded-md p-2 text-xs text-surface-200"
+                          >
                             <p className="mb-2">Remove this mapping?</p>
                             <div className="flex justify-end gap-2">
                               <button
