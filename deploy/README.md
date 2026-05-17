@@ -329,10 +329,17 @@ cd /opt/gigachad-grc/deploy
 
 Backup includes:
 
-- PostgreSQL database dump
-- RustFS/S3 object storage files
-- Configuration files
-- Docker volumes
+- PostgreSQL database dump (taken over the network via `pg_dump`)
+- RustFS/S3 object storage files (taken via the S3 API with `aws s3 sync`)
+- Redis snapshot (taken over the network via `redis-cli --rdb`)
+- Configuration files (`.env.prod`, `docker-compose.prod.yml`, Traefik, Keycloak realm export, database init scripts)
+
+The `backup-scheduler` container does **not** mount `/var/run/docker.sock`. It
+connects to `postgres`, `redis` and `rustfs` purely as a network peer on the
+`grc-network`. A compromised backup container therefore cannot introspect or
+operate on other containers on the host. Application data volumes
+(`postgres_data`, `redis_data`, `rustfs_data`) are no longer captured at the
+filesystem level; the network-level dumps above are the canonical backup.
 
 Backups are stored in:
 
@@ -341,23 +348,42 @@ Backups are stored in:
 
 ### Disaster Recovery
 
+`restore.sh` is run **from the host** by an operator. It uses `pg_restore`,
+`psql` and `aws s3` to push data back into the containers over the network -
+it does not need to be run from inside the backup-scheduler container, and
+no `docker exec` / `docker cp` calls are used for data movement. The host
+`docker` CLI is still used for service lifecycle (`docker compose up/down`).
+
 To restore from backup:
 
 ```bash
-# Stop all services
-cd /opt/gigachad-grc
-docker compose -f docker-compose.prod.yml down
-
-# Restore from backup
-cd deploy
+# Run from the host (postgresql-client, redis and aws-cli must be installed)
+cd /opt/gigachad-grc/deploy
 ./restore.sh /backups/gigachad-grc/backup-YYYY-MM-DD-HHMMSS.tar.gz
 
-# Start services
-cd ..
-docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
+# restore.sh stops services, restores configuration, restarts postgres /
+# rustfs, pushes data back via the network, then brings up the full stack.
 
 # Verify restoration
+cd ..
 docker compose -f docker-compose.prod.yml logs -f
+```
+
+#### Manual Redis cold restore
+
+Because Redis only loads `dump.rdb` at server startup, network-only restore
+cannot fully rehydrate the cache. The default behaviour is to skip Redis -
+keys are recomputed from postgres / rustfs on demand. If a true cold restore
+is required (e.g. for rate-limit counters or session continuity), run on the
+host after extracting the backup archive:
+
+```bash
+docker compose -f docker-compose.prod.yml stop redis
+docker run --rm \
+    -v gigachad-grc_redis_data:/data \
+    -v "$(pwd)":/src \
+    alpine cp /src/redis_backup.rdb /data/dump.rdb
+docker compose -f docker-compose.prod.yml start redis
 ```
 
 ### Backup to Remote Storage
