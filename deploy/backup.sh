@@ -8,14 +8,27 @@
 # - PostgreSQL database
 # - RustFS/S3 object storage (https://github.com/rustfs/rustfs)
 # - Configuration files
-# - Docker volumes
+#
+# Backups are taken over the docker-compose network using direct network clients
+# (pg_dump, redis-cli, aws s3). The script does NOT require access to the host
+# Docker socket - the backup-scheduler container runs as a plain network peer.
 #
 # Usage: ./backup.sh [backup_directory]
 #
-# Prerequisites:
-# - Docker and Docker Compose installed
-# - Sufficient disk space for backups
-# - Write permissions to backup directory
+# Required environment variables (typically supplied via the backup-scheduler
+# service in docker-compose.prod.yml):
+#   POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB
+#   REDIS_PASSWORD
+#   MINIO_ROOT_USER, MINIO_ROOT_PASSWORD
+#
+# Optional overrides:
+#   POSTGRES_HOST (default: postgres)
+#   POSTGRES_PORT (default: 5432)
+#   REDIS_HOST    (default: redis)
+#   REDIS_PORT    (default: 6379)
+#   S3_ENDPOINT   (default: http://rustfs:9000)
+#   S3_BUCKET     (default: grc-storage)
+#   S3_REGION     (default: us-east-1)
 #
 ################################################################################
 
@@ -42,9 +55,18 @@ RETENTION_DAYS="${BACKUP_RETENTION_DAYS:-30}"
 # Compression settings
 COMPRESSION_LEVEL="${BACKUP_COMPRESSION_LEVEL:-6}"
 
-# Docker Compose settings
-COMPOSE_FILE="${PROJECT_DIR}/docker-compose.prod.yml"
-ENV_FILE="${PROJECT_DIR}/.env.prod"
+# Network targets (resolvable on the docker-compose grc-network)
+POSTGRES_HOST="${POSTGRES_HOST:-postgres}"
+POSTGRES_PORT="${POSTGRES_PORT:-5432}"
+REDIS_HOST="${REDIS_HOST:-redis}"
+REDIS_PORT="${REDIS_PORT:-6379}"
+S3_ENDPOINT="${S3_ENDPOINT:-http://rustfs:9000}"
+S3_BUCKET="${S3_BUCKET:-grc-storage}"
+S3_REGION="${S3_REGION:-us-east-1}"
+
+# Optional environment file (only used to surface config files in the backup -
+# environment is normally injected by the container runtime).
+ENV_FILE="${ENV_FILE:-${PROJECT_DIR}/.env.prod}"
 
 # Log file
 LOG_FILE="${BACKUP_ROOT}/backup-${TIMESTAMP}.log"
@@ -93,20 +115,20 @@ command_exists() {
 check_prerequisites() {
     log_info "Checking prerequisites..."
 
-    if ! command_exists docker; then
-        error_exit "Docker is not installed. Please install Docker first."
+    if ! command_exists pg_dump; then
+        error_exit "pg_dump not found. Install postgresql-client."
     fi
 
-    if ! command_exists docker-compose && ! docker compose version >/dev/null 2>&1; then
-        error_exit "Docker Compose is not installed. Please install Docker Compose first."
+    if ! command_exists redis-cli; then
+        error_exit "redis-cli not found. Install the redis package."
     fi
 
-    if [ ! -f "$COMPOSE_FILE" ]; then
-        error_exit "Docker Compose file not found: $COMPOSE_FILE"
+    if ! command_exists aws; then
+        error_exit "aws CLI not found. Install aws-cli."
     fi
 
-    if [ ! -f "$ENV_FILE" ]; then
-        error_exit "Environment file not found: $ENV_FILE"
+    if [ -z "${POSTGRES_USER:-}" ] || [ -z "${POSTGRES_PASSWORD:-}" ] || [ -z "${POSTGRES_DB:-}" ]; then
+        error_exit "POSTGRES_USER, POSTGRES_PASSWORD and POSTGRES_DB must be set"
     fi
 
     log_success "Prerequisites check passed"
@@ -130,70 +152,89 @@ create_backup_directory() {
 load_environment() {
     log_info "Loading environment variables..."
 
-    # Source environment file
-    set -a
-    # shellcheck disable=SC1090
-    source "$ENV_FILE"
-    set +a
+    # In the backup-scheduler container the environment is injected by
+    # docker-compose. When run from the host we optionally source .env.prod
+    # for convenience, but it is not required.
+    if [ -f "$ENV_FILE" ]; then
+        set -a
+        # shellcheck disable=SC1090
+        source "$ENV_FILE"
+        set +a
+    fi
 
-    # Set defaults if not defined
+    # Set sensible defaults
     POSTGRES_USER="${POSTGRES_USER:-grc_prod_user}"
     POSTGRES_DB="${POSTGRES_DB:-gigachad_grc_prod}"
 
     log_success "Environment variables loaded"
 }
 
-# Backup PostgreSQL database
+# Backup PostgreSQL database over the network
 backup_database() {
-    log_info "Starting PostgreSQL database backup..."
+    log_info "Starting PostgreSQL database backup (host: $POSTGRES_HOST)..."
 
     local db_backup_file="${BACKUP_DIR}/postgres_backup.sql.gz"
     local db_custom_backup="${BACKUP_DIR}/postgres_backup.dump"
 
+    # PGPASSWORD avoids interactive prompts; scope it to this function
+    export PGPASSWORD="$POSTGRES_PASSWORD"
+
     # SQL dump (compressed)
     log_info "Creating SQL dump..."
-    docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" exec -T postgres \
-        pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -F plain --clean --if-exists \
+    pg_dump -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" \
+        -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
+        -F plain --clean --if-exists \
         | gzip -"$COMPRESSION_LEVEL" > "$db_backup_file" \
-        || error_exit "Failed to create SQL dump"
+        || { unset PGPASSWORD; error_exit "Failed to create SQL dump"; }
 
     # Custom format dump (for faster restoration)
     log_info "Creating custom format dump..."
-    docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" exec -T postgres \
-        pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -F custom -Z "$COMPRESSION_LEVEL" \
-        > "$db_custom_backup" \
-        || error_exit "Failed to create custom format dump"
+    pg_dump -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" \
+        -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
+        -F custom -Z "$COMPRESSION_LEVEL" \
+        -f "$db_custom_backup" \
+        || { unset PGPASSWORD; error_exit "Failed to create custom format dump"; }
 
     # Get database size
     local db_size
-    db_size=$(docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" exec -T postgres \
-        psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -t -c \
-        "SELECT pg_size_pretty(pg_database_size('$POSTGRES_DB'));" | xargs)
+    db_size=$(psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" \
+        -U "$POSTGRES_USER" -d "$POSTGRES_DB" -t -c \
+        "SELECT pg_size_pretty(pg_database_size('$POSTGRES_DB'));" 2>/dev/null \
+        | xargs || echo "unknown")
+
+    unset PGPASSWORD
 
     log_success "Database backup completed (Size: $db_size)"
 }
 
-# Backup RustFS/S3 object storage data
+# Backup RustFS/S3 object storage over the S3 API
 backup_object_storage() {
     log_info "Starting RustFS/S3 object storage backup..."
 
-    local storage_backup_dir="${BACKUP_DIR}/rustfs"
+    local storage_backup_dir="${BACKUP_DIR}/object-storage"
     mkdir -p "$storage_backup_dir"
 
-    # Use docker cp to copy RustFS data
-    # Try new container name first, fall back to legacy minio name
-    log_info "Copying object storage data..."
-    if docker cp grc-rustfs:/data "$storage_backup_dir/" 2>/dev/null; then
-        log_info "Copied data from grc-rustfs container"
-    elif docker cp grc-minio:/data "$storage_backup_dir/" 2>/dev/null; then
-        log_info "Copied data from legacy grc-minio container"
-    else
-        log_warning "Failed to backup object storage data (service may not be running)"
+    if [ -z "${MINIO_ROOT_USER:-}" ] || [ -z "${MINIO_ROOT_PASSWORD:-}" ]; then
+        log_warning "MINIO_ROOT_USER / MINIO_ROOT_PASSWORD not set; skipping object storage backup"
+        return 0
     fi
 
-    # Compress backup (keep legacy name for compatibility)
+    log_info "Syncing s3://${S3_BUCKET} from ${S3_ENDPOINT}..."
+
+    # Pass credentials via the env vars aws-cli reads, scoped to the subshell
+    if ! (
+        export AWS_ACCESS_KEY_ID="$MINIO_ROOT_USER"
+        export AWS_SECRET_ACCESS_KEY="$MINIO_ROOT_PASSWORD"
+        export AWS_DEFAULT_REGION="$S3_REGION"
+        aws --endpoint-url "$S3_ENDPOINT" s3 sync \
+            "s3://${S3_BUCKET}" "$storage_backup_dir" --no-progress
+    ); then
+        log_warning "aws s3 sync failed (bucket may not exist or RustFS unreachable)"
+    fi
+
+    # Compress backup (keep legacy filename for restore compatibility)
     log_info "Compressing object storage data..."
-    tar -czf "${BACKUP_DIR}/minio_backup.tar.gz" -C "$storage_backup_dir" data \
+    tar -czf "${BACKUP_DIR}/minio_backup.tar.gz" -C "$BACKUP_DIR" object-storage \
         || log_warning "Failed to compress object storage backup"
 
     # Remove uncompressed directory
@@ -202,25 +243,26 @@ backup_object_storage() {
     log_success "Object storage backup completed"
 }
 
-# Backup Redis data (optional)
+# Backup Redis data using redis-cli's RDB-over-the-wire mode
 backup_redis() {
-    log_info "Starting Redis backup..."
+    log_info "Starting Redis backup (host: $REDIS_HOST)..."
 
     local redis_backup_file="${BACKUP_DIR}/redis_backup.rdb"
 
-    # Trigger Redis BGSAVE
-    docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" exec -T redis \
-        redis-cli -a "$REDIS_PASSWORD" --no-auth-warning BGSAVE \
-        || log_warning "Failed to trigger Redis BGSAVE"
+    if [ -z "${REDIS_PASSWORD:-}" ]; then
+        log_warning "REDIS_PASSWORD not set; skipping Redis backup"
+        return 0
+    fi
 
-    # Wait for BGSAVE to complete
-    sleep 5
-
-    # Copy Redis dump file
-    docker cp grc-redis:/data/dump.rdb "$redis_backup_file" \
-        || log_warning "Failed to backup Redis data"
-
-    log_success "Redis backup completed"
+    # redis-cli --rdb writes the RDB stream from the server straight to a local
+    # file. No need to copy a file out of the redis container.
+    if redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" \
+        -a "$REDIS_PASSWORD" --no-auth-warning \
+        --rdb "$redis_backup_file" 2>>"$LOG_FILE"; then
+        log_success "Redis backup completed"
+    else
+        log_warning "Failed to backup Redis data (server may not be running)"
+    fi
 }
 
 # Backup configuration files
@@ -230,9 +272,10 @@ backup_configurations() {
     local config_backup_dir="${BACKUP_DIR}/configs"
     mkdir -p "$config_backup_dir"
 
-    # Copy configuration files
-    cp "$ENV_FILE" "$config_backup_dir/.env.prod" 2>/dev/null || true
-    cp "$COMPOSE_FILE" "$config_backup_dir/docker-compose.prod.yml" 2>/dev/null || true
+    # Copy configuration files (mounted read-only into the backup container)
+    [ -f "$ENV_FILE" ] && cp "$ENV_FILE" "$config_backup_dir/.env.prod" 2>/dev/null || true
+    [ -f "${PROJECT_DIR}/docker-compose.prod.yml" ] && \
+        cp "${PROJECT_DIR}/docker-compose.prod.yml" "$config_backup_dir/docker-compose.prod.yml" 2>/dev/null || true
 
     # Copy Traefik configuration if exists
     [ -f "${PROJECT_DIR}/gateway/traefik.yml" ] && \
@@ -249,43 +292,6 @@ backup_configurations() {
     log_success "Configuration files backup completed"
 }
 
-# Backup Docker volumes
-backup_volumes() {
-    log_info "Starting Docker volumes backup..."
-
-    local volumes_backup_dir="${BACKUP_DIR}/volumes"
-    mkdir -p "$volumes_backup_dir"
-
-    # List of volumes to backup
-    # Note: rustfs_data is the new volume name, minio_data is legacy
-    local volumes=(
-        "gigachad-grc_postgres_data"
-        "gigachad-grc_redis_data"
-        "gigachad-grc_rustfs_data"
-        "gigachad-grc_minio_data"
-        "gigachad-grc_keycloak_data"
-        "gigachad-grc_traefik_letsencrypt"
-    )
-
-    for volume in "${volumes[@]}"; do
-        if docker volume inspect "$volume" >/dev/null 2>&1; then
-            log_info "Backing up volume: $volume"
-
-            # Create a temporary container to access volume
-            docker run --rm \
-                -v "$volume":/volume \
-                -v "$volumes_backup_dir":/backup \
-                alpine \
-                tar -czf "/backup/${volume}.tar.gz" -C /volume . \
-                || log_warning "Failed to backup volume: $volume"
-        else
-            log_warning "Volume not found: $volume"
-        fi
-    done
-
-    log_success "Docker volumes backup completed"
-}
-
 # Create backup manifest
 create_manifest() {
     log_info "Creating backup manifest..."
@@ -296,32 +302,28 @@ create_manifest() {
     local hostname
     hostname=$(hostname)
 
-    # Get Docker Compose version
-    local compose_version
-    if docker compose version >/dev/null 2>&1; then
-        compose_version=$(docker compose version --short)
-    else
-        compose_version=$(docker-compose version --short)
-    fi
-
     # Create manifest
     cat > "$manifest_file" << EOF
 {
   "backup_date": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
   "backup_timestamp": "$TIMESTAMP",
   "hostname": "$hostname",
-  "docker_compose_version": "$compose_version",
+  "backup_method": "network-direct",
   "database": {
     "postgres_user": "$POSTGRES_USER",
-    "postgres_db": "$POSTGRES_DB"
+    "postgres_db": "$POSTGRES_DB",
+    "postgres_host": "$POSTGRES_HOST"
+  },
+  "object_storage": {
+    "endpoint": "$S3_ENDPOINT",
+    "bucket": "$S3_BUCKET"
   },
   "files": {
     "database_sql": "postgres_backup.sql.gz",
     "database_dump": "postgres_backup.dump",
     "minio": "minio_backup.tar.gz",
     "redis": "redis_backup.rdb",
-    "configs": "configs/",
-    "volumes": "volumes/"
+    "configs": "configs/"
   },
   "retention_days": $RETENTION_DAYS
 }
@@ -397,6 +399,8 @@ upload_to_remote() {
         local s3_region="${DR_REMOTE_BACKUP_REGION:-us-east-1}"
 
         if command_exists aws; then
+            # Remote upload uses AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY from
+            # the environment (set in docker-compose.prod.yml).
             aws s3 cp "$archive_file" "s3://${s3_bucket}/gigachad-grc/" \
                 --region "$s3_region" \
                 || log_warning "Failed to upload backup to S3"
@@ -458,14 +462,13 @@ main() {
     log_info "Backup directory: $BACKUP_DIR"
 
     # Run backup steps
+    load_environment
     check_prerequisites
     create_backup_directory
-    load_environment
     backup_database
     backup_object_storage
     backup_redis
     backup_configurations
-    backup_volumes
     create_manifest
     calculate_backup_size
     create_archive

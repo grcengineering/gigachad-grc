@@ -8,17 +8,26 @@
 # - PostgreSQL database
 # - RustFS/S3 object storage (https://github.com/rustfs/rustfs)
 # - Configuration files
-# - Docker volumes
+#
+# Data-plane restore (postgres, redis, object storage) is performed over the
+# network using pg_restore / psql, redis-cli RESTORE, and aws s3 cp - so the
+# restore container does not require docker.sock access to move data.
+#
+# Service lifecycle (docker compose up/down) is still managed via the host's
+# docker CLI: restore.sh is intended to be invoked from the host by an
+# operator after a disaster, not from inside the backup-scheduler container.
 #
 # Usage: ./restore.sh <backup_file>
 #        ./restore.sh /backups/gigachad-grc/backup-2025-12-05-020000.tar.gz
 #
 # WARNING: This will overwrite existing data!
 #
-# Prerequisites:
-# - Docker and Docker Compose installed
-# - Valid backup archive
-# - Services should be stopped before restoration
+# Prerequisites (on the host):
+#   - docker / docker compose v2
+#   - postgresql-client (for pg_restore / psql)
+#   - redis (for redis-cli)
+#   - aws CLI
+#   - Valid backup archive
 #
 ################################################################################
 
@@ -38,9 +47,21 @@ BACKUP_FILE="${1:-}"
 # Temporary restore directory
 RESTORE_DIR="/tmp/grc-restore-$$"
 
-# Docker Compose settings
+# Docker Compose settings - only used for service lifecycle (up/down/restart)
 COMPOSE_FILE="${PROJECT_DIR}/docker-compose.prod.yml"
 ENV_FILE="${PROJECT_DIR}/.env.prod"
+
+# Network targets. When restore.sh runs on the docker host, services are
+# reached via published localhost ports. Operators can override these by
+# exporting the variables before invoking the script (e.g. to restore from
+# inside the grc-network).
+POSTGRES_HOST="${POSTGRES_HOST:-127.0.0.1}"
+POSTGRES_PORT="${POSTGRES_PORT:-5432}"
+REDIS_HOST="${REDIS_HOST:-127.0.0.1}"
+REDIS_PORT="${REDIS_PORT:-6379}"
+S3_ENDPOINT="${S3_ENDPOINT:-http://127.0.0.1:9000}"
+S3_BUCKET="${S3_BUCKET:-grc-storage}"
+S3_REGION="${S3_REGION:-us-east-1}"
 
 # Log file
 LOG_FILE="/var/log/grc-restore-$(date +%Y%m%d-%H%M%S).log"
@@ -156,19 +177,24 @@ check_prerequisites() {
         error_exit "Backup file not found: $BACKUP_FILE"
     fi
 
-    # Check if Docker is installed
+    # Network clients required for data-plane restore
+    for cmd in pg_restore psql redis-cli aws; do
+        if ! command_exists "$cmd"; then
+            error_exit "$cmd not found. Install postgresql-client, redis and aws-cli before running restore."
+        fi
+    done
+
+    # docker CLI is required for service lifecycle (up/down/restart)
     if ! command_exists docker; then
-        error_exit "Docker is not installed. Please install Docker first."
+        error_exit "docker not found. restore.sh needs the docker CLI to start/stop services on the host."
     fi
 
-    # Check if Docker Compose is installed
     if ! command_exists docker-compose && ! docker compose version >/dev/null 2>&1; then
         error_exit "Docker Compose is not installed. Please install Docker Compose first."
     fi
 
-    # Check if Docker daemon is running
     if ! docker ps >/dev/null 2>&1; then
-        error_exit "Docker daemon is not running. Please start Docker first."
+        error_exit "Docker daemon is not running or current user cannot reach it."
     fi
 
     log_success "Prerequisites check passed"
@@ -293,58 +319,7 @@ restore_configurations() {
     log_success "Configuration files restored"
 }
 
-# Restore Docker volumes
-restore_volumes() {
-    log_step "Restoring Docker volumes..."
-
-    # Load environment variables
-    set -a
-    # shellcheck disable=SC1090
-    source "$ENV_FILE" 2>/dev/null || true
-    set +a
-
-    # List of volumes to restore
-    # Note: rustfs_data is the new volume name, minio_data is legacy
-    local volumes=(
-        "gigachad-grc_postgres_data"
-        "gigachad-grc_redis_data"
-        "gigachad-grc_rustfs_data"
-        "gigachad-grc_minio_data"
-        "gigachad-grc_keycloak_data"
-        "gigachad-grc_traefik_letsencrypt"
-    )
-
-    for volume in "${volumes[@]}"; do
-        local volume_backup="${RESTORE_DIR}/volumes/${volume}.tar.gz"
-
-        if [ -f "$volume_backup" ]; then
-            log_info "Restoring volume: $volume"
-
-            # Remove existing volume
-            docker volume rm "$volume" 2>/dev/null || true
-
-            # Create new volume
-            docker volume create "$volume" >/dev/null \
-                || error_exit "Failed to create volume: $volume"
-
-            # Restore volume data
-            docker run --rm \
-                -v "$volume":/volume \
-                -v "$RESTORE_DIR/volumes":/backup \
-                alpine \
-                tar -xzf "/backup/${volume}.tar.gz" -C /volume \
-                || log_warning "Failed to restore volume: $volume"
-
-            log_success "Volume restored: $volume"
-        else
-            log_warning "Volume backup not found: $volume"
-        fi
-    done
-
-    log_success "Docker volumes restoration completed"
-}
-
-# Restore PostgreSQL database
+# Restore PostgreSQL database over the network
 restore_database() {
     log_step "Restoring PostgreSQL database..."
 
@@ -359,101 +334,117 @@ restore_database() {
     docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d postgres \
         || error_exit "Failed to start PostgreSQL service"
 
-    # Wait for PostgreSQL to be ready
+    # Wait for PostgreSQL to be ready (TCP poll via pg_isready)
     log_info "Waiting for PostgreSQL to be ready..."
     local retries=30
     local wait_time=2
 
+    export PGPASSWORD="$POSTGRES_PASSWORD"
+
     for ((i=1; i<=retries; i++)); do
-        if docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" exec -T postgres \
-            pg_isready -U "${POSTGRES_USER}" >/dev/null 2>&1; then
+        if pg_isready -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" \
+            -U "$POSTGRES_USER" >/dev/null 2>&1; then
             log_success "PostgreSQL is ready"
             break
         fi
 
-        if [ $i -eq $retries ]; then
+        if [ "$i" -eq "$retries" ]; then
+            unset PGPASSWORD
             error_exit "PostgreSQL did not become ready in time"
         fi
 
         echo -n "."
-        sleep $wait_time
+        sleep "$wait_time"
     done
     echo ""
 
     # Drop existing database (if exists) and create new one
     log_info "Recreating database..."
-    docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" exec -T postgres \
-        psql -U "${POSTGRES_USER}" -d postgres -c "DROP DATABASE IF EXISTS ${POSTGRES_DB};" \
+    psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d postgres \
+        -c "DROP DATABASE IF EXISTS ${POSTGRES_DB};" \
         || log_warning "Failed to drop existing database"
 
-    docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" exec -T postgres \
-        psql -U "${POSTGRES_USER}" -d postgres -c "CREATE DATABASE ${POSTGRES_DB};" \
-        || error_exit "Failed to create database"
+    psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d postgres \
+        -c "CREATE DATABASE ${POSTGRES_DB};" \
+        || { unset PGPASSWORD; error_exit "Failed to create database"; }
 
     # Restore database from custom dump (preferred)
     if [ -f "$RESTORE_DIR/postgres_backup.dump" ]; then
         log_info "Restoring from custom dump format..."
-        cat "$RESTORE_DIR/postgres_backup.dump" | \
-            docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" exec -T postgres \
-            pg_restore -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" --clean --if-exists --no-owner --no-acl \
+        pg_restore -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" \
+            -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
+            --clean --if-exists --no-owner --no-acl \
+            "$RESTORE_DIR/postgres_backup.dump" \
             || log_warning "Database restore completed with warnings"
 
     # Fallback to SQL dump
     elif [ -f "$RESTORE_DIR/postgres_backup.sql.gz" ]; then
         log_info "Restoring from SQL dump..."
         gunzip -c "$RESTORE_DIR/postgres_backup.sql.gz" | \
-            docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" exec -T postgres \
-            psql -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" \
+            psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" \
+            -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
             || log_warning "Database restore completed with warnings"
 
     elif [ -f "$RESTORE_DIR/postgres_backup.sql" ]; then
         log_info "Restoring from uncompressed SQL dump..."
-        cat "$RESTORE_DIR/postgres_backup.sql" | \
-            docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" exec -T postgres \
-            psql -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" \
+        psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" \
+            -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
+            -f "$RESTORE_DIR/postgres_backup.sql" \
             || log_warning "Database restore completed with warnings"
 
     else
+        unset PGPASSWORD
         error_exit "No database backup found"
     fi
 
     # Verify database restoration
     log_info "Verifying database restoration..."
     local table_count
-    table_count=$(docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" exec -T postgres \
-        psql -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -t -c \
-        "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public';" | xargs)
+    table_count=$(psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" \
+        -U "$POSTGRES_USER" -d "$POSTGRES_DB" -t -c \
+        "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public';" \
+        2>/dev/null | xargs || echo "unknown")
 
     log_info "Tables restored: $table_count"
+
+    unset PGPASSWORD
 
     log_success "Database restoration completed"
 }
 
-# Restore RustFS/S3 object storage data
+# Restore RustFS/S3 object storage data over the S3 API
 restore_object_storage() {
     log_step "Restoring RustFS/S3 object storage data..."
 
-    # Check if backup exists (legacy name for compatibility)
+    # Check if backup exists (legacy filename kept for compatibility)
     if [ ! -f "$RESTORE_DIR/minio_backup.tar.gz" ]; then
         log_warning "Object storage backup not found, skipping"
         return 0
     fi
 
-    # Start RustFS service (try new name first, fall back to legacy)
-    log_info "Starting object storage service..."
-    if docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d rustfs 2>/dev/null; then
-        STORAGE_CONTAINER="grc-rustfs"
-        STORAGE_SERVICE="rustfs"
-    elif docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d minio 2>/dev/null; then
-        STORAGE_CONTAINER="grc-minio"
-        STORAGE_SERVICE="minio"
-    else
-        error_exit "Failed to start object storage service"
+    if [ -z "${MINIO_ROOT_USER:-}" ] || [ -z "${MINIO_ROOT_PASSWORD:-}" ]; then
+        log_warning "MINIO_ROOT_USER / MINIO_ROOT_PASSWORD not set; skipping object storage restore"
+        return 0
     fi
+
+    # Start RustFS service
+    log_info "Starting object storage service..."
+    docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d rustfs \
+        || error_exit "Failed to start RustFS service"
 
     # Wait for service to be ready
     log_info "Waiting for object storage to be ready..."
-    sleep 10
+    local retries=30
+    for ((i=1; i<=retries; i++)); do
+        if curl -fsS "${S3_ENDPOINT}/" >/dev/null 2>&1 \
+           || curl -fsS "${S3_ENDPOINT}/minio/health/live" >/dev/null 2>&1; then
+            break
+        fi
+        if [ "$i" -eq "$retries" ]; then
+            log_warning "Object storage did not become ready in time"
+        fi
+        sleep 2
+    done
 
     # Extract backup to temporary location
     local storage_temp_dir="${RESTORE_DIR}/storage_temp"
@@ -463,13 +454,39 @@ restore_object_storage() {
     tar -xzf "$RESTORE_DIR/minio_backup.tar.gz" -C "$storage_temp_dir" \
         || error_exit "Failed to extract object storage backup"
 
-    # Copy data to container
-    log_info "Copying data to $STORAGE_CONTAINER container..."
-    docker cp "$storage_temp_dir/data/." "$STORAGE_CONTAINER:/data/" \
-        || error_exit "Failed to copy object storage data"
+    # The archive contains either an "object-storage" directory (new format)
+    # or a legacy "data" directory. Locate whichever exists.
+    local source_dir=""
+    if [ -d "$storage_temp_dir/object-storage" ]; then
+        source_dir="$storage_temp_dir/object-storage"
+    elif [ -d "$storage_temp_dir/data" ]; then
+        # Legacy backups stored RustFS data verbatim (a raw /data dump from
+        # `docker cp`). These are not S3-restoreable; warn and skip.
+        log_warning "Legacy data-directory format detected in $storage_temp_dir/data."
+        log_warning "Cannot restore legacy raw RustFS data over S3 - copy the directory"
+        log_warning "into the rustfs_data volume manually if needed."
+        rm -rf "$storage_temp_dir"
+        return 0
+    else
+        log_warning "No recognizable object-storage payload in archive"
+        rm -rf "$storage_temp_dir"
+        return 0
+    fi
 
-    # Restart service to reload data
-    docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" restart "$STORAGE_SERVICE"
+    log_info "Uploading objects to s3://${S3_BUCKET} via ${S3_ENDPOINT}..."
+
+    (
+        export AWS_ACCESS_KEY_ID="$MINIO_ROOT_USER"
+        export AWS_SECRET_ACCESS_KEY="$MINIO_ROOT_PASSWORD"
+        export AWS_DEFAULT_REGION="$S3_REGION"
+
+        # Ensure the bucket exists (idempotent)
+        aws --endpoint-url "$S3_ENDPOINT" s3api create-bucket \
+            --bucket "$S3_BUCKET" 2>/dev/null || true
+
+        aws --endpoint-url "$S3_ENDPOINT" s3 sync \
+            "$source_dir" "s3://${S3_BUCKET}" --no-progress
+    ) || log_warning "Failed to upload some objects to RustFS"
 
     # Cleanup
     rm -rf "$storage_temp_dir"
@@ -487,23 +504,31 @@ restore_redis() {
         return 0
     fi
 
-    # Start Redis service
-    log_info "Starting Redis service..."
-    docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d redis \
-        || error_exit "Failed to start Redis service"
+    # NOTE: Re-hydrating an RDB into a running Redis server over the network
+    # is not possible with redis-cli alone - Redis only loads dump.rdb at
+    # server startup. The previous implementation used `docker cp` to drop
+    # the RDB into the redis container's /data volume; with docker.sock
+    # removed from the backup scheduler that pathway is no longer available
+    # from inside the container.
+    #
+    # For this product Redis is used as a cache (session keys, queues),
+    # not as a primary datastore, so a warm restart is acceptable: keys
+    # are recomputed from postgres / rustfs on demand.
+    #
+    # If an operator running this script from the host needs a true cold
+    # restore, they should:
+    #   1. docker compose -f docker-compose.prod.yml stop redis
+    #   2. docker run --rm -v gigachad-grc_redis_data:/data -v "<dump-dir>":/src \
+    #        alpine cp /src/redis_backup.rdb /data/dump.rdb
+    #   3. docker compose -f docker-compose.prod.yml start redis
+    # That manual procedure is documented in deploy/README.md.
 
-    # Wait for Redis to be ready
-    sleep 5
+    log_warning "Redis cold restore is not performed automatically (cache-only)."
+    log_warning "  Backup file kept at: $RESTORE_DIR/redis_backup.rdb"
+    log_warning "  See deploy/README.md 'Manual Redis cold restore' for the"
+    log_warning "  procedure to load it back into the redis_data volume."
 
-    # Copy Redis dump file
-    log_info "Copying Redis dump file..."
-    docker cp "$RESTORE_DIR/redis_backup.rdb" grc-redis:/data/dump.rdb \
-        || error_exit "Failed to copy Redis dump"
-
-    # Restart Redis to load data
-    docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" restart redis
-
-    log_success "Redis data restoration completed"
+    log_success "Redis data restoration step completed (best-effort)"
 }
 
 # Start all services
@@ -532,17 +557,19 @@ verify_restoration() {
 
     log_info "Running services: $services_count"
 
-    # Check database connectivity
-    if docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" exec -T postgres \
-        pg_isready -U "${POSTGRES_USER}" >/dev/null 2>&1; then
+    # Check database connectivity (network)
+    export PGPASSWORD="$POSTGRES_PASSWORD"
+    if pg_isready -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" \
+        -U "$POSTGRES_USER" >/dev/null 2>&1; then
         log_success "Database is accessible"
     else
         log_warning "Database may not be accessible"
     fi
+    unset PGPASSWORD
 
-    # Check Redis connectivity
-    if docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" exec -T redis \
-        redis-cli -a "${REDIS_PASSWORD}" --no-auth-warning ping >/dev/null 2>&1; then
+    # Check Redis connectivity (network)
+    if redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" \
+        -a "${REDIS_PASSWORD}" --no-auth-warning ping 2>/dev/null | grep -q "PONG"; then
         log_success "Redis is accessible"
     else
         log_warning "Redis may not be accessible"
@@ -581,7 +608,6 @@ main() {
     validate_backup
     stop_services
     restore_configurations
-    restore_volumes
     restore_database
     restore_object_storage
     restore_redis

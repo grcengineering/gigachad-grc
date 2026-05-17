@@ -105,13 +105,28 @@ docker compose -f docker-compose.prod.yml up -d --build controls
 
 ## Backup & Restore
 
+The `backup-scheduler` container runs as a plain network peer on `grc-network`
+and uses `pg_dump`, `redis-cli` and `aws s3` to pull data directly from
+`postgres`, `redis` and `rustfs`. It does **not** mount `/var/run/docker.sock`,
+so a compromise of the backup container cannot reach other containers on the
+host.
+
 ### Create Backup
 
 ```bash
-# Run backup script
+# Run backup script (from the host)
 ./deploy/backup.sh
 
 # Backup is stored in: /backups/gigachad-grc/backup-YYYY-MM-DD-HHMMSS.tar.gz
+```
+
+When invoking `backup.sh` from the host, set network targets if your services
+are not at the defaults (the script defaults to `postgres` / `redis` /
+`http://rustfs:9000`, which only resolve from inside the compose network):
+
+```bash
+POSTGRES_HOST=127.0.0.1 REDIS_HOST=127.0.0.1 S3_ENDPOINT=http://127.0.0.1:9000 \
+    ./deploy/backup.sh
 ```
 
 ### Schedule Automatic Backups

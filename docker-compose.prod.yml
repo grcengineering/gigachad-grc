@@ -966,6 +966,11 @@ services:
   # ===========================================
   # Backup Scheduler - Automated Backups
   # ===========================================
+  # The backup scheduler is a plain network peer on grc-network. It uses
+  # pg_dump / redis-cli / aws s3 to extract data directly from postgres,
+  # redis and rustfs over TCP. It does NOT mount /var/run/docker.sock - a
+  # compromised backup container can no longer introspect or operate on
+  # other containers on the host.
   backup-scheduler:
     build:
       context: ./deploy
@@ -980,25 +985,42 @@ services:
       DR_REMOTE_BACKUP_REGION: ${DR_REMOTE_BACKUP_REGION:-us-east-1}
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      # PostgreSQL access (network)
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
+      # Redis access (network)
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD}
+      # RustFS / S3 access (network)
+      S3_ENDPOINT: http://rustfs:9000
+      S3_BUCKET: ${S3_BUCKET:-grc-storage}
+      S3_REGION: ${S3_REGION:-us-east-1}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
       SLACK_ENABLED: ${SLACK_ENABLED:-false}
       SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL:-}
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
       - grc_backups:/backups
+      # Mounted read-only so configuration files can be captured in the
+      # backup archive. No docker socket is required.
       - ./docker-compose.prod.yml:/app/docker-compose.prod.yml:ro
       - ./.env.prod:/app/.env.prod:ro
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - grc-network
     restart: always
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
     logging:
       driver: 'json-file'
       options:

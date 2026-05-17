@@ -40,6 +40,10 @@ const MULTI_USER_TEST_MATCH = ['**/tenant-isolation.spec.ts'];
 
 export default defineConfig({
   testDir: './e2e',
+  // Visual regression baselines live under e2e/__snapshots__/<spec>/<name>.png
+  // so they sit next to the specs that own them.
+  snapshotDir: './e2e/__snapshots__',
+  snapshotPathTemplate: '{snapshotDir}/{testFilePath}/{arg}{ext}',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
