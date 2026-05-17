@@ -11,7 +11,12 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { MappingsService } from './mappings.service';
-import { CreateMappingDto, BulkCreateMappingsDto, UpdateMappingDto } from './dto/mapping.dto';
+import {
+  CreateMappingDto,
+  BulkCreateMappingsDto,
+  UpdateMappingDto,
+  RestoreMappingDto,
+} from './dto/mapping.dto';
 import { Roles, RolesGuard, CurrentUser, UserContext } from '@gigachad-grc/shared';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 
@@ -90,5 +95,27 @@ export class MappingsController {
   @ApiParam({ name: 'id', description: 'Mapping ID' })
   async delete(@Param('id') id: string, @CurrentUser() user: UserContext) {
     return this.mappingsService.delete(id, user.userId, user.organizationId);
+  }
+
+  @Get(':id/history')
+  @Roles('admin', 'compliance_manager', 'auditor')
+  @ApiOperation({ summary: 'List change history for a mapping' })
+  @ApiParam({ name: 'id', description: 'Mapping ID' })
+  async history(@Param('id') id: string, @CurrentUser() user: UserContext) {
+    return this.mappingsService.getHistory(id, user.organizationId);
+  }
+
+  @Post(':id/restore/:historyId')
+  @Roles('admin', 'compliance_manager')
+  @ApiOperation({ summary: 'Restore a mapping to a prior history snapshot' })
+  @ApiParam({ name: 'id', description: 'Mapping ID' })
+  @ApiParam({ name: 'historyId', description: 'History entry ID' })
+  async restore(
+    @Param('id') id: string,
+    @Param('historyId') historyId: string,
+    @Body() dto: RestoreMappingDto,
+    @CurrentUser() user: UserContext
+  ) {
+    return this.mappingsService.restore(id, historyId, dto, user.userId, user.organizationId);
   }
 }

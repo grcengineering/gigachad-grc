@@ -100,4 +100,71 @@ describe('MappingHistoryService', () => {
       expect(result).toEqual(rows);
     });
   });
+
+  describe('listByMappingWithUser', () => {
+    it('throws NotFoundException when mapping is in a different org', async () => {
+      mockPrisma.controlMapping.findFirst.mockResolvedValue(null);
+
+      await expect(service.listByMappingWithUser('m-1', 'org-other')).rejects.toThrow(
+        NotFoundException
+      );
+      expect(mockPrisma.controlMappingHistory.findMany).not.toHaveBeenCalled();
+    });
+
+    it('checks both control.organizationId and framework.organizationId', async () => {
+      mockPrisma.controlMapping.findFirst.mockResolvedValue({ id: 'm-1' });
+      mockPrisma.controlMappingHistory.findMany.mockResolvedValue([]);
+
+      await service.listByMappingWithUser('m-1', 'org-1');
+
+      expect(mockPrisma.controlMapping.findFirst).toHaveBeenCalledWith({
+        where: {
+          id: 'm-1',
+          OR: [
+            { control: { OR: [{ organizationId: 'org-1' }, { organizationId: null }] } },
+            { framework: { OR: [{ organizationId: 'org-1' }, { organizationId: null }] } },
+          ],
+        },
+      });
+    });
+
+    it('orders by changedAt desc and includes changedByUser profile fields', async () => {
+      mockPrisma.controlMapping.findFirst.mockResolvedValue({ id: 'm-1' });
+      const rows = [
+        {
+          id: 'h-2',
+          mappingId: 'm-1',
+          action: 'update',
+          changedAt: new Date('2026-05-17'),
+          changedByUser: {
+            id: 'u-1',
+            email: 'a@b.com',
+            firstName: 'A',
+            lastName: 'B',
+            displayName: 'A B',
+          },
+        },
+      ];
+      mockPrisma.controlMappingHistory.findMany.mockResolvedValue(rows);
+
+      const result = await service.listByMappingWithUser('m-1', 'org-1');
+
+      expect(mockPrisma.controlMappingHistory.findMany).toHaveBeenCalledWith({
+        where: { mappingId: 'm-1' },
+        orderBy: { changedAt: 'desc' },
+        include: {
+          changedByUser: {
+            select: {
+              id: true,
+              email: true,
+              firstName: true,
+              lastName: true,
+              displayName: true,
+            },
+          },
+        },
+      });
+      expect(result).toEqual(rows);
+    });
+  });
 });
