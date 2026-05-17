@@ -1,6 +1,7 @@
 import { ConflictException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { randomUUID } from 'crypto';
+import * as ExcelJS from 'exceljs';
 import { STORAGE_PROVIDER, StorageProvider } from '@gigachad-grc/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
@@ -13,6 +14,14 @@ import {
   UpdateMappingDto,
 } from './dto/mapping.dto';
 import { parseMappingCsv, parseMappingXlsx, RawMappingRow } from './import-parser';
+
+export type MappingExportFormat = 'csv' | 'xlsx';
+
+export interface MappingExportResult {
+  buffer: Buffer;
+  fileName: string;
+  contentType: string;
+}
 
 const MAPPING_INCLUDE = {
   framework: { select: { id: true, name: true, type: true } },
@@ -701,6 +710,86 @@ export class MappingsService {
       })),
     };
   }
+
+  async exportFile(
+    frameworkId: string,
+    format: MappingExportFormat,
+    organizationId: string,
+    userId?: string
+  ): Promise<MappingExportResult> {
+    // Tenant check FIRST. NotFound on miss (no disclosure across tenants).
+    const framework = await this.prisma.framework.findFirst({
+      where: {
+        id: frameworkId,
+        OR: [{ organizationId }, { organizationId: null }],
+      },
+      select: { id: true, type: true, version: true },
+    });
+    if (!framework) {
+      throw new NotFoundException(`Framework not found: ${frameworkId}`);
+    }
+
+    const mappings = await this.prisma.controlMapping.findMany({
+      where: { frameworkId: framework.id },
+      include: {
+        framework: { select: { type: true, version: true } },
+        requirement: { select: { reference: true, order: true } },
+        control: { select: { controlId: true } },
+      },
+      orderBy: [{ requirement: { order: 'asc' } }, { control: { controlId: 'asc' } }],
+    });
+
+    const rows = mappings.map((m) => ({
+      framework_code: `${m.framework.type}:${m.framework.version}`,
+      requirement_ref: m.requirement.reference,
+      control_code: m.control.controlId,
+      mapping_type: m.mappingType,
+      notes: m.notes ?? '',
+    }));
+
+    const date = new Date();
+    const yyyy = date.getUTCFullYear().toString();
+    const mm = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(date.getUTCDate()).padStart(2, '0');
+    const datePart = `${yyyy}-${mm}-${dd}`;
+    const slug = sanitizeFilenamePart(`${framework.type}-${framework.version}`);
+
+    let buffer: Buffer;
+    let contentType: string;
+    let extension: string;
+    if (format === 'csv') {
+      buffer = Buffer.from(buildMappingsCsv(rows), 'utf-8');
+      contentType = 'text/csv; charset=utf-8';
+      extension = 'csv';
+    } else {
+      buffer = await buildMappingsXlsx(rows);
+      contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+      extension = 'xlsx';
+    }
+
+    const fileName = `mappings-${slug}-${datePart}.${extension}`;
+
+    // Best-effort audit log. userId is optional so the method stays unit-testable
+    // outside the controller context.
+    if (userId) {
+      await this.auditService.log({
+        organizationId,
+        userId,
+        action: 'mapping.exported',
+        entityType: 'control_mapping',
+        entityId: framework.id,
+        entityName: `${framework.type}:${framework.version}`,
+        description: `Exported ${rows.length} mappings for ${framework.type}:${framework.version} as ${format}`,
+        metadata: {
+          frameworkId: framework.id,
+          format,
+          rowCount: rows.length,
+        },
+      });
+    }
+
+    return { buffer, fileName, contentType };
+  }
 }
 
 function unique<T>(values: T[]): T[] {
@@ -729,4 +818,63 @@ function sanitizeOriginalValues(raw: RawMappingRow): Record<string, string> {
     out[key] = (raw[key] ?? '').toString();
   }
   return out;
+}
+
+const EXPORT_COLUMNS = [
+  'framework_code',
+  'requirement_ref',
+  'control_code',
+  'mapping_type',
+  'notes',
+] as const;
+
+interface ExportRow {
+  framework_code: string;
+  requirement_ref: string;
+  control_code: string;
+  mapping_type: string;
+  notes: string;
+}
+
+function escapeCsvCell(value: string): string {
+  if (value.includes(',') || value.includes('"') || value.includes('\n') || value.includes('\r')) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
+}
+
+export function buildMappingsCsv(rows: ExportRow[]): string {
+  const lines: string[] = [];
+  lines.push(EXPORT_COLUMNS.join(','));
+  for (const row of rows) {
+    lines.push(EXPORT_COLUMNS.map((col) => escapeCsvCell(row[col] ?? '')).join(','));
+  }
+  return lines.join('\r\n') + '\r\n';
+}
+
+export async function buildMappingsXlsx(rows: ExportRow[]): Promise<Buffer> {
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet('Mappings');
+  sheet.columns = EXPORT_COLUMNS.map((col) => ({ header: col, key: col, width: 24 }));
+  sheet.getRow(1).font = { bold: true };
+  sheet.views = [{ state: 'frozen', ySplit: 1 }];
+  sheet.autoFilter = {
+    from: { row: 1, column: 1 },
+    to: { row: 1, column: EXPORT_COLUMNS.length },
+  };
+  for (const row of rows) {
+    sheet.addRow({
+      framework_code: row.framework_code,
+      requirement_ref: row.requirement_ref,
+      control_code: row.control_code,
+      mapping_type: row.mapping_type,
+      notes: row.notes,
+    });
+  }
+  const arrayBuffer = await workbook.xlsx.writeBuffer();
+  return Buffer.from(arrayBuffer as ArrayBuffer);
+}
+
+function sanitizeFilenamePart(input: string): string {
+  return input.toLowerCase().replace(/[^a-z0-9._-]/g, '-');
 }

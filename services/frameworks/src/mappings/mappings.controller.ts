@@ -8,12 +8,14 @@ import {
   Patch,
   Post,
   Query,
+  Res,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
+import { Response } from 'express';
 import { MappingsService } from './mappings.service';
 import { CreateMappingDto, BulkCreateMappingsDto, UpdateMappingDto } from './dto/mapping.dto';
 import { Roles, RolesGuard, CurrentUser, UserContext } from '@gigachad-grc/shared';
@@ -76,6 +78,34 @@ export class MappingsController {
   @ApiParam({ name: 'frameworkId', description: 'Framework ID' })
   async getRequirementCoverage(@Param('frameworkId') frameworkId: string) {
     return this.mappingsService.getRequirementCoverage(frameworkId);
+  }
+
+  @Get('export')
+  @Roles('admin', 'compliance_manager', 'auditor')
+  @ApiOperation({ summary: 'Export control-to-requirement mappings as CSV or XLSX' })
+  async exportFile(
+    @CurrentUser() user: UserContext,
+    @Query('frameworkId') frameworkId: string,
+    @Res() res: Response,
+    @Query('format') format?: string
+  ) {
+    if (!frameworkId) throw new BadRequestException('frameworkId is required');
+    const normalizedFormat = (format ?? 'xlsx').toLowerCase();
+    if (normalizedFormat !== 'csv' && normalizedFormat !== 'xlsx') {
+      throw new BadRequestException(`Unsupported format: ${format}`);
+    }
+    const { buffer, fileName, contentType } = await this.mappingsService.exportFile(
+      frameworkId,
+      normalizedFormat as 'csv' | 'xlsx',
+      user.organizationId,
+      user.userId
+    );
+    res.set({
+      'Content-Type': contentType,
+      'Content-Disposition': `attachment; filename="${fileName}"`,
+      'Content-Length': buffer.length.toString(),
+    });
+    res.send(buffer);
   }
 
   @Post()
