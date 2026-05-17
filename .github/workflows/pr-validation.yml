@@ -189,6 +189,107 @@ jobs:
           DOCKER_BUILDKIT: 1
         continue-on-error: true # Some services have TypeScript build issues
 
+  # E2E quality checks (accessibility + visual regression).
+  # REPORT-ONLY: this job emits artifacts (axe-core results, Playwright
+  # report, visual snapshots) but does NOT block merge. The
+  # `continue-on-error: true` at the job level and the deliberate
+  # omission from the `status` rollup below both encode this. Flip
+  # `continue-on-error` to `false` and add `e2e-quality-checks` to the
+  # status `needs` list once baselines stabilize.
+  e2e-quality-checks:
+    name: E2E Quality Checks (a11y + visual, report-only)
+    runs-on: ubuntu-latest
+    needs: [frontend]
+    timeout-minutes: 30
+    continue-on-error: true
+
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5 # v2.19.3
+        with:
+          egress-policy: audit
+
+      - name: Checkout code
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies (skip lifecycle scripts)
+        run: npm ci --ignore-scripts
+
+      - name: Bring up dev stack
+        # Plain `up -d` (no --wait). The polling step below handles the
+        # readiness gate. The frontend nginx healthcheck has a tight
+        # retry budget on a cold runner; --wait would exit non-zero
+        # before our poll has a chance to confirm HTTP readiness.
+        run: docker compose up -d
+
+      - name: Wait for stack health
+        run: |
+          for i in $(seq 1 60); do
+            api_ok=$(curl -fs http://127.0.0.1:3001/health >/dev/null && echo y || echo n)
+            fe_ok=$(curl -fs http://127.0.0.1:3000/ >/dev/null && echo y || echo n)
+            if [ "$api_ok" = "y" ] && [ "$fe_ok" = "y" ]; then
+              echo "Stack ready (api+frontend)"; exit 0
+            fi
+            echo "wait $i: api=$api_ok frontend=$fe_ok"; sleep 2
+          done
+          echo "Stack did not become healthy"; exit 1
+
+      - name: Seed demo data
+        run: |
+          curl -fsS -X POST http://127.0.0.1:3001/api/seed/load-demo \
+            -H 'x-user-id: 8f88a42b-e799-455c-b68a-308d7d2e9aa4' \
+            -H 'x-org-id: 8924f0c1-7bb1-4be8-84ee-ad8725c712bf' \
+            --max-time 120 || echo "Seed call returned non-zero (continuing)"
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+        working-directory: frontend
+
+      - name: Run accessibility (axe-core) scans (report-only)
+        run: npx playwright test e2e/a11y.spec.ts --reporter=line
+        working-directory: frontend
+        continue-on-error: true
+
+      - name: Run visual regression suite (report-only)
+        run: npx playwright test e2e/visual.spec.ts --grep @visual --reporter=line
+        working-directory: frontend
+        continue-on-error: true
+
+      - name: Upload Playwright HTML report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: e2e-quality-playwright-report
+          path: frontend/playwright-report
+          retention-days: 14
+
+      - name: Upload Playwright test-results (videos, traces, diffs)
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: e2e-quality-test-results
+          path: frontend/test-results
+          retention-days: 14
+
+      - name: Upload visual snapshots (baselines + actuals)
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: e2e-quality-visual-snapshots
+          path: frontend/e2e/__snapshots__
+          retention-days: 14
+
+      - name: Tear down dev stack
+        if: always()
+        run: docker compose down -v
+
   # Final status check
   status:
     name: Validation Status
