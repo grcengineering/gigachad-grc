@@ -321,20 +321,33 @@ const controls = await this.prisma.control.findMany({
 
 ### Running Tests
 
+All six backend services (`controls`, `frameworks`, `audit`,
+`policies`, `tprm`, `trust`) have Jest wired with the same scripts.
+The CI `backend` matrix runs `npm test --if-present` in every service.
+
 ```bash
 # Unit tests for a service
-cd services/controls
-npm run test
+cd services/<service>
+npm run test            # one-shot
+npm run test:watch      # watch mode
+npm run test:ci         # CI flags (--ci --runInBand)
+npm run test:cov        # with coverage
 
-# Watch mode
-npm run test:watch
+# Run every service from the repo root
+for svc in controls frameworks audit policies tprm trust; do
+  (cd services/$svc && npm test) || break
+done
 
-# Coverage report
-npm run test:cov
-
-# E2E tests
-npm run test:e2e
+# E2E tests (Playwright, frontend only)
+cd frontend && npm run test:e2e
 ```
+
+Two Playwright suites are required CI gates:
+[`tenant-isolation.spec.ts`](frontend/e2e/tenant-isolation.spec.ts)
+and [`rbac.spec.ts`](frontend/e2e/rbac.spec.ts). If you touch a
+controller, service method, or guard, add or update a case in both.
+See [frontend/e2e/README.md](frontend/e2e/README.md) for the
+multi-user fixture layout and `x-dev-user-id` header override.
 
 ### Writing Tests
 
