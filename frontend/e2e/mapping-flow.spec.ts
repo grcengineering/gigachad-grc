@@ -47,6 +47,14 @@ interface MappingFixture {
   frameworkId: string;
   requirementId: string;
   requirementRef: string;
+  /**
+   * Top-down chain of ancestor category references that must be expanded
+   * in the FrameworkDetail tree before the leaf row becomes visible. For
+   * HIPAA leaf `164.308(a)(1)(i)` this is `["164.308", "164.308(a)", "164.308(a)(1)"]`.
+   * Empty when the leaf happens to be at the top level (no seeded catalog
+   * is like this today, but kept for future-proofing).
+   */
+  ancestorRefs: string[];
   controlAId: string;
   controlBId: string;
 }
@@ -76,11 +84,18 @@ async function discoverFixture(api: APIRequestContext): Promise<MappingFixture> 
     throw new Error('Seed produced no frameworks; cannot pick a target');
   }
 
-  function findLeaf(nodes: any[]): any | undefined {
+  // Returns the first non-category leaf in DFS order, plus the chain of
+  // ancestor references (top-down) walked to reach it. The chain lets the
+  // UI tests expand each ancestor in the FrameworkDetail tree before
+  // clicking the leaf row (categories are collapsed by default).
+  function findLeafWithAncestors(
+    nodes: any[],
+    ancestors: string[] = []
+  ): { leaf: any; ancestorRefs: string[] } | undefined {
     for (const n of nodes) {
-      if (!n.isCategory) return n;
+      if (!n.isCategory) return { leaf: n, ancestorRefs: ancestors };
       if (Array.isArray(n.children) && n.children.length > 0) {
-        const hit = findLeaf(n.children);
+        const hit = findLeafWithAncestors(n.children, [...ancestors, n.reference]);
         if (hit) return hit;
       }
     }
@@ -89,6 +104,7 @@ async function discoverFixture(api: APIRequestContext): Promise<MappingFixture> 
 
   let chosenFwId: string | undefined;
   let chosenReq: any | undefined;
+  let chosenAncestors: string[] = [];
   for (const fw of frameworks) {
     // Use the `/tree` endpoint for full hierarchy; fall back to the regular
     // endpoint + recurse into `.children` if `/tree` is unavailable.
@@ -105,10 +121,11 @@ async function discoverFixture(api: APIRequestContext): Promise<MappingFixture> 
         ? reqBody
         : (reqBody.data ?? reqBody.items ?? reqBody.requirements ?? []);
     }
-    const candidate = findLeaf(reqs);
+    const candidate = findLeafWithAncestors(reqs);
     if (candidate) {
       chosenFwId = fw.id;
-      chosenReq = candidate;
+      chosenReq = candidate.leaf;
+      chosenAncestors = candidate.ancestorRefs;
       break;
     }
   }
@@ -141,6 +158,7 @@ async function discoverFixture(api: APIRequestContext): Promise<MappingFixture> 
     frameworkId: chosenFwId,
     requirementId: chosenReq.id,
     requirementRef: chosenReq.reference ?? '',
+    ancestorRefs: chosenAncestors,
     controlAId: unmapped[0].id,
     controlBId: unmapped[1].id,
   };
@@ -180,20 +198,37 @@ test.afterAll(async () => {
 // ---------------------------------------------------------------------------
 
 /** Navigate the SPA to the framework detail page and click into the chosen
- *  requirement so its detail panel renders. Tolerates the requirement
- *  living inside an expanded/collapsed category tree. */
+ *  requirement so its detail panel renders.
+ *
+ *  The seeded catalogs (SOC 2 / ISO 27001 / HIPAA) have a deep category
+ *  hierarchy. FrameworkDetail.tsx renders requirements as a collapsible
+ *  tree where non-category leaves are HIDDEN until every ancestor row is
+ *  expanded — so this helper expands each ancestor by aria-label first,
+ *  then clicks the leaf row. The aria-label is on the chevron `<button>`
+ *  inside each requirement row (see FrameworkDetail.tsx).
+ */
 async function openRequirementDetail(
   page: import('@playwright/test').Page,
   frameworkId: string,
-  requirementRef: string
+  requirementRef: string,
+  ancestorRefs: string[] = []
 ) {
   await page.goto(`/frameworks/${frameworkId}`);
   await page.waitForLoadState('networkidle');
 
-  // The requirement row carries the reference text in a stable column.
-  // Click whichever row holds it; if it's nested in a collapsed category
-  // we'll need to expand first, but in practice the seeded fixtures put
-  // requirements at the top level.
+  for (const ref of ancestorRefs) {
+    // The chevron carries `aria-label="Toggle <reference>"` so we can target
+    // it reliably without relying on Tailwind classes or row layout.
+    // `exact: true` matters here: ref="164.308" must not also match
+    // "164.308(a)" via Playwright's default substring fuzzy-match.
+    const toggle = page.getByRole('button', { name: `Toggle ${ref}`, exact: true });
+    // Skip if the ancestor is already expanded (aria-expanded=true).
+    const expanded = await toggle.getAttribute('aria-expanded');
+    if (expanded !== 'true') {
+      await toggle.click();
+    }
+  }
+
   const row = page.getByText(requirementRef, { exact: true }).first();
   await row.click();
 
@@ -227,7 +262,7 @@ test.describe('Mapping flow — adminA', () => {
     page,
   }) => {
     const f = fixture!;
-    await openRequirementDetail(page, f.frameworkId, f.requirementRef);
+    await openRequirementDetail(page, f.frameworkId, f.requirementRef, f.ancestorRefs);
 
     // The contract puts an "Add mapping…" button above the Mapped
     // Controls chip list. The ellipsis character may be either "..."
@@ -238,11 +273,17 @@ test.describe('Mapping flow — adminA', () => {
     const modal = page.getByRole('dialog');
     await expect(modal.getByText(/Add mappings/i)).toBeVisible();
 
+    // The modal follows contract §3.2's stage machine: search →
+    // multi-select → per-row-form. Requirement-to-controls mode skips the
+    // framework picker but still requires advancing past search to expose
+    // the candidate checkboxes.
+    await modal.getByRole('button', { name: /Next|Continue/i }).click();
+
     // Multi-select the two unmapped controls discovered in beforeAll.
     // Checkbox items are addressable by accessible name (the control id
     // is rendered inside each row label).
     const controls = await adminApi!
-      .get(`${URL_CONTROLS}/api/controls?limit=200`)
+      .get(`${URL_CONTROLS}/api/controls?limit=100`)
       .then((r) => r.json())
       .then((b) => (Array.isArray(b) ? b : (b.data ?? b.items ?? b.controls ?? [])));
     const controlA = controls.find((c: any) => c.id === f.controlAId);
@@ -250,17 +291,23 @@ test.describe('Mapping flow — adminA', () => {
     await modal.getByRole('checkbox', { name: new RegExp(controlA.controlId, 'i') }).check();
     await modal.getByRole('checkbox', { name: new RegExp(controlB.controlId, 'i') }).check();
 
-    // Advance to the per-row form. The contract uses a "Next" / "Continue"
-    // affordance; either label is accepted.
+    // Advance to the per-row form.
     await modal.getByRole('button', { name: /Next|Continue/i }).click();
 
     // Row 1 — leave as primary (default). Row 2 — switch to supporting +
-    // add notes. Rows expose their mappingType via a labeled select.
-    const rowA = modal.getByRole('group').filter({ hasText: new RegExp(controlA.controlId, 'i') });
-    const rowB = modal.getByRole('group').filter({ hasText: new RegExp(controlB.controlId, 'i') });
-    await rowA.getByLabel(/mapping type/i).selectOption('primary');
-    await rowB.getByLabel(/mapping type/i).selectOption('supporting');
-    await rowB.getByLabel(/notes/i).fill('Compensating control covering scope gap');
+    // add notes. Each row is a `<li role="listitem">` containing the
+    // mapping-type select (aria-label="Mapping type for <label>") and
+    // the notes input (aria-label="Notes for <label>"). Scope by the
+    // control id appearing inside the row's header text.
+    const rowA = modal
+      .getByRole('listitem')
+      .filter({ hasText: new RegExp(controlA.controlId, 'i') });
+    const rowB = modal
+      .getByRole('listitem')
+      .filter({ hasText: new RegExp(controlB.controlId, 'i') });
+    await rowA.getByLabel(/^Mapping type for /i).selectOption('primary');
+    await rowB.getByLabel(/^Mapping type for /i).selectOption('supporting');
+    await rowB.getByLabel(/^Notes for /i).fill('Compensating control covering scope gap');
 
     // Save and wait for the modal to close.
     await modal.getByRole('button', { name: /^Save$/i }).click();
@@ -289,12 +336,12 @@ test.describe('Mapping flow — adminA', () => {
     expect(seedRes.ok(), `seed mapping POST: ${seedRes.status()}`).toBeTruthy();
 
     const controls = await adminApi!
-      .get(`${URL_CONTROLS}/api/controls?limit=200`)
+      .get(`${URL_CONTROLS}/api/controls?limit=100`)
       .then((r) => r.json())
       .then((b) => (Array.isArray(b) ? b : (b.data ?? b.items ?? b.controls ?? [])));
     const controlA = controls.find((c: any) => c.id === f.controlAId);
 
-    await openRequirementDetail(page, f.frameworkId, f.requirementRef);
+    await openRequirementDetail(page, f.frameworkId, f.requirementRef, f.ancestorRefs);
 
     const chip = mappingChip(page, controlA.controlId);
     await expect(chip).toBeVisible();
@@ -302,8 +349,11 @@ test.describe('Mapping flow — adminA', () => {
 
     // Open kebab. The trigger carries aria-haspopup="menu" and an
     // accessible name referencing the control id (per contract §5.2).
+    // The kebab is hidden via opacity-0 until hover/focus (UX choice);
+    // hover the chip first so Playwright's actionability check passes.
+    await chip.hover();
     const kebab = chip.getByRole('button', { name: /Mapping actions/i });
-    await kebab.click();
+    await kebab.click({ force: true });
     await page.getByRole('menuitem', { name: /Edit/i }).click();
 
     const modal = page.getByRole('dialog');
@@ -336,17 +386,18 @@ test.describe('Mapping flow — adminA', () => {
     expect(mappingId).toBeTruthy();
 
     const controls = await adminApi!
-      .get(`${URL_CONTROLS}/api/controls?limit=200`)
+      .get(`${URL_CONTROLS}/api/controls?limit=100`)
       .then((r) => r.json())
       .then((b) => (Array.isArray(b) ? b : (b.data ?? b.items ?? b.controls ?? [])));
     const controlA = controls.find((c: any) => c.id === f.controlAId);
 
-    await openRequirementDetail(page, f.frameworkId, f.requirementRef);
+    await openRequirementDetail(page, f.frameworkId, f.requirementRef, f.ancestorRefs);
 
     const chip = mappingChip(page, controlA.controlId);
     await expect(chip).toBeVisible();
 
-    await chip.getByRole('button', { name: /Mapping actions/i }).click();
+    await chip.hover();
+    await chip.getByRole('button', { name: /Mapping actions/i }).click({ force: true });
     await page.getByRole('menuitem', { name: /Delete/i }).click();
 
     // Contract §5.1 calls for an inline confirm dialog (no separate
@@ -370,7 +421,7 @@ test.describe('Mapping flow — adminA', () => {
   test('re-creates the same mapping from the control side', async ({ page }) => {
     const f = fixture!;
     // Start with the requirement having no mappings.
-    await openRequirementDetail(page, f.frameworkId, f.requirementRef);
+    await openRequirementDetail(page, f.frameworkId, f.requirementRef, f.ancestorRefs);
 
     // Walk into the control detail page and add a mapping back to the
     // original requirement.
@@ -385,8 +436,9 @@ test.describe('Mapping flow — adminA', () => {
 
     // control-to-requirements mode → stage 1 includes a framework
     // selector (contract §3.2). Pick the same framework that owns the
-    // requirement.
+    // requirement, then advance past the search stage to the multi-select.
     await modal.getByLabel(/framework/i).selectOption(f.frameworkId);
+    await modal.getByRole('button', { name: /Next|Continue/i }).click();
 
     // Multi-select the target requirement by reference.
     await modal
@@ -400,15 +452,16 @@ test.describe('Mapping flow — adminA', () => {
     await modal.getByRole('button', { name: /^Save$/i }).click();
     await expect(modal).toBeHidden();
 
-    // Chip appears on the control side.
-    await expect(
-      page.getByRole('listitem').filter({ hasText: new RegExp(f.requirementRef, 'i') })
-    ).toBeVisible();
+    // Chip appears on the control side. The reference contains regex
+    // specials (e.g. "164.308(a)(1)(i)") that must be escaped before
+    // being passed to RegExp.
+    const refRegex = new RegExp(f.requirementRef.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+    await expect(page.getByRole('listitem').filter({ hasText: refRegex })).toBeVisible();
 
     // And on the requirement side after we navigate back.
-    await openRequirementDetail(page, f.frameworkId, f.requirementRef);
+    await openRequirementDetail(page, f.frameworkId, f.requirementRef, f.ancestorRefs);
     const controls = await adminApi!
-      .get(`${URL_CONTROLS}/api/controls?limit=200`)
+      .get(`${URL_CONTROLS}/api/controls?limit=100`)
       .then((r) => r.json())
       .then((b) => (Array.isArray(b) ? b : (b.data ?? b.items ?? b.controls ?? [])));
     const controlA = controls.find((c: any) => c.id === f.controlAId);
@@ -439,11 +492,11 @@ test.describe('Mapping flow — viewerA (read-only)', () => {
 
   test('viewer sees chips but no Add button and no kebab triggers', async ({ page }) => {
     const f = fixture!;
-    await openRequirementDetail(page, f.frameworkId, f.requirementRef);
+    await openRequirementDetail(page, f.frameworkId, f.requirementRef, f.ancestorRefs);
 
     // Chip renders (read-only).
     const controls = await adminApi!
-      .get(`${URL_CONTROLS}/api/controls?limit=200`)
+      .get(`${URL_CONTROLS}/api/controls?limit=100`)
       .then((r) => r.json())
       .then((b) => (Array.isArray(b) ? b : (b.data ?? b.items ?? b.controls ?? [])));
     const controlA = controls.find((c: any) => c.id === f.controlAId);
@@ -475,7 +528,7 @@ test.describe('Mapping flow — complianceA (create + edit, no delete)', () => {
     page,
   }) => {
     const f = fixture!;
-    await openRequirementDetail(page, f.frameworkId, f.requirementRef);
+    await openRequirementDetail(page, f.frameworkId, f.requirementRef, f.ancestorRefs);
 
     // Add mapping is allowed.
     const addBtn = page.getByRole('button', { name: /Add mapping/i });
@@ -485,8 +538,11 @@ test.describe('Mapping flow — complianceA (create + edit, no delete)', () => {
     const modal = page.getByRole('dialog');
     await expect(modal.getByText(/Add mappings/i)).toBeVisible();
 
+    // Advance past the search stage to expose checkboxes (contract §3.2).
+    await modal.getByRole('button', { name: /Next|Continue/i }).click();
+
     const controls = await adminApi!
-      .get(`${URL_CONTROLS}/api/controls?limit=200`)
+      .get(`${URL_CONTROLS}/api/controls?limit=100`)
       .then((r) => r.json())
       .then((b) => (Array.isArray(b) ? b : (b.data ?? b.items ?? b.controls ?? [])));
     const controlA = controls.find((c: any) => c.id === f.controlAId);
@@ -500,7 +556,8 @@ test.describe('Mapping flow — complianceA (create + edit, no delete)', () => {
     const chip = mappingChip(page, controlA.controlId);
     await expect(chip).toBeVisible();
 
-    await chip.getByRole('button', { name: /Mapping actions/i }).click();
+    await chip.hover();
+    await chip.getByRole('button', { name: /Mapping actions/i }).click({ force: true });
     await expect(page.getByRole('menuitem', { name: /Edit/i })).toBeVisible();
     await expect(page.getByRole('menuitem', { name: /Delete/i })).toHaveCount(0);
 
@@ -536,10 +593,10 @@ test.describe('Mapping flow — auditorA (read-only)', () => {
 
   test('auditor sees chips but no Add button and no kebab triggers', async ({ page }) => {
     const f = fixture!;
-    await openRequirementDetail(page, f.frameworkId, f.requirementRef);
+    await openRequirementDetail(page, f.frameworkId, f.requirementRef, f.ancestorRefs);
 
     const controls = await adminApi!
-      .get(`${URL_CONTROLS}/api/controls?limit=200`)
+      .get(`${URL_CONTROLS}/api/controls?limit=100`)
       .then((r) => r.json())
       .then((b) => (Array.isArray(b) ? b : (b.data ?? b.items ?? b.controls ?? [])));
     const controlA = controls.find((c: any) => c.id === f.controlAId);
