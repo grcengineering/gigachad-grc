@@ -7,7 +7,7 @@ import { FrameworksModule } from './frameworks/frameworks.module';
 import { AssessmentsModule } from './assessments/assessments.module';
 import { MappingsModule } from './mappings/mappings.module';
 import { AuditModule } from './audit/audit.module';
-import { EventsModule } from '@gigachad-grc/shared';
+import { EventsModule, StorageModule } from '@gigachad-grc/shared';
 
 @Module({
   imports: [
@@ -22,6 +22,7 @@ import { EventsModule } from '@gigachad-grc/shared';
     ]),
     PrismaModule,
     EventsModule,
+    StorageModule.forRoot(),
     AuditModule,
     FrameworksModule,
     AssessmentsModule,
