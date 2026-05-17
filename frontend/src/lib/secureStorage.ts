@@ -194,6 +194,22 @@ class SecureStorage {
 // Export singleton instance
 export const secureStorage = new SecureStorage();
 
+/**
+ * Returns the current authenticated organization ID, or null if none is
+ * available. Reads from secureStorage first (the new path) and falls back to
+ * a legacy localStorage key, which dev-login still writes (see AuthContext).
+ *
+ * Callers that get null here should fail loud (toast, log, or no-op) — do not
+ * substitute a placeholder org ID; that pattern was the cause of PR #298/299.
+ */
+export function getCurrentOrgId(): string | null {
+  return (
+    secureStorage.get(STORAGE_KEYS.ORGANIZATION_ID) ||
+    localStorage.getItem('organizationId') ||
+    null
+  );
+}
+
 // Legacy compatibility - these map to the secure storage
 // Used during migration from direct localStorage usage
 export const legacyStorageKeys = {

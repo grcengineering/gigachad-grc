@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { BaseConnector } from './base-connector';
 import axios from 'axios';
 import * as crypto from 'crypto';
+import { safeFetch, SSRFProtectionError } from '@gigachad-grc/shared';
 
 // =============================================================================
 // Finance & Accounting Connectors - Fully Implemented
@@ -24,22 +25,29 @@ export class QuickBooksConnector extends BaseConnector {
           ? 'https://quickbooks.api.intuit.com'
           : 'https://sandbox-quickbooks.api.intuit.com';
 
-      // Get access token using refresh token
-      const tokenResponse = await axios.post(
+      // Get access token using refresh token.
+      // safeFetch protects against SSRF (defense-in-depth).
+      const tokenResponse = await safeFetch(
         'https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer',
-        new URLSearchParams({
-          grant_type: 'refresh_token',
-          refresh_token: config.refreshToken,
-        }),
         {
+          method: 'POST',
           headers: {
             Authorization: `Basic ${Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64')}`,
             'Content-Type': 'application/x-www-form-urlencoded',
           },
+          body: new URLSearchParams({
+            grant_type: 'refresh_token',
+            refresh_token: config.refreshToken,
+          }).toString(),
         }
       );
 
-      const accessToken = tokenResponse.data?.access_token;
+      if (tokenResponse.status < 200 || tokenResponse.status >= 300) {
+        const body = await tokenResponse.text().catch(() => '');
+        return { success: false, message: `Token request failed: HTTP ${tokenResponse.status} ${body.slice(0, 200)}` };
+      }
+      const tokenData = await tokenResponse.json().catch(() => null);
+      const accessToken = tokenData?.access_token;
       if (!accessToken) {
         return { success: false, message: 'Failed to obtain access token' };
       }
@@ -63,9 +71,12 @@ export class QuickBooksConnector extends BaseConnector {
         details: result.data,
       };
     } catch (error: any) {
+      if (error instanceof SSRFProtectionError) {
+        return { success: false, message: `SSRF protection blocked request: ${error.message}` };
+      }
       return {
         success: false,
-        message: error.response?.data?.error || error.message || 'Connection test failed',
+        message: error.message || 'Connection test failed',
       };
     }
   }
@@ -84,21 +95,34 @@ export class QuickBooksConnector extends BaseConnector {
           : 'https://sandbox-quickbooks.api.intuit.com';
 
       // Get access token
-      const tokenResponse = await axios.post(
+      const tokenResponse = await safeFetch(
         'https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer',
-        new URLSearchParams({
-          grant_type: 'refresh_token',
-          refresh_token: config.refreshToken,
-        }),
         {
+          method: 'POST',
           headers: {
             Authorization: `Basic ${Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64')}`,
             'Content-Type': 'application/x-www-form-urlencoded',
           },
+          body: new URLSearchParams({
+            grant_type: 'refresh_token',
+            refresh_token: config.refreshToken,
+          }).toString(),
         }
       );
 
-      const accessToken = tokenResponse.data?.access_token;
+      if (tokenResponse.status < 200 || tokenResponse.status >= 300) {
+        const body = await tokenResponse.text().catch(() => '');
+        return {
+          accounts: { total: 0, items: [] },
+          invoices: { total: 0, items: [] },
+          customers: { total: 0, items: [] },
+          vendors: { total: 0, items: [] },
+          collectedAt: new Date().toISOString(),
+          errors: [`Token request failed: HTTP ${tokenResponse.status} ${body.slice(0, 200)}`],
+        };
+      }
+      const tokenData = await tokenResponse.json().catch(() => null);
+      const accessToken = tokenData?.access_token;
       if (!accessToken) {
         return {
           accounts: { total: 0, items: [] },
@@ -159,13 +183,17 @@ export class QuickBooksConnector extends BaseConnector {
         errors,
       };
     } catch (error: any) {
+      const msg =
+        error instanceof SSRFProtectionError
+          ? `SSRF protection blocked request: ${error.message}`
+          : error.message;
       return {
         accounts: { total: 0, items: [] },
         invoices: { total: 0, items: [] },
         customers: { total: 0, items: [] },
         vendors: { total: 0, items: [] },
         collectedAt: new Date().toISOString(),
-        errors: [error.message],
+        errors: [msg],
       };
     }
   }

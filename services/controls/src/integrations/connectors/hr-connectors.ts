@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { BaseConnector } from './base-connector';
 import axios from 'axios';
+import { safeFetch, SSRFProtectionError } from '@gigachad-grc/shared';
 
 // =============================================================================
 // HR & People Management Connectors - Fully Implemented
@@ -115,34 +116,43 @@ export class ADPConnector extends BaseConnector {
     }
 
     try {
-      // ADP uses OAuth2 - get access token first
+      // ADP uses OAuth2 - get access token first.
+      // safeFetch blocks SSRF — baseUrl is operator-configured.
       const tokenUrl = config.baseUrl || 'https://api.adp.com';
-      const tokenResponse = await axios.post(
+      const tokenResponse = await safeFetch(
         `${tokenUrl}/auth/oauth/v2/token`,
-        new URLSearchParams({
-          grant_type: 'client_credentials',
-          client_id: config.clientId,
-          client_secret: config.clientSecret,
-        }),
         {
+          method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            grant_type: 'client_credentials',
+            client_id: config.clientId,
+            client_secret: config.clientSecret,
+          }).toString(),
         }
       );
 
-      if (tokenResponse.data?.access_token) {
+      if (tokenResponse.status < 200 || tokenResponse.status >= 300) {
+        const body = await tokenResponse.text().catch(() => '');
+        return { success: false, message: `Token request failed: HTTP ${tokenResponse.status} ${body.slice(0, 200)}` };
+      }
+      const tokenData = await tokenResponse.json().catch(() => null);
+      if (tokenData?.access_token) {
         return {
           success: true,
           message: 'Successfully authenticated with ADP',
-          details: { tokenExpiresIn: tokenResponse.data.expires_in },
+          details: { tokenExpiresIn: tokenData.expires_in },
         };
       }
 
       return { success: false, message: 'Failed to obtain access token' };
     } catch (error: any) {
+      if (error instanceof SSRFProtectionError) {
+        return { success: false, message: `SSRF protection blocked request: ${error.message}` };
+      }
       return {
         success: false,
-        message:
-          error.response?.data?.error_description || error.message || 'Connection test failed',
+        message: error.message || 'Connection test failed',
       };
     }
   }
@@ -155,19 +165,29 @@ export class ADPConnector extends BaseConnector {
       const baseUrl = config.baseUrl || 'https://api.adp.com';
 
       // Get access token
-      const tokenResponse = await axios.post(
+      const tokenResponse = await safeFetch(
         `${baseUrl}/auth/oauth/v2/token`,
-        new URLSearchParams({
-          grant_type: 'client_credentials',
-          client_id: config.clientId,
-          client_secret: config.clientSecret,
-        }),
         {
+          method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            grant_type: 'client_credentials',
+            client_id: config.clientId,
+            client_secret: config.clientSecret,
+          }).toString(),
         }
       );
 
-      const accessToken = tokenResponse.data?.access_token;
+      if (tokenResponse.status < 200 || tokenResponse.status >= 300) {
+        const body = await tokenResponse.text().catch(() => '');
+        return {
+          workers: { total: 0, items: [] },
+          collectedAt: new Date().toISOString(),
+          errors: [`Token request failed: HTTP ${tokenResponse.status} ${body.slice(0, 200)}`],
+        };
+      }
+      const tokenData = await tokenResponse.json().catch(() => null);
+      const accessToken = tokenData?.access_token;
       if (!accessToken) {
         return {
           workers: { total: 0, items: [] },
@@ -197,10 +217,14 @@ export class ADPConnector extends BaseConnector {
         errors,
       };
     } catch (error: any) {
+      const msg =
+        error instanceof SSRFProtectionError
+          ? `SSRF protection blocked request: ${error.message}`
+          : error.message;
       return {
         workers: { total: 0, items: [] },
         collectedAt: new Date().toISOString(),
-        errors: [error.message],
+        errors: [msg],
       };
     }
   }

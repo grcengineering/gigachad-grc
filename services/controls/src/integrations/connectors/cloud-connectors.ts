@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { BaseConnector } from './base-connector';
-import axios from 'axios';
+import { safeFetch, SSRFProtectionError } from '@gigachad-grc/shared';
 import * as crypto from 'crypto';
 import { URL } from 'url';
 
@@ -107,12 +107,17 @@ export class OracleCloudConnector extends BaseConnector {
     try {
       const url = `https://identity.${config.region}.oraclecloud.com/20160918/compartments?compartmentId=${encodeURIComponent(config.tenancyOcid)}&limit=1`;
       const headers = this.ociSign('GET', url);
-      const response = await axios.get(url, { headers, timeout: 30000, validateStatus: (s) => s < 500 });
+      const response = await safeFetch(url, { method: 'GET', headers });
       if (response.status >= 400) {
-        return { success: false, message: `HTTP ${response.status}: ${JSON.stringify(response.data || response.statusText)}` };
+        const body = await response.text().catch(() => '');
+        return { success: false, message: `HTTP ${response.status}: ${body.slice(0, 500) || response.status}` };
       }
-      return { success: true, message: 'Connected to Oracle Cloud', details: { compartments: Array.isArray(response.data) ? response.data.length : 0 } };
+      const data = await response.json().catch(() => null);
+      return { success: true, message: 'Connected to Oracle Cloud', details: { compartments: Array.isArray(data) ? data.length : 0 } };
     } catch (error: any) {
+      if (error instanceof SSRFProtectionError) {
+        return { success: false, message: `SSRF protection blocked request: ${error.message}` };
+      }
       return { success: false, message: error.message || 'Connection test failed' };
     }
   }
@@ -129,32 +134,38 @@ export class OracleCloudConnector extends BaseConnector {
 
     const callOci = async (url: string): Promise<any> => {
       const headers = this.ociSign('GET', url);
-      const response = await axios.get(url, { headers, timeout: 30000, validateStatus: (s) => s < 500 });
+      const response = await safeFetch(url, { method: 'GET', headers });
       if (response.status >= 400) {
-        throw new Error(`HTTP ${response.status}: ${JSON.stringify(response.data || response.statusText)}`);
+        const body = await response.text().catch(() => '');
+        throw new Error(`HTTP ${response.status}: ${body.slice(0, 500) || response.status}`);
       }
-      return response.data;
+      return await response.json().catch(() => null);
     };
+
+    const ssrfMsg = (error: any) =>
+      error instanceof SSRFProtectionError
+        ? `SSRF protection blocked request: ${error.message}`
+        : error.message;
 
     try {
       const data = await callOci(`https://identity.${config.region}.oraclecloud.com/20160918/compartments?compartmentId=${encodeURIComponent(config.tenancyOcid)}`);
       if (Array.isArray(data)) compartments.push(...data);
     } catch (error: any) {
-      errors.push(`compartments: ${error.message}`);
+      errors.push(`compartments: ${ssrfMsg(error)}`);
     }
 
     try {
       const data = await callOci(`https://iaas.${config.region}.oraclecloud.com/20160918/instances?compartmentId=${encodeURIComponent(config.tenancyOcid)}`);
       if (Array.isArray(data)) instances.push(...data);
     } catch (error: any) {
-      errors.push(`instances: ${error.message}`);
+      errors.push(`instances: ${ssrfMsg(error)}`);
     }
 
     try {
       const data = await callOci(`https://database.${config.region}.oraclecloud.com/20160918/dbSystems?compartmentId=${encodeURIComponent(config.tenancyOcid)}`);
       if (Array.isArray(data)) databases.push(...data);
     } catch (error: any) {
-      errors.push(`databases: ${error.message}`);
+      errors.push(`databases: ${ssrfMsg(error)}`);
     }
 
     return {
@@ -177,20 +188,26 @@ export class IBMCloudConnector extends BaseConnector {
   }): Promise<{ success: boolean; message: string; details?: any }> {
     if (!config.apiKey) return { success: false, message: 'API key required' };
     try {
-      const tokenResponse = await axios.post(
+      const tokenResponse = await safeFetch(
         'https://iam.cloud.ibm.com/identity/token',
-        new URLSearchParams({
-          grant_type: 'urn:ibm:params:oauth:grant-type:apikey',
-          apikey: config.apiKey,
-        }),
         {
+          method: 'POST',
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
             Accept: 'application/json',
           },
+          body: new URLSearchParams({
+            grant_type: 'urn:ibm:params:oauth:grant-type:apikey',
+            apikey: config.apiKey,
+          }).toString(),
         }
       );
-      const accessToken = tokenResponse.data?.access_token;
+      if (tokenResponse.status < 200 || tokenResponse.status >= 300) {
+        const body = await tokenResponse.text().catch(() => '');
+        return { success: false, message: `Token request failed: HTTP ${tokenResponse.status} ${body.slice(0, 200)}` };
+      }
+      const tokenData = await tokenResponse.json().catch(() => null);
+      const accessToken = tokenData?.access_token;
       if (!accessToken) return { success: false, message: 'Failed to obtain access token' };
       this.setHeaders({
         Authorization: `Bearer ${accessToken}`,
@@ -206,6 +223,9 @@ export class IBMCloudConnector extends BaseConnector {
             details: result.data,
           };
     } catch (error: any) {
+      if (error instanceof SSRFProtectionError) {
+        return { success: false, message: `SSRF protection blocked request: ${error.message}` };
+      }
       return { success: false, message: error.message || 'Connection test failed' };
     }
   }
@@ -214,20 +234,31 @@ export class IBMCloudConnector extends BaseConnector {
     const vms: any[] = [];
     const errors: string[] = [];
     try {
-      const tokenResponse = await axios.post(
+      const tokenResponse = await safeFetch(
         'https://iam.cloud.ibm.com/identity/token',
-        new URLSearchParams({
-          grant_type: 'urn:ibm:params:oauth:grant-type:apikey',
-          apikey: config.apiKey,
-        }),
         {
+          method: 'POST',
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
             Accept: 'application/json',
           },
+          body: new URLSearchParams({
+            grant_type: 'urn:ibm:params:oauth:grant-type:apikey',
+            apikey: config.apiKey,
+          }).toString(),
         }
       );
-      const accessToken = tokenResponse.data?.access_token;
+      if (tokenResponse.status < 200 || tokenResponse.status >= 300) {
+        const body = await tokenResponse.text().catch(() => '');
+        return {
+          resources: { total: 0, items: [] },
+          vms: { total: 0, items: [] },
+          collectedAt: new Date().toISOString(),
+          errors: [`Token request failed: HTTP ${tokenResponse.status} ${body.slice(0, 200)}`],
+        };
+      }
+      const tokenData = await tokenResponse.json().catch(() => null);
+      const accessToken = tokenData?.access_token;
       if (!accessToken)
         return {
           resources: { total: 0, items: [] },
@@ -250,11 +281,15 @@ export class IBMCloudConnector extends BaseConnector {
         errors,
       };
     } catch (error: any) {
+      const msg =
+        error instanceof SSRFProtectionError
+          ? `SSRF protection blocked request: ${error.message}`
+          : error.message;
       return {
         resources: { total: 0, items: [] },
         vms: { total: 0, items: [] },
         collectedAt: new Date().toISOString(),
-        errors: [error.message],
+        errors: [msg],
       };
     }
   }
@@ -342,12 +377,17 @@ export class AlibabaCloudConnector extends BaseConnector {
         Action: 'DescribeRegions',
         Version: '2014-05-26',
       });
-      const response = await axios.get(url, { headers, timeout: 30000, validateStatus: (s) => s < 500 });
+      const response = await safeFetch(url, { method: 'GET', headers });
       if (response.status >= 400) {
-        return { success: false, message: `HTTP ${response.status}: ${JSON.stringify(response.data || response.statusText)}` };
+        const body = await response.text().catch(() => '');
+        return { success: false, message: `HTTP ${response.status}: ${body.slice(0, 500)}` };
       }
-      return { success: true, message: 'Connected to Alibaba Cloud', details: response.data };
+      const data = await response.json().catch(() => null);
+      return { success: true, message: 'Connected to Alibaba Cloud', details: data };
     } catch (error: any) {
+      if (error instanceof SSRFProtectionError) {
+        return { success: false, message: `SSRF protection blocked request: ${error.message}` };
+      }
       return { success: false, message: error.message || 'Connection test failed' };
     }
   }
@@ -362,6 +402,11 @@ export class AlibabaCloudConnector extends BaseConnector {
     const storage: any[] = [];
     const errors: string[] = [];
 
+    const ssrfMsg = (error: any) =>
+      error instanceof SSRFProtectionError
+        ? `SSRF protection blocked request: ${error.message}`
+        : error.message;
+
     // ECS instances
     try {
       const host = `ecs.${config.region}.aliyuncs.com`;
@@ -370,15 +415,17 @@ export class AlibabaCloudConnector extends BaseConnector {
         Version: '2014-05-26',
         RegionId: config.region,
       });
-      const response = await axios.get(url, { headers, timeout: 30000, validateStatus: (s) => s < 500 });
+      const response = await safeFetch(url, { method: 'GET', headers });
       if (response.status >= 400) {
-        errors.push(`ECS DescribeInstances: HTTP ${response.status}: ${JSON.stringify(response.data || '')}`);
+        const body = await response.text().catch(() => '');
+        errors.push(`ECS DescribeInstances: HTTP ${response.status}: ${body.slice(0, 500)}`);
       } else {
-        const items = response.data?.Instances?.Instance || response.data?.Instances || [];
+        const data = await response.json().catch(() => null);
+        const items = data?.Instances?.Instance || data?.Instances || [];
         if (Array.isArray(items)) instances.push(...items);
       }
     } catch (error: any) {
-      errors.push(`ECS DescribeInstances: ${error.message}`);
+      errors.push(`ECS DescribeInstances: ${ssrfMsg(error)}`);
     }
 
     // RDS databases
@@ -389,15 +436,17 @@ export class AlibabaCloudConnector extends BaseConnector {
         Version: '2014-08-15',
         RegionId: config.region,
       });
-      const response = await axios.get(url, { headers, timeout: 30000, validateStatus: (s) => s < 500 });
+      const response = await safeFetch(url, { method: 'GET', headers });
       if (response.status >= 400) {
-        errors.push(`RDS DescribeDBInstances: HTTP ${response.status}: ${JSON.stringify(response.data || '')}`);
+        const body = await response.text().catch(() => '');
+        errors.push(`RDS DescribeDBInstances: HTTP ${response.status}: ${body.slice(0, 500)}`);
       } else {
-        const items = response.data?.Items?.DBInstance || response.data?.Items || [];
+        const data = await response.json().catch(() => null);
+        const items = data?.Items?.DBInstance || data?.Items || [];
         if (Array.isArray(items)) databases.push(...items);
       }
     } catch (error: any) {
-      errors.push(`RDS DescribeDBInstances: ${error.message}`);
+      errors.push(`RDS DescribeDBInstances: ${ssrfMsg(error)}`);
     }
 
     // OSS uses a separate, older signature scheme (HMAC-SHA1 with a different canonical request).

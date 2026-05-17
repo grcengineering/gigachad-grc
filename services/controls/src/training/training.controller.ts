@@ -30,6 +30,30 @@ import {
   UpdateCustomModuleDto,
 } from './dto/training.dto';
 
+// Allowlist for training material uploads (videos, slides, SCORM packages).
+// Anything outside this set is rejected at the interceptor layer before the
+// service handler runs. Exported so it can be exercised directly in tests.
+export const TRAINING_MIME_ALLOWLIST = [
+  'video/mp4',
+  'application/pdf',
+  'image/jpeg',
+  'image/png',
+  'application/zip',
+];
+export const TRAINING_MAX_BYTES = 100 * 1024 * 1024;
+
+export function trainingFileFilter(
+  _req: unknown,
+  file: { mimetype: string },
+  cb: (err: Error | null, acceptFile: boolean) => void,
+): void {
+  if (TRAINING_MIME_ALLOWLIST.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new BadRequestException(`Unsupported file type: ${file.mimetype}`), false);
+  }
+}
+
 interface AuthUser {
   userId: string;
   organizationId: string;
@@ -343,7 +367,12 @@ export class TrainingController {
       },
     },
   })
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: TRAINING_MAX_BYTES },
+      fileFilter: trainingFileFilter,
+    }),
+  )
   async uploadScormPackage(
     @CurrentUser() user: AuthUser,
     @Param('id') moduleId: string,
@@ -351,10 +380,6 @@ export class TrainingController {
   ) {
     if (!file) {
       throw new BadRequestException('No file uploaded');
-    }
-
-    if (!file.originalname.endsWith('.zip')) {
-      throw new BadRequestException('File must be a ZIP archive');
     }
 
     return this.trainingService.uploadScormPackage(
