@@ -10,7 +10,11 @@ import { PrismaService } from '../prisma/prisma.service';
       provide: PRISMA_SERVICE,
       useExisting: PrismaService,
     },
-    DevAuthGuard,
+    {
+      provide: DevAuthGuard,
+      useFactory: (prisma) => new DevAuthGuard(prisma),
+      inject: [PRISMA_SERVICE],
+    },
     RolesGuard,
     PermissionsGuard,
   ],

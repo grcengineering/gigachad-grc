@@ -189,6 +189,136 @@ jobs:
           DOCKER_BUILDKIT: 1
         continue-on-error: true # Some services have TypeScript build issues
 
+  # E2E: tenant-isolation + RBAC (BLOCKING)
+  # Brings up the full dev compose stack, seeds demo data, and runs only the
+  # two new Playwright specs that exercise cross-tenant data leakage and
+  # role-based access control. The broader 253-test suite is intentionally
+  # not run here — it remains local-dev-only for now.
+  e2e-tenant-rbac:
+    name: E2E Tenant & RBAC Tests
+    runs-on: ubuntu-latest
+    needs: [frontend]
+    timeout-minutes: 30
+
+    env:
+      # Throwaway secrets for the ephemeral CI stack. These are NOT real
+      # credentials — they only need to satisfy docker-compose's required-var
+      # checks (${VAR:?...}). Postgres / Redis / RustFS / Keycloak / Grafana
+      # come up fresh and are torn down at the end of the job.
+      POSTGRES_USER: grc
+      POSTGRES_PASSWORD: ci-postgres-password
+      POSTGRES_DB: gigachad_grc
+      REDIS_PASSWORD: ci-redis-password
+      MINIO_ROOT_USER: rustfsadmin
+      MINIO_ROOT_PASSWORD: ci-minio-password
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: ci-keycloak-password
+      GRAFANA_ADMIN_USER: admin
+      GRAFANA_ADMIN_PASSWORD: ci-grafana-password
+      # CI-only fixture. The controls service requires length >= 32 and passes
+      # this through scrypt as a passphrase, so any non-empty 32+ char string
+      # works. Avoid hex/random-looking strings here — gitleaks' encryption-key
+      # rule matches /ENCRYPTION_KEY['"=:\s]+['"][0-9a-f]{32,}['"]/ and would
+      # flag this even though it's an obvious fixture.
+      ENCRYPTION_KEY: 'ci-fixture-encryption-key-not-a-real-secret-padding-padding'
+      PHISHING_TRACKING_SECRET: ci-phishing-tracking-secret
+      # Playwright targets the nginx frontend container exposed on :3000.
+      E2E_BASE_URL: http://localhost:3000
+
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5 # v2.19.3
+        with:
+          egress-policy: audit
+
+      - name: Checkout code
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Bring up dev stack
+        # Plain `up -d` (no --wait). The polling step below handles
+        # readiness gating with a 5 min budget. We don't use --wait
+        # because the frontend's nginx healthcheck has a tight retry
+        # budget (5s start period + 3 retries at 30s interval) and the
+        # first build of all 7 images on a cold runner can exceed it.
+        # --wait then exits non-zero before the poll has a chance to
+        # confirm actual HTTP readiness.
+        run: docker compose up -d
+
+      - name: Poll backend + frontend readiness (5 min max)
+        run: |
+          set -e
+          deadline=$(( $(date +%s) + 300 ))
+          ready_controls=0
+          ready_frontend=0
+          while [ "$(date +%s)" -lt "$deadline" ]; do
+            if [ "$ready_controls" -eq 0 ] && \
+               curl -sf -o /dev/null http://127.0.0.1:3001/health; then
+              echo "controls service ready"
+              ready_controls=1
+            fi
+            if [ "$ready_frontend" -eq 0 ] && \
+               curl -sf -o /dev/null http://127.0.0.1:3000/; then
+              echo "frontend ready"
+              ready_frontend=1
+            fi
+            if [ "$ready_controls" -eq 1 ] && [ "$ready_frontend" -eq 1 ]; then
+              echo "All endpoints healthy"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::Stack did not become ready within 5 minutes"
+          docker compose ps
+          docker compose logs --tail=200
+          exit 1
+
+      - name: Seed demo data
+        run: |
+          curl -fsS -X POST http://127.0.0.1:3001/api/seed/load-demo \
+            -H 'x-user-id: 8f88a42b-e799-455c-b68a-308d7d2e9aa4' \
+            -H 'x-org-id: 8924f0c1-7bb1-4be8-84ee-ad8725c712bf'
+
+      - name: Install Playwright + Chromium
+        run: npx playwright install --with-deps chromium
+        working-directory: frontend
+
+      - name: Run tenant-isolation + RBAC specs
+        run: npx playwright test e2e/tenant-isolation.spec.ts e2e/rbac.spec.ts --reporter=line
+        working-directory: frontend
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: playwright-report
+          path: frontend/playwright-report
+          retention-days: 7
+
+      - name: Upload Playwright test-results
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: playwright-test-results
+          path: frontend/test-results
+          retention-days: 7
+
+      - name: Tear down dev stack
+        if: always()
+        # -v drops the named volumes too so the runner is clean even on
+        # retry / re-run. The compose stack is ephemeral; nothing here is
+        # worth preserving.
+        run: docker compose down -v --remove-orphans
+
   # E2E quality checks (accessibility + visual regression).
   # REPORT-ONLY: this job emits artifacts (axe-core results, Playwright
   # report, visual snapshots) but does NOT block merge. The
@@ -318,7 +448,7 @@ jobs:
   status:
     name: Validation Status
     runs-on: ubuntu-latest
-    needs: [frontend, backend, security, docker]
+    needs: [frontend, backend, security, docker, e2e-tenant-rbac]
     if: always()
     steps:
       - name: Harden the runner (Audit all outbound calls)
@@ -330,8 +460,9 @@ jobs:
         run: |
           if [ "${{ needs.frontend.result }}" == "failure" ] || \
              [ "${{ needs.backend.result }}" == "failure" ] || \
-             [ "${{ needs.security.result }}" == "failure" ]; then
+             [ "${{ needs.security.result }}" == "failure" ] || \
+             [ "${{ needs.e2e-tenant-rbac.result }}" == "failure" ]; then
             echo "Required checks failed"
             exit 1
           fi
-          echo "All required checks passed (frontend, backend, security)"
+          echo "All required checks passed (frontend, backend, security, e2e-tenant-rbac)"

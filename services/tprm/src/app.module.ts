@@ -46,7 +46,11 @@ import { StorageModule, CacheModule, DevAuthGuard, PRISMA_SERVICE } from '@gigac
       provide: PRISMA_SERVICE,
       useExisting: PrismaService,
     },
-    DevAuthGuard,
+    {
+      provide: DevAuthGuard,
+      useFactory: (prisma) => new DevAuthGuard(prisma),
+      inject: [PRISMA_SERVICE],
+    },
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,

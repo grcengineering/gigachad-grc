@@ -84,6 +84,11 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      # First boot runs every script under database/init/ (creates keycloak + infisical DBs,
+      # 26+ SQL files for soft-delete, BCDR, enums, indexes, etc.). On a slow CI runner this
+      # easily exceeds the default zero start_period and trips compose's dependency-wait
+      # before pg_isready can ever return 0. 30s leaves headroom for cold runners.
+      start_period: 30s
 
   # ===========================================
   # Cache & Message Queue - Redis (Docker Hardened Image)

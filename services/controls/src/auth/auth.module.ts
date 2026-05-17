@@ -25,8 +25,17 @@ import { PrismaService } from '../prisma/prisma.service';
       provide: PRISMA_SERVICE,
       useExisting: PrismaService,
     },
-    // DevAuthGuard - development authentication guard
-    DevAuthGuard,
+    // DevAuthGuard with explicit factory so Nest passes the prisma
+    // dependency reliably. Using just `DevAuthGuard` here works in
+    // most cases but the @Optional() @Inject(PRISMA_SERVICE) at the
+    // constructor occasionally resolves to undefined depending on
+    // the controller's module context — the explicit factory removes
+    // that ambiguity. Required for the x-dev-user-id override.
+    {
+      provide: DevAuthGuard,
+      useFactory: (prisma: PrismaService) => new DevAuthGuard(prisma as any),
+      inject: [PRISMA_SERVICE],
+    },
     // RolesGuard and PermissionsGuard now use optional Reflector injection
     RolesGuard,
     PermissionsGuard,
