@@ -31,6 +31,7 @@ import { ReportDownloadButton } from '@/components/ReportDownloadButton';
 import { ActionItemsWidget } from '@/components/ActionItemsWidget';
 import { VendorReviewsDueWidget } from '@/components/vendor/VendorReviewsDueWidget';
 import { TrustAnalystQueueWidget } from '@/components/trust/TrustAnalystQueueWidget';
+import { MappingCoverageWidget } from '@/components/widgets/MappingCoverageWidget';
 
 // Dashboard widget configuration
 interface DashboardConfig {
@@ -42,6 +43,7 @@ interface DashboardConfig {
     riskHeatMap: boolean;
     vendorReviewsDue: boolean;
     trustQueue: boolean;
+    mappingCoverage: boolean;
     policyLifecycle: boolean;
     controlsByCategory: boolean;
     quickActions: boolean;
@@ -58,6 +60,7 @@ const DEFAULT_CONFIG: DashboardConfig = {
     riskHeatMap: true,
     vendorReviewsDue: true,
     trustQueue: true,
+    mappingCoverage: true,
     policyLifecycle: true,
     controlsByCategory: true,
     quickActions: true,
@@ -73,6 +76,7 @@ const WIDGET_LABELS: Record<keyof DashboardConfig['widgets'], string> = {
   riskHeatMap: 'Risk Heat Map',
   vendorReviewsDue: 'Vendor Reviews Due',
   trustQueue: 'Trust Queue',
+  mappingCoverage: 'Mapping Coverage',
   policyLifecycle: 'Policy Lifecycle',
   controlsByCategory: 'Controls by Category',
   quickActions: 'Quick Actions',
@@ -122,7 +126,7 @@ export default function Dashboard() {
   }, [config]);
 
   const toggleWidget = (widget: keyof DashboardConfig['widgets']) => {
-    setConfig(prev => ({
+    setConfig((prev) => ({
       ...prev,
       widgets: {
         ...prev.widgets,
@@ -136,12 +140,20 @@ export default function Dashboard() {
   };
 
   // Use consolidated dashboard endpoint - reduces 6 API calls to 1
-  const { data: dashboardData, isLoading: dashboardLoading, error: dashboardError } = useQuery({
+  const {
+    data: dashboardData,
+    isLoading: dashboardLoading,
+    error: dashboardError,
+  } = useQuery({
     queryKey: ['dashboard-full'],
-    queryFn: () => dashboardApi.getFull().then((res) => res.data).catch((error) => {
-      console.error('Failed to load dashboard:', error);
-      return null;
-    }),
+    queryFn: () =>
+      dashboardApi
+        .getFull()
+        .then((res) => res.data)
+        .catch((error) => {
+          console.error('Failed to load dashboard:', error);
+          return null;
+        }),
     staleTime: 5 * 60 * 1000, // 5 minute cache - matches backend
     retry: 1,
     refetchOnWindowFocus: false,
@@ -150,14 +162,25 @@ export default function Dashboard() {
   // Extract data from consolidated response with defaults
   const summary = dashboardData?.summary || DEFAULT_SUMMARY;
   const frameworksData = dashboardData?.frameworks || [];
-  const policyStats = dashboardData?.policyStats || { total: 0, published: 0, approved: 0, inReview: 0, draft: 0, overdueReview: 0 };
+  const policyStats = dashboardData?.policyStats || {
+    total: 0,
+    published: 0,
+    approved: 0,
+    inReview: 0,
+    draft: 0,
+    overdueReview: 0,
+  };
   const risksData = dashboardData?.riskSummary || { risks: [], total: 0, byLevel: {} };
   const vendorData = dashboardData?.vendorSummary || null;
 
   // Fetch custom dashboards for the selector (separate query - user-specific)
   const { data: customDashboards } = useQuery({
     queryKey: ['dashboards'],
-    queryFn: () => customDashboardsApi.list().then((res) => res.data).catch(() => []),
+    queryFn: () =>
+      customDashboardsApi
+        .list()
+        .then((res) => res.data)
+        .catch(() => []),
     retry: false,
     refetchOnWindowFocus: false,
   });
@@ -167,56 +190,73 @@ export default function Dashboard() {
   // IMPORTANT: All hooks must be called before any early returns
   // Use default summary if data is not available
   const safeSummary = summary || DEFAULT_SUMMARY;
-  
-  const frameworks = useMemo(() => 
-    Array.isArray(frameworksData) ? frameworksData : [],
+
+  const frameworks = useMemo(
+    () => (Array.isArray(frameworksData) ? frameworksData : []),
     [frameworksData]
   );
 
   // Framework readiness chart data - memoized to prevent recalculation
-  const frameworkChartData = useMemo(() => 
-    frameworks.map((f: any) => ({
-      name: f.name?.replace('ISO/IEC ', '').replace(' Type II', '') || 'Unknown',
-      score: f.readiness?.score || 0,
-    })),
+  const frameworkChartData = useMemo(
+    () =>
+      frameworks.map((f: any) => ({
+        name: f.name?.replace('ISO/IEC ', '').replace(' Type II', '') || 'Unknown',
+        score: f.readiness?.score || 0,
+      })),
     [frameworks]
   );
 
   // Control status donut data - memoized
-  const controlStatusData = useMemo(() => 
-    safeSummary.controls?.byStatus
-      ? Object.entries(safeSummary.controls.byStatus)
-          .filter(([_, value]) => (value as number) > 0)
-          .map(([name, value]) => ({
-            name: name.replace(/_/g, ' '),
-            value,
-            color: CONTROL_STATUS_COLORS[name] || '#6b7280',
-          }))
-      : [],
+  const controlStatusData = useMemo(
+    () =>
+      safeSummary.controls?.byStatus
+        ? Object.entries(safeSummary.controls.byStatus)
+            .filter(([_, value]) => (value as number) > 0)
+            .map(([name, value]) => ({
+              name: name.replace(/_/g, ' '),
+              value,
+              color: CONTROL_STATUS_COLORS[name] || '#6b7280',
+            }))
+        : [],
     [safeSummary.controls?.byStatus]
   );
 
   // Policy status donut data - memoized
-  const policyStatusData = useMemo(() => [
-    { name: 'Published', value: policyStats?.published || 0, color: POLICY_STATUS_COLORS.published },
-    { name: 'Approved', value: policyStats?.approved || 0, color: POLICY_STATUS_COLORS.approved },
-    { name: 'In Review', value: policyStats?.inReview || 0, color: POLICY_STATUS_COLORS.in_review },
-    { name: 'Draft', value: policyStats?.draft || 0, color: POLICY_STATUS_COLORS.draft },
-  ].filter(d => d.value > 0),
+  const policyStatusData = useMemo(
+    () =>
+      [
+        {
+          name: 'Published',
+          value: policyStats?.published || 0,
+          color: POLICY_STATUS_COLORS.published,
+        },
+        {
+          name: 'Approved',
+          value: policyStats?.approved || 0,
+          color: POLICY_STATUS_COLORS.approved,
+        },
+        {
+          name: 'In Review',
+          value: policyStats?.inReview || 0,
+          color: POLICY_STATUS_COLORS.in_review,
+        },
+        { name: 'Draft', value: policyStats?.draft || 0, color: POLICY_STATUS_COLORS.draft },
+      ].filter((d) => d.value > 0),
     [policyStats]
   );
 
   // Calculate action items - memoized
-  const actionItems = useMemo(() => 
-    (safeSummary.evidence?.pendingReview || 0) + 
-    (safeSummary.evidence?.expiringSoon || 0) + 
-    (safeSummary.controls?.overdue || 0) +
-    (policyStats?.overdueReview || 0),
+  const actionItems = useMemo(
+    () =>
+      (safeSummary.evidence?.pendingReview || 0) +
+      (safeSummary.evidence?.expiringSoon || 0) +
+      (safeSummary.controls?.overdue || 0) +
+      (policyStats?.overdueReview || 0),
     [safeSummary.evidence, safeSummary.controls?.overdue, policyStats?.overdueReview]
   );
 
-  const userDashboards = useMemo(() => 
-    customDashboards?.filter((d: any) => !d.isTemplate) || [],
+  const userDashboards = useMemo(
+    () => customDashboards?.filter((d: any) => !d.isTemplate) || [],
     [customDashboards]
   );
 
@@ -227,7 +267,7 @@ export default function Dashboard() {
 
   // Show error banner if critical data failed to load
   const hasErrors = dashboardError;
-  
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Error Banner */}
@@ -237,12 +277,13 @@ export default function Dashboard() {
           <div className="flex-1">
             <p className="text-sm font-medium text-yellow-400">Some data failed to load</p>
             <p className="text-sm text-yellow-300/80 mt-1">
-              The dashboard is showing partial data. Some widgets may be empty or show default values.
+              The dashboard is showing partial data. Some widgets may be empty or show default
+              values.
             </p>
           </div>
         </div>
       )}
-      
+
       {/* Header with Dashboard Selector and Configuration */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -262,9 +303,9 @@ export default function Dashboard() {
             </button>
             {showDashboardSelector && (
               <>
-                <div 
-                  className="fixed inset-0 z-10" 
-                  onClick={() => setShowDashboardSelector(false)} 
+                <div
+                  className="fixed inset-0 z-10"
+                  onClick={() => setShowDashboardSelector(false)}
                 />
                 <div className="absolute left-0 mt-2 w-64 bg-surface-800 border border-surface-700 rounded-lg shadow-xl z-20">
                   <div className="p-3 border-b border-surface-700">
@@ -272,9 +313,7 @@ export default function Dashboard() {
                   </div>
                   <div className="max-h-64 overflow-y-auto">
                     {userDashboards.length === 0 ? (
-                      <div className="p-3 text-sm text-surface-500">
-                        No custom dashboards yet
-                      </div>
+                      <div className="p-3 text-sm text-surface-500">No custom dashboards yet</div>
                     ) : (
                       userDashboards.map((dashboard: any) => (
                         <button
@@ -340,25 +379,27 @@ export default function Dashboard() {
               <p className="text-sm text-surface-400 mb-4">
                 Toggle widgets to show or hide them on your dashboard.
               </p>
-              {(Object.keys(WIDGET_LABELS) as Array<keyof DashboardConfig['widgets']>).map((widget) => (
-                <button
-                  key={widget}
-                  onClick={() => toggleWidget(widget)}
-                  className={clsx(
-                    'w-full flex items-center justify-between p-3 rounded-lg border transition-all',
-                    config.widgets[widget]
-                      ? 'bg-brand-500/10 border-brand-500/30 text-surface-100'
-                      : 'bg-surface-800 border-surface-700 text-surface-400'
-                  )}
-                >
-                  <span className="font-medium">{WIDGET_LABELS[widget]}</span>
-                  {config.widgets[widget] ? (
-                    <EyeIcon className="w-5 h-5 text-brand-400" />
-                  ) : (
-                    <EyeSlashIcon className="w-5 h-5 text-surface-500" />
-                  )}
-                </button>
-              ))}
+              {(Object.keys(WIDGET_LABELS) as Array<keyof DashboardConfig['widgets']>).map(
+                (widget) => (
+                  <button
+                    key={widget}
+                    onClick={() => toggleWidget(widget)}
+                    className={clsx(
+                      'w-full flex items-center justify-between p-3 rounded-lg border transition-all',
+                      config.widgets[widget]
+                        ? 'bg-brand-500/10 border-brand-500/30 text-surface-100'
+                        : 'bg-surface-800 border-surface-700 text-surface-400'
+                    )}
+                  >
+                    <span className="font-medium">{WIDGET_LABELS[widget]}</span>
+                    {config.widgets[widget] ? (
+                      <EyeIcon className="w-5 h-5 text-brand-400" />
+                    ) : (
+                      <EyeSlashIcon className="w-5 h-5 text-surface-500" />
+                    )}
+                  </button>
+                )
+              )}
             </div>
             <div className="flex items-center justify-between p-4 border-t border-surface-700">
               <button
@@ -367,10 +408,7 @@ export default function Dashboard() {
               >
                 Reset to Default
               </button>
-              <button
-                onClick={() => setShowConfigModal(false)}
-                className="btn btn-primary"
-              >
+              <button onClick={() => setShowConfigModal(false)} className="btn btn-primary">
                 Done
               </button>
             </div>
@@ -426,11 +464,16 @@ export default function Dashboard() {
           <div className="flex items-center gap-3">
             <ExclamationTriangleIcon className="w-5 h-5 text-amber-600 dark:text-yellow-400 flex-shrink-0" />
             <div className="flex-1">
-              <span className="text-amber-700 dark:text-yellow-400 font-medium">{actionItems} items need attention:</span>
+              <span className="text-amber-700 dark:text-yellow-400 font-medium">
+                {actionItems} items need attention:
+              </span>
               <span className="text-gray-600 dark:text-surface-400 ml-2">
-                {(safeSummary.evidence?.pendingReview ?? 0) > 0 && `${safeSummary.evidence?.pendingReview} pending review`}
-                {(safeSummary.evidence?.expiringSoon ?? 0) > 0 && `, ${safeSummary.evidence?.expiringSoon} expiring soon`}
-                {(policyStats?.overdueReview ?? 0) > 0 && `, ${policyStats?.overdueReview} overdue policy reviews`}
+                {(safeSummary.evidence?.pendingReview ?? 0) > 0 &&
+                  `${safeSummary.evidence?.pendingReview} pending review`}
+                {(safeSummary.evidence?.expiringSoon ?? 0) > 0 &&
+                  `, ${safeSummary.evidence?.expiringSoon} expiring soon`}
+                {(policyStats?.overdueReview ?? 0) > 0 &&
+                  `, ${policyStats?.overdueReview} overdue policy reviews`}
               </span>
             </div>
           </div>
@@ -445,7 +488,10 @@ export default function Dashboard() {
             <div className="card p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-surface-100">Framework Readiness</h2>
-                <Link to="/frameworks" className="text-sm text-brand-400 hover:text-brand-300 flex items-center gap-1">
+                <Link
+                  to="/frameworks"
+                  className="text-sm text-brand-400 hover:text-brand-300 flex items-center gap-1"
+                >
                   View all <ChevronRightIcon className="w-4 h-4" />
                 </Link>
               </div>
@@ -454,8 +500,17 @@ export default function Dashboard() {
                   <LazyRechartsWrapper height={224}>
                     {({ BarChart, Bar, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer }) => (
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={frameworkChartData} layout="vertical" margin={{ left: 10, right: 20 }}>
-                          <XAxis type="number" domain={[0, 100]} stroke="#71717a" tickFormatter={(v: number) => `${v}%`} />
+                        <BarChart
+                          data={frameworkChartData}
+                          layout="vertical"
+                          margin={{ left: 10, right: 20 }}
+                        >
+                          <XAxis
+                            type="number"
+                            domain={[0, 100]}
+                            stroke="#71717a"
+                            tickFormatter={(v: number) => `${v}%`}
+                          />
                           <YAxis
                             type="category"
                             dataKey="name"
@@ -472,12 +527,20 @@ export default function Dashboard() {
                             formatter={(value: number) => [`${value}%`, 'Readiness']}
                           />
                           <Bar dataKey="score" radius={[0, 4, 4, 0]}>
-                            {frameworkChartData.map((entry: { name: string; score: number }, index: number) => (
-                              <Cell
-                                key={`cell-${index}`}
-                                fill={entry.score >= 70 ? '#22c55e' : entry.score >= 40 ? '#eab308' : '#ef4444'}
-                              />
-                            ))}
+                            {frameworkChartData.map(
+                              (entry: { name: string; score: number }, index: number) => (
+                                <Cell
+                                  key={`cell-${index}`}
+                                  fill={
+                                    entry.score >= 70
+                                      ? '#22c55e'
+                                      : entry.score >= 40
+                                        ? '#eab308'
+                                        : '#ef4444'
+                                  }
+                                />
+                              )
+                            )}
                           </Bar>
                         </BarChart>
                       </ResponsiveContainer>
@@ -497,7 +560,10 @@ export default function Dashboard() {
             <div className="card p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-surface-100">Control Status</h2>
-                <Link to="/controls" className="text-sm text-brand-400 hover:text-brand-300 flex items-center gap-1">
+                <Link
+                  to="/controls"
+                  className="text-sm text-brand-400 hover:text-brand-300 flex items-center gap-1"
+                >
                   View all <ChevronRightIcon className="w-4 h-4" />
                 </Link>
               </div>
@@ -534,8 +600,13 @@ export default function Dashboard() {
               <div className="flex flex-wrap justify-center gap-x-4 gap-y-2">
                 {controlStatusData.map((item) => (
                   <div key={item.name} className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                    <span className="text-xs text-surface-400 capitalize">{item.name}: {String(item.value)}</span>
+                    <div
+                      className="w-2.5 h-2.5 rounded-full"
+                      style={{ backgroundColor: item.color }}
+                    />
+                    <span className="text-xs text-surface-400 capitalize">
+                      {item.name}: {String(item.value)}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -551,7 +622,10 @@ export default function Dashboard() {
           <div className="card p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-surface-100">Vendor Risk Summary</h2>
-              <Link to="/vendors" className="text-sm text-brand-400 hover:text-brand-300 flex items-center gap-1">
+              <Link
+                to="/vendors"
+                className="text-sm text-brand-400 hover:text-brand-300 flex items-center gap-1"
+              >
                 View all <ChevronRightIcon className="w-4 h-4" />
               </Link>
             </div>
@@ -562,7 +636,10 @@ export default function Dashboard() {
           <div className="card p-5 flex flex-col">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-lg font-semibold text-surface-100">Risk Heat Map</h2>
-              <Link to="/risks" className="text-sm text-brand-400 hover:text-brand-300 flex items-center gap-1">
+              <Link
+                to="/risks"
+                className="text-sm text-brand-400 hover:text-brand-300 flex items-center gap-1"
+              >
                 View all <ChevronRightIcon className="w-4 h-4" />
               </Link>
             </div>
@@ -575,7 +652,8 @@ export default function Dashboard() {
                 </div>
                 <div className="flex items-center justify-between mt-4 pt-3 border-t border-surface-700">
                   <p className="text-sm text-surface-400">
-                    <span className="font-semibold text-surface-200">{risksData.risks.length}</span> risks tracked
+                    <span className="font-semibold text-surface-200">{risksData.risks.length}</span>{' '}
+                    risks tracked
                   </p>
                   <div className="flex items-center gap-3 text-xs">
                     <span className="flex items-center gap-1">
@@ -603,8 +681,8 @@ export default function Dashboard() {
                   <ExclamationTriangleIcon className="w-8 h-8 text-surface-500" />
                 </div>
                 <p className="text-surface-400 text-sm mb-2">No risks registered yet</p>
-                <Link 
-                  to="/risks" 
+                <Link
+                  to="/risks"
                   className="text-brand-400 text-sm hover:text-brand-300 flex items-center gap-1"
                 >
                   Add your first risk <ChevronRightIcon className="w-4 h-4" />
@@ -623,7 +701,10 @@ export default function Dashboard() {
             <div className="card p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-surface-100">Policy Lifecycle</h2>
-                <Link to="/policies" className="text-sm text-brand-400 hover:text-brand-300 flex items-center gap-1">
+                <Link
+                  to="/policies"
+                  className="text-sm text-brand-400 hover:text-brand-300 flex items-center gap-1"
+                >
                   Manage <ChevronRightIcon className="w-4 h-4" />
                 </Link>
               </div>
@@ -660,8 +741,13 @@ export default function Dashboard() {
               <div className="flex flex-wrap justify-center gap-x-4 gap-y-2">
                 {policyStatusData.map((item) => (
                   <div key={item.name} className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                    <span className="text-xs text-surface-400">{item.name}: {item.value}</span>
+                    <div
+                      className="w-2.5 h-2.5 rounded-full"
+                      style={{ backgroundColor: item.color }}
+                    />
+                    <span className="text-xs text-surface-400">
+                      {item.name}: {item.value}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -677,7 +763,9 @@ export default function Dashboard() {
                   .sort(([, a], [, b]) => (b as number) - (a as number))
                   .slice(0, 6)
                   .map(([category, count]) => {
-                    const percentage = Math.round(((count as number) / (safeSummary.controls?.total || 1)) * 100);
+                    const percentage = Math.round(
+                      ((count as number) / (safeSummary.controls?.total || 1)) * 100
+                    );
                     return (
                       <div key={category}>
                         <div className="flex items-center justify-between mb-1">
@@ -706,26 +794,21 @@ export default function Dashboard() {
 
       {/* Vendor Reviews & Trust Queue Widgets */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {config.widgets.vendorReviewsDue && (
-          <VendorReviewsDueWidget />
-        )}
-        {config.widgets.trustQueue && (
-          <TrustAnalystQueueWidget />
-        )}
+        {config.widgets.vendorReviewsDue && <VendorReviewsDueWidget />}
+        {config.widgets.trustQueue && <TrustAnalystQueueWidget />}
+        {config.widgets.mappingCoverage && <MappingCoverageWidget frameworkId={undefined} />}
       </div>
 
       {/* Action Items Widget */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ActionItemsWidget limit={5} />
-        
+
         {/* Quick Actions */}
         {config.widgets.quickActions && <QuickActions />}
       </div>
 
       {/* Recent Activity */}
-      {config.widgets.recentActivity && (
-        <ActivityFeed limit={8} />
-      )}
+      {config.widgets.recentActivity && <ActivityFeed limit={8} />}
     </div>
   );
 }
@@ -753,7 +836,12 @@ const StatCard = memo(function StatCard({
   linkTo?: string;
 }) {
   const content = (
-    <div className={clsx('stat-card h-full', linkTo && 'hover:border-surface-600 cursor-pointer transition-colors')}>
+    <div
+      className={clsx(
+        'stat-card h-full',
+        linkTo && 'hover:border-surface-600 cursor-pointer transition-colors'
+      )}
+    >
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm text-surface-400">{title}</p>
@@ -782,25 +870,36 @@ interface VendorRiskSummaryProps {
 const VendorRiskSummary = memo(function VendorRiskSummary({ data }: VendorRiskSummaryProps) {
   // Use pre-fetched data from consolidated endpoint - no separate API call needed
   const vendors = data?.recentVendors || [];
-  
+
   // Use pre-calculated stats from the backend
-  const stats = useMemo(() => ({
-    total: data?.total || 0,
-    critical: data?.byCriticality?.critical || 0,
-    high: data?.byCriticality?.high || 0,
-    medium: data?.byCriticality?.medium || 0,
-    low: data?.byCriticality?.low || 0,
-    active: data?.active || 0,
-    pendingReview: data?.pendingReview || 0,
-  }), [data]);
+  const stats = useMemo(
+    () => ({
+      total: data?.total || 0,
+      critical: data?.byCriticality?.critical || 0,
+      high: data?.byCriticality?.high || 0,
+      medium: data?.byCriticality?.medium || 0,
+      low: data?.byCriticality?.low || 0,
+      active: data?.active || 0,
+      pendingReview: data?.pendingReview || 0,
+    }),
+    [data]
+  );
 
   // Memoize criticality data
-  const criticialityData = useMemo(() => [
-    { label: 'Critical', count: stats.critical, color: 'bg-red-500', textColor: 'text-red-400' },
-    { label: 'High', count: stats.high, color: 'bg-orange-500', textColor: 'text-orange-400' },
-    { label: 'Medium', count: stats.medium, color: 'bg-yellow-500', textColor: 'text-yellow-400' },
-    { label: 'Low', count: stats.low, color: 'bg-green-500', textColor: 'text-green-400' },
-  ], [stats]);
+  const criticialityData = useMemo(
+    () => [
+      { label: 'Critical', count: stats.critical, color: 'bg-red-500', textColor: 'text-red-400' },
+      { label: 'High', count: stats.high, color: 'bg-orange-500', textColor: 'text-orange-400' },
+      {
+        label: 'Medium',
+        count: stats.medium,
+        color: 'bg-yellow-500',
+        textColor: 'text-yellow-400',
+      },
+      { label: 'Low', count: stats.low, color: 'bg-green-500', textColor: 'text-green-400' },
+    ],
+    [stats]
+  );
 
   // No loading state needed - data is pre-fetched with the consolidated endpoint
 
@@ -840,16 +939,17 @@ const VendorRiskSummary = memo(function VendorRiskSummary({ data }: VendorRiskSu
       <div>
         <p className="text-sm text-surface-400 mb-2">By Criticality</p>
         <div className="flex gap-1 h-3 rounded-full overflow-hidden bg-surface-800">
-          {criticialityData.map((item) => (
-            item.count > 0 && (
-              <div
-                key={item.label}
-                className={`${item.color} transition-all`}
-                style={{ width: `${(item.count / stats.total) * 100}%` }}
-                title={`${item.label}: ${item.count}`}
-              />
-            )
-          ))}
+          {criticialityData.map(
+            (item) =>
+              item.count > 0 && (
+                <div
+                  key={item.label}
+                  className={`${item.color} transition-all`}
+                  style={{ width: `${(item.count / stats.total) * 100}%` }}
+                  title={`${item.label}: ${item.count}`}
+                />
+              )
+          )}
         </div>
         <div className="flex justify-between mt-2">
           {criticialityData.map((item) => (
@@ -874,20 +974,32 @@ const VendorRiskSummary = memo(function VendorRiskSummary({ data }: VendorRiskSu
               className="flex items-center justify-between p-2 bg-surface-800/50 rounded-lg hover:bg-surface-700 transition-colors"
             >
               <div className="flex items-center gap-2">
-                <div className={clsx(
-                  'w-2 h-2 rounded-full',
-                  vendor.criticality === 'critical' ? 'bg-red-500' :
-                  vendor.criticality === 'high' ? 'bg-orange-500' :
-                  vendor.criticality === 'medium' ? 'bg-yellow-500' : 'bg-green-500'
-                )} />
-                <span className="text-sm text-surface-200 truncate max-w-[180px]">{vendor.name}</span>
+                <div
+                  className={clsx(
+                    'w-2 h-2 rounded-full',
+                    vendor.criticality === 'critical'
+                      ? 'bg-red-500'
+                      : vendor.criticality === 'high'
+                        ? 'bg-orange-500'
+                        : vendor.criticality === 'medium'
+                          ? 'bg-yellow-500'
+                          : 'bg-green-500'
+                  )}
+                />
+                <span className="text-sm text-surface-200 truncate max-w-[180px]">
+                  {vendor.name}
+                </span>
               </div>
-              <span className={clsx(
-                'text-xs px-2 py-0.5 rounded',
-                vendor.status === 'active' ? 'bg-green-500/20 text-green-400' :
-                vendor.status === 'pending_review' ? 'bg-yellow-500/20 text-yellow-400' :
-                'bg-surface-600 text-surface-400'
-              )}>
+              <span
+                className={clsx(
+                  'text-xs px-2 py-0.5 rounded',
+                  vendor.status === 'active'
+                    ? 'bg-green-500/20 text-green-400'
+                    : vendor.status === 'pending_review'
+                      ? 'bg-yellow-500/20 text-yellow-400'
+                      : 'bg-surface-600 text-surface-400'
+                )}
+              >
                 {vendor.status?.replace('_', ' ')}
               </span>
             </Link>

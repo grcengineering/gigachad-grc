@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import CommentsPanel from '@/components/CommentsPanel';
 import TasksPanel from '@/components/TasksPanel';
 import MappingEditorModal from '@/components/mappings/MappingEditorModal';
+import { MappingCoverageWidget } from '@/components/widgets/MappingCoverageWidget';
 import { SkeletonDetailHeader, SkeletonDetailSection } from '@/components/Skeleton';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -181,7 +182,7 @@ export default function FrameworkDetail() {
       </div>
 
       {/* Readiness Overview */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         {/* Score Card */}
         <div className="card p-6 lg:col-span-1">
           <p className="text-sm text-surface-400 mb-2">Readiness Score</p>
@@ -277,6 +278,8 @@ export default function FrameworkDetail() {
             </div>
           )}
         </div>
+
+        <MappingCoverageWidget frameworkId={id} className="lg:col-span-1" />
       </div>
 
       {/* Requirements Tree */}
