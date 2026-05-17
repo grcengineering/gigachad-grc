@@ -30,7 +30,7 @@ export function AIAnswerAssistant({
   className,
 }: AIAnswerAssistantProps) {
   const { user } = useAuth();
-  const organizationId = user?.organizationId || 'default-org';
+  const organizationId = user?.organizationId;
   const [suggestion, setSuggestion] = useState<AnswerSuggestion | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const [aiEnabled, setAiEnabled] = useState<boolean | null>(null);
@@ -38,6 +38,7 @@ export function AIAnswerAssistant({
   // Check if AI is enabled
   const checkAiMutation = useMutation({
     mutationFn: async () => {
+      if (!organizationId) throw new Error('Not signed in');
       const response = await trustConfigApi.get(organizationId);
       return response.data.aiSettings?.enabled === true;
     },
@@ -52,6 +53,7 @@ export function AIAnswerAssistant({
   // Generate draft answer
   const draftMutation = useMutation({
     mutationFn: async () => {
+      if (!organizationId) throw new Error('Not signed in');
       const response = await trustAiApi.draftAnswer(organizationId, questionText);
       return response.data;
     },
@@ -67,6 +69,7 @@ export function AIAnswerAssistant({
   // Improve existing answer
   const improveMutation = useMutation({
     mutationFn: async () => {
+      if (!organizationId) throw new Error('Not signed in');
       if (!currentAnswer) throw new Error('No current answer to improve');
       const response = await trustAiApi.improveAnswer(organizationId, questionText, currentAnswer);
       return response.data;

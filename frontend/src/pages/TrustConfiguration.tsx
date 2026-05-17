@@ -13,6 +13,7 @@ import {
 import { trustConfigApi, TrustConfiguration as TrustConfigType } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '@/components/Button';
+import { EmptyState } from '@/components/EmptyState';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 
@@ -29,19 +30,21 @@ const TABS: { id: TabId; label: string; icon: React.ComponentType<{ className?: 
 export default function TrustConfiguration() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const organizationId = user?.organizationId || 'default-org';
+  const organizationId = user?.organizationId;
   const [activeTab, setActiveTab] = useState<TabId>('sla');
 
   const { data: config, isLoading } = useQuery({
     queryKey: ['trust-config', organizationId],
     queryFn: async () => {
-      const response = await trustConfigApi.get(organizationId);
+      const response = await trustConfigApi.get(organizationId!);
       return response.data;
     },
+    enabled: !!organizationId,
   });
 
   const updateMutation = useMutation({
     mutationFn: async (data: Partial<TrustConfigType>) => {
+      if (!organizationId) throw new Error('Not signed in');
       const response = await trustConfigApi.update(data, organizationId);
       return response.data;
     },
@@ -56,6 +59,7 @@ export default function TrustConfiguration() {
 
   const resetMutation = useMutation({
     mutationFn: async () => {
+      if (!organizationId) throw new Error('Not signed in');
       const response = await trustConfigApi.reset(organizationId);
       return response.data;
     },
@@ -67,6 +71,16 @@ export default function TrustConfiguration() {
       toast.error('Failed to reset configuration');
     },
   });
+
+  if (!organizationId) {
+    return (
+      <EmptyState
+        variant="warning"
+        title="Sign in required"
+        description="You need to be signed in to view or change Trust Configuration."
+      />
+    );
+  }
 
   if (isLoading) {
     return (

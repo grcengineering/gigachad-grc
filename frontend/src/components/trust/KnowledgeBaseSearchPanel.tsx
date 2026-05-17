@@ -37,12 +37,17 @@ export function KnowledgeBaseSearchPanel({
   const [autoSearched, setAutoSearched] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<KnowledgeBaseEntry | null>(null);
 
-  const organizationId = user?.organizationId || 'default-org';
+  const organizationId = user?.organizationId;
 
   // Debounced search
   const searchKnowledgeBase = useCallback(async (query: string) => {
     if (!query.trim() || query.length < 3) {
       setResults([]);
+      return;
+    }
+    if (!organizationId) {
+      // Panel can't search without a tenant context; parent handles the
+      // sign-in prompt at the page level.
       return;
     }
 

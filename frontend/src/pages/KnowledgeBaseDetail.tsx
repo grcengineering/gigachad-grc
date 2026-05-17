@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { ArrowLeftIcon, PencilIcon, TrashIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { knowledgeBaseApi } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/Button';
 import { SkeletonDetailHeader, SkeletonDetailSection } from '@/components/Skeleton';
 import toast from 'react-hot-toast';
@@ -28,6 +29,7 @@ export default function KnowledgeBaseDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const [editing, setEditing] = useState(id === 'new');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -60,8 +62,14 @@ export default function KnowledgeBaseDetail() {
 
   const createMutation = useMutation({
     mutationFn: async (data: Partial<KnowledgeEntry>) => {
-      const organizationId = localStorage.getItem('organizationId') || '8924f0c1-7bb1-4be8-84ee-ad8725c712bf';
-      const payload = { ...data, organizationId };
+      // Organization ID must come from the authenticated user. Previously
+      // this fell back to a hardcoded UUID, routing unauthenticated writes
+      // into a random tenant. handleSave guards against null user before
+      // calling .mutate, so this assertion is a defensive backstop.
+      if (!user?.organizationId) {
+        throw new Error('Cannot create knowledge-base entry: not signed in');
+      }
+      const payload = { ...data, organizationId: user.organizationId };
       const response = await knowledgeBaseApi.create(payload as any);
       return response.data;
     },
@@ -111,6 +119,10 @@ export default function KnowledgeBaseDetail() {
       return;
     }
     if (id === 'new') {
+      if (!user?.organizationId) {
+        toast.error('Cannot save entry: not signed in');
+        return;
+      }
       createMutation.mutate(formData);
     } else {
       updateMutation.mutate(formData);

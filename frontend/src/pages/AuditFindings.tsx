@@ -16,6 +16,7 @@ import { Modal } from '@/components/Modal';
 import { EmptyState } from '@/components/EmptyState';
 import { SkeletonTable } from '@/components/Skeleton';
 import { auditFindingsApi, auditsApi, usersApi } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/useToast';
 import { useSelection, BulkActionsBar, SelectCheckbox } from '@/components/BulkActions';
 
@@ -511,6 +512,8 @@ interface FindingFormProps {
 }
 
 function FindingForm({ finding, audits, users, onSubmit, onDelete, isLoading }: FindingFormProps) {
+  const { user } = useAuth();
+  const toast = useToast();
   const [formData, setFormData] = useState({
     auditId: finding?.auditId || '',
     title: finding?.title || '',
@@ -531,10 +534,16 @@ function FindingForm({ finding, audits, users, onSubmit, onDelete, isLoading }: 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const orgId = localStorage.getItem('organizationId') || '';
+    // organizationId must come from the authenticated user. Previously this
+    // pulled from localStorage with an empty-string default, letting saves
+    // slip through without tenant scoping.
+    if (!user?.organizationId) {
+      toast.error('Cannot save finding: not signed in');
+      return;
+    }
     onSubmit({
       ...formData,
-      organizationId: orgId,
+      organizationId: user.organizationId,
       targetDate: formData.targetDate || undefined,
     });
   };

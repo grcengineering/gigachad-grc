@@ -104,7 +104,7 @@ export default function QuestionnaireDetail() {
     // answer was attributed to a fake user — breaking audit trails for
     // a compliance product. Use the authenticated user's id instead.
     if (!user?.id) {
-      console.error('Cannot update answer: no authenticated user');
+      toast.error('Cannot update answer: not signed in');
       return;
     }
     try {
@@ -176,6 +176,16 @@ export default function QuestionnaireDetail() {
 
   const handleSubmitNewQuestionnaire = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Both the user id (audit-trail attribution) and the organization id
+    // (tenant scoping) must come from the authenticated user. Previously
+    // these were hardcoded to 'system' and 'default-org', which attributed
+    // every questionnaire to a fake user in a fictitious tenant.
+    if (!user?.id || !user?.organizationId) {
+      toast.error('Cannot create questionnaire: not signed in');
+      return;
+    }
+
     setSubmitting(true);
 
     try {
@@ -190,10 +200,10 @@ export default function QuestionnaireDetail() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': 'system',
+          'x-user-id': user.id,
         },
         body: JSON.stringify({
-          organizationId: 'default-org',
+          organizationId: user.organizationId,
           title: formData.title,
           requesterName: formData.requesterName,
           requesterEmail: formData.requesterEmail,
@@ -213,7 +223,7 @@ export default function QuestionnaireDetail() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-user-id': 'system',
+            'x-user-id': user.id,
           },
           body: JSON.stringify({
             questionnaireId: newQuestionnaire.id,

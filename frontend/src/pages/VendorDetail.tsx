@@ -13,6 +13,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { vendorsApi, tprmConfigApi, TprmFeatureSettings } from '../lib/api';
 import { Vendor } from '../lib/apiTypes';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/Button';
 import { SkeletonDetailHeader, SkeletonDetailSection } from '@/components/Skeleton';
 import { ConfirmModal } from '@/components/Modal';
@@ -241,8 +242,9 @@ function VendorForm({
   onSave: (data: Partial<Vendor>) => void;
   onCancel: () => void;
 }) {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
-    organizationId: vendor?.organizationId || localStorage.getItem('organizationId') || '',
+    organizationId: vendor?.organizationId || user?.organizationId || '',
     vendorId: vendor?.vendorId || `VND-${Date.now()}`,
     name: vendor?.name || '',
     legalName: vendor?.legalName || '',
@@ -259,6 +261,13 @@ function VendorForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // organizationId must come from the authenticated user or the existing
+    // vendor record. Previously this fell back to localStorage with an empty
+    // string default, which let unauthenticated saves slip through.
+    if (!formData.organizationId) {
+      toast.error('Cannot save vendor: not signed in');
+      return;
+    }
     onSave(formData);
   };
 
