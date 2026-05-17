@@ -35,6 +35,11 @@ export interface MappingEditorModalProps {
   // Edit mode: pre-populates with one mapping's current state; Save calls update()
   editingMappingId?: string;
 
+  // Cross-framework copy: when set, pre-seed each new row's mappingType / notes
+  // on the per-row-form stage. Ignored in edit mode.
+  defaultMappingType?: 'primary' | 'supporting';
+  defaultNotes?: string;
+
   onSaved: (createdMappingIds: string[]) => void;
 }
 
@@ -71,6 +76,8 @@ export function MappingEditorModal({
   frameworkId: initialFrameworkId,
   existingMappingIds,
   editingMappingId,
+  defaultMappingType,
+  defaultNotes,
   onSaved,
 }: MappingEditorModalProps) {
   const isEditMode = Boolean(editingMappingId);
@@ -175,8 +182,8 @@ export function MappingEditorModal({
     setRows(
       selectedIds.map((id) => ({
         candidateId: id,
-        mappingType: 'primary',
-        notes: '',
+        mappingType: defaultMappingType ?? 'primary',
+        notes: defaultNotes ?? '',
       }))
     );
     setStage('per-row-form');

@@ -77,6 +77,8 @@ const { sampleControl } = vi.hoisted(() => ({
         id: 'map-1',
         frameworkId: 'fw-1',
         requirementId: 'req-1',
+        mappingType: 'primary',
+        notes: 'Sample notes from CC6.1',
         framework: { id: 'fw-1', name: 'SOC 2' },
         requirement: { id: 'req-1', reference: 'CC6.1', title: 'Logical Access Controls' },
       },
@@ -84,6 +86,8 @@ const { sampleControl } = vi.hoisted(() => ({
         id: 'map-2',
         frameworkId: 'fw-2',
         requirementId: 'req-2',
+        mappingType: 'supporting',
+        notes: null,
         framework: { id: 'fw-2', name: 'ISO 27001' },
         requirement: { id: 'req-2', reference: 'A.9.1', title: 'Access Control Policy' },
       },
@@ -227,6 +231,81 @@ describe('ControlDetail — Framework Mappings', () => {
     });
     expect(lastCall.frameworkId).toBeUndefined();
     expect(lastCall.existingMappingIds).toEqual(expect.arrayContaining(['req-1', 'req-2']));
+  });
+
+  it('shows Edit, Copy to framework…, and Delete in that order when both permissions are present', async () => {
+    hasPermissionMock.mockReturnValue(true);
+    render(<ControlDetail />);
+
+    await waitFor(() => {
+      expect(screen.getByText('SOC 2')).toBeInTheDocument();
+    });
+
+    const kebab = screen.getByRole('button', {
+      name: 'Mapping actions for SOC 2/CC6.1',
+    });
+    fireEvent.click(kebab);
+
+    const items = await screen.findAllByRole('menuitem');
+    expect(items).toHaveLength(3);
+    expect(items[0]).toHaveTextContent(/^edit$/i);
+    expect(items[1]).toHaveTextContent(/copy to framework/i);
+    expect(items[2]).toHaveTextContent(/^delete$/i);
+  });
+
+  it('shows Edit + Copy but not Delete when delete permission is absent', async () => {
+    hasPermissionMock.mockImplementation((p: string) => p === 'controls:update');
+    render(<ControlDetail />);
+
+    await waitFor(() => {
+      expect(screen.getByText('SOC 2')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mapping actions for SOC 2/CC6.1' }));
+    expect(await screen.findByRole('menuitem', { name: /^edit$/i })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: /copy to framework/i })).toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: /^delete$/i })).not.toBeInTheDocument();
+  });
+
+  it('hides Edit and Copy when edit permission is absent (Delete-only menu)', async () => {
+    hasPermissionMock.mockImplementation((p: string) => p === 'controls:delete');
+    render(<ControlDetail />);
+
+    await waitFor(() => {
+      expect(screen.getByText('SOC 2')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mapping actions for SOC 2/CC6.1' }));
+    expect(screen.queryByRole('menuitem', { name: /^edit$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: /copy to framework/i })).not.toBeInTheDocument();
+    expect(await screen.findByRole('menuitem', { name: /^delete$/i })).toBeInTheDocument();
+  });
+
+  it('clicking Copy to framework… opens the modal with defaultMappingType and defaultNotes from the source mapping', async () => {
+    hasPermissionMock.mockImplementation((p: string) => p === 'controls:update');
+    render(<ControlDetail />);
+
+    await waitFor(() => {
+      expect(screen.getByText('SOC 2')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mapping actions for SOC 2/CC6.1' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: /copy to framework/i }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('mapping-editor-modal')).toBeInTheDocument();
+    });
+
+    const lastCall = modalSpy.mock.calls[modalSpy.mock.calls.length - 1][0];
+    expect(lastCall).toMatchObject({
+      open: true,
+      mode: 'control-to-requirements',
+      controlId: 'ctrl-1',
+      defaultMappingType: 'primary',
+      defaultNotes: 'Sample notes from CC6.1',
+    });
+    expect(lastCall.editingMappingId).toBeUndefined();
+    expect(lastCall.existingMappingIds).toEqual([]);
   });
 
   it('confirming delete calls mappingsApi.delete and invalidates by-control / by-requirement queries', async () => {

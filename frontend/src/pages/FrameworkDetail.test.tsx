@@ -51,6 +51,8 @@ vi.mock('@/components/mappings/MappingEditorModal', () => ({
         data-control-id={String(props.controlId ?? '')}
         data-editing-mapping-id={String(props.editingMappingId ?? '')}
         data-existing-mapping-ids={JSON.stringify(props.existingMappingIds ?? [])}
+        data-default-mapping-type={String(props.defaultMappingType ?? '')}
+        data-default-notes={String(props.defaultNotes ?? '')}
       />
     ) : null,
 }));
@@ -81,6 +83,7 @@ const fixtures = vi.hoisted(() => {
       id: 'map-1',
       controlId: 'ctrl-1',
       mappingType: 'primary',
+      notes: 'Primary mapping notes',
       control: {
         id: 'ctrl-1',
         controlId: 'AC-001',
@@ -91,6 +94,7 @@ const fixtures = vi.hoisted(() => {
       id: 'map-2',
       controlId: 'ctrl-2',
       mappingType: 'supporting',
+      notes: null,
       control: { id: 'ctrl-2', controlId: 'AC-002', title: 'MFA Required' },
     },
   ];
@@ -227,6 +231,64 @@ describe('FrameworkDetail — Mapped Controls', () => {
     await waitFor(() => {
       expect(mappingsApi.delete).toHaveBeenCalledWith('map-1');
     });
+  });
+
+  it('shows Edit, Copy to framework…, and Delete in that order when both permissions are present', async () => {
+    setMockedAuth({ 'controls:update': true, 'controls:delete': true });
+    await openRequirementPanel();
+    await screen.findByText('AC-001');
+
+    const trigger = screen.getByRole('button', {
+      name: /mapping actions for ac-001/i,
+    });
+    fireEvent.click(trigger);
+
+    const items = screen.getAllByRole('menuitem');
+    expect(items).toHaveLength(3);
+    expect(items[0]).toHaveTextContent(/^edit$/i);
+    expect(items[1]).toHaveTextContent(/copy to framework/i);
+    expect(items[2]).toHaveTextContent(/^delete$/i);
+  });
+
+  it('shows Edit + Copy but not Delete when delete permission is absent', async () => {
+    setMockedAuth({ 'controls:update': true, 'controls:delete': false });
+    await openRequirementPanel();
+    await screen.findByText('AC-001');
+
+    fireEvent.click(screen.getByRole('button', { name: /mapping actions for ac-001/i }));
+    expect(screen.getByRole('menuitem', { name: /^edit$/i })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: /copy to framework/i })).toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: /^delete$/i })).not.toBeInTheDocument();
+  });
+
+  it('hides Edit and Copy when edit permission is absent (Delete-only menu)', async () => {
+    setMockedAuth({ 'controls:update': false, 'controls:delete': true });
+    await openRequirementPanel();
+    await screen.findByText('AC-001');
+
+    fireEvent.click(screen.getByRole('button', { name: /mapping actions for ac-001/i }));
+    expect(screen.queryByRole('menuitem', { name: /^edit$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: /copy to framework/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: /^delete$/i })).toBeInTheDocument();
+  });
+
+  it('opens MappingEditorModal in copy mode with defaults seeded from the source mapping', async () => {
+    setMockedAuth({ 'controls:update': true, 'controls:delete': true });
+    await openRequirementPanel();
+    await screen.findByText('AC-001');
+
+    fireEvent.click(screen.getByRole('button', { name: /mapping actions for ac-001/i }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /copy to framework/i }));
+
+    const modal = await screen.findByTestId('mapping-editor-modal');
+    expect(modal).toHaveAttribute('data-mode', 'control-to-requirements');
+    expect(modal).toHaveAttribute('data-control-id', 'ctrl-1');
+    expect(modal).toHaveAttribute('data-default-mapping-type', 'primary');
+    expect(modal).toHaveAttribute('data-default-notes', 'Primary mapping notes');
+    // Edit-mode props should be absent for copy.
+    expect(modal).toHaveAttribute('data-editing-mapping-id', '');
+    // existingMappingIds is an empty array (copy lets target framework decide).
+    expect(modal.getAttribute('data-existing-mapping-ids')).toBe('[]');
   });
 
   it('invalidates the by-requirement and by-control query keys after delete', async () => {

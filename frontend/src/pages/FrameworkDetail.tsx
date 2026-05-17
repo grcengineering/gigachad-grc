@@ -777,6 +777,13 @@ function RequirementDetailPanel({
   const [editingMappingId, setEditingMappingId] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [copyState, setCopyState] = useState<{
+    sourceMapping: {
+      controlId: string;
+      mappingType: 'primary' | 'supporting';
+      notes: string | null;
+    };
+  } | null>(null);
   const menuContainerRef = useRef<HTMLDivElement | null>(null);
 
   const { data: mappings, isLoading } = useQuery({
@@ -833,6 +840,30 @@ function RequirementDetailPanel({
     setEditingMappingId(mappingId);
     setIsMappingModalOpen(true);
     setOpenMenuId(null);
+  };
+
+  const handleOpenCopyMapping = (mapping: any) => {
+    setOpenMenuId(null);
+    setCopyState({
+      sourceMapping: {
+        controlId: mapping.controlId || mapping.control?.id,
+        mappingType: (mapping.mappingType || 'primary') as 'primary' | 'supporting',
+        notes: mapping.notes || null,
+      },
+    });
+  };
+
+  const handleCopySaved = (createdIds: string[]) => {
+    if (createdIds.length > 0) {
+      toast.success(`Copied to ${createdIds.length} requirement(s).`);
+      if (copyState) {
+        queryClient.invalidateQueries({
+          queryKey: ['mappings', 'by-control', copyState.sourceMapping.controlId],
+        });
+      }
+      queryClient.invalidateQueries({ queryKey: ['framework-requirements', frameworkId] });
+    }
+    setCopyState(null);
   };
 
   const handleMappingModalClose = () => {
@@ -1154,6 +1185,20 @@ function RequirementDetailPanel({
                                     Edit
                                   </button>
                                 )}
+                                {canEditMappings && (
+                                  <button
+                                    type="button"
+                                    role="menuitem"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      handleOpenCopyMapping(mapping);
+                                    }}
+                                    className="block w-full text-left px-3 py-1.5 text-sm text-surface-200 hover:bg-surface-700"
+                                  >
+                                    Copy to framework…
+                                  </button>
+                                )}
                                 {canDeleteMappings && (
                                   <button
                                     type="button"
@@ -1242,6 +1287,18 @@ function RequirementDetailPanel({
                   />
                 );
               })()}
+            {copyState && (
+              <MappingEditorModal
+                open={true}
+                onClose={() => setCopyState(null)}
+                mode="control-to-requirements"
+                controlId={copyState.sourceMapping.controlId}
+                existingMappingIds={[]}
+                defaultMappingType={copyState.sourceMapping.mappingType}
+                defaultNotes={copyState.sourceMapping.notes ?? undefined}
+                onSaved={handleCopySaved}
+              />
+            )}
           </div>
         )}
 
