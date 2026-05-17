@@ -1,11 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  IsString,
-  IsOptional,
-  IsArray,
-  IsEnum,
-  IsUUID,
-} from 'class-validator';
+import { IsString, IsOptional, IsArray, IsEnum, IsUUID } from 'class-validator';
 
 export class CreateMappingDto {
   @ApiProperty()
@@ -37,5 +31,14 @@ export class BulkCreateMappingsDto {
   mappings: CreateMappingDto[];
 }
 
+export class UpdateMappingDto {
+  @ApiPropertyOptional({ enum: ['primary', 'supporting'] })
+  @IsOptional()
+  @IsEnum(['primary', 'supporting'])
+  mappingType?: 'primary' | 'supporting';
 
-
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  notes?: string;
+}
