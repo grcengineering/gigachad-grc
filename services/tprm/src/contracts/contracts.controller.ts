@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Controller,
   Get,
   Post,
@@ -13,6 +14,19 @@ import {
   Res,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+
+// Allowlist for contract document uploads. Anything outside this set is
+// rejected at the interceptor layer before the service handler runs.
+const CONTRACT_MIME_ALLOWLIST = [
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'text/plain',
+  'text/csv',
+];
+const CONTRACT_MAX_BYTES = 25 * 1024 * 1024;
 import { Response } from 'express';
 import { ContractsService } from './contracts.service';
 import { CreateContractDto } from './dto/create-contract.dto';
@@ -82,12 +96,26 @@ export class ContractsController {
   }
 
   @Post(':id/document')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: CONTRACT_MAX_BYTES },
+      fileFilter: (_req, file, cb) => {
+        if (CONTRACT_MIME_ALLOWLIST.includes(file.mimetype)) {
+          cb(null, true);
+        } else {
+          cb(new BadRequestException(`Unsupported file type: ${file.mimetype}`), false);
+        }
+      },
+    })
+  )
   uploadDocument(
     @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File,
     @CurrentUser() user: UserContext
   ) {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
     // SECURITY: Pass organizationId to ensure tenant isolation
     return this.contractsService.uploadDocument(id, file, user.userId, user.organizationId);
   }

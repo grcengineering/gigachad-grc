@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { BaseConnector } from './base-connector';
-import axios from 'axios';
+import { safeFetch, SSRFProtectionError } from '@gigachad-grc/shared';
 
 /**
  * Generic connector for integrations that follow standard patterns
@@ -49,12 +49,14 @@ export class GenericConnector {
     const target = this.joinUrl(base, testEndpoint || '');
 
     try {
-      const response = await axios.get(target, {
+      // safeFetch blocks SSRF targets (internal IPs, link-local, metadata
+      // endpoints) — required because the baseUrl is operator-configured.
+      const response = await safeFetch(target, {
+        method: 'GET',
         headers: {
           Authorization: `Bearer ${bearer}`,
           Accept: 'application/json',
         },
-        validateStatus: () => true,
       });
       if (response.status >= 200 && response.status < 300) {
         return {
@@ -63,14 +65,15 @@ export class GenericConnector {
           details: { status: response.status },
         };
       }
-      const snippet = typeof response.data === 'string'
-        ? response.data.slice(0, 200)
-        : JSON.stringify(response.data || {}).slice(0, 200);
+      const body = await response.text().catch(() => '');
       return {
         success: false,
-        message: `${integrationType} API returned ${response.status}: ${snippet}`,
+        message: `${integrationType} API returned ${response.status}: ${body.slice(0, 200)}`,
       };
     } catch (error: any) {
+      if (error instanceof SSRFProtectionError) {
+        return { success: false, message: `SSRF protection blocked request: ${error.message}` };
+      }
       return { success: false, message: error.message || `${integrationType} connection failed` };
     }
   }
@@ -103,27 +106,33 @@ export class GenericConnector {
     for (const endpoint of endpoints) {
       const url = this.joinUrl(base, endpoint.path);
       try {
-        const response = await axios.get(url, {
+        // safeFetch blocks SSRF — see comment in testConnection above.
+        const response = await safeFetch(url, {
+          method: 'GET',
           headers: {
             Authorization: `Bearer ${bearer}`,
             Accept: 'application/json',
           },
-          validateStatus: () => true,
         });
         if (response.status < 200 || response.status >= 300) {
           errors.push(`${endpoint.name}: HTTP ${response.status}`);
           continue;
         }
-        data[endpoint.name] = response.data;
-        if (Array.isArray(response.data)) {
-          totalItems += response.data.length;
-        } else if (response.data && typeof response.data === 'object') {
-          const arrayField = Object.values(response.data).find((v) => Array.isArray(v));
+        const body = await response.json().catch(() => null);
+        data[endpoint.name] = body;
+        if (Array.isArray(body)) {
+          totalItems += body.length;
+        } else if (body && typeof body === 'object') {
+          const arrayField = Object.values(body).find((v) => Array.isArray(v));
           if (Array.isArray(arrayField)) totalItems += arrayField.length;
           else totalItems += 1;
         }
       } catch (error: any) {
-        errors.push(`${endpoint.name}: ${error.message || 'request failed'}`);
+        if (error instanceof SSRFProtectionError) {
+          errors.push(`${endpoint.name}: SSRF protection blocked request: ${error.message}`);
+        } else {
+          errors.push(`${endpoint.name}: ${error.message || 'request failed'}`);
+        }
       }
     }
 

@@ -28,11 +28,23 @@ COPY frontend/ ./
 ARG VITE_API_URL=
 ARG VITE_ENABLE_AI_MODULE=true
 ARG VITE_ENABLE_DEV_AUTH=false
+# Double opt-in for the dev-auth bypass. Setting VITE_ENABLE_DEV_AUTH=true
+# alone is not enough; you must also pass ALLOW_DEV_AUTH=true. This
+# prevents a misconfigured CI variable from silently baking the
+# Keycloak-bypassing dev-login UI into a production image.
+ARG ALLOW_DEV_AUTH=
 
 ENV VITE_API_URL=$VITE_API_URL
 ENV VITE_ENABLE_AI_MODULE=$VITE_ENABLE_AI_MODULE
 # SECURITY: Dev auth defaults to false; set via build arg for dev/demo
 ENV VITE_ENABLE_DEV_AUTH=$VITE_ENABLE_DEV_AUTH
+
+# Fail the build if dev-auth is requested without the explicit opt-in.
+RUN if [ "$VITE_ENABLE_DEV_AUTH" = "true" ] && [ "$ALLOW_DEV_AUTH" != "true" ]; then \
+      echo "ERROR: VITE_ENABLE_DEV_AUTH=true requires also passing --build-arg ALLOW_DEV_AUTH=true." >&2; \
+      echo "Dev-auth bakes a Keycloak-bypassing login button into the static build. Refusing." >&2; \
+      exit 1; \
+    fi
 
 # Limit Node.js heap to prevent OOM kills during parallel Docker builds
 ENV NODE_OPTIONS=--max-old-space-size=2048

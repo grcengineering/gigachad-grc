@@ -691,6 +691,20 @@ function VendorView({ vendor, onRefresh, featureSettings, onStartRiskAssessment 
   );
 }
 
+// Parse a user-supplied URL and only return it if it's http/https. Anything
+// else (javascript:, data:, vbscript:, etc.) returns null, which causes the
+// component to render the raw value as plain text instead of as a link. This
+// prevents a vendor.website value like "javascript:alert(1)" from becoming
+// an XSS sink when clicked.
+function safeHref(raw: string): string | null {
+  try {
+    const u = new URL(raw);
+    return u.protocol === 'http:' || u.protocol === 'https:' ? u.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
 function InfoField({
   label,
   value,
@@ -704,13 +718,15 @@ function InfoField({
 }) {
   if (!value) return null;
 
+  const href = link ? safeHref(value.toString()) : null;
+
   return (
     <div>
       <dt className="text-sm font-medium text-surface-400 mb-1">{label}</dt>
       <dd className={`text-sm text-surface-100 ${capitalize ? 'capitalize' : ''}`}>
-        {link ? (
+        {href ? (
           <a
-            href={value.toString()}
+            href={href}
             target="_blank"
             rel="noopener noreferrer"
             className="text-brand-400 hover:text-brand-300"
