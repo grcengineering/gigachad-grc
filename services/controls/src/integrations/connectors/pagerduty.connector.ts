@@ -62,9 +62,7 @@ export class PagerDutyConnector {
   private readonly logger = new Logger(PagerDutyConnector.name);
   private readonly baseUrl = 'https://api.pagerduty.com';
 
-  async testConnection(
-    config: PagerDutyConfig
-  ): Promise<{ success: boolean; message: string; details?: any }> {
+  async testConnection(config: PagerDutyConfig): Promise<{ success: boolean; message: string; details?: any }> {
     if (!config.apiKey) {
       return { success: false, message: 'API key is required' };
     }
@@ -75,10 +73,7 @@ export class PagerDutyConnector {
       });
 
       if (!response.ok) {
-        return {
-          success: false,
-          message: response.status === 401 ? 'Invalid API key' : `API error: ${response.status}`,
-        };
+        return { success: false, message: response.status === 401 ? 'Invalid API key' : `API error: ${response.status}` };
       }
 
       const data = await response.json();
@@ -95,23 +90,13 @@ export class PagerDutyConnector {
   async sync(config: PagerDutyConfig): Promise<PagerDutySyncResult> {
     const errors: string[] = [];
 
-    const [services, incidents, users, escalationPolicies] = await Promise.all([
-      this.getServices(config).catch((e) => {
-        errors.push(`Services: ${e.message}`);
-        return [];
-      }),
-      this.getIncidents(config).catch((e) => {
-        errors.push(`Incidents: ${e.message}`);
-        return [];
-      }),
-      this.getUsers(config).catch((e) => {
-        errors.push(`Users: ${e.message}`);
-        return [];
-      }),
-      this.getEscalationPolicies(config).catch((e) => {
-        errors.push(`Policies: ${e.message}`);
-        return [];
-      }),
+    const [services, incidents, users, escalationPolicies, schedules, onCalls] = await Promise.all([
+      this.getServices(config).catch(e => { errors.push(`Services: ${e.message}`); return []; }),
+      this.getIncidents(config).catch(e => { errors.push(`Incidents: ${e.message}`); return []; }),
+      this.getUsers(config).catch(e => { errors.push(`Users: ${e.message}`); return []; }),
+      this.getEscalationPolicies(config).catch(e => { errors.push(`Policies: ${e.message}`); return []; }),
+      this.getSchedules(config).catch(e => { errors.push(`Schedules: ${e.message}`); return []; }),
+      this.getOnCalls(config).catch(e => { errors.push(`OnCalls: ${e.message}`); return []; }),
     ]);
 
     const byPriority: Record<string, number> = {};
@@ -119,6 +104,49 @@ export class PagerDutyConnector {
       const priority = i.priority?.summary || 'No Priority';
       byPriority[priority] = (byPriority[priority] || 0) + 1;
     });
+
+    // MTTR / MTTA / incidentsPerDay from the 30-day incident window.
+    const resolvedIncidents = incidents.filter(
+      (i: any) => i.status === 'resolved' && i.created_at && i.resolved_at,
+    );
+    const acknowledgedIncidents = incidents.filter((i: any) => {
+      if (!i.created_at) return false;
+      // PagerDuty exposes acknowledgements via `acknowledgements[].at`. Fall
+      // back to last_status_change_at when status is acknowledged.
+      const ack = Array.isArray(i.acknowledgements) && i.acknowledgements[0]?.at
+        ? i.acknowledgements[0].at
+        : (i.status === 'acknowledged' ? i.last_status_change_at : null);
+      return !!ack;
+    });
+    const mttr = resolvedIncidents.length === 0
+      ? 0
+      : resolvedIncidents.reduce(
+          (sum: number, i: any) =>
+            sum + (new Date(i.resolved_at).getTime() - new Date(i.created_at).getTime()),
+          0,
+        ) / resolvedIncidents.length / 1000;
+    const mtta = acknowledgedIncidents.length === 0
+      ? 0
+      : acknowledgedIncidents.reduce((sum: number, i: any) => {
+          const ack = Array.isArray(i.acknowledgements) && i.acknowledgements[0]?.at
+            ? i.acknowledgements[0].at
+            : i.last_status_change_at;
+          return sum + (new Date(ack).getTime() - new Date(i.created_at).getTime());
+        }, 0) / acknowledgedIncidents.length / 1000;
+    const incidentsPerDay = incidents.length / 30;
+
+    // Distinct on-call users (oncalls returns one entry per layer/escalation).
+    const onCallUserIds = new Set<string>(
+      onCalls
+        .map((o: any): string | undefined => o.user?.id)
+        .filter((id): id is string => typeof id === 'string' && id.length > 0),
+    );
+
+    // Schedule coverage = schedules whose users appear in oncalls / total.
+    const schedulesWithCoverage = schedules.filter((s: any) =>
+      onCalls.some((o: any) => o.schedule?.id === s.id),
+    ).length;
+    const coverage = schedules.length === 0 ? 0 : schedulesWithCoverage / schedules.length;
 
     return {
       services: {
@@ -141,8 +169,8 @@ export class PagerDutyConnector {
         acknowledged: incidents.filter((i: any) => i.status === 'acknowledged').length,
         resolved: incidents.filter((i: any) => i.status === 'resolved').length,
         byPriority,
-        avgTimeToAcknowledge: 0,
-        avgTimeToResolve: 0,
+        avgTimeToAcknowledge: mtta,
+        avgTimeToResolve: mttr,
         items: incidents.slice(0, 100).map((i: any) => ({
           id: i.id,
           title: i.title,
@@ -155,11 +183,11 @@ export class PagerDutyConnector {
       },
       users: {
         total: users.length,
-        onCall: 0,
+        onCall: onCallUserIds.size,
       },
       escalationPolicies: { total: escalationPolicies.length },
-      schedules: { total: 0, coverage: 0 },
-      analytics: { mttr: 0, mtta: 0, incidentsPerDay: 0 },
+      schedules: { total: schedules.length, coverage },
+      analytics: { mttr, mtta, incidentsPerDay },
       collectedAt: new Date().toISOString(),
       errors,
     };
@@ -167,8 +195,8 @@ export class PagerDutyConnector {
 
   private buildHeaders(apiKey: string): Record<string, string> {
     return {
-      Authorization: `Token token=${apiKey}`,
-      Accept: 'application/json',
+      'Authorization': `Token token=${apiKey}`,
+      'Accept': 'application/json',
       'Content-Type': 'application/json',
     };
   }
@@ -208,5 +236,23 @@ export class PagerDutyConnector {
     if (!response.ok) throw new Error(`Failed: ${response.status}`);
     const data = await response.json();
     return data.escalation_policies || [];
+  }
+
+  private async getSchedules(config: PagerDutyConfig): Promise<any[]> {
+    const response = await fetch(`${this.baseUrl}/schedules?limit=100`, {
+      headers: this.buildHeaders(config.apiKey),
+    });
+    if (!response.ok) throw new Error(`Failed: ${response.status}`);
+    const data = await response.json();
+    return data.schedules || [];
+  }
+
+  private async getOnCalls(config: PagerDutyConfig): Promise<any[]> {
+    const response = await fetch(`${this.baseUrl}/oncalls?limit=100`, {
+      headers: this.buildHeaders(config.apiKey),
+    });
+    if (!response.ok) throw new Error(`Failed: ${response.status}`);
+    const data = await response.json();
+    return data.oncalls || [];
   }
 }

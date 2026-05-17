@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 
 export interface ServiceNowConfig {
-  instanceUrl: string; // e.g., https://company.service-now.com
+  instanceUrl: string;  // e.g., https://company.service-now.com
   username: string;
   password: string;
 }
@@ -64,9 +64,7 @@ export interface ServiceNowSyncResult {
 export class ServiceNowConnector {
   private readonly logger = new Logger(ServiceNowConnector.name);
 
-  async testConnection(
-    config: ServiceNowConfig
-  ): Promise<{ success: boolean; message: string; details?: any }> {
+  async testConnection(config: ServiceNowConfig): Promise<{ success: boolean; message: string; details?: any }> {
     if (!config.instanceUrl || !config.username || !config.password) {
       return { success: false, message: 'Instance URL, username, and password are required' };
     }
@@ -78,11 +76,7 @@ export class ServiceNowConnector {
       });
 
       if (!response.ok) {
-        return {
-          success: false,
-          message:
-            response.status === 401 ? 'Invalid credentials' : `API error: ${response.status}`,
-        };
+        return { success: false, message: response.status === 401 ? 'Invalid credentials' : `API error: ${response.status}` };
       }
 
       return {
@@ -99,23 +93,13 @@ export class ServiceNowConnector {
     const baseUrl = config.instanceUrl.replace(/\/+$/, '');
     const errors: string[] = [];
 
-    const [incidents, changes, problems, cmdb] = await Promise.all([
-      this.getIncidents(baseUrl, config).catch((e) => {
-        errors.push(`Incidents: ${e.message}`);
-        return [];
-      }),
-      this.getChanges(baseUrl, config).catch((e) => {
-        errors.push(`Changes: ${e.message}`);
-        return [];
-      }),
-      this.getProblems(baseUrl, config).catch((e) => {
-        errors.push(`Problems: ${e.message}`);
-        return [];
-      }),
-      this.getCMDBItems(baseUrl, config).catch((e) => {
-        errors.push(`CMDB: ${e.message}`);
-        return { totalCIs: 0, servers: 0, applications: 0, databases: 0 };
-      }),
+    const [incidents, changes, problems, cmdb, securityIncidents, vulnerabilities] = await Promise.all([
+      this.getIncidents(baseUrl, config).catch(e => { errors.push(`Incidents: ${e.message}`); return []; }),
+      this.getChanges(baseUrl, config).catch(e => { errors.push(`Changes: ${e.message}`); return []; }),
+      this.getProblems(baseUrl, config).catch(e => { errors.push(`Problems: ${e.message}`); return []; }),
+      this.getCMDBItems(baseUrl, config).catch(e => { errors.push(`CMDB: ${e.message}`); return { totalCIs: 0, servers: 0, applications: 0, databases: 0 }; }),
+      this.getSecurityIncidents(baseUrl, config).catch(e => { errors.push(`SecurityIncidents: ${e.message}`); return []; }),
+      this.getVulnerabilities(baseUrl, config).catch(e => { errors.push(`Vulnerabilities: ${e.message}`); return []; }),
     ]);
 
     const openIncidents = incidents.filter((i: any) => ['1', '2', '3'].includes(i.state));
@@ -158,8 +142,29 @@ export class ServiceNowConnector {
         rootCauseIdentified: problems.filter((p: any) => p.cause_ci).length,
       },
       cmdb,
-      securityIncidents: { total: 0, open: 0, critical: 0, high: 0 },
-      vulnerabilities: { total: 0, open: 0, critical: 0, high: 0 },
+      securityIncidents: {
+        total: securityIncidents.length,
+        // Treat anything not in a closed/resolved terminal state as open.
+        // ServiceNow security incident states: 1 New, 3 Analysis, 10 Contain,
+        // 16 Eradicate, 18 Recover, 19 Review, 100 Closed.
+        open: securityIncidents.filter((s: any) => !['100'].includes(String(s.state ?? ''))).length,
+        critical: securityIncidents.filter((s: any) => String(s.priority ?? '') === '1').length,
+        high: securityIncidents.filter((s: any) => String(s.priority ?? '') === '2').length,
+      },
+      vulnerabilities: {
+        total: vulnerabilities.length,
+        // Open = state is not Closed/Resolved (ServiceNow VR states: 1 Open,
+        // 2 Under Investigation, 3 Awaiting Implementation, 4 Resolved, 5 Closed).
+        open: vulnerabilities.filter((v: any) => !['4', '5'].includes(String(v.state ?? ''))).length,
+        critical: vulnerabilities.filter((v: any) => {
+          const sev = (v.severity || v.risk_score_severity || '').toString().toLowerCase();
+          return sev === 'critical' || sev === '1';
+        }).length,
+        high: vulnerabilities.filter((v: any) => {
+          const sev = (v.severity || v.risk_score_severity || '').toString().toLowerCase();
+          return sev === 'high' || sev === '2';
+        }).length,
+      },
       collectedAt: new Date().toISOString(),
       errors,
     };
@@ -168,8 +173,8 @@ export class ServiceNowConnector {
   private buildHeaders(config: ServiceNowConfig): Record<string, string> {
     const auth = Buffer.from(`${config.username}:${config.password}`).toString('base64');
     return {
-      Authorization: `Basic ${auth}`,
-      Accept: 'application/json',
+      'Authorization': `Basic ${auth}`,
+      'Accept': 'application/json',
       'Content-Type': 'application/json',
     };
   }
@@ -185,18 +190,50 @@ export class ServiceNowConnector {
   }
 
   private async getChanges(baseUrl: string, config: ServiceNowConfig): Promise<any[]> {
-    const response = await fetch(`${baseUrl}/api/now/table/change_request?sysparm_limit=500`, {
-      headers: this.buildHeaders(config),
-    });
+    const response = await fetch(
+      `${baseUrl}/api/now/table/change_request?sysparm_limit=500`,
+      { headers: this.buildHeaders(config) }
+    );
     if (!response.ok) throw new Error(`Failed: ${response.status}`);
     const data = await response.json();
     return data.result || [];
   }
 
   private async getProblems(baseUrl: string, config: ServiceNowConfig): Promise<any[]> {
-    const response = await fetch(`${baseUrl}/api/now/table/problem?sysparm_limit=200`, {
-      headers: this.buildHeaders(config),
-    });
+    const response = await fetch(
+      `${baseUrl}/api/now/table/problem?sysparm_limit=200`,
+      { headers: this.buildHeaders(config) }
+    );
+    if (!response.ok) throw new Error(`Failed: ${response.status}`);
+    const data = await response.json();
+    return data.result || [];
+  }
+
+  private async getSecurityIncidents(baseUrl: string, config: ServiceNowConfig): Promise<any[]> {
+    // Requires the ServiceNow Security Incident Response (SIR) application.
+    // A 404 means the table doesn't exist on this instance — surface as an
+    // error so consumers don't read zeros as "no security incidents".
+    const response = await fetch(
+      `${baseUrl}/api/now/table/sn_si_incident?sysparm_limit=500&sysparm_fields=number,state,priority,opened_at,short_description`,
+      { headers: this.buildHeaders(config) }
+    );
+    if (response.status === 404) {
+      throw new Error('sn_si_incident table not available (Security Incident Response module not installed)');
+    }
+    if (!response.ok) throw new Error(`Failed: ${response.status}`);
+    const data = await response.json();
+    return data.result || [];
+  }
+
+  private async getVulnerabilities(baseUrl: string, config: ServiceNowConfig): Promise<any[]> {
+    // Requires the ServiceNow Vulnerability Response application.
+    const response = await fetch(
+      `${baseUrl}/api/now/table/sn_vul_vulnerable_item?sysparm_limit=500&sysparm_fields=number,state,severity,risk_score_severity,opened_at`,
+      { headers: this.buildHeaders(config) }
+    );
+    if (response.status === 404) {
+      throw new Error('sn_vul_vulnerable_item table not available (Vulnerability Response module not installed)');
+    }
     if (!response.ok) throw new Error(`Failed: ${response.status}`);
     const data = await response.json();
     return data.result || [];
@@ -204,15 +241,9 @@ export class ServiceNowConnector {
 
   private async getCMDBItems(baseUrl: string, config: ServiceNowConfig) {
     const [serversResp, appsResp, dbsResp] = await Promise.all([
-      fetch(`${baseUrl}/api/now/table/cmdb_ci_server?sysparm_limit=1&sysparm_fields=sys_id`, {
-        headers: this.buildHeaders(config),
-      }),
-      fetch(`${baseUrl}/api/now/table/cmdb_ci_appl?sysparm_limit=1&sysparm_fields=sys_id`, {
-        headers: this.buildHeaders(config),
-      }),
-      fetch(`${baseUrl}/api/now/table/cmdb_ci_database?sysparm_limit=1&sysparm_fields=sys_id`, {
-        headers: this.buildHeaders(config),
-      }),
+      fetch(`${baseUrl}/api/now/table/cmdb_ci_server?sysparm_limit=1&sysparm_fields=sys_id`, { headers: this.buildHeaders(config) }),
+      fetch(`${baseUrl}/api/now/table/cmdb_ci_appl?sysparm_limit=1&sysparm_fields=sys_id`, { headers: this.buildHeaders(config) }),
+      fetch(`${baseUrl}/api/now/table/cmdb_ci_database?sysparm_limit=1&sysparm_fields=sys_id`, { headers: this.buildHeaders(config) }),
     ]);
 
     return {
