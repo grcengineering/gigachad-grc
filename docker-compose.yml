@@ -623,6 +623,10 @@ services:
       dockerfile: frontend/Dockerfile
       args:
         VITE_ENABLE_DEV_AUTH: 'true'
+        # Explicit opt-in for dev-auth bypass. This is intentional in the
+        # dev compose file; production builds (docker-compose.prod.yml)
+        # must NOT set this.
+        ALLOW_DEV_AUTH: 'true'
     container_name: grc-frontend
     # SECURITY: Prevent privilege escalation attacks
     security_opt:
