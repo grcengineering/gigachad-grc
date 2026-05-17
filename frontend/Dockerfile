@@ -13,8 +13,11 @@ WORKDIR /app
 # Copy package files from frontend directory (context is repo root)
 COPY frontend/package*.json ./
 
-# Install ALL dependencies (including devDependencies) for build
-RUN npm install
+# Install ALL dependencies (including devDependencies) for build.
+# --ignore-scripts blocks postinstall hooks, the main supply-chain attack
+# vector via npm. The repo .npmrc sets ignore-scripts=true but isn't
+# COPY'd into the build context, so we pass the flag explicitly here.
+RUN npm install --ignore-scripts
 
 # Copy frontend source
 COPY frontend/ ./
