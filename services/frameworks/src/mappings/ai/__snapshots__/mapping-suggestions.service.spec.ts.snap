@@ -1,0 +1,79 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Prompt builders control-to-requirements snapshot 1`] = `
+"Direction: control-to-requirements
+
+You are given a single control (the anchor) and a catalog of candidate
+framework requirements. Select the requirements that the control most clearly
+satisfies and score each candidate's confidence in [0, 1].
+
+Anchor control:
+{
+  "reference": "AC-001",
+  "title": "Role-Based Access Control",
+  "description": "Access to systems is granted on a least-privilege basis and aligned to job role.",
+  "guidance": null
+}
+
+Candidate requirements (use only these ids):
+[
+  {
+    "id": "33333333-3333-3333-3333-333333333333",
+    "reference": "CC6.1",
+    "title": "Logical Access Controls",
+    "description": "The entity implements logical access security software, infrastructure, and architectures over protected information assets."
+  },
+  {
+    "id": "44444444-4444-4444-4444-444444444444",
+    "reference": "CC6.3",
+    "title": "Access Removal",
+    "description": "The entity removes access to protected information assets when no longer required."
+  }
+]
+
+Respond with strictly-formatted JSON matching this schema:
+{
+  "suggestions": [
+    { "candidateId": "<one of the provided candidate ids>", "confidence": 0.0, "rationale": "≤ 280 chars" }
+  ]
+}"
+`;
+
+exports[`Prompt builders requirement-to-controls snapshot 1`] = `
+"Direction: requirement-to-controls
+
+You are given a single framework requirement (the anchor) and a catalog of
+candidate controls. Select the controls that best satisfy the requirement and
+score each candidate's confidence in [0, 1].
+
+Anchor requirement:
+{
+  "reference": "CC6.1",
+  "title": "Logical Access Controls",
+  "description": "The entity implements logical access security software, infrastructure, and architectures over protected information assets.",
+  "guidance": "Consider role-based access, least privilege, and periodic reviews of access rights."
+}
+
+Candidate controls (use only these ids):
+[
+  {
+    "id": "11111111-1111-1111-1111-111111111111",
+    "reference": "AC-001",
+    "title": "Role-Based Access Control",
+    "description": "Access to systems is granted on a least-privilege basis and aligned to job role."
+  },
+  {
+    "id": "22222222-2222-2222-2222-222222222222",
+    "reference": "AC-002",
+    "title": "Quarterly Access Review",
+    "description": "Owners review user access on a quarterly cadence and remove unneeded entitlements."
+  }
+]
+
+Respond with strictly-formatted JSON matching this schema:
+{
+  "suggestions": [
+    { "candidateId": "<one of the provided candidate ids>", "confidence": 0.0, "rationale": "≤ 280 chars" }
+  ]
+}"
+`;
