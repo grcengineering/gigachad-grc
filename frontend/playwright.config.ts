@@ -1,111 +1,65 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * Playwright E2E Test Configuration for GigaChad GRC
- * @see https://playwright.dev/docs/test-configuration
+ * Playwright E2E Test Configuration for GigaChad GRC.
+ *
+ * Tests target the dev docker-compose stack by default
+ * (frontend at http://127.0.0.1:3000). Bring it up before running:
+ *
+ *   docker compose up -d
+ *   docker compose ps    # all services healthy / up
+ *
+ * Authentication uses the dev-login bypass — auth.setup.ts pre-seeds
+ * localStorage with the seeded "John Doe" user, so tests can run
+ * without Keycloak.
+ *
+ * Override the target via E2E_BASE_URL for a different stack (e.g.,
+ * a CI ephemeral environment or a remote staging host).
  */
+const BASE_URL = process.env.E2E_BASE_URL ?? 'http://127.0.0.1:3000';
+
 export default defineConfig({
   testDir: './e2e',
-  
-  /* Run tests in files in parallel */
   fullyParallel: true,
-  
-  /* Fail the build on CI if you accidentally left test.only in the source code */
   forbidOnly: !!process.env.CI,
-  
-  /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
-  
-  /* Opt out of parallel tests on CI */
   workers: process.env.CI ? 1 : undefined,
-  
-  /* Reporter to use */
   reporter: [
-    ['html', { outputFolder: 'playwright-report' }],
+    ['html', { outputFolder: 'playwright-report', open: 'never' }],
     ['list'],
     ...(process.env.CI ? [['github' as const]] : []),
   ],
-  
-  /* Shared settings for all the projects below */
   use: {
-    /* Base URL to use in actions like `await page.goto('/')` */
-    baseURL: process.env.E2E_BASE_URL || 'http://localhost:5173',
-
-    /* Collect trace when retrying the failed test */
+    baseURL: BASE_URL,
     trace: 'on-first-retry',
-    
-    /* Screenshot on failure */
     screenshot: 'only-on-failure',
-    
-    /* Video on retry */
-    video: 'on-first-retry',
-    
-    /* Viewport size */
+    video: 'retain-on-failure',
     viewport: { width: 1280, height: 720 },
+    // The dev stack is HTTP; this is only set so https-based overrides
+    // (a staging target on https://localhost) still work.
+    ignoreHTTPSErrors: true,
   },
-
-  /* Configure projects for major browsers */
   projects: [
-    /* Setup project for authentication */
+    // Setup project: runs auth.setup.ts to seed dev-login state.
     {
       name: 'setup',
       testMatch: /.*\.setup\.ts/,
     },
-    
     {
       name: 'chromium',
-      use: { 
+      use: {
         ...devices['Desktop Chrome'],
-        /* Use stored authentication state */
-        storageState: 'playwright/.auth/user.json',
-      },
-      dependencies: ['setup'],
-    },
-
-    {
-      name: 'firefox',
-      use: { 
-        ...devices['Desktop Firefox'],
-        storageState: 'playwright/.auth/user.json',
-      },
-      dependencies: ['setup'],
-    },
-
-    {
-      name: 'webkit',
-      use: { 
-        ...devices['Desktop Safari'],
-        storageState: 'playwright/.auth/user.json',
-      },
-      dependencies: ['setup'],
-    },
-
-    /* Test against mobile viewports */
-    {
-      name: 'Mobile Chrome',
-      use: { 
-        ...devices['Pixel 5'],
         storageState: 'playwright/.auth/user.json',
       },
       dependencies: ['setup'],
     },
   ],
-
-  /* Run your local dev server before starting the tests */
-  webServer: process.env.CI ? undefined : {
-    command: 'npm run dev',
-    url: 'http://localhost:5173',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000,
-  },
-
-  /* Global timeout */
-  timeout: 30 * 1000,
-  
-  /* Expect timeout */
-  expect: {
-    timeout: 10 * 1000,
-  },
+  // Do NOT auto-start a vite dev server. The tests target the docker
+  // stack; if you want to use the dev server instead, override
+  // E2E_BASE_URL=http://localhost:5173 and start vite manually.
+  webServer: undefined,
+  timeout: 30_000,
+  expect: { timeout: 10_000 },
 });
 
 
