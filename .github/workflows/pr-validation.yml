@@ -302,8 +302,8 @@ jobs:
         run: npx playwright install --with-deps chromium
         working-directory: frontend
 
-      - name: Run tenant-isolation + RBAC + mapping-flow specs
-        run: npx playwright test e2e/tenant-isolation.spec.ts e2e/rbac.spec.ts e2e/mapping-flow.spec.ts --reporter=line
+      - name: Run tenant-isolation + RBAC + mapping-flow + mapping-history specs
+        run: npx playwright test e2e/tenant-isolation.spec.ts e2e/rbac.spec.ts e2e/mapping-flow.spec.ts e2e/mapping-history.spec.ts --reporter=line
         working-directory: frontend
 
       - name: Upload Playwright report
