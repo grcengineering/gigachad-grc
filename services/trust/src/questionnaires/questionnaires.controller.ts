@@ -32,7 +32,14 @@ export class QuestionnairesController {
 
   @Post()
   create(@Body() createQuestionnaireDto: CreateQuestionnaireDto, @CurrentUser() user: UserContext) {
-    return this.questionnairesService.create(createQuestionnaireDto, user.userId);
+    // SECURITY: Tenant isolation. Override any organizationId in the body
+    // with the caller's authenticated org. Without this, an attacker could
+    // POST `{ organizationId: <other-org-id>, ... }` and have the record
+    // persist under a different tenant.
+    return this.questionnairesService.create(
+      { ...createQuestionnaireDto, organizationId: user.organizationId },
+      user.userId
+    );
   }
 
   @Get()

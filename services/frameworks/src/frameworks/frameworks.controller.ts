@@ -24,7 +24,7 @@ import {
 } from '@nestjs/swagger';
 import { IsString, IsOptional, IsBoolean, IsNumber } from 'class-validator';
 import { FrameworksService } from './frameworks.service';
-import { CurrentUser, UserContext } from '@gigachad-grc/shared';
+import { CurrentUser, Roles, RolesGuard, UserContext } from '@gigachad-grc/shared';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 
 // Allowlist for framework requirement bulk-upload files (CSV / Excel).
@@ -133,11 +133,11 @@ class UpdateRequirementOwnerDto {
 @ApiTags('frameworks')
 @ApiBearerAuth()
 @Controller('api/frameworks')
+@UseGuards(DevAuthGuard, RolesGuard)
 export class FrameworksController {
   constructor(private readonly frameworksService: FrameworksService) {}
 
   @Get()
-  @UseGuards(DevAuthGuard)
   @ApiOperation({ summary: 'List all frameworks' })
   @ApiResponse({ status: 200, description: 'Returns list of frameworks with readiness' })
   async findAll(@CurrentUser() user: UserContext) {
@@ -145,7 +145,7 @@ export class FrameworksController {
   }
 
   @Post()
-  @UseGuards(DevAuthGuard)
+  @Roles('admin', 'compliance_manager')
   @ApiOperation({ summary: 'Create a new framework' })
   @ApiResponse({ status: 201, description: 'Framework created successfully' })
   @ApiBody({ type: CreateFrameworkDto })
@@ -154,14 +154,12 @@ export class FrameworksController {
   }
 
   @Get('types')
-  @UseGuards(DevAuthGuard)
   @ApiOperation({ summary: 'Get framework types' })
   async getTypes() {
     return this.frameworksService.getFrameworkTypes();
   }
 
   @Get(':id')
-  @UseGuards(DevAuthGuard)
   @ApiOperation({ summary: 'Get framework by ID' })
   @ApiParam({ name: 'id', description: 'Framework ID' })
   async findOne(@Param('id') id: string, @CurrentUser() user: UserContext) {
@@ -169,7 +167,7 @@ export class FrameworksController {
   }
 
   @Put(':id')
-  @UseGuards(DevAuthGuard)
+  @Roles('admin', 'compliance_manager')
   @ApiOperation({ summary: 'Update a framework' })
   @ApiParam({ name: 'id', description: 'Framework ID' })
   @ApiBody({ type: CreateFrameworkDto })
@@ -183,7 +181,7 @@ export class FrameworksController {
   }
 
   @Delete(':id')
-  @UseGuards(DevAuthGuard)
+  @Roles('admin', 'compliance_manager')
   @ApiOperation({ summary: 'Delete a framework (soft delete)' })
   @ApiParam({ name: 'id', description: 'Framework ID' })
   @ApiResponse({ status: 200, description: 'Framework deleted successfully' })
@@ -192,7 +190,6 @@ export class FrameworksController {
   }
 
   @Get(':id/requirements')
-  @UseGuards(DevAuthGuard)
   @ApiOperation({ summary: 'Get framework requirements' })
   @ApiParam({ name: 'id', description: 'Framework ID' })
   async getRequirements(
@@ -204,7 +201,7 @@ export class FrameworksController {
   }
 
   @Post(':id/requirements')
-  @UseGuards(DevAuthGuard)
+  @Roles('admin', 'compliance_manager')
   @ApiOperation({ summary: 'Create a framework requirement' })
   @ApiParam({ name: 'id', description: 'Framework ID' })
   @ApiBody({ type: CreateRequirementDto })
@@ -214,7 +211,7 @@ export class FrameworksController {
   }
 
   @Post(':id/requirements/bulk-upload')
-  @UseGuards(DevAuthGuard)
+  @Roles('admin', 'compliance_manager')
   @UseInterceptors(
     FileInterceptor('file', {
       limits: { fileSize: FRAMEWORK_IMPORT_MAX_BYTES },
@@ -229,7 +226,6 @@ export class FrameworksController {
   }
 
   @Get(':id/requirements/tree')
-  @UseGuards(DevAuthGuard)
   @ApiOperation({ summary: 'Get framework requirements as tree' })
   @ApiParam({ name: 'id', description: 'Framework ID' })
   async getRequirementTree(@Param('id') id: string, @CurrentUser() user: UserContext) {
@@ -237,7 +233,6 @@ export class FrameworksController {
   }
 
   @Get(':id/requirements/:requirementId')
-  @UseGuards(DevAuthGuard)
   @ApiOperation({ summary: 'Get specific requirement' })
   async getRequirement(
     @Param('id') id: string,
@@ -248,7 +243,7 @@ export class FrameworksController {
   }
 
   @Put(':id/requirements/:requirementId')
-  @UseGuards(DevAuthGuard)
+  @Roles('admin', 'compliance_manager')
   @ApiOperation({ summary: 'Update requirement (owner, notes, due date, priority)' })
   @ApiParam({ name: 'id', description: 'Framework ID' })
   @ApiParam({ name: 'requirementId', description: 'Requirement ID' })
@@ -262,7 +257,6 @@ export class FrameworksController {
   }
 
   @Get(':id/readiness')
-  @UseGuards(DevAuthGuard)
   @ApiOperation({ summary: 'Calculate framework readiness score' })
   @ApiParam({ name: 'id', description: 'Framework ID' })
   async getReadiness(@Param('id') id: string, @CurrentUser() user: UserContext) {

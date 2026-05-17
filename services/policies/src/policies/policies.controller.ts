@@ -31,7 +31,7 @@ import {
   UpdatePolicyStatusDto,
   PolicyFilterDto,
 } from './dto/policy.dto';
-import { CurrentUser, UserContext } from '@gigachad-grc/shared';
+import { CurrentUser, Roles, RolesGuard, UserContext } from '@gigachad-grc/shared';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 import { Response } from 'express';
 
@@ -74,7 +74,7 @@ function sanitizeFilename(filename: string): string {
 
 @ApiTags('policies')
 @ApiBearerAuth()
-@UseGuards(DevAuthGuard)
+@UseGuards(DevAuthGuard, RolesGuard)
 @Controller('api/policies')
 export class PoliciesController {
   constructor(private readonly policiesService: PoliciesService) {}
@@ -126,6 +126,7 @@ export class PoliciesController {
   }
 
   @Post()
+  @Roles('admin', 'compliance_manager')
   @UseInterceptors(
     FileInterceptor('file', {
       limits: { fileSize: POLICY_MAX_BYTES },
@@ -161,6 +162,7 @@ export class PoliciesController {
   }
 
   @Put(':id')
+  @Roles('admin', 'compliance_manager')
   @ApiOperation({ summary: 'Update policy metadata' })
   @ApiParam({ name: 'id', description: 'Policy ID' })
   async update(
@@ -172,6 +174,7 @@ export class PoliciesController {
   }
 
   @Post(':id/versions')
+  @Roles('admin', 'compliance_manager')
   @UseInterceptors(
     FileInterceptor('file', {
       limits: { fileSize: POLICY_MAX_BYTES },
@@ -210,6 +213,7 @@ export class PoliciesController {
   }
 
   @Put(':id/status')
+  @Roles('admin', 'compliance_manager')
   @ApiOperation({ summary: 'Update policy status (workflow)' })
   @ApiParam({ name: 'id', description: 'Policy ID' })
   async updateStatus(
@@ -221,6 +225,7 @@ export class PoliciesController {
   }
 
   @Delete(':id')
+  @Roles('admin', 'compliance_manager')
   @ApiOperation({ summary: 'Delete a policy' })
   @ApiParam({ name: 'id', description: 'Policy ID' })
   async delete(@Param('id') id: string, @CurrentUser() user: UserContext) {
@@ -228,6 +233,7 @@ export class PoliciesController {
   }
 
   @Post(':id/link')
+  @Roles('admin', 'compliance_manager')
   @ApiOperation({ summary: 'Link policy to controls' })
   @ApiParam({ name: 'id', description: 'Policy ID' })
   async linkToControls(
@@ -239,6 +245,7 @@ export class PoliciesController {
   }
 
   @Delete(':id/link/:controlId')
+  @Roles('admin', 'compliance_manager')
   @ApiOperation({ summary: 'Unlink policy from control' })
   @ApiParam({ name: 'id', description: 'Policy ID' })
   @ApiParam({ name: 'controlId', description: 'Control ID' })

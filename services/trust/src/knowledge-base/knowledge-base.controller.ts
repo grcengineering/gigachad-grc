@@ -26,7 +26,14 @@ export class KnowledgeBaseController {
     @Body() createKnowledgeBaseDto: CreateKnowledgeBaseDto,
     @CurrentUser() user: UserContext,
   ) {
-    return this.knowledgeBaseService.create(createKnowledgeBaseDto, user.userId);
+    // SECURITY: Tenant isolation. Override organizationId in the body
+    // with the caller's authenticated org. Without this, an attacker
+    // could POST `{ organizationId: <other-org-id>, ... }` and have the
+    // entry persist under a different tenant.
+    return this.knowledgeBaseService.create(
+      { ...createKnowledgeBaseDto, organizationId: user.organizationId },
+      user.userId,
+    );
   }
 
   @Post('bulk')
@@ -34,7 +41,12 @@ export class KnowledgeBaseController {
     @Body() bulkCreateDto: BulkCreateKnowledgeBaseDto,
     @CurrentUser() user: UserContext,
   ) {
-    return this.knowledgeBaseService.bulkCreate(bulkCreateDto.entries, user.userId);
+    // SECURITY: Tenant isolation — see comment on create() above.
+    const entries = bulkCreateDto.entries.map((e) => ({
+      ...e,
+      organizationId: user.organizationId,
+    }));
+    return this.knowledgeBaseService.bulkCreate(entries, user.userId);
   }
 
   @Get()

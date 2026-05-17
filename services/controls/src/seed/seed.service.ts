@@ -12,6 +12,38 @@ import {
   DEMO_AUDITS,
 } from './seed-data.generators';
 import { getCatalogFramework, flattenRequirements } from '../frameworks/catalog';
+import {
+  SEED_ORG_A_ID,
+  SEED_ORG_A_NAME,
+  SEED_ORG_A_SLUG,
+  SEED_ORG_B_ID,
+  SEED_ORG_B_NAME,
+  SEED_ORG_B_SLUG,
+  SEED_USER_A_ADMIN_EMAIL,
+  SEED_USER_A_COMPLIANCE_ID,
+  SEED_USER_A_COMPLIANCE_EMAIL,
+  SEED_USER_A_AUDITOR_ID,
+  SEED_USER_A_AUDITOR_EMAIL,
+  SEED_USER_A_VIEWER_ID,
+  SEED_USER_A_VIEWER_EMAIL,
+  SEED_USER_B_ADMIN_ID,
+  SEED_USER_B_ADMIN_EMAIL,
+  SEED_ORG_B_CONTROL_CODES,
+  SEED_ORG_B_RISK_CODES,
+  SEED_ORG_B_VENDOR_CODES,
+} from '@gigachad-grc/shared';
+
+/**
+ * Minimal shape used by ensureUserExists to seed RBAC fixtures.
+ * `role` must match Prisma's UserRole enum.
+ */
+interface SeedUserSpec {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: 'admin' | 'compliance_manager' | 'auditor' | 'viewer';
+}
 
 export interface SeedResult {
   success: boolean;
@@ -50,22 +82,30 @@ export class SeedDataService {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * Ensure the organization exists, creating it if necessary
-   * This is needed because the dev auth guard uses a hardcoded org ID
+   * Ensure the organization exists, creating it if necessary.
+   *
+   * Idempotent: if `id` already exists the record is left untouched.
+   * Used to bootstrap both the primary demo org and the secondary tenant
+   * (Org B) used by tenant-isolation tests.
    */
-  private async ensureOrganizationExists(organizationId: string): Promise<void> {
+  private async ensureOrganizationExists(
+    organizationId: string,
+    name: string = SEED_ORG_A_NAME,
+    slug: string = SEED_ORG_A_SLUG,
+    description: string = 'Default organization for GigaChad GRC demo'
+  ): Promise<void> {
     const existing = await this.prisma.organization.findUnique({
       where: { id: organizationId },
     });
 
     if (!existing) {
-      this.logger.log(`Creating organization ${organizationId}...`);
+      this.logger.log(`Creating organization ${organizationId} (${slug})...`);
       await this.prisma.organization.create({
         data: {
           id: organizationId,
-          name: 'Demo Organization',
-          slug: 'demo-org',
-          description: 'Default organization for GigaChad GRC demo',
+          name,
+          slug,
+          description,
           status: 'active',
           settings: {
             timezone: 'UTC',
@@ -78,31 +118,229 @@ export class SeedDataService {
   }
 
   /**
-   * Ensure a User record exists in the database
-   * This is necessary because dev auth guard creates a virtual user that may not exist in DB
+   * Ensure a User record exists in the database.
+   *
+   * Two-call shape:
+   *   1. `ensureUserExists(orgId, userId)` — legacy convenience used by the
+   *      hot path before the four-role/two-org fixtures landed. Creates the
+   *      mock dev admin if missing.
+   *   2. `ensureUserExists(orgId, spec)` — explicit role/email so the seeder
+   *      can stand up the compliance/auditor/viewer/admin matrix.
+   *
+   * Idempotent: existing rows by `id` are returned without modification.
    */
-  private async ensureUserExists(organizationId: string, userId: string): Promise<void> {
+  private async ensureUserExists(
+    organizationId: string,
+    userOrId: string | SeedUserSpec
+  ): Promise<void> {
+    const spec: SeedUserSpec =
+      typeof userOrId === 'string'
+        ? {
+            id: userOrId,
+            email: SEED_USER_A_ADMIN_EMAIL,
+            firstName: 'Demo',
+            lastName: 'Admin',
+            role: 'admin',
+          }
+        : userOrId;
+
     const existingUser = await this.prisma.user.findUnique({
-      where: { id: userId },
+      where: { id: spec.id },
     });
 
     if (!existingUser) {
-      this.logger.log(`Creating user ${userId}...`);
+      this.logger.log(`Creating user ${spec.id} (${spec.role}) in org ${organizationId}...`);
       await this.prisma.user.create({
         data: {
-          id: userId,
-          keycloakId: `demo-${userId}`,
-          email: 'admin@demo.local',
-          firstName: 'Demo',
-          lastName: 'Admin',
-          displayName: 'Demo Admin',
-          organizationId: organizationId,
-          role: 'admin',
+          id: spec.id,
+          keycloakId: `demo-${spec.id}`,
+          email: spec.email,
+          firstName: spec.firstName,
+          lastName: spec.lastName,
+          displayName: `${spec.firstName} ${spec.lastName}`,
+          organizationId,
+          role: spec.role,
           status: 'active',
         },
       });
-      this.logger.log(`User ${userId} created successfully`);
+      this.logger.log(`User ${spec.id} created successfully`);
     }
+  }
+
+  /**
+   * Seed the three additional Org A RBAC personas (compliance/auditor/viewer).
+   * Admin is created earlier in `loadDemoData` via `ensureUserExists`.
+   * Idempotent.
+   */
+  private async ensureOrgARbacUsers(organizationId: string): Promise<void> {
+    const rbacUsers: SeedUserSpec[] = [
+      {
+        id: SEED_USER_A_COMPLIANCE_ID,
+        email: SEED_USER_A_COMPLIANCE_EMAIL,
+        firstName: 'Casey',
+        lastName: 'Compliance',
+        role: 'compliance_manager',
+      },
+      {
+        id: SEED_USER_A_AUDITOR_ID,
+        email: SEED_USER_A_AUDITOR_EMAIL,
+        firstName: 'Avery',
+        lastName: 'Auditor',
+        role: 'auditor',
+      },
+      {
+        id: SEED_USER_A_VIEWER_ID,
+        email: SEED_USER_A_VIEWER_EMAIL,
+        firstName: 'Vic',
+        lastName: 'Viewer',
+        role: 'viewer',
+      },
+    ];
+
+    for (const user of rbacUsers) {
+      await this.ensureUserExists(organizationId, user);
+    }
+  }
+
+  /**
+   * Seed Org B (tenant-isolation test target).
+   *
+   * Creates the organization, its admin user, and a small set of
+   * cross-tenant probe resources (5 controls / 3 risks / 2 vendors).
+   * Re-running is a no-op once the records exist.
+   */
+  private async ensureOrgBFixtures(): Promise<{
+    controlsCreated: number;
+    risksCreated: number;
+    vendorsCreated: number;
+  }> {
+    // 1. Organization
+    await this.ensureOrganizationExists(
+      SEED_ORG_B_ID,
+      SEED_ORG_B_NAME,
+      SEED_ORG_B_SLUG,
+      'Secondary tenant fixture for isolation tests'
+    );
+
+    // 2. Admin user
+    await this.ensureUserExists(SEED_ORG_B_ID, {
+      id: SEED_USER_B_ADMIN_ID,
+      email: SEED_USER_B_ADMIN_EMAIL,
+      firstName: 'Acme',
+      lastName: 'Admin',
+      role: 'admin',
+    });
+
+    // 3. Controls (5)
+    let controlsCreated = 0;
+    for (let i = 0; i < SEED_ORG_B_CONTROL_CODES.length; i++) {
+      const code = SEED_ORG_B_CONTROL_CODES[i];
+      const existing = await this.prisma.control.findUnique({
+        where: {
+          controlId_organizationId: {
+            controlId: code,
+            organizationId: SEED_ORG_B_ID,
+          },
+        },
+      });
+      if (existing) continue;
+
+      const control = await this.prisma.control.create({
+        data: {
+          organizationId: SEED_ORG_B_ID,
+          controlId: code,
+          title: `Acme Corp Control ${i + 1}`,
+          description: `Org B isolation fixture control ${code}.`,
+          category: 'access_control',
+        },
+      });
+
+      await this.prisma.controlImplementation.create({
+        data: {
+          controlId: control.id,
+          organizationId: SEED_ORG_B_ID,
+          status: 'implemented',
+          ownerId: SEED_USER_B_ADMIN_ID,
+          implementationNotes: `${code} fully implemented (isolation fixture).`,
+          testingFrequency: 'quarterly',
+          lastTestedAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
+          nextTestDue: new Date(Date.now() + 76 * 24 * 60 * 60 * 1000),
+          effectivenessScore: 90,
+          createdBy: SEED_USER_B_ADMIN_ID,
+          updatedBy: SEED_USER_B_ADMIN_ID,
+        },
+      });
+      controlsCreated++;
+    }
+
+    // 4. Risks (3)
+    let risksCreated = 0;
+    for (let i = 0; i < SEED_ORG_B_RISK_CODES.length; i++) {
+      const code = SEED_ORG_B_RISK_CODES[i];
+      const existing = await this.prisma.risk.findUnique({
+        where: {
+          organizationId_riskId: {
+            organizationId: SEED_ORG_B_ID,
+            riskId: code,
+          },
+        },
+      });
+      if (existing) continue;
+
+      await this.prisma.risk.create({
+        data: {
+          organizationId: SEED_ORG_B_ID,
+          riskId: code,
+          title: `Acme Corp Risk ${i + 1}`,
+          description: `Org B isolation fixture risk ${code}.`,
+          category: 'security',
+          status: 'risk_analyzed',
+          source: 'internal_security_reviews',
+          initialSeverity: 'high',
+          likelihood: 'possible',
+          impact: 'major',
+          inherentRisk: 'high',
+          reporterId: SEED_USER_B_ADMIN_ID,
+          riskOwnerId: SEED_USER_B_ADMIN_ID,
+          createdBy: SEED_USER_B_ADMIN_ID,
+        },
+      });
+      risksCreated++;
+    }
+
+    // 5. Vendors (2)
+    let vendorsCreated = 0;
+    for (let i = 0; i < SEED_ORG_B_VENDOR_CODES.length; i++) {
+      const code = SEED_ORG_B_VENDOR_CODES[i];
+      const existing = await this.prisma.vendor.findUnique({
+        where: {
+          organizationId_vendorId: {
+            organizationId: SEED_ORG_B_ID,
+            vendorId: code,
+          },
+        },
+      });
+      if (existing) continue;
+
+      await this.prisma.vendor.create({
+        data: {
+          organizationId: SEED_ORG_B_ID,
+          vendorId: code,
+          name: `Acme Vendor ${i + 1}`,
+          category: 'software_vendor',
+          tier: 'tier_3',
+          status: 'active',
+          serviceDescription: `Org B isolation fixture vendor ${code}.`,
+          createdBy: SEED_USER_B_ADMIN_ID,
+        },
+      });
+      vendorsCreated++;
+    }
+
+    this.logger.log(
+      `Org B fixtures: ${controlsCreated} controls, ${risksCreated} risks, ${vendorsCreated} vendors`
+    );
+    return { controlsCreated, risksCreated, vendorsCreated };
   }
 
   /**
@@ -143,6 +381,14 @@ export class SeedDataService {
 
     // Ensure the user exists (create if not) - required for foreign key constraints
     await this.ensureUserExists(organizationId, userId);
+
+    // Always ensure RBAC personas + Org B isolation fixtures are present.
+    // These are idempotent and serve e2e tests independently of whether the
+    // bulk demo data has been loaded for the calling org yet.
+    if (organizationId === SEED_ORG_A_ID) {
+      await this.ensureOrgARbacUsers(SEED_ORG_A_ID);
+    }
+    await this.ensureOrgBFixtures();
 
     // Check if demo data already loaded
     if (await this.isDemoDataLoaded(organizationId)) {
