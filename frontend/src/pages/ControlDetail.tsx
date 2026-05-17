@@ -10,6 +10,7 @@ import {
   mappingsApi,
 } from '@/lib/api';
 import { MappingEditorModal } from '@/components/mappings/MappingEditorModal';
+import { MappingHistoryDrawer } from '@/components/mappings/MappingHistoryDrawer';
 import { useAuth } from '@/contexts/AuthContext';
 import toast from 'react-hot-toast';
 import CommentsPanel from '@/components/CommentsPanel';
@@ -75,6 +76,7 @@ export default function ControlDetail() {
   });
   const [mappingMenuOpenId, setMappingMenuOpenId] = useState<string | null>(null);
   const [mappingDeleteConfirmId, setMappingDeleteConfirmId] = useState<string | null>(null);
+  const [historyDrawerMappingId, setHistoryDrawerMappingId] = useState<string | null>(null);
   const [mappingEditorState, setMappingEditorState] = useState<
     | { mode: 'create' }
     | { mode: 'edit'; mappingId: string; requirementId: string; frameworkId: string }
@@ -741,7 +743,7 @@ export default function ControlDetail() {
                 {control?.mappings?.map((mapping: any) => {
                   const isMenuOpen = mappingMenuOpenId === mapping.id;
                   const isConfirmingDelete = mappingDeleteConfirmId === mapping.id;
-                  const showKebab = canEditMappings || canDeleteMappings;
+                  const showKebab = true;
                   return (
                     <div
                       key={mapping.id}
@@ -790,6 +792,18 @@ export default function ControlDetail() {
                                     Edit
                                   </button>
                                 )}
+                                <button
+                                  type="button"
+                                  role="menuitem"
+                                  onClick={() => {
+                                    setMappingMenuOpenId(null);
+                                    setHistoryDrawerMappingId(mapping.id);
+                                  }}
+                                  className="flex items-center gap-2 w-full text-left px-3 py-2 text-xs text-surface-200 hover:bg-surface-800"
+                                >
+                                  <ClockIcon className="w-3.5 h-3.5" aria-hidden="true" />
+                                  History
+                                </button>
                                 {canDeleteMappings && (
                                   <button
                                     type="button"
@@ -881,6 +895,24 @@ export default function ControlDetail() {
                 queryClient.invalidateQueries({ queryKey: ['control', id] });
                 setMappingEditorState(null);
               }}
+            />
+          )}
+
+          {historyDrawerMappingId && (
+            <MappingHistoryDrawer
+              open={true}
+              onClose={() => setHistoryDrawerMappingId(null)}
+              mappingId={historyDrawerMappingId}
+              mode="control-to-requirements"
+              invalidateOnRestore={[
+                ['mappings', 'by-control', id],
+                [
+                  'mappings',
+                  'by-requirement',
+                  control?.mappings?.find((m: any) => m.id === historyDrawerMappingId)
+                    ?.requirementId,
+                ],
+              ]}
             />
           )}
 

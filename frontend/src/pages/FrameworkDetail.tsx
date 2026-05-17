@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import CommentsPanel from '@/components/CommentsPanel';
 import TasksPanel from '@/components/TasksPanel';
 import MappingEditorModal from '@/components/mappings/MappingEditorModal';
+import MappingHistoryDrawer from '@/components/mappings/MappingHistoryDrawer';
 import { SkeletonDetailHeader, SkeletonDetailSection } from '@/components/Skeleton';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -25,6 +26,7 @@ import {
   ArrowUpTrayIcon,
   DocumentArrowDownIcon,
   EllipsisVerticalIcon,
+  ClockIcon,
 } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 
@@ -774,6 +776,7 @@ function RequirementDetailPanel({
   const [editingMappingId, setEditingMappingId] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [historyDrawerMappingId, setHistoryDrawerMappingId] = useState<string | null>(null);
   const menuContainerRef = useRef<HTMLDivElement | null>(null);
 
   const { data: mappings, isLoading } = useQuery({
@@ -1090,7 +1093,7 @@ function RequirementDetailPanel({
                   const controlRef = mapping.control?.controlId || mapping.controlId;
                   const isMenuOpen = openMenuId === mapping.id;
                   const isConfirmingDelete = pendingDeleteId === mapping.id;
-                  const showKebab = canEditMappings || canDeleteMappings;
+                  const showKebab = true;
                   return (
                     <div
                       key={mapping.id}
@@ -1151,6 +1154,20 @@ function RequirementDetailPanel({
                                     Edit
                                   </button>
                                 )}
+                                <button
+                                  type="button"
+                                  role="menuitem"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setHistoryDrawerMappingId(mapping.id);
+                                    setOpenMenuId(null);
+                                  }}
+                                  className="flex items-center gap-2 w-full text-left px-3 py-1.5 text-sm text-surface-200 hover:bg-surface-700"
+                                >
+                                  <ClockIcon className="w-4 h-4" aria-hidden="true" />
+                                  History
+                                </button>
                                 {canDeleteMappings && (
                                   <button
                                     type="button"
@@ -1239,6 +1256,24 @@ function RequirementDetailPanel({
                   />
                 );
               })()}
+            {historyDrawerMappingId && (
+              <MappingHistoryDrawer
+                open={true}
+                onClose={() => setHistoryDrawerMappingId(null)}
+                mappingId={historyDrawerMappingId}
+                mode="requirement-to-controls"
+                invalidateOnRestore={[
+                  ['mappings', 'by-requirement', requirement.id],
+                  [
+                    'mappings',
+                    'by-control',
+                    (mappings || []).find((m: any) => m.id === historyDrawerMappingId)?.controlId ??
+                      (mappings || []).find((m: any) => m.id === historyDrawerMappingId)?.control
+                        ?.id,
+                  ],
+                ]}
+              />
+            )}
           </div>
         )}
 

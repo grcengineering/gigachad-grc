@@ -162,7 +162,7 @@ describe('ControlDetail — Framework Mappings', () => {
     expect(screen.queryByRole('button', { name: /add mapping/i })).not.toBeInTheDocument();
   });
 
-  it('does not render kebab triggers when both permissions are false', async () => {
+  it('still renders kebab (History only) when both mutation permissions are false', async () => {
     hasPermissionMock.mockReturnValue(false);
     render(<ControlDetail />);
 
@@ -170,7 +170,13 @@ describe('ControlDetail — Framework Mappings', () => {
       expect(screen.getByText('SOC 2')).toBeInTheDocument();
     });
 
-    expect(screen.queryByRole('button', { name: /mapping actions for/i })).not.toBeInTheDocument();
+    // Kebab itself remains visible so viewers can open the History drawer.
+    const triggers = screen.getAllByRole('button', { name: /mapping actions for/i });
+    expect(triggers.length).toBeGreaterThan(0);
+    fireEvent.click(triggers[0]);
+    expect(screen.getByRole('menuitem', { name: /history/i })).toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: /^edit$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: /^delete$/i })).not.toBeInTheDocument();
   });
 
   it('opens the modal in edit mode with anchor props derived from the mapping', async () => {
