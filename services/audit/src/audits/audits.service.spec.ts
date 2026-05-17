@@ -256,12 +256,13 @@ describe('AuditsService', () => {
     };
 
     it('should update an audit', async () => {
+      mockPrismaService.audit.findFirst.mockResolvedValue({ id: 'audit-123', organizationId: 'org-123' });
       mockPrismaService.audit.update.mockResolvedValue(mockUpdatedAudit);
 
       const result = await service.update('audit-123', 'org-123', mockUpdateDto);
 
       expect(mockPrismaService.audit.update).toHaveBeenCalledWith({
-        where: { id: 'audit-123', organizationId: 'org-123' },
+        where: { id: 'audit-123' },
         data: expect.objectContaining({
           title: 'Updated Audit Title',
           status: 'in_progress',
@@ -273,6 +274,7 @@ describe('AuditsService', () => {
 
     it('should calculate finding counts when status changes to completed', async () => {
       const completedDto = { status: 'completed' };
+      mockPrismaService.audit.findFirst.mockResolvedValue({ id: 'audit-123', organizationId: 'org-123' });
       mockPrismaService.auditFinding.groupBy.mockResolvedValue([
         { severity: 'critical', _count: { severity: 1 } },
         { severity: 'high', _count: { severity: 2 } },
@@ -315,6 +317,7 @@ describe('AuditsService', () => {
         plannedStartDate: '2024-01-01',
         plannedEndDate: '2024-03-31',
       };
+      mockPrismaService.audit.findFirst.mockResolvedValue({ id: 'audit-123', organizationId: 'org-123' });
       mockPrismaService.audit.update.mockResolvedValue(mockUpdatedAudit);
 
       await service.update('audit-123', 'org-123', dtoWithDates);

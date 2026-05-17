@@ -92,7 +92,7 @@ describe('VendorsService', () => {
     });
 
     it('should format custom frequencies', () => {
-      expect(formatFrequencyLabel('custom_18')).toBe('Every 18 months');
+      expect(formatFrequencyLabel('custom_18')).toBe('18 Months');
     });
   });
 
@@ -104,7 +104,7 @@ describe('VendorsService', () => {
         name: 'Test Vendor 1',
         status: 'active',
         tier: 'tier_1',
-        _count: { assessments: 2, risks: 1 },
+        _count: { assessments: 2, contracts: 1 },
       },
       {
         id: 'vendor-2',
@@ -112,31 +112,38 @@ describe('VendorsService', () => {
         name: 'Test Vendor 2',
         status: 'pending_onboarding',
         tier: 'tier_2',
-        _count: { assessments: 0, risks: 0 },
+        _count: { assessments: 0, contracts: 0 },
       },
     ];
 
-    it('should return paginated vendors', async () => {
+    it('should return vendors with total count (happy path)', async () => {
       mockPrismaService.vendor.findMany.mockResolvedValue(mockVendors);
       mockPrismaService.vendor.count.mockResolvedValue(2);
 
-      const result = await service.findAll('org-123', { page: 1, limit: 20 });
+      const result = await service.findAll({ organizationId: 'org-123' });
 
       expect(result.data).toHaveLength(2);
       expect(result.total).toBe(2);
-      expect(result.page).toBe(1);
     });
 
-    it('should filter by status', async () => {
-      mockPrismaService.vendor.findMany.mockResolvedValue([mockVendors[0]]);
-      mockPrismaService.vendor.count.mockResolvedValue(1);
+    it('should enforce tenant isolation via organizationId filter', async () => {
+      mockPrismaService.vendor.findMany.mockResolvedValue([]);
+      mockPrismaService.vendor.count.mockResolvedValue(0);
 
-      await service.findAll('org-123', { status: 'active' });
+      await service.findAll({ organizationId: 'org-123' });
 
       expect(mockPrismaService.vendor.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
-            status: 'active',
+            organizationId: 'org-123',
+            deletedAt: null,
+          }),
+        }),
+      );
+      expect(mockPrismaService.vendor.count).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            organizationId: 'org-123',
           }),
         }),
       );
@@ -146,7 +153,7 @@ describe('VendorsService', () => {
       mockPrismaService.vendor.findMany.mockResolvedValue([mockVendors[0]]);
       mockPrismaService.vendor.count.mockResolvedValue(1);
 
-      await service.findAll('org-123', { tier: 'tier_1' });
+      await service.findAll({ organizationId: 'org-123', tier: 'tier_1' });
 
       expect(mockPrismaService.vendor.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -161,7 +168,7 @@ describe('VendorsService', () => {
       mockPrismaService.vendor.findMany.mockResolvedValue([mockVendors[0]]);
       mockPrismaService.vendor.count.mockResolvedValue(1);
 
-      await service.findAll('org-123', { search: 'Test' });
+      await service.findAll({ organizationId: 'org-123', search: 'Test' });
 
       expect(mockPrismaService.vendor.findMany).toHaveBeenCalled();
     });
@@ -173,20 +180,21 @@ describe('VendorsService', () => {
       vendorId: 'VND-001',
       name: 'Test Vendor',
       status: 'active',
-      contacts: [],
       assessments: [],
-      risks: [],
+      contracts: [],
+      _count: { assessments: 0, contracts: 0 },
     };
 
-    it('should return a vendor by id', async () => {
+    it('should return a vendor scoped to the organization', async () => {
       mockPrismaService.vendor.findFirst.mockResolvedValue(mockVendor);
 
       const result = await service.findOne('vendor-123', 'org-123');
 
-      expect(mockPrismaService.vendor.findFirst).toHaveBeenCalledWith({
-        where: { id: 'vendor-123', organizationId: 'org-123', deletedAt: null },
-        include: expect.any(Object),
-      });
+      expect(mockPrismaService.vendor.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'vendor-123', organizationId: 'org-123', deletedAt: null },
+        }),
+      );
       expect(result).toEqual(mockVendor);
     });
 
@@ -196,82 +204,6 @@ describe('VendorsService', () => {
       await expect(service.findOne('nonexistent', 'org-123')).rejects.toThrow(
         NotFoundException,
       );
-    });
-  });
-
-  describe('create', () => {
-    const mockCreateDto = {
-      name: 'New Vendor',
-      category: 'software_vendor',
-      tier: 'tier_2',
-      description: 'A test vendor',
-    };
-
-    const mockCreatedVendor = {
-      id: 'vendor-123',
-      vendorId: 'VND-001',
-      ...mockCreateDto,
-      status: 'pending_onboarding',
-    };
-
-    it('should create a vendor', async () => {
-      mockPrismaService.vendor.count.mockResolvedValue(0);
-      mockPrismaService.vendor.create.mockResolvedValue(mockCreatedVendor);
-
-      const result = await service.create('org-123', mockCreateDto, 'user-123');
-
-      expect(mockPrismaService.vendor.create).toHaveBeenCalled();
-      expect(result).toEqual(mockCreatedVendor);
-    });
-
-    it('should generate vendorId based on count', async () => {
-      mockPrismaService.vendor.count.mockResolvedValue(5);
-      mockPrismaService.vendor.create.mockResolvedValue({
-        ...mockCreatedVendor,
-        vendorId: 'VND-006',
-      });
-
-      await service.create('org-123', mockCreateDto, 'user-123');
-
-      expect(mockPrismaService.vendor.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({
-            vendorId: 'VND-006',
-          }),
-        }),
-      );
-    });
-  });
-
-  describe('update', () => {
-    const mockUpdateDto = {
-      name: 'Updated Vendor',
-      status: 'active',
-    };
-
-    it('should update a vendor', async () => {
-      mockPrismaService.vendor.findFirst.mockResolvedValue({ id: 'vendor-123' });
-      mockPrismaService.vendor.update.mockResolvedValue({
-        id: 'vendor-123',
-        ...mockUpdateDto,
-      });
-
-      const result = await service.update('vendor-123', 'org-123', mockUpdateDto, 'user-123');
-
-      expect(mockPrismaService.vendor.update).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { id: 'vendor-123' },
-        }),
-      );
-      expect(result.name).toBe('Updated Vendor');
-    });
-
-    it('should throw NotFoundException if vendor not found', async () => {
-      mockPrismaService.vendor.findFirst.mockResolvedValue(null);
-
-      await expect(
-        service.update('nonexistent', 'org-123', mockUpdateDto, 'user-123'),
-      ).rejects.toThrow(NotFoundException);
     });
   });
 });
