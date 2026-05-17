@@ -81,6 +81,32 @@ and removal of the backup-scheduler's docker socket dependency.
 
 ### Added
 
+#### Control ↔ Requirement Mapping UI Foundation (PR-A)
+
+- New `PATCH /api/mappings/:id` endpoint allowing admin /
+  compliance_manager to update an existing mapping's `mappingType` or
+  `notes`. Tenant-isolated via OR-organization check on both the
+  control's and the framework's org.
+- New `ControlMappingHistory` table capturing every mapping mutation
+  (create, update, delete, restore) with full snapshot.
+  `onDelete: SetNull` so history outlives parent deletion. Indexed
+  `(mappingId, changedAt desc)`.
+- New `MappingHistoryService.record()` invoked inside the same
+  `prisma.$transaction` as every mapping write — guarantees the history
+  row lands atomically with the data change.
+- New `frontend/src/components/mappings/MappingEditorModal` — shared
+  two-mode modal (`requirement-to-controls` and
+  `control-to-requirements`) with stage machine (search → multi-select
+  → per-row-form → submit). Supports both create (via `bulkCreate`)
+  and edit (via `update`).
+- `FrameworkDetail.tsx` and `ControlDetail.tsx`: "Mapped Controls" /
+  "Framework Mappings" chip lists now have an "Add mapping…" button
+  and per-chip kebab menu (Edit / Delete). Gated on `controls:update`
+  / `controls:delete`. Previously read-only.
+- `frameworks` service now has its own `AuditService` (copied from
+  `policies`); all four mapping mutations fire both `AuditLog` (org
+  feed) and `ControlMappingHistory` (entity feed).
+
 #### Multi-Tenant + RBAC E2E Coverage (#308)
 
 - New Playwright specs that gate PR merges:
