@@ -6,7 +6,7 @@
 # =============================================================================
 
 # Build stage
-FROM node:20-alpine@sha256:b88333c42c23fbd91596ebd7fd10de239cedab9617de04142dde7315e3bc0afa AS builder
+FROM node:20-alpine@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293 AS builder
 
 WORKDIR /app
 
@@ -58,7 +58,7 @@ RUN if [ "$VITE_ENABLE_DEV_AUTH" = "true" ]; then \
     fi
 
 # Production stage - Nginx
-FROM nginx:alpine@sha256:1d13701a5f9f3fb01aaa88cef2344d65b6b5bf6b7d9fa4cf0dca557a8d7702ba AS production
+FROM nginx:alpine@sha256:dc48b7a872a79fb541ba5081d320b11b549231bc63ba465a7495afaa7d2ebcb8 AS production
 
 # Patch OS-level CVEs (zlib CVE-2026-22184, CVE-2026-27171)
 RUN apk upgrade --no-cache

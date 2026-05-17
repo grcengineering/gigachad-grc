@@ -147,7 +147,7 @@ export default function TrustCenterSettings() {
 
         <div className="p-6">
           {activeTab === 'general' && (
-            <GeneralSettings config={config} onUpdate={updateConfig} organizationId={organizationId} />
+            <GeneralSettings config={config} onUpdate={updateConfig} />
           )}
           {activeTab === 'branding' && (
             <BrandingSettings config={config} onUpdate={updateConfig} />
@@ -156,7 +156,7 @@ export default function TrustCenterSettings() {
             <DomainSettings config={config} onUpdate={updateConfig} />
           )}
           {activeTab === 'embed' && (
-            <EmbedSettings config={config} organizationId={organizationId} />
+            <EmbedSettings config={config} />
           )}
         </div>
       </div>
@@ -172,14 +172,12 @@ export default function TrustCenterSettings() {
 }
 
 // General Settings Tab
-function GeneralSettings({ 
-  config, 
-  onUpdate, 
-  organizationId 
-}: { 
-  config: TrustCenterConfig; 
+function GeneralSettings({
+  config,
+  onUpdate,
+}: {
+  config: TrustCenterConfig;
   onUpdate: (updates: Partial<TrustCenterConfig>) => void;
-  organizationId: string;
 }) {
   return (
     <div className="space-y-6">
@@ -249,7 +247,7 @@ function GeneralSettings({
         <h3 className="text-lg font-medium text-surface-100 mb-4">Quick Links</h3>
         <div className="flex flex-wrap gap-3">
           <a
-            href={`/trust-center/public?organizationId=${organizationId}`}
+            href="/trust-center/public"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors"
@@ -500,15 +498,13 @@ function DomainSettings({
 }
 
 // Embed Settings Tab
-function EmbedSettings({ 
-  config, 
-  organizationId 
-}: { 
-  config: TrustCenterConfig; 
-  organizationId: string;
-}) {
+function EmbedSettings({ config }: { config: TrustCenterConfig }) {
   const baseUrl = window.location.origin;
-  const trustCenterUrl = `${baseUrl}/trust-center/public?organizationId=${organizationId}`;
+  // The backend resolves the org from the authenticated user's context, not
+  // from a query param. Previously this URL embedded `?organizationId=<uuid>`,
+  // which leaked the tenant id into shared/iframed URLs without affecting
+  // the backend (it ignored the query string). Drop the param.
+  const trustCenterUrl = `${baseUrl}/trust-center/public`;
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);

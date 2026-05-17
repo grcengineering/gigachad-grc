@@ -5,7 +5,7 @@
 # =============================================================================
 
 # Build stage
-FROM node:20-alpine@sha256:b88333c42c23fbd91596ebd7fd10de239cedab9617de04142dde7315e3bc0afa AS builder
+FROM node:20-alpine@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293 AS builder
 
 WORKDIR /app
 
@@ -56,7 +56,7 @@ RUN ls -la node_modules/.prisma/client/ 2>/dev/null | head -5 || echo "Checking 
 RUN npm run build
 
 # Production stage
-FROM node:20-alpine@sha256:b88333c42c23fbd91596ebd7fd10de239cedab9617de04142dde7315e3bc0afa AS production
+FROM node:20-alpine@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293 AS production
 
 # Patch OS-level CVEs, install OpenSSL for Prisma, remove npm (not needed at runtime)
 RUN apk upgrade --no-cache && apk add --no-cache openssl && \
