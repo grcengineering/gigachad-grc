@@ -20,6 +20,10 @@ const BASE_URL = process.env.E2E_BASE_URL ?? 'http://127.0.0.1:3000';
 
 export default defineConfig({
   testDir: './e2e',
+  // Visual regression baselines live under e2e/__snapshots__/<spec>/<name>.png
+  // so they sit next to the specs that own them.
+  snapshotDir: './e2e/__snapshots__',
+  snapshotPathTemplate: '{snapshotDir}/{testFilePath}/{arg}{ext}',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
