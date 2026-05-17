@@ -1,9 +1,4 @@
-import {
-  test,
-  expect,
-  request as pwRequest,
-  APIRequestContext,
-} from '@playwright/test';
+import { test, expect, request as pwRequest, APIRequestContext } from '@playwright/test';
 
 /**
  * Control <-> Requirement Mapping UI — end-to-end CRUD coverage.
@@ -61,8 +56,14 @@ let adminApi: APIRequestContext | undefined;
 
 async function discoverFixture(api: APIRequestContext): Promise<MappingFixture> {
   // 1. Pick the first framework that has at least one non-category
-  //    requirement. The seed loads SOC 2 / ISO 27001 / NIST CSF / HIPAA
-  //    / PCI by default, so this is normally a single hop.
+  //    requirement. The seed loads SOC 2 / ISO 27001 / HIPAA by default —
+  //    but each of those catalogs has ONLY category rows at the top level
+  //    (SOC 2: CC1-CC9, ISO 27001: A.5-A.8, HIPAA: 164.308-164.316). The
+  //    actual non-category leaves are nested under those categories via
+  //    parentId. `GET /api/frameworks/:id/requirements` defaults to
+  //    parentId=null, so we must walk `.children` recursively (or the
+  //    response would only ever contain categories and this discovery
+  //    would always fail).
   const fwRes = await api.get(`${URL_FRAMEWORKS}/api/frameworks`);
   if (!fwRes.ok()) {
     throw new Error(`Could not list frameworks: ${fwRes.status()}`);
@@ -75,16 +76,36 @@ async function discoverFixture(api: APIRequestContext): Promise<MappingFixture> 
     throw new Error('Seed produced no frameworks; cannot pick a target');
   }
 
+  function findLeaf(nodes: any[]): any | undefined {
+    for (const n of nodes) {
+      if (!n.isCategory) return n;
+      if (Array.isArray(n.children) && n.children.length > 0) {
+        const hit = findLeaf(n.children);
+        if (hit) return hit;
+      }
+    }
+    return undefined;
+  }
+
   let chosenFwId: string | undefined;
   let chosenReq: any | undefined;
   for (const fw of frameworks) {
-    const reqRes = await api.get(`${URL_FRAMEWORKS}/api/frameworks/${fw.id}/requirements`);
-    if (!reqRes.ok()) continue;
-    const reqBody = await reqRes.json();
-    const reqs: any[] = Array.isArray(reqBody)
-      ? reqBody
-      : (reqBody.data ?? reqBody.items ?? reqBody.requirements ?? []);
-    const candidate = reqs.find((r) => !r.isCategory);
+    // Use the `/tree` endpoint for full hierarchy; fall back to the regular
+    // endpoint + recurse into `.children` if `/tree` is unavailable.
+    let reqs: any[] = [];
+    const treeRes = await api.get(`${URL_FRAMEWORKS}/api/frameworks/${fw.id}/requirements/tree`);
+    if (treeRes.ok()) {
+      const body = await treeRes.json();
+      reqs = Array.isArray(body) ? body : (body.data ?? body.items ?? body.requirements ?? []);
+    } else {
+      const reqRes = await api.get(`${URL_FRAMEWORKS}/api/frameworks/${fw.id}/requirements`);
+      if (!reqRes.ok()) continue;
+      const reqBody = await reqRes.json();
+      reqs = Array.isArray(reqBody)
+        ? reqBody
+        : (reqBody.data ?? reqBody.items ?? reqBody.requirements ?? []);
+    }
+    const candidate = findLeaf(reqs);
     if (candidate) {
       chosenFwId = fw.id;
       chosenReq = candidate;
@@ -92,7 +113,11 @@ async function discoverFixture(api: APIRequestContext): Promise<MappingFixture> 
     }
   }
   if (!chosenFwId || !chosenReq) {
-    throw new Error('No framework with a non-category requirement found in seed');
+    throw new Error(
+      'No framework with a non-category requirement found in seed. ' +
+        'This is a test-code bug, not a seed bug: every seeded catalog has ' +
+        'non-category leaves nested under categories. Walk `.children` recursively.'
+    );
   }
 
   // 2. Pick two controls that are NOT already mapped to this requirement.
@@ -105,7 +130,7 @@ async function discoverFixture(api: APIRequestContext): Promise<MappingFixture> 
     ? ctrlBody
     : (ctrlBody.data ?? ctrlBody.items ?? ctrlBody.controls ?? []);
   const mappedIds = new Set<string>(
-    (chosenReq.mappings ?? []).map((m: any) => m.control?.id ?? m.controlId),
+    (chosenReq.mappings ?? []).map((m: any) => m.control?.id ?? m.controlId)
   );
   const unmapped = controls.filter((c) => !mappedIds.has(c.id));
   if (unmapped.length < 2) {
@@ -160,7 +185,7 @@ test.afterAll(async () => {
 async function openRequirementDetail(
   page: import('@playwright/test').Page,
   frameworkId: string,
-  requirementRef: string,
+  requirementRef: string
 ) {
   await page.goto(`/frameworks/${frameworkId}`);
   await page.waitForLoadState('networkidle');
@@ -198,7 +223,9 @@ test.describe('Mapping flow — adminA', () => {
     await cleanRequirementMappings(adminApi!, fixture!.requirementId);
   });
 
-  test('creates two mappings (primary + supporting) from the requirement side', async ({ page }) => {
+  test('creates two mappings (primary + supporting) from the requirement side', async ({
+    page,
+  }) => {
     const f = fixture!;
     await openRequirementDetail(page, f.frameworkId, f.requirementRef);
 
@@ -332,7 +359,7 @@ test.describe('Mapping flow — adminA', () => {
 
     // Backend confirms removal.
     const listRes = await adminApi!.get(
-      `${URL_FRAMEWORKS}/api/mappings/by-requirement/${f.requirementId}`,
+      `${URL_FRAMEWORKS}/api/mappings/by-requirement/${f.requirementId}`
     );
     expect(listRes.ok()).toBeTruthy();
     const list = await listRes.json();
@@ -363,7 +390,9 @@ test.describe('Mapping flow — adminA', () => {
 
     // Multi-select the target requirement by reference.
     await modal
-      .getByRole('checkbox', { name: new RegExp(f.requirementRef.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') })
+      .getByRole('checkbox', {
+        name: new RegExp(f.requirementRef.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'),
+      })
       .check();
     await modal.getByRole('button', { name: /Next|Continue/i }).click();
 
@@ -373,7 +402,7 @@ test.describe('Mapping flow — adminA', () => {
 
     // Chip appears on the control side.
     await expect(
-      page.getByRole('listitem').filter({ hasText: new RegExp(f.requirementRef, 'i') }),
+      page.getByRole('listitem').filter({ hasText: new RegExp(f.requirementRef, 'i') })
     ).toBeVisible();
 
     // And on the requirement side after we navigate back.
@@ -442,7 +471,9 @@ test.describe('Mapping flow — complianceA (create + edit, no delete)', () => {
     await cleanRequirementMappings(adminApi!, fixture!.requirementId);
   });
 
-  test('compliance manager can create then edit a mapping; no Delete menu item', async ({ page }) => {
+  test('compliance manager can create then edit a mapping; no Delete menu item', async ({
+    page,
+  }) => {
     const f = fixture!;
     await openRequirementDetail(page, f.frameworkId, f.requirementRef);
 

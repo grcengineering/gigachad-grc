@@ -300,6 +300,23 @@ test.beforeAll(async ({}, testInfo) => {
   expect(sampleControlId, 'sampleControlId').toBeTruthy();
 
   // ----- Discover a framework + requirement + control for mapping tests -----
+  // NOTE: the seeded catalog frameworks (SOC 2, ISO 27001, HIPAA) have ONLY
+  // category rows at the top level — non-category leaf requirements are
+  // nested under them via parentId. The plain /requirements endpoint
+  // returns top-level only (parentId IS NULL), so we hit /requirements/tree
+  // which returns every row flat, then pick the first non-category one.
+  // Fallback to the regular endpoint + recurse into `.children` if the
+  // tree endpoint is unavailable.
+  const findLeafRequirement = (nodes: any[]): any | undefined => {
+    for (const n of nodes) {
+      if (!n.isCategory) return n;
+      if (Array.isArray(n.children) && n.children.length > 0) {
+        const hit = findLeafRequirement(n.children);
+        if (hit) return hit;
+      }
+    }
+    return undefined;
+  };
   const fwRes = await getWithRetry(admin, `${FRAMEWORKS_URL}/api/frameworks`);
   if (fwRes.ok()) {
     const fwBody = await fwRes.json();
@@ -307,16 +324,26 @@ test.beforeAll(async ({}, testInfo) => {
       ? fwBody
       : (fwBody.data ?? fwBody.items ?? fwBody.frameworks ?? []);
     for (const fw of fws) {
-      const reqRes = await getWithRetry(
+      let reqs: any[] = [];
+      const treeRes = await getWithRetry(
         admin,
-        `${FRAMEWORKS_URL}/api/frameworks/${fw.id}/requirements`
+        `${FRAMEWORKS_URL}/api/frameworks/${fw.id}/requirements/tree`
       );
-      if (!reqRes.ok()) continue;
-      const reqBody = await reqRes.json();
-      const reqs = Array.isArray(reqBody)
-        ? reqBody
-        : (reqBody.data ?? reqBody.items ?? reqBody.requirements ?? []);
-      const req = reqs.find((r: any) => !r.isCategory);
+      if (treeRes.ok()) {
+        const body = await treeRes.json();
+        reqs = Array.isArray(body) ? body : (body.data ?? body.items ?? body.requirements ?? []);
+      } else {
+        const reqRes = await getWithRetry(
+          admin,
+          `${FRAMEWORKS_URL}/api/frameworks/${fw.id}/requirements`
+        );
+        if (!reqRes.ok()) continue;
+        const reqBody = await reqRes.json();
+        reqs = Array.isArray(reqBody)
+          ? reqBody
+          : (reqBody.data ?? reqBody.items ?? reqBody.requirements ?? []);
+      }
+      const req = findLeafRequirement(reqs);
       if (req) {
         sampleFrameworkId = fw.id;
         sampleRequirementId = req.id;
@@ -378,15 +405,16 @@ test.beforeAll(async ({}, testInfo) => {
 
   // Fail loud if mapping-fixture discovery silently failed. Without this,
   // each mapping test produces an opaque "Error: <var> from beforeAll" that
-  // takes minutes to trace back to a flaky framework-service startup.
+  // takes minutes to trace back.
   if (!sampleFrameworkId || !sampleRequirementId || !sampleMappingControlId) {
     throw new Error(
       '[rbac.spec] mapping fixture discovery failed in beforeAll. ' +
         `sampleFrameworkId=${sampleFrameworkId}, ` +
         `sampleRequirementId=${sampleRequirementId}, ` +
         `sampleMappingControlId=${sampleMappingControlId}. ` +
-        'Likely cause: frameworks service (:3002) was not ready when tests started, ' +
-        'or the seed did not populate frameworks. Check the workflow readiness poll.'
+        'Possible causes: seed did not run (controls service returned 0 frameworks), ' +
+        'or /api/frameworks/:id/requirements/tree did not return any non-category leaf ' +
+        '(check the catalog data and ensure findLeafRequirement walks .children).'
     );
   }
   if (!sharedMappingId) {
