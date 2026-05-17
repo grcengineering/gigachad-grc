@@ -222,7 +222,18 @@ const getExportColumns = (reportType: ReportType) => {
   }
 };
 
-// Generate mock trend data based on actual risks
+// Approximate trend data derived from the current risk list. This is NOT
+// historical state — it filters the current risks by createdAt and applies
+// today's status to past months. A risk created in Jan that was open then
+// and mitigated in Mar will show as "mitigated" for both months. Accurate
+// trends require backend-recorded status snapshots, which the risks API
+// doesn't yet expose. Use this chart as a directional indicator only.
+//
+// Previously this function added `Math.random() * 3 - 1` "variance for
+// visual interest" to the openRisks and mitigatedRisks counts, which
+// fabricated synthetic noise on top of an already-approximate metric.
+// That variance has been removed; the numbers are now deterministic and
+// derived from real data.
 function generateTrendData(risks: Risk[], months: number = 6) {
   const now = new Date();
   const trendData = [];
@@ -235,7 +246,8 @@ function generateTrendData(risks: Risk[], months: number = 6) {
     const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
     const risksUpToDate = risks.filter((r) => new Date(r.createdAt) <= monthEnd);
 
-    // Calculate metrics
+    // Calculate metrics. NOTE: status fields reflect TODAY's state, not the
+    // state on `monthEnd`. See function-level comment.
     const openRisks = risksUpToDate.filter(
       (r) => r.status === 'open' || r.status === 'in_treatment'
     ).length;
@@ -246,14 +258,11 @@ function generateTrendData(risks: Risk[], months: number = 6) {
       (r) => r.inherentRisk === 'critical' || r.inherentRisk === 'high'
     ).length;
 
-    // Simulate some variance for visual interest (in real app, this would be actual historical data)
-    const variance = Math.floor(Math.random() * 3) - 1;
-
     trendData.push({
       month: monthName,
-      openRisks: Math.max(0, openRisks + variance),
-      mitigatedRisks: Math.max(0, mitigatedRisks + variance),
-      criticalHighRisks: Math.max(0, criticalHighRisks),
+      openRisks,
+      mitigatedRisks,
+      criticalHighRisks,
       totalRisks: risksUpToDate.length,
     });
   }
@@ -426,8 +435,12 @@ export default function RiskReports() {
       const response = await risksApi.list({
         ...(filters as any),
         limit: 1000,
-        // Note: In a real app, dateRange would be sent to backend
-        // For now, we'll filter client-side
+        // The risks list endpoint does not yet accept a date range. Until
+        // it does (RiskListParams in apiTypes.ts would need start/end), we
+        // filter by createdAt client-side below. This means we still pay
+        // for transferring the full list across the network — acceptable
+        // while the tenant risk-count cap is the 1000 limit above; revisit
+        // if larger tenants need this view.
       });
       return response.data;
     },
