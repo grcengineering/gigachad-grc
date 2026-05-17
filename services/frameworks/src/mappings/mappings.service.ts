@@ -1,10 +1,23 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateMappingDto } from './dto/mapping.dto';
+import { AuditService } from '../audit/audit.service';
+import { MappingHistoryService } from './mapping-history.service';
+import { CreateMappingDto, UpdateMappingDto } from './dto/mapping.dto';
+
+const MAPPING_INCLUDE = {
+  framework: { select: { id: true, name: true, type: true } },
+  requirement: { select: { id: true, reference: true, title: true } },
+  control: { select: { id: true, controlId: true, title: true, category: true } },
+} as const;
 
 @Injectable()
 export class MappingsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private history: MappingHistoryService,
+    private auditService: AuditService
+  ) {}
 
   async findAll(frameworkId?: string, controlId?: string) {
     const where: { frameworkId?: string; controlId?: string } = {};
@@ -13,15 +26,8 @@ export class MappingsService {
 
     return this.prisma.controlMapping.findMany({
       where,
-      include: {
-        framework: { select: { id: true, name: true, type: true } },
-        requirement: { select: { id: true, reference: true, title: true } },
-        control: { select: { id: true, controlId: true, title: true, category: true } },
-      },
-      orderBy: [
-        { framework: { name: 'asc' } },
-        { requirement: { order: 'asc' } },
-      ],
+      include: MAPPING_INCLUDE,
+      orderBy: [{ framework: { name: 'asc' } }, { requirement: { order: 'asc' } }],
     });
   }
 
@@ -44,7 +50,7 @@ export class MappingsService {
     });
   }
 
-  async create(userId: string, dto: CreateMappingDto) {
+  async create(userId: string, organizationId: string, dto: CreateMappingDto) {
     // Check for existing mapping
     const existing = await this.prisma.controlMapping.findFirst({
       where: {
@@ -58,52 +64,125 @@ export class MappingsService {
       throw new ConflictException('This mapping already exists');
     }
 
-    return this.prisma.controlMapping.create({
-      data: {
-        frameworkId: dto.frameworkId,
-        requirementId: dto.requirementId,
-        controlId: dto.controlId,
-        mappingType: dto.mappingType || 'primary',
-        notes: dto.notes,
-        createdBy: userId,
-      },
-      include: {
-        framework: { select: { id: true, name: true } },
-        requirement: { select: { id: true, reference: true, title: true } },
-        control: { select: { id: true, controlId: true, title: true } },
-      },
+    const mapping = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.controlMapping.create({
+        data: {
+          frameworkId: dto.frameworkId,
+          requirementId: dto.requirementId,
+          controlId: dto.controlId,
+          mappingType: dto.mappingType || 'primary',
+          notes: dto.notes,
+          createdBy: userId,
+        },
+        include: MAPPING_INCLUDE,
+      });
+
+      await this.history.record(tx, created.id, 'create', this.serializeSnapshot(created), userId);
+
+      return created;
     });
+
+    await this.auditService.log({
+      organizationId,
+      userId,
+      action: 'mapping.created',
+      entityType: 'control_mapping',
+      entityId: mapping.id,
+      entityName: `${mapping.control.controlId} -> ${mapping.requirement.reference}`,
+      description: `Mapped control ${mapping.control.controlId} to requirement ${mapping.requirement.reference}`,
+    });
+
+    return mapping;
   }
 
-  async delete(id: string, organizationId: string) {
-    // SECURITY: Verify the mapping's control belongs to user's organization
-    // This prevents users from deleting mappings for controls in other organizations
-    const mapping = await this.prisma.controlMapping.findFirst({
-      where: { 
+  async update(id: string, dto: UpdateMappingDto, userId: string, organizationId: string) {
+    const existing = await this.prisma.controlMapping.findFirst({
+      where: {
         id,
-        control: {
-          OR: [
-            { organizationId }, // Control belongs to user's org
-            { organizationId: null }, // Or is a global control
-          ],
-        },
+        OR: [
+          { control: { OR: [{ organizationId }, { organizationId: null }] } },
+          { framework: { OR: [{ organizationId }, { organizationId: null }] } },
+        ],
       },
+      include: MAPPING_INCLUDE,
+    });
+
+    if (!existing) {
+      throw new NotFoundException(`Mapping with ID ${id} not found`);
+    }
+
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const result = await tx.controlMapping.update({
+        where: { id },
+        data: {
+          mappingType: dto.mappingType,
+          notes: dto.notes,
+        },
+        include: MAPPING_INCLUDE,
+      });
+
+      await this.history.record(tx, result.id, 'update', this.serializeSnapshot(result), userId);
+
+      return result;
+    });
+
+    await this.auditService.log({
+      organizationId,
+      userId,
+      action: 'mapping.updated',
+      entityType: 'control_mapping',
+      entityId: updated.id,
+      entityName: `${updated.control.controlId} -> ${updated.requirement.reference}`,
+      description: `Updated mapping ${updated.control.controlId} -> ${updated.requirement.reference}`,
+      changes: {
+        before: { mappingType: existing.mappingType, notes: existing.notes },
+        after: { mappingType: updated.mappingType, notes: updated.notes },
+      },
+    });
+
+    return updated;
+  }
+
+  async delete(id: string, userId: string, organizationId: string) {
+    const mapping = await this.prisma.controlMapping.findFirst({
+      where: {
+        id,
+        OR: [
+          { control: { OR: [{ organizationId }, { organizationId: null }] } },
+          { framework: { OR: [{ organizationId }, { organizationId: null }] } },
+        ],
+      },
+      include: MAPPING_INCLUDE,
     });
 
     if (!mapping) {
       throw new NotFoundException(`Mapping with ID ${id} not found`);
     }
 
-    await this.prisma.controlMapping.delete({ where: { id: mapping.id } });
+    await this.prisma.$transaction(async (tx) => {
+      await this.history.record(tx, mapping.id, 'delete', this.serializeSnapshot(mapping), userId);
+      await tx.controlMapping.delete({ where: { id: mapping.id } });
+    });
+
+    await this.auditService.log({
+      organizationId,
+      userId,
+      action: 'mapping.deleted',
+      entityType: 'control_mapping',
+      entityId: mapping.id,
+      entityName: `${mapping.control.controlId} -> ${mapping.requirement.reference}`,
+      description: `Deleted mapping ${mapping.control.controlId} -> ${mapping.requirement.reference}`,
+    });
+
     return { success: true };
   }
 
-  async bulkCreate(userId: string, mappings: CreateMappingDto[]) {
+  async bulkCreate(userId: string, organizationId: string, mappings: CreateMappingDto[]) {
     const results = [];
 
     for (const dto of mappings) {
       try {
-        const mapping = await this.create(userId, dto);
+        const mapping = await this.createForBulk(userId, organizationId, dto);
         results.push({ success: true, mapping });
       } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -118,14 +197,75 @@ export class MappingsService {
     return results;
   }
 
+  private async createForBulk(userId: string, organizationId: string, dto: CreateMappingDto) {
+    const existing = await this.prisma.controlMapping.findFirst({
+      where: {
+        frameworkId: dto.frameworkId,
+        requirementId: dto.requirementId,
+        controlId: dto.controlId,
+      },
+    });
+
+    if (existing) {
+      throw new ConflictException('This mapping already exists');
+    }
+
+    const mapping = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.controlMapping.create({
+        data: {
+          frameworkId: dto.frameworkId,
+          requirementId: dto.requirementId,
+          controlId: dto.controlId,
+          mappingType: dto.mappingType || 'primary',
+          notes: dto.notes,
+          createdBy: userId,
+        },
+        include: MAPPING_INCLUDE,
+      });
+
+      await this.history.record(tx, created.id, 'create', this.serializeSnapshot(created), userId);
+
+      return created;
+    });
+
+    await this.auditService.log({
+      organizationId,
+      userId,
+      action: 'mapping.bulk_created',
+      entityType: 'control_mapping',
+      entityId: mapping.id,
+      entityName: `${mapping.control.controlId} -> ${mapping.requirement.reference}`,
+      description: `Bulk-created mapping ${mapping.control.controlId} -> ${mapping.requirement.reference}`,
+    });
+
+    return mapping;
+  }
+
+  private serializeSnapshot(mapping: {
+    frameworkId: string;
+    requirementId: string;
+    controlId: string;
+    mappingType: string;
+    notes: string | null;
+    createdBy: string;
+    createdAt: Date;
+  }): Prisma.InputJsonValue {
+    return {
+      frameworkId: mapping.frameworkId,
+      requirementId: mapping.requirementId,
+      controlId: mapping.controlId,
+      mappingType: mapping.mappingType,
+      notes: mapping.notes,
+      createdBy: mapping.createdBy,
+      createdAt: mapping.createdAt.toISOString(),
+    };
+  }
+
   async getControlCoverage(organizationId: string) {
     // Get all controls with their framework mappings
     const controls = await this.prisma.control.findMany({
       where: {
-        OR: [
-          { organizationId: null },
-          { organizationId },
-        ],
+        OR: [{ organizationId: null }, { organizationId }],
       },
       include: {
         mappings: {
@@ -136,13 +276,13 @@ export class MappingsService {
       },
     });
 
-    const mapped = controls.filter(c => c.mappings.length > 0);
-    const unmapped = controls.filter(c => c.mappings.length === 0);
+    const mapped = controls.filter((c) => c.mappings.length > 0);
+    const unmapped = controls.filter((c) => c.mappings.length === 0);
 
     // Group by framework
     const byFramework: Record<string, number> = {};
-    controls.forEach(c => {
-      c.mappings.forEach(m => {
+    controls.forEach((c) => {
+      c.mappings.forEach((m) => {
         byFramework[m.framework.name] = (byFramework[m.framework.name] || 0) + 1;
       });
     });
@@ -153,7 +293,11 @@ export class MappingsService {
       unmappedControls: unmapped.length,
       coveragePercent: Math.round((mapped.length / controls.length) * 100),
       byFramework,
-      unmappedControlIds: unmapped.map(c => ({ id: c.id, controlId: c.controlId, title: c.title })),
+      unmappedControlIds: unmapped.map((c) => ({
+        id: c.id,
+        controlId: c.controlId,
+        title: c.title,
+      })),
     };
   }
 
@@ -165,15 +309,15 @@ export class MappingsService {
       },
     });
 
-    const mapped = requirements.filter(r => r.mappings.length > 0);
-    const unmapped = requirements.filter(r => r.mappings.length === 0);
+    const mapped = requirements.filter((r) => r.mappings.length > 0);
+    const unmapped = requirements.filter((r) => r.mappings.length === 0);
 
     return {
       totalRequirements: requirements.length,
       mappedRequirements: mapped.length,
       unmappedRequirements: unmapped.length,
       coveragePercent: Math.round((mapped.length / requirements.length) * 100),
-      unmappedRequirementIds: unmapped.map(r => ({
+      unmappedRequirementIds: unmapped.map((r) => ({
         id: r.id,
         reference: r.reference,
         title: r.title,
@@ -181,6 +325,3 @@ export class MappingsService {
     };
   }
 }
-
-
-
