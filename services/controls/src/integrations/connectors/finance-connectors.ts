@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { BaseConnector } from './base-connector';
 import axios from 'axios';
+import * as crypto from 'crypto';
 
 // =============================================================================
 // Finance & Accounting Connectors - Fully Implemented
@@ -321,39 +322,143 @@ export class NetSuiteConnector extends BaseConnector {
     super('NetSuiteConnector');
   }
 
+  private percentEncode(s: string): string {
+    return encodeURIComponent(s)
+      .replace(/!/g, '%21')
+      .replace(/'/g, '%27')
+      .replace(/\(/g, '%28')
+      .replace(/\)/g, '%29')
+      .replace(/\*/g, '%2A');
+  }
+
+  /**
+   * Build OAuth 1.0a HMAC-SHA256 Authorization header for NetSuite.
+   * realm = accountId (with hyphens converted to underscores per NetSuite spec).
+   */
+  private buildOAuthHeader(
+    method: string,
+    url: string,
+    config: { accountId: string; consumerKey: string; consumerSecret: string; tokenId: string; tokenSecret: string },
+  ): string {
+    const oauthParams: Record<string, string> = {
+      oauth_consumer_key: config.consumerKey,
+      oauth_nonce: crypto.randomBytes(16).toString('hex'),
+      oauth_signature_method: 'HMAC-SHA256',
+      oauth_timestamp: Math.floor(Date.now() / 1000).toString(),
+      oauth_token: config.tokenId,
+      oauth_version: '1.0',
+    };
+
+    // Parse URL and merge query params into signing params
+    const urlObj = new URL(url);
+    const allParams: Record<string, string> = { ...oauthParams };
+    urlObj.searchParams.forEach((value, key) => { allParams[key] = value; });
+
+    const sortedKeys = Object.keys(allParams).sort();
+    const paramString = sortedKeys
+      .map((k) => `${this.percentEncode(k)}=${this.percentEncode(allParams[k])}`)
+      .join('&');
+
+    const baseUrl = `${urlObj.protocol}//${urlObj.host}${urlObj.pathname}`;
+    const baseString = `${method.toUpperCase()}&${this.percentEncode(baseUrl)}&${this.percentEncode(paramString)}`;
+    const signingKey = `${this.percentEncode(config.consumerSecret)}&${this.percentEncode(config.tokenSecret)}`;
+    const signature = crypto.createHmac('sha256', signingKey).update(baseString).digest('base64');
+
+    oauthParams.oauth_signature = signature;
+
+    const realm = config.accountId.replace(/-/g, '_').toUpperCase();
+    const headerParams = ['oauth_consumer_key', 'oauth_token', 'oauth_signature_method', 'oauth_timestamp', 'oauth_nonce', 'oauth_version', 'oauth_signature']
+      .map((k) => `${k}="${this.percentEncode(oauthParams[k])}"`)
+      .join(', ');
+
+    return `OAuth realm="${realm}", ${headerParams}`;
+  }
+
   async testConnection(config: any): Promise<{ success: boolean; message: string; details?: any }> {
-    if (!config.accountId) {
-      return { success: false, message: 'Account ID is required' };
+    if (!config.accountId || !config.consumerKey || !config.consumerSecret || !config.tokenId || !config.tokenSecret) {
+      return { success: false, message: 'accountId, consumerKey, consumerSecret, tokenId, and tokenSecret are required' };
     }
 
     try {
-      // NetSuite uses OAuth 1.0 - simplified for this implementation
-      this.setBaseURL(`https://${config.accountId}.suitetalk.api.netsuite.com`);
-      // OAuth 1.0 signature would be implemented here
+      const accountHost = config.accountId.toLowerCase().replace(/_/g, '-');
+      const url = `https://${accountHost}.suitetalk.api.netsuite.com/services/rest/query/v1/suiteql?limit=1`;
+      const authHeader = this.buildOAuthHeader('POST', url, config);
+      const response = await axios.post(url, { q: 'SELECT id FROM customer LIMIT 1' }, {
+        headers: {
+          Authorization: authHeader,
+          'Content-Type': 'application/json',
+          Prefer: 'transient',
+        },
+        timeout: 30000,
+        validateStatus: (s) => s < 500,
+      });
 
-      const result = await this.get<any>('/services/rest/record/v1/metadata-catalog');
-      if (result.error) {
-        return { success: false, message: result.error };
+      if (response.status >= 400) {
+        return { success: false, message: `HTTP ${response.status}: ${JSON.stringify(response.data || response.statusText)}` };
       }
-
-      return {
-        success: true,
-        message: 'Connected to NetSuite',
-        details: result.data,
-      };
+      return { success: true, message: 'Connected to NetSuite', details: response.data };
     } catch (error: any) {
       return { success: false, message: error.message || 'Connection test failed' };
     }
   }
 
-  async sync(_config: any): Promise<any> {
-    // Implementation would fetch customers, transactions, items
+  async sync(config: any): Promise<any> {
+    if (!config.accountId || !config.consumerKey || !config.consumerSecret || !config.tokenId || !config.tokenSecret) {
+      throw new Error('NetSuite credentials missing: accountId, consumerKey, consumerSecret, tokenId, tokenSecret required');
+    }
+
+    const accountHost = config.accountId.toLowerCase().replace(/_/g, '-');
+    const baseUrl = `https://${accountHost}.suitetalk.api.netsuite.com`;
+    const customers: any[] = [];
+    const transactions: any[] = [];
+    const items: any[] = [];
+    const errors: string[] = [];
+
+    const runSuiteQL = async (sql: string): Promise<any[]> => {
+      const url = `${baseUrl}/services/rest/query/v1/suiteql`;
+      const authHeader = this.buildOAuthHeader('POST', url, config);
+      const response = await axios.post(url, { q: sql }, {
+        headers: {
+          Authorization: authHeader,
+          'Content-Type': 'application/json',
+          Prefer: 'transient',
+        },
+        timeout: 30000,
+        validateStatus: (s) => s < 500,
+      });
+      if (response.status >= 400) {
+        throw new Error(`HTTP ${response.status}: ${JSON.stringify(response.data || response.statusText)}`);
+      }
+      return response.data?.items || [];
+    };
+
+    try {
+      const rows = await runSuiteQL('SELECT id, entitytitle FROM customer LIMIT 1000');
+      customers.push(...rows);
+    } catch (error: any) {
+      errors.push(`customers: ${error.message}`);
+    }
+
+    try {
+      const rows = await runSuiteQL('SELECT id, type, total FROM transaction LIMIT 1000');
+      transactions.push(...rows);
+    } catch (error: any) {
+      errors.push(`transactions: ${error.message}`);
+    }
+
+    try {
+      const rows = await runSuiteQL('SELECT id, itemid, displayname FROM item LIMIT 1000');
+      items.push(...rows);
+    } catch (error: any) {
+      errors.push(`items: ${error.message}`);
+    }
+
     return {
-      customers: { total: 0, items: [] },
-      transactions: { total: 0, items: [] },
-      items: { total: 0, items: [] },
+      customers: { total: customers.length, items: customers },
+      transactions: { total: transactions.length, items: transactions },
+      items: { total: items.length, items },
       collectedAt: new Date().toISOString(),
-      errors: ['NetSuite OAuth 1.0 implementation requires additional OAuth library'],
+      errors,
     };
   }
 }
@@ -1426,85 +1531,134 @@ export class StripePaymentsConnector extends BaseConnector {
 
 @Injectable()
 export class AmplitudeConnector extends BaseConnector {
-  constructor() {
-    super('AmplitudeConnector');
-  }
-  async testConnection(config: any): Promise<{ success: boolean; message: string; details?: any }> {
-    if (!config.apiKey) return { success: false, message: 'API key required' };
+  constructor() { super('AmplitudeConnector'); }
+  async testConnection(config: { apiKey: string; secretKey: string }): Promise<{ success: boolean; message: string; details?: any }> {
+    if (!config.apiKey || !config.secretKey) return { success: false, message: 'apiKey and secretKey are required' };
     try {
       const auth = Buffer.from(`${config.apiKey}:${config.secretKey}`).toString('base64');
       this.setHeaders({ Authorization: `Basic ${auth}`, 'Content-Type': 'application/json' });
       this.setBaseURL('https://amplitude.com/api');
-      const result = await this.get<any>('/2/usersearch');
-      return result.error
-        ? { success: false, message: result.error }
-        : { success: true, message: 'Connected to Amplitude', details: result.data };
-    } catch (error: any) {
-      return { success: false, message: error.message || 'Connection test failed' };
-    }
+      const result = await this.get('/2/usersearch?user=');
+      return result.error ? { success: false, message: result.error } : { success: true, message: 'Connected to Amplitude', details: result.data };
+    } catch (error: any) { return { success: false, message: error.message || 'Connection test failed' }; }
   }
-  async sync(config: any): Promise<any> {
+  async sync(config: { apiKey: string; secretKey: string }): Promise<any> {
+    if (!config.apiKey || !config.secretKey) {
+      throw new Error('Amplitude credentials missing: apiKey and secretKey required');
+    }
     const events: any[] = [];
     const users: any[] = [];
     const errors: string[] = [];
+    const auth = Buffer.from(`${config.apiKey}:${config.secretKey}`).toString('base64');
+    this.setHeaders({ Authorization: `Basic ${auth}`, 'Content-Type': 'application/json' });
+    this.setBaseURL('https://amplitude.com/api');
+
+    // Sessions over the last 7 days as a proxy for activity volume.
+    // The full event export (`/2/events/export`) returns gzipped raw data and is
+    // too heavy to fetch and decode for a routine sync; we capture summary data here
+    // and surface the gap so consumers know.
+    const now = new Date();
+    const start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const fmt = (d: Date) => `${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, '0')}${String(d.getUTCDate()).padStart(2, '0')}T${String(d.getUTCHours()).padStart(2, '0')}`;
     try {
-      const auth = Buffer.from(`${config.apiKey}:${config.secretKey}`).toString('base64');
-      this.setHeaders({ Authorization: `Basic ${auth}`, 'Content-Type': 'application/json' });
-      this.setBaseURL('https://amplitude.com/api');
-      return {
-        events: { total: events.length, items: events },
-        users: { total: users.length, items: users },
-        collectedAt: new Date().toISOString(),
-        errors,
-      };
+      const sessions = await this.get(`/2/sessions/length?start=${fmt(start)}&end=${fmt(now)}`);
+      if (sessions.data) {
+        events.push({ metric: 'sessions/length', window: { start: fmt(start), end: fmt(now) }, data: sessions.data });
+      } else if (sessions.error) {
+        errors.push(`sessions: ${sessions.error}`);
+      }
     } catch (error: any) {
-      return {
-        events: { total: 0, items: [] },
-        users: { total: 0, items: [] },
-        collectedAt: new Date().toISOString(),
-        errors: [error.message],
-      };
+      errors.push(`sessions: ${error.message}`);
     }
+    errors.push('Raw event export (/2/events/export) not implemented: response is a gzipped multi-MB stream that requires decompression and parsing per the Amplitude Behavioral plan.');
+
+    // Users via usersearch (limited — only returns matches for a query).
+    try {
+      const result = await this.get<any>(`/2/usersearch?user=`);
+      if (result.data?.matches && Array.isArray(result.data.matches)) {
+        users.push(...result.data.matches);
+      } else if (result.error) {
+        errors.push(`users: ${result.error}`);
+      }
+    } catch (error: any) {
+      errors.push(`users: ${error.message}`);
+    }
+
+    return {
+      events: { total: events.length, items: events },
+      users: { total: users.length, items: users },
+      collectedAt: new Date().toISOString(),
+      errors,
+    };
   }
 }
 
 @Injectable()
 export class MixpanelConnector extends BaseConnector {
-  constructor() {
-    super('MixpanelConnector');
-  }
+  constructor() { super('MixpanelConnector'); }
   async testConnection(config: any): Promise<{ success: boolean; message: string; details?: any }> {
-    if (!config.projectToken) return { success: false, message: 'Project token required' };
+    if (!config.projectToken || !config.apiSecret) return { success: false, message: 'projectToken and apiSecret are required' };
     try {
+      const auth = Buffer.from(`${config.apiSecret}:`).toString('base64');
+      this.setHeaders({ Authorization: `Basic ${auth}` });
       this.setBaseURL('https://mixpanel.com/api/2.0');
-      const result = await this.get<any>(`/events/?token=${config.projectToken}`);
-      return result.error
-        ? { success: false, message: result.error }
-        : { success: true, message: 'Connected to Mixpanel', details: result.data };
-    } catch (error: any) {
-      return { success: false, message: error.message || 'Connection test failed' };
-    }
+      const result = await this.get(`/events/names?type=general&limit=1`);
+      return result.error ? { success: false, message: result.error } : { success: true, message: 'Connected to Mixpanel', details: result.data };
+    } catch (error: any) { return { success: false, message: error.message || 'Connection test failed' }; }
   }
-  async sync(_config: any): Promise<any> {
+  async sync(config: any): Promise<any> {
+    if (!config.projectToken || !config.apiSecret) {
+      throw new Error('Mixpanel credentials missing: projectToken and apiSecret required');
+    }
     const events: any[] = [];
     const funnels: any[] = [];
-    const _errors: string[] = [];
+    const errors: string[] = [];
+    const auth = Buffer.from(`${config.apiSecret}:`).toString('base64');
+    this.setHeaders({ Authorization: `Basic ${auth}` });
+    this.setBaseURL('https://mixpanel.com/api/2.0');
+
+    // Project event totals — top event names, then daily totals over a 7-day window
     try {
-      this.setBaseURL('https://mixpanel.com/api/2.0');
-      return {
-        events: { total: events.length, items: events },
-        funnels: { total: funnels.length, items: funnels },
-        collectedAt: new Date().toISOString(),
-        errors: [],
-      };
+      const namesResp = await this.get<any>('/events/names?type=general&limit=100');
+      if (namesResp.error) {
+        errors.push(`event names: ${namesResp.error}`);
+      } else if (Array.isArray(namesResp.data)) {
+        const eventArray = JSON.stringify(namesResp.data);
+        const totalsResp = await this.get<any>(`/events?event=${encodeURIComponent(eventArray)}&type=general&unit=day&interval=7`);
+        if (totalsResp.data) {
+          if (totalsResp.data.data && totalsResp.data.data.series && totalsResp.data.data.values) {
+            for (const [eventName, series] of Object.entries(totalsResp.data.data.values)) {
+              events.push({ event: eventName, series });
+            }
+          } else {
+            events.push(totalsResp.data);
+          }
+        } else if (totalsResp.error) {
+          errors.push(`events totals: ${totalsResp.error}`);
+        }
+      }
     } catch (error: any) {
-      return {
-        events: { total: 0, items: [] },
-        funnels: { total: 0, items: [] },
-        collectedAt: new Date().toISOString(),
-        errors: [error.message],
-      };
+      errors.push(`events: ${error.message}`);
     }
+
+    // Funnel list
+    try {
+      const result = await this.get<any>('/funnels/list');
+      if (Array.isArray(result.data)) {
+        funnels.push(...result.data);
+      } else if (result.error) {
+        errors.push(`funnels: ${result.error}`);
+      }
+    } catch (error: any) {
+      errors.push(`funnels: ${error.message}`);
+    }
+
+    return {
+      events: { total: events.length, items: events },
+      funnels: { total: funnels.length, items: funnels },
+      collectedAt: new Date().toISOString(),
+      errors,
+    };
   }
 }
 
@@ -2297,45 +2451,135 @@ export class ElasticsearchConnector extends BaseConnector {
 
 @Injectable()
 export class SnowflakeConnector extends BaseConnector {
-  constructor() {
-    super('SnowflakeConnector');
+  constructor() { super('SnowflakeConnector'); }
+
+  /**
+   * Build a JWT for Snowflake key-pair auth.
+   * Requires privateKey (PEM). The public key fingerprint is derived from the private key.
+   * Optionally accepts a pre-computed publicKeyFingerprint (with or without the SHA256: prefix)
+   * which will be normalized to the required `SHA256:<base64>` form.
+   */
+  private buildSnowflakeJwt(config: { account: string; username: string; privateKey: string; publicKeyFingerprint?: string }): string {
+    const accountPart = config.account.toUpperCase().split('.')[0];
+    const userPart = config.username.toUpperCase();
+    const qualifiedUser = `${accountPart}.${userPart}`;
+    const sub = qualifiedUser;
+    let fingerprint: string;
+    if (config.publicKeyFingerprint) {
+      fingerprint = config.publicKeyFingerprint.startsWith('SHA256:')
+        ? config.publicKeyFingerprint
+        : `SHA256:${config.publicKeyFingerprint}`;
+    } else {
+      const publicKeyDer = crypto.createPublicKey(config.privateKey).export({ format: 'der', type: 'spki' });
+      fingerprint = 'SHA256:' + crypto.createHash('sha256').update(publicKeyDer).digest('base64');
+    }
+    const iss = `${qualifiedUser}.${fingerprint}`;
+    const now = Math.floor(Date.now() / 1000);
+    const header = { alg: 'RS256', typ: 'JWT' };
+    const payload = { iss, sub, iat: now, exp: now + 3600 };
+    const b64u = (input: Buffer | string) => (typeof input === 'string' ? Buffer.from(input) : input).toString('base64').replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+    const signingInput = `${b64u(JSON.stringify(header))}.${b64u(JSON.stringify(payload))}`;
+    const signer = crypto.createSign('RSA-SHA256');
+    signer.update(signingInput);
+    const signature = signer.sign(config.privateKey);
+    return `${signingInput}.${b64u(signature)}`;
   }
+
   async testConnection(config: any): Promise<{ success: boolean; message: string; details?: any }> {
-    if (!config.account) return { success: false, message: 'Account required' };
+    if (!config.account || !config.username) {
+      return { success: false, message: 'account and username are required' };
+    }
+    if (!config.privateKey) {
+      return { success: false, message: 'Snowflake REST API requires JWT key-pair authentication; configure SNOWFLAKE_PRIVATE_KEY' };
+    }
+    if (!config.warehouse) {
+      return { success: false, message: 'warehouse is required for Snowflake REST API queries' };
+    }
     try {
-      // Snowflake uses JDBC/ODBC, but we can test via REST API if available
-      this.setBaseURL(`https://${config.account}.snowflakecomputing.com`);
-      const result = await this.get<any>('/api/v1/statements');
-      return result.error
-        ? { success: false, message: result.error }
-        : { success: true, message: 'Connected to Snowflake', details: result.data };
+      const jwt = this.buildSnowflakeJwt({ account: config.account, username: config.username, privateKey: config.privateKey, publicKeyFingerprint: config.publicKeyFingerprint });
+      const url = `https://${config.account}.snowflakecomputing.com/api/v2/statements`;
+      const response = await axios.post(url, { statement: 'SELECT CURRENT_VERSION()', warehouse: config.warehouse, ...(config.role ? { role: config.role } : {}) }, {
+        headers: {
+          'Authorization': `Bearer ${jwt}`,
+          'X-Snowflake-Authorization-Token-Type': 'KEYPAIR_JWT',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        timeout: 30000,
+        validateStatus: (s) => s < 500,
+      });
+      if (response.status >= 400) {
+        return { success: false, message: `HTTP ${response.status}: ${JSON.stringify(response.data || response.statusText)}` };
+      }
+      return { success: true, message: 'Connected to Snowflake', details: response.data };
     } catch (error: any) {
       return { success: false, message: error.message || 'Connection test failed' };
     }
   }
-  async sync(_config: any): Promise<any> {
+
+  async sync(config: any): Promise<any> {
+    if (!config.account || !config.username) {
+      throw new Error('Snowflake credentials missing: account and username required');
+    }
+    if (!config.privateKey) {
+      throw new Error('Snowflake REST API requires JWT key-pair authentication; configure SNOWFLAKE_PRIVATE_KEY');
+    }
+    if (!config.warehouse) {
+      throw new Error('Snowflake warehouse is required for REST API queries');
+    }
+
+    const jwt = this.buildSnowflakeJwt({ account: config.account, username: config.username, privateKey: config.privateKey, publicKeyFingerprint: config.publicKeyFingerprint });
+    const url = `https://${config.account}.snowflakecomputing.com/api/v2/statements`;
     const databases: any[] = [];
     const warehouses: any[] = [];
     const users: any[] = [];
-    const _errors: string[] = [];
+    const errors: string[] = [];
+
+    const runStatement = async (statement: string): Promise<any[]> => {
+      const response = await axios.post(url, { statement, warehouse: config.warehouse, ...(config.role ? { role: config.role } : {}) }, {
+        headers: {
+          'Authorization': `Bearer ${jwt}`,
+          'X-Snowflake-Authorization-Token-Type': 'KEYPAIR_JWT',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        timeout: 60000,
+        validateStatus: (s) => s < 500,
+      });
+      if (response.status >= 400) {
+        throw new Error(`HTTP ${response.status}: ${JSON.stringify(response.data || response.statusText)}`);
+      }
+      return response.data?.data || [];
+    };
+
     try {
-      // Snowflake typically requires SQL queries via JDBC/ODBC
-      return {
-        databases: { total: databases.length, items: databases },
-        warehouses: { total: warehouses.length, items: warehouses },
-        users: { total: users.length, items: users },
-        collectedAt: new Date().toISOString(),
-        errors: ['Snowflake requires JDBC/ODBC connection for full sync'],
-      };
+      const rows = await runStatement('SHOW DATABASES');
+      databases.push(...rows);
     } catch (error: any) {
-      return {
-        databases: { total: 0, items: [] },
-        warehouses: { total: 0, items: [] },
-        users: { total: 0, items: [] },
-        collectedAt: new Date().toISOString(),
-        errors: [error.message],
-      };
+      errors.push(`databases: ${error.message}`);
     }
+
+    try {
+      const rows = await runStatement('SHOW WAREHOUSES');
+      warehouses.push(...rows);
+    } catch (error: any) {
+      errors.push(`warehouses: ${error.message}`);
+    }
+
+    try {
+      const rows = await runStatement('SHOW USERS');
+      users.push(...rows);
+    } catch (error: any) {
+      errors.push(`users: ${error.message}`);
+    }
+
+    return {
+      databases: { total: databases.length, items: databases },
+      warehouses: { total: warehouses.length, items: warehouses },
+      users: { total: users.length, items: users },
+      collectedAt: new Date().toISOString(),
+      errors,
+    };
   }
 }
 

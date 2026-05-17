@@ -1,6 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { BaseConnector } from './base-connector';
 import axios from 'axios';
+import {
+  CognitoIdentityProviderClient,
+  ListUsersCommand,
+  ListGroupsCommand,
+} from '@aws-sdk/client-cognito-identity-provider';
+import {
+  createGoogleServiceAccountJwt,
+  exchangeGoogleJwtForAccessToken,
+  parseServiceAccountKey,
+} from './utils/google-jwt';
 
 // =============================================================================
 // IT Asset Management Connectors - Fully Implemented
@@ -1518,38 +1528,91 @@ export class AWSCognitoConnector extends BaseConnector {
     super('AWSCognitoConnector');
   }
   async testConnection(config: any): Promise<{ success: boolean; message: string; details?: any }> {
-    if (!config.userPoolId) return { success: false, message: 'User Pool ID required' };
+    if (!config.accessKeyId || !config.secretAccessKey || !config.region || !config.userPoolId) {
+      return {
+        success: false,
+        message: 'accessKeyId, secretAccessKey, region, and userPoolId are required',
+      };
+    }
     try {
-      // AWS Cognito requires AWS SDK - simplified test
-      this.setBaseURL(`https://cognito-idp.${config.region}.amazonaws.com`);
+      const client = new CognitoIdentityProviderClient({
+        region: config.region,
+        credentials: {
+          accessKeyId: config.accessKeyId,
+          secretAccessKey: config.secretAccessKey,
+        },
+      });
+      const result = await client.send(
+        new ListUsersCommand({ UserPoolId: config.userPoolId, Limit: 1 })
+      );
       return {
         success: true,
-        message: 'AWS Cognito connection configured (requires AWS SDK for full sync)',
-        details: {},
+        message: `Connected to AWS Cognito user pool ${config.userPoolId}`,
+        details: { sampleCount: result.Users?.length ?? 0 },
       };
     } catch (error: any) {
       return { success: false, message: error.message || 'Connection test failed' };
     }
   }
-  async sync(_config: any): Promise<any> {
+  async sync(config: any): Promise<any> {
+    if (!config.accessKeyId || !config.secretAccessKey || !config.region || !config.userPoolId) {
+      throw new Error(
+        'AWS Cognito credentials missing: accessKeyId, secretAccessKey, region, userPoolId required'
+      );
+    }
+    const client = new CognitoIdentityProviderClient({
+      region: config.region,
+      credentials: {
+        accessKeyId: config.accessKeyId,
+        secretAccessKey: config.secretAccessKey,
+      },
+    });
     const users: any[] = [];
     const groups: any[] = [];
-    const _errors: string[] = [];
+    const errors: string[] = [];
+
     try {
-      return {
-        users: { total: users.length, items: users },
-        groups: { total: groups.length, items: groups },
-        collectedAt: new Date().toISOString(),
-        errors: ['AWS Cognito requires AWS SDK for full sync'],
-      };
+      let paginationToken: string | undefined;
+      do {
+        const resp = await client.send(
+          new ListUsersCommand({
+            UserPoolId: config.userPoolId,
+            Limit: 60,
+            PaginationToken: paginationToken,
+          })
+        );
+        if (resp.Users) users.push(...resp.Users);
+        paginationToken = resp.PaginationToken;
+        if (users.length >= 5000) break;
+      } while (paginationToken);
     } catch (error: any) {
-      return {
-        users: { total: 0, items: [] },
-        groups: { total: 0, items: [] },
-        collectedAt: new Date().toISOString(),
-        errors: [error.message],
-      };
+      errors.push(`users: ${error.message}`);
     }
+
+    try {
+      let nextToken: string | undefined;
+      do {
+        const resp = await client.send(
+          new ListGroupsCommand({
+            UserPoolId: config.userPoolId,
+            Limit: 60,
+            NextToken: nextToken,
+          })
+        );
+        if (resp.Groups) groups.push(...resp.Groups);
+        nextToken = resp.NextToken;
+        if (groups.length >= 5000) break;
+      } while (nextToken);
+    } catch (error: any) {
+      errors.push(`groups: ${error.message}`);
+    }
+
+    return {
+      users: { total: users.length, items: users },
+      groups: { total: groups.length, items: groups },
+      collectedAt: new Date().toISOString(),
+      errors,
+    };
   }
 }
 
@@ -2147,42 +2210,107 @@ export class GoogleDriveConnector extends BaseConnector {
   constructor() {
     super('GoogleDriveConnector');
   }
+
+  private async getDriveToken(config: {
+    serviceAccountKey: string;
+    adminEmail?: string;
+  }): Promise<string> {
+    const credentials = parseServiceAccountKey(config.serviceAccountKey);
+    const jwt = createGoogleServiceAccountJwt(credentials, {
+      scope: 'https://www.googleapis.com/auth/drive.readonly',
+      subject: config.adminEmail,
+    });
+    return exchangeGoogleJwtForAccessToken(jwt, credentials.token_uri);
+  }
+
   async testConnection(config: any): Promise<{ success: boolean; message: string; details?: any }> {
     if (!config.serviceAccountKey)
-      return { success: false, message: 'Service account key required' };
+      return { success: false, message: 'serviceAccountKey is required' };
     try {
-      // Google Drive requires OAuth2 - simplified test
-      return {
-        success: true,
-        message: 'Google Drive connection configured (requires OAuth2 setup)',
-        details: {},
-      };
+      const token = await this.getDriveToken(config);
+      const response = await axios.get('https://www.googleapis.com/drive/v3/about?fields=user', {
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 30000,
+        validateStatus: (s) => s < 500,
+      });
+      if (response.status >= 400) {
+        return {
+          success: false,
+          message: `HTTP ${response.status}: ${JSON.stringify(response.data || response.statusText)}`,
+        };
+      }
+      return { success: true, message: 'Connected to Google Drive', details: response.data };
     } catch (error: any) {
       return { success: false, message: error.message || 'Connection test failed' };
     }
   }
-  async sync(_config: any): Promise<any> {
+
+  async sync(config: any): Promise<any> {
+    if (!config.serviceAccountKey) {
+      throw new Error('Google Drive credentials missing: serviceAccountKey required');
+    }
+    const token = await this.getDriveToken(config);
+    const headers = { Authorization: `Bearer ${token}` };
     const files: any[] = [];
     const folders: any[] = [];
     const sharedDrives: any[] = [];
-    const _errors: string[] = [];
+    const errors: string[] = [];
+
+    const paginate = async (
+      baseUrl: string,
+      accumulator: any[],
+      itemKey: string
+    ): Promise<void> => {
+      let pageToken: string | undefined;
+      do {
+        const sep = baseUrl.includes('?') ? '&' : '?';
+        const url = pageToken
+          ? `${baseUrl}${sep}pageToken=${encodeURIComponent(pageToken)}`
+          : baseUrl;
+        const resp = await axios.get(url, {
+          headers,
+          timeout: 30000,
+          validateStatus: (s) => s < 500,
+        });
+        if (resp.status >= 400) {
+          throw new Error(`HTTP ${resp.status}: ${JSON.stringify(resp.data || resp.statusText)}`);
+        }
+        const items = resp.data?.[itemKey];
+        if (Array.isArray(items)) accumulator.push(...items);
+        pageToken = resp.data?.nextPageToken;
+        if (accumulator.length >= 5000) break;
+      } while (pageToken);
+    };
+
     try {
-      return {
-        files: { total: files.length, items: files },
-        folders: { total: folders.length, items: folders },
-        sharedDrives: { total: sharedDrives.length, items: sharedDrives },
-        collectedAt: new Date().toISOString(),
-        errors: ['Google Drive requires OAuth2 authentication'],
-      };
+      const filesUrl = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent("mimeType!='application/vnd.google-apps.folder'")}&pageSize=1000&fields=nextPageToken,files(id,name,owners,permissions,mimeType,size,webViewLink)`;
+      await paginate(filesUrl, files, 'files');
     } catch (error: any) {
-      return {
-        files: { total: 0, items: [] },
-        folders: { total: 0, items: [] },
-        sharedDrives: { total: 0, items: [] },
-        collectedAt: new Date().toISOString(),
-        errors: [error.message],
-      };
+      errors.push(`files: ${error.message}`);
     }
+
+    try {
+      const foldersUrl = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent("mimeType='application/vnd.google-apps.folder'")}&pageSize=1000&fields=nextPageToken,files(id,name,owners,permissions,parents)`;
+      await paginate(foldersUrl, folders, 'files');
+    } catch (error: any) {
+      errors.push(`folders: ${error.message}`);
+    }
+
+    try {
+      const drivesUrl =
+        'https://www.googleapis.com/drive/v3/drives?pageSize=100&fields=nextPageToken,drives(id,name,createdTime,restrictions)';
+      await paginate(drivesUrl, sharedDrives, 'drives');
+    } catch (error: any) {
+      errors.push(`sharedDrives: ${error.message}`);
+    }
+
+    return {
+      files: { total: files.length, items: files },
+      folders: { total: folders.length, items: folders },
+      sharedDrives: { total: sharedDrives.length, items: sharedDrives },
+      collectedAt: new Date().toISOString(),
+      errors,
+    };
   }
 }
 
