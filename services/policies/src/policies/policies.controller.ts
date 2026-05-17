@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Controller,
   Get,
   Post,
@@ -33,6 +34,30 @@ import {
 import { CurrentUser, UserContext } from '@gigachad-grc/shared';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 import { Response } from 'express';
+
+// Allowlist for policy document uploads (initial upload and new versions).
+// Anything outside this set is rejected at the interceptor layer before the
+// service handler runs. Exported so it can be exercised directly in tests.
+export const POLICY_MIME_ALLOWLIST = [
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'text/markdown',
+  'text/plain',
+];
+export const POLICY_MAX_BYTES = 25 * 1024 * 1024;
+
+export function policyFileFilter(
+  _req: unknown,
+  file: { mimetype: string },
+  cb: (err: Error | null, acceptFile: boolean) => void,
+): void {
+  if (POLICY_MIME_ALLOWLIST.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new BadRequestException(`Unsupported file type: ${file.mimetype}`), false);
+  }
+}
 
 /**
  * SECURITY: Sanitize filename for Content-Disposition header
@@ -101,7 +126,12 @@ export class PoliciesController {
   }
 
   @Post()
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: POLICY_MAX_BYTES },
+      fileFilter: policyFileFilter,
+    })
+  )
   @ApiOperation({ summary: 'Upload a new policy' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -142,7 +172,12 @@ export class PoliciesController {
   }
 
   @Post(':id/versions')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: POLICY_MAX_BYTES },
+      fileFilter: policyFileFilter,
+    })
+  )
   @ApiOperation({ summary: 'Upload a new version of the policy' })
   @ApiParam({ name: 'id', description: 'Policy ID' })
   @ApiConsumes('multipart/form-data')

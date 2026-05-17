@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Controller,
   Get,
   Post,
@@ -25,6 +26,28 @@ import { IsString, IsOptional, IsBoolean, IsNumber } from 'class-validator';
 import { FrameworksService } from './frameworks.service';
 import { CurrentUser, UserContext } from '@gigachad-grc/shared';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
+
+// Allowlist for framework requirement bulk-upload files (CSV / Excel).
+// Anything outside this set is rejected at the interceptor layer before the
+// service handler runs. Exported so it can be exercised directly in tests.
+export const FRAMEWORK_IMPORT_MIME_ALLOWLIST = [
+  'text/csv',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+];
+export const FRAMEWORK_IMPORT_MAX_BYTES = 25 * 1024 * 1024;
+
+export function frameworkImportFileFilter(
+  _req: unknown,
+  file: { mimetype: string },
+  cb: (err: Error | null, acceptFile: boolean) => void,
+): void {
+  if (FRAMEWORK_IMPORT_MIME_ALLOWLIST.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new BadRequestException(`Unsupported file type: ${file.mimetype}`), false);
+  }
+}
 
 class CreateFrameworkDto {
   @ApiProperty()
@@ -192,8 +215,13 @@ export class FrameworksController {
 
   @Post(':id/requirements/bulk-upload')
   @UseGuards(DevAuthGuard)
-  @UseInterceptors(FileInterceptor('file'))
-  @ApiOperation({ summary: 'Bulk upload requirements from CSV, Excel, or JSON file' })
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: FRAMEWORK_IMPORT_MAX_BYTES },
+      fileFilter: frameworkImportFileFilter,
+    })
+  )
+  @ApiOperation({ summary: 'Bulk upload requirements from CSV or Excel file' })
   @ApiParam({ name: 'id', description: 'Framework ID' })
   @ApiResponse({ status: 201, description: 'Requirements uploaded successfully' })
   async bulkUploadRequirements(@Param('id') id: string, @UploadedFile() file: Express.Multer.File) {

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Controller,
   Get,
   Post,
@@ -29,6 +30,29 @@ import { DevAuthGuard } from '../auth/dev-auth.guard';
 import { PermissionGuard } from '../auth/permission.guard';
 import { RequirePermission } from '../auth/decorators/require-permission.decorator';
 import { Resource, Action } from '../permissions/dto/permission.dto';
+
+// Allowlist for BC/DR plan document uploads. Anything outside this set is
+// rejected at the interceptor layer before the service handler runs.
+// Exported so it can be exercised directly in tests.
+export const BCDR_PLAN_MIME_ALLOWLIST = [
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'text/plain',
+];
+export const BCDR_PLAN_MAX_BYTES = 25 * 1024 * 1024;
+
+export function bcdrPlanFileFilter(
+  _req: unknown,
+  file: { mimetype: string },
+  cb: (err: Error | null, acceptFile: boolean) => void,
+): void {
+  if (BCDR_PLAN_MIME_ALLOWLIST.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new BadRequestException(`Unsupported file type: ${file.mimetype}`), false);
+  }
+}
 
 @ApiTags('bcdr/plans')
 @ApiBearerAuth()
@@ -139,7 +163,12 @@ export class BCDRPlansController {
   }
 
   @Post(':id/upload')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: BCDR_PLAN_MAX_BYTES },
+      fileFilter: bcdrPlanFileFilter,
+    }),
+  )
   @ApiOperation({ summary: 'Upload plan document' })
   @ApiParam({ name: 'id', description: 'Plan ID' })
   @ApiConsumes('multipart/form-data')

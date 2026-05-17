@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Controller,
   Get,
   Post,
@@ -43,6 +44,35 @@ import {
   ENDPOINT_RATE_LIMITS,
 } from '@gigachad-grc/shared';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
+
+// Allowlist for evidence uploads. Anything outside this set is rejected at the
+// interceptor layer before the service handler runs. Exported so it can be
+// exercised directly in tests.
+export const EVIDENCE_MIME_ALLOWLIST = [
+  'application/pdf',
+  'image/png',
+  'image/jpeg',
+  'text/csv',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'text/plain',
+  'application/json',
+];
+export const EVIDENCE_MAX_BYTES = 50 * 1024 * 1024;
+
+export function evidenceFileFilter(
+  _req: unknown,
+  file: { mimetype: string },
+  cb: (err: Error | null, acceptFile: boolean) => void,
+): void {
+  if (EVIDENCE_MIME_ALLOWLIST.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new BadRequestException(`Unsupported file type: ${file.mimetype}`), false);
+  }
+}
 
 /**
  * SECURITY: Sanitize filename for Content-Disposition header
@@ -131,7 +161,12 @@ export class EvidenceController {
   @Post()
   @Roles('admin', 'compliance_manager')
   @EndpointRateLimit(ENDPOINT_RATE_LIMITS.FILE_UPLOAD)
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: EVIDENCE_MAX_BYTES },
+      fileFilter: evidenceFileFilter,
+    })
+  )
   @ApiOperation({ summary: 'Upload evidence' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({

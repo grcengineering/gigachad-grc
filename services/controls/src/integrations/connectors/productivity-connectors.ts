@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { BaseConnector } from './base-connector';
 import axios from 'axios';
+import { safeFetch, SSRFProtectionError } from '@gigachad-grc/shared';
 import { createGoogleServiceAccountJwt, exchangeGoogleJwtForAccessToken, parseServiceAccountKey } from './utils/google-jwt';
 
 // =============================================================================
@@ -355,16 +356,25 @@ export class PodioConnector extends BaseConnector {
   async testConnection(config: any): Promise<{ success: boolean; message: string; details?: any }> {
     if (!config.clientId) return { success: false, message: 'Credentials required' };
     try {
-      const tokenResponse = await axios.post(
+      // safeFetch protects against SSRF (defense-in-depth even with a fixed host).
+      const tokenResponse = await safeFetch(
         'https://api.podio.com/oauth/token',
-        new URLSearchParams({
-          grant_type: 'client_credentials',
-          client_id: config.clientId,
-          client_secret: config.clientSecret,
-        }),
-        { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            grant_type: 'client_credentials',
+            client_id: config.clientId,
+            client_secret: config.clientSecret,
+          }).toString(),
+        }
       );
-      const accessToken = tokenResponse.data?.access_token;
+      if (tokenResponse.status < 200 || tokenResponse.status >= 300) {
+        const body = await tokenResponse.text().catch(() => '');
+        return { success: false, message: `Token request failed: HTTP ${tokenResponse.status} ${body.slice(0, 200)}` };
+      }
+      const tokenData = await tokenResponse.json().catch(() => null);
+      const accessToken = tokenData?.access_token;
       if (!accessToken) return { success: false, message: 'Failed to obtain access token' };
       this.setHeaders({
         Authorization: `OAuth2 ${accessToken}`,
@@ -380,6 +390,9 @@ export class PodioConnector extends BaseConnector {
             details: result.data,
           };
     } catch (error: any) {
+      if (error instanceof SSRFProtectionError) {
+        return { success: false, message: `SSRF protection blocked request: ${error.message}` };
+      }
       return { success: false, message: error.message || 'Connection test failed' };
     }
   }
@@ -388,16 +401,29 @@ export class PodioConnector extends BaseConnector {
     const apps: any[] = [];
     const errors: string[] = [];
     try {
-      const tokenResponse = await axios.post(
+      const tokenResponse = await safeFetch(
         'https://api.podio.com/oauth/token',
-        new URLSearchParams({
-          grant_type: 'client_credentials',
-          client_id: config.clientId,
-          client_secret: config.clientSecret,
-        }),
-        { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            grant_type: 'client_credentials',
+            client_id: config.clientId,
+            client_secret: config.clientSecret,
+          }).toString(),
+        }
       );
-      const accessToken = tokenResponse.data?.access_token;
+      if (tokenResponse.status < 200 || tokenResponse.status >= 300) {
+        const body = await tokenResponse.text().catch(() => '');
+        return {
+          workspaces: { total: 0, items: [] },
+          apps: { total: 0, items: [] },
+          collectedAt: new Date().toISOString(),
+          errors: [`Token request failed: HTTP ${tokenResponse.status} ${body.slice(0, 200)}`],
+        };
+      }
+      const tokenData = await tokenResponse.json().catch(() => null);
+      const accessToken = tokenData?.access_token;
       if (!accessToken)
         return {
           workspaces: { total: 0, items: [] },
@@ -421,11 +447,15 @@ export class PodioConnector extends BaseConnector {
         errors,
       };
     } catch (error: any) {
+      const msg =
+        error instanceof SSRFProtectionError
+          ? `SSRF protection blocked request: ${error.message}`
+          : error.message;
       return {
         workspaces: { total: 0, items: [] },
         apps: { total: 0, items: [] },
         collectedAt: new Date().toISOString(),
-        errors: [error.message],
+        errors: [msg],
       };
     }
   }

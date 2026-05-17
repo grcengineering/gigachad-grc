@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { BaseConnector } from './base-connector';
 import axios from 'axios';
 import * as crypto from 'crypto';
+import { safeFetch, SSRFProtectionError } from '@gigachad-grc/shared';
 
 // =============================================================================
 // Additional Integration Connectors - Fully Implemented
@@ -177,16 +178,22 @@ export class MimecastAwarenessConnector extends BaseConnector {
     try {
       const uri = '/api/awareness-training/company/get-safe-score-details';
       const { headers } = this.mimecastSign('POST', uri);
-      const response = await axios.post(`https://api.mimecast.com${uri}`, { data: [] }, {
+      // safeFetch protects against SSRF (defense-in-depth even with a fixed host).
+      const response = await safeFetch(`https://api.mimecast.com${uri}`, {
+        method: 'POST',
         headers,
-        timeout: 30000,
-        validateStatus: (s) => s < 500,
+        body: JSON.stringify({ data: [] }),
       });
       if (response.status >= 400) {
-        return { success: false, message: `HTTP ${response.status}: ${JSON.stringify(response.data?.fail || response.data || response.statusText)}` };
+        const body = await response.text().catch(() => '');
+        return { success: false, message: `HTTP ${response.status}: ${body.slice(0, 500)}` };
       }
-      return { success: true, message: 'Connected to Mimecast Awareness Training', details: response.data };
+      const data = await response.json().catch(() => null);
+      return { success: true, message: 'Connected to Mimecast Awareness Training', details: data };
     } catch (error: any) {
+      if (error instanceof SSRFProtectionError) {
+        return { success: false, message: `SSRF protection blocked request: ${error.message}` };
+      }
       return { success: false, message: error.message || 'Connection test failed' };
     }
   }
@@ -201,19 +208,25 @@ export class MimecastAwarenessConnector extends BaseConnector {
     const errors: string[] = [];
     let completionRate = 0;
 
+    const ssrfMsg = (error: any) =>
+      error instanceof SSRFProtectionError
+        ? `SSRF protection blocked request: ${error.message}`
+        : error.message;
+
     // Fetch safe score details (users)
     try {
       const uri = '/api/awareness-training/company/get-safe-score-details';
       const { headers } = this.mimecastSign('POST', uri);
-      const response = await axios.post(`https://api.mimecast.com${uri}`, { data: [] }, {
+      const response = await safeFetch(`https://api.mimecast.com${uri}`, {
+        method: 'POST',
         headers,
-        timeout: 30000,
-        validateStatus: (s) => s < 500,
+        body: JSON.stringify({ data: [] }),
       });
       if (response.status >= 400) {
         errors.push(`safe-score-details: HTTP ${response.status}`);
       } else {
-        const safeScoreData = response.data?.data || [];
+        const data = await response.json().catch(() => null);
+        const safeScoreData = data?.data || [];
         for (const entry of safeScoreData) {
           const userList = entry?.userDetails || entry?.users || [];
           if (Array.isArray(userList)) {
@@ -238,28 +251,29 @@ export class MimecastAwarenessConnector extends BaseConnector {
         }
       }
     } catch (error: any) {
-      errors.push(`safe-score-details: ${error.message}`);
+      errors.push(`safe-score-details: ${ssrfMsg(error)}`);
     }
 
     // Fetch awareness campaigns (modules)
     try {
       const uri = '/api/awareness-training/campaign/get-campaigns';
       const { headers } = this.mimecastSign('POST', uri);
-      const response = await axios.post(`https://api.mimecast.com${uri}`, { data: [] }, {
+      const response = await safeFetch(`https://api.mimecast.com${uri}`, {
+        method: 'POST',
         headers,
-        timeout: 30000,
-        validateStatus: (s) => s < 500,
+        body: JSON.stringify({ data: [] }),
       });
       if (response.status >= 400) {
         errors.push(`get-campaigns: HTTP ${response.status}`);
       } else {
-        const campaigns = response.data?.data || [];
+        const data = await response.json().catch(() => null);
+        const campaigns = data?.data || [];
         for (const c of campaigns) {
           modules.push(c);
         }
       }
     } catch (error: any) {
-      errors.push(`get-campaigns: ${error.message}`);
+      errors.push(`get-campaigns: ${ssrfMsg(error)}`);
     }
 
     if (users.length > 0) {

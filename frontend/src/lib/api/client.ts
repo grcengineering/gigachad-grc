@@ -6,7 +6,7 @@
  */
 
 import axios, { AxiosError, AxiosResponse } from 'axios';
-import { secureStorage, STORAGE_KEYS, migrateLegacyStorage } from '../secureStorage';
+import { secureStorage, STORAGE_KEYS, migrateLegacyStorage, getCurrentOrgId } from '../secureStorage';
 import { isApiError } from '../apiTypes';
 
 // Migrate legacy storage on module load
@@ -112,8 +112,7 @@ api.interceptors.request.use((config) => {
   }
 
   // Add organization ID
-  const orgId =
-    secureStorage.get(STORAGE_KEYS.ORGANIZATION_ID) || localStorage.getItem('organizationId');
+  const orgId = getCurrentOrgId();
   if (orgId) {
     config.headers['x-organization-id'] = orgId;
   }

@@ -78,7 +78,14 @@ export default function Integrations() {
 
   const { isLoading } = useQuery({
     queryKey: ['integration-types'],
-    queryFn: () => integrationsApi.getTypes().then((res) => res.data).catch(() => null),
+    queryFn: () =>
+      integrationsApi
+        .getTypes()
+        .then((res) => res.data)
+        .catch((err) => {
+          console.warn('integrations.getTypes failed:', err);
+          return null;
+        }),
   });
 
   // Always use the comprehensive local INTEGRATION_TYPES which includes all categories

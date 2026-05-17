@@ -1,4 +1,4 @@
-import { secureStorage, STORAGE_KEYS } from './secureStorage';
+import { secureStorage, STORAGE_KEYS, getCurrentOrgId } from './secureStorage';
 
 const originalFetch = window.fetch.bind(window);
 
@@ -18,8 +18,7 @@ window.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Res
 
   const token = secureStorage.get(STORAGE_KEYS.TOKEN) || localStorage.getItem('token');
   const userId = secureStorage.get(STORAGE_KEYS.USER_ID) || localStorage.getItem('userId');
-  const orgId =
-    secureStorage.get(STORAGE_KEYS.ORGANIZATION_ID) || localStorage.getItem('organizationId');
+  const orgId = getCurrentOrgId();
 
   const headers = new Headers(
     init?.headers || (input instanceof Request ? input.headers : undefined)
