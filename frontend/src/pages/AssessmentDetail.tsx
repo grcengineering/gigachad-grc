@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeftIcon, TrashIcon, PencilIcon } from '@heroicons/react/24/outline';
 import { assessmentsApi, vendorsApi } from '../lib/api';
 import { VendorAssessment, Vendor } from '../lib/apiTypes';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface AssessmentFormProps {
   assessment: VendorAssessment | null;
@@ -584,6 +585,7 @@ function AssessmentView({ assessment, onEdit, onDelete }: { assessment: VendorAs
 export default function AssessmentDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [assessment, setAssessment] = useState<VendorAssessment | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -610,8 +612,14 @@ export default function AssessmentDetail() {
 
   const handleSave = async (formData: Partial<VendorAssessment>) => {
     try {
-      // Get organizationId from localStorage with fallback to default org
-      const organizationId = localStorage.getItem('organizationId') || '8924f0c1-7bb1-4be8-84ee-ad8725c712bf';
+      // Organization ID must come from the authenticated user. Previously
+      // this fell back to a hardcoded UUID, which routed unauthenticated
+      // writes into a random tenant's data.
+      const organizationId = user?.organizationId;
+      if (!organizationId) {
+        console.error('Cannot save assessment: no authenticated user / organizationId');
+        return;
+      }
       
       // Clean up form data - remove empty strings and undefined values for optional fields
       const cleanedData: Record<string, unknown> = {

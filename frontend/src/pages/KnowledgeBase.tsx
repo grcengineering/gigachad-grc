@@ -52,6 +52,14 @@ export default function KnowledgeBase() {
   };
 
   const parseCsv = (csvText: string) => {
+    // Organization ID must come from the authenticated user. Previously this
+    // was hardcoded to 'default-org', which routed every CSV-imported entry
+    // into a fictitious tenant regardless of who was signed in.
+    const organizationId = user?.organizationId;
+    if (!organizationId) {
+      throw new Error('Cannot import knowledge-base entries: no authenticated user / organizationId');
+    }
+
     const lines = csvText.trim().split('\n');
     const headers = parseCsvLine(lines[0]);
 
@@ -61,7 +69,7 @@ export default function KnowledgeBase() {
 
       const values = parseCsvLine(lines[i]);
       const entry: any = {
-        organizationId: 'default-org',
+        organizationId,
       };
 
       headers.forEach((header, index) => {

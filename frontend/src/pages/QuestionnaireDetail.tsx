@@ -5,6 +5,7 @@ import { questionnairesApi } from '../lib/api';
 import { Button } from '@/components/Button';
 import { SkeletonDetailHeader, SkeletonDetailSection } from '@/components/Skeleton';
 import { KnowledgeBaseSearchPanel } from '@/components/trust/KnowledgeBaseSearchPanel';
+import { useAuth } from '@/contexts/AuthContext';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 
@@ -33,6 +34,7 @@ interface Question {
 export default function QuestionnaireDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [questionnaire, setQuestionnaire] = useState<Questionnaire | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -98,12 +100,19 @@ export default function QuestionnaireDetail() {
   };
 
   const updateAnswer = async (questionId: string, answer: string) => {
+    // x-user-id used to be hardcoded to 'system', which meant every
+    // answer was attributed to a fake user — breaking audit trails for
+    // a compliance product. Use the authenticated user's id instead.
+    if (!user?.id) {
+      console.error('Cannot update answer: no authenticated user');
+      return;
+    }
     try {
       await fetch(`/api/questionnaires/questions/${questionId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': 'system',
+          'x-user-id': user.id,
         },
         body: JSON.stringify({
           answerText: answer,
