@@ -58,6 +58,11 @@ terraform.tfvars
 coverage/
 .nyc_output/
 
+# Playwright artifacts
+frontend/test-results/
+frontend/playwright-report/
+frontend/playwright/.auth/
+
 # Build artifacts (service-specific)
 services/*/dist/
 frontend/dist/

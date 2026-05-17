@@ -93,31 +93,32 @@ test.describe('Smoke Tests - Navigation', () => {
 });
 
 test.describe('Smoke Tests - Sidebar Navigation', () => {
-  test('sidebar is visible and functional', async ({ page }) => {
+  test('sidebar is visible and shows top-level sections', async ({ page }) => {
     await page.goto('/dashboard');
     await page.waitForLoadState('networkidle');
-    
-    // Check sidebar exists
-    const sidebar = page.locator('nav, aside').first();
+
+    // Sidebar is rendered as <nav> in Layout.tsx.
+    const sidebar = page.locator('nav').first();
     await expect(sidebar).toBeVisible();
-    
-    // Check key navigation links exist
-    const navLinks = ['Dashboard', 'Controls', 'Risks', 'Policies', 'Vendors'];
-    for (const link of navLinks) {
-      await expect(page.locator(`a, button`).filter({ hasText: new RegExp(link, 'i') }).first()).toBeVisible();
+
+    // Top-level section headings render directly (not behind an accordion).
+    // Sub-items like "Controls" are inside collapsible sections.
+    for (const section of ['Compliance', 'Data', 'Risk Management', 'Third Party Risk', 'Settings']) {
+      await expect(sidebar.getByText(section, { exact: true })).toBeVisible();
     }
   });
 
-  test('can use sidebar to navigate', async ({ page }) => {
+  test('can expand a section and navigate via sidebar', async ({ page }) => {
     await page.goto('/dashboard');
     await page.waitForLoadState('networkidle');
-    
-    // Click on Controls link in sidebar
-    await page.click('a[href*="controls"], button:has-text("Controls")');
-    await page.waitForLoadState('networkidle');
-    
-    // Verify navigation worked
-    await expect(page).toHaveURL(/controls/);
+
+    // Expand "Compliance" — clicking the section header reveals its items.
+    const sidebar = page.locator('nav').first();
+    await sidebar.getByRole('button', { name: /Compliance/ }).click();
+
+    // Now the Controls sub-link is in the DOM and visible.
+    await sidebar.getByRole('link', { name: 'Controls' }).click();
+    await expect(page).toHaveURL(/\/controls$/);
   });
 });
 
