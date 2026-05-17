@@ -9,6 +9,11 @@ export interface SnykConfig {
 }
 
 /**
+ * Snyk REST API version for code/issues endpoints
+ */
+const SNYK_REST_VERSION = '2024-04-22';
+
+/**
  * Snyk Organization
  */
 interface SnykOrg {
@@ -152,6 +157,9 @@ export interface SnykSyncResult {
     projectsClean: number;
     averageFixTime: number;
   };
+  policies: {
+    total: number;
+  };
   collectedAt: string;
   errors: string[];
 }
@@ -253,6 +261,34 @@ export class SnykConnector {
       allIssues.push(...issues.map((i) => ({ ...i, projectName: project.name })));
     }
 
+    // Fetch policies and code scanning issues (per configured org, else first org)
+    let policiesTotal = 0;
+    const allCodeIssues: any[] = [];
+    const policyOrgs = config.organizationId
+      ? [config.organizationId]
+      : targetOrgs.slice(0, 1).map((o) => o.id);
+    for (const orgId of policyOrgs) {
+      const [policies, codeIssues] = await Promise.all([
+        this.getPolicies(config, orgId).catch((e) => {
+          errors.push(`Policies for org ${orgId}: ${e.message}`);
+          return [] as any[];
+        }),
+        this.getCodeIssues(config, orgId).catch((e) => {
+          errors.push(`Code issues for org ${orgId}: ${e.message}`);
+          return [] as any[];
+        }),
+      ]);
+      policiesTotal += policies.length;
+      allCodeIssues.push(...codeIssues);
+    }
+    const codeSeverity = (i: any): string =>
+      (i?.attributes?.effective_severity_level || i?.attributes?.severity || '').toLowerCase();
+    const codeIssuesTotal = allCodeIssues.length;
+    const codeIssuesCritical = allCodeIssues.filter((i) => codeSeverity(i) === 'critical').length;
+    const codeIssuesHigh = allCodeIssues.filter((i) => codeSeverity(i) === 'high').length;
+    const codeIssuesMedium = allCodeIssues.filter((i) => codeSeverity(i) === 'medium').length;
+    const codeIssuesLow = allCodeIssues.filter((i) => codeSeverity(i) === 'low').length;
+
     // Process projects
     const byOrigin: Record<string, number> = {};
     const byType: Record<string, number> = {};
@@ -317,6 +353,16 @@ export class SnykConnector {
         (p.issueCountsBySeverity?.low || 0) === 0
     ).length;
 
+    // Average fix time (days) - computed from issues that have both introducedDate and fixedDate
+    let averageFixTime = 0;
+    const fixedIssues = allIssues.filter((i: any) => i.introducedDate && i.fixedDate);
+    if (fixedIssues.length > 0) {
+      const totalMs = fixedIssues.reduce((sum: number, i: any) => {
+        return sum + (new Date(i.fixedDate).getTime() - new Date(i.introducedDate).getTime());
+      }, 0);
+      averageFixTime = totalMs / fixedIssues.length / (1000 * 60 * 60 * 24);
+    }
+
     this.logger.log(
       `Snyk sync complete: ${allProjects.length} projects, ${allIssues.length} issues sampled`
     );
@@ -378,17 +424,20 @@ export class SnykConnector {
         low: 0,
       },
       codeIssues: {
-        total: 0, // Would need Snyk Code API
-        critical: 0,
-        high: 0,
-        medium: 0,
-        low: 0,
+        total: codeIssuesTotal,
+        critical: codeIssuesCritical,
+        high: codeIssuesHigh,
+        medium: codeIssuesMedium,
+        low: codeIssuesLow,
       },
       compliance: {
         projectsWithCritical,
         projectsWithHigh,
         projectsClean,
-        averageFixTime: 0, // Would need historical data
+        averageFixTime,
+      },
+      policies: {
+        total: policiesTotal,
       },
       collectedAt: new Date().toISOString(),
       errors,
@@ -456,6 +505,41 @@ export class SnykConnector {
 
     const data = await response.json();
     return data.issues || [];
+  }
+
+  /**
+   * Get policies for an organization (v1)
+   */
+  private async getPolicies(config: SnykConfig, orgId: string): Promise<any[]> {
+    const response = await fetch(`${this.baseUrl}/org/${orgId}/policies`, {
+      headers: this.buildHeaders(config.apiToken),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch policies: ${response.status}`);
+    }
+
+    const data = await response.json();
+    // Snyk v1 policies endpoint returns an array, or { policies: [] }
+    if (Array.isArray(data)) return data;
+    return data.policies || [];
+  }
+
+  /**
+   * Get code scanning issues for an organization (Snyk Code, REST API)
+   */
+  private async getCodeIssues(config: SnykConfig, orgId: string): Promise<any[]> {
+    const response = await fetch(
+      `https://api.snyk.io/rest/orgs/${orgId}/issues?type=code&version=${SNYK_REST_VERSION}&limit=100`,
+      { headers: this.buildHeaders(config.apiToken) }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch code issues: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.data || [];
   }
 
   /**

@@ -99,7 +99,7 @@ export class GitLabConnector {
     const baseUrl = this.getBaseUrl(config.baseUrl);
     const errors: string[] = [];
 
-    const [projects, vulnerabilities] = await Promise.all([
+    const [projects, vulnerabilities, openMRs, mergedMRs] = await Promise.all([
       this.getProjects(baseUrl, config).catch((e) => {
         errors.push(`Projects: ${e.message}`);
         return [];
@@ -108,7 +108,81 @@ export class GitLabConnector {
         errors.push(`Vulns: ${e.message}`);
         return [];
       }),
+      this.getMergeRequests(baseUrl, config, 'opened').catch((e) => {
+        errors.push(`OpenMRs: ${e.message}`);
+        return [];
+      }),
+      this.getMergeRequests(baseUrl, config, 'merged').catch((e) => {
+        errors.push(`MergedMRs: ${e.message}`);
+        return [];
+      }),
     ]);
+
+    // For per-project queries, cap at 20 projects to bound the work
+    const projectsToScan: any[] = projects.slice(0, 20);
+
+    // Fetch jobs, pipelines, protected branches per project
+    const scannerSets = {
+      sast: new Set<number>(),
+      dast: new Set<number>(),
+      dependency_scanning: new Set<number>(),
+      container_scanning: new Set<number>(),
+      secret_detection: new Set<number>(),
+    };
+    let pipelinesTotal = 0;
+    let pipelinesSuccessful = 0;
+    let pipelinesFailed = 0;
+    const protectedByProject: Record<number, boolean> = {};
+
+    for (const project of projectsToScan) {
+      const projectId = project.id;
+      const defaultBranch = project.default_branch;
+
+      const [jobs, pipelines, protectedBranches] = await Promise.all([
+        this.getProjectJobs(baseUrl, config, projectId).catch((e) => {
+          errors.push(`Jobs(${project.path_with_namespace}): ${e.message}`);
+          return [] as any[];
+        }),
+        this.getProjectPipelines(baseUrl, config, projectId).catch((e) => {
+          errors.push(`Pipelines(${project.path_with_namespace}): ${e.message}`);
+          return [] as any[];
+        }),
+        this.getProtectedBranches(baseUrl, config, projectId).catch((e) => {
+          errors.push(`ProtectedBranches(${project.path_with_namespace}): ${e.message}`);
+          return [] as any[];
+        }),
+      ]);
+
+      // Job name patterns -> scanner type
+      for (const job of jobs) {
+        const name: string = (job.name || '').toLowerCase();
+        if (/sast/.test(name)) scannerSets.sast.add(projectId);
+        if (/dast/.test(name)) scannerSets.dast.add(projectId);
+        if (/dependency[_-]?scanning/.test(name)) scannerSets.dependency_scanning.add(projectId);
+        if (/container[_-]?scanning/.test(name)) scannerSets.container_scanning.add(projectId);
+        if (/secret[_-]?detection/.test(name)) scannerSets.secret_detection.add(projectId);
+      }
+
+      for (const p of pipelines) {
+        pipelinesTotal++;
+        if (p.status === 'success') pipelinesSuccessful++;
+        else if (p.status === 'failed') pipelinesFailed++;
+      }
+
+      protectedByProject[projectId] =
+        !!defaultBranch && protectedBranches.some((b: any) => b.name === defaultBranch);
+    }
+
+    // Merge request stats
+    const mergedWithDates = mergedMRs.filter((m: any) => m.created_at && m.merged_at);
+    let avgTimeToMerge = 0;
+    if (mergedWithDates.length > 0) {
+      const totalMs = mergedWithDates.reduce((sum: number, m: any) => {
+        return sum + (new Date(m.merged_at).getTime() - new Date(m.created_at).getTime());
+      }, 0);
+      // ms -> hours
+      avgTimeToMerge = totalMs / mergedWithDates.length / (1000 * 60 * 60);
+    }
 
     const privateProjects = projects.filter((p: any) => p.visibility === 'private');
     const publicProjects = projects.filter((p: any) => p.visibility === 'public');
@@ -126,15 +200,15 @@ export class GitLabConnector {
           visibility: p.visibility,
           defaultBranch: p.default_branch,
           lastActivity: p.last_activity_at,
-          protectedBranches: true,
+          protectedBranches: protectedByProject[p.id] ?? false,
         })),
       },
       securityScanning: {
-        projectsWithSast: 0,
-        projectsWithDast: 0,
-        projectsWithDependencyScanning: 0,
-        projectsWithContainerScanning: 0,
-        projectsWithSecretDetection: 0,
+        projectsWithSast: scannerSets.sast.size,
+        projectsWithDast: scannerSets.dast.size,
+        projectsWithDependencyScanning: scannerSets.dependency_scanning.size,
+        projectsWithContainerScanning: scannerSets.container_scanning.size,
+        projectsWithSecretDetection: scannerSets.secret_detection.size,
       },
       vulnerabilities: {
         total: vulnerabilities.length,
@@ -151,8 +225,17 @@ export class GitLabConnector {
           scanner: v.scanner?.name || '',
         })),
       },
-      mergeRequests: { open: 0, merged: 0, avgTimeToMerge: 0 },
-      pipelines: { total: 0, successful: 0, failed: 0, successRate: 0 },
+      mergeRequests: {
+        open: openMRs.length,
+        merged: mergedMRs.length,
+        avgTimeToMerge,
+      },
+      pipelines: {
+        total: pipelinesTotal,
+        successful: pipelinesSuccessful,
+        failed: pipelinesFailed,
+        successRate: pipelinesTotal > 0 ? (pipelinesSuccessful / pipelinesTotal) * 100 : 0,
+      },
       collectedAt: new Date().toISOString(),
       errors,
     };
@@ -164,10 +247,10 @@ export class GitLabConnector {
 
   private async getProjects(baseUrl: string, config: GitLabConfig): Promise<any[]> {
     const endpoint = config.groupId
-      ? `${baseUrl}/api/v4/groups/${config.groupId}/projects`
-      : `${baseUrl}/api/v4/projects?membership=true`;
+      ? `${baseUrl}/api/v4/groups/${config.groupId}/projects?per_page=100`
+      : `${baseUrl}/api/v4/projects?membership=true&per_page=100`;
 
-    const response = await fetch(`${endpoint}&per_page=100`, {
+    const response = await fetch(endpoint, {
       headers: { 'PRIVATE-TOKEN': config.accessToken },
     });
     if (!response.ok) throw new Error(`Failed to fetch projects: ${response.status}`);
@@ -183,6 +266,58 @@ export class GitLabConnector {
       }
     );
     if (!response.ok) return [];
+    return response.json();
+  }
+
+  private async getProjectJobs(
+    baseUrl: string,
+    config: GitLabConfig,
+    projectId: number
+  ): Promise<any[]> {
+    const response = await fetch(
+      `${baseUrl}/api/v4/projects/${projectId}/jobs?scope=success&per_page=100`,
+      { headers: { 'PRIVATE-TOKEN': config.accessToken } }
+    );
+    if (!response.ok) throw new Error(`Failed: ${response.status}`);
+    return response.json();
+  }
+
+  private async getProjectPipelines(
+    baseUrl: string,
+    config: GitLabConfig,
+    projectId: number
+  ): Promise<any[]> {
+    const response = await fetch(`${baseUrl}/api/v4/projects/${projectId}/pipelines?per_page=100`, {
+      headers: { 'PRIVATE-TOKEN': config.accessToken },
+    });
+    if (!response.ok) throw new Error(`Failed: ${response.status}`);
+    return response.json();
+  }
+
+  private async getProtectedBranches(
+    baseUrl: string,
+    config: GitLabConfig,
+    projectId: number
+  ): Promise<any[]> {
+    const response = await fetch(`${baseUrl}/api/v4/projects/${projectId}/protected_branches`, {
+      headers: { 'PRIVATE-TOKEN': config.accessToken },
+    });
+    if (!response.ok) throw new Error(`Failed: ${response.status}`);
+    return response.json();
+  }
+
+  private async getMergeRequests(
+    baseUrl: string,
+    config: GitLabConfig,
+    state: 'opened' | 'merged'
+  ): Promise<any[]> {
+    const url = config.groupId
+      ? `${baseUrl}/api/v4/groups/${config.groupId}/merge_requests?state=${state}&per_page=100`
+      : `${baseUrl}/api/v4/merge_requests?state=${state}&scope=all&per_page=100`;
+    const response = await fetch(url, {
+      headers: { 'PRIVATE-TOKEN': config.accessToken },
+    });
+    if (!response.ok) throw new Error(`Failed: ${response.status}`);
     return response.json();
   }
 }
