@@ -2,11 +2,18 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
+import { GlobalExceptionFilter } from '@gigachad-grc/shared';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
+
+  // SECURITY: Global exception filter sanitizes error responses and
+  // ensures HttpException subclasses (e.g. ForbiddenException from
+  // RolesGuard) propagate their proper status code instead of being
+  // wrapped as a generic 500.
+  app.useGlobalFilters(new GlobalExceptionFilter());
 
   // Security middleware with CSP for API services
   app.use(

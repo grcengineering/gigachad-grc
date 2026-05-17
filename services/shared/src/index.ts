@@ -175,3 +175,6 @@ export * from './security';
 
 // Secrets (Infisical integration)
 export * from './secrets';
+
+// Seed data constants (dev & e2e fixtures)
+export * from './seed';
