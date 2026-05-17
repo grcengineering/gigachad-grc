@@ -35,6 +35,13 @@ export default defineConfig(({ mode }) => {
       },
     },
     build: {
+      // Output bundled JS/CSS under dist/static/ instead of the Vite
+      // default dist/assets/. The default name collides with the SPA's
+      // /assets route: nginx's `try_files` resolves the literal
+      // dist/assets/ directory before falling through to /index.html,
+      // so direct navigation or refresh on /assets/* returns 404 instead
+      // of the SPA. Renaming the asset directory unshadows the route.
+      assetsDir: 'static',
       rollupOptions: {
         output: {
           manualChunks: (id) => {

@@ -7,16 +7,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Assets', () => {
   test.beforeEach(async ({ page }) => {
-    // Direct nav to /assets hits an nginx 301→`/assets/` redirect (the
-    // built `dist/assets/` directory conflicts with the SPA route). Bootstrap
-    // the SPA on /dashboard, then push the target URL into history so React
-    // Router handles it client-side.
-    await page.goto('/dashboard');
-    await page.waitForLoadState('networkidle');
-    await page.evaluate(() => {
-      window.history.pushState({}, '', '/assets');
-      window.dispatchEvent(new PopStateEvent('popstate'));
-    });
+    await page.goto('/assets');
     await page.waitForLoadState('networkidle');
   });
 

@@ -80,21 +80,15 @@ test.describe('Employee Compliance Dashboard', () => {
     }
   });
 
-  // The dashboard's "View All Employees" link points to /employees, but that
-  // route does not exist (the employee list lives at /people). Clicking the
-  // link triggers a catch-all redirect to /dashboard. Skip until the product
-  // link target is corrected.
-  test.skip('can navigate to employee list', async ({ page }) => {
-    // Look for "View All Employees" link
-    const viewAllLink = page.locator('a, button').filter({ hasText: /View.*Employee|All Employee/i });
+  test('can navigate to employee list', async ({ page }) => {
+    // Scope to main; the sidebar has its own People/Employee links that
+    // would otherwise match first.
+    const viewAllLink = page
+      .locator('main')
+      .getByRole('link', { name: /View.*Employee|All Employee/i });
 
-    if (await viewAllLink.count() > 0) {
-      await viewAllLink.first().click();
-      await page.waitForLoadState('networkidle');
-
-      // Should navigate to employees page
-      await expect(page).toHaveURL(/employee|people/i);
-    }
+    await viewAllLink.first().click();
+    await expect(page).toHaveURL(/\/people(\?|$)/);
   });
 
   test('can access compliance settings', async ({ page }) => {
