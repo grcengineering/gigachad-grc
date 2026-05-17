@@ -15,6 +15,7 @@ import {
 import { answerTemplatesApi, AnswerTemplate, CreateAnswerTemplateData } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '@/components/Button';
+import { EmptyState } from '@/components/EmptyState';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 
@@ -30,8 +31,8 @@ const CATEGORIES = [
 export default function AnswerTemplates() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const organizationId = user?.organizationId || 'default-org';
-  
+  const organizationId = user?.organizationId;
+
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('');
   const [showArchived, setShowArchived] = useState(false);
@@ -43,13 +44,14 @@ export default function AnswerTemplates() {
     queryKey: ['answer-templates', organizationId, categoryFilter, showArchived, searchQuery],
     queryFn: async () => {
       const response = await answerTemplatesApi.list({
-        organizationId,
+        organizationId: organizationId!,
         category: categoryFilter || undefined,
         status: showArchived ? 'archived' : 'active',
         search: searchQuery || undefined,
       });
       return response.data;
     },
+    enabled: !!organizationId,
   });
 
   const createMutation = useMutation({
@@ -113,6 +115,16 @@ export default function AnswerTemplates() {
     const cat = CATEGORIES.find(c => c.value === category);
     return cat?.color || 'bg-surface-700 text-surface-300';
   };
+
+  if (!organizationId) {
+    return (
+      <EmptyState
+        variant="warning"
+        title="Sign in required"
+        description="You need to be signed in to view or manage answer templates."
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">

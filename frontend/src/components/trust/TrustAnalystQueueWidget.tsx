@@ -19,17 +19,26 @@ interface TrustAnalystQueueWidgetProps {
 
 export function TrustAnalystQueueWidget({ className }: TrustAnalystQueueWidgetProps) {
   const { user } = useAuth();
-  const organizationId = user?.organizationId || 'default-org';
+  const organizationId = user?.organizationId;
 
   const { data: queue, isLoading, error } = useQuery({
     queryKey: ['questionnaire-dashboard-queue', organizationId],
     queryFn: async () => {
-      const response = await questionnairesApi.getDashboardQueue(organizationId);
+      const response = await questionnairesApi.getDashboardQueue(organizationId!);
       return response.data;
     },
     refetchInterval: 60000, // Refresh every minute
     staleTime: 30000,
+    enabled: !!organizationId,
   });
+
+  if (!organizationId) {
+    return (
+      <div className={clsx('bg-surface-900 border border-surface-800 rounded-xl p-6', className)}>
+        <p className="text-surface-400 text-sm">Sign in to view your questionnaire queue.</p>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (

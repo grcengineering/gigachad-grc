@@ -9,28 +9,41 @@ import {
 } from '@heroicons/react/24/outline';
 import { questionnairesApi, knowledgeBaseApi } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
+import { EmptyState } from '@/components/EmptyState';
 import { LazyRechartsWrapper } from '@/components/charts/LazyCharts';
 import clsx from 'clsx';
 
 export default function TrustAnalytics() {
   const { user } = useAuth();
-  const organizationId = user?.organizationId || 'default-org';
+  const organizationId = user?.organizationId;
 
   const { data: analytics, isLoading } = useQuery({
     queryKey: ['questionnaire-analytics', organizationId],
     queryFn: async () => {
-      const response = await questionnairesApi.getAnalytics(organizationId);
+      const response = await questionnairesApi.getAnalytics(organizationId!);
       return response.data;
     },
+    enabled: !!organizationId,
   });
 
   const { data: kbStats } = useQuery({
     queryKey: ['kb-stats', organizationId],
     queryFn: async () => {
-      const response = await knowledgeBaseApi.getStats(organizationId);
+      const response = await knowledgeBaseApi.getStats(organizationId!);
       return response.data;
     },
+    enabled: !!organizationId,
   });
+
+  if (!organizationId) {
+    return (
+      <EmptyState
+        variant="warning"
+        title="Sign in required"
+        description="You need to be signed in to view trust analytics."
+      />
+    );
+  }
 
   if (isLoading) {
     return (
