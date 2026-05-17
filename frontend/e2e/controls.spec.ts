@@ -44,13 +44,18 @@ test.describe('Controls - List View', () => {
   test('has filter options', async ({ page }) => {
     // Look for filter button or dropdown
     const filterBtn = page.locator('button').filter({ hasText: /filter/i }).first();
-    
+
     if (await filterBtn.count() > 0) {
       await filterBtn.click();
       await page.waitForTimeout(500);
-      
-      // Filter options should appear
-      const filterOptions = page.locator('[role="menu"], [role="listbox"], .filter-panel, [class*="dropdown"]');
+
+      // After clicking the Filters button the Advanced Filters panel pops
+      // open. Accept any of the panel's identifiers: the heading, the
+      // standard ARIA roles, a `.filter-panel` class, or any element with
+      // a dropdown/popover-style className.
+      const filterOptions = page.locator(
+        'h3:has-text("Advanced Filters"), [role="menu"], [role="listbox"], .filter-panel, [class*="dropdown"], [class*="popover"]'
+      );
       expect(await filterOptions.count()).toBeGreaterThan(0);
     }
   });
@@ -74,17 +79,20 @@ test.describe('Controls - Detail View', () => {
   test('can navigate to control detail', async ({ page }) => {
     await page.goto('/controls');
     await page.waitForLoadState('networkidle');
-    
+
     // Wait for controls to load
     await page.waitForTimeout(2000);
-    
-    // Click on first control row/item
-    const controlItem = page.locator('table tbody tr, [class*="list-item"], [class*="control-card"]').first();
-    
-    if (await controlItem.count() > 0) {
-      await controlItem.click();
+
+    // Click on the first detail link inside the controls table. The <tr>
+    // itself has no click handler — navigation happens via the cell links.
+    const controlLink = page
+      .locator('table tbody tr a[href*="/controls/"], [class*="list-item"] a[href*="/controls/"], [class*="control-card"] a[href*="/controls/"]')
+      .first();
+
+    if (await controlLink.count() > 0) {
+      await controlLink.click();
       await page.waitForLoadState('networkidle');
-      
+
       // Should navigate to detail page
       await expect(page).toHaveURL(/controls\/[a-zA-Z0-9-]+/);
     }

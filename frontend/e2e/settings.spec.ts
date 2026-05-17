@@ -82,8 +82,14 @@ test.describe('Settings - Notifications', () => {
   test('notifications page has form controls', async ({ page }) => {
     await page.goto('/settings/notifications');
     await page.waitForLoadState('networkidle');
-    // Notification preferences page renders toggles/checkboxes or selects.
+    // Notification preferences live behind the in-page "Settings" tab; the
+    // default tab shows the notification list. Switch to Settings to render
+    // the per-type toggles (sr-only checkboxes with custom toggle UI).
+    await page.getByRole('main').getByRole('button', { name: 'Settings' }).click();
+    // Preferences are loaded lazily after the tab is clicked; wait for the
+    // first toggle input to appear rather than relying on networkidle.
     const controls = page.locator('input[type="checkbox"], input[role="switch"], select');
+    await expect(controls.first()).toBeAttached({ timeout: 15000 });
     expect(await controls.count()).toBeGreaterThan(0);
   });
 });

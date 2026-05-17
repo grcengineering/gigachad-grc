@@ -17,11 +17,15 @@ test.describe('Questionnaires', () => {
 
   test('shows questionnaire list or empty state', async ({ page }) => {
     await page.waitForTimeout(2000);
-    
-    // Should show either a list of questionnaires or empty state
+
+    // Should show either a list of questionnaires or empty state.
+    // The empty state heading is "No incoming questionnaires" — match its
+    // wording (and other common variants).
     const list = page.locator('table, [class*="grid"], [class*="list"], [class*="card"]');
-    const emptyState = page.locator('text=/No questionnaire|Create your first|Get started/i');
-    
+    const emptyState = page.locator(
+      'text=/No (incoming )?questionnaire|No questionnaires|Create your first|Get started/i'
+    );
+
     const hasContent = await list.count() > 0 || await emptyState.count() > 0;
     expect(hasContent).toBeTruthy();
   });

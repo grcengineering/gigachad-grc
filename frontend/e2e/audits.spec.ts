@@ -55,10 +55,14 @@ test.describe('Audits', () => {
 
   test('displays audit status badges', async ({ page }) => {
     await page.waitForTimeout(2000);
-    
-    // Look for status indicators
-    const statusBadges = page.locator('text=/Planning|In Progress|Complete|Draft|Upcoming/i');
-    
+
+    // Look for status indicators rendered as visible badges. The status
+    // filter <select> contains matching <option> elements that are not
+    // visible while the select is closed, so filter those out by tag.
+    const statusBadges = page
+      .locator('span, div, p')
+      .filter({ hasText: /^(Planning|In Progress|Completed|Complete|Draft|Upcoming|Fieldwork)$/i });
+
     if (await statusBadges.count() > 0) {
       await expect(statusBadges.first()).toBeVisible();
     }
