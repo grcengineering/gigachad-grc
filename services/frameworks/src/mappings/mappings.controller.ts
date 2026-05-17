@@ -9,7 +9,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { MappingsService } from './mappings.service';
 import { CreateMappingDto, BulkCreateMappingsDto, UpdateMappingDto } from './dto/mapping.dto';
 import { Roles, RolesGuard, CurrentUser, UserContext } from '@gigachad-grc/shared';
@@ -56,6 +56,28 @@ export class MappingsController {
   @ApiParam({ name: 'frameworkId', description: 'Framework ID' })
   async getRequirementCoverage(@Param('frameworkId') frameworkId: string) {
     return this.mappingsService.getRequirementCoverage(frameworkId);
+  }
+
+  @Get('gaps')
+  @Roles('admin', 'compliance_manager', 'auditor')
+  @ApiOperation({ summary: 'List mapping gaps (requirements/controls without coverage)' })
+  @ApiQuery({
+    name: 'frameworkId',
+    required: false,
+    description: 'Filter by framework (ignored for unused-controls)',
+  })
+  @ApiQuery({
+    name: 'type',
+    required: false,
+    enum: ['no-controls', 'supporting-only', 'unused-controls'],
+    description: 'Gap type filter; omit to return all three concatenated',
+  })
+  async findGaps(
+    @CurrentUser() user: UserContext,
+    @Query('frameworkId') frameworkId?: string,
+    @Query('type') type?: 'no-controls' | 'supporting-only' | 'unused-controls'
+  ) {
+    return this.mappingsService.findGaps(user.organizationId, frameworkId, type);
   }
 
   @Post()

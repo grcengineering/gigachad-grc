@@ -1,5 +1,10 @@
 import axios, { AxiosError, AxiosResponse } from 'axios';
-import { secureStorage, STORAGE_KEYS, migrateLegacyStorage, getCurrentOrgId } from './secureStorage';
+import {
+  secureStorage,
+  STORAGE_KEYS,
+  migrateLegacyStorage,
+  getCurrentOrgId,
+} from './secureStorage';
 
 // Migrate legacy storage on module load
 migrateLegacyStorage();
@@ -762,6 +767,10 @@ export const mappingsApi = {
   controlCoverage: () => api.get('/api/mappings/control-coverage'),
   requirementCoverage: (frameworkId: string) =>
     api.get(`/api/mappings/requirement-coverage/${frameworkId}`),
+  findGaps: (params?: {
+    frameworkId?: string;
+    type?: 'no-controls' | 'supporting-only' | 'unused-controls';
+  }) => api.get('/api/mappings/gaps', { params }),
   create: (data: CreateMappingData) => api.post('/api/mappings', data),
   bulkCreate: (data: BulkMappingData) => api.post('/api/mappings/bulk', data),
   delete: (id: string) => api.delete(`/api/mappings/${id}`),

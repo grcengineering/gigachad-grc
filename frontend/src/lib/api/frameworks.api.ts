@@ -202,5 +202,17 @@ export const frameworksApi = {
       const response = await api.get(`/api/mappings/requirement-coverage/${frameworkId}`);
       return response.data;
     },
+
+    /**
+     * Find mapping gaps (requirements with no/only-supporting controls and unused controls)
+     */
+    findGaps: async (params?: {
+      frameworkId?: string;
+      type?: 'no-controls' | 'supporting-only' | 'unused-controls';
+    }) => {
+      const qs = params ? buildQueryString(params as Record<string, string | undefined>) : '';
+      const response = await api.get(`/api/mappings/gaps${qs}`);
+      return response.data;
+    },
   },
 };
