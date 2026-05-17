@@ -1,8 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
+import {
+  createGoogleServiceAccountJwt,
+  exchangeGoogleJwtForAccessToken,
+  parseServiceAccountKey,
+  GoogleServiceAccountKey,
+} from './utils/google-jwt';
 
 export interface GoogleWorkspaceConfig {
-  serviceAccountKey: string; // JSON string
-  adminEmail: string; // Admin email for domain-wide delegation
+  serviceAccountKey: string;  // JSON string
+  adminEmail: string;         // Admin email for domain-wide delegation
 }
 
 export interface GoogleWorkspaceSyncResult {
@@ -35,52 +41,46 @@ export interface GoogleWorkspaceSyncResult {
     mobile: number;
     chromeos: number;
   };
-  apps: {
-    installed: number;
-    thirdParty: number;
-  };
-  security: {
-    passwordPolicyStrength: string;
-    sessionLength: number;
-    allowLessSecureApps: boolean;
-  };
-  drive: {
-    externalSharingEnabled: boolean;
-    linkSharingDefault: string;
-  };
   collectedAt: string;
   errors: string[];
 }
+
+const GOOGLE_WORKSPACE_SCOPES = [
+  'https://www.googleapis.com/auth/admin.directory.user.readonly',
+  'https://www.googleapis.com/auth/admin.directory.group.readonly',
+  'https://www.googleapis.com/auth/admin.directory.group.member.readonly',
+  'https://www.googleapis.com/auth/admin.directory.orgunit.readonly',
+  'https://www.googleapis.com/auth/admin.directory.device.chromeos.readonly',
+  'https://www.googleapis.com/auth/admin.directory.device.mobile.readonly',
+].join(' ');
 
 @Injectable()
 export class GoogleWorkspaceConnector {
   private readonly logger = new Logger(GoogleWorkspaceConnector.name);
   private readonly adminUrl = 'https://admin.googleapis.com/admin/directory/v1';
 
-  async testConnection(
-    config: GoogleWorkspaceConfig
-  ): Promise<{ success: boolean; message: string; details?: any }> {
+  async testConnection(config: GoogleWorkspaceConfig): Promise<{ success: boolean; message: string; details?: any }> {
     if (!config.serviceAccountKey || !config.adminEmail) {
       return { success: false, message: 'Service Account Key and Admin Email are required' };
     }
 
+    let credentials: GoogleServiceAccountKey;
     try {
-      const credentials = JSON.parse(config.serviceAccountKey);
-      const token = await this.getAccessToken(credentials, config.adminEmail);
+      credentials = parseServiceAccountKey(config.serviceAccountKey);
+    } catch (error: any) {
+      return { success: false, message: error.message || 'Invalid service account key' };
+    }
 
-      if (!token) {
-        return {
-          success: false,
-          message: 'Authentication failed - check service account and domain-wide delegation',
-        };
-      }
+    try {
+      const token = await this.getAccessToken(credentials, config.adminEmail);
 
       const response = await fetch(`${this.adminUrl}/users?maxResults=1&customer=my_customer`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       if (!response.ok) {
-        return { success: false, message: `API error: ${response.status}` };
+        const text = await response.text();
+        return { success: false, message: `API error: ${response.status} ${text}` };
       }
 
       return {
@@ -95,26 +95,15 @@ export class GoogleWorkspaceConnector {
 
   async sync(config: GoogleWorkspaceConfig): Promise<GoogleWorkspaceSyncResult> {
     const errors: string[] = [];
-    const credentials = JSON.parse(config.serviceAccountKey);
+    const credentials = parseServiceAccountKey(config.serviceAccountKey);
     const token = await this.getAccessToken(credentials, config.adminEmail);
 
-    if (!token) {
-      throw new Error('Authentication failed');
-    }
-
-    const [users, groups, orgUnits] = await Promise.all([
-      this.getUsers(token).catch((e) => {
-        errors.push(`Users: ${e.message}`);
-        return [];
-      }),
-      this.getGroups(token).catch((e) => {
-        errors.push(`Groups: ${e.message}`);
-        return [];
-      }),
-      this.getOrgUnits(token).catch((e) => {
-        errors.push(`OrgUnits: ${e.message}`);
-        return [];
-      }),
+    const [users, groups, orgUnits, chromeDevices, mobileDevices] = await Promise.all([
+      this.getUsers(token).catch(e => { errors.push(`Users: ${e.message}`); return []; }),
+      this.getGroups(token).catch(e => { errors.push(`Groups: ${e.message}`); return []; }),
+      this.getOrgUnits(token).catch(e => { errors.push(`OrgUnits: ${e.message}`); return []; }),
+      this.getChromeOsDevices(token).catch(e => { errors.push(`ChromeOS: ${e.message}`); return []; }),
+      this.getMobileDevices(token).catch(e => { errors.push(`Mobile: ${e.message}`); return []; }),
     ]);
 
     const activeUsers = users.filter((u: any) => !u.suspended);
@@ -144,72 +133,99 @@ export class GoogleWorkspaceConnector {
         withExternalMembers: 0,
       },
       orgUnits: { total: orgUnits.length },
-      devices: { total: 0, mobile: 0, chromeos: 0 },
-      apps: { installed: 0, thirdParty: 0 },
-      security: { passwordPolicyStrength: '', sessionLength: 0, allowLessSecureApps: false },
-      drive: { externalSharingEnabled: false, linkSharingDefault: '' },
+      devices: {
+        total: chromeDevices.length + mobileDevices.length,
+        mobile: mobileDevices.length,
+        chromeos: chromeDevices.length,
+      },
       collectedAt: new Date().toISOString(),
       errors,
     };
   }
 
-  private async getAccessToken(credentials: any, adminEmail: string): Promise<string | null> {
-    // In production, use Google Auth Library with JWT
-    // This is a simplified implementation
-    try {
-      const jwt = this.createJWT(credentials, adminEmail);
-      const response = await fetch('https://oauth2.googleapis.com/token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-          assertion: jwt,
-        }),
-      });
-      if (!response.ok) return null;
-      const data = await response.json();
-      return data.access_token;
-    } catch {
-      return null;
-    }
+  private async getAccessToken(credentials: GoogleServiceAccountKey, adminEmail: string): Promise<string> {
+    const jwt = createGoogleServiceAccountJwt(credentials, {
+      scope: GOOGLE_WORKSPACE_SCOPES,
+      subject: adminEmail,
+    });
+    return exchangeGoogleJwtForAccessToken(jwt, credentials.token_uri);
   }
 
-  private createJWT(_credentials: any, _adminEmail: string): string {
-    // Simplified - use proper JWT library in production
-    return 'jwt-token';
+  private async authedGet(token: string, url: string): Promise<any> {
+    const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`GET ${url} failed: ${response.status} ${text}`);
+    }
+    return response.json();
   }
 
   private async getUsers(token: string): Promise<any[]> {
     const users: any[] = [];
     let pageToken = '';
+    let pages = 0;
 
     do {
-      const url = `${this.adminUrl}/users?customer=my_customer&maxResults=500${pageToken ? `&pageToken=${pageToken}` : ''}`;
-      const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-      if (!response.ok) throw new Error(`Failed: ${response.status}`);
-      const data = await response.json();
+      const url = `${this.adminUrl}/users?customer=my_customer&maxResults=500${pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : ''}`;
+      const data = await this.authedGet(token, url);
       users.push(...(data.users || []));
       pageToken = data.nextPageToken || '';
-    } while (pageToken && users.length < 1000);
+      pages += 1;
+    } while (pageToken && users.length < 5000 && pages < 20);
 
     return users;
   }
 
   private async getGroups(token: string): Promise<any[]> {
-    const response = await fetch(`${this.adminUrl}/groups?customer=my_customer&maxResults=200`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!response.ok) throw new Error(`Failed: ${response.status}`);
-    const data = await response.json();
-    return data.groups || [];
+    const groups: any[] = [];
+    let pageToken = '';
+    let pages = 0;
+
+    do {
+      const url = `${this.adminUrl}/groups?customer=my_customer&maxResults=200${pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : ''}`;
+      const data = await this.authedGet(token, url);
+      groups.push(...(data.groups || []));
+      pageToken = data.nextPageToken || '';
+      pages += 1;
+    } while (pageToken && groups.length < 5000 && pages < 20);
+
+    return groups;
   }
 
   private async getOrgUnits(token: string): Promise<any[]> {
-    const response = await fetch(`${this.adminUrl}/customer/my_customer/orgunits?type=all`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!response.ok) return [];
-    const data = await response.json();
+    const data = await this.authedGet(token, `${this.adminUrl}/customer/my_customer/orgunits?type=all`);
     return data.organizationUnits || [];
+  }
+
+  private async getChromeOsDevices(token: string): Promise<any[]> {
+    const devices: any[] = [];
+    let pageToken = '';
+    let pages = 0;
+
+    do {
+      const url = `${this.adminUrl}/customer/my_customer/devices/chromeos?maxResults=200${pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : ''}`;
+      const data = await this.authedGet(token, url);
+      devices.push(...(data.chromeosdevices || []));
+      pageToken = data.nextPageToken || '';
+      pages += 1;
+    } while (pageToken && devices.length < 5000 && pages < 25);
+
+    return devices;
+  }
+
+  private async getMobileDevices(token: string): Promise<any[]> {
+    const devices: any[] = [];
+    let pageToken = '';
+    let pages = 0;
+
+    do {
+      const url = `${this.adminUrl}/customer/my_customer/devices/mobile?maxResults=200${pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : ''}`;
+      const data = await this.authedGet(token, url);
+      devices.push(...(data.mobiledevices || []));
+      pageToken = data.nextPageToken || '';
+      pages += 1;
+    } while (pageToken && devices.length < 5000 && pages < 25);
+
+    return devices;
   }
 }
