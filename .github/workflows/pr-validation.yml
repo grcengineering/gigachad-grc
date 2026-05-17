@@ -215,8 +215,12 @@ jobs:
       KEYCLOAK_ADMIN_PASSWORD: ci-keycloak-password
       GRAFANA_ADMIN_USER: admin
       GRAFANA_ADMIN_PASSWORD: ci-grafana-password
-      # 64-char hex (openssl rand -hex 32 equivalent); deterministic for CI.
-      ENCRYPTION_KEY: 0000000000000000000000000000000000000000000000000000000000000000
+      # CI-only fixture. The controls service requires length >= 32 and passes
+      # this through scrypt as a passphrase, so any non-empty 32+ char string
+      # works. Avoid hex/random-looking strings here — gitleaks' encryption-key
+      # rule matches /ENCRYPTION_KEY['"=:\s]+['"][0-9a-f]{32,}['"]/ and would
+      # flag this even though it's an obvious fixture.
+      ENCRYPTION_KEY: 'ci-fixture-encryption-key-not-a-real-secret-padding-padding'
       PHISHING_TRACKING_SECRET: ci-phishing-tracking-secret
       # Playwright targets the nginx frontend container exposed on :3000.
       E2E_BASE_URL: http://localhost:3000
