@@ -54,60 +54,49 @@ function AuditorPortalContent() {
 
     setIsLoading(true);
     try {
-      // In production, this would fetch from the API
-      // For now, using mock data
-      const mockRequests: AuditRequest[] = [
-        {
-          id: '1',
-          title: 'Access Control Policy Documentation',
-          description: 'Please provide the current access control policy document and any related procedures.',
-          status: 'open',
-          priority: 'high',
-          dueDate: '2024-12-20',
-          assignedTo: 'John Smith',
+      const response = await fetch('/api/audit-portal/requests', {
+        headers: {
+          'x-portal-access-code': session.accessCode,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to load audit requests: ${response.status} ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      const data: Array<{
+        id: string;
+        title: string;
+        description: string;
+        status: AuditRequest['status'];
+        priority: AuditRequest['priority'];
+        dueDate?: string;
+        assignee?: { name?: string; email?: string } | null;
+        controlId?: string | null;
+        requirementRef?: string | null;
+      }> = result.data ?? [];
+
+      // The bulk-list endpoint does not return evidence/comment counts to
+      // keep the response cheap. The request-detail view fetches accurate
+      // counts. Default to 0 here so the list renders immediately.
+      setRequests(
+        data.map((r) => ({
+          id: r.id,
+          title: r.title,
+          description: r.description,
+          status: r.status,
+          priority: r.priority,
+          dueDate: r.dueDate ?? '',
+          assignedTo: r.assignee?.name,
           evidenceCount: 0,
           commentCount: 0,
-          controlReference: 'AC-1',
-        },
-        {
-          id: '2',
-          title: 'User Access Review Evidence',
-          description: 'Evidence of quarterly user access reviews for the past 12 months.',
-          status: 'in_progress',
-          priority: 'medium',
-          dueDate: '2024-12-25',
-          assignedTo: 'Jane Doe',
-          evidenceCount: 2,
-          commentCount: 1,
-          controlReference: 'AC-2',
-        },
-        {
-          id: '3',
-          title: 'Incident Response Plan',
-          description: 'Current incident response plan and evidence of testing.',
-          status: 'submitted',
-          priority: 'high',
-          dueDate: '2024-12-18',
-          evidenceCount: 3,
-          commentCount: 2,
-          controlReference: 'IR-1',
-        },
-        {
-          id: '4',
-          title: 'Security Awareness Training Records',
-          description: 'Training completion records for all employees.',
-          status: 'approved',
-          priority: 'low',
-          dueDate: '2024-12-15',
-          evidenceCount: 5,
-          commentCount: 0,
-          controlReference: 'AT-1',
-        },
-      ];
-
-      setRequests(mockRequests);
+          controlReference: r.controlId || r.requirementRef || undefined,
+        })),
+      );
     } catch (error) {
       console.error('Failed to fetch audit data:', error);
+      setRequests([]);
     } finally {
       setIsLoading(false);
     }
