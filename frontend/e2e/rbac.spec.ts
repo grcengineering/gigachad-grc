@@ -8,7 +8,7 @@ import { test, expect, request as playwrightRequest, APIRequestContext } from '@
 test.beforeEach(({}, testInfo) => {
   test.skip(
     testInfo.project.name !== 'chromium',
-    'rbac.spec is project-agnostic and only needs to run once',
+    'rbac.spec is project-agnostic and only needs to run once'
   );
 });
 
@@ -171,12 +171,9 @@ const MATRIX: Record<Role, Record<string, boolean>> = {
 function expectAllowed(status: number, context: string) {
   expect(
     status,
-    `[${context}] expected role to be authorized but got ${status} (401/403 = denied)`,
+    `[${context}] expected role to be authorized but got ${status} (401/403 = denied)`
   ).not.toBe(401);
-  expect(
-    status,
-    `[${context}] expected role to be authorized but got 403 Forbidden`,
-  ).not.toBe(403);
+  expect(status, `[${context}] expected role to be authorized but got 403 Forbidden`).not.toBe(403);
   // sanity: server didn't blow up
   expect(status, `[${context}] server error ${status}`).toBeLessThan(500);
 }
@@ -186,7 +183,7 @@ function expectAllowed(status: number, context: string) {
 function expectDenied(status: number, context: string) {
   expect(
     [401, 403].includes(status),
-    `[${context}] expected 401 or 403 (denial) but got ${status}`,
+    `[${context}] expected 401 or 403 (denial) but got ${status}`
   ).toBe(true);
 }
 
@@ -196,7 +193,7 @@ async function reqWithRetry(
   method: 'post' | 'put' | 'patch' | 'delete',
   url: string,
   options?: Parameters<APIRequestContext['post']>[1],
-  attempts = 5,
+  attempts = 5
 ): Promise<import('@playwright/test').APIResponse> {
   let res: import('@playwright/test').APIResponse | undefined;
   for (let i = 0; i < attempts; i++) {
@@ -254,7 +251,7 @@ const perRoleMappingControlId: Partial<Record<Role, string>> = {};
 async function getWithRetry(
   ctx: APIRequestContext,
   url: string,
-  attempts = 5,
+  attempts = 5
 ): Promise<import('@playwright/test').APIResponse> {
   let res: import('@playwright/test').APIResponse | undefined;
   for (let i = 0; i < attempts; i++) {
@@ -283,14 +280,14 @@ test.beforeAll(async ({}, testInfo) => {
   expect(
     [200, 201, 409, 429].includes(seedRes.status()),
     `[rbac.spec] seed load-demo returned unexpected status ${seedRes.status()}; ` +
-      `RBAC users may not be seeded`,
+      `RBAC users may not be seeded`
   ).toBe(true);
 
   const res = await getWithRetry(admin, `${CONTROLS_URL}/api/controls?limit=1`);
   if (!res.ok()) {
     throw new Error(
       `[rbac.spec] could not fetch a sample control as admin (status ${res.status()}); ` +
-        `the spec needs at least one seeded control to exercise PUT/DELETE paths.`,
+        `the spec needs at least one seeded control to exercise PUT/DELETE paths.`
     );
   }
   const body = await res.json();
@@ -303,6 +300,23 @@ test.beforeAll(async ({}, testInfo) => {
   expect(sampleControlId, 'sampleControlId').toBeTruthy();
 
   // ----- Discover a framework + requirement + control for mapping tests -----
+  // NOTE: the seeded catalog frameworks (SOC 2, ISO 27001, HIPAA) have ONLY
+  // category rows at the top level — non-category leaf requirements are
+  // nested under them via parentId. The plain /requirements endpoint
+  // returns top-level only (parentId IS NULL), so we hit /requirements/tree
+  // which returns every row flat, then pick the first non-category one.
+  // Fallback to the regular endpoint + recurse into `.children` if the
+  // tree endpoint is unavailable.
+  const findLeafRequirement = (nodes: any[]): any | undefined => {
+    for (const n of nodes) {
+      if (!n.isCategory) return n;
+      if (Array.isArray(n.children) && n.children.length > 0) {
+        const hit = findLeafRequirement(n.children);
+        if (hit) return hit;
+      }
+    }
+    return undefined;
+  };
   const fwRes = await getWithRetry(admin, `${FRAMEWORKS_URL}/api/frameworks`);
   if (fwRes.ok()) {
     const fwBody = await fwRes.json();
@@ -310,16 +324,26 @@ test.beforeAll(async ({}, testInfo) => {
       ? fwBody
       : (fwBody.data ?? fwBody.items ?? fwBody.frameworks ?? []);
     for (const fw of fws) {
-      const reqRes = await getWithRetry(
+      let reqs: any[] = [];
+      const treeRes = await getWithRetry(
         admin,
-        `${FRAMEWORKS_URL}/api/frameworks/${fw.id}/requirements`
+        `${FRAMEWORKS_URL}/api/frameworks/${fw.id}/requirements/tree`
       );
-      if (!reqRes.ok()) continue;
-      const reqBody = await reqRes.json();
-      const reqs = Array.isArray(reqBody)
-        ? reqBody
-        : (reqBody.data ?? reqBody.items ?? reqBody.requirements ?? []);
-      const req = reqs.find((r: any) => !r.isCategory);
+      if (treeRes.ok()) {
+        const body = await treeRes.json();
+        reqs = Array.isArray(body) ? body : (body.data ?? body.items ?? body.requirements ?? []);
+      } else {
+        const reqRes = await getWithRetry(
+          admin,
+          `${FRAMEWORKS_URL}/api/frameworks/${fw.id}/requirements`
+        );
+        if (!reqRes.ok()) continue;
+        const reqBody = await reqRes.json();
+        reqs = Array.isArray(reqBody)
+          ? reqBody
+          : (reqBody.data ?? reqBody.items ?? reqBody.requirements ?? []);
+      }
+      const req = findLeafRequirement(reqs);
       if (req) {
         sampleFrameworkId = fw.id;
         sampleRequirementId = req.id;
@@ -350,20 +374,15 @@ test.beforeAll(async ({}, testInfo) => {
   if (sampleFrameworkId && sampleRequirementId && sampleMappingControlId) {
     // Pre-seed one mapping row that the denied-role PATCH/DELETE tests
     // can target without first having to create their own.
-    const seedRes = await reqWithRetry(
-      admin,
-      'post',
-      `${FRAMEWORKS_URL}/api/mappings`,
-      {
-        data: {
-          frameworkId: sampleFrameworkId,
-          requirementId: sampleRequirementId,
-          controlId: sampleMappingControlId,
-          mappingType: 'primary',
-          notes: 'rbac.spec shared probe row',
-        },
-      }
-    );
+    const seedRes = await reqWithRetry(admin, 'post', `${FRAMEWORKS_URL}/api/mappings`, {
+      data: {
+        frameworkId: sampleFrameworkId,
+        requirementId: sampleRequirementId,
+        controlId: sampleMappingControlId,
+        mappingType: 'primary',
+        notes: 'rbac.spec shared probe row',
+      },
+    });
     if (seedRes.ok()) {
       const seeded = await seedRes.json();
       sharedMappingId = seeded?.id ?? seeded?.data?.id;
@@ -377,13 +396,32 @@ test.beforeAll(async ({}, testInfo) => {
         const body = await findRes.json();
         const items = Array.isArray(body) ? body : (body.data ?? body.items ?? []);
         const hit = items.find(
-          (m: any) =>
-            m.requirementId === sampleRequirementId &&
-            m.frameworkId === sampleFrameworkId
+          (m: any) => m.requirementId === sampleRequirementId && m.frameworkId === sampleFrameworkId
         );
         sharedMappingId = hit?.id;
       }
     }
+  }
+
+  // Fail loud if mapping-fixture discovery silently failed. Without this,
+  // each mapping test produces an opaque "Error: <var> from beforeAll" that
+  // takes minutes to trace back.
+  if (!sampleFrameworkId || !sampleRequirementId || !sampleMappingControlId) {
+    throw new Error(
+      '[rbac.spec] mapping fixture discovery failed in beforeAll. ' +
+        `sampleFrameworkId=${sampleFrameworkId}, ` +
+        `sampleRequirementId=${sampleRequirementId}, ` +
+        `sampleMappingControlId=${sampleMappingControlId}. ` +
+        'Possible causes: seed did not run (controls service returned 0 frameworks), ' +
+        'or /api/frameworks/:id/requirements/tree did not return any non-category leaf ' +
+        '(check the catalog data and ensure findLeafRequirement walks .children).'
+    );
+  }
+  if (!sharedMappingId) {
+    throw new Error(
+      '[rbac.spec] sharedMappingId was not seeded in beforeAll. ' +
+        'POST /api/mappings must succeed for the admin context — check the response in the workflow logs.'
+    );
   }
 });
 
@@ -485,9 +523,14 @@ function runRoleTests(role: Role) {
     test('PUT /api/controls/:id (controls:update)', async () => {
       const ctx = await getRoleContext(role);
       expect(sampleControlId, 'sampleControlId from beforeAll').toBeTruthy();
-      const res = await reqWithRetry(ctx, 'put', `${CONTROLS_URL}/api/controls/${sampleControlId}`, {
-        data: { title: `RBAC update probe (${role})` },
-      });
+      const res = await reqWithRetry(
+        ctx,
+        'put',
+        `${CONTROLS_URL}/api/controls/${sampleControlId}`,
+        {
+          data: { title: `RBAC update probe (${role})` },
+        }
+      );
       const ctxLabel = `${role} PUT /api/controls/:id`;
       if (MATRIX[role]['controls:update']) {
         expectAllowed(res.status(), ctxLabel);
@@ -659,20 +702,15 @@ function runRoleTests(role: Role) {
           }
           if (!targetId) {
             // Create on the fly so we have a row to delete.
-            const createRes = await reqWithRetry(
-              ctx,
-              'post',
-              `${FRAMEWORKS_URL}/api/mappings`,
-              {
-                data: {
-                  frameworkId: sampleFrameworkId,
-                  requirementId: sampleRequirementId,
-                  controlId: ctrlId,
-                  mappingType: 'supporting',
-                  notes: `rbac.spec ${role} delete-probe seed`,
-                },
-              }
-            );
+            const createRes = await reqWithRetry(ctx, 'post', `${FRAMEWORKS_URL}/api/mappings`, {
+              data: {
+                frameworkId: sampleFrameworkId,
+                requirementId: sampleRequirementId,
+                controlId: ctrlId,
+                mappingType: 'supporting',
+                notes: `rbac.spec ${role} delete-probe seed`,
+              },
+            });
             if (createRes.ok()) {
               const created = await createRes.json();
               targetId = created?.id ?? created?.data?.id;
@@ -695,11 +733,7 @@ function runRoleTests(role: Role) {
         expect(targetId, 'sharedMappingId for denied-role probe').toBeTruthy();
       }
 
-      const res = await reqWithRetry(
-        ctx,
-        'delete',
-        `${FRAMEWORKS_URL}/api/mappings/${targetId}`
-      );
+      const res = await reqWithRetry(ctx, 'delete', `${FRAMEWORKS_URL}/api/mappings/${targetId}`);
       const ctxLabel = `${role} DELETE /api/mappings/:id`;
       if (MATRIX[role]['mappings:delete']) {
         expectAllowed(res.status(), ctxLabel);
