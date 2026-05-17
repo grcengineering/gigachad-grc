@@ -361,13 +361,14 @@ export class NetSuiteConnector extends BaseConnector {
 
     const baseUrl = `${urlObj.protocol}//${urlObj.host}${urlObj.pathname}`;
     const baseString = `${method.toUpperCase()}&${this.percentEncode(baseUrl)}&${this.percentEncode(paramString)}`;
-    // OAuth 1.0a (RFC 5849 §3.4.2) signs the base string with HMAC-SHA256
-    // keyed on the percent-encoded consumer secret + token secret joined
-    // by "&". This is a MAC construction over the request — not a password
-    // hash — so CodeQL's js/insufficient-password-hash heuristic is a
-    // false positive here.
+    // OAuth 1.0a (RFC 5849 §3.4.2): the signature is HMAC-SHA256 over the
+    // request base string, keyed on the percent-encoded consumer secret +
+    // token secret joined by "&". This is a MAC construction over the
+    // request payload, not a password hash for storage. CodeQL's
+    // js/insufficient-password-hash heuristic produces a false positive
+    // here (alert dismissed in code-scanning UI on 2026-05-16).
     const signingKey = `${this.percentEncode(config.consumerSecret)}&${this.percentEncode(config.tokenSecret)}`;
-    const signature = crypto.createHmac('sha256', signingKey).update(baseString).digest('base64'); // lgtm[js/insufficient-password-hash]
+    const signature = crypto.createHmac('sha256', signingKey).update(baseString).digest('base64');
 
     oauthParams.oauth_signature = signature;
 
