@@ -59,34 +59,38 @@ vi.mock('@/components/mappings/MappingEditorModal', () => ({
   },
 }));
 
-// API surface used by ControlDetail.
-const sampleControl = {
-  id: 'ctrl-1',
-  controlId: 'AC-001',
-  title: 'Access Control Policy',
-  description: 'Defines access control requirements',
-  category: 'access_control',
-  isCustom: false,
-  tags: [],
-  implementation: { id: 'impl-1', status: 'implemented' },
-  mappings: [
-    {
-      id: 'map-1',
-      frameworkId: 'fw-1',
-      requirementId: 'req-1',
-      framework: { id: 'fw-1', name: 'SOC 2' },
-      requirement: { id: 'req-1', reference: 'CC6.1', title: 'Logical Access Controls' },
-    },
-    {
-      id: 'map-2',
-      frameworkId: 'fw-2',
-      requirementId: 'req-2',
-      framework: { id: 'fw-2', name: 'ISO 27001' },
-      requirement: { id: 'req-2', reference: 'A.9.1', title: 'Access Control Policy' },
-    },
-  ],
-  policyLinks: [],
-};
+// API surface used by ControlDetail. Wrapped in vi.hoisted() so the constant is
+// available when the hoisted vi.mock factories below evaluate (vitest hoists
+// vi.mock above all top-level statements; plain `const` declarations are not).
+const { sampleControl } = vi.hoisted(() => ({
+  sampleControl: {
+    id: 'ctrl-1',
+    controlId: 'AC-001',
+    title: 'Access Control Policy',
+    description: 'Defines access control requirements',
+    category: 'access_control',
+    isCustom: false,
+    tags: [],
+    implementation: { id: 'impl-1', status: 'implemented' },
+    mappings: [
+      {
+        id: 'map-1',
+        frameworkId: 'fw-1',
+        requirementId: 'req-1',
+        framework: { id: 'fw-1', name: 'SOC 2' },
+        requirement: { id: 'req-1', reference: 'CC6.1', title: 'Logical Access Controls' },
+      },
+      {
+        id: 'map-2',
+        frameworkId: 'fw-2',
+        requirementId: 'req-2',
+        framework: { id: 'fw-2', name: 'ISO 27001' },
+        requirement: { id: 'req-2', reference: 'A.9.1', title: 'Access Control Policy' },
+      },
+    ],
+    policyLinks: [],
+  },
+}));
 
 vi.mock('@/lib/api', () => ({
   controlsApi: {
