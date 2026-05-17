@@ -109,24 +109,37 @@ export function MappingEditorModal({
     enabled: open && mode === 'requirement-to-controls' && !isEditMode,
   });
 
-  // Requirements list (control mode picker)
+  // Requirements list (control mode picker). Uses `listAll` so the
+  // picker shows non-category leaves nested deep inside the catalog
+  // tree — `list()` would only return parentId=null rows (categories).
   const requirementsQuery = useQuery({
-    queryKey: ['framework-requirements', selectedFrameworkId],
+    queryKey: ['framework-requirements-all', selectedFrameworkId],
     queryFn: () =>
       selectedFrameworkId
-        ? frameworksApi.requirements.list(selectedFrameworkId)
+        ? frameworksApi.requirements.listAll(selectedFrameworkId)
         : Promise.resolve([] as FrameworkRequirement[]),
     enabled:
       open && mode === 'control-to-requirements' && !isEditMode && Boolean(selectedFrameworkId),
   });
+
+  // controlsApi.list() resolves to whatever the backend sends. The real
+  // `/api/controls` endpoint wraps results as `{ data, meta }`; tests
+  // historically mocked it to a plain array. Accept both shapes.
+  const controlsList: Control[] = useMemo(() => {
+    const raw: unknown = controlsQuery.data;
+    if (Array.isArray(raw)) return raw as Control[];
+    if (raw && typeof raw === 'object' && Array.isArray((raw as { data?: unknown }).data)) {
+      return (raw as { data: Control[] }).data;
+    }
+    return [];
+  }, [controlsQuery.data]);
 
   const candidates = useMemo(() => {
     const hidden = new Set(existingMappingIds);
     const query = search.trim().toLowerCase();
 
     if (mode === 'requirement-to-controls') {
-      const all: Control[] = controlsQuery.data ?? [];
-      return all
+      return controlsList
         .filter((c) => !hidden.has(c.id))
         .filter((c) => (query ? `${c.controlId} ${c.title}`.toLowerCase().includes(query) : true));
     }
@@ -136,11 +149,11 @@ export function MappingEditorModal({
       .filter((r) => !r.isCategory)
       .filter((r) => !hidden.has(r.id))
       .filter((r) => (query ? `${r.reference} ${r.title}`.toLowerCase().includes(query) : true));
-  }, [mode, controlsQuery.data, requirementsQuery.data, existingMappingIds, search]);
+  }, [mode, controlsList, requirementsQuery.data, existingMappingIds, search]);
 
   const candidateLabel = (id: string): string => {
     if (mode === 'requirement-to-controls') {
-      const ctrl = (controlsQuery.data ?? []).find((c) => c.id === id);
+      const ctrl = controlsList.find((c) => c.id === id);
       return ctrl ? `${ctrl.controlId} — ${ctrl.title}` : id;
     }
     const req = (requirementsQuery.data ?? []).find((r) => r.id === id);

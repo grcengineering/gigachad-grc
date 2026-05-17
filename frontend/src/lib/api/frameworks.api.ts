@@ -84,6 +84,25 @@ export const frameworksApi = {
     },
 
     /**
+     * Fetch every requirement in a framework as a flat list (including
+     * leaves nested under categories). `list()` only returns top-level
+     * rows (parentId IS NULL), which for the seeded catalogs (SOC 2 /
+     * ISO 27001 / HIPAA) means categories only — pickers that want the
+     * actual non-category leaves must call this instead.
+     */
+    listAll: async (frameworkId: string): Promise<FrameworkRequirement[]> => {
+      const response = await api.get<FrameworkRequirement[]>(
+        `/api/frameworks/${frameworkId}/requirements/tree`
+      );
+      const flatten = (nodes: FrameworkRequirement[]): FrameworkRequirement[] =>
+        nodes.flatMap((n) => [
+          n,
+          ...flatten((n as { children?: FrameworkRequirement[] }).children ?? []),
+        ]);
+      return flatten(response.data);
+    },
+
+    /**
      * Get a single requirement
      */
     get: async (frameworkId: string, requirementId: string) => {
