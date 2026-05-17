@@ -299,28 +299,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Dev login bypass - only available in development
+  // Dev login bypass - only available in development. Defense in depth on
+  // top of the Dockerfile guard: refuse to run if we are clearly in a
+  // production build, even if VITE_ENABLE_DEV_AUTH got flipped by mistake.
   const devLogin = useCallback(() => {
-    const isDevMode = import.meta.env.DEV || import.meta.env.VITE_ENABLE_DEV_AUTH === 'true';
-    if (isDevMode) {
-      if (import.meta.env.DEV) {
-        console.log('Dev login activated');
-      }
-      const devUser: User = {
-        id: '8f88a42b-e799-455c-b68a-308d7d2e9aa4', // John Doe - seeded user
-        email: 'john.doe@example.com',
-        name: 'John Doe',
-        role: 'admin',
-        organizationId: '8924f0c1-7bb1-4be8-84ee-ad8725c712bf',
-      };
-      setUser(devUser);
-      setToken('dev-token-not-for-production');
-      setIsAuthenticated(true);
-      // Persist dev auth state and user info for API calls
-      localStorage.setItem('grc-dev-auth', JSON.stringify(devUser));
-      localStorage.setItem('userId', devUser.id);
-      localStorage.setItem('organizationId', devUser.organizationId);
+    const inDevBuild = import.meta.env.DEV === true;
+    const devAuthFlag = import.meta.env.VITE_ENABLE_DEV_AUTH === 'true';
+    const isProdBuild = import.meta.env.PROD === true;
+
+    if (isProdBuild && !devAuthFlag) {
+      // Should never be reachable in a properly-built prod bundle, since
+      // the dev-login UI is hidden. If something does reach here, fail loud.
+      console.error('devLogin invoked in a production build without VITE_ENABLE_DEV_AUTH');
+      return;
     }
+    if (!inDevBuild && !devAuthFlag) {
+      return;
+    }
+
+    if (inDevBuild) {
+      console.log('Dev login activated');
+    }
+    const devUser: User = {
+      id: '8f88a42b-e799-455c-b68a-308d7d2e9aa4', // John Doe - seeded user
+      email: 'john.doe@example.com',
+      name: 'John Doe',
+      role: 'admin',
+      organizationId: '8924f0c1-7bb1-4be8-84ee-ad8725c712bf',
+    };
+    setUser(devUser);
+    setToken('dev-token-not-for-production');
+    setIsAuthenticated(true);
+    // Persist dev auth state and user info for API calls
+    localStorage.setItem('grc-dev-auth', JSON.stringify(devUser));
+    localStorage.setItem('userId', devUser.id);
+    localStorage.setItem('organizationId', devUser.organizationId);
   }, []);
 
   const hasRole = (role: string): boolean => {

@@ -13,6 +13,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { vendorsApi, tprmConfigApi, TprmFeatureSettings } from '../lib/api';
 import { Vendor } from '../lib/apiTypes';
+import { safeHref } from '../lib/safeHref';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/Button';
 import { SkeletonDetailHeader, SkeletonDetailSection } from '@/components/Skeleton';
@@ -704,13 +705,15 @@ function InfoField({
 }) {
   if (!value) return null;
 
+  const href = link ? safeHref(value.toString()) : null;
+
   return (
     <div>
       <dt className="text-sm font-medium text-surface-400 mb-1">{label}</dt>
       <dd className={`text-sm text-surface-100 ${capitalize ? 'capitalize' : ''}`}>
-        {link ? (
+        {href ? (
           <a
-            href={value.toString()}
+            href={href}
             target="_blank"
             rel="noopener noreferrer"
             className="text-brand-400 hover:text-brand-300"

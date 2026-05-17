@@ -465,8 +465,12 @@ export const trainingApi_legacy = {
     return progress.find(p => p.moduleId === moduleId);
   },
   updateProgress: (progress: TrainingProgress) => {
-    // Fire and forget API call, sync localStorage
-    trainingApiWrapper.updateProgress(progress).catch(() => {});
+    // Fire and forget API call, sync localStorage. Errors are non-fatal
+    // (localStorage is the source of truth) but we log them so a broken
+    // backend isn't completely silent.
+    trainingApiWrapper.updateProgress(progress).catch((err) => {
+      console.warn('Training updateProgress sync failed:', err);
+    });
     
     const data = localStorage.getItem(STORAGE_KEYS.PROGRESS);
     const all: TrainingProgress[] = data ? JSON.parse(data) : [];
@@ -491,8 +495,10 @@ export const trainingApi_legacy = {
       lastAccessedAt: new Date().toISOString(),
     };
     trainingApi_legacy.updateProgress(progress);
-    // Also call API
-    backendTrainingApi.startModule(moduleId).catch(() => {});
+    // Also call API. Errors are non-fatal but worth surfacing in console.
+    backendTrainingApi.startModule(moduleId).catch((err) => {
+      console.warn('Training startModule sync failed:', err);
+    });
     return progress;
   },
   completeModule: (userId: string, moduleId: string, score?: number) => {
@@ -505,8 +511,10 @@ export const trainingApi_legacy = {
       slideProgress: 100,
     };
     trainingApi_legacy.updateProgress(progress);
-    // Also call API
-    backendTrainingApi.completeModule(moduleId, score).catch(() => {});
+    // Also call API. Errors are non-fatal but worth surfacing in console.
+    backendTrainingApi.completeModule(moduleId, score).catch((err) => {
+      console.warn('Training completeModule sync failed:', err);
+    });
     return progress;
   },
   getAssignments: (userId: string) => {
