@@ -119,6 +119,11 @@ Two specs are required CI gates (see `e2e-tenant-rbac` job in
 If you add a new resource type or a new mutation route, extend both
 specs to cover it.
 
+A forthcoming `mapping-flow.spec.ts` will cover the control ↔
+requirement mapping round-trip (create from both sides, edit, delete,
+history drawer). It depends on the multi-user storage states added in
+#308 and will land in PR-A Phase 3 once #308 merges.
+
 ## Accessibility and visual regression (report-only)
 
 Two additional specs run in the `e2e-quality-checks` CI job. The job
