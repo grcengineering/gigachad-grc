@@ -543,6 +543,39 @@ export interface MappingListParams {
   frameworkId?: string;
 }
 
+export interface MappingHistorySnapshot {
+  frameworkId: string;
+  requirementId: string;
+  controlId: string;
+  mappingType: 'primary' | 'supporting';
+  notes: string | null;
+  createdBy: string;
+  createdAt: string;
+}
+
+export interface MappingHistoryUser {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  displayName: string;
+}
+
+export interface MappingHistoryEntry {
+  id: string;
+  mappingId: string | null;
+  action: 'create' | 'update' | 'delete' | 'restore';
+  snapshot: MappingHistorySnapshot;
+  changedBy: string;
+  changedAt: string;
+  reason: string | null;
+  changedByUser: MappingHistoryUser;
+}
+
+export interface RestoreMappingData {
+  reason?: string;
+}
+
 // ===========================================
 // Mapping Import / Export Types
 // ===========================================

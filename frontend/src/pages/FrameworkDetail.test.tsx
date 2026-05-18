@@ -163,11 +163,18 @@ describe('FrameworkDetail — Mapped Controls', () => {
     expect(screen.queryByRole('button', { name: /add mapping/i })).not.toBeInTheDocument();
   });
 
-  it('does not render kebab triggers when both mapping permissions are false', async () => {
+  it('still renders kebab (History only) when both mutation permissions are false', async () => {
     setMockedAuth({ 'controls:update': false, 'controls:delete': false });
     await openRequirementPanel();
     await screen.findByText('AC-001');
-    expect(screen.queryByRole('button', { name: /mapping actions/i })).not.toBeInTheDocument();
+    // Kebab itself remains visible so viewers can open the History drawer.
+    const trigger = screen.getByRole('button', { name: /mapping actions for ac-001/i });
+    expect(trigger).toBeInTheDocument();
+    fireEvent.click(trigger);
+    // History menu item is present; Edit / Delete are not.
+    expect(screen.getByRole('menuitem', { name: /history/i })).toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: /^edit$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: /^delete$/i })).not.toBeInTheDocument();
   });
 
   it('opens the MappingEditorModal in edit mode with anchor props', async () => {

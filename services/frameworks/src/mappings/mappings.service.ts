@@ -11,6 +11,7 @@ import {
   ImportResult,
   MappingImportError,
   MappingImportRowOutcome,
+  RestoreMappingDto,
   UpdateMappingDto,
 } from './dto/mapping.dto';
 import { parseMappingCsv, parseMappingXlsx, RawMappingRow } from './import-parser';
@@ -159,6 +160,85 @@ export class MappingsService {
         before: { mappingType: existing.mappingType, notes: existing.notes },
         after: { mappingType: updated.mappingType, notes: updated.notes },
       },
+    });
+
+    return updated;
+  }
+
+  async getHistory(id: string, organizationId: string) {
+    return this.history.listByMappingWithUser(id, organizationId);
+  }
+
+  async restore(
+    id: string,
+    historyId: string,
+    dto: RestoreMappingDto,
+    userId: string,
+    organizationId: string
+  ) {
+    const existing = await this.prisma.controlMapping.findFirst({
+      where: {
+        id,
+        OR: [
+          { control: { OR: [{ organizationId }, { organizationId: null }] } },
+          { framework: { OR: [{ organizationId }, { organizationId: null }] } },
+        ],
+      },
+      include: MAPPING_INCLUDE,
+    });
+
+    if (!existing) {
+      throw new NotFoundException(`Mapping with ID ${id} not found`);
+    }
+
+    const historyRow = await this.prisma.controlMappingHistory.findFirst({
+      where: { id: historyId, mappingId: id },
+    });
+
+    if (!historyRow) {
+      throw new NotFoundException(`History entry ${historyId} not found for mapping ${id}`);
+    }
+
+    const snapshot = historyRow.snapshot as {
+      mappingType: 'primary' | 'supporting';
+      notes: string | null;
+    };
+
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const result = await tx.controlMapping.update({
+        where: { id },
+        data: {
+          mappingType: snapshot.mappingType,
+          notes: snapshot.notes,
+        },
+        include: MAPPING_INCLUDE,
+      });
+
+      await this.history.record(
+        tx,
+        result.id,
+        'restore',
+        this.serializeSnapshot(result),
+        userId,
+        dto.reason
+      );
+
+      return result;
+    });
+
+    await this.auditService.log({
+      organizationId,
+      userId,
+      action: 'mapping.restored',
+      entityType: 'control_mapping',
+      entityId: updated.id,
+      entityName: `${updated.control.controlId} -> ${updated.requirement.reference}`,
+      description: `Restored mapping ${updated.control.controlId} -> ${updated.requirement.reference} from history ${historyId}`,
+      changes: {
+        before: { mappingType: existing.mappingType, notes: existing.notes },
+        after: { mappingType: updated.mappingType, notes: updated.notes },
+      },
+      metadata: { historyId, reason: dto.reason ?? null },
     });
 
     return updated;
