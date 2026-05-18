@@ -7,6 +7,7 @@ import CommentsPanel from '@/components/CommentsPanel';
 import TasksPanel from '@/components/TasksPanel';
 import MappingEditorModal from '@/components/mappings/MappingEditorModal';
 import MappingHistoryDrawer from '@/components/mappings/MappingHistoryDrawer';
+import MappingImportWizard from '@/components/mappings/MappingImportWizard';
 import { SkeletonDetailHeader, SkeletonDetailSection } from '@/components/Skeleton';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -24,6 +25,7 @@ import {
   FlagIcon,
   PlusIcon,
   ArrowUpTrayIcon,
+  ArrowDownTrayIcon,
   DocumentArrowDownIcon,
   EllipsisVerticalIcon,
   ClockIcon,
@@ -49,12 +51,19 @@ type StatusFilter =
 export default function FrameworkDetail() {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
+  const { user, hasPermission } = useAuth();
   const [expandedReqs, setExpandedReqs] = useState<Set<string>>(new Set());
   const [selectedReq, setSelectedReq] = useState<any>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isMappingImportOpen, setIsMappingImportOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+
+  const canManageMappings = hasPermission('frameworks:manage');
+  const canExportMappings = user
+    ? ['admin', 'compliance_manager', 'auditor'].includes(user.role)
+    : false;
   const [formData, setFormData] = useState({
     reference: '',
     title: '',
@@ -119,6 +128,28 @@ export default function FrameworkDetail() {
     if (selectedFile) {
       uploadMutation.mutate(selectedFile);
     }
+  };
+
+  const handleExportMappings = async () => {
+    if (!id) return;
+    try {
+      const blob = await mappingsApi.exportFile(id, 'xlsx');
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `mappings-${framework?.type || 'framework'}-${new Date()
+        .toISOString()
+        .slice(0, 10)}.xlsx`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Failed to export mappings');
+    }
+  };
+
+  const handleMappingImportComplete = () => {
+    queryClient.invalidateQueries({ queryKey: ['framework-requirements', id] });
+    queryClient.invalidateQueries({ queryKey: ['framework-readiness', id] });
   };
 
   const toggleExpanded = (reqId: string) => {
@@ -280,6 +311,28 @@ export default function FrameworkDetail() {
           )}
         </div>
       </div>
+
+      {/* Mappings toolbar */}
+      {(canManageMappings || canExportMappings) && (
+        <div className="flex items-center justify-end gap-2 mb-4">
+          {canManageMappings && (
+            <button
+              type="button"
+              onClick={() => setIsMappingImportOpen(true)}
+              className="btn-secondary text-sm"
+            >
+              <ArrowUpTrayIcon className="w-4 h-4 mr-1" />
+              Import mappings
+            </button>
+          )}
+          {canExportMappings && (
+            <button type="button" onClick={handleExportMappings} className="btn-secondary text-sm">
+              <ArrowDownTrayIcon className="w-4 h-4 mr-1" />
+              Export mappings
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Requirements Tree */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -576,6 +629,14 @@ export default function FrameworkDetail() {
           </div>
         </div>
       )}
+
+      {/* Mapping Import Wizard */}
+      <MappingImportWizard
+        open={isMappingImportOpen}
+        onClose={() => setIsMappingImportOpen(false)}
+        frameworkId={id}
+        onComplete={handleMappingImportComplete}
+      />
     </div>
   );
 }

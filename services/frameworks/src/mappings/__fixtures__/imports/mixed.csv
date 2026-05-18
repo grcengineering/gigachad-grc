@@ -1,0 +1,5 @@
+framework_code,requirement_ref,control_code,mapping_type,notes
+soc2:2017,CC1.1,AC-001,primary,
+soc2:2017,CC1.1,AC-001,primary,dup-in-file
+soc2:2017,CC2.1,AC-002,supporting,already exists in DB
+nope:1,CC1.1,AC-001,primary,unknown framework

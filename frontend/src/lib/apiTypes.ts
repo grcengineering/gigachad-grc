@@ -577,6 +577,40 @@ export interface RestoreMappingData {
 }
 
 // ===========================================
+// Mapping Import / Export Types
+// ===========================================
+
+export type MappingImportRowStatus = 'will_create' | 'duplicate' | 'error';
+
+export interface MappingImportRowOutcome {
+  row: number;
+  status: MappingImportRowStatus;
+  originalValues: Record<string, string>;
+  errorMessage?: string;
+  resolvedIds?: {
+    frameworkId: string;
+    requirementId: string;
+    controlId: string;
+  };
+}
+
+export interface MappingImportError {
+  row: number;
+  message: string;
+  originalValues: Record<string, string>;
+}
+
+export interface ImportResult {
+  totalRows: number;
+  successful: number;
+  duplicates: number;
+  errors: MappingImportError[];
+  rows: MappingImportRowOutcome[];
+  dryRun: boolean;
+  sourceStorageKey: string | null;
+}
+
+// ===========================================
 // Policy Types
 // ===========================================
 
