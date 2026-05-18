@@ -239,7 +239,7 @@ describe('ControlDetail — Framework Mappings', () => {
     expect(lastCall.existingMappingIds).toEqual(expect.arrayContaining(['req-1', 'req-2']));
   });
 
-  it('shows Edit, Copy to framework…, and Delete in that order when both permissions are present', async () => {
+  it('shows Edit, Copy to framework…, History, Delete in that order when both permissions are present', async () => {
     hasPermissionMock.mockReturnValue(true);
     render(<ControlDetail />);
 
@@ -252,11 +252,15 @@ describe('ControlDetail — Framework Mappings', () => {
     });
     fireEvent.click(kebab);
 
+    // PR-C1 (#313) inserted History between Copy and Delete; it's ungated
+    // (read-only audit trail available to all roles) while Copy + Delete
+    // remain gated on controls:update / controls:delete.
     const items = await screen.findAllByRole('menuitem');
-    expect(items).toHaveLength(3);
+    expect(items).toHaveLength(4);
     expect(items[0]).toHaveTextContent(/^edit$/i);
     expect(items[1]).toHaveTextContent(/copy to framework/i);
-    expect(items[2]).toHaveTextContent(/^delete$/i);
+    expect(items[2]).toHaveTextContent(/^history$/i);
+    expect(items[3]).toHaveTextContent(/^delete$/i);
   });
 
   it('shows Edit + Copy but not Delete when delete permission is absent', async () => {

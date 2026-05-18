@@ -240,7 +240,7 @@ describe('FrameworkDetail — Mapped Controls', () => {
     });
   });
 
-  it('shows Edit, Copy to framework…, and Delete in that order when both permissions are present', async () => {
+  it('shows Edit, Copy to framework…, History, Delete in that order when both permissions are present', async () => {
     setMockedAuth({ 'controls:update': true, 'controls:delete': true });
     await openRequirementPanel();
     await screen.findByText('AC-001');
@@ -250,11 +250,15 @@ describe('FrameworkDetail — Mapped Controls', () => {
     });
     fireEvent.click(trigger);
 
+    // PR-C1 (#313) inserted History between Copy and Delete; it's ungated
+    // (read-only audit trail available to all roles) while Copy + Delete
+    // remain gated on controls:update / controls:delete.
     const items = screen.getAllByRole('menuitem');
-    expect(items).toHaveLength(3);
+    expect(items).toHaveLength(4);
     expect(items[0]).toHaveTextContent(/^edit$/i);
     expect(items[1]).toHaveTextContent(/copy to framework/i);
-    expect(items[2]).toHaveTextContent(/^delete$/i);
+    expect(items[2]).toHaveTextContent(/^history$/i);
+    expect(items[3]).toHaveTextContent(/^delete$/i);
   });
 
   it('shows Edit + Copy but not Delete when delete permission is absent', async () => {
