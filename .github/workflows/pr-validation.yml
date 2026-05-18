@@ -260,6 +260,7 @@ jobs:
           deadline=$(( $(date +%s) + 300 ))
           ready_controls=0
           ready_frontend=0
+          ready_frameworks=0
           while [ "$(date +%s)" -lt "$deadline" ]; do
             if [ "$ready_controls" -eq 0 ] && \
                curl -sf -o /dev/null http://127.0.0.1:3001/health; then
@@ -271,7 +272,16 @@ jobs:
               echo "frontend ready"
               ready_frontend=1
             fi
-            if [ "$ready_controls" -eq 1 ] && [ "$ready_frontend" -eq 1 ]; then
+            if [ "$ready_frameworks" -eq 0 ] && \
+               curl -s -o /dev/null --max-time 5 http://127.0.0.1:3002/ \
+               && [ "$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://127.0.0.1:3002/)" != "000" ]; then
+              # `/` returns 4xx on frameworks (no public root route) but that's
+              # fine — we only want to confirm the HTTP server is responding.
+              # `%{http_code} != 000` rejects connection-refused (curl prints 000).
+              echo "frameworks service ready"
+              ready_frameworks=1
+            fi
+            if [ "$ready_controls" -eq 1 ] && [ "$ready_frontend" -eq 1 ] && [ "$ready_frameworks" -eq 1 ]; then
               echo "All endpoints healthy"
               exit 0
             fi
@@ -292,8 +302,8 @@ jobs:
         run: npx playwright install --with-deps chromium
         working-directory: frontend
 
-      - name: Run tenant-isolation + RBAC specs
-        run: npx playwright test e2e/tenant-isolation.spec.ts e2e/rbac.spec.ts --reporter=line
+      - name: Run tenant-isolation + RBAC + mapping-flow specs
+        run: npx playwright test e2e/tenant-isolation.spec.ts e2e/rbac.spec.ts e2e/mapping-flow.spec.ts --reporter=line
         working-directory: frontend
 
       - name: Upload Playwright report

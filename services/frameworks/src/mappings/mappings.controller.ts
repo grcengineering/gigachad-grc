@@ -2,26 +2,17 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Delete,
   Body,
   Param,
   Query,
   UseGuards,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiBearerAuth,
-  ApiParam,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { MappingsService } from './mappings.service';
-import { CreateMappingDto, BulkCreateMappingsDto } from './dto/mapping.dto';
-import {
-  Roles,
-  RolesGuard,
-  CurrentUser,
-  UserContext,
-} from '@gigachad-grc/shared';
+import { CreateMappingDto, BulkCreateMappingsDto, UpdateMappingDto } from './dto/mapping.dto';
+import { Roles, RolesGuard, CurrentUser, UserContext } from '@gigachad-grc/shared';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 
 @ApiTags('mappings')
@@ -35,7 +26,7 @@ export class MappingsController {
   @ApiOperation({ summary: 'List control-to-requirement mappings' })
   async findAll(
     @Query('frameworkId') frameworkId?: string,
-    @Query('controlId') controlId?: string,
+    @Query('controlId') controlId?: string
   ) {
     return this.mappingsService.findAll(frameworkId, controlId);
   }
@@ -70,21 +61,27 @@ export class MappingsController {
   @Post()
   @Roles('admin', 'compliance_manager')
   @ApiOperation({ summary: 'Create a control-to-requirement mapping' })
-  async create(
-    @CurrentUser() user: UserContext,
-    @Body() dto: CreateMappingDto,
-  ) {
-    return this.mappingsService.create(user.userId, dto);
+  async create(@CurrentUser() user: UserContext, @Body() dto: CreateMappingDto) {
+    return this.mappingsService.create(user.userId, user.organizationId, dto);
   }
 
   @Post('bulk')
   @Roles('admin', 'compliance_manager')
   @ApiOperation({ summary: 'Bulk create mappings' })
-  async bulkCreate(
-    @CurrentUser() user: UserContext,
-    @Body() dto: BulkCreateMappingsDto,
+  async bulkCreate(@CurrentUser() user: UserContext, @Body() dto: BulkCreateMappingsDto) {
+    return this.mappingsService.bulkCreate(user.userId, user.organizationId, dto.mappings);
+  }
+
+  @Patch(':id')
+  @Roles('admin', 'compliance_manager')
+  @ApiOperation({ summary: 'Update a control-to-requirement mapping' })
+  @ApiParam({ name: 'id', description: 'Mapping ID' })
+  async update(
+    @Param('id') id: string,
+    @Body() dto: UpdateMappingDto,
+    @CurrentUser() user: UserContext
   ) {
-    return this.mappingsService.bulkCreate(user.userId, dto.mappings);
+    return this.mappingsService.update(id, dto, user.userId, user.organizationId);
   }
 
   @Delete(':id')
@@ -92,8 +89,6 @@ export class MappingsController {
   @ApiOperation({ summary: 'Delete a mapping' })
   @ApiParam({ name: 'id', description: 'Mapping ID' })
   async delete(@Param('id') id: string, @CurrentUser() user: UserContext) {
-    // SECURITY: Pass organizationId to ensure tenant isolation
-    return this.mappingsService.delete(id, user.organizationId);
+    return this.mappingsService.delete(id, user.userId, user.organizationId);
   }
 }
-

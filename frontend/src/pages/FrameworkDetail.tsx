@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { frameworksApi, mappingsApi, usersApi } from '@/lib/api';
 import toast from 'react-hot-toast';
 import CommentsPanel from '@/components/CommentsPanel';
 import TasksPanel from '@/components/TasksPanel';
+import MappingEditorModal from '@/components/mappings/MappingEditorModal';
 import { SkeletonDetailHeader, SkeletonDetailSection } from '@/components/Skeleton';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   ArrowLeftIcon,
   ChevronRightIcon,
@@ -22,6 +24,7 @@ import {
   PlusIcon,
   ArrowUpTrayIcon,
   DocumentArrowDownIcon,
+  EllipsisVerticalIcon,
 } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 
@@ -33,7 +36,13 @@ const STATUS_CONFIG = {
   not_assessed: { icon: MinusCircleIcon, color: 'text-surface-500', bg: 'bg-surface-500/10' },
 };
 
-type StatusFilter = 'all' | 'compliant' | 'partial' | 'non_compliant' | 'not_applicable' | 'not_assessed';
+type StatusFilter =
+  | 'all'
+  | 'compliant'
+  | 'partial'
+  | 'non_compliant'
+  | 'not_applicable'
+  | 'not_assessed';
 
 export default function FrameworkDetail() {
   const { id } = useParams<{ id: string }>();
@@ -127,8 +136,12 @@ export default function FrameworkDetail() {
       <div className="space-y-6">
         <SkeletonDetailHeader />
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-          <div><SkeletonDetailSection /></div>
-          <div className="lg:col-span-3"><SkeletonDetailSection /></div>
+          <div>
+            <SkeletonDetailSection />
+          </div>
+          <div className="lg:col-span-3">
+            <SkeletonDetailSection />
+          </div>
         </div>
         <SkeletonDetailSection />
       </div>
@@ -195,7 +208,9 @@ export default function FrameworkDetail() {
                   value={readiness.requirementsByStatus.compliant}
                   status="compliant"
                   isActive={statusFilter === 'compliant'}
-                  onClick={() => setStatusFilter(statusFilter === 'compliant' ? 'all' : 'compliant')}
+                  onClick={() =>
+                    setStatusFilter(statusFilter === 'compliant' ? 'all' : 'compliant')
+                  }
                 />
                 <StatusCard
                   label="Partial"
@@ -209,21 +224,27 @@ export default function FrameworkDetail() {
                   value={readiness.requirementsByStatus.non_compliant}
                   status="non_compliant"
                   isActive={statusFilter === 'non_compliant'}
-                  onClick={() => setStatusFilter(statusFilter === 'non_compliant' ? 'all' : 'non_compliant')}
+                  onClick={() =>
+                    setStatusFilter(statusFilter === 'non_compliant' ? 'all' : 'non_compliant')
+                  }
                 />
                 <StatusCard
                   label="N/A"
                   value={readiness.requirementsByStatus.not_applicable}
                   status="not_applicable"
                   isActive={statusFilter === 'not_applicable'}
-                  onClick={() => setStatusFilter(statusFilter === 'not_applicable' ? 'all' : 'not_applicable')}
+                  onClick={() =>
+                    setStatusFilter(statusFilter === 'not_applicable' ? 'all' : 'not_applicable')
+                  }
                 />
                 <StatusCard
                   label="Not Assessed"
                   value={readiness.requirementsByStatus.not_assessed}
                   status="not_assessed"
                   isActive={statusFilter === 'not_assessed'}
-                  onClick={() => setStatusFilter(statusFilter === 'not_assessed' ? 'all' : 'not_assessed')}
+                  onClick={() =>
+                    setStatusFilter(statusFilter === 'not_assessed' ? 'all' : 'not_assessed')
+                  }
                 />
               </>
             )}
@@ -231,14 +252,16 @@ export default function FrameworkDetail() {
           {statusFilter !== 'all' && (
             <div className="flex items-center gap-2 text-sm mt-4 pt-4 border-t border-surface-800">
               <span className="text-surface-400">Filtering by:</span>
-              <span className={clsx(
-                'px-2 py-1 rounded-full text-xs font-medium',
-                statusFilter === 'compliant' && 'bg-green-400/20 text-green-400',
-                statusFilter === 'partial' && 'bg-yellow-400/20 text-yellow-400',
-                statusFilter === 'non_compliant' && 'bg-red-400/20 text-red-400',
-                statusFilter === 'not_applicable' && 'bg-surface-400/20 text-surface-400',
-                statusFilter === 'not_assessed' && 'bg-surface-500/20 text-surface-500'
-              )}>
+              <span
+                className={clsx(
+                  'px-2 py-1 rounded-full text-xs font-medium',
+                  statusFilter === 'compliant' && 'bg-green-400/20 text-green-400',
+                  statusFilter === 'partial' && 'bg-yellow-400/20 text-yellow-400',
+                  statusFilter === 'non_compliant' && 'bg-red-400/20 text-red-400',
+                  statusFilter === 'not_applicable' && 'bg-surface-400/20 text-surface-400',
+                  statusFilter === 'not_assessed' && 'bg-surface-500/20 text-surface-500'
+                )}
+              >
                 {statusFilter === 'compliant' && 'Compliant'}
                 {statusFilter === 'partial' && 'Partial'}
                 {statusFilter === 'non_compliant' && 'Non-Compliant'}
@@ -269,17 +292,11 @@ export default function FrameworkDetail() {
               </p>
             </div>
             <div className="flex gap-2">
-              <button
-                onClick={() => setIsUploadModalOpen(true)}
-                className="btn-secondary text-sm"
-              >
+              <button onClick={() => setIsUploadModalOpen(true)} className="btn-secondary text-sm">
                 <ArrowUpTrayIcon className="w-4 h-4 mr-1" />
                 Bulk Upload
               </button>
-              <button
-                onClick={() => setIsCreateModalOpen(true)}
-                className="btn-primary text-sm"
-              >
+              <button onClick={() => setIsCreateModalOpen(true)} className="btn-primary text-sm">
                 <PlusIcon className="w-4 h-4 mr-1" />
                 Add Requirement
               </button>
@@ -352,7 +369,9 @@ export default function FrameworkDetail() {
                     placeholder="e.g., CC1.1, A.5.1.1"
                     className="input w-full"
                   />
-                  <p className="text-xs text-surface-500 mt-1">Unique identifier for this requirement</p>
+                  <p className="text-xs text-surface-500 mt-1">
+                    Unique identifier for this requirement
+                  </p>
                 </div>
 
                 <div className="flex items-center">
@@ -369,9 +388,7 @@ export default function FrameworkDetail() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-1">
-                  Title *
-                </label>
+                <label className="block text-sm font-medium text-surface-300 mb-1">Title *</label>
                 <input
                   type="text"
                   required
@@ -454,13 +471,34 @@ export default function FrameworkDetail() {
                   Upload a CSV, Excel (.xlsx, .xls), or JSON file with the following columns:
                 </p>
                 <ul className="text-xs text-surface-400 space-y-1 list-disc list-inside">
-                  <li><span className="font-medium text-surface-300">reference</span> - Unique identifier (required)</li>
-                  <li><span className="font-medium text-surface-300">title</span> - Requirement title (required)</li>
-                  <li><span className="font-medium text-surface-300">description</span> - Detailed description (required)</li>
-                  <li><span className="font-medium text-surface-300">guidance</span> - Implementation guidance (optional)</li>
-                  <li><span className="font-medium text-surface-300">isCategory</span> - true/false (optional)</li>
-                  <li><span className="font-medium text-surface-300">order</span> - Display order number (optional)</li>
-                  <li><span className="font-medium text-surface-300">level</span> - Hierarchy level 0-3 (optional)</li>
+                  <li>
+                    <span className="font-medium text-surface-300">reference</span> - Unique
+                    identifier (required)
+                  </li>
+                  <li>
+                    <span className="font-medium text-surface-300">title</span> - Requirement title
+                    (required)
+                  </li>
+                  <li>
+                    <span className="font-medium text-surface-300">description</span> - Detailed
+                    description (required)
+                  </li>
+                  <li>
+                    <span className="font-medium text-surface-300">guidance</span> - Implementation
+                    guidance (optional)
+                  </li>
+                  <li>
+                    <span className="font-medium text-surface-300">isCategory</span> - true/false
+                    (optional)
+                  </li>
+                  <li>
+                    <span className="font-medium text-surface-300">order</span> - Display order
+                    number (optional)
+                  </li>
+                  <li>
+                    <span className="font-medium text-surface-300">level</span> - Hierarchy level
+                    0-3 (optional)
+                  </li>
                 </ul>
               </div>
 
@@ -562,7 +600,9 @@ function StatusCard({
       className={clsx(
         'p-3 rounded-lg text-left transition-all w-full',
         config.bg,
-        isActive ? 'ring-2 ring-offset-1 ring-offset-surface-900' : 'hover:opacity-80 cursor-pointer',
+        isActive
+          ? 'ring-2 ring-offset-1 ring-offset-surface-900'
+          : 'hover:opacity-80 cursor-pointer',
         isActive && status === 'compliant' && 'ring-green-400',
         isActive && status === 'partial' && 'ring-yellow-400',
         isActive && status === 'non_compliant' && 'ring-red-400',
@@ -575,9 +615,7 @@ function StatusCard({
         <span className={clsx('text-xl font-bold', config.color)}>{value}</span>
       </div>
       <p className="text-xs text-surface-400 mt-1">{label}</p>
-      {isActive && (
-        <p className={clsx('text-xs mt-1', config.color)}>Click to clear</p>
-      )}
+      {isActive && <p className={clsx('text-xs mt-1', config.color)}>Click to clear</p>}
     </button>
   );
 }
@@ -604,21 +642,23 @@ function RequirementRow({
   const isSelected = selectedId === requirement.id;
 
   // Get requirement's compliance status (now provided by backend)
-  const reqStatus = requirement.isCategory ? 'category' : (requirement.complianceStatus || 'not_assessed');
+  const reqStatus = requirement.isCategory
+    ? 'category'
+    : requirement.complianceStatus || 'not_assessed';
 
   // Check if this requirement or any children match the filter
   const matchesFilter = (req: any): boolean => {
     if (!statusFilter || statusFilter === 'all') return true;
-    
-    const status = req.isCategory ? 'category' : (req.complianceStatus || 'not_assessed');
-    
+
+    const status = req.isCategory ? 'category' : req.complianceStatus || 'not_assessed';
+
     if (status === statusFilter) return true;
-    
+
     // Check children recursively
     if (req.children?.length > 0) {
       return req.children.some((child: any) => matchesFilter(child));
     }
-    
+
     return false;
   };
 
@@ -636,7 +676,8 @@ function RequirementRow({
   };
 
   // Visual highlight if this specific item matches the filter (not just a parent with matching children)
-  const directlyMatchesFilter = statusFilter && statusFilter !== 'all' && reqStatus === statusFilter;
+  const directlyMatchesFilter =
+    statusFilter && statusFilter !== 'all' && reqStatus === statusFilter;
 
   return (
     <>
@@ -650,7 +691,15 @@ function RequirementRow({
         onClick={handleClick}
       >
         {hasChildren ? (
-          <button className="p-1 -ml-1" onClick={(e) => { e.stopPropagation(); onToggle(requirement.id); }}>
+          <button
+            className="p-1 -ml-1"
+            aria-label={`Toggle ${requirement.reference}`}
+            aria-expanded={isExpanded}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggle(requirement.id);
+            }}
+          >
             {isExpanded ? (
               <ChevronDownIcon className="w-4 h-4 text-surface-400" />
             ) : (
@@ -713,17 +762,87 @@ function RequirementDetailPanel({
   onClose: () => void;
 }) {
   const queryClient = useQueryClient();
+  const { hasPermission } = useAuth();
+  const canEditMappings = hasPermission('controls:update');
+  const canDeleteMappings = hasPermission('controls:delete');
   const [isEditing, setIsEditing] = useState(false);
   const [selectedOwner, setSelectedOwner] = useState<string>(requirement.ownerId || '');
   const [ownerNotes, setOwnerNotes] = useState(requirement.ownerNotes || '');
-  const [dueDate, setDueDate] = useState(requirement.dueDate ? requirement.dueDate.split('T')[0] : '');
+  const [dueDate, setDueDate] = useState(
+    requirement.dueDate ? requirement.dueDate.split('T')[0] : ''
+  );
   const [priority, setPriority] = useState(requirement.priority || '');
+  const [isMappingModalOpen, setIsMappingModalOpen] = useState(false);
+  const [editingMappingId, setEditingMappingId] = useState<string | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const menuContainerRef = useRef<HTMLDivElement | null>(null);
 
   const { data: mappings, isLoading } = useQuery({
-    queryKey: ['requirement-mappings', requirement.id],
+    queryKey: ['mappings', 'by-requirement', requirement.id],
     queryFn: () => mappingsApi.byRequirement(requirement.id).then((res) => res.data),
     enabled: !!requirement.id && !requirement.isCategory,
   });
+
+  useEffect(() => {
+    if (!openMenuId) return;
+    const onDocClick = (e: MouseEvent) => {
+      if (menuContainerRef.current && !menuContainerRef.current.contains(e.target as Node)) {
+        setOpenMenuId(null);
+      }
+    };
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, [openMenuId]);
+
+  const invalidateMappingQueries = (controlId?: string) => {
+    queryClient.invalidateQueries({
+      queryKey: ['mappings', 'by-requirement', requirement.id],
+    });
+    if (controlId) {
+      queryClient.invalidateQueries({
+        queryKey: ['mappings', 'by-control', controlId],
+      });
+    }
+    // Keep legacy query keys in sync until callers migrate.
+    queryClient.invalidateQueries({
+      queryKey: ['requirement-mappings', requirement.id],
+    });
+  };
+
+  const deleteMutation = useMutation({
+    mutationFn: ({ id }: { id: string; controlId?: string }) => mappingsApi.delete(id),
+    onSuccess: (_data, variables) => {
+      toast.success('Mapping removed');
+      invalidateMappingQueries(variables.controlId);
+      setPendingDeleteId(null);
+      setOpenMenuId(null);
+    },
+    onError: () => {
+      toast.error('Failed to remove mapping');
+    },
+  });
+
+  const handleOpenCreateMapping = () => {
+    setEditingMappingId(null);
+    setIsMappingModalOpen(true);
+  };
+
+  const handleOpenEditMapping = (mappingId: string) => {
+    setEditingMappingId(mappingId);
+    setIsMappingModalOpen(true);
+    setOpenMenuId(null);
+  };
+
+  const handleMappingModalClose = () => {
+    setIsMappingModalOpen(false);
+    setEditingMappingId(null);
+  };
+
+  const handleMappingSaved = () => {
+    invalidateMappingQueries();
+    handleMappingModalClose();
+  };
 
   const { data: usersData } = useQuery({
     queryKey: ['users'],
@@ -733,7 +852,8 @@ function RequirementDetailPanel({
 
   const { data: reqDetail } = useQuery({
     queryKey: ['requirement-detail', frameworkId, requirement.id],
-    queryFn: () => frameworksApi.getRequirement(frameworkId, requirement.id).then((res) => res.data),
+    queryFn: () =>
+      frameworksApi.getRequirement(frameworkId, requirement.id).then((res) => res.data),
     enabled: !!requirement.id,
   });
 
@@ -741,7 +861,9 @@ function RequirementDetailPanel({
     mutationFn: (data: any) => frameworksApi.updateRequirement(frameworkId, requirement.id, data),
     onSuccess: () => {
       toast.success('Requirement updated');
-      queryClient.invalidateQueries({ queryKey: ['requirement-detail', frameworkId, requirement.id] });
+      queryClient.invalidateQueries({
+        queryKey: ['requirement-detail', frameworkId, requirement.id],
+      });
       queryClient.invalidateQueries({ queryKey: ['framework-requirements', frameworkId] });
       setIsEditing(false);
     },
@@ -769,23 +891,18 @@ function RequirementDetailPanel({
     <div className="card lg:col-span-1 h-fit sticky top-4">
       <div className="p-4 border-b border-surface-800 flex items-center justify-between">
         <h3 className="font-semibold text-surface-100">Requirement Details</h3>
-        <button
-          onClick={onClose}
-          className="p-1 hover:bg-surface-700 rounded transition-colors"
-        >
+        <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded transition-colors">
           <XMarkIcon className="w-5 h-5 text-surface-400" />
         </button>
       </div>
-      
+
       <div className="p-4 space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto">
         {/* Reference & Title */}
         <div>
           <span className="font-mono text-sm text-brand-400 bg-brand-500/10 px-2 py-1 rounded">
             {requirement.reference}
           </span>
-          <h4 className="text-lg font-medium text-surface-100 mt-2">
-            {requirement.title}
-          </h4>
+          <h4 className="text-lg font-medium text-surface-100 mt-2">{requirement.title}</h4>
         </div>
 
         {/* Description */}
@@ -905,12 +1022,19 @@ function RequirementDetailPanel({
                 {/* Priority */}
                 {currentPriority && (
                   <div className="flex items-center gap-2 p-2 bg-surface-800/50 rounded-lg">
-                    <FlagIcon className={clsx(
-                      'w-4 h-4',
-                      currentPriority === 'high' ? 'text-red-400' :
-                      currentPriority === 'medium' ? 'text-yellow-400' : 'text-green-400'
-                    )} />
-                    <span className="text-sm text-surface-300 capitalize">{currentPriority} Priority</span>
+                    <FlagIcon
+                      className={clsx(
+                        'w-4 h-4',
+                        currentPriority === 'high'
+                          ? 'text-red-400'
+                          : currentPriority === 'medium'
+                            ? 'text-yellow-400'
+                            : 'text-green-400'
+                      )}
+                    />
+                    <span className="text-sm text-surface-300 capitalize">
+                      {currentPriority} Priority
+                    </span>
                   </div>
                 )}
 
@@ -939,45 +1063,206 @@ function RequirementDetailPanel({
         {/* Mapped Controls */}
         {!requirement.isCategory && (
           <div className="border-t border-surface-800 pt-4">
-            <p className="text-xs text-surface-500 uppercase tracking-wide mb-2">
-              Mapped Controls ({mappings?.length || 0})
-            </p>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs text-surface-500 uppercase tracking-wide">
+                Mapped Controls ({mappings?.length || 0})
+              </p>
+              {canEditMappings && (
+                <button
+                  type="button"
+                  onClick={handleOpenCreateMapping}
+                  className="inline-flex items-center gap-1 text-xs text-brand-400 hover:text-brand-300"
+                >
+                  <PlusIcon className="w-3.5 h-3.5" />
+                  Add mapping…
+                </button>
+              )}
+            </div>
             {isLoading ? (
               <div className="flex items-center justify-center py-4">
                 <div className="animate-spin w-5 h-5 border-2 border-surface-700 rounded-full border-t-brand-500"></div>
               </div>
             ) : mappings && mappings.length > 0 ? (
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-                {mappings.map((mapping: any) => (
-                  <Link
-                    key={mapping.id}
-                    to={`/controls/${mapping.control?.id}`}
-                    className="block p-3 bg-surface-800/50 rounded-lg hover:bg-surface-800 transition-colors"
-                  >
-                    <div className="flex items-start gap-2">
-                      <LinkIcon className="w-4 h-4 text-brand-400 mt-0.5 flex-shrink-0" />
-                      <div className="min-w-0">
-                        <p className="text-sm font-mono text-brand-400">
-                          {mapping.control?.controlId}
-                        </p>
-                        <p className="text-sm text-surface-200 truncate">
-                          {mapping.control?.title}
-                        </p>
+              <div
+                role="list"
+                aria-label="Mapped controls"
+                className="space-y-2 max-h-48 overflow-y-auto"
+              >
+                {mappings.map((mapping: any) => {
+                  const controlRef = mapping.control?.controlId || mapping.controlId;
+                  const isMenuOpen = openMenuId === mapping.id;
+                  const isConfirmingDelete = pendingDeleteId === mapping.id;
+                  const showKebab = canEditMappings || canDeleteMappings;
+                  return (
+                    <div
+                      key={mapping.id}
+                      role="listitem"
+                      className="group relative bg-surface-800/50 rounded-lg hover:bg-surface-800 transition-colors"
+                    >
+                      <div className="flex items-start gap-2 p-3">
+                        <Link
+                          to={`/controls/${mapping.control?.id}`}
+                          className="flex items-start gap-2 min-w-0 flex-1"
+                        >
+                          <LinkIcon className="w-4 h-4 text-brand-400 mt-0.5 flex-shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-sm font-mono text-brand-400">
+                              {mapping.control?.controlId}
+                            </p>
+                            <p className="text-sm text-surface-200 truncate">
+                              {mapping.control?.title}
+                            </p>
+                            <span
+                              className={
+                                mapping.mappingType === 'supporting'
+                                  ? 'inline-block mt-1 text-xs text-surface-400 uppercase tracking-wide'
+                                  : 'inline-block mt-1 text-xs text-brand-400 uppercase tracking-wide'
+                              }
+                            >
+                              {mapping.mappingType || 'primary'}
+                            </span>
+                          </div>
+                        </Link>
+                        {showKebab && (
+                          <div
+                            className="relative flex-shrink-0"
+                            ref={isMenuOpen ? menuContainerRef : null}
+                          >
+                            <button
+                              type="button"
+                              aria-label={`Mapping actions for ${controlRef}`}
+                              aria-haspopup="menu"
+                              aria-expanded={isMenuOpen}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setOpenMenuId(isMenuOpen ? null : mapping.id);
+                                setPendingDeleteId(null);
+                              }}
+                              className="p-1 rounded hover:bg-surface-700 text-surface-400 hover:text-surface-200 opacity-60 group-hover:opacity-100 focus:opacity-100 focus:outline-none focus:ring-1 focus:ring-brand-500 transition-opacity"
+                            >
+                              <EllipsisVerticalIcon className="w-4 h-4" />
+                            </button>
+                            {isMenuOpen && (
+                              <div
+                                role="menu"
+                                className="absolute right-0 top-7 z-10 min-w-[10rem] bg-surface-800 border border-surface-700 rounded-lg shadow-lg py-1"
+                              >
+                                {canEditMappings && (
+                                  <button
+                                    type="button"
+                                    role="menuitem"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      handleOpenEditMapping(mapping.id);
+                                    }}
+                                    className="block w-full text-left px-3 py-1.5 text-sm text-surface-200 hover:bg-surface-700"
+                                  >
+                                    Edit
+                                  </button>
+                                )}
+                                {canDeleteMappings && (
+                                  <button
+                                    type="button"
+                                    role="menuitem"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      setPendingDeleteId(mapping.id);
+                                    }}
+                                    className="block w-full text-left px-3 py-1.5 text-sm text-red-400 hover:bg-surface-700"
+                                  >
+                                    Delete
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
+                      {isConfirmingDelete && (
+                        <div className="px-3 pb-3 -mt-1">
+                          <div
+                            role="alertdialog"
+                            aria-label="Confirm mapping deletion"
+                            className="bg-surface-900/60 border border-red-500/30 rounded-md p-2 text-xs text-surface-200"
+                          >
+                            <p className="mb-2">Remove this mapping?</p>
+                            <div className="flex justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setPendingDeleteId(null);
+                                }}
+                                className="px-2 py-1 text-surface-300 hover:text-surface-100"
+                                disabled={deleteMutation.isPending}
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  deleteMutation.mutate({
+                                    id: mapping.id,
+                                    controlId: mapping.controlId || mapping.control?.id,
+                                  });
+                                }}
+                                disabled={deleteMutation.isPending}
+                                className="px-2 py-1 bg-red-500/20 text-red-300 hover:bg-red-500/30 rounded disabled:opacity-50"
+                              >
+                                {deleteMutation.isPending ? 'Removing…' : 'Confirm'}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </Link>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <p className="text-sm text-surface-500 italic">No controls mapped yet</p>
             )}
+            {isMappingModalOpen &&
+              (() => {
+                const editingMapping = editingMappingId
+                  ? (mappings || []).find((m: any) => m.id === editingMappingId)
+                  : undefined;
+                const editingControlId = editingMapping?.controlId || editingMapping?.control?.id;
+                return (
+                  <MappingEditorModal
+                    open={isMappingModalOpen}
+                    onClose={handleMappingModalClose}
+                    mode="requirement-to-controls"
+                    requirementId={requirement.id}
+                    frameworkId={frameworkId}
+                    controlId={editingControlId}
+                    existingMappingIds={
+                      editingMappingId
+                        ? []
+                        : (mappings || [])
+                            .map((m: any) => m.controlId || m.control?.id)
+                            .filter(Boolean)
+                    }
+                    editingMappingId={editingMappingId || undefined}
+                    onSaved={handleMappingSaved}
+                  />
+                );
+              })()}
           </div>
         )}
 
         {/* Children count for categories */}
         {requirement.isCategory && requirement.children?.length > 0 && (
           <div>
-            <p className="text-xs text-surface-500 uppercase tracking-wide mb-1">Sub-requirements</p>
+            <p className="text-xs text-surface-500 uppercase tracking-wide mb-1">
+              Sub-requirements
+            </p>
             <p className="text-sm text-surface-300">
               {requirement.children.length} child requirement(s)
             </p>
@@ -999,4 +1284,3 @@ function RequirementDetailPanel({
     </div>
   );
 }
-

@@ -22,7 +22,7 @@ and is intended as a human-readable reference for administrators.
 ### Resources and Actions
 
 - **Resources**
-  - `controls`, `evidence`, `policies`, `frameworks`, `integrations`, `audit_logs`,
+  - `controls`, `evidence`, `policies`, `frameworks`, `mappings`, `integrations`, `audit_logs`,
     `users`, `permissions`, `settings`, `dashboard`, `workspaces`,
     `risk`, `bcdr`, `reports`, `ai`
 - **Actions**
@@ -52,6 +52,7 @@ Admins can manage everything, including risk, BC/DR, reports, AI features, and p
 | `evidence`   | `read`, `create`, `update`, `approve`    | `all` |
 | `policies`   | `read`, `create`, `update`, `approve`    | `all` |
 | `frameworks` | `read`                                   | `all` |
+| `mappings`   | `read`, `create`, `update`, `delete`     | `all` |
 | `integrations` | `read`                                 | `all` |
 | `audit_logs` | `read`                                   | `all` |
 | `dashboard`  | `read`                                   | `all` |
@@ -72,6 +73,7 @@ Admins can manage everything, including risk, BC/DR, reports, AI features, and p
 | `evidence`   | `read`, `approve`               | `all` |
 | `policies`   | `read`                          | `all` |
 | `frameworks` | `read`                          | `all` |
+| `mappings`   | `read`                          | `all` |
 | `audit_logs` | `read`, `export`                | `all` |
 | `dashboard`  | `read`                          | `all` |
 | `risk`       | `read`                          | `all` |
@@ -92,6 +94,7 @@ Auditors can generate standard reports but cannot change configuration or entiti
 | `evidence`   | `read`, `create`, `update`      | `owned`       |
 | `policies`   | `read`                          | `all`         |
 | `frameworks` | `read`                          | `all`         |
+| `mappings`   | `read`                          | `all`         |
 | `dashboard`  | `read`                          | `all`         |
 
 ---
@@ -106,6 +109,7 @@ Auditors can generate standard reports but cannot change configuration or entiti
 | `evidence`   | `read`                          | `all` |
 | `policies`   | `read`                          | `all` |
 | `frameworks` | `read`                          | `all` |
+| `mappings`   | `read`                          | `all` |
 | `dashboard`  | `read`                          | `all` |
 
 Viewers cannot modify data, run collectors, execute workflows, or generate exports.

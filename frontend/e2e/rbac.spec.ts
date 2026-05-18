@@ -8,7 +8,7 @@ import { test, expect, request as playwrightRequest, APIRequestContext } from '@
 test.beforeEach(({}, testInfo) => {
   test.skip(
     testInfo.project.name !== 'chromium',
-    'rbac.spec is project-agnostic and only needs to run once',
+    'rbac.spec is project-agnostic and only needs to run once'
   );
 });
 
@@ -95,6 +95,10 @@ const MATRIX: Record<Role, Record<string, boolean>> = {
     'policies:approve': true,
     'integrations:view': true,
     'integrations:manage': true,
+    // PR-A mapping mutations — admin + compliance_manager allowed.
+    'mappings:create': true,
+    'mappings:update': true,
+    'mappings:delete': true,
   },
   compliance_manager: {
     'controls:view': true,
@@ -111,6 +115,9 @@ const MATRIX: Record<Role, Record<string, boolean>> = {
     'policies:approve': true,
     'integrations:view': true,
     'integrations:manage': true,
+    'mappings:create': true,
+    'mappings:update': true,
+    'mappings:delete': true,
   },
   auditor: {
     'controls:view': true,
@@ -127,6 +134,9 @@ const MATRIX: Record<Role, Record<string, boolean>> = {
     'policies:approve': false,
     'integrations:view': false,
     'integrations:manage': false,
+    'mappings:create': false,
+    'mappings:update': false,
+    'mappings:delete': false,
   },
   viewer: {
     'controls:view': true,
@@ -143,6 +153,9 @@ const MATRIX: Record<Role, Record<string, boolean>> = {
     'policies:approve': false,
     'integrations:view': false,
     'integrations:manage': false,
+    'mappings:create': false,
+    'mappings:update': false,
+    'mappings:delete': false,
   },
 };
 
@@ -158,12 +171,9 @@ const MATRIX: Record<Role, Record<string, boolean>> = {
 function expectAllowed(status: number, context: string) {
   expect(
     status,
-    `[${context}] expected role to be authorized but got ${status} (401/403 = denied)`,
+    `[${context}] expected role to be authorized but got ${status} (401/403 = denied)`
   ).not.toBe(401);
-  expect(
-    status,
-    `[${context}] expected role to be authorized but got 403 Forbidden`,
-  ).not.toBe(403);
+  expect(status, `[${context}] expected role to be authorized but got 403 Forbidden`).not.toBe(403);
   // sanity: server didn't blow up
   expect(status, `[${context}] server error ${status}`).toBeLessThan(500);
 }
@@ -173,7 +183,7 @@ function expectAllowed(status: number, context: string) {
 function expectDenied(status: number, context: string) {
   expect(
     [401, 403].includes(status),
-    `[${context}] expected 401 or 403 (denial) but got ${status}`,
+    `[${context}] expected 401 or 403 (denial) but got ${status}`
   ).toBe(true);
 }
 
@@ -183,7 +193,7 @@ async function reqWithRetry(
   method: 'post' | 'put' | 'patch' | 'delete',
   url: string,
   options?: Parameters<APIRequestContext['post']>[1],
-  attempts = 5,
+  attempts = 5
 ): Promise<import('@playwright/test').APIResponse> {
   let res: import('@playwright/test').APIResponse | undefined;
   for (let i = 0; i < attempts; i++) {
@@ -217,13 +227,31 @@ async function getRoleContext(role: Role): Promise<APIRequestContext> {
  * granted to admin. */
 let sampleControlId: string | undefined;
 
+/** Mapping fixtures shared across the four role descriptions. We discover
+ * one framework + one non-category requirement + one control up-front, then
+ * each role's POST attempt either succeeds (creating a new row whose id is
+ * the role's `mappingsRowId`, used by the same role's PATCH+DELETE tests) or
+ * gets denied (in which case the PATCH/DELETE tests fall back to a row that
+ * admin pre-seeds — see `sharedMappingId`). */
+let sampleFrameworkId: string | undefined;
+let sampleRequirementId: string | undefined;
+let sampleMappingControlId: string | undefined;
+/** A pre-existing mapping row created as admin in beforeAll, used by
+ * denied-role PATCH/DELETE probes so we hit the auth guard rather than
+ * 404 on a missing row. */
+let sharedMappingId: string | undefined;
+/** A pool of additional control ids per role, used to keep their
+ * `mappings:create` POSTs from colliding with each other on the
+ * (frameworkId, requirementId, controlId) uniqueness constraint. */
+const perRoleMappingControlId: Partial<Record<Role, string>> = {};
+
 /** GET that retries on 429 — the controls service applies per-IP rate limits
  * and `fullyParallel: true` plus six projects can blow through the bucket.
  * Returns the first non-429 response or throws after `attempts` tries. */
 async function getWithRetry(
   ctx: APIRequestContext,
   url: string,
-  attempts = 5,
+  attempts = 5
 ): Promise<import('@playwright/test').APIResponse> {
   let res: import('@playwright/test').APIResponse | undefined;
   for (let i = 0; i < attempts; i++) {
@@ -252,14 +280,14 @@ test.beforeAll(async ({}, testInfo) => {
   expect(
     [200, 201, 409, 429].includes(seedRes.status()),
     `[rbac.spec] seed load-demo returned unexpected status ${seedRes.status()}; ` +
-      `RBAC users may not be seeded`,
+      `RBAC users may not be seeded`
   ).toBe(true);
 
   const res = await getWithRetry(admin, `${CONTROLS_URL}/api/controls?limit=1`);
   if (!res.ok()) {
     throw new Error(
       `[rbac.spec] could not fetch a sample control as admin (status ${res.status()}); ` +
-        `the spec needs at least one seeded control to exercise PUT/DELETE paths.`,
+        `the spec needs at least one seeded control to exercise PUT/DELETE paths.`
     );
   }
   const body = await res.json();
@@ -270,6 +298,131 @@ test.beforeAll(async ({}, testInfo) => {
   }
   sampleControlId = items[0].id;
   expect(sampleControlId, 'sampleControlId').toBeTruthy();
+
+  // ----- Discover a framework + requirement + control for mapping tests -----
+  // NOTE: the seeded catalog frameworks (SOC 2, ISO 27001, HIPAA) have ONLY
+  // category rows at the top level — non-category leaf requirements are
+  // nested under them via parentId. The plain /requirements endpoint
+  // returns top-level only (parentId IS NULL), so we hit /requirements/tree
+  // which returns every row flat, then pick the first non-category one.
+  // Fallback to the regular endpoint + recurse into `.children` if the
+  // tree endpoint is unavailable.
+  const findLeafRequirement = (nodes: any[]): any | undefined => {
+    for (const n of nodes) {
+      if (!n.isCategory) return n;
+      if (Array.isArray(n.children) && n.children.length > 0) {
+        const hit = findLeafRequirement(n.children);
+        if (hit) return hit;
+      }
+    }
+    return undefined;
+  };
+  const fwRes = await getWithRetry(admin, `${FRAMEWORKS_URL}/api/frameworks`);
+  if (fwRes.ok()) {
+    const fwBody = await fwRes.json();
+    const fws = Array.isArray(fwBody)
+      ? fwBody
+      : (fwBody.data ?? fwBody.items ?? fwBody.frameworks ?? []);
+    for (const fw of fws) {
+      let reqs: any[] = [];
+      const treeRes = await getWithRetry(
+        admin,
+        `${FRAMEWORKS_URL}/api/frameworks/${fw.id}/requirements/tree`
+      );
+      if (treeRes.ok()) {
+        const body = await treeRes.json();
+        reqs = Array.isArray(body) ? body : (body.data ?? body.items ?? body.requirements ?? []);
+      } else {
+        const reqRes = await getWithRetry(
+          admin,
+          `${FRAMEWORKS_URL}/api/frameworks/${fw.id}/requirements`
+        );
+        if (!reqRes.ok()) continue;
+        const reqBody = await reqRes.json();
+        reqs = Array.isArray(reqBody)
+          ? reqBody
+          : (reqBody.data ?? reqBody.items ?? reqBody.requirements ?? []);
+      }
+      const req = findLeafRequirement(reqs);
+      if (req) {
+        sampleFrameworkId = fw.id;
+        sampleRequirementId = req.id;
+        break;
+      }
+    }
+  }
+  // The sample control was picked above; reuse it as the mapping target.
+  sampleMappingControlId = sampleControlId;
+
+  // Reserve one distinct control id per role for their `mappings:create`
+  // attempt. The (framework, requirement, control) tuple is unique so
+  // we cannot reuse the same control across all four POSTs.
+  const controlPoolRes = await getWithRetry(admin, `${CONTROLS_URL}/api/controls?limit=10`);
+  if (controlPoolRes.ok()) {
+    const poolBody = await controlPoolRes.json();
+    const pool = Array.isArray(poolBody)
+      ? poolBody
+      : (poolBody.data ?? poolBody.items ?? poolBody.controls ?? []);
+    const roles: Role[] = ['admin', 'compliance_manager', 'auditor', 'viewer'];
+    roles.forEach((r, idx) => {
+      // Skip index 0 — that's reserved as the shared mapping target above.
+      const ctrl = pool[idx + 1];
+      if (ctrl) perRoleMappingControlId[r] = ctrl.id;
+    });
+  }
+
+  if (sampleFrameworkId && sampleRequirementId && sampleMappingControlId) {
+    // Pre-seed one mapping row that the denied-role PATCH/DELETE tests
+    // can target without first having to create their own.
+    const seedRes = await reqWithRetry(admin, 'post', `${FRAMEWORKS_URL}/api/mappings`, {
+      data: {
+        frameworkId: sampleFrameworkId,
+        requirementId: sampleRequirementId,
+        controlId: sampleMappingControlId,
+        mappingType: 'primary',
+        notes: 'rbac.spec shared probe row',
+      },
+    });
+    if (seedRes.ok()) {
+      const seeded = await seedRes.json();
+      sharedMappingId = seeded?.id ?? seeded?.data?.id;
+    } else if (seedRes.status() === 409) {
+      // Already exists from a previous run — pick it up via by-control.
+      const findRes = await getWithRetry(
+        admin,
+        `${FRAMEWORKS_URL}/api/mappings/by-control/${sampleMappingControlId}`
+      );
+      if (findRes.ok()) {
+        const body = await findRes.json();
+        const items = Array.isArray(body) ? body : (body.data ?? body.items ?? []);
+        const hit = items.find(
+          (m: any) => m.requirementId === sampleRequirementId && m.frameworkId === sampleFrameworkId
+        );
+        sharedMappingId = hit?.id;
+      }
+    }
+  }
+
+  // Fail loud if mapping-fixture discovery silently failed. Without this,
+  // each mapping test produces an opaque "Error: <var> from beforeAll" that
+  // takes minutes to trace back.
+  if (!sampleFrameworkId || !sampleRequirementId || !sampleMappingControlId) {
+    throw new Error(
+      '[rbac.spec] mapping fixture discovery failed in beforeAll. ' +
+        `sampleFrameworkId=${sampleFrameworkId}, ` +
+        `sampleRequirementId=${sampleRequirementId}, ` +
+        `sampleMappingControlId=${sampleMappingControlId}. ` +
+        'Possible causes: seed did not run (controls service returned 0 frameworks), ' +
+        'or /api/frameworks/:id/requirements/tree did not return any non-category leaf ' +
+        '(check the catalog data and ensure findLeafRequirement walks .children).'
+    );
+  }
+  if (!sharedMappingId) {
+    throw new Error(
+      '[rbac.spec] sharedMappingId was not seeded in beforeAll. ' +
+        'POST /api/mappings must succeed for the admin context — check the response in the workflow logs.'
+    );
+  }
 });
 
 test.afterAll(async () => {
@@ -370,9 +523,14 @@ function runRoleTests(role: Role) {
     test('PUT /api/controls/:id (controls:update)', async () => {
       const ctx = await getRoleContext(role);
       expect(sampleControlId, 'sampleControlId from beforeAll').toBeTruthy();
-      const res = await reqWithRetry(ctx, 'put', `${CONTROLS_URL}/api/controls/${sampleControlId}`, {
-        data: { title: `RBAC update probe (${role})` },
-      });
+      const res = await reqWithRetry(
+        ctx,
+        'put',
+        `${CONTROLS_URL}/api/controls/${sampleControlId}`,
+        {
+          data: { title: `RBAC update probe (${role})` },
+        }
+      );
       const ctxLabel = `${role} PUT /api/controls/:id`;
       if (MATRIX[role]['controls:update']) {
         expectAllowed(res.status(), ctxLabel);
@@ -458,6 +616,126 @@ function runRoleTests(role: Role) {
       });
       const ctxLabel = `${role} POST /api/integrations`;
       if (MATRIX[role]['integrations:manage']) {
+        expectAllowed(res.status(), ctxLabel);
+      } else {
+        expectDenied(res.status(), ctxLabel);
+      }
+    });
+
+    // ---------- MAPPINGS (PR-A) --------------------------------------
+    // The mappings controller uses @Roles('admin','compliance_manager')
+    // on POST / PATCH / DELETE. Auditor + viewer should hit 401/403
+    // before any business logic.
+
+    test('POST /api/mappings (mappings:create)', async () => {
+      const ctx = await getRoleContext(role);
+      // Guard runs before validation, so we can fire even when fixtures
+      // are missing — denied roles still get 401/403. Allowed roles need
+      // a real (framework, requirement, control) triple.
+      const fwId = sampleFrameworkId;
+      const reqId = sampleRequirementId;
+      const ctrlId = perRoleMappingControlId[role] ?? sampleMappingControlId;
+      expect(fwId, 'sampleFrameworkId from beforeAll').toBeTruthy();
+      expect(reqId, 'sampleRequirementId from beforeAll').toBeTruthy();
+      expect(ctrlId, `mapping control for role ${role}`).toBeTruthy();
+
+      const res = await reqWithRetry(ctx, 'post', `${FRAMEWORKS_URL}/api/mappings`, {
+        data: {
+          frameworkId: fwId,
+          requirementId: reqId,
+          controlId: ctrlId,
+          mappingType: 'supporting',
+          notes: `rbac.spec ${role} probe`,
+        },
+      });
+      const ctxLabel = `${role} POST /api/mappings`;
+      if (MATRIX[role]['mappings:create']) {
+        expectAllowed(res.status(), ctxLabel);
+      } else {
+        expectDenied(res.status(), ctxLabel);
+      }
+    });
+
+    test('PATCH /api/mappings/:id (mappings:update)', async () => {
+      const ctx = await getRoleContext(role);
+      expect(sharedMappingId, 'sharedMappingId from beforeAll').toBeTruthy();
+      const res = await reqWithRetry(
+        ctx,
+        'patch',
+        `${FRAMEWORKS_URL}/api/mappings/${sharedMappingId}`,
+        {
+          data: { notes: `rbac.spec ${role} update probe` },
+        }
+      );
+      const ctxLabel = `${role} PATCH /api/mappings/:id`;
+      if (MATRIX[role]['mappings:update']) {
+        expectAllowed(res.status(), ctxLabel);
+      } else {
+        expectDenied(res.status(), ctxLabel);
+      }
+    });
+
+    test('DELETE /api/mappings/:id (mappings:delete)', async () => {
+      // Only the auditor + viewer tests actually fire DELETE against
+      // the shared row — they should be denied before the row is
+      // touched. Admin / compliance_manager test against the row they
+      // created in their own POST test (rolled into perRoleMappingControlId)
+      // so we don't accidentally delete the shared row and break the
+      // PATCH test that other roles still need to run against.
+      const ctx = await getRoleContext(role);
+
+      let targetId: string | undefined;
+      if (MATRIX[role]['mappings:delete']) {
+        // Allowed roles: discover or create a row tied to this role's
+        // reserved control, then DELETE it. This keeps the shared row
+        // alive for PATCH probes by other parallel tests.
+        const ctrlId = perRoleMappingControlId[role];
+        if (ctrlId) {
+          const findRes = await getWithRetry(
+            ctx,
+            `${FRAMEWORKS_URL}/api/mappings/by-control/${ctrlId}`
+          );
+          if (findRes.ok()) {
+            const body = await findRes.json();
+            const items = Array.isArray(body) ? body : (body.data ?? body.items ?? []);
+            targetId = items[0]?.id;
+          }
+          if (!targetId) {
+            // Create on the fly so we have a row to delete.
+            const createRes = await reqWithRetry(ctx, 'post', `${FRAMEWORKS_URL}/api/mappings`, {
+              data: {
+                frameworkId: sampleFrameworkId,
+                requirementId: sampleRequirementId,
+                controlId: ctrlId,
+                mappingType: 'supporting',
+                notes: `rbac.spec ${role} delete-probe seed`,
+              },
+            });
+            if (createRes.ok()) {
+              const created = await createRes.json();
+              targetId = created?.id ?? created?.data?.id;
+            } else if (createRes.status() === 409) {
+              const refind = await getWithRetry(
+                ctx,
+                `${FRAMEWORKS_URL}/api/mappings/by-control/${ctrlId}`
+              );
+              const body = await refind.json();
+              const items = Array.isArray(body) ? body : (body.data ?? body.items ?? []);
+              targetId = items[0]?.id;
+            }
+          }
+        }
+        expect(targetId, `${role} could not obtain a mapping row to DELETE`).toBeTruthy();
+      } else {
+        // Denied roles aim at the shared row — guard fires before any
+        // DB read, so the row staying intact is the desired outcome.
+        targetId = sharedMappingId;
+        expect(targetId, 'sharedMappingId for denied-role probe').toBeTruthy();
+      }
+
+      const res = await reqWithRetry(ctx, 'delete', `${FRAMEWORKS_URL}/api/mappings/${targetId}`);
+      const ctxLabel = `${role} DELETE /api/mappings/:id`;
+      if (MATRIX[role]['mappings:delete']) {
         expectAllowed(res.status(), ctxLabel);
       } else {
         expectDenied(res.status(), ctxLabel);

@@ -1,7 +1,15 @@
 import { useState } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { controlsApi, implementationsApi, usersApi, evidenceApi, policiesApi } from '@/lib/api';
+import {
+  controlsApi,
+  implementationsApi,
+  usersApi,
+  evidenceApi,
+  policiesApi,
+  mappingsApi,
+} from '@/lib/api';
+import { MappingEditorModal } from '@/components/mappings/MappingEditorModal';
 import { useAuth } from '@/contexts/AuthContext';
 import toast from 'react-hot-toast';
 import CommentsPanel from '@/components/CommentsPanel';
@@ -12,8 +20,10 @@ import EntityAuditHistory from '@/components/EntityAuditHistory';
 import {
   ArrowLeftIcon,
   DocumentTextIcon,
+  EllipsisVerticalIcon,
   LinkIcon,
   PencilIcon,
+  PlusIcon,
   XMarkIcon,
   TrashIcon,
   ChatBubbleLeftRightIcon,
@@ -63,6 +73,16 @@ export default function ControlDetail() {
     effectivenessScore: '',
     implementationNotes: '',
   });
+  const [mappingMenuOpenId, setMappingMenuOpenId] = useState<string | null>(null);
+  const [mappingDeleteConfirmId, setMappingDeleteConfirmId] = useState<string | null>(null);
+  const [mappingEditorState, setMappingEditorState] = useState<
+    | { mode: 'create' }
+    | { mode: 'edit'; mappingId: string; requirementId: string; frameworkId: string }
+    | null
+  >(null);
+
+  const canEditMappings = hasPermission('controls:update');
+  const canDeleteMappings = hasPermission('controls:delete');
 
   // Store the referrer URL to go back to with search params preserved
   const backUrl = location.state?.from || '/controls';
@@ -171,7 +191,12 @@ export default function ControlDetail() {
       title: editForm.title,
       description: editForm.description,
       guidance: editForm.guidance || undefined,
-      tags: editForm.tags ? editForm.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
+      tags: editForm.tags
+        ? editForm.tags
+            .split(',')
+            .map((t) => t.trim())
+            .filter(Boolean)
+        : [],
     });
 
     // Update implementation
@@ -179,7 +204,9 @@ export default function ControlDetail() {
       await updateImplementationMutation.mutateAsync({
         ownerId: implForm.ownerId || null,
         testingFrequency: implForm.testingFrequency,
-        effectivenessScore: implForm.effectivenessScore ? parseInt(implForm.effectivenessScore) : null,
+        effectivenessScore: implForm.effectivenessScore
+          ? parseInt(implForm.effectivenessScore)
+          : null,
         implementationNotes: implForm.implementationNotes || null,
       });
     }
@@ -237,14 +264,18 @@ export default function ControlDetail() {
         </div>
         <div className="flex items-center gap-2">
           {hasPermission('controls:update') && (
-            <Button variant="outline" onClick={handleEdit} leftIcon={<PencilIcon className="w-4 h-4" />}>
+            <Button
+              variant="outline"
+              onClick={handleEdit}
+              leftIcon={<PencilIcon className="w-4 h-4" />}
+            >
               Edit
             </Button>
           )}
           {hasPermission('controls:delete') && (
-            <Button 
+            <Button
               variant="danger"
-              onClick={() => setShowDeleteConfirm(true)} 
+              onClick={() => setShowDeleteConfirm(true)}
               leftIcon={<TrashIcon className="w-4 h-4" />}
             >
               Delete
@@ -259,14 +290,19 @@ export default function ControlDetail() {
           <div className="card w-full max-w-3xl max-h-[90vh] overflow-y-auto">
             <div className="p-4 border-b border-surface-800 flex items-center justify-between sticky top-0 bg-surface-900">
               <h2 className="text-lg font-semibold text-surface-100">Edit Control</h2>
-              <button onClick={() => setIsEditing(false)} className="p-1 hover:bg-surface-700 rounded">
+              <button
+                onClick={() => setIsEditing(false)}
+                className="p-1 hover:bg-surface-700 rounded"
+              >
                 <XMarkIcon className="w-5 h-5 text-surface-400" />
               </button>
             </div>
             <div className="p-4 space-y-6">
               {/* Control Details Section */}
               <div>
-                <h3 className="text-sm font-semibold text-surface-300 mb-3 uppercase tracking-wide">Control Details</h3>
+                <h3 className="text-sm font-semibold text-surface-300 mb-3 uppercase tracking-wide">
+                  Control Details
+                </h3>
                 <div className="space-y-4">
                   <div>
                     <label className="label mb-1">Title</label>
@@ -311,7 +347,9 @@ export default function ControlDetail() {
               {/* Implementation Details Section */}
               {control.implementation && (
                 <div className="border-t border-surface-800 pt-6">
-                  <h3 className="text-sm font-semibold text-surface-300 mb-3 uppercase tracking-wide">Implementation Details</h3>
+                  <h3 className="text-sm font-semibold text-surface-300 mb-3 uppercase tracking-wide">
+                    Implementation Details
+                  </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="label mb-1">Owner</label>
@@ -332,7 +370,9 @@ export default function ControlDetail() {
                       <label className="label mb-1">Testing Frequency</label>
                       <select
                         value={implForm.testingFrequency}
-                        onChange={(e) => setImplForm({ ...implForm, testingFrequency: e.target.value })}
+                        onChange={(e) =>
+                          setImplForm({ ...implForm, testingFrequency: e.target.value })
+                        }
                         className="input w-full"
                       >
                         {FREQUENCY_OPTIONS.map((opt) => (
@@ -349,7 +389,9 @@ export default function ControlDetail() {
                         min="0"
                         max="100"
                         value={implForm.effectivenessScore}
-                        onChange={(e) => setImplForm({ ...implForm, effectivenessScore: e.target.value })}
+                        onChange={(e) =>
+                          setImplForm({ ...implForm, effectivenessScore: e.target.value })
+                        }
                         placeholder="Not rated"
                         className="input w-full"
                       />
@@ -361,7 +403,9 @@ export default function ControlDetail() {
                       <label className="label mb-1">Implementation Notes</label>
                       <textarea
                         value={implForm.implementationNotes}
-                        onChange={(e) => setImplForm({ ...implForm, implementationNotes: e.target.value })}
+                        onChange={(e) =>
+                          setImplForm({ ...implForm, implementationNotes: e.target.value })
+                        }
                         rows={3}
                         placeholder="Notes about how this control is implemented..."
                         className="input w-full"
@@ -375,9 +419,11 @@ export default function ControlDetail() {
               <Button variant="secondary" onClick={() => setIsEditing(false)}>
                 Cancel
               </Button>
-              <Button 
-                onClick={handleSave} 
-                isLoading={updateControlMutation.isPending || updateImplementationMutation.isPending}
+              <Button
+                onClick={handleSave}
+                isLoading={
+                  updateControlMutation.isPending || updateImplementationMutation.isPending
+                }
               >
                 Save Changes
               </Button>
@@ -490,8 +536,8 @@ export default function ControlDetail() {
                           link.evidence.status === 'approved'
                             ? 'badge-success'
                             : link.evidence.status === 'expired'
-                            ? 'badge-danger'
-                            : 'badge-warning'
+                              ? 'badge-danger'
+                              : 'badge-warning'
                         )}
                       >
                         {link.evidence.status}
@@ -520,10 +566,7 @@ export default function ControlDetail() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-surface-100">Linked Policies</h2>
               {hasPermission('policies:write') && (
-                <button
-                  onClick={() => setIsLinkPolicyOpen(true)}
-                  className="btn-outline text-sm"
-                >
+                <button onClick={() => setIsLinkPolicyOpen(true)} className="btn-outline text-sm">
                   <LinkIcon className="w-4 h-4 mr-2" />
                   Link Policy
                 </button>
@@ -560,8 +603,8 @@ export default function ControlDetail() {
                           link.policy?.status === 'published' || link.policy?.status === 'approved'
                             ? 'badge-success'
                             : link.policy?.status === 'retired'
-                            ? 'badge-danger'
-                            : 'badge-warning'
+                              ? 'badge-danger'
+                              : 'badge-warning'
                         )}
                       >
                         {link.policy?.status}
@@ -581,9 +624,7 @@ export default function ControlDetail() {
                 ))}
               </div>
             ) : (
-              <p className="text-surface-500 text-sm">
-                No policies linked to this control.
-              </p>
+              <p className="text-surface-500 text-sm">No policies linked to this control.</p>
             )}
           </div>
 
@@ -615,15 +656,13 @@ export default function ControlDetail() {
                             test.result === 'pass'
                               ? 'badge-success'
                               : test.result === 'fail'
-                              ? 'badge-danger'
-                              : 'badge-warning'
+                                ? 'badge-danger'
+                                : 'badge-warning'
                           )}
                         >
                           {test.result}
                         </span>
-                        <span className="text-xs text-surface-500">
-                          {test.testType} test
-                        </span>
+                        <span className="text-xs text-surface-500">{test.testType} test</span>
                       </div>
                       {test.findings && (
                         <p className="text-sm text-surface-400 mt-2">{test.findings}</p>
@@ -684,30 +723,182 @@ export default function ControlDetail() {
 
           {/* Framework Mappings Card */}
           <div className="card p-6">
-            <h3 className="text-sm font-semibold text-surface-100 mb-4">Framework Mappings</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-surface-100">Framework Mappings</h3>
+              {canEditMappings && (
+                <button
+                  type="button"
+                  onClick={() => setMappingEditorState({ mode: 'create' })}
+                  className="inline-flex items-center gap-1 text-xs text-brand-400 hover:text-brand-300 transition-colors"
+                >
+                  <PlusIcon className="w-3.5 h-3.5" />
+                  Add mapping...
+                </button>
+              )}
+            </div>
             {(control?.mappings?.length ?? 0) > 0 ? (
-              <div className="space-y-2">
-                {control?.mappings?.map((mapping: any) => (
-                  <div
-                    key={mapping.id}
-                    className="p-2 bg-surface-800 rounded-lg"
-                  >
-                    <p className="text-sm text-brand-400">{mapping.framework.name}</p>
-                    <p className="text-xs text-surface-400 mt-1">
-                      {mapping.requirement.reference} - {mapping.requirement.title}
-                    </p>
-                  </div>
-                ))}
+              <div role="list" aria-label="Framework mappings" className="space-y-2">
+                {control?.mappings?.map((mapping: any) => {
+                  const isMenuOpen = mappingMenuOpenId === mapping.id;
+                  const isConfirmingDelete = mappingDeleteConfirmId === mapping.id;
+                  const showKebab = canEditMappings || canDeleteMappings;
+                  return (
+                    <div
+                      key={mapping.id}
+                      role="listitem"
+                      className="group relative p-2 bg-surface-800 rounded-lg"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-brand-400">{mapping.framework.name}</p>
+                          <p className="text-xs text-surface-400 mt-1">
+                            {mapping.requirement.reference} - {mapping.requirement.title}
+                          </p>
+                          <span
+                            className={
+                              mapping.mappingType === 'supporting'
+                                ? 'inline-block mt-1 text-xs text-surface-400 uppercase tracking-wide'
+                                : 'inline-block mt-1 text-xs text-brand-400 uppercase tracking-wide'
+                            }
+                          >
+                            {mapping.mappingType || 'primary'}
+                          </span>
+                        </div>
+                        {showKebab && (
+                          <div className="relative">
+                            <button
+                              type="button"
+                              aria-label={`Mapping actions for ${mapping.framework.name}/${mapping.requirement.reference}`}
+                              aria-haspopup="menu"
+                              aria-expanded={isMenuOpen}
+                              onClick={() => setMappingMenuOpenId(isMenuOpen ? null : mapping.id)}
+                              className="opacity-60 group-hover:opacity-100 focus:opacity-100 p-1 rounded hover:bg-surface-700 transition-opacity"
+                            >
+                              <EllipsisVerticalIcon className="w-4 h-4 text-surface-400" />
+                            </button>
+                            {isMenuOpen && (
+                              <div
+                                role="menu"
+                                className="absolute right-0 top-full mt-1 w-32 rounded-md border border-surface-700 bg-surface-900 shadow-lg z-10"
+                              >
+                                {canEditMappings && (
+                                  <button
+                                    type="button"
+                                    role="menuitem"
+                                    onClick={() => {
+                                      setMappingMenuOpenId(null);
+                                      setMappingEditorState({
+                                        mode: 'edit',
+                                        mappingId: mapping.id,
+                                        requirementId: mapping.requirementId,
+                                        frameworkId: mapping.frameworkId,
+                                      });
+                                    }}
+                                    className="w-full text-left px-3 py-2 text-xs text-surface-200 hover:bg-surface-800 first:rounded-t-md"
+                                  >
+                                    Edit
+                                  </button>
+                                )}
+                                {canDeleteMappings && (
+                                  <button
+                                    type="button"
+                                    role="menuitem"
+                                    onClick={() => {
+                                      setMappingMenuOpenId(null);
+                                      setMappingDeleteConfirmId(mapping.id);
+                                    }}
+                                    className="w-full text-left px-3 py-2 text-xs text-red-400 hover:bg-surface-800 last:rounded-b-md"
+                                  >
+                                    Delete
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      {isConfirmingDelete && (
+                        <div className="mt-2 p-2 bg-surface-900 border border-surface-700 rounded">
+                          <p className="text-xs text-surface-300 mb-2">Delete this mapping?</p>
+                          <div className="flex justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setMappingDeleteConfirmId(null)}
+                              className="text-xs px-2 py-1 text-surface-300 hover:text-surface-100"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                try {
+                                  await mappingsApi.delete(mapping.id);
+                                  queryClient.invalidateQueries({
+                                    queryKey: ['mappings', 'by-control', id],
+                                  });
+                                  queryClient.invalidateQueries({
+                                    queryKey: ['mappings', 'by-requirement', mapping.requirementId],
+                                  });
+                                  queryClient.invalidateQueries({ queryKey: ['control', id] });
+                                  toast.success('Mapping deleted');
+                                } catch (error: any) {
+                                  toast.error(
+                                    error?.response?.data?.message || 'Failed to delete mapping'
+                                  );
+                                } finally {
+                                  setMappingDeleteConfirmId(null);
+                                }
+                              }}
+                              className="text-xs px-2 py-1 bg-red-600 text-white rounded hover:bg-red-500"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               <p className="text-surface-500 text-sm">Not mapped to any frameworks</p>
             )}
           </div>
 
+          {mappingEditorState && id && (
+            <MappingEditorModal
+              open={true}
+              onClose={() => setMappingEditorState(null)}
+              mode="control-to-requirements"
+              controlId={id}
+              requirementId={
+                mappingEditorState.mode === 'edit' ? mappingEditorState.requirementId : undefined
+              }
+              frameworkId={
+                mappingEditorState.mode === 'edit' ? mappingEditorState.frameworkId : undefined
+              }
+              editingMappingId={
+                mappingEditorState.mode === 'edit' ? mappingEditorState.mappingId : undefined
+              }
+              existingMappingIds={
+                mappingEditorState.mode === 'create'
+                  ? (control?.mappings?.map((m: any) => m.requirementId).filter(Boolean) ?? [])
+                  : []
+              }
+              onSaved={() => {
+                queryClient.invalidateQueries({ queryKey: ['mappings', 'by-control', id] });
+                queryClient.invalidateQueries({ queryKey: ['control', id] });
+                setMappingEditorState(null);
+              }}
+            />
+          )}
+
           {/* Guidance Card */}
           {control.guidance && (
             <div className="card p-6">
-              <h3 className="text-sm font-semibold text-surface-100 mb-4">Implementation Guidance</h3>
+              <h3 className="text-sm font-semibold text-surface-100 mb-4">
+                Implementation Guidance
+              </h3>
               <p className="text-sm text-surface-400">{control.guidance}</p>
             </div>
           )}
@@ -760,15 +951,9 @@ export default function ControlDetail() {
 
         {/* Tab Content */}
         <div className="p-6">
-          {activeTab === 'comments' && (
-            <CommentsPanel entityType="control" entityId={id!} />
-          )}
-          {activeTab === 'tasks' && (
-            <TasksPanel entityType="control" entityId={id!} />
-          )}
-          {activeTab === 'history' && (
-            <EntityAuditHistory entityType="control" entityId={id!} />
-          )}
+          {activeTab === 'comments' && <CommentsPanel entityType="control" entityId={id!} />}
+          {activeTab === 'tasks' && <TasksPanel entityType="control" entityId={id!} />}
+          {activeTab === 'history' && <EntityAuditHistory entityType="control" entityId={id!} />}
         </div>
       </div>
 
@@ -810,7 +995,10 @@ export default function ControlDetail() {
                       status: error?.response?.status,
                       data: error?.response?.data,
                     });
-                    const message = error?.response?.data?.message || error?.message || 'Failed to delete control';
+                    const message =
+                      error?.response?.data?.message ||
+                      error?.message ||
+                      'Failed to delete control';
                     toast.error(Array.isArray(message) ? message.join(', ') : message);
                   }
                 }}
@@ -841,7 +1029,8 @@ function LinkPolicyModal({
 
   const { data: policiesData, isLoading: isLoadingPolicies } = useQuery({
     queryKey: ['policies-for-linking', search],
-    queryFn: () => policiesApi.list({ search: search.trim() || undefined, limit: 100 }).then((res) => res.data),
+    queryFn: () =>
+      policiesApi.list({ search: search.trim() || undefined, limit: 100 }).then((res) => res.data),
     staleTime: 0, // Always fetch fresh data
   });
 
@@ -849,9 +1038,7 @@ function LinkPolicyModal({
     mutationFn: async () => {
       // Link each selected policy to this control
       await Promise.all(
-        selectedPolicyIds.map((policyId) =>
-          policiesApi.linkToControls(policyId, [controlId])
-        )
+        selectedPolicyIds.map((policyId) => policiesApi.linkToControls(policyId, [controlId]))
       );
     },
     onSuccess: () => {

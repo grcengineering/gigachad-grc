@@ -937,6 +937,9 @@ model User {
   riskWorkflowTasksCompleted RiskWorkflowTask[]           @relation("RiskWorkflowTaskCompleter")
   userNotificationPrefs      UserNotificationPreferences? @relation("UserNotificationPrefs")
 
+  // Control mapping history
+  mappingHistoryEntries ControlMappingHistory[] @relation("MappingHistoryChangedBy")
+
   @@unique([organizationId, email])
   @@index([organizationId, status])
   @@index([status, lastLoginAt])
@@ -1317,12 +1320,29 @@ model ControlMapping {
   createdAt     DateTime @default(now()) @map("created_at")
 
   // Relations
-  framework   Framework            @relation(fields: [frameworkId], references: [id], onDelete: Cascade)
-  requirement FrameworkRequirement @relation(fields: [requirementId], references: [id], onDelete: Cascade)
-  control     Control              @relation(fields: [controlId], references: [id])
+  framework   Framework               @relation(fields: [frameworkId], references: [id], onDelete: Cascade)
+  requirement FrameworkRequirement    @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+  control     Control                 @relation(fields: [controlId], references: [id])
+  history     ControlMappingHistory[]
 
   @@unique([frameworkId, requirementId, controlId])
   @@map("control_mappings")
+}
+
+model ControlMappingHistory {
+  id        String   @id @default(uuid())
+  mappingId String?  @map("mapping_id")
+  action    String // 'create' | 'update' | 'delete' | 'restore'
+  snapshot  Json
+  changedBy String   @map("changed_by")
+  changedAt DateTime @default(now()) @map("changed_at")
+  reason    String?
+
+  mapping       ControlMapping? @relation(fields: [mappingId], references: [id], onDelete: SetNull)
+  changedByUser User            @relation("MappingHistoryChangedBy", fields: [changedBy], references: [id])
+
+  @@index([mappingId, changedAt(sort: Desc)])
+  @@map("control_mapping_history")
 }
 
 model ReadinessAssessment {

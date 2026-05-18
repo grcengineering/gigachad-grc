@@ -521,8 +521,15 @@ export interface ControlMapping {
 }
 
 export interface CreateMappingData {
+  frameworkId: string;
   controlId: string;
   requirementId: string;
+  mappingType?: 'primary' | 'supporting';
+  notes?: string;
+}
+
+export interface UpdateMappingData {
+  mappingType?: 'primary' | 'supporting';
   notes?: string;
 }
 

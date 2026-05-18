@@ -1,6 +1,6 @@
 /**
  * Frameworks API Module
- * 
+ *
  * Handles all API calls related to compliance frameworks and mappings.
  */
 
@@ -13,6 +13,7 @@ import type {
   CreateRequirementData,
   UpdateRequirementData,
   CreateMappingData,
+  UpdateMappingData,
   BulkMappingData,
   MappingListParams,
 } from '../apiTypes';
@@ -83,6 +84,25 @@ export const frameworksApi = {
     },
 
     /**
+     * Fetch every requirement in a framework as a flat list (including
+     * leaves nested under categories). `list()` only returns top-level
+     * rows (parentId IS NULL), which for the seeded catalogs (SOC 2 /
+     * ISO 27001 / HIPAA) means categories only — pickers that want the
+     * actual non-category leaves must call this instead.
+     */
+    listAll: async (frameworkId: string): Promise<FrameworkRequirement[]> => {
+      const response = await api.get<FrameworkRequirement[]>(
+        `/api/frameworks/${frameworkId}/requirements/tree`
+      );
+      const flatten = (nodes: FrameworkRequirement[]): FrameworkRequirement[] =>
+        nodes.flatMap((n) => [
+          n,
+          ...flatten((n as { children?: FrameworkRequirement[] }).children ?? []),
+        ]);
+      return flatten(response.data);
+    },
+
+    /**
      * Get a single requirement
      */
     get: async (frameworkId: string, requirementId: string) => {
@@ -131,7 +151,9 @@ export const frameworksApi = {
      * List all mappings with optional filtering
      */
     list: async (params?: MappingListParams) => {
-      const queryString = params ? buildQueryString(params as Record<string, string | number | boolean | undefined>) : '';
+      const queryString = params
+        ? buildQueryString(params as Record<string, string | number | boolean | undefined>)
+        : '';
       const response = await api.get(`/api/mappings${queryString}`);
       return response.data;
     },
@@ -141,6 +163,14 @@ export const frameworksApi = {
      */
     create: async (data: CreateMappingData) => {
       const response = await api.post('/api/mappings', data);
+      return response.data;
+    },
+
+    /**
+     * Update an existing mapping (mappingType and/or notes)
+     */
+    update: async (id: string, data: UpdateMappingData) => {
+      const response = await api.patch(`/api/mappings/${id}`, data);
       return response.data;
     },
 
