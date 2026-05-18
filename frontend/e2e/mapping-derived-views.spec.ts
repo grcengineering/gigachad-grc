@@ -129,7 +129,7 @@ async function discoverFixture(api: APIRequestContext): Promise<DerivedFixture> 
   const [source, target] = usable;
 
   // 2. Two unmapped controls on the source requirement.
-  const ctrlRes = await api.get(`${URL_CONTROLS}/api/controls?limit=200`);
+  const ctrlRes = await api.get(`${URL_CONTROLS}/api/controls?limit=100`);
   if (!ctrlRes.ok()) {
     throw new Error(`Could not list controls: ${ctrlRes.status()}`);
   }
