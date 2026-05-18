@@ -294,7 +294,7 @@ test.describe('Mapping derived views — adminA', () => {
     await expect(region.getByText(/of \d+ mapped/i)).toBeVisible();
   });
 
-  test('chip kebab menu order is Edit, Copy to framework…, Delete', async ({ page }) => {
+  test('chip kebab menu order is Edit, Copy to framework…, History, Delete', async ({ page }) => {
     const f = fixture!;
     // Make sure controlA has at least one mapping on the source requirement
     // (beforeAll seeded a supporting one; defend against earlier scenarios
@@ -322,13 +322,17 @@ test.describe('Mapping derived views — adminA', () => {
 
     await chip.getByRole('button', { name: /Mapping actions/i }).click();
 
-    // Order of menu items in DOM should be Edit → Copy → Delete.
+    // Order of menu items in DOM should be Edit → Copy → History → Delete.
+    // (PR-C1 / #313 inserted History between Copy and Delete; History is
+    // ungated so it shows for all roles, while Copy is admin/compliance
+    // only — see FrameworkDetail.tsx §kebab.)
     const menu = page.getByRole('menu');
     await expect(menu).toBeVisible();
     const items_ = menu.getByRole('menuitem');
     await expect(items_.nth(0)).toHaveText(/Edit/i);
     await expect(items_.nth(1)).toHaveText(/Copy to framework/i);
-    await expect(items_.nth(2)).toHaveText(/Delete/i);
+    await expect(items_.nth(2)).toHaveText(/^History$/i);
+    await expect(items_.nth(3)).toHaveText(/Delete/i);
 
     // Click "Copy to framework…" → modal opens with mappingType pre-filled
     // to the source mapping's type (we seeded `supporting` above).

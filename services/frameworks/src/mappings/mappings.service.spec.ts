@@ -27,12 +27,16 @@ describe('MappingsService', () => {
       findFirst: jest.fn(),
       findMany: jest.fn(),
     },
+    controlMappingHistory: {
+      findFirst: jest.fn(),
+    },
     $transaction: jest.fn(),
   };
 
   const mockHistoryService = {
     record: jest.fn(),
     listByMapping: jest.fn(),
+    listByMappingWithUser: jest.fn(),
   };
 
   const mockAuditService = {
@@ -259,6 +263,199 @@ describe('MappingsService', () => {
     });
   });
 
+  describe('getHistory', () => {
+    it('delegates to history.listByMappingWithUser and returns its result', async () => {
+      const rows = [{ id: 'h-1', mappingId: 'm-1', action: 'create' }];
+      mockHistoryService.listByMappingWithUser.mockResolvedValue(rows);
+
+      const result = await service.getHistory('m-1', orgId);
+
+      expect(mockHistoryService.listByMappingWithUser).toHaveBeenCalledWith('m-1', orgId);
+      expect(result).toBe(rows);
+    });
+
+    it('propagates NotFoundException from history service (tenant mismatch surfaces as 404)', async () => {
+      mockHistoryService.listByMappingWithUser.mockRejectedValue(
+        new NotFoundException('Mapping with ID m-1 not found')
+      );
+
+      await expect(service.getHistory('m-1', 'org-other')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('restore', () => {
+    const historyId = 'h-9';
+    const historyRow = {
+      id: historyId,
+      mappingId: baseMapping.id,
+      action: 'update',
+      snapshot: {
+        frameworkId: 'fw-1',
+        requirementId: 'req-1',
+        controlId: 'ctl-1',
+        mappingType: 'supporting',
+        notes: 'snapshot note',
+        createdBy: userId,
+        createdAt: '2026-05-15T00:00:00Z',
+      },
+      changedBy: userId,
+      changedAt: new Date('2026-05-15T00:00:00Z'),
+      reason: null,
+    };
+
+    it('restores mappingType + notes from snapshot, writes history row with action=restore and reason, and fires audit log', async () => {
+      mockPrismaService.controlMapping.findFirst.mockResolvedValue(baseMapping);
+      mockPrismaService.controlMappingHistory.findFirst.mockResolvedValue(historyRow);
+      const restored = {
+        ...baseMapping,
+        mappingType: 'supporting',
+        notes: 'snapshot note',
+      };
+      mockTx.controlMapping.update.mockResolvedValue(restored);
+
+      const result = await service.restore(
+        baseMapping.id,
+        historyId,
+        { reason: 'reverting bad edit' },
+        userId,
+        orgId
+      );
+
+      // Live row is updated to the snapshot values
+      expect(mockTx.controlMapping.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: baseMapping.id },
+          data: { mappingType: 'supporting', notes: 'snapshot note' },
+        })
+      );
+
+      // A new history row is written with action='restore' and the reason
+      expect(mockHistoryService.record).toHaveBeenCalledWith(
+        mockTx,
+        restored.id,
+        'restore',
+        expect.objectContaining({ mappingType: 'supporting', notes: 'snapshot note' }),
+        userId,
+        'reverting bad edit'
+      );
+
+      // Audit log fires AFTER the transaction with mapping.restored verb + metadata
+      expect(mockAuditService.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          organizationId: orgId,
+          userId,
+          action: 'mapping.restored',
+          entityType: 'control_mapping',
+          entityId: restored.id,
+          changes: {
+            before: { mappingType: 'primary', notes: 'initial note' },
+            after: { mappingType: 'supporting', notes: 'snapshot note' },
+          },
+          metadata: { historyId, reason: 'reverting bad edit' },
+        })
+      );
+
+      expect(result).toEqual(restored);
+    });
+
+    it('throws NotFoundException on tenant mismatch on mapping (404)', async () => {
+      mockPrismaService.controlMapping.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.restore(baseMapping.id, historyId, {}, userId, 'org-other')
+      ).rejects.toThrow(NotFoundException);
+
+      expect(mockPrismaService.controlMappingHistory.findFirst).not.toHaveBeenCalled();
+      expect(mockPrismaService.$transaction).not.toHaveBeenCalled();
+      expect(mockAuditService.log).not.toHaveBeenCalled();
+    });
+
+    it('throws NotFoundException when historyId does not belong to mapping (404)', async () => {
+      mockPrismaService.controlMapping.findFirst.mockResolvedValue(baseMapping);
+      mockPrismaService.controlMappingHistory.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.restore(baseMapping.id, 'h-other-mapping', {}, userId, orgId)
+      ).rejects.toThrow(NotFoundException);
+
+      expect(mockPrismaService.controlMappingHistory.findFirst).toHaveBeenCalledWith({
+        where: { id: 'h-other-mapping', mappingId: baseMapping.id },
+      });
+      expect(mockPrismaService.$transaction).not.toHaveBeenCalled();
+      expect(mockAuditService.log).not.toHaveBeenCalled();
+    });
+
+    it('still records a history row when restore is a no-op (snapshot equals current state)', async () => {
+      const noopHistory = {
+        ...historyRow,
+        snapshot: {
+          ...historyRow.snapshot,
+          mappingType: baseMapping.mappingType,
+          notes: baseMapping.notes,
+        },
+      };
+      mockPrismaService.controlMapping.findFirst.mockResolvedValue(baseMapping);
+      mockPrismaService.controlMappingHistory.findFirst.mockResolvedValue(noopHistory);
+      mockTx.controlMapping.update.mockResolvedValue(baseMapping);
+
+      await service.restore(baseMapping.id, historyId, { reason: 'audit drill' }, userId, orgId);
+
+      expect(mockHistoryService.record).toHaveBeenCalledWith(
+        mockTx,
+        baseMapping.id,
+        'restore',
+        expect.any(Object),
+        userId,
+        'audit drill'
+      );
+      expect(mockAuditService.log).toHaveBeenCalledWith(
+        expect.objectContaining({ action: 'mapping.restored' })
+      );
+    });
+
+    it('passes reason=null in metadata when omitted from the DTO', async () => {
+      mockPrismaService.controlMapping.findFirst.mockResolvedValue(baseMapping);
+      mockPrismaService.controlMappingHistory.findFirst.mockResolvedValue(historyRow);
+      mockTx.controlMapping.update.mockResolvedValue(baseMapping);
+
+      await service.restore(baseMapping.id, historyId, {}, userId, orgId);
+
+      expect(mockHistoryService.record).toHaveBeenCalledWith(
+        mockTx,
+        baseMapping.id,
+        'restore',
+        expect.any(Object),
+        userId,
+        undefined
+      );
+      expect(mockAuditService.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          metadata: { historyId, reason: null },
+        })
+      );
+    });
+
+    it('uses OR-on-both control and framework org checks for tenant isolation', async () => {
+      mockPrismaService.controlMapping.findFirst.mockResolvedValue(baseMapping);
+      mockPrismaService.controlMappingHistory.findFirst.mockResolvedValue(historyRow);
+      mockTx.controlMapping.update.mockResolvedValue(baseMapping);
+
+      await service.restore(baseMapping.id, historyId, {}, userId, orgId);
+
+      expect(mockPrismaService.controlMapping.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            id: baseMapping.id,
+            OR: [
+              { control: { OR: [{ organizationId: orgId }, { organizationId: null }] } },
+              { framework: { OR: [{ organizationId: orgId }, { organizationId: null }] } },
+            ],
+          }),
+        })
+      );
+    });
+  });
+
   describe('bulkCreate', () => {
     it('writes history + audit per successful row and reports failures', async () => {
       mockPrismaService.controlMapping.findFirst
@@ -310,6 +507,19 @@ describe('MappingsController (role + validation metadata)', () => {
   it('restricts DELETE /:id to admin and compliance_manager', () => {
     const roles = reflector.get<string[]>('roles', controller.delete);
     expect(roles).toEqual(expect.arrayContaining(['admin', 'compliance_manager']));
+  });
+
+  it('allows GET /:id/history for admin, compliance_manager, and auditor', () => {
+    const roles = reflector.get<string[]>('roles', controller.history);
+    expect(roles).toEqual(expect.arrayContaining(['admin', 'compliance_manager', 'auditor']));
+    expect(roles).not.toContain('viewer');
+  });
+
+  it('restricts POST /:id/restore/:historyId to admin and compliance_manager', () => {
+    const roles = reflector.get<string[]>('roles', controller.restore);
+    expect(roles).toEqual(expect.arrayContaining(['admin', 'compliance_manager']));
+    expect(roles).not.toContain('auditor');
+    expect(roles).not.toContain('viewer');
   });
 });
 
