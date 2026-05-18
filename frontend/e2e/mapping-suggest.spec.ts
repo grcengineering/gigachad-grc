@@ -32,124 +32,25 @@ import { test, expect, request as pwRequest, APIRequestContext } from '@playwrig
 // ---------------------------------------------------------------------------
 const SEED_USER_A_ADMIN_ID = '8f88a42b-e799-455c-b68a-308d7d2e9aa4';
 
-const URL_CONTROLS = 'http://127.0.0.1:3001';
-const URL_FRAMEWORKS = 'http://127.0.0.1:3002';
+import {
+  discoverMappingFixture,
+  openRequirementDetail as openRequirementDetailHelper,
+  cleanRequirementMappings,
+  type MappingFixture,
+} from './_mapping-helpers';
 
 /** Locked verbatim from MappingEditorModal MOCK_MODE_BANNER_COPY (contract §0.10). */
 const MOCK_MODE_BANNER_COPY =
   'AI provider not configured — showing heuristic suggestions based on shared keywords.';
 
-// ---------------------------------------------------------------------------
-// Shared discovery — same recurse-into-`.children` strategy as
-// mapping-flow.spec.ts. The seeded catalogs only expose categories at the
-// top level; non-category leaves live under `children`.
-// ---------------------------------------------------------------------------
-interface SuggestFixture {
-  frameworkId: string;
-  requirementId: string;
-  requirementRef: string;
-  controlAId: string;
-  controlBId: string;
-}
-
-let fixture: SuggestFixture | undefined;
+let fixture: MappingFixture | undefined;
 let adminApi: APIRequestContext | undefined;
-
-async function discoverFixture(api: APIRequestContext): Promise<SuggestFixture> {
-  const fwRes = await api.get(`${URL_FRAMEWORKS}/api/frameworks`);
-  if (!fwRes.ok()) {
-    throw new Error(`Could not list frameworks: ${fwRes.status()}`);
-  }
-  const fwBody = await fwRes.json();
-  const frameworks: any[] = Array.isArray(fwBody)
-    ? fwBody
-    : (fwBody.data ?? fwBody.items ?? fwBody.frameworks ?? []);
-  if (frameworks.length === 0) {
-    throw new Error('Seed produced no frameworks; cannot pick a target');
-  }
-
-  function findLeaf(nodes: any[]): any | undefined {
-    for (const n of nodes) {
-      if (!n.isCategory) return n;
-      if (Array.isArray(n.children) && n.children.length > 0) {
-        const hit = findLeaf(n.children);
-        if (hit) return hit;
-      }
-    }
-    return undefined;
-  }
-
-  let chosenFwId: string | undefined;
-  let chosenReq: any | undefined;
-  for (const fw of frameworks) {
-    let reqs: any[] = [];
-    const treeRes = await api.get(`${URL_FRAMEWORKS}/api/frameworks/${fw.id}/requirements/tree`);
-    if (treeRes.ok()) {
-      const body = await treeRes.json();
-      reqs = Array.isArray(body) ? body : (body.data ?? body.items ?? body.requirements ?? []);
-    } else {
-      const reqRes = await api.get(`${URL_FRAMEWORKS}/api/frameworks/${fw.id}/requirements`);
-      if (!reqRes.ok()) continue;
-      const reqBody = await reqRes.json();
-      reqs = Array.isArray(reqBody)
-        ? reqBody
-        : (reqBody.data ?? reqBody.items ?? reqBody.requirements ?? []);
-    }
-    const candidate = findLeaf(reqs);
-    if (candidate) {
-      chosenFwId = fw.id;
-      chosenReq = candidate;
-      break;
-    }
-  }
-  if (!chosenFwId || !chosenReq) {
-    throw new Error(
-      'No framework with a non-category requirement found in seed. ' +
-        'Walk `.children` recursively — every seeded catalog has non-category leaves nested under categories.'
-    );
-  }
-
-  const ctrlRes = await api.get(`${URL_CONTROLS}/api/controls?limit=100`);
-  if (!ctrlRes.ok()) {
-    throw new Error(`Could not list controls: ${ctrlRes.status()}`);
-  }
-  const ctrlBody = await ctrlRes.json();
-  const controls: any[] = Array.isArray(ctrlBody)
-    ? ctrlBody
-    : (ctrlBody.data ?? ctrlBody.items ?? ctrlBody.controls ?? []);
-  const mappedIds = new Set<string>(
-    (chosenReq.mappings ?? []).map((m: any) => m.control?.id ?? m.controlId)
-  );
-  const unmapped = controls.filter((c) => !mappedIds.has(c.id));
-  if (unmapped.length < 2) {
-    throw new Error('Need at least two unmapped controls for suggestion fixture');
-  }
-
-  return {
-    frameworkId: chosenFwId,
-    requirementId: chosenReq.id,
-    requirementRef: chosenReq.reference ?? '',
-    controlAId: unmapped[0].id,
-    controlBId: unmapped[1].id,
-  };
-}
-
-/** Best-effort cleanup so the requirement starts each test mapping-free. */
-async function cleanRequirementMappings(api: APIRequestContext, requirementId: string) {
-  const res = await api.get(`${URL_FRAMEWORKS}/api/mappings/by-requirement/${requirementId}`);
-  if (!res.ok()) return;
-  const body = await res.json();
-  const items: any[] = Array.isArray(body) ? body : (body.data ?? body.items ?? []);
-  for (const m of items) {
-    if (m.id) await api.delete(`${URL_FRAMEWORKS}/api/mappings/${m.id}`).catch(() => undefined);
-  }
-}
 
 test.beforeAll(async () => {
   adminApi = await pwRequest.newContext({
     extraHTTPHeaders: { 'x-dev-user-id': SEED_USER_A_ADMIN_ID },
   });
-  fixture = await discoverFixture(adminApi);
+  fixture = await discoverMappingFixture(adminApi);
 });
 
 test.afterAll(async () => {
@@ -169,11 +70,7 @@ async function openRequirementDetail(
   frameworkId: string,
   requirementRef: string
 ) {
-  await page.goto(`/frameworks/${frameworkId}`);
-  await page.waitForLoadState('networkidle');
-  const row = page.getByText(requirementRef, { exact: true }).first();
-  await row.click();
-  await expect(page.getByText(/Mapped Controls/i)).toBeVisible();
+  await openRequirementDetailHelper(page, frameworkId, requirementRef, fixture?.ancestorRefs ?? []);
 }
 
 /** Open the modal and advance it from the search stage to the multi-select
