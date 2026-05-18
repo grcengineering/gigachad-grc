@@ -345,8 +345,14 @@ test.describe('Mapping derived views — adminA', () => {
     await modal.getByRole('button', { name: /^Next$/i }).click();
 
     // Multi-select stage — pick the target framework's leaf requirement.
+    // Anchor to the start of the accessible name and require a trailing
+    // non-digit/non-dot boundary so "A.5.1" doesn't also match A.5.10,
+    // A.5.11, … (11 ISO 27001 leaves share the "A.5.1" prefix → strict
+    // mode violation without the boundary).
     const escapedRef = f.targetRequirementRef.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    await modal.getByRole('checkbox', { name: new RegExp(escapedRef, 'i') }).check();
+    await modal
+      .getByRole('checkbox', { name: new RegExp(`^${escapedRef}(?![\\d.])`, 'i') })
+      .check();
     await modal.getByRole('button', { name: /^Next$/i }).click();
 
     // Per-row form — assert the mapping type select is pre-populated with
@@ -384,12 +390,29 @@ test.describe('Mapping derived views — adminA', () => {
     await modal.getByRole('button', { name: /^Next$/i }).click();
 
     // Pick the target requirement.
+    // Anchor to the start of the accessible name and require a trailing
+    // non-digit/non-dot boundary so "A.5.1" doesn't also match A.5.10,
+    // A.5.11, … (11 ISO 27001 leaves share the "A.5.1" prefix → strict
+    // mode violation without the boundary).
     const escapedRef = f.targetRequirementRef.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    await modal.getByRole('checkbox', { name: new RegExp(escapedRef, 'i') }).check();
+    await modal
+      .getByRole('checkbox', { name: new RegExp(`^${escapedRef}(?![\\d.])`, 'i') })
+      .check();
     await modal.getByRole('button', { name: /^Next$/i }).click();
 
     // Leave the mappingType at its inherited default ('supporting') and save.
-    await modal.getByRole('button', { name: /^Save$/i }).click();
+    // Wait for the bulk POST to actually complete before checking the modal
+    // close — modal.toBeHidden races the response under fast network, and
+    // the verify GET below would otherwise hit the backend before the
+    // bulkCreate transaction commits.
+    const [bulkResp] = await Promise.all([
+      page.waitForResponse(
+        (r) => r.url().includes('/api/mappings/bulk') && r.request().method() === 'POST',
+        { timeout: 10_000 }
+      ),
+      modal.getByRole('button', { name: /^Save$/i }).click(),
+    ]);
+    expect(bulkResp.ok(), 'bulk POST should succeed').toBeTruthy();
     await expect(modal).toBeHidden();
 
     // The new mapping should exist on the target framework's requirement

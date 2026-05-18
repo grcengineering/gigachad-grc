@@ -468,6 +468,7 @@ function SearchStage({
             value={selectedFrameworkId ?? ''}
             onChange={(e) => onSelectFramework(e.target.value || undefined)}
             disabled={frameworksLoading}
+            aria-label="Framework"
             className="w-full rounded-lg bg-surface-700 border border-surface-600 text-surface-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
           >
             <option value="">Select a framework…</option>

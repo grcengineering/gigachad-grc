@@ -440,6 +440,31 @@ describe('MappingEditorModal', () => {
     });
   });
 
+  describe('control-to-requirements framework picker', () => {
+    it('exposes the Framework select with an unambiguous accessible name', async () => {
+      // Regression for PR 316 / mapping-derived-views.spec.ts: the e2e
+      // suite locates the framework picker via getByLabel(/^Framework$/i),
+      // which Playwright resolves through the ARIA accessible name. An
+      // implicit <label><span>Framework</span><select>...</select></label>
+      // alone is not enough — the <option> text gets folded into the
+      // computed name in chromium, breaking the anchored regex. Lock in
+      // the explicit `aria-label="Framework"` so the contract sticks.
+      render(
+        <MappingEditorModal
+          open
+          onClose={vi.fn()}
+          mode="control-to-requirements"
+          controlId={CONTROL_ID}
+          existingMappingIds={[]}
+          onSaved={vi.fn()}
+        />
+      );
+
+      const select = await screen.findByRole('combobox', { name: /^Framework$/i });
+      expect(select.tagName).toBe('SELECT');
+    });
+  });
+
   describe('existingMappingIds', () => {
     it('hides already-mapped candidates from the picker', async () => {
       const user = userEvent.setup();
