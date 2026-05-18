@@ -33,6 +33,7 @@ import { test, expect, request as pwRequest, APIRequestContext } from '@playwrig
 const SEED_USER_A_ADMIN_ID = '8f88a42b-e799-455c-b68a-308d7d2e9aa4';
 
 import {
+  URL_FRAMEWORKS,
   discoverMappingFixture,
   openRequirementDetail as openRequirementDetailHelper,
   cleanRequirementMappings,
@@ -187,14 +188,14 @@ test.describe('Mapping suggestions — adminA', () => {
     await expect(modal.getByRole('combobox', { name: /Mapping type/i })).toHaveCount(0);
 
     // And the chip list on the page behind hasn't gained an entry — no
-    // mapping was created.
-    const newChip = page
-      .getByRole('list')
-      .filter({ hasNot: page.getByRole('dialog') })
-      .getByRole('listitem');
-    // The page's mapping chip list either does not exist yet or is empty;
-    // assert no chips containing the suggestion ref were silently added.
-    await expect(newChip).toHaveCount(0);
+    // mapping was created. Scope explicitly to the "Mapped controls" list
+    // so we don't accidentally count listitems from sidebar/nav lists.
+    // The list itself only renders when at least one mapping exists; if
+    // it's absent we treat the count as zero.
+    const chipList = page.getByRole('list', { name: /Mapped controls/i });
+    const chipCount =
+      (await chipList.count()) === 0 ? 0 : await chipList.getByRole('listitem').count();
+    expect(chipCount, 'no chip should have been silently added by Use').toBe(0);
   });
 
   test('each suggestion row renders rationale text alongside its confidence badge', async ({
