@@ -1,4 +1,5 @@
 import { test, expect, request as pwRequest, APIRequestContext } from '@playwright/test';
+import { openRequirementDetail as openRequirementDetailHelper } from './_mapping-helpers';
 
 /**
  * Mapping derived views — gap report + cross-framework copy (PR-D).
@@ -52,6 +53,8 @@ interface DerivedFixture {
   /** Non-category requirement on the source framework. */
   sourceRequirementId: string;
   sourceRequirementRef: string;
+  /** Ancestor category refs to expand on the source FrameworkDetail tree. */
+  sourceAncestorRefs: string[];
   /** A second framework, used as the cross-framework copy target. */
   targetFrameworkId: string;
   targetFrameworkName: string;
@@ -68,11 +71,19 @@ interface DerivedFixture {
 let fixture: DerivedFixture | undefined;
 let adminApi: APIRequestContext | undefined;
 
-function findLeaf(nodes: any[]): any | undefined {
+// Walks the tree DFS-first to return the first non-category leaf plus the
+// chain of ancestor refs encountered. The chain lets the UI tests expand
+// each ancestor in the FrameworkDetail collapsible tree before clicking
+// the leaf row (the seeded catalogs have ONLY category rows at the top
+// level so leaves are hidden by default).
+function findLeafWithAncestors(
+  nodes: any[],
+  ancestors: string[] = []
+): { leaf: any; ancestorRefs: string[] } | undefined {
   for (const n of nodes) {
-    if (!n.isCategory) return n;
+    if (!n.isCategory) return { leaf: n, ancestorRefs: ancestors };
     if (Array.isArray(n.children) && n.children.length > 0) {
-      const hit = findLeaf(n.children);
+      const hit = findLeafWithAncestors(n.children, [...ancestors, n.reference]);
       if (hit) return hit;
     }
   }
@@ -114,11 +125,11 @@ async function discoverFixture(api: APIRequestContext): Promise<DerivedFixture> 
     );
   }
 
-  const usable: Array<{ fw: any; leaf: any }> = [];
+  const usable: Array<{ fw: any; leaf: any; ancestorRefs: string[] }> = [];
   for (const fw of frameworks) {
     const reqs = await fetchRequirements(api, fw.id);
-    const leaf = findLeaf(reqs);
-    if (leaf) usable.push({ fw, leaf });
+    const hit = findLeafWithAncestors(reqs);
+    if (hit) usable.push({ fw, leaf: hit.leaf, ancestorRefs: hit.ancestorRefs });
     if (usable.length >= 2) break;
   }
   if (usable.length < 2) {
@@ -150,6 +161,7 @@ async function discoverFixture(api: APIRequestContext): Promise<DerivedFixture> 
     sourceFrameworkName: source.fw.name,
     sourceRequirementId: source.leaf.id,
     sourceRequirementRef: source.leaf.reference ?? '',
+    sourceAncestorRefs: source.ancestorRefs,
     targetFrameworkId: target.fw.id,
     targetFrameworkName: target.fw.name,
     targetRequirementId: target.leaf.id,
@@ -215,11 +227,14 @@ async function openRequirementDetail(
   frameworkId: string,
   requirementRef: string
 ) {
-  await page.goto(`/frameworks/${frameworkId}`);
-  await page.waitForLoadState('networkidle');
-  const row = page.getByText(requirementRef, { exact: true }).first();
-  await row.click();
-  await expect(page.getByText(/Mapped Controls/i)).toBeVisible();
+  // The fixture's source ancestors apply to the source framework; for the
+  // target framework we don't track ancestors here because the cross-
+  // framework copy tests don't drive UI navigation into the target's
+  // requirement detail page — they only assert that a new mapping appears
+  // via API.
+  const ancestors =
+    frameworkId === fixture?.sourceFrameworkId ? (fixture?.sourceAncestorRefs ?? []) : [];
+  await openRequirementDetailHelper(page, frameworkId, requirementRef, ancestors);
 }
 
 function mappingChip(page: import('@playwright/test').Page, identifier: string) {
