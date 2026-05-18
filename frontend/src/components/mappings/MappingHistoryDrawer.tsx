@@ -402,7 +402,15 @@ export function MappingHistoryDrawer({
 
   return (
     <Transition appear show={open} as={Fragment}>
-      <Dialog as="div" className="relative z-50" onClose={onClose}>
+      {/*
+       * Dialog wrapper uses `fixed inset-0` (not the more common
+       * `relative z-50`) so its bounding box covers the viewport. Without
+       * non-zero dimensions on this element Playwright's `toBeVisible`
+       * treats the dialog as hidden — even when the slide-in panel
+       * children are fully painted. The inner fixed/absolute children
+       * still position correctly inside this wrapper.
+       */}
+      <Dialog as="div" className="fixed inset-0 z-50" onClose={onClose}>
         {/* Overlay */}
         <Transition.Child
           as={Fragment}

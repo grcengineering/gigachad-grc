@@ -193,14 +193,19 @@ test.describe('Mapping history — adminA', () => {
     await expect(entries).toHaveCount(2);
 
     // First entry is the Updated event (newest); second is Created.
-    await expect(entries.nth(0)).toContainText(/^Updated$/);
-    await expect(entries.nth(1)).toContainText(/^Created$/);
+    // The action label renders as a standalone badge <span>; assert on
+    // the badge text rather than the article's full textContent (which
+    // also includes the timestamp, author, diff rows, etc).
+    await expect(entries.nth(0).getByText('Updated', { exact: true })).toBeVisible();
+    await expect(entries.nth(1).getByText('Created', { exact: true })).toBeVisible();
 
     // Diff renders the field-label + before/after values. The
     // contract uses the label "Mapping type" (cf. FIELD_LABELS in
     // MappingHistoryDrawer.tsx) and the arrow "→" between values.
     await expect(entries.nth(0).getByText(/Mapping type/)).toBeVisible();
-    await expect(entries.nth(0).getByText('→')).toBeVisible();
+    // Each changed field renders its own "→" between the before/after
+    // values — the test asserts at least one is present.
+    await expect(entries.nth(0).getByText('→').first()).toBeVisible();
     // Old value (Primary, line-through) and new value (Supporting)
     // both appear inside the Updated entry.
     await expect(entries.nth(0).getByText(/Primary/)).toBeVisible();
@@ -249,7 +254,7 @@ test.describe('Mapping history — adminA', () => {
     // newest entry never shows a restore button (per
     // HistoryEntryItem: `restoreVisible = canRestore && index > 0`).
     const olderEntry = entries.nth(1);
-    await expect(olderEntry).toContainText(/^Created$/);
+    await expect(olderEntry.getByText('Created', { exact: true })).toBeVisible();
     const restoreCta = olderEntry.getByRole('button', { name: /Restore mapping to state from/i });
     await expect(restoreCta).toBeVisible();
     await restoreCta.click();
@@ -261,12 +266,12 @@ test.describe('Mapping history — adminA', () => {
     // After the restore completes, a new "Restored" entry appears at
     // the top of the drawer (the drawer auto-refetches via
     // invalidateQueries on the ['mappings','history',mappingId] key).
-    await expect(drawer.getByRole('article').first()).toContainText(/^Restored$/, {
-      timeout: 10_000,
-    });
+    await expect(
+      drawer.getByRole('article').first().getByText('Restored', { exact: true })
+    ).toBeVisible({ timeout: 10_000 });
     entries = drawer.getByRole('article');
     await expect(entries).toHaveCount(3);
-    await expect(entries.nth(0)).toContainText(/^Restored$/);
+    await expect(entries.nth(0).getByText('Restored', { exact: true })).toBeVisible();
 
     // Close the drawer to inspect the chip — it should now read
     // "primary" again, reflecting the restored snapshot.
@@ -274,12 +279,20 @@ test.describe('Mapping history — adminA', () => {
     await expect(chip).toContainText(/primary/i);
     await expect(chip).not.toContainText(/supporting/i);
 
-    // Backend agrees.
-    const verifyRes = await adminApi!.get(`${URL_FRAMEWORKS}/api/mappings/${mappingId}`);
+    // Backend agrees. The mappings controller doesn't expose GET-by-id
+    // (only the by-requirement / by-control list endpoints), so look up
+    // the restored mapping by id inside the requirement's list.
+    const verifyRes = await adminApi!.get(
+      `${URL_FRAMEWORKS}/api/mappings/by-requirement/${f.requirementId}`
+    );
     expect(verifyRes.ok()).toBeTruthy();
-    const verified = await verifyRes.json();
-    const verifiedType = verified.mappingType ?? verified.data?.mappingType;
-    expect(verifiedType).toBe('primary');
+    const verifiedList = (await verifyRes.json()) as Array<{
+      id: string;
+      mappingType: 'primary' | 'supporting';
+    }>;
+    const verified = verifiedList.find((m) => m.id === mappingId);
+    expect(verified, 'restored mapping still present').toBeDefined();
+    expect(verified!.mappingType).toBe('primary');
   });
 });
 
