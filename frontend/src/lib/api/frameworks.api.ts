@@ -18,6 +18,8 @@ import type {
   MappingListParams,
   ImportResult,
   MappingHistoryEntry,
+  MappingSuggestRequest,
+  MappingSuggestResponse,
   RestoreMappingData,
 } from '../apiTypes';
 
@@ -253,6 +255,14 @@ export const frameworksApi = {
     }) => {
       const qs = params ? buildQueryString(params as Record<string, string | undefined>) : '';
       const response = await api.get(`/api/mappings/gaps${qs}`);
+      return response.data;
+    },
+
+    /**
+     * Get AI-generated mapping suggestions for a requirement or control anchor
+     */
+    suggest: async (data: MappingSuggestRequest): Promise<MappingSuggestResponse> => {
+      const response = await api.post('/api/mappings/suggest', data);
       return response.data;
     },
 

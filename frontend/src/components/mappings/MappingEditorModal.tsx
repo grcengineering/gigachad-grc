@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeftIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { ArrowLeftIcon, MagnifyingGlassIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 
@@ -13,9 +13,33 @@ import type {
   CreateMappingData,
   Framework,
   FrameworkRequirement,
+  MappingSuggestion,
 } from '@/lib/apiTypes';
 
 export type MappingEditorMode = 'requirement-to-controls' | 'control-to-requirements';
+
+/**
+ * Confidence threshold at or above which AI suggestions are considered
+ * high-confidence. Exported for downstream callers (e.g. e2e tests).
+ */
+export const SUGGESTION_AUTO_SELECT_THRESHOLD = 0.7;
+
+/**
+ * Mock-mode banner copy (locked verbatim per PR-B-ai contract §0.10).
+ */
+const MOCK_MODE_BANNER_COPY =
+  'AI provider not configured — showing heuristic suggestions based on shared keywords.';
+
+type SuggestionsState =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | {
+      status: 'ready';
+      suggestions: MappingSuggestion[];
+      isMockMode: boolean;
+      mockModeReason?: string;
+    }
+  | { status: 'error'; message: string; isRateLimited: boolean };
 
 export interface MappingEditorModalProps {
   open: boolean;
@@ -90,6 +114,7 @@ export function MappingEditorModal({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [rows, setRows] = useState<RowDraft[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<SuggestionsState>({ status: 'idle' });
 
   // Reset everything when modal opens or context changes
   useEffect(() => {
@@ -100,6 +125,7 @@ export function MappingEditorModal({
     setSelectedIds(editingMappingId ? [editingMappingId] : []);
     setRows([]);
     setErrorMessage(null);
+    setSuggestions({ status: 'idle' });
   }, [open, isEditMode, editingMappingId, initialFrameworkId]);
 
   // Frameworks list (only needed for control mode without preset framework)
@@ -179,6 +205,51 @@ export function MappingEditorModal({
   const allRowsValid =
     rows.length > 0 &&
     rows.every((r) => r.mappingType === 'primary' || r.mappingType === 'supporting');
+
+  const resolvedFrameworkId =
+    mode === 'requirement-to-controls' ? initialFrameworkId : selectedFrameworkId;
+
+  const canSuggest =
+    !isEditMode &&
+    Boolean(resolvedFrameworkId) &&
+    (mode === 'requirement-to-controls' ? Boolean(requirementId) : Boolean(controlId));
+
+  async function handleSuggest() {
+    if (!canSuggest || !resolvedFrameworkId) return;
+    setSuggestions({ status: 'loading' });
+    try {
+      const response = await frameworksApi.mappings.suggest({
+        frameworkId: resolvedFrameworkId,
+        requirementId: mode === 'requirement-to-controls' ? requirementId : undefined,
+        controlId: mode === 'control-to-requirements' ? controlId : undefined,
+      });
+      setSuggestions({
+        status: 'ready',
+        suggestions: response.suggestions,
+        isMockMode: response.isMockMode,
+        mockModeReason: response.mockModeReason,
+      });
+    } catch (err) {
+      const status = getHttpStatus(err);
+      if (status === 429) {
+        setSuggestions({
+          status: 'error',
+          message: 'Try again in a moment.',
+          isRateLimited: true,
+        });
+        return;
+      }
+      setSuggestions({
+        status: 'error',
+        message: extractErrorMessage(err),
+        isRateLimited: false,
+      });
+    }
+  }
+
+  function handleUseSuggestion(candidateId: string) {
+    setSelectedIds((prev) => (prev.includes(candidateId) ? prev : [...prev, candidateId]));
+  }
 
   function handleBack() {
     const prev = previousStage(stage);
@@ -345,19 +416,28 @@ export function MappingEditorModal({
         )}
 
         {stage === 'multi-select' && (
-          <MultiSelectStage
-            mode={mode}
-            candidates={candidates}
-            isLoading={
-              mode === 'requirement-to-controls'
-                ? controlsQuery.isLoading
-                : requirementsQuery.isLoading
-            }
-            selectedIds={selectedIds}
-            onToggle={toggleSelection}
-            search={search}
-            onSearchChange={setSearch}
-          />
+          <>
+            <SuggestionsPanel
+              state={suggestions}
+              canSuggest={canSuggest}
+              onSuggest={handleSuggest}
+              onUse={handleUseSuggestion}
+              selectedIds={selectedIds}
+            />
+            <MultiSelectStage
+              mode={mode}
+              candidates={candidates}
+              isLoading={
+                mode === 'requirement-to-controls'
+                  ? controlsQuery.isLoading
+                  : requirementsQuery.isLoading
+              }
+              selectedIds={selectedIds}
+              onToggle={toggleSelection}
+              search={search}
+              onSearchChange={setSearch}
+            />
+          </>
         )}
 
         {(stage === 'per-row-form' || stage === 'submit') && (
@@ -662,6 +742,155 @@ function PerRowFormStage({ rows, getLabel, onChange, disabled, isEditMode }: Per
       </ul>
     </div>
   );
+}
+
+interface SuggestionsPanelProps {
+  state: SuggestionsState;
+  canSuggest: boolean;
+  onSuggest: () => void;
+  onUse: (candidateId: string) => void;
+  selectedIds: string[];
+}
+
+function SuggestionsPanel({
+  state,
+  canSuggest,
+  onSuggest,
+  onUse,
+  selectedIds,
+}: SuggestionsPanelProps) {
+  const isLoading = state.status === 'loading';
+  return (
+    <section
+      aria-label="AI mapping suggestions"
+      className="rounded-lg border border-surface-700 bg-surface-900/40 p-3 space-y-3"
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <SparklesIcon className="h-4 w-4 text-brand-400" aria-hidden="true" />
+          <h3 className="text-sm font-medium text-surface-200">AI suggestions</h3>
+        </div>
+        <button
+          type="button"
+          onClick={onSuggest}
+          disabled={!canSuggest || isLoading}
+          className="inline-flex items-center gap-1.5 rounded-md border border-brand-500/40 bg-brand-600/20 px-2.5 py-1 text-xs font-medium text-brand-200 hover:bg-brand-600/30 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <SparklesIcon className="h-3.5 w-3.5" aria-hidden="true" />
+          {isLoading ? 'Suggesting…' : 'Suggest with AI'}
+        </button>
+      </div>
+
+      {state.status === 'idle' && (
+        <p className="text-xs text-surface-500">
+          Get ranked candidates based on semantic overlap with this anchor.
+        </p>
+      )}
+
+      {state.status === 'loading' && (
+        <p role="status" className="text-xs text-surface-400">
+          <span
+            className="mr-2 inline-block h-3 w-3 animate-spin rounded-full border-2 border-surface-400/30 border-t-surface-200 align-middle"
+            aria-hidden="true"
+          />
+          Generating suggestions…
+        </p>
+      )}
+
+      {state.status === 'error' && (
+        <p
+          role={state.isRateLimited ? 'status' : 'alert'}
+          className={clsx(
+            'rounded-md border px-2.5 py-1.5 text-xs',
+            state.isRateLimited
+              ? 'border-amber-500/30 bg-amber-500/10 text-amber-200'
+              : 'border-red-500/30 bg-red-500/10 text-red-200'
+          )}
+        >
+          {state.message}
+        </p>
+      )}
+
+      {state.status === 'ready' && state.isMockMode && (
+        <p
+          role="status"
+          className="rounded-md border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 text-xs text-amber-200"
+        >
+          {MOCK_MODE_BANNER_COPY}
+        </p>
+      )}
+
+      {state.status === 'ready' && state.suggestions.length === 0 && (
+        <p className="text-xs text-surface-400">No suggestions available.</p>
+      )}
+
+      {state.status === 'ready' && state.suggestions.length > 0 && (
+        <ul role="list" aria-label="Suggested candidates" className="space-y-2">
+          {state.suggestions.map((s) => {
+            const already = selectedIds.includes(s.candidateId);
+            return (
+              <li
+                key={s.candidateId}
+                className="rounded-md border border-surface-700 bg-surface-900/60 p-2.5"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-mono text-xs text-surface-200">
+                        {s.candidateReference}
+                      </span>
+                      <ConfidenceBadge value={s.confidence} />
+                    </div>
+                    <p className="text-sm text-surface-300 mt-0.5">{s.candidateTitle}</p>
+                    <p className="text-xs text-surface-400 mt-1">{s.rationale}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => onUse(s.candidateId)}
+                    disabled={already}
+                    aria-label={`Use suggestion ${s.candidateReference}`}
+                    className="shrink-0 rounded-md border border-surface-600 bg-surface-700 px-2 py-1 text-xs font-medium text-surface-100 hover:bg-surface-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {already ? 'Added' : 'Use'}
+                  </button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function ConfidenceBadge({ value }: { value: number }) {
+  const pct = Math.round(value * 100);
+  const band =
+    value >= SUGGESTION_AUTO_SELECT_THRESHOLD
+      ? 'bg-green-500/15 text-green-300 border-green-500/30'
+      : value >= 0.4
+        ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+        : 'bg-red-500/15 text-red-300 border-red-500/30';
+  return (
+    <span
+      className={clsx(
+        'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium border',
+        band
+      )}
+      aria-label={`${pct}% confidence`}
+    >
+      {pct}% confidence
+    </span>
+  );
+}
+
+function getHttpStatus(err: unknown): number | undefined {
+  if (typeof err === 'object' && err !== null) {
+    const maybe = err as { response?: { status?: number }; status?: number };
+    if (typeof maybe.response?.status === 'number') return maybe.response.status;
+    if (typeof maybe.status === 'number') return maybe.status;
+  }
+  return undefined;
 }
 
 function extractErrorMessage(err: unknown): string {
