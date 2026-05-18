@@ -16,6 +16,7 @@ import type {
   UpdateMappingData,
   BulkMappingData,
   MappingListParams,
+  ImportResult,
 } from '../apiTypes';
 
 export const frameworksApi = {
@@ -220,6 +221,32 @@ export const frameworksApi = {
     getRequirementCoverage: async (frameworkId: string) => {
       const response = await api.get(`/api/mappings/requirement-coverage/${frameworkId}`);
       return response.data;
+    },
+
+    /**
+     * Bulk import mappings from a CSV/XLSX file. When dryRun is true the
+     * backend validates rows but does not persist any mappings.
+     */
+    bulkImport: async (file: File, dryRun: boolean): Promise<ImportResult> => {
+      const formData = new FormData();
+      formData.append('file', file);
+      const response = await api.post<ImportResult>(
+        `/api/mappings/import?dryRun=${dryRun ? 'true' : 'false'}`,
+        formData,
+        { headers: { 'Content-Type': 'multipart/form-data' } }
+      );
+      return response.data;
+    },
+
+    /**
+     * Download mappings for a framework as a CSV or XLSX file.
+     */
+    exportFile: async (frameworkId: string, format: 'csv' | 'xlsx' = 'xlsx'): Promise<Blob> => {
+      const response = await api.get(
+        `/api/mappings/export?frameworkId=${encodeURIComponent(frameworkId)}&format=${format}`,
+        { responseType: 'blob' }
+      );
+      return response.data as Blob;
     },
   },
 };
