@@ -363,6 +363,84 @@ describe('MappingEditorModal', () => {
     });
   });
 
+  describe('defaultMappingType / defaultNotes props', () => {
+    it('seeds the first row with primary + empty notes when no defaults are provided', async () => {
+      const user = userEvent.setup();
+      render(
+        <MappingEditorModal
+          open
+          onClose={vi.fn()}
+          mode="requirement-to-controls"
+          requirementId={REQUIREMENT_ID}
+          frameworkId={FRAMEWORK_ID}
+          existingMappingIds={[]}
+          onSaved={vi.fn()}
+        />
+      );
+
+      await user.click(screen.getByRole('button', { name: 'Next' }));
+      await waitFor(() => expect(screen.getByText('AC-001')).toBeInTheDocument());
+      const list = screen.getByRole('list', { name: /candidate controls/i });
+      await user.click(within(list).getAllByRole('checkbox')[0]);
+      await user.click(screen.getByRole('button', { name: 'Next' }));
+
+      const select = screen.getByRole('combobox', { name: /mapping type for/i });
+      expect((select as HTMLSelectElement).value).toBe('primary');
+      const notes = screen.getByRole('textbox', { name: /notes for/i });
+      expect((notes as HTMLInputElement).value).toBe('');
+    });
+
+    it('pre-fills the first row with defaultMappingType and defaultNotes when provided', async () => {
+      const user = userEvent.setup();
+      render(
+        <MappingEditorModal
+          open
+          onClose={vi.fn()}
+          mode="requirement-to-controls"
+          requirementId={REQUIREMENT_ID}
+          frameworkId={FRAMEWORK_ID}
+          existingMappingIds={[]}
+          defaultMappingType="supporting"
+          defaultNotes="copied from CC1.1"
+          onSaved={vi.fn()}
+        />
+      );
+
+      await user.click(screen.getByRole('button', { name: 'Next' }));
+      await waitFor(() => expect(screen.getByText('AC-001')).toBeInTheDocument());
+      const list = screen.getByRole('list', { name: /candidate controls/i });
+      await user.click(within(list).getAllByRole('checkbox')[0]);
+      await user.click(screen.getByRole('button', { name: 'Next' }));
+
+      const select = screen.getByRole('combobox', { name: /mapping type for/i });
+      expect((select as HTMLSelectElement).value).toBe('supporting');
+      const notes = screen.getByRole('textbox', { name: /notes for/i });
+      expect((notes as HTMLInputElement).value).toBe('copied from CC1.1');
+    });
+
+    it('ignores defaults in edit mode (single edit row stays primary/empty)', async () => {
+      render(
+        <MappingEditorModal
+          open
+          onClose={vi.fn()}
+          mode="requirement-to-controls"
+          requirementId={REQUIREMENT_ID}
+          frameworkId={FRAMEWORK_ID}
+          existingMappingIds={[]}
+          editingMappingId="m-existing"
+          defaultMappingType="supporting"
+          defaultNotes="should be ignored"
+          onSaved={vi.fn()}
+        />
+      );
+
+      const select = await screen.findByRole('combobox', { name: /mapping type for/i });
+      expect((select as HTMLSelectElement).value).toBe('primary');
+      const notes = screen.getByRole('textbox', { name: /notes for/i });
+      expect((notes as HTMLInputElement).value).toBe('');
+    });
+  });
+
   describe('AI suggestions panel', () => {
     async function advanceToMultiSelect(user: ReturnType<typeof userEvent.setup>) {
       await user.click(screen.getByRole('button', { name: 'Next' }));
@@ -533,6 +611,31 @@ describe('MappingEditorModal', () => {
       await waitFor(() => {
         expect(screen.getByText(/service unavailable/i)).toBeInTheDocument();
       });
+    });
+  });
+
+  describe('control-to-requirements framework picker', () => {
+    it('exposes the Framework select with an unambiguous accessible name', async () => {
+      // Regression for PR 316 / mapping-derived-views.spec.ts: the e2e
+      // suite locates the framework picker via getByLabel(/^Framework$/i),
+      // which Playwright resolves through the ARIA accessible name. An
+      // implicit <label><span>Framework</span><select>...</select></label>
+      // alone is not enough — the <option> text gets folded into the
+      // computed name in chromium, breaking the anchored regex. Lock in
+      // the explicit `aria-label="Framework"` so the contract sticks.
+      render(
+        <MappingEditorModal
+          open
+          onClose={vi.fn()}
+          mode="control-to-requirements"
+          controlId={CONTROL_ID}
+          existingMappingIds={[]}
+          onSaved={vi.fn()}
+        />
+      );
+
+      const select = await screen.findByRole('combobox', { name: /^Framework$/i });
+      expect(select.tagName).toBe('SELECT');
     });
   });
 

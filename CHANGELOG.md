@@ -81,6 +81,42 @@ and removal of the backup-scheduler's docker socket dependency.
 
 ### Added
 
+#### Mapping Derived Views (PR-D)
+
+- New `MappingCoverageWidget` (`frontend/src/components/widgets/MappingCoverageWidget.tsx`)
+  rendered in two modes:
+  - **Aggregate** on the dashboard — percent of org controls with at
+    least one mapping, with a `{mapped}/{total} — {unmapped} unmapped`
+    breakdown.
+  - **Per-framework** on the framework detail page — percent of that
+    framework's requirements with at least one mapping. Gated on
+    `frameworks:read`. Reuses the existing `/control-coverage` and
+    `/requirement-coverage/:frameworkId` endpoints (no new backend).
+- New `GET /api/mappings/gaps` endpoint
+  (`@Roles('admin','compliance_manager','auditor')`) returning the union
+  of three gap categories with optional `frameworkId` + `type` filters:
+  - `no-controls`: requirements with zero mappings.
+  - `supporting-only`: requirements with mappings but no `primary`.
+  - `unused-controls`: controls with no mappings (org-scoped;
+    `frameworkId` ignored for this type).
+    Returns `[]` (not 404) on empty result. Tenant-isolated via
+    OR-organization check on the underlying framework and control rows.
+- New `/reports/mapping-gaps` page (`frontend/src/pages/MappingGaps.tsx`)
+  mounted under `<ModuleRoute module="compliance">`. Tabs for all three
+  gap types plus an "All gap types" combined view, framework filter
+  (disabled on the unused-controls tab), CSV export
+  (`mapping-gaps-{type-or-all}-{YYYY-MM-DD}.csv`) via the existing
+  `ExportDropdown`, and PDF export via dynamic-imported `jspdf` +
+  `html2canvas` (no new npm deps). Row click navigates to the relevant
+  framework or control detail page.
+- New **Copy to framework…** kebab menu item on every mapping chip in
+  `FrameworkDetail.tsx` and `ControlDetail.tsx`, inserted between
+  **Edit** and **Delete**. Gated on `controls:update`. Opens
+  `MappingEditorModal` in `control-to-requirements` mode seeded with the
+  source mapping's type and notes via two new optional props
+  (`defaultMappingType`, `defaultNotes`); duplicate-framework rejection
+  is enforced server-side and surfaces as a toast.
+
 #### Control ↔ Requirement Mapping UI Foundation (PR-A)
 
 - New `PATCH /api/mappings/:id` endpoint allowing admin /

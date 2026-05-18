@@ -24,6 +24,17 @@ export interface MappingExportResult {
   contentType: string;
 }
 
+export type GapType = 'no-controls' | 'supporting-only' | 'unused-controls';
+
+export interface MappingGapRow {
+  id: string;
+  type: GapType;
+  framework?: { id: string; name: string };
+  requirement?: { id: string; reference: string; title: string };
+  control?: { id: string; controlId: string; title: string };
+  summary: string;
+}
+
 const MAPPING_INCLUDE = {
   framework: { select: { id: true, name: true, type: true } },
   requirement: { select: { id: true, reference: true, title: true } },
@@ -789,6 +800,81 @@ export class MappingsService {
         title: r.title,
       })),
     };
+  }
+
+  async findGaps(
+    organizationId: string,
+    frameworkId?: string,
+    type?: GapType
+  ): Promise<MappingGapRow[]> {
+    const tenantClause = { OR: [{ organizationId }, { organizationId: null }] };
+
+    const fetchNoControls = async (): Promise<MappingGapRow[]> => {
+      const reqs = await this.prisma.frameworkRequirement.findMany({
+        where: {
+          isCategory: false,
+          framework: tenantClause,
+          ...(frameworkId ? { frameworkId } : {}),
+          mappings: { none: {} },
+        },
+        include: { framework: { select: { id: true, name: true } } },
+        orderBy: [{ framework: { name: 'asc' } }, { reference: 'asc' }],
+      });
+      return reqs.map((r) => ({
+        id: `req:${r.id}:no-controls`,
+        type: 'no-controls' as const,
+        framework: r.framework ? { id: r.framework.id, name: r.framework.name } : undefined,
+        requirement: { id: r.id, reference: r.reference, title: r.title },
+        summary: 'Requirement has no mapped controls',
+      }));
+    };
+
+    const fetchSupportingOnly = async (): Promise<MappingGapRow[]> => {
+      const reqs = await this.prisma.frameworkRequirement.findMany({
+        where: {
+          isCategory: false,
+          framework: tenantClause,
+          ...(frameworkId ? { frameworkId } : {}),
+          AND: [{ mappings: { some: {} } }, { mappings: { none: { mappingType: 'primary' } } }],
+        },
+        include: { framework: { select: { id: true, name: true } } },
+        orderBy: [{ framework: { name: 'asc' } }, { reference: 'asc' }],
+      });
+      return reqs.map((r) => ({
+        id: `req:${r.id}:supporting-only`,
+        type: 'supporting-only' as const,
+        framework: r.framework ? { id: r.framework.id, name: r.framework.name } : undefined,
+        requirement: { id: r.id, reference: r.reference, title: r.title },
+        summary: 'Requirement is covered only by supporting controls',
+      }));
+    };
+
+    const fetchUnusedControls = async (): Promise<MappingGapRow[]> => {
+      const controls = await this.prisma.control.findMany({
+        where: {
+          OR: [{ organizationId }, { organizationId: null }],
+          mappings: { none: {} },
+        },
+        orderBy: { controlId: 'asc' },
+      });
+      return controls.map((c) => ({
+        id: `ctrl:${c.id}:unused-controls`,
+        type: 'unused-controls' as const,
+        control: { id: c.id, controlId: c.controlId, title: c.title },
+        summary: 'Control is not mapped to any requirement',
+      }));
+    };
+
+    if (type === 'no-controls') return fetchNoControls();
+    if (type === 'supporting-only') return fetchSupportingOnly();
+    if (type === 'unused-controls') return fetchUnusedControls();
+
+    const [a, b, c] = await Promise.all([
+      fetchNoControls(),
+      fetchSupportingOnly(),
+      fetchUnusedControls(),
+    ]);
+    return [...a, ...b, ...c];
   }
 
   async exportFile(

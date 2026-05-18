@@ -577,6 +577,21 @@ export interface RestoreMappingData {
 }
 
 // ===========================================
+// Mapping Gap Types
+// ===========================================
+
+export type MappingGapType = 'no-controls' | 'supporting-only' | 'unused-controls';
+
+export interface MappingGapRow {
+  id: string;
+  type: MappingGapType;
+  framework?: { id: string; name: string };
+  requirement?: { id: string; reference: string; title: string };
+  control?: { id: string; controlId: string; title: string };
+  summary: string;
+}
+
+// ===========================================
 // Mapping Suggestion Types (AI)
 // ===========================================
 

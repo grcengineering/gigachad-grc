@@ -247,6 +247,18 @@ export const frameworksApi = {
     },
 
     /**
+     * Find mapping gaps (requirements with no/only-supporting controls and unused controls)
+     */
+    findGaps: async (params?: {
+      frameworkId?: string;
+      type?: 'no-controls' | 'supporting-only' | 'unused-controls';
+    }) => {
+      const qs = params ? buildQueryString(params as Record<string, string | undefined>) : '';
+      const response = await api.get(`/api/mappings/gaps${qs}`);
+      return response.data;
+    },
+
+    /**
      * Get AI-generated mapping suggestions for a requirement or control anchor
      */
     suggest: async (data: MappingSuggestRequest): Promise<MappingSuggestResponse> => {

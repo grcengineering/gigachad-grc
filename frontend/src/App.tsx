@@ -14,6 +14,7 @@ const EvidenceDetail = lazy(() => import('./pages/EvidenceDetail'));
 const Frameworks = lazy(() => import('./pages/Frameworks'));
 const FrameworkDetail = lazy(() => import('./pages/FrameworkDetail'));
 const FrameworkLibrary = lazy(() => import('./pages/FrameworkLibrary'));
+const MappingGaps = lazy(() => import('./pages/MappingGaps'));
 const Policies = lazy(() => import('./pages/Policies'));
 const PolicyDetail = lazy(() => import('./pages/PolicyDetail'));
 const Risks = lazy(() => import('./pages/Risks'));
@@ -103,7 +104,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   // Check if this is an OAuth callback (has code or error in URL)
   const searchParams = new URLSearchParams(location.search);
-  const hasAuthCallback = searchParams.has('code') || searchParams.has('error') || searchParams.has('session_state');
+  const hasAuthCallback =
+    searchParams.has('code') || searchParams.has('error') || searchParams.has('session_state');
 
   // Prevent redirect loops
   const isOnLogin = location.pathname === '/login';
@@ -138,7 +140,7 @@ interface ModuleRouteProps {
 
 function ModuleRoute({ children, module }: ModuleRouteProps) {
   const { isModuleEnabled } = useModules();
-  
+
   if (!isModuleEnabled(module)) {
     return (
       <Suspense fallback={<PageLoader />}>
@@ -146,7 +148,7 @@ function ModuleRoute({ children, module }: ModuleRouteProps) {
       </Suspense>
     );
   }
-  
+
   return <>{children}</>;
 }
 
@@ -207,121 +209,951 @@ export default function App() {
             </ProtectedRoute>
           }
         >
-          <Route path="dashboard" element={<Suspense fallback={<PageLoader />}><Dashboard /></Suspense>} />
+          <Route
+            path="dashboard"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <Dashboard />
+              </Suspense>
+            }
+          />
           {/* Tools Module */}
-          <Route path="dashboards" element={<ModuleRoute module="tools"><Suspense fallback={<PageLoader />}><CustomDashboards /></Suspense></ModuleRoute>} />
+          <Route
+            path="dashboards"
+            element={
+              <ModuleRoute module="tools">
+                <Suspense fallback={<PageLoader />}>
+                  <CustomDashboards />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
           {/* Compliance Module */}
-          <Route path="controls" element={<ModuleRoute module="compliance"><Suspense fallback={<PageLoader />}><Controls /></Suspense></ModuleRoute>} />
-          <Route path="controls/new" element={<ModuleRoute module="compliance"><Suspense fallback={<PageLoader />}><ControlNew /></Suspense></ModuleRoute>} />
-          <Route path="controls/:id" element={<ModuleRoute module="compliance"><Suspense fallback={<PageLoader />}><ControlDetail /></Suspense></ModuleRoute>} />
-          <Route path="evidence" element={<ModuleRoute module="compliance"><Suspense fallback={<PageLoader />}><Evidence /></Suspense></ModuleRoute>} />
-          <Route path="evidence/:id" element={<ModuleRoute module="compliance"><Suspense fallback={<PageLoader />}><EvidenceDetail /></Suspense></ModuleRoute>} />
-          <Route path="frameworks" element={<ModuleRoute module="compliance"><Suspense fallback={<PageLoader />}><Frameworks /></Suspense></ModuleRoute>} />
-          <Route path="frameworks/:id" element={<ModuleRoute module="compliance"><Suspense fallback={<PageLoader />}><FrameworkDetail /></Suspense></ModuleRoute>} />
-          <Route path="framework-library" element={<ModuleRoute module="compliance"><Suspense fallback={<PageLoader />}><FrameworkLibrary /></Suspense></ModuleRoute>} />
-          <Route path="calendar" element={<ModuleRoute module="compliance"><Suspense fallback={<PageLoader />}><ComplianceCalendarPage /></Suspense></ModuleRoute>} />
-          
+          <Route
+            path="controls"
+            element={
+              <ModuleRoute module="compliance">
+                <Suspense fallback={<PageLoader />}>
+                  <Controls />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="controls/new"
+            element={
+              <ModuleRoute module="compliance">
+                <Suspense fallback={<PageLoader />}>
+                  <ControlNew />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="controls/:id"
+            element={
+              <ModuleRoute module="compliance">
+                <Suspense fallback={<PageLoader />}>
+                  <ControlDetail />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="evidence"
+            element={
+              <ModuleRoute module="compliance">
+                <Suspense fallback={<PageLoader />}>
+                  <Evidence />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="evidence/:id"
+            element={
+              <ModuleRoute module="compliance">
+                <Suspense fallback={<PageLoader />}>
+                  <EvidenceDetail />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="frameworks"
+            element={
+              <ModuleRoute module="compliance">
+                <Suspense fallback={<PageLoader />}>
+                  <Frameworks />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="frameworks/:id"
+            element={
+              <ModuleRoute module="compliance">
+                <Suspense fallback={<PageLoader />}>
+                  <FrameworkDetail />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="framework-library"
+            element={
+              <ModuleRoute module="compliance">
+                <Suspense fallback={<PageLoader />}>
+                  <FrameworkLibrary />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="reports/mapping-gaps"
+            element={
+              <ModuleRoute module="compliance">
+                <Suspense fallback={<PageLoader />}>
+                  <MappingGaps />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="calendar"
+            element={
+              <ModuleRoute module="compliance">
+                <Suspense fallback={<PageLoader />}>
+                  <ComplianceCalendarPage />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+
           {/* Data Module */}
-          <Route path="policies" element={<ModuleRoute module="data"><Suspense fallback={<PageLoader />}><Policies /></Suspense></ModuleRoute>} />
-          <Route path="policies/:id" element={<ModuleRoute module="data"><Suspense fallback={<PageLoader />}><PolicyDetail /></Suspense></ModuleRoute>} />
-          <Route path="assets" element={<ModuleRoute module="data"><Suspense fallback={<PageLoader />}><Assets /></Suspense></ModuleRoute>} />
-          <Route path="assets/:id" element={<ModuleRoute module="data"><Suspense fallback={<PageLoader />}><AssetDetail /></Suspense></ModuleRoute>} />
-          <Route path="integrations" element={<ModuleRoute module="data"><Suspense fallback={<PageLoader />}><Integrations /></Suspense></ModuleRoute>} />
-          
+          <Route
+            path="policies"
+            element={
+              <ModuleRoute module="data">
+                <Suspense fallback={<PageLoader />}>
+                  <Policies />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="policies/:id"
+            element={
+              <ModuleRoute module="data">
+                <Suspense fallback={<PageLoader />}>
+                  <PolicyDetail />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="assets"
+            element={
+              <ModuleRoute module="data">
+                <Suspense fallback={<PageLoader />}>
+                  <Assets />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="assets/:id"
+            element={
+              <ModuleRoute module="data">
+                <Suspense fallback={<PageLoader />}>
+                  <AssetDetail />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="integrations"
+            element={
+              <ModuleRoute module="data">
+                <Suspense fallback={<PageLoader />}>
+                  <Integrations />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+
           {/* Risk Module */}
-          <Route path="risks" element={<ModuleRoute module="risk"><Suspense fallback={<PageLoader />}><Risks /></Suspense></ModuleRoute>} />
-          <Route path="risks/:id" element={<ModuleRoute module="risk"><Suspense fallback={<PageLoader />}><RiskDetail /></Suspense></ModuleRoute>} />
-          <Route path="risk-dashboard" element={<ModuleRoute module="risk"><Suspense fallback={<PageLoader />}><RiskDashboard /></Suspense></ModuleRoute>} />
-          <Route path="risk-queue" element={<ModuleRoute module="risk"><Suspense fallback={<PageLoader />}><RiskQueue /></Suspense></ModuleRoute>} />
-          <Route path="risk-heatmap" element={<ModuleRoute module="risk"><Suspense fallback={<PageLoader />}><RiskHeatmap /></Suspense></ModuleRoute>} />
-          <Route path="risk-scenarios" element={<ModuleRoute module="risk"><Suspense fallback={<PageLoader />}><RiskScenarios /></Suspense></ModuleRoute>} />
-          <Route path="risk-reports" element={<ModuleRoute module="risk"><Suspense fallback={<PageLoader />}><RiskReports /></Suspense></ModuleRoute>} />
-          
+          <Route
+            path="risks"
+            element={
+              <ModuleRoute module="risk">
+                <Suspense fallback={<PageLoader />}>
+                  <Risks />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="risks/:id"
+            element={
+              <ModuleRoute module="risk">
+                <Suspense fallback={<PageLoader />}>
+                  <RiskDetail />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="risk-dashboard"
+            element={
+              <ModuleRoute module="risk">
+                <Suspense fallback={<PageLoader />}>
+                  <RiskDashboard />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="risk-queue"
+            element={
+              <ModuleRoute module="risk">
+                <Suspense fallback={<PageLoader />}>
+                  <RiskQueue />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="risk-heatmap"
+            element={
+              <ModuleRoute module="risk">
+                <Suspense fallback={<PageLoader />}>
+                  <RiskHeatmap />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="risk-scenarios"
+            element={
+              <ModuleRoute module="risk">
+                <Suspense fallback={<PageLoader />}>
+                  <RiskScenarios />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="risk-reports"
+            element={
+              <ModuleRoute module="risk">
+                <Suspense fallback={<PageLoader />}>
+                  <RiskReports />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+
           {/* TPRM Module */}
-          <Route path="vendors" element={<ModuleRoute module="tprm"><Suspense fallback={<PageLoader />}><Vendors /></Suspense></ModuleRoute>} />
-          <Route path="vendors/new" element={<ModuleRoute module="tprm"><Suspense fallback={<PageLoader />}><VendorNew /></Suspense></ModuleRoute>} />
-          <Route path="vendors/:id" element={<ModuleRoute module="tprm"><Suspense fallback={<PageLoader />}><VendorDetail /></Suspense></ModuleRoute>} />
-          <Route path="assessments" element={<ModuleRoute module="tprm"><Suspense fallback={<PageLoader />}><Assessments /></Suspense></ModuleRoute>} />
-          <Route path="assessments/:id" element={<ModuleRoute module="tprm"><Suspense fallback={<PageLoader />}><AssessmentDetail /></Suspense></ModuleRoute>} />
-          <Route path="contracts" element={<ModuleRoute module="tprm"><Suspense fallback={<PageLoader />}><Contracts /></Suspense></ModuleRoute>} />
-          <Route path="contracts/:id" element={<ModuleRoute module="tprm"><Suspense fallback={<PageLoader />}><ContractDetail /></Suspense></ModuleRoute>} />
-          <Route path="questionnaires" element={<ModuleRoute module="tprm"><Suspense fallback={<PageLoader />}><Questionnaires /></Suspense></ModuleRoute>} />
-          <Route path="questionnaires/:id" element={<ModuleRoute module="tprm"><Suspense fallback={<PageLoader />}><QuestionnaireDetail /></Suspense></ModuleRoute>} />
-          
+          <Route
+            path="vendors"
+            element={
+              <ModuleRoute module="tprm">
+                <Suspense fallback={<PageLoader />}>
+                  <Vendors />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="vendors/new"
+            element={
+              <ModuleRoute module="tprm">
+                <Suspense fallback={<PageLoader />}>
+                  <VendorNew />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="vendors/:id"
+            element={
+              <ModuleRoute module="tprm">
+                <Suspense fallback={<PageLoader />}>
+                  <VendorDetail />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="assessments"
+            element={
+              <ModuleRoute module="tprm">
+                <Suspense fallback={<PageLoader />}>
+                  <Assessments />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="assessments/:id"
+            element={
+              <ModuleRoute module="tprm">
+                <Suspense fallback={<PageLoader />}>
+                  <AssessmentDetail />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="contracts"
+            element={
+              <ModuleRoute module="tprm">
+                <Suspense fallback={<PageLoader />}>
+                  <Contracts />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="contracts/:id"
+            element={
+              <ModuleRoute module="tprm">
+                <Suspense fallback={<PageLoader />}>
+                  <ContractDetail />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="questionnaires"
+            element={
+              <ModuleRoute module="tprm">
+                <Suspense fallback={<PageLoader />}>
+                  <Questionnaires />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="questionnaires/:id"
+            element={
+              <ModuleRoute module="tprm">
+                <Suspense fallback={<PageLoader />}>
+                  <QuestionnaireDetail />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+
           {/* Trust Module */}
-          <Route path="knowledge-base" element={<ModuleRoute module="trust"><Suspense fallback={<PageLoader />}><KnowledgeBase /></Suspense></ModuleRoute>} />
-          <Route path="knowledge-base/:id" element={<ModuleRoute module="trust"><Suspense fallback={<PageLoader />}><KnowledgeBaseDetail /></Suspense></ModuleRoute>} />
-          <Route path="answer-templates" element={<ModuleRoute module="trust"><Suspense fallback={<PageLoader />}><AnswerTemplates /></Suspense></ModuleRoute>} />
-          <Route path="trust-analytics" element={<ModuleRoute module="trust"><Suspense fallback={<PageLoader />}><TrustAnalytics /></Suspense></ModuleRoute>} />
-          <Route path="trust-center" element={<ModuleRoute module="trust"><Suspense fallback={<PageLoader />}><TrustCenter /></Suspense></ModuleRoute>} />
-          <Route path="trust-center/settings" element={<ModuleRoute module="trust"><Suspense fallback={<PageLoader />}><TrustCenterSettings /></Suspense></ModuleRoute>} />
-          
+          <Route
+            path="knowledge-base"
+            element={
+              <ModuleRoute module="trust">
+                <Suspense fallback={<PageLoader />}>
+                  <KnowledgeBase />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="knowledge-base/:id"
+            element={
+              <ModuleRoute module="trust">
+                <Suspense fallback={<PageLoader />}>
+                  <KnowledgeBaseDetail />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="answer-templates"
+            element={
+              <ModuleRoute module="trust">
+                <Suspense fallback={<PageLoader />}>
+                  <AnswerTemplates />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="trust-analytics"
+            element={
+              <ModuleRoute module="trust">
+                <Suspense fallback={<PageLoader />}>
+                  <TrustAnalytics />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="trust-center"
+            element={
+              <ModuleRoute module="trust">
+                <Suspense fallback={<PageLoader />}>
+                  <TrustCenter />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="trust-center/settings"
+            element={
+              <ModuleRoute module="trust">
+                <Suspense fallback={<PageLoader />}>
+                  <TrustCenterSettings />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+
           {/* Audit Module */}
-          <Route path="audits" element={<ModuleRoute module="audit"><Suspense fallback={<PageLoader />}><Audits /></Suspense></ModuleRoute>} />
-          <Route path="audits/new" element={<ModuleRoute module="audit"><Suspense fallback={<PageLoader />}><AuditNew /></Suspense></ModuleRoute>} />
-          <Route path="audits/:id" element={<ModuleRoute module="audit"><Suspense fallback={<PageLoader />}><AuditDetail /></Suspense></ModuleRoute>} />
-          <Route path="audit-requests" element={<ModuleRoute module="audit"><Suspense fallback={<PageLoader />}><AuditRequests /></Suspense></ModuleRoute>} />
-          <Route path="audit-requests/:id" element={<ModuleRoute module="audit"><Suspense fallback={<PageLoader />}><AuditRequests /></Suspense></ModuleRoute>} />
-          <Route path="audit-findings" element={<ModuleRoute module="audit"><Suspense fallback={<PageLoader />}><AuditFindings /></Suspense></ModuleRoute>} />
-          <Route path="audit-templates" element={<ModuleRoute module="audit"><Suspense fallback={<PageLoader />}><AuditTemplates /></Suspense></ModuleRoute>} />
-          <Route path="audit-workpapers" element={<ModuleRoute module="audit"><Suspense fallback={<PageLoader />}><AuditWorkpapers /></Suspense></ModuleRoute>} />
-          <Route path="audit-analytics" element={<ModuleRoute module="audit"><Suspense fallback={<PageLoader />}><AuditAnalytics /></Suspense></ModuleRoute>} />
-          <Route path="audit-calendar" element={<ModuleRoute module="audit"><Suspense fallback={<PageLoader />}><AuditCalendar /></Suspense></ModuleRoute>} />
-          <Route path="test-procedures" element={<ModuleRoute module="audit"><Suspense fallback={<PageLoader />}><TestProcedures /></Suspense></ModuleRoute>} />
-          <Route path="audit" element={<ModuleRoute module="audit"><Suspense fallback={<PageLoader />}><AuditLog /></Suspense></ModuleRoute>} />
-          
+          <Route
+            path="audits"
+            element={
+              <ModuleRoute module="audit">
+                <Suspense fallback={<PageLoader />}>
+                  <Audits />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="audits/new"
+            element={
+              <ModuleRoute module="audit">
+                <Suspense fallback={<PageLoader />}>
+                  <AuditNew />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="audits/:id"
+            element={
+              <ModuleRoute module="audit">
+                <Suspense fallback={<PageLoader />}>
+                  <AuditDetail />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="audit-requests"
+            element={
+              <ModuleRoute module="audit">
+                <Suspense fallback={<PageLoader />}>
+                  <AuditRequests />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="audit-requests/:id"
+            element={
+              <ModuleRoute module="audit">
+                <Suspense fallback={<PageLoader />}>
+                  <AuditRequests />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="audit-findings"
+            element={
+              <ModuleRoute module="audit">
+                <Suspense fallback={<PageLoader />}>
+                  <AuditFindings />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="audit-templates"
+            element={
+              <ModuleRoute module="audit">
+                <Suspense fallback={<PageLoader />}>
+                  <AuditTemplates />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="audit-workpapers"
+            element={
+              <ModuleRoute module="audit">
+                <Suspense fallback={<PageLoader />}>
+                  <AuditWorkpapers />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="audit-analytics"
+            element={
+              <ModuleRoute module="audit">
+                <Suspense fallback={<PageLoader />}>
+                  <AuditAnalytics />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="audit-calendar"
+            element={
+              <ModuleRoute module="audit">
+                <Suspense fallback={<PageLoader />}>
+                  <AuditCalendar />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="test-procedures"
+            element={
+              <ModuleRoute module="audit">
+                <Suspense fallback={<PageLoader />}>
+                  <TestProcedures />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="audit"
+            element={
+              <ModuleRoute module="audit">
+                <Suspense fallback={<PageLoader />}>
+                  <AuditLog />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+
           {/* Tools Module */}
-          <Route path="scheduled-reports" element={<ModuleRoute module="tools"><Suspense fallback={<PageLoader />}><ScheduledReportsPage /></Suspense></ModuleRoute>} />
-          <Route path="tools/ai-risk-assistant" element={<ModuleRoute module="ai"><Suspense fallback={<PageLoader />}><AIRiskAssistant /></Suspense></ModuleRoute>} />
+          <Route
+            path="scheduled-reports"
+            element={
+              <ModuleRoute module="tools">
+                <Suspense fallback={<PageLoader />}>
+                  <ScheduledReportsPage />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="tools/ai-risk-assistant"
+            element={
+              <ModuleRoute module="ai">
+                <Suspense fallback={<PageLoader />}>
+                  <AIRiskAssistant />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
           <Route path="settings" element={<Navigate to="/settings/organization" replace />} />
-          <Route path="settings/organization" element={<Suspense fallback={<PageLoader />}><Settings section="organization" /></Suspense>} />
-          <Route path="settings/communications" element={<Suspense fallback={<PageLoader />}><Settings section="communications" /></Suspense>} />
-          <Route path="settings/api-keys" element={<Suspense fallback={<PageLoader />}><Settings section="api" /></Suspense>} />
-          <Route path="settings/modules" element={<Suspense fallback={<PageLoader />}><Settings section="modules" /></Suspense>} />
-          <Route path="settings/notifications" element={<Suspense fallback={<PageLoader />}><NotificationSettings /></Suspense>} />
-          <Route path="settings/risk" element={<Suspense fallback={<PageLoader />}><RiskConfiguration /></Suspense>} />
-          <Route path="settings/tprm" element={<Suspense fallback={<PageLoader />}><TPRMConfiguration /></Suspense>} />
-          <Route path="settings/trust" element={<Suspense fallback={<PageLoader />}><TrustConfiguration /></Suspense>} />
-          <Route path="settings/dashboard-templates" element={<Suspense fallback={<PageLoader />}><Settings section="dashboard-templates" /></Suspense>} />
-          <Route path="settings/employee-compliance" element={<Suspense fallback={<PageLoader />}><Settings section="employee-compliance" /></Suspense>} />
-          <Route path="settings/ai" element={<Suspense fallback={<PageLoader />}><Settings section="ai" /></Suspense>} />
-          <Route path="settings/config-as-code" element={<ModuleRoute module="config-as-code"><Suspense fallback={<PageLoader />}><ConfigAsCode /></Suspense></ModuleRoute>} />
-          <Route path="settings/mcp" element={<Suspense fallback={<PageLoader />}><MCPSettings /></Suspense>} />
-          <Route path="settings/workspaces" element={<Suspense fallback={<PageLoader />}><WorkspaceList /></Suspense>} />
-          <Route path="settings/workspaces/:id" element={<Suspense fallback={<PageLoader />}><WorkspaceSettings /></Suspense>} />
-          <Route path="account" element={<Suspense fallback={<PageLoader />}><AccountSettings /></Suspense>} />
+          <Route
+            path="settings/organization"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <Settings section="organization" />
+              </Suspense>
+            }
+          />
+          <Route
+            path="settings/communications"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <Settings section="communications" />
+              </Suspense>
+            }
+          />
+          <Route
+            path="settings/api-keys"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <Settings section="api" />
+              </Suspense>
+            }
+          />
+          <Route
+            path="settings/modules"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <Settings section="modules" />
+              </Suspense>
+            }
+          />
+          <Route
+            path="settings/notifications"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <NotificationSettings />
+              </Suspense>
+            }
+          />
+          <Route
+            path="settings/risk"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <RiskConfiguration />
+              </Suspense>
+            }
+          />
+          <Route
+            path="settings/tprm"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <TPRMConfiguration />
+              </Suspense>
+            }
+          />
+          <Route
+            path="settings/trust"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <TrustConfiguration />
+              </Suspense>
+            }
+          />
+          <Route
+            path="settings/dashboard-templates"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <Settings section="dashboard-templates" />
+              </Suspense>
+            }
+          />
+          <Route
+            path="settings/employee-compliance"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <Settings section="employee-compliance" />
+              </Suspense>
+            }
+          />
+          <Route
+            path="settings/ai"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <Settings section="ai" />
+              </Suspense>
+            }
+          />
+          <Route
+            path="settings/config-as-code"
+            element={
+              <ModuleRoute module="config-as-code">
+                <Suspense fallback={<PageLoader />}>
+                  <ConfigAsCode />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="settings/mcp"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <MCPSettings />
+              </Suspense>
+            }
+          />
+          <Route
+            path="settings/workspaces"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <WorkspaceList />
+              </Suspense>
+            }
+          />
+          <Route
+            path="settings/workspaces/:id"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <WorkspaceSettings />
+              </Suspense>
+            }
+          />
+          <Route
+            path="account"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <AccountSettings />
+              </Suspense>
+            }
+          />
           {/* People Module */}
-          <Route path="tools/awareness" element={<ModuleRoute module="people"><Suspense fallback={<PageLoader />}><AwarenessTraining /></Suspense></ModuleRoute>} />
-          <Route path="settings/training" element={<Suspense fallback={<PageLoader />}><TrainingAdmin /></Suspense>} />
-          <Route path="people/training" element={<ModuleRoute module="people"><Suspense fallback={<PageLoader />}><SecurityTrainingDashboard /></Suspense></ModuleRoute>} />
+          <Route
+            path="tools/awareness"
+            element={
+              <ModuleRoute module="people">
+                <Suspense fallback={<PageLoader />}>
+                  <AwarenessTraining />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="settings/training"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <TrainingAdmin />
+              </Suspense>
+            }
+          />
+          <Route
+            path="people/training"
+            element={
+              <ModuleRoute module="people">
+                <Suspense fallback={<PageLoader />}>
+                  <SecurityTrainingDashboard />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
           {/* /people/training shows enterprise-level training dashboard, /tools/awareness is for individual user training */}
-          <Route path="users" element={<Suspense fallback={<PageLoader />}><UserManagement /></Suspense>} />
-          <Route path="permissions" element={<Suspense fallback={<PageLoader />}><PermissionGroups /></Suspense>} />
-          <Route path="help" element={<Suspense fallback={<PageLoader />}><HelpCenter /></Suspense>} />
-          <Route path="help/:category/:article" element={<Suspense fallback={<PageLoader />}><HelpArticle /></Suspense>} />
-          <Route path="docs" element={<Suspense fallback={<PageLoader />}><DeveloperDocs /></Suspense>} />
-          <Route path="people" element={<ModuleRoute module="people"><Suspense fallback={<PageLoader />}><Employees /></Suspense></ModuleRoute>} />
-          <Route path="people/dashboard" element={<ModuleRoute module="people"><Suspense fallback={<PageLoader />}><EmployeeComplianceDashboard /></Suspense></ModuleRoute>} />
-          <Route path="people/:id" element={<ModuleRoute module="people"><Suspense fallback={<PageLoader />}><EmployeeDetail /></Suspense></ModuleRoute>} />
-          
+          <Route
+            path="users"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <UserManagement />
+              </Suspense>
+            }
+          />
+          <Route
+            path="permissions"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <PermissionGroups />
+              </Suspense>
+            }
+          />
+          <Route
+            path="help"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <HelpCenter />
+              </Suspense>
+            }
+          />
+          <Route
+            path="help/:category/:article"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <HelpArticle />
+              </Suspense>
+            }
+          />
+          <Route
+            path="docs"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <DeveloperDocs />
+              </Suspense>
+            }
+          />
+          <Route
+            path="people"
+            element={
+              <ModuleRoute module="people">
+                <Suspense fallback={<PageLoader />}>
+                  <Employees />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="people/dashboard"
+            element={
+              <ModuleRoute module="people">
+                <Suspense fallback={<PageLoader />}>
+                  <EmployeeComplianceDashboard />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="people/:id"
+            element={
+              <ModuleRoute module="people">
+                <Suspense fallback={<PageLoader />}>
+                  <EmployeeDetail />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+
           {/* BC/DR Module */}
-          <Route path="bcdr" element={<ModuleRoute module="bcdr"><Suspense fallback={<PageLoader />}><BCDRDashboard /></Suspense></ModuleRoute>} />
-          <Route path="bcdr/processes" element={<ModuleRoute module="bcdr"><Suspense fallback={<PageLoader />}><BusinessProcesses /></Suspense></ModuleRoute>} />
-          <Route path="bcdr/processes/:id" element={<ModuleRoute module="bcdr"><Suspense fallback={<PageLoader />}><BusinessProcessDetail /></Suspense></ModuleRoute>} />
-          <Route path="bcdr/plans" element={<ModuleRoute module="bcdr"><Suspense fallback={<PageLoader />}><BCDRPlans /></Suspense></ModuleRoute>} />
-          <Route path="bcdr/plans/:id" element={<ModuleRoute module="bcdr"><Suspense fallback={<PageLoader />}><BCDRPlanDetail /></Suspense></ModuleRoute>} />
-          <Route path="bcdr/tests" element={<ModuleRoute module="bcdr"><Suspense fallback={<PageLoader />}><DRTests /></Suspense></ModuleRoute>} />
-          <Route path="bcdr/tests/:id" element={<ModuleRoute module="bcdr"><Suspense fallback={<PageLoader />}><DRTestDetail /></Suspense></ModuleRoute>} />
-          <Route path="bcdr/runbooks" element={<ModuleRoute module="bcdr"><Suspense fallback={<PageLoader />}><Runbooks /></Suspense></ModuleRoute>} />
-          <Route path="bcdr/runbooks/:id" element={<ModuleRoute module="bcdr"><Suspense fallback={<PageLoader />}><RunbookDetail /></Suspense></ModuleRoute>} />
-          <Route path="bcdr/communication" element={<ModuleRoute module="bcdr"><Suspense fallback={<PageLoader />}><CommunicationPlans /></Suspense></ModuleRoute>} />
-          <Route path="bcdr/communication/:id" element={<ModuleRoute module="bcdr"><Suspense fallback={<PageLoader />}><CommunicationPlanDetail /></Suspense></ModuleRoute>} />
-          <Route path="bcdr/exercise-templates" element={<ModuleRoute module="bcdr"><Suspense fallback={<PageLoader />}><ExerciseTemplates /></Suspense></ModuleRoute>} />
-          <Route path="bcdr/exercise-templates/:id" element={<ModuleRoute module="bcdr"><Suspense fallback={<PageLoader />}><ExerciseTemplates /></Suspense></ModuleRoute>} />
-          <Route path="bcdr/recovery-teams" element={<ModuleRoute module="bcdr"><Suspense fallback={<PageLoader />}><RecoveryTeams /></Suspense></ModuleRoute>} />
-          <Route path="bcdr/recovery-teams/:id" element={<ModuleRoute module="bcdr"><Suspense fallback={<PageLoader />}><RecoveryTeamDetail /></Suspense></ModuleRoute>} />
-          <Route path="bcdr/incidents" element={<ModuleRoute module="bcdr"><Suspense fallback={<PageLoader />}><BCDRIncidents /></Suspense></ModuleRoute>} />
-          <Route path="bcdr/incidents/:id" element={<ModuleRoute module="bcdr"><Suspense fallback={<PageLoader />}><BCDRIncidentDetail /></Suspense></ModuleRoute>} />
+          <Route
+            path="bcdr"
+            element={
+              <ModuleRoute module="bcdr">
+                <Suspense fallback={<PageLoader />}>
+                  <BCDRDashboard />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="bcdr/processes"
+            element={
+              <ModuleRoute module="bcdr">
+                <Suspense fallback={<PageLoader />}>
+                  <BusinessProcesses />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="bcdr/processes/:id"
+            element={
+              <ModuleRoute module="bcdr">
+                <Suspense fallback={<PageLoader />}>
+                  <BusinessProcessDetail />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="bcdr/plans"
+            element={
+              <ModuleRoute module="bcdr">
+                <Suspense fallback={<PageLoader />}>
+                  <BCDRPlans />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="bcdr/plans/:id"
+            element={
+              <ModuleRoute module="bcdr">
+                <Suspense fallback={<PageLoader />}>
+                  <BCDRPlanDetail />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="bcdr/tests"
+            element={
+              <ModuleRoute module="bcdr">
+                <Suspense fallback={<PageLoader />}>
+                  <DRTests />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="bcdr/tests/:id"
+            element={
+              <ModuleRoute module="bcdr">
+                <Suspense fallback={<PageLoader />}>
+                  <DRTestDetail />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="bcdr/runbooks"
+            element={
+              <ModuleRoute module="bcdr">
+                <Suspense fallback={<PageLoader />}>
+                  <Runbooks />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="bcdr/runbooks/:id"
+            element={
+              <ModuleRoute module="bcdr">
+                <Suspense fallback={<PageLoader />}>
+                  <RunbookDetail />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="bcdr/communication"
+            element={
+              <ModuleRoute module="bcdr">
+                <Suspense fallback={<PageLoader />}>
+                  <CommunicationPlans />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="bcdr/communication/:id"
+            element={
+              <ModuleRoute module="bcdr">
+                <Suspense fallback={<PageLoader />}>
+                  <CommunicationPlanDetail />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="bcdr/exercise-templates"
+            element={
+              <ModuleRoute module="bcdr">
+                <Suspense fallback={<PageLoader />}>
+                  <ExerciseTemplates />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="bcdr/exercise-templates/:id"
+            element={
+              <ModuleRoute module="bcdr">
+                <Suspense fallback={<PageLoader />}>
+                  <ExerciseTemplates />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="bcdr/recovery-teams"
+            element={
+              <ModuleRoute module="bcdr">
+                <Suspense fallback={<PageLoader />}>
+                  <RecoveryTeams />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="bcdr/recovery-teams/:id"
+            element={
+              <ModuleRoute module="bcdr">
+                <Suspense fallback={<PageLoader />}>
+                  <RecoveryTeamDetail />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="bcdr/incidents"
+            element={
+              <ModuleRoute module="bcdr">
+                <Suspense fallback={<PageLoader />}>
+                  <BCDRIncidents />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
+          <Route
+            path="bcdr/incidents/:id"
+            element={
+              <ModuleRoute module="bcdr">
+                <Suspense fallback={<PageLoader />}>
+                  <BCDRIncidentDetail />
+                </Suspense>
+              </ModuleRoute>
+            }
+          />
         </Route>
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>

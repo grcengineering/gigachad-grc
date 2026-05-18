@@ -82,6 +82,13 @@ export default function ControlDetail() {
     | { mode: 'edit'; mappingId: string; requirementId: string; frameworkId: string }
     | null
   >(null);
+  const [copyState, setCopyState] = useState<{
+    sourceMapping: {
+      controlId: string;
+      mappingType: 'primary' | 'supporting';
+      notes: string | null;
+    };
+  } | null>(null);
 
   const canEditMappings = hasPermission('controls:update');
   const canDeleteMappings = hasPermission('controls:delete');
@@ -801,6 +808,27 @@ export default function ControlDetail() {
                                     Edit
                                   </button>
                                 )}
+                                {canEditMappings && (
+                                  <button
+                                    type="button"
+                                    role="menuitem"
+                                    onClick={() => {
+                                      setMappingMenuOpenId(null);
+                                      setCopyState({
+                                        sourceMapping: {
+                                          controlId: id ?? mapping.controlId,
+                                          mappingType: (mapping.mappingType || 'primary') as
+                                            | 'primary'
+                                            | 'supporting',
+                                          notes: mapping.notes || null,
+                                        },
+                                      });
+                                    }}
+                                    className="w-full text-left px-3 py-2 text-xs text-surface-200 hover:bg-surface-800"
+                                  >
+                                    Copy to framework…
+                                  </button>
+                                )}
                                 <button
                                   type="button"
                                   role="menuitem"
@@ -903,6 +931,26 @@ export default function ControlDetail() {
                 queryClient.invalidateQueries({ queryKey: ['mappings', 'by-control', id] });
                 queryClient.invalidateQueries({ queryKey: ['control', id] });
                 setMappingEditorState(null);
+              }}
+            />
+          )}
+
+          {copyState && (
+            <MappingEditorModal
+              open={true}
+              onClose={() => setCopyState(null)}
+              mode="control-to-requirements"
+              controlId={copyState.sourceMapping.controlId}
+              existingMappingIds={[]}
+              defaultMappingType={copyState.sourceMapping.mappingType}
+              defaultNotes={copyState.sourceMapping.notes ?? undefined}
+              onSaved={(createdIds: string[]) => {
+                queryClient.invalidateQueries({ queryKey: ['mappings', 'by-control', id] });
+                queryClient.invalidateQueries({ queryKey: ['control', id] });
+                setCopyState(null);
+                if (createdIds.length > 0) {
+                  toast.success('Mapping copied.');
+                }
               }}
             />
           )}
