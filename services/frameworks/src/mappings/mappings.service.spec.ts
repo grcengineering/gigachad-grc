@@ -3,6 +3,7 @@ import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
+import { STORAGE_PROVIDER } from '@gigachad-grc/shared';
 import { MappingsController } from './mappings.controller';
 import { MappingsService } from './mappings.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -38,6 +39,17 @@ describe('MappingsService', () => {
     log: jest.fn(),
   };
 
+  const mockStorage = {
+    upload: jest.fn().mockResolvedValue('imports/mappings/org/path/file'),
+    download: jest.fn(),
+    delete: jest.fn(),
+    exists: jest.fn(),
+    getSignedUrl: jest.fn(),
+    getMetadata: jest.fn(),
+    list: jest.fn(),
+    copy: jest.fn(),
+  };
+
   const orgId = 'org-123';
   const userId = 'user-123';
 
@@ -62,6 +74,7 @@ describe('MappingsService', () => {
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: MappingHistoryService, useValue: mockHistoryService },
         { provide: AuditService, useValue: mockAuditService },
+        { provide: STORAGE_PROVIDER, useValue: mockStorage },
       ],
     }).compile();
 

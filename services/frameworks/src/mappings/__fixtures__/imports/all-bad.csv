@@ -1,0 +1,6 @@
+framework_code,requirement_ref,control_code,mapping_type,notes
+nope:9999,CC1.1,AC-001,primary,unknown framework
+soc2:2017,XX9.9,AC-001,primary,unknown requirement
+soc2:2017,CC1.1,NONE-000,primary,unknown control
+soc2:2017,CC1.1,AC-001,tangential,invalid mapping type
+,CC1.1,AC-001,primary,missing framework_code

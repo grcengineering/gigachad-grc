@@ -52,6 +52,7 @@ import {
   CreateMappingData,
   BulkMappingData,
   MappingListParams,
+  ImportResult,
   // Policies
   Policy,
   UploadPolicyData,
@@ -774,6 +775,23 @@ export const mappingsApi = {
   create: (data: CreateMappingData) => api.post('/api/mappings', data),
   bulkCreate: (data: BulkMappingData) => api.post('/api/mappings/bulk', data),
   delete: (id: string) => api.delete(`/api/mappings/${id}`),
+  bulkImport: async (file: File, dryRun: boolean): Promise<ImportResult> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await api.post(
+      `/api/mappings/import?dryRun=${dryRun ? 'true' : 'false'}`,
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } }
+    );
+    return response.data;
+  },
+  exportFile: async (frameworkId: string, format: 'csv' | 'xlsx' = 'xlsx'): Promise<Blob> => {
+    const response = await api.get(
+      `/api/mappings/export?frameworkId=${encodeURIComponent(frameworkId)}&format=${format}`,
+      { responseType: 'blob' }
+    );
+    return response.data as Blob;
+  },
 };
 
 // Full dashboard response type for consolidated endpoint
