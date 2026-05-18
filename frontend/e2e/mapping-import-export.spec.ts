@@ -125,7 +125,7 @@ async function discoverFixture(api: APIRequestContext): Promise<IeFixture> {
   // 2. Pick two controls that are NOT already mapped to this requirement,
   //    capturing both their UUIDs (for API seeding) and their human
   //    controlId codes (for CSV import).
-  const ctrlRes = await api.get(`${URL_CONTROLS}/api/controls?limit=200`);
+  const ctrlRes = await api.get(`${URL_CONTROLS}/api/controls?limit=100`);
   if (!ctrlRes.ok()) {
     throw new Error(`Could not list controls: ${ctrlRes.status()}`);
   }
