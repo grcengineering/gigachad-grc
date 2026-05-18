@@ -17,8 +17,10 @@ import type {
   BulkMappingData,
   MappingListParams,
   ImportResult,
+  MappingHistoryEntry,
   MappingSuggestRequest,
   MappingSuggestResponse,
+  RestoreMappingData,
 } from '../apiTypes';
 
 export const frameworksApi = {
@@ -182,6 +184,25 @@ export const frameworksApi = {
      */
     bulkCreate: async (data: BulkMappingData) => {
       const response = await api.post('/api/mappings/bulk', data);
+      return response.data;
+    },
+
+    /**
+     * List change history for a mapping
+     */
+    history: async (mappingId: string) => {
+      const response = await api.get<MappingHistoryEntry[]>(`/api/mappings/${mappingId}/history`);
+      return response.data;
+    },
+
+    /**
+     * Restore a mapping to a previous history entry's snapshot
+     */
+    restore: async (mappingId: string, historyId: string, data?: RestoreMappingData) => {
+      const response = await api.post(
+        `/api/mappings/${mappingId}/restore/${historyId}`,
+        data ?? {}
+      );
       return response.data;
     },
 

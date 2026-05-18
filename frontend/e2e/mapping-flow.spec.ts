@@ -470,7 +470,9 @@ test.describe('Mapping flow — adminA', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Scenario 5: viewerA — read-only, no Add button, no kebab.
+// Scenario 5: viewerA — read-only, no Add button. Kebab still renders so the
+// read-only "History" menu item remains reachable (PR-C1 contract), but the
+// menu must NOT expose Edit or Delete to viewers.
 // ---------------------------------------------------------------------------
 test.describe('Mapping flow — viewerA (read-only)', () => {
   test.use({ storageState: 'playwright/.auth/viewerA.json' });
@@ -490,7 +492,7 @@ test.describe('Mapping flow — viewerA (read-only)', () => {
     });
   });
 
-  test('viewer sees chips but no Add button and no kebab triggers', async ({ page }) => {
+  test('viewer sees chips and History-only kebab; no Add/Edit/Delete', async ({ page }) => {
     const f = fixture!;
     await openRequirementDetail(page, f.frameworkId, f.requirementRef, f.ancestorRefs);
 
@@ -500,13 +502,20 @@ test.describe('Mapping flow — viewerA (read-only)', () => {
       .then((r) => r.json())
       .then((b) => (Array.isArray(b) ? b : (b.data ?? b.items ?? b.controls ?? [])));
     const controlA = controls.find((c: any) => c.id === f.controlAId);
-    await expect(mappingChip(page, controlA.controlId)).toBeVisible();
+    const chip = mappingChip(page, controlA.controlId);
+    await expect(chip).toBeVisible();
 
     // No Add mapping button.
     await expect(page.getByRole('button', { name: /Add mapping/i })).toHaveCount(0);
 
-    // No kebab triggers anywhere.
-    await expect(page.locator('[aria-haspopup="menu"]')).toHaveCount(0);
+    // Kebab renders (only History is reachable from it for viewers).
+    await chip.hover();
+    const kebab = chip.getByRole('button', { name: /Mapping actions/i });
+    await kebab.click({ force: true });
+
+    await expect(page.getByRole('menuitem', { name: /^History$/i })).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: /^Edit$/i })).toHaveCount(0);
+    await expect(page.getByRole('menuitem', { name: /^Delete$/i })).toHaveCount(0);
   });
 });
 
@@ -591,7 +600,7 @@ test.describe('Mapping flow — auditorA (read-only)', () => {
     });
   });
 
-  test('auditor sees chips but no Add button and no kebab triggers', async ({ page }) => {
+  test('auditor sees chips and History-only kebab; no Add/Edit/Delete', async ({ page }) => {
     const f = fixture!;
     await openRequirementDetail(page, f.frameworkId, f.requirementRef, f.ancestorRefs);
 
@@ -600,9 +609,17 @@ test.describe('Mapping flow — auditorA (read-only)', () => {
       .then((r) => r.json())
       .then((b) => (Array.isArray(b) ? b : (b.data ?? b.items ?? b.controls ?? [])));
     const controlA = controls.find((c: any) => c.id === f.controlAId);
-    await expect(mappingChip(page, controlA.controlId)).toBeVisible();
+    const chip = mappingChip(page, controlA.controlId);
+    await expect(chip).toBeVisible();
 
     await expect(page.getByRole('button', { name: /Add mapping/i })).toHaveCount(0);
-    await expect(page.locator('[aria-haspopup="menu"]')).toHaveCount(0);
+
+    await chip.hover();
+    const kebab = chip.getByRole('button', { name: /Mapping actions/i });
+    await kebab.click({ force: true });
+
+    await expect(page.getByRole('menuitem', { name: /^History$/i })).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: /^Edit$/i })).toHaveCount(0);
+    await expect(page.getByRole('menuitem', { name: /^Delete$/i })).toHaveCount(0);
   });
 });

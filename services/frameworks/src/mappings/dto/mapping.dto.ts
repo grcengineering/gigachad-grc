@@ -43,6 +43,13 @@ export class UpdateMappingDto {
   notes?: string;
 }
 
+export class RestoreMappingDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  reason?: string;
+}
+
 export interface MappingImportError {
   row: number;
   message: string;

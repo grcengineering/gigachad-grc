@@ -27,7 +27,7 @@ const sizeStyles: Record<ModalSize, string> = {
 
 /**
  * Accessible Modal Component
- * 
+ *
  * Features:
  * - Proper focus trapping
  * - Escape key closes modal
@@ -49,11 +49,14 @@ export function Modal({
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   // Handle escape key
-  const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    if (event.key === 'Escape') {
-      onClose();
-    }
-  }, [onClose]);
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    },
+    [onClose]
+  );
 
   useEffect(() => {
     if (isOpen) {
@@ -72,7 +75,13 @@ export function Modal({
     <Transition appear show={isOpen} as={Fragment}>
       <Dialog
         as="div"
-        className="relative z-50"
+        // `fixed inset-0` rather than `relative z-50` so the dialog
+        // element itself has viewport-sized dimensions. Playwright's
+        // `toBeVisible` requires a non-empty bounding box, which the
+        // standard Headless UI `<Dialog className="relative z-50">`
+        // pattern lacks (its visible content is in absolutely-positioned
+        // children). The fixed children inside still position correctly.
+        className="fixed inset-0 z-50"
         onClose={closeOnOverlayClick ? onClose : () => {}}
         initialFocus={initialFocus || closeButtonRef}
       >
@@ -86,10 +95,7 @@ export function Modal({
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div 
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm" 
-            aria-hidden="true"
-          />
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" aria-hidden="true" />
         </Transition.Child>
 
         {/* Modal container */}
@@ -116,22 +122,17 @@ export function Modal({
                   <div className="flex items-start justify-between p-4 border-b border-surface-700">
                     <div>
                       {title && (
-                        <Dialog.Title
-                          as="h2"
-                          className="text-lg font-semibold text-surface-100"
-                        >
+                        <Dialog.Title as="h2" className="text-lg font-semibold text-surface-100">
                           {title}
                         </Dialog.Title>
                       )}
                       {description && (
-                        <Dialog.Description
-                          className="mt-1 text-sm text-surface-400"
-                        >
+                        <Dialog.Description className="mt-1 text-sm text-surface-400">
                           {description}
                         </Dialog.Description>
                       )}
                     </div>
-                    
+
                     {showCloseButton && (
                       <button
                         ref={closeButtonRef}
@@ -152,9 +153,7 @@ export function Modal({
                 )}
 
                 {/* Content */}
-                <div className="p-4">
-                  {children}
-                </div>
+                <div className="p-4">{children}</div>
               </Dialog.Panel>
             </Transition.Child>
           </div>
@@ -168,15 +167,9 @@ export function Modal({
  * Modal Footer Component
  * Use for action buttons at the bottom of the modal
  */
-export function ModalFooter({ 
-  children, 
-  className 
-}: { 
-  children: ReactNode; 
-  className?: string;
-}) {
+export function ModalFooter({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div 
+    <div
       className={clsx(
         'flex items-center justify-end gap-3 pt-4 mt-4 border-t border-surface-700',
         className
@@ -188,4 +181,3 @@ export function ModalFooter({
 }
 
 export default Modal;
-
