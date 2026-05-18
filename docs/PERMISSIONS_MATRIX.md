@@ -34,9 +34,9 @@ and is intended as a human-readable reference for administrators.
 
 **Description**: Full access to all resources and actions.
 
-| Resource    | Actions                         | Scope      |
-|------------|----------------------------------|------------|
-| All        | All actions (`read`, `create`, `update`, `delete`, `assign`, `approve`, `export`) | `all` (entire organization) |
+| Resource | Actions                                                                           | Scope                       |
+| -------- | --------------------------------------------------------------------------------- | --------------------------- |
+| All      | All actions (`read`, `create`, `update`, `delete`, `assign`, `approve`, `export`) | `all` (entire organization) |
 
 Admins can manage everything, including risk, BC/DR, reports, AI features, and permission groups.
 
@@ -46,20 +46,20 @@ Admins can manage everything, including risk, BC/DR, reports, AI features, and p
 
 **Description**: Manage controls, evidence, policies, risk, and BC/DR.
 
-| Resource      | Actions                                  | Scope |
-|--------------|-------------------------------------------|-------|
-| `controls`   | `read`, `create`, `update`, `assign`     | `all` |
-| `evidence`   | `read`, `create`, `update`, `approve`    | `all` |
-| `policies`   | `read`, `create`, `update`, `approve`    | `all` |
-| `frameworks` | `read`                                   | `all` |
-| `mappings`   | `read`, `create`, `update`, `delete`     | `all` |
-| `integrations` | `read`                                 | `all` |
-| `audit_logs` | `read`                                   | `all` |
-| `dashboard`  | `read`                                   | `all` |
-| `risk`       | `read`, `create`, `update`               | `all` |
-| `bcdr`       | `read`, `create`, `update`               | `all` |
-| `reports`    | `read`, `export`                         | `all` |
-| `ai`         | `read`                                   | `all` |
+| Resource       | Actions                               | Scope |
+| -------------- | ------------------------------------- | ----- |
+| `controls`     | `read`, `create`, `update`, `assign`  | `all` |
+| `evidence`     | `read`, `create`, `update`, `approve` | `all` |
+| `policies`     | `read`, `create`, `update`, `approve` | `all` |
+| `frameworks`   | `read`                                | `all` |
+| `mappings`     | `read`, `create`, `update`, `delete`  | `all` |
+| `integrations` | `read`                                | `all` |
+| `audit_logs`   | `read`                                | `all` |
+| `dashboard`    | `read`                                | `all` |
+| `risk`         | `read`, `create`, `update`            | `all` |
+| `bcdr`         | `read`, `create`, `update`            | `all` |
+| `reports`      | `read`, `export`                      | `all` |
+| `ai`           | `read`                                | `all` |
 
 ---
 
@@ -67,18 +67,18 @@ Admins can manage everything, including risk, BC/DR, reports, AI features, and p
 
 **Description**: Read-only access with ability to approve evidence and export logs/reports.
 
-| Resource      | Actions                         | Scope |
-|--------------|----------------------------------|-------|
-| `controls`   | `read`                          | `all` |
-| `evidence`   | `read`, `approve`               | `all` |
-| `policies`   | `read`                          | `all` |
-| `frameworks` | `read`                          | `all` |
-| `mappings`   | `read`                          | `all` |
-| `audit_logs` | `read`, `export`                | `all` |
-| `dashboard`  | `read`                          | `all` |
-| `risk`       | `read`                          | `all` |
-| `bcdr`       | `read`                          | `all` |
-| `reports`    | `read`, `export`                | `all` |
+| Resource     | Actions           | Scope |
+| ------------ | ----------------- | ----- |
+| `controls`   | `read`            | `all` |
+| `evidence`   | `read`, `approve` | `all` |
+| `policies`   | `read`            | `all` |
+| `frameworks` | `read`            | `all` |
+| `mappings`   | `read`            | `all` |
+| `audit_logs` | `read`, `export`  | `all` |
+| `dashboard`  | `read`            | `all` |
+| `risk`       | `read`            | `all` |
+| `bcdr`       | `read`            | `all` |
+| `reports`    | `read`, `export`  | `all` |
 
 Auditors can generate standard reports but cannot change configuration or entities.
 
@@ -88,14 +88,14 @@ Auditors can generate standard reports but cannot change configuration or entiti
 
 **Description**: Edit assigned controls and link evidence.
 
-| Resource      | Actions                         | Scope         |
-|--------------|----------------------------------|---------------|
-| `controls`   | `read`, `update`                | `assigned`    |
-| `evidence`   | `read`, `create`, `update`      | `owned`       |
-| `policies`   | `read`                          | `all`         |
-| `frameworks` | `read`                          | `all`         |
-| `mappings`   | `read`                          | `all`         |
-| `dashboard`  | `read`                          | `all`         |
+| Resource     | Actions                    | Scope      |
+| ------------ | -------------------------- | ---------- |
+| `controls`   | `read`, `update`           | `assigned` |
+| `evidence`   | `read`, `create`, `update` | `owned`    |
+| `policies`   | `read`                     | `all`      |
+| `frameworks` | `read`                     | `all`      |
+| `mappings`   | `read`                     | `all`      |
+| `dashboard`  | `read`                     | `all`      |
 
 ---
 
@@ -103,14 +103,14 @@ Auditors can generate standard reports but cannot change configuration or entiti
 
 **Description**: Read-only access to non-sensitive data.
 
-| Resource      | Actions                         | Scope |
-|--------------|----------------------------------|-------|
-| `controls`   | `read`                          | `all` |
-| `evidence`   | `read`                          | `all` |
-| `policies`   | `read`                          | `all` |
-| `frameworks` | `read`                          | `all` |
-| `mappings`   | `read`                          | `all` |
-| `dashboard`  | `read`                          | `all` |
+| Resource     | Actions | Scope |
+| ------------ | ------- | ----- |
+| `controls`   | `read`  | `all` |
+| `evidence`   | `read`  | `all` |
+| `policies`   | `read`  | `all` |
+| `frameworks` | `read`  | `all` |
+| `mappings`   | `read`  | `all` |
+| `dashboard`  | `read`  | `all` |
 
 Viewers cannot modify data, run collectors, execute workflows, or generate exports.
 
@@ -125,11 +125,25 @@ Viewers cannot modify data, run collectors, execute workflows, or generate expor
   - Executing MCP workflows / AI actions,
   - Managing BC/DR plans,
   - Generating or exporting reports,
-  are protected by the corresponding `controls`, `ai`, `bcdr`, and `reports` permissions.
+    are protected by the corresponding `controls`, `ai`, `bcdr`, and `reports` permissions.
 - When in doubt, assign **Auditor** or **Viewer** roles rather than Administrator, then
   add overrides for specific needs.
 
 ---
+
+### Notes on the AI mapping suggestions endpoint
+
+`POST /api/mappings/suggest` (frameworks service) is gated by `@Roles('admin',
+'compliance_manager')` only — it does **not** consult the `ai` resource /
+`Resource.AI` permission groups defined in the controls service. The
+controls-service `Resource` enum and `@RequirePermission` decorator are
+intentionally scoped to that service, and the frameworks service does not yet
+adopt the cross-service permission framework. As a result the `ai` resource
+column in the role tables above governs **only** the controls service's own AI
+endpoints (e.g. `/api/ai/analyze`), not the mapping-suggestion endpoint. A
+future iteration may extend the permission framework into the frameworks
+service to close this gap; until then the role gate above is the source of
+truth for AI mapping suggestions.
 
 ### How to Map Roles to Permissions
 
@@ -137,7 +151,7 @@ When defining custom roles or adjusting defaults, a good workflow is:
 
 1. **Start from a base role**
    - Use one of the built-in groups (Administrator, Compliance Manager, Auditor, Control Owner, Viewer) as a template.
-   - Clone or create a new group that is *at most* as powerful as the closest built-in role.
+   - Clone or create a new group that is _at most_ as powerful as the closest built-in role.
 
 2. **Decide what the persona should do**
    - **View only** → grant `read` on the relevant resources.
@@ -157,5 +171,3 @@ When defining custom roles or adjusting defaults, a good workflow is:
    - Use overrides only for exceptional cases (e.g., a single executive approver needing `risk:update` or `bcdr:update`).
 
 By following this pattern, you keep your permission model understandable while ensuring that powerful actions (collectors, MCP/AI, BC/DR, reporting) are only available to clearly defined roles.
-
-

@@ -30,6 +30,7 @@ vi.mock('@/lib/api/frameworks.api', () => ({
     mappings: {
       bulkCreate: vi.fn(),
       update: vi.fn(),
+      suggest: vi.fn(),
     },
   },
 }));
@@ -359,6 +360,179 @@ describe('MappingEditorModal', () => {
         />
       );
       expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled();
+    });
+  });
+
+  describe('AI suggestions panel', () => {
+    async function advanceToMultiSelect(user: ReturnType<typeof userEvent.setup>) {
+      await user.click(screen.getByRole('button', { name: 'Next' }));
+      await waitFor(() => expect(screen.getByText('AC-001')).toBeInTheDocument());
+    }
+
+    it('shows loading state while suggest request is in flight', async () => {
+      let resolve!: (v: unknown) => void;
+      vi.mocked(frameworksApi.mappings.suggest).mockReturnValueOnce(
+        new Promise((r) => {
+          resolve = r;
+        }) as never
+      );
+      const user = userEvent.setup();
+
+      render(
+        <MappingEditorModal
+          open
+          onClose={vi.fn()}
+          mode="requirement-to-controls"
+          requirementId={REQUIREMENT_ID}
+          frameworkId={FRAMEWORK_ID}
+          existingMappingIds={[]}
+          onSaved={vi.fn()}
+        />
+      );
+
+      await advanceToMultiSelect(user);
+      await user.click(screen.getByRole('button', { name: /suggest with ai/i }));
+
+      expect(screen.getByText(/generating suggestions/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /suggesting/i })).toBeDisabled();
+
+      // Cleanly resolve to avoid open promise leaking past test
+      resolve({ direction: 'requirement-to-controls', suggestions: [], isMockMode: false });
+    });
+
+    it('renders ranked candidates with rationale and a Use button that pre-fills selection', async () => {
+      vi.mocked(frameworksApi.mappings.suggest).mockResolvedValueOnce({
+        direction: 'requirement-to-controls',
+        suggestions: [
+          {
+            candidateId: CONTROL_A.id,
+            candidateReference: 'AC-001',
+            candidateTitle: 'Access Control Policy',
+            confidence: 0.82,
+            rationale: 'Matched on 3 shared terms: access, control, policy.',
+          },
+        ],
+        isMockMode: false,
+      } as never);
+      const user = userEvent.setup();
+
+      render(
+        <MappingEditorModal
+          open
+          onClose={vi.fn()}
+          mode="requirement-to-controls"
+          requirementId={REQUIREMENT_ID}
+          frameworkId={FRAMEWORK_ID}
+          existingMappingIds={[]}
+          onSaved={vi.fn()}
+        />
+      );
+
+      await advanceToMultiSelect(user);
+      await user.click(screen.getByRole('button', { name: /suggest with ai/i }));
+
+      const suggestionsList = await screen.findByRole('list', { name: /suggested candidates/i });
+      expect(within(suggestionsList).getByText(/matched on 3 shared terms/i)).toBeInTheDocument();
+      expect(within(suggestionsList).getByLabelText(/82% confidence/i)).toBeInTheDocument();
+
+      // Click "Use" — should pre-fill controlId selection without auto-submitting.
+      await user.click(
+        within(suggestionsList).getByRole('button', { name: /use suggestion ac-001/i })
+      );
+
+      const candidateList = screen.getByRole('list', { name: /candidate controls/i });
+      const checkbox = within(candidateList).getAllByRole('checkbox')[0] as HTMLInputElement;
+      expect(checkbox.checked).toBe(true);
+
+      // bulkCreate should NOT have been called — selection only.
+      expect(frameworksApi.mappings.bulkCreate).not.toHaveBeenCalled();
+    });
+
+    it('shows mock-mode banner and empty state when suggestions array is empty', async () => {
+      vi.mocked(frameworksApi.mappings.suggest).mockResolvedValueOnce({
+        direction: 'requirement-to-controls',
+        suggestions: [],
+        isMockMode: true,
+        mockModeReason: 'no-key',
+      } as never);
+      const user = userEvent.setup();
+
+      render(
+        <MappingEditorModal
+          open
+          onClose={vi.fn()}
+          mode="requirement-to-controls"
+          requirementId={REQUIREMENT_ID}
+          frameworkId={FRAMEWORK_ID}
+          existingMappingIds={[]}
+          onSaved={vi.fn()}
+        />
+      );
+
+      await advanceToMultiSelect(user);
+      await user.click(screen.getByRole('button', { name: /suggest with ai/i }));
+
+      await waitFor(() => {
+        expect(
+          screen.getByText(/ai provider not configured — showing heuristic suggestions/i)
+        ).toBeInTheDocument();
+      });
+      expect(screen.getByText(/no suggestions available/i)).toBeInTheDocument();
+    });
+
+    it('renders a non-blocking message on 429 rate limit', async () => {
+      vi.mocked(frameworksApi.mappings.suggest).mockRejectedValueOnce({
+        response: { status: 429, data: { message: 'Too Many Requests' } },
+      });
+      const user = userEvent.setup();
+
+      render(
+        <MappingEditorModal
+          open
+          onClose={vi.fn()}
+          mode="requirement-to-controls"
+          requirementId={REQUIREMENT_ID}
+          frameworkId={FRAMEWORK_ID}
+          existingMappingIds={[]}
+          onSaved={vi.fn()}
+        />
+      );
+
+      await advanceToMultiSelect(user);
+      await user.click(screen.getByRole('button', { name: /suggest with ai/i }));
+
+      await waitFor(() => {
+        expect(screen.getByText(/try again in a moment/i)).toBeInTheDocument();
+      });
+
+      // Non-blocking: the modal Cancel button is still operable and no alert role surfaces.
+      expect(screen.getByRole('button', { name: /cancel/i })).toBeEnabled();
+    });
+
+    it('renders an error state on non-429 failures', async () => {
+      vi.mocked(frameworksApi.mappings.suggest).mockRejectedValueOnce(
+        new Error('Service unavailable')
+      );
+      const user = userEvent.setup();
+
+      render(
+        <MappingEditorModal
+          open
+          onClose={vi.fn()}
+          mode="requirement-to-controls"
+          requirementId={REQUIREMENT_ID}
+          frameworkId={FRAMEWORK_ID}
+          existingMappingIds={[]}
+          onSaved={vi.fn()}
+        />
+      );
+
+      await advanceToMultiSelect(user);
+      await user.click(screen.getByRole('button', { name: /suggest with ai/i }));
+
+      await waitFor(() => {
+        expect(screen.getByText(/service unavailable/i)).toBeInTheDocument();
+      });
     });
   });
 

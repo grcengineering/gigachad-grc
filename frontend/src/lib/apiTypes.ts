@@ -577,6 +577,32 @@ export interface RestoreMappingData {
 }
 
 // ===========================================
+// Mapping Suggestion Types (AI)
+// ===========================================
+
+export interface MappingSuggestRequest {
+  frameworkId: string;
+  requirementId?: string;
+  controlId?: string;
+  limit?: number;
+}
+
+export interface MappingSuggestion {
+  candidateId: string;
+  candidateReference: string;
+  candidateTitle: string;
+  confidence: number;
+  rationale: string;
+}
+
+export interface MappingSuggestResponse {
+  direction: 'requirement-to-controls' | 'control-to-requirements';
+  suggestions: MappingSuggestion[];
+  isMockMode: boolean;
+  mockModeReason?: string;
+}
+
+// ===========================================
 // Mapping Import / Export Types
 // ===========================================
 
