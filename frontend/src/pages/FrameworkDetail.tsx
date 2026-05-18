@@ -1158,6 +1158,7 @@ function RequirementDetailPanel({
                                     onClick={(e) => {
                                       e.preventDefault();
                                       e.stopPropagation();
+                                      setOpenMenuId(null);
                                       handleOpenEditMapping(mapping.id);
                                     }}
                                     className="block w-full text-left px-3 py-1.5 text-sm text-surface-200 hover:bg-surface-700"
@@ -1186,6 +1187,7 @@ function RequirementDetailPanel({
                                     onClick={(e) => {
                                       e.preventDefault();
                                       e.stopPropagation();
+                                      setOpenMenuId(null);
                                       setPendingDeleteId(mapping.id);
                                     }}
                                     className="block w-full text-left px-3 py-1.5 text-sm text-red-400 hover:bg-surface-700"

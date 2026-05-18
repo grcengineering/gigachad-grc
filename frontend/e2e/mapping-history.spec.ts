@@ -1,20 +1,18 @@
 import { test, expect, request as pwRequest, APIRequestContext } from '@playwright/test';
+import {
+  URL_FRAMEWORKS,
+  discoverMappingFixture,
+  openRequirementDetail as openRequirementDetailHelper,
+  cleanRequirementMappings,
+  type MappingFixture as SharedMappingFixture,
+} from './_mapping-helpers';
 
 /**
  * Mapping History Drawer + Restore — end-to-end coverage (PR-C1).
  *
  * Covers the history drawer introduced behind the chip kebab "History"
  * menu item on FrameworkDetail.tsx, plus the restore-from-snapshot
- * affordance inside the drawer. Mirrors the patterns established in
- * mapping-flow.spec.ts (PR-A):
- *
- *   - Storage state per role via `test.use({ storageState })`.
- *   - Backend fixture discovery through a header-authenticated
- *     APIRequestContext (`x-dev-user-id`) using the Org A admin id, so
- *     per-role browser tests do not all repeat the search.
- *   - Recursive walk into requirement `.children` to find a leaf
- *     (non-category) requirement — every seeded catalog (SOC 2 / ISO /
- *     HIPAA) puts leaves underneath category rows.
+ * affordance inside the drawer.
  *
  * Selectors: ARIA roles + accessible names only. No Tailwind class
  * names, no hex colors. The drawer dialog is addressed via
@@ -30,131 +28,25 @@ import { test, expect, request as pwRequest, APIRequestContext } from '@playwrig
 // ---------------------------------------------------------------------------
 const SEED_USER_A_ADMIN_ID = '8f88a42b-e799-455c-b68a-308d7d2e9aa4';
 
-const URL_CONTROLS = 'http://127.0.0.1:3001';
-const URL_FRAMEWORKS = 'http://127.0.0.1:3002';
-
-// ---------------------------------------------------------------------------
-// Shared discovery: pick a non-category requirement in some framework and a
-// control we can wire up to it. Done once via the admin API context so per-
-// role browser tests don't all repeat the search. Identical recursion shape
-// to mapping-flow.spec.ts's discoverFixture so future seed reshuffles only
-// need to be tracked once.
-// ---------------------------------------------------------------------------
-interface MappingFixture {
-  frameworkId: string;
-  requirementId: string;
-  requirementRef: string;
-  controlAId: string;
+// Local fixture extends the shared one with the human-facing controlId
+// string (e.g. "AC-001") used to find the chip on the page.
+interface MappingFixture extends SharedMappingFixture {
   controlAControlId: string;
 }
 
 let fixture: MappingFixture | undefined;
 let adminApi: APIRequestContext | undefined;
 
-async function discoverFixture(api: APIRequestContext): Promise<MappingFixture> {
-  const fwRes = await api.get(`${URL_FRAMEWORKS}/api/frameworks`);
-  if (!fwRes.ok()) {
-    throw new Error(`Could not list frameworks: ${fwRes.status()}`);
-  }
-  const fwBody = await fwRes.json();
-  const frameworks: any[] = Array.isArray(fwBody)
-    ? fwBody
-    : (fwBody.data ?? fwBody.items ?? fwBody.frameworks ?? []);
-  if (frameworks.length === 0) {
-    throw new Error('Seed produced no frameworks; cannot pick a target');
-  }
-
-  function findLeaf(nodes: any[]): any | undefined {
-    for (const n of nodes) {
-      if (!n.isCategory) return n;
-      if (Array.isArray(n.children) && n.children.length > 0) {
-        const hit = findLeaf(n.children);
-        if (hit) return hit;
-      }
-    }
-    return undefined;
-  }
-
-  let chosenFwId: string | undefined;
-  let chosenReq: any | undefined;
-  for (const fw of frameworks) {
-    let reqs: any[] = [];
-    const treeRes = await api.get(`${URL_FRAMEWORKS}/api/frameworks/${fw.id}/requirements/tree`);
-    if (treeRes.ok()) {
-      const body = await treeRes.json();
-      reqs = Array.isArray(body) ? body : (body.data ?? body.items ?? body.requirements ?? []);
-    } else {
-      const reqRes = await api.get(`${URL_FRAMEWORKS}/api/frameworks/${fw.id}/requirements`);
-      if (!reqRes.ok()) continue;
-      const reqBody = await reqRes.json();
-      reqs = Array.isArray(reqBody)
-        ? reqBody
-        : (reqBody.data ?? reqBody.items ?? reqBody.requirements ?? []);
-    }
-    const candidate = findLeaf(reqs);
-    if (candidate) {
-      chosenFwId = fw.id;
-      chosenReq = candidate;
-      break;
-    }
-  }
-  if (!chosenFwId || !chosenReq) {
-    throw new Error(
-      'No framework with a non-category requirement found in seed. ' +
-        'Every seeded catalog has non-category leaves nested under categories — ' +
-        'walk `.children` recursively.'
-    );
-  }
-
-  // Pick a control NOT already mapped to this requirement so we can create
-  // a fresh mapping per scenario (each test deletes its own mapping in
-  // beforeEach via cleanRequirementMappings).
-  const ctrlRes = await api.get(`${URL_CONTROLS}/api/controls?limit=100`);
-  if (!ctrlRes.ok()) {
-    throw new Error(`Could not list controls: ${ctrlRes.status()}`);
-  }
-  const ctrlBody = await ctrlRes.json();
-  const controls: any[] = Array.isArray(ctrlBody)
-    ? ctrlBody
-    : (ctrlBody.data ?? ctrlBody.items ?? ctrlBody.controls ?? []);
-  const mappedIds = new Set<string>(
-    (chosenReq.mappings ?? []).map((m: any) => m.control?.id ?? m.controlId)
-  );
-  const unmapped = controls.filter((c) => !mappedIds.has(c.id));
-  if (unmapped.length < 1) {
-    throw new Error('Need at least one unmapped control to drive the history flows');
-  }
-
-  return {
-    frameworkId: chosenFwId,
-    requirementId: chosenReq.id,
-    requirementRef: chosenReq.reference ?? '',
-    controlAId: unmapped[0].id,
-    controlAControlId: unmapped[0].controlId,
-  };
-}
-
-/** Delete every mapping currently attached to the fixture's requirement so
- *  the next scenario starts clean. The history rows themselves are
- *  preserved across deletes (mappingId is nulled out on hard-delete; the
- *  audit trail is by design append-only) — but each scenario creates a
- *  fresh mapping with its own brand-new history chain, so that doesn't
- *  affect isolation. */
-async function cleanRequirementMappings(api: APIRequestContext, requirementId: string) {
-  const res = await api.get(`${URL_FRAMEWORKS}/api/mappings/by-requirement/${requirementId}`);
-  if (!res.ok()) return;
-  const body = await res.json();
-  const items: any[] = Array.isArray(body) ? body : (body.data ?? body.items ?? []);
-  for (const m of items) {
-    if (m.id) await api.delete(`${URL_FRAMEWORKS}/api/mappings/${m.id}`).catch(() => undefined);
-  }
-}
-
 test.beforeAll(async () => {
   adminApi = await pwRequest.newContext({
     extraHTTPHeaders: { 'x-dev-user-id': SEED_USER_A_ADMIN_ID },
   });
-  fixture = await discoverFixture(adminApi);
+  const base = await discoverMappingFixture(adminApi);
+  const controlA = base.controls.find((c: any) => c.id === base.controlAId);
+  if (!controlA) {
+    throw new Error('discoverMappingFixture returned a controlAId that is not in controls list');
+  }
+  fixture = { ...base, controlAControlId: controlA.controlId };
 });
 
 test.afterAll(async () => {
@@ -169,17 +61,15 @@ test.afterAll(async () => {
 // ---------------------------------------------------------------------------
 
 /** Navigate to FrameworkDetail and click into the chosen requirement so its
- *  Mapped Controls panel renders. */
+ *  Mapped Controls panel renders. Delegates to the shared helper which
+ *  expands every ancestor category in the requirement tree first (leaves
+ *  are hidden behind collapsed categories by default). */
 async function openRequirementDetail(
   page: import('@playwright/test').Page,
   frameworkId: string,
   requirementRef: string
 ) {
-  await page.goto(`/frameworks/${frameworkId}`);
-  await page.waitForLoadState('networkidle');
-  const row = page.getByText(requirementRef, { exact: true }).first();
-  await row.click();
-  await expect(page.getByText(/Mapped Controls/i)).toBeVisible();
+  await openRequirementDetailHelper(page, frameworkId, requirementRef, fixture?.ancestorRefs ?? []);
 }
 
 /** A chip element representing one mapping. `identifier` is the human
