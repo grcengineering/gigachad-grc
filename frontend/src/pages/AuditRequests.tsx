@@ -13,6 +13,8 @@ import { EmptyState, NoResultsEmptyState } from '@/components/EmptyState';
 import { auditsApi, auditRequestsApi } from '@/lib/api';
 import toast from 'react-hot-toast';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 interface AuditRequest {
   id: string;
   requestNumber: string;
@@ -172,7 +174,6 @@ export default function AuditRequests() {
             <p className="text-surface-600 mt-1">Create a new evidence or documentation request</p>
           </div>
         </div>
-
         <div className="bg-surface-800 border border-surface-700 rounded-lg p-6">
           <form onSubmit={handleCreateRequest} className="space-y-4">
             <div>
@@ -254,7 +255,7 @@ export default function AuditRequests() {
 
             <div>
               <label className="block text-sm font-medium text-surface-700 mb-1">Description</label>
-              <textarea
+              <Textarea
                 value={createForm.description}
                 onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
                 rows={3}

@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { PlusIcon, TrashIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 interface EndpointConfig {
   name: string;
   description: string;
@@ -380,7 +382,6 @@ function EndpointCard({
           )}
         </div>
       </div>
-
       {/* Expanded Content */}
       {isExpanded && (
         <div className="p-4 space-y-4 bg-surface-900/30">
@@ -441,7 +442,7 @@ function EndpointCard({
             <label className="block text-xs text-surface-600 mb-1">
               Headers <span className="text-surface-600">(one per line, format: Key: Value)</span>
             </label>
-            <textarea
+            <Textarea
               value={headersText}
               onChange={(e) => {
                 setHeadersText(e.target.value);
@@ -459,7 +460,7 @@ function EndpointCard({
               Query Parameters{' '}
               <span className="text-surface-600">(one per line, format: key=value)</span>
             </label>
-            <textarea
+            <Textarea
               value={paramsText}
               onChange={(e) => {
                 setParamsText(e.target.value);
@@ -475,7 +476,7 @@ function EndpointCard({
           {['POST', 'PUT', 'PATCH'].includes(endpoint.method) && (
             <div>
               <label className="block text-xs text-surface-600 mb-1">Request Body (JSON)</label>
-              <textarea
+              <Textarea
                 value={JSON.stringify(endpoint.body || {}, null, 2)}
                 onChange={(e) => {
                   try {

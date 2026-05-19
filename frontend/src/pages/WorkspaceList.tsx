@@ -15,6 +15,8 @@ import {
 import { useWorkspace, Workspace } from '@/contexts/WorkspaceContext';
 import api from '@/lib/api';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 function CreateWorkspaceModal({
   isOpen,
   onClose,
@@ -70,7 +72,7 @@ function CreateWorkspaceModal({
               <label className="block text-sm font-medium text-foreground mb-1">
                 Description (optional)
               </label>
-              <textarea
+              <Textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Brief description of this workspace..."

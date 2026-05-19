@@ -9,6 +9,8 @@ import {
 import clsx from 'clsx';
 import type { IntegrationType, ConfigField, EvidenceType } from '@/lib/integrationTypes';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 interface QuickSetupConfig {
   name: string;
   description: string;
@@ -196,7 +198,7 @@ export default function QuickSetupTab({ typeMeta, config, onChange }: QuickSetup
         );
       case 'textarea':
         return (
-          <textarea
+          <Textarea
             value={value}
             onChange={(e) => updateCredential(field.key, e.target.value)}
             placeholder={field.placeholder}
@@ -258,7 +260,7 @@ export default function QuickSetupTab({ typeMeta, config, onChange }: QuickSetup
           </div>
           <div className="md:col-span-2">
             <label className="block text-sm text-surface-600 mb-1.5">Description (optional)</label>
-            <textarea
+            <Textarea
               value={config.description}
               onChange={(e) => onChange({ ...config, description: e.target.value })}
               placeholder="Brief description of this integration instance"
@@ -268,7 +270,6 @@ export default function QuickSetupTab({ typeMeta, config, onChange }: QuickSetup
           </div>
         </div>
       </section>
-
       {/* Connection Settings */}
       <section>
         <h3 className="text-sm font-semibold text-surface-200 mb-4">Connection Settings</h3>
@@ -290,7 +291,6 @@ export default function QuickSetupTab({ typeMeta, config, onChange }: QuickSetup
           ))}
         </div>
       </section>
-
       {/* Data Selection */}
       {typeMeta.evidenceTypes && typeMeta.evidenceTypes.length > 0 && (
         <section>

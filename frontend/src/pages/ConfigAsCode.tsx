@@ -15,6 +15,8 @@ import DisabledModulePage from './DisabledModulePage';
 import ConfigIDE from '@/components/config-as-code/ConfigIDE';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 export default function ConfigAsCode() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
@@ -321,7 +323,6 @@ function ExportImportContent({
           </button>
         </div>
       </div>
-
       {/* Import Section */}
       <div className="card p-6">
         <div className="flex items-center gap-3 mb-4">
@@ -375,7 +376,7 @@ function ExportImportContent({
             <label className="block text-sm font-medium text-surface-700 mb-2">
               Configuration Content
             </label>
-            <textarea
+            <Textarea
               value={importConfig}
               onChange={(e) => setImportConfig(e.target.value)}
               placeholder="Paste your configuration here or upload a file..."
@@ -403,7 +404,6 @@ function ExportImportContent({
           </div>
         </div>
       </div>
-
       {/* Info Section */}
       <div className="bg-surface-800 border border-surface-700 rounded-lg p-4">
         <div className="flex items-start gap-3">

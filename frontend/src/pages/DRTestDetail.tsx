@@ -21,6 +21,8 @@ import clsx from 'clsx';
 import { Button } from '@/components/ui/Button';
 import { SkeletonDetailHeader, SkeletonDetailSection } from '@/components/Skeleton';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 interface DRTest {
   id: string;
   test_id: string;
@@ -283,7 +285,6 @@ export default function DRTestDetail() {
             <p className="text-surface-600 mt-1">Create a new disaster recovery test</p>
           </div>
         </div>
-
         <div className="card p-6">
           <form
             onSubmit={(e) => {
@@ -334,7 +335,7 @@ export default function DRTestDetail() {
 
             <div>
               <label className="block text-sm font-medium text-surface-700 mb-2">Description</label>
-              <textarea
+              <Textarea
                 value={editForm.description}
                 onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
                 rows={3}
@@ -345,7 +346,7 @@ export default function DRTestDetail() {
 
             <div>
               <label className="block text-sm font-medium text-surface-700 mb-2">Objectives</label>
-              <textarea
+              <Textarea
                 value={editForm.objectives}
                 onChange={(e) => setEditForm({ ...editForm, objectives: e.target.value })}
                 rows={2}
@@ -356,7 +357,7 @@ export default function DRTestDetail() {
 
             <div>
               <label className="block text-sm font-medium text-surface-700 mb-2">Scope</label>
-              <textarea
+              <Textarea
                 value={editForm.scope}
                 onChange={(e) => setEditForm({ ...editForm, scope: e.target.value })}
                 rows={2}
@@ -444,7 +445,6 @@ export default function DRTestDetail() {
           </Button>
         </div>
       </div>
-
       {/* Tabs */}
       <div className="border-b border-surface-700">
         <nav className="flex gap-6">
@@ -469,7 +469,6 @@ export default function DRTestDetail() {
           ))}
         </nav>
       </div>
-
       {/* Content */}
       {activeTab === 'overview' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -605,7 +604,6 @@ export default function DRTestDetail() {
           </div>
         </div>
       )}
-
       {activeTab === 'findings' && (
         <div className="card p-6">
           <div className="flex items-center justify-between mb-4">
@@ -670,7 +668,6 @@ export default function DRTestDetail() {
           )}
         </div>
       )}
-
       {activeTab === 'participants' && (
         <div className="card p-6">
           <div className="flex items-center justify-between mb-4">
@@ -714,7 +711,6 @@ export default function DRTestDetail() {
           )}
         </div>
       )}
-
       {/* Edit Modal */}
       {showEditModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -786,7 +782,7 @@ export default function DRTestDetail() {
                 <label className="block text-sm font-medium text-surface-700 mb-2">
                   Description
                 </label>
-                <textarea
+                <Textarea
                   value={editForm.description}
                   onChange={(e) =>
                     setEditForm((prev) => ({ ...prev, description: e.target.value }))
@@ -800,7 +796,7 @@ export default function DRTestDetail() {
                 <label className="block text-sm font-medium text-surface-700 mb-2">
                   Objectives
                 </label>
-                <textarea
+                <Textarea
                   value={editForm.objectives}
                   onChange={(e) => setEditForm((prev) => ({ ...prev, objectives: e.target.value }))}
                   rows={3}
@@ -810,7 +806,7 @@ export default function DRTestDetail() {
 
               <div>
                 <label className="block text-sm font-medium text-surface-700 mb-2">Scope</label>
-                <textarea
+                <Textarea
                   value={editForm.scope}
                   onChange={(e) => setEditForm((prev) => ({ ...prev, scope: e.target.value }))}
                   rows={2}
@@ -830,7 +826,6 @@ export default function DRTestDetail() {
           </div>
         </div>
       )}
-
       {/* Complete Test Modal */}
       {showCompleteModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -889,7 +884,7 @@ export default function DRTestDetail() {
                 <label className="block text-sm font-medium text-surface-700 mb-2">
                   Lessons Learned
                 </label>
-                <textarea
+                <Textarea
                   value={completeForm.lessons_learned}
                   onChange={(e) =>
                     setCompleteForm((prev) => ({ ...prev, lessons_learned: e.target.value }))
@@ -916,7 +911,6 @@ export default function DRTestDetail() {
           </div>
         </div>
       )}
-
       {/* Delete Confirmation */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">

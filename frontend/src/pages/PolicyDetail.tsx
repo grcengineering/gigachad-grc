@@ -24,6 +24,8 @@ import clsx from 'clsx';
 import { Button } from '@/components/ui/Button';
 import { SkeletonDetailHeader, SkeletonDetailSection } from '@/components/Skeleton';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 type TabType = 'status' | 'history';
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; next?: string[] }> = {
@@ -207,7 +209,6 @@ export default function PolicyDetail() {
           </div>
         </div>
       </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
@@ -578,7 +579,6 @@ export default function PolicyDetail() {
           )}
         </div>
       </div>
-
       {/* New Version Modal */}
       {isNewVersionOpen && (
         <NewVersionModal
@@ -591,7 +591,6 @@ export default function PolicyDetail() {
           }}
         />
       )}
-
       {isEditOpen && (
         <EditPolicyModal
           policy={policy}
@@ -603,7 +602,6 @@ export default function PolicyDetail() {
           }}
         />
       )}
-
       {isLinkControlOpen && (
         <LinkControlModal
           policyId={id!}
@@ -615,7 +613,6 @@ export default function PolicyDetail() {
           }}
         />
       )}
-
       {/* Status Change Modal */}
       {statusChangeModal.isOpen && statusChangeModal.targetStatus && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -654,7 +651,7 @@ export default function PolicyDetail() {
 
             <div className="mb-4">
               <label className="label">Notes (optional)</label>
-              <textarea
+              <Textarea
                 value={statusChangeNotes}
                 onChange={(e) => setStatusChangeNotes(e.target.value)}
                 className="input mt-1"
@@ -761,7 +758,7 @@ function NewVersionModal({
 
           <div>
             <label className="label">Change Notes</label>
-            <textarea
+            <Textarea
               value={changeNotes}
               onChange={(e) => setChangeNotes(e.target.value)}
               className="input mt-1"
@@ -978,7 +975,7 @@ function EditPolicyModal({
 
           <div>
             <label className="label">Description</label>
-            <textarea
+            <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="input mt-1"

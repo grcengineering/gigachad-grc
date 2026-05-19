@@ -16,6 +16,8 @@ import { SkeletonTable } from '@/components/Skeleton';
 import { ExportDropdown } from '@/components/ExportDropdown';
 import { exportConfigs } from '@/lib/export';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   draft: { label: 'Draft', color: 'badge-neutral' },
   in_review: { label: 'In Review', color: 'badge-warning' },
@@ -77,7 +79,6 @@ export default function Policies() {
           </Button>
         </div>
       </div>
-
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="card p-4">
@@ -97,7 +98,6 @@ export default function Policies() {
           <p className="text-2xl font-bold text-red-600 mt-1">{stats?.overdueReview || 0}</p>
         </div>
       </div>
-
       {/* Search */}
       <div className="card p-4">
         <div className="relative">
@@ -111,7 +111,6 @@ export default function Policies() {
           />
         </div>
       </div>
-
       {/* Policies List */}
       <div className="card overflow-hidden">
         {isLoading ? (
@@ -192,7 +191,6 @@ export default function Policies() {
           </div>
         )}
       </div>
-
       {/* Upload Modal */}
       {isUploadOpen && (
         <UploadPolicyModal
@@ -333,7 +331,7 @@ function UploadPolicyModal({ onClose, onSuccess }: { onClose: () => void; onSucc
 
           <div>
             <label className="label">Description</label>
-            <textarea
+            <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="input mt-1"

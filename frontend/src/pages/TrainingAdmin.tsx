@@ -20,6 +20,8 @@ import { Button } from '@/components/ui/Button';
 import { useToast } from '@/hooks/useToast';
 import { SkeletonCard } from '@/components/Skeleton';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 // Types
 interface CustomModule {
   id: string;
@@ -972,7 +974,7 @@ function CampaignModal({
             <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
               Description
             </label>
-            <textarea
+            <Textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={3}
@@ -1171,7 +1173,7 @@ function ModuleModal({ module, onClose }: { module: CustomModule | null; onClose
             <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
               Description
             </label>
-            <textarea
+            <Textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={3}
@@ -1655,7 +1657,7 @@ function UploadNewScormModal({ onClose }: { onClose: () => void }) {
               <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
                 Description
               </label>
-              <textarea
+              <Textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows={3}

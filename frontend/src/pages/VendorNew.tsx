@@ -6,6 +6,8 @@ import toast from 'react-hot-toast';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/Button';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 const CATEGORY_OPTIONS = [
   { value: 'software_vendor', label: 'Software Vendor' },
   { value: 'cloud_provider', label: 'Cloud Provider' },
@@ -120,7 +122,6 @@ export default function VendorNew() {
         <h1 className="text-2xl font-bold text-surface-100">Add New Vendor</h1>
         <p className="text-surface-600 mt-1">Register a new third-party vendor</p>
       </div>
-
       {/* Form */}
       <form onSubmit={handleSubmit} className="card p-6 space-y-6">
         {/* Vendor Name */}
@@ -255,7 +256,7 @@ export default function VendorNew() {
           <label htmlFor="description" className="block text-sm font-medium text-surface-700 mb-1">
             Description
           </label>
-          <textarea
+          <Textarea
             id="description"
             value={formData.description}
             onChange={(e) => handleChange('description', e.target.value)}

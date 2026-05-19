@@ -72,6 +72,8 @@ import {
 import { Button } from '@/components/ui/Button';
 import { SkeletonDetailHeader, SkeletonDetailSection } from '@/components/Skeleton';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 type TabType = 'details' | 'history';
 
 const TYPE_ICONS: Record<string, any> = {
@@ -251,7 +253,6 @@ export default function EvidenceDetail() {
           </div>
         </div>
       </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
@@ -474,7 +475,6 @@ export default function EvidenceDetail() {
           </div>
         </div>
       </div>
-
       {/* Tabs Section */}
       <div className="card overflow-hidden">
         {/* Tab Navigation */}
@@ -537,7 +537,6 @@ export default function EvidenceDetail() {
           {activeTab === 'history' && <EntityAuditHistory entityType="evidence" entityId={id!} />}
         </div>
       </div>
-
       {/* Review Modal */}
       {isReviewing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -547,7 +546,7 @@ export default function EvidenceDetail() {
             <div className="space-y-4">
               <div>
                 <label className="label">Notes (optional)</label>
-                <textarea
+                <Textarea
                   value={reviewNotes}
                   onChange={(e) => setReviewNotes(e.target.value)}
                   className="input mt-1"
@@ -577,7 +576,6 @@ export default function EvidenceDetail() {
           </div>
         </div>
       )}
-
       {/* Image Lightbox Modal */}
       {isLightboxOpen && isImage && (
         <div

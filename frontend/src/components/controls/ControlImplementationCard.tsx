@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { PencilIcon, ClockIcon } from '@heroicons/react/24/outline';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 interface User {
   id: string;
   displayName?: string;
@@ -112,7 +114,6 @@ export default function ControlImplementationCard({
           </button>
         )}
       </div>
-
       {/* Status Selector */}
       <div className="mb-6">
         <label className="block text-sm text-surface-600 mb-2">Status</label>
@@ -133,7 +134,6 @@ export default function ControlImplementationCard({
           ))}
         </div>
       </div>
-
       {isEditing ? (
         <div className="space-y-4">
           <div>
@@ -184,7 +184,7 @@ export default function ControlImplementationCard({
 
           <div>
             <label className="block text-sm text-surface-600 mb-1">Implementation Notes</label>
-            <textarea
+            <Textarea
               value={form.implementationNotes}
               onChange={(e) => setForm({ ...form, implementationNotes: e.target.value })}
               rows={3}

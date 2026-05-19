@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/Button';
 import { api } from '@/lib/api';
 import clsx from 'clsx';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 // ============================================
 // Types
 // ============================================
@@ -137,7 +139,7 @@ export function DeclareIncidentModal({ onClose, onComplete }: DeclareIncidentMod
 
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">Description</label>
-            <textarea
+            <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}

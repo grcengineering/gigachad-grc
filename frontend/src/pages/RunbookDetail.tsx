@@ -15,6 +15,8 @@ import clsx from 'clsx';
 import { Button } from '@/components/ui/Button';
 import { SkeletonDetailHeader, SkeletonDetailSection } from '@/components/Skeleton';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 interface RunbookStep {
   id: string;
   step_number: number;
@@ -234,7 +236,6 @@ export default function RunbookDetail() {
             <p className="text-surface-600">Define step-by-step recovery procedures</p>
           </div>
         </div>
-
         <div className="card p-6">
           <form
             onSubmit={(e) => {
@@ -271,7 +272,7 @@ export default function RunbookDetail() {
 
             <div>
               <label className="block text-sm font-medium text-surface-700 mb-2">Description</label>
-              <textarea
+              <Textarea
                 className="form-input w-full"
                 rows={3}
                 value={editForm.description}
@@ -332,7 +333,7 @@ export default function RunbookDetail() {
               <label className="block text-sm font-medium text-surface-700 mb-2">
                 Prerequisites
               </label>
-              <textarea
+              <Textarea
                 className="form-input w-full"
                 rows={3}
                 value={editForm.prerequisites}
@@ -345,7 +346,7 @@ export default function RunbookDetail() {
               <label className="block text-sm font-medium text-surface-700 mb-2">
                 Post-Conditions
               </label>
-              <textarea
+              <Textarea
                 className="form-input w-full"
                 rows={3}
                 value={editForm.post_conditions}
@@ -358,7 +359,7 @@ export default function RunbookDetail() {
               <label className="block text-sm font-medium text-surface-700 mb-2">
                 Rollback Procedure
               </label>
-              <textarea
+              <Textarea
                 className="form-input w-full"
                 rows={3}
                 value={editForm.rollback_procedure}
@@ -420,7 +421,6 @@ export default function RunbookDetail() {
           </Button>
         </div>
       </div>
-
       {/* Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content */}
@@ -539,7 +539,6 @@ export default function RunbookDetail() {
           )}
         </div>
       </div>
-
       {/* Edit Modal */}
       {showEditModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -574,7 +573,7 @@ export default function RunbookDetail() {
                 <label className="block text-sm font-medium text-surface-700 mb-2">
                   Description
                 </label>
-                <textarea
+                <Textarea
                   className="form-input w-full"
                   rows={3}
                   value={editForm.description}
@@ -625,7 +624,6 @@ export default function RunbookDetail() {
           </div>
         </div>
       )}
-
       {/* Delete Confirmation */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">

@@ -18,6 +18,8 @@ import clsx from 'clsx';
 import { Button } from '@/components/ui/Button';
 import { SkeletonDetailHeader, SkeletonDetailSection } from '@/components/Skeleton';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 interface BCDRPlan {
   id: string;
   plan_id: string;
@@ -251,7 +253,6 @@ export default function BCDRPlanDetail() {
             <p className="text-surface-600">Fill out the form below to create a new plan</p>
           </div>
         </div>
-
         <div className="card p-6">
           <form
             onSubmit={(e) => {
@@ -288,7 +289,7 @@ export default function BCDRPlanDetail() {
 
             <div>
               <label className="label">Description</label>
-              <textarea
+              <Textarea
                 value={editForm.description}
                 onChange={(e) => setEditForm((prev) => ({ ...prev, description: e.target.value }))}
                 rows={3}
@@ -298,7 +299,7 @@ export default function BCDRPlanDetail() {
 
             <div>
               <label className="label">Objectives</label>
-              <textarea
+              <Textarea
                 value={editForm.objectives}
                 onChange={(e) => setEditForm((prev) => ({ ...prev, objectives: e.target.value }))}
                 rows={3}
@@ -366,7 +367,6 @@ export default function BCDRPlanDetail() {
           </Button>
         </div>
       </div>
-
       {/* Tabs */}
       <div className="border-b border-surface-700">
         <nav className="flex gap-6">
@@ -386,7 +386,6 @@ export default function BCDRPlanDetail() {
           ))}
         </nav>
       </div>
-
       {/* Content */}
       {activeTab === 'overview' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -499,7 +498,6 @@ export default function BCDRPlanDetail() {
           </div>
         </div>
       )}
-
       {activeTab === 'processes' && (
         <div className="card p-6">
           <h3 className="text-lg font-semibold text-surface-100 mb-4">
@@ -531,7 +529,6 @@ export default function BCDRPlanDetail() {
           )}
         </div>
       )}
-
       {activeTab === 'tests' && (
         <div className="card p-6">
           <div className="flex items-center justify-between mb-4">
@@ -585,7 +582,6 @@ export default function BCDRPlanDetail() {
           )}
         </div>
       )}
-
       {activeTab === 'controls' && (
         <div className="card p-6">
           <h3 className="text-lg font-semibold text-surface-100 mb-4">Linked Controls</h3>
@@ -609,7 +605,6 @@ export default function BCDRPlanDetail() {
           )}
         </div>
       )}
-
       {/* Edit Modal */}
       {showEditModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -685,7 +680,7 @@ export default function BCDRPlanDetail() {
                 <label className="block text-sm font-medium text-surface-700 mb-2">
                   Description
                 </label>
-                <textarea
+                <Textarea
                   value={editForm.description}
                   onChange={(e) =>
                     setEditForm((prev) => ({ ...prev, description: e.target.value }))
@@ -699,7 +694,7 @@ export default function BCDRPlanDetail() {
                 <label className="block text-sm font-medium text-surface-700 mb-2">
                   Objectives
                 </label>
-                <textarea
+                <Textarea
                   value={editForm.objectives}
                   onChange={(e) => setEditForm((prev) => ({ ...prev, objectives: e.target.value }))}
                   rows={3}
@@ -709,7 +704,7 @@ export default function BCDRPlanDetail() {
 
               <div>
                 <label className="block text-sm font-medium text-surface-700 mb-2">Scope</label>
-                <textarea
+                <Textarea
                   value={editForm.scope}
                   onChange={(e) => setEditForm((prev) => ({ ...prev, scope: e.target.value }))}
                   rows={3}
@@ -722,7 +717,7 @@ export default function BCDRPlanDetail() {
                   <label className="block text-sm font-medium text-surface-700 mb-2">
                     Activation Criteria
                   </label>
-                  <textarea
+                  <Textarea
                     value={editForm.activation_criteria}
                     onChange={(e) =>
                       setEditForm((prev) => ({ ...prev, activation_criteria: e.target.value }))
@@ -735,7 +730,7 @@ export default function BCDRPlanDetail() {
                   <label className="block text-sm font-medium text-surface-700 mb-2">
                     Deactivation Criteria
                   </label>
-                  <textarea
+                  <Textarea
                     value={editForm.deactivation_criteria}
                     onChange={(e) =>
                       setEditForm((prev) => ({ ...prev, deactivation_criteria: e.target.value }))
@@ -750,7 +745,7 @@ export default function BCDRPlanDetail() {
                 <label className="block text-sm font-medium text-surface-700 mb-2">
                   Assumptions
                 </label>
-                <textarea
+                <Textarea
                   value={editForm.assumptions}
                   onChange={(e) =>
                     setEditForm((prev) => ({ ...prev, assumptions: e.target.value }))
@@ -772,7 +767,6 @@ export default function BCDRPlanDetail() {
           </div>
         </div>
       )}
-
       {/* Delete Confirmation */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">

@@ -10,6 +10,8 @@ import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import { collectorsApi, integrationsApi } from '@/lib/api';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 interface Props {
   controlId: string;
   implementationId: string;
@@ -222,7 +224,6 @@ export default function CollectorConfigModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/70" onClick={onClose} />
-
       {/* Modal */}
       <div className="relative bg-surface-900 rounded-xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl">
         {/* Header */}
@@ -271,7 +272,7 @@ export default function CollectorConfigModal({
 
           <div>
             <label className="label">Description</label>
-            <textarea
+            <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="What this collector does..."
@@ -381,7 +382,7 @@ export default function CollectorConfigModal({
 
             <div>
               <label className="label">Headers (one per line: Key: Value)</label>
-              <textarea
+              <Textarea
                 value={headers}
                 onChange={(e) => setHeaders(e.target.value)}
                 placeholder="Accept: application/json"
@@ -392,7 +393,7 @@ export default function CollectorConfigModal({
 
             <div>
               <label className="label">Query Parameters (one per line: key=value)</label>
-              <textarea
+              <Textarea
                 value={queryParams}
                 onChange={(e) => setQueryParams(e.target.value)}
                 placeholder="page=1&#10;limit=100"
@@ -404,7 +405,7 @@ export default function CollectorConfigModal({
             {['POST', 'PUT', 'PATCH'].includes(method) && (
               <div>
                 <label className="label">Request Body (JSON)</label>
-                <textarea
+                <Textarea
                   value={body}
                   onChange={(e) => setBody(e.target.value)}
                   placeholder='{"key": "value"}'

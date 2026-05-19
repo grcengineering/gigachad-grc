@@ -17,6 +17,8 @@ import { ConfirmModal } from '@/components/Modal';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 const STATUS_CONFIG: Record<string, { label: string; color: string; bgColor: string }> = {
   planning: { label: 'Planning', color: 'text-blue-600', bgColor: 'bg-blue-500/20' },
   fieldwork: { label: 'Fieldwork', color: 'text-yellow-600', bgColor: 'bg-yellow-500/20' },
@@ -279,7 +281,6 @@ export default function AuditDetail() {
           )}
         </div>
       </div>
-
       {/* Status and Key Info */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-surface-800 rounded-lg border border-surface-700 p-4">
@@ -327,13 +328,12 @@ export default function AuditDetail() {
           </p>
         </div>
       </div>
-
       {/* Description */}
       {(audit?.description || isEditing) && (
         <div className="bg-surface-800 rounded-lg border border-surface-700 p-6">
           <h2 className="text-lg font-semibold text-white mb-4">Description</h2>
           {isEditing ? (
-            <textarea
+            <Textarea
               value={editForm.description || ''}
               onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
               rows={4}
@@ -345,7 +345,6 @@ export default function AuditDetail() {
           )}
         </div>
       )}
-
       {/* Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Findings */}
@@ -440,7 +439,6 @@ export default function AuditDetail() {
           )}
         </div>
       </div>
-
       {/* Stats Grid - only show for existing audits */}
       {!isNewAudit && audit && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -470,7 +468,6 @@ export default function AuditDetail() {
           </div>
         </div>
       )}
-
       {/* Delete Confirmation Modal - only for existing audits */}
       {!isNewAudit && audit && (
         <ConfirmModal

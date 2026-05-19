@@ -3,6 +3,8 @@ import { TrashIcon, PlusIcon, XMarkIcon, InformationCircleIcon } from '@heroicon
 import clsx from 'clsx';
 import type { ApiEndpoint } from './AdvancedBuilderTab';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 interface EndpointBuilderProps {
   endpoint: ApiEndpoint;
   onChange: (updates: Partial<ApiEndpoint>) => void;
@@ -85,7 +87,6 @@ export default function EndpointBuilder({ endpoint, onChange, onDelete }: Endpoi
           <TrashIcon className="w-5 h-5" />
         </button>
       </div>
-
       {/* Method & Path */}
       <div className="flex gap-2">
         <select
@@ -114,12 +115,10 @@ export default function EndpointBuilder({ endpoint, onChange, onDelete }: Endpoi
           className="input flex-1 font-mono text-sm"
         />
       </div>
-
       <p className="text-xs text-surface-500 flex items-center gap-1">
         <InformationCircleIcon className="w-3.5 h-3.5" />
         Use {'{{variable}}'} syntax for dynamic values (e.g., {'{{baseUrl}}/users/{{userId}}'})
       </p>
-
       {/* Headers */}
       <div>
         <div className="flex items-center justify-between mb-2">
@@ -162,7 +161,6 @@ export default function EndpointBuilder({ endpoint, onChange, onDelete }: Endpoi
           )}
         </div>
       </div>
-
       {/* Query Parameters */}
       <div>
         <div className="flex items-center justify-between mb-2">
@@ -205,7 +203,6 @@ export default function EndpointBuilder({ endpoint, onChange, onDelete }: Endpoi
           )}
         </div>
       </div>
-
       {/* Request Body */}
       {showRequestBody && (
         <div>
@@ -219,7 +216,7 @@ export default function EndpointBuilder({ endpoint, onChange, onDelete }: Endpoi
             </button>
           </div>
           {showBodyEditor && (
-            <textarea
+            <Textarea
               value={endpoint.body || ''}
               onChange={(e) => onChange({ body: e.target.value })}
               placeholder={'{\n  "key": "value"\n}'}
@@ -235,7 +232,6 @@ export default function EndpointBuilder({ endpoint, onChange, onDelete }: Endpoi
           )}
         </div>
       )}
-
       {/* Pagination */}
       <div>
         <label className="text-sm font-medium text-surface-700 block mb-2">Pagination</label>

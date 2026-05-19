@@ -25,6 +25,8 @@ import { VendorSecurityScanPanel } from '@/components/vendor/VendorSecurityScanP
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 // Review frequency labels
 const FREQUENCY_LABELS: Record<string, string> = {
   monthly: 'Monthly',
@@ -403,7 +405,7 @@ function VendorForm({
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-surface-700 mb-1">Description</label>
-            <textarea
+            <Textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={3}
@@ -413,7 +415,7 @@ function VendorForm({
 
           <div>
             <label className="block text-sm font-medium text-surface-700 mb-1">Notes</label>
-            <textarea
+            <Textarea
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               rows={3}
@@ -422,7 +424,6 @@ function VendorForm({
           </div>
         </div>
       </div>
-
       {/* Actions */}
       <div className="flex items-center justify-end gap-3">
         <Button variant="secondary" type="button" onClick={onCancel}>

@@ -25,6 +25,8 @@ import {
   ClipboardList,
 } from 'lucide-react';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 // Using RiskDetail from apiTypes as RiskDetailData
 
 const RISK_LEVELS = [
@@ -1046,7 +1048,7 @@ function TreatmentModal({
           </div>
           <div>
             <label className="block text-sm text-surface-600 mb-2">Notes</label>
-            <textarea
+            <Textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
@@ -1129,7 +1131,7 @@ function ScenarioModal({
           </div>
           <div>
             <label className="block text-sm text-surface-600 mb-2">Description *</label>
-            <textarea
+            <Textarea
               value={scenario.description}
               onChange={(e) => setScenario((prev) => ({ ...prev, description: e.target.value }))}
               required
@@ -1315,7 +1317,7 @@ function EditRiskModal({
           {/* Description */}
           <div>
             <label className="block text-sm font-medium text-surface-700 mb-2">Description *</label>
-            <textarea
+            <Textarea
               value={formData.description}
               onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
               required

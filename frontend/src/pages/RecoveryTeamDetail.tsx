@@ -14,6 +14,8 @@ import { Button } from '@/components/ui/Button';
 import { api } from '@/lib/api';
 import clsx from 'clsx';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 // ============================================
 // Types
 // ============================================
@@ -261,7 +263,6 @@ export default function RecoveryTeamDetail() {
           {team.isActive ? 'Active' : 'Inactive'}
         </span>
       </div>
-
       {/* Team Info */}
       {(team.description || team.activationCriteria || team.assemblyLocation) && (
         <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
@@ -293,7 +294,6 @@ export default function RecoveryTeamDetail() {
           </div>
         </div>
       )}
-
       {/* Members Section */}
       <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
         <div className="flex items-center justify-between mb-4">
@@ -373,7 +373,6 @@ export default function RecoveryTeamDetail() {
           </div>
         )}
       </div>
-
       {/* Linked Plans Section */}
       <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
         <div className="flex items-center justify-between mb-4">
@@ -418,7 +417,6 @@ export default function RecoveryTeamDetail() {
           </div>
         )}
       </div>
-
       {/* Add Member Modal */}
       {showAddMember && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -518,7 +516,7 @@ export default function RecoveryTeamDetail() {
                 <label className="block text-sm font-medium text-slate-300 mb-2">
                   Responsibilities
                 </label>
-                <textarea
+                <Textarea
                   value={memberResponsibilities}
                   onChange={(e) => setMemberResponsibilities(e.target.value)}
                   rows={2}
@@ -538,7 +536,6 @@ export default function RecoveryTeamDetail() {
           </div>
         </div>
       )}
-
       {/* Link Plan Modal */}
       {showLinkPlan && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">

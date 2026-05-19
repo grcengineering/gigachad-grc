@@ -19,6 +19,8 @@ import clsx from 'clsx';
 import { Button } from '@/components/ui/Button';
 import { SkeletonDetailHeader, SkeletonDetailSection } from '@/components/Skeleton';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 interface CommunicationPlan {
   id: string;
   name: string;
@@ -190,7 +192,6 @@ export default function CommunicationPlanDetail() {
             </p>
           </div>
         </div>
-
         <div className="card p-6">
           <form
             onSubmit={(e) => {
@@ -228,7 +229,7 @@ export default function CommunicationPlanDetail() {
 
             <div>
               <label className="block text-sm font-medium text-surface-700 mb-2">Description</label>
-              <textarea
+              <Textarea
                 value={editForm.description}
                 onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
                 rows={4}
@@ -319,7 +320,6 @@ export default function CommunicationPlanDetail() {
           </Button>
         </div>
       </div>
-
       {/* Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
@@ -393,7 +393,6 @@ export default function CommunicationPlanDetail() {
           </div>
         </div>
       </div>
-
       {/* Edit Modal */}
       {showEditModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -444,7 +443,7 @@ export default function CommunicationPlanDetail() {
                 <label className="block text-sm font-medium text-surface-700 mb-2">
                   Description
                 </label>
-                <textarea
+                <Textarea
                   value={editForm.description}
                   onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
                   rows={3}
@@ -475,7 +474,6 @@ export default function CommunicationPlanDetail() {
           </div>
         </div>
       )}
-
       {/* Delete Confirmation */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">

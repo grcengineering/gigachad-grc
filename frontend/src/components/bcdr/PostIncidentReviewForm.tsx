@@ -3,6 +3,8 @@ import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/Button';
 import { api } from '@/lib/api';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 // ============================================
 // Types
 // ============================================
@@ -95,10 +97,9 @@ export function PostIncidentReviewForm({
           Document the root cause, lessons learned, and improvement actions from this incident.
         </p>
       </div>
-
       <div>
         <label className="block text-sm font-medium text-slate-300 mb-2">Root Cause</label>
-        <textarea
+        <Textarea
           value={rootCause}
           onChange={(e) => setRootCause(e.target.value)}
           rows={3}
@@ -106,10 +107,9 @@ export function PostIncidentReviewForm({
           placeholder="What was the root cause of this incident?"
         />
       </div>
-
       <div>
         <label className="block text-sm font-medium text-slate-300 mb-2">Lessons Learned</label>
-        <textarea
+        <Textarea
           value={lessonsLearned}
           onChange={(e) => setLessonsLearned(e.target.value)}
           rows={3}
@@ -117,7 +117,6 @@ export function PostIncidentReviewForm({
           placeholder="What did we learn from this incident?"
         />
       </div>
-
       <div className="grid grid-cols-3 gap-4">
         <div>
           <label className="block text-sm font-medium text-slate-300 mb-2">
@@ -160,7 +159,6 @@ export function PostIncidentReviewForm({
           />
         </div>
       </div>
-
       <div>
         <div className="flex items-center justify-between mb-2">
           <label className="block text-sm font-medium text-slate-300">Improvement Actions</label>
@@ -222,13 +220,11 @@ export function PostIncidentReviewForm({
           )}
         </div>
       </div>
-
       {error && (
         <div className="bg-red-500/20 border border-red-500 rounded-lg p-3">
           <p className="text-red-600 text-sm">{error}</p>
         </div>
       )}
-
       <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-700">
         <Button variant="secondary" onClick={onCancel} disabled={isSubmitting}>
           Cancel

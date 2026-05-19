@@ -35,6 +35,8 @@ import clsx from 'clsx';
 import { Button } from '@/components/ui/Button';
 import { SkeletonDetailHeader, SkeletonDetailSection } from '@/components/Skeleton';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 type TabType = 'details' | 'comments' | 'tasks' | 'history';
 
 const STATUS_OPTIONS = [
@@ -292,7 +294,6 @@ export default function ControlDetail() {
           )}
         </div>
       </div>
-
       {/* Edit Modal */}
       {isEditing && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -324,7 +325,7 @@ export default function ControlDetail() {
                   </div>
                   <div>
                     <label className="label mb-1">Description</label>
-                    <textarea
+                    <Textarea
                       value={editForm.description}
                       onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
                       rows={3}
@@ -343,7 +344,7 @@ export default function ControlDetail() {
                   </div>
                   <div>
                     <label className="label mb-1">Implementation Guidance</label>
-                    <textarea
+                    <Textarea
                       value={editForm.guidance}
                       onChange={(e) => setEditForm({ ...editForm, guidance: e.target.value })}
                       rows={3}
@@ -410,7 +411,7 @@ export default function ControlDetail() {
                     </div>
                     <div className="md:col-span-2">
                       <label className="label mb-1">Implementation Notes</label>
-                      <textarea
+                      <Textarea
                         value={implForm.implementationNotes}
                         onChange={(e) =>
                           setImplForm({ ...implForm, implementationNotes: e.target.value })
@@ -440,7 +441,6 @@ export default function ControlDetail() {
           </div>
         </div>
       )}
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main content */}
         <div className="lg:col-span-2 space-y-6">
@@ -984,7 +984,6 @@ export default function ControlDetail() {
           )}
         </div>
       </div>
-
       {/* Tabs Section */}
       <div className="card overflow-hidden">
         {/* Tab Navigation */}
@@ -1036,7 +1035,6 @@ export default function ControlDetail() {
           {activeTab === 'history' && <EntityAuditHistory entityType="control" entityId={id!} />}
         </div>
       </div>
-
       {/* Link Policy Modal */}
       {isLinkPolicyOpen && (
         <LinkPolicyModal
@@ -1049,7 +1047,6 @@ export default function ControlDetail() {
           }}
         />
       )}
-
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">

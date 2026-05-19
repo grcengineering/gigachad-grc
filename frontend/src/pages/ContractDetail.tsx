@@ -9,6 +9,8 @@ import {
 import { contractsApi } from '../lib/api';
 import toast from 'react-hot-toast';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 interface Contract {
   id: string;
   vendorId: string;
@@ -137,7 +139,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
         {/* Description */}
         <div>
           <label className="block text-sm font-medium text-surface-600 mb-1">Description</label>
-          <textarea
+          <Textarea
             value={formData.description || ''}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             rows={3}
@@ -274,7 +276,6 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
           </div>
         </div>
       </div>
-
       {/* Actions */}
       <div className="flex items-center justify-end gap-3">
         <button

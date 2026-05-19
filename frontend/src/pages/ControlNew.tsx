@@ -7,6 +7,8 @@ import toast from 'react-hot-toast';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/Button';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 // Categories must match backend ControlCategory enum exactly
 const CATEGORY_OPTIONS: { value: ControlCategory; label: string }[] = [
   { value: 'access_control', label: 'Access Control' },
@@ -121,7 +123,6 @@ export default function ControlNew() {
         <h1 className="text-2xl font-bold text-surface-100">Create New Control</h1>
         <p className="text-surface-600 mt-1">Add a new control to your compliance program</p>
       </div>
-
       {/* Form */}
       <form onSubmit={handleSubmit} className="card p-6 space-y-6">
         {/* Control ID */}
@@ -183,7 +184,7 @@ export default function ControlNew() {
           <label htmlFor="description" className="block text-sm font-medium text-surface-700 mb-1">
             Description <span className="text-red-600">*</span>
           </label>
-          <textarea
+          <Textarea
             id="description"
             value={formData.description}
             onChange={(e) => handleChange('description', e.target.value)}

@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/Button';
 import { api } from '@/lib/api';
 import clsx from 'clsx';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 // ============================================
 // Types
 // ============================================
@@ -147,7 +149,7 @@ export function PlanAttestationModal({
         <label className="block text-sm font-medium text-slate-300 mb-2">
           Message to Plan Owner (Optional)
         </label>
-        <textarea
+        <Textarea
           value={requestMessage}
           onChange={(e) => setRequestMessage(e.target.value)}
           rows={3}
@@ -228,7 +230,7 @@ export function PlanAttestationModal({
 
       <div>
         <label className="block text-sm font-medium text-slate-300 mb-2">Comments</label>
-        <textarea
+        <Textarea
           value={comments}
           onChange={(e) => setComments(e.target.value)}
           rows={2}
@@ -242,7 +244,7 @@ export function PlanAttestationModal({
           <label className="block text-sm font-medium text-slate-300 mb-2">
             Reason for Declining <span className="text-red-600">*</span>
           </label>
-          <textarea
+          <Textarea
             value={declineReason}
             onChange={(e) => setDeclineReason(e.target.value)}
             rows={2}

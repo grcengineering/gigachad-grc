@@ -12,6 +12,8 @@ import {
 import { XMarkIcon, PlayIcon } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 interface WidgetConfigModalProps {
   widget: DashboardWidget;
   onSave: (data: Partial<DashboardWidget>) => void;
@@ -341,7 +343,7 @@ export default function WidgetConfigModal({ widget, onSave, onClose }: WidgetCon
                   <label className="block text-sm font-medium text-surface-700 mb-2">
                     Content (Markdown)
                   </label>
-                  <textarea
+                  <Textarea
                     value={config.markdownContent || ''}
                     onChange={(e) => setConfig({ ...config, markdownContent: e.target.value })}
                     className="input w-full h-32 font-mono text-sm"

@@ -5,6 +5,8 @@ import { assessmentsApi, vendorsApi } from '../lib/api';
 import { VendorAssessment, Vendor } from '../lib/apiTypes';
 import { useAuth } from '@/contexts/AuthContext';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 interface AssessmentFormProps {
   assessment: VendorAssessment | null;
   onSave: (data: Partial<VendorAssessment>) => Promise<void>;
@@ -296,7 +298,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
         {/* Findings */}
         <div>
           <label className="block text-sm font-medium text-surface-600 mb-1">Findings</label>
-          <textarea
+          <Textarea
             value={typeof formData.findings === 'string' ? formData.findings : ''}
             onChange={(e) => setFormData({ ...formData, findings: e.target.value })}
             rows={4}
@@ -308,7 +310,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
         {/* Recommendations */}
         <div>
           <label className="block text-sm font-medium text-surface-600 mb-1">Recommendations</label>
-          <textarea
+          <Textarea
             value={formData.recommendations || ''}
             onChange={(e) => setFormData({ ...formData, recommendations: e.target.value })}
             rows={4}
@@ -317,7 +319,6 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
           />
         </div>
       </div>
-
       {/* Actions */}
       <div className="flex items-center justify-end gap-3">
         <button

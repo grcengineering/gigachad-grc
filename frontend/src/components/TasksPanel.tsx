@@ -13,6 +13,8 @@ import {
 } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 interface TasksPanelProps {
   entityType: string;
   entityId: string;
@@ -123,7 +125,6 @@ export default function TasksPanel({ entityType, entityId }: TasksPanelProps) {
           </button>
         )}
       </div>
-
       {/* Create Task Form */}
       {isCreating && (
         <form onSubmit={handleCreate} className="card p-4 space-y-3">
@@ -135,7 +136,7 @@ export default function TasksPanel({ entityType, entityId }: TasksPanelProps) {
             className="input w-full"
             autoFocus
           />
-          <textarea
+          <Textarea
             value={newTask.description}
             onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
             placeholder="Description (optional)"
@@ -190,7 +191,6 @@ export default function TasksPanel({ entityType, entityId }: TasksPanelProps) {
           </div>
         </form>
       )}
-
       {/* Tasks List */}
       {isLoading ? (
         <div className="text-center py-4 text-surface-500">Loading tasks...</div>
@@ -288,7 +288,7 @@ function TaskCard({
           onChange={(e) => setEditData({ ...editData, title: e.target.value })}
           className="input w-full text-sm"
         />
-        <textarea
+        <Textarea
           value={editData.description}
           onChange={(e) => setEditData({ ...editData, description: e.target.value })}
           className="input w-full h-16 text-sm"

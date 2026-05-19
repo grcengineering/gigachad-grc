@@ -33,6 +33,8 @@ import {
 } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 const STATUS_CONFIG = {
   compliant: { icon: CheckCircleIcon, color: 'text-green-600', bg: 'bg-green-400/10' },
   partial: { icon: ExclamationTriangleIcon, color: 'text-yellow-600', bg: 'bg-yellow-400/10' },
@@ -213,7 +215,6 @@ export default function FrameworkDetail() {
           <span className="badge badge-info text-sm uppercase">{framework.type}</span>
         </div>
       </div>
-
       {/* Readiness Overview */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         {/* Score Card */}
@@ -314,7 +315,6 @@ export default function FrameworkDetail() {
 
         <MappingCoverageWidget frameworkId={id} className="lg:col-span-1" />
       </div>
-
       {/* Mappings toolbar */}
       {(canManageMappings || canExportMappings) && (
         <div className="flex items-center justify-end gap-2 mb-4">
@@ -336,7 +336,6 @@ export default function FrameworkDetail() {
           )}
         </div>
       )}
-
       {/* Requirements Tree */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className={clsx('card', selectedReq ? 'lg:col-span-2' : 'lg:col-span-3')}>
@@ -398,7 +397,6 @@ export default function FrameworkDetail() {
           />
         )}
       </div>
-
       {/* Create Requirement Modal */}
       {isCreateModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -461,7 +459,7 @@ export default function FrameworkDetail() {
                 <label className="block text-sm font-medium text-surface-700 mb-1">
                   Description *
                 </label>
-                <textarea
+                <Textarea
                   required
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -475,7 +473,7 @@ export default function FrameworkDetail() {
                 <label className="block text-sm font-medium text-surface-700 mb-1">
                   Guidance (Optional)
                 </label>
-                <textarea
+                <Textarea
                   value={formData.guidance}
                   onChange={(e) => setFormData({ ...formData, guidance: e.target.value })}
                   placeholder="Additional implementation guidance..."
@@ -504,7 +502,6 @@ export default function FrameworkDetail() {
           </div>
         </div>
       )}
-
       {/* Bulk Upload Modal */}
       {isUploadModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -632,7 +629,6 @@ export default function FrameworkDetail() {
           </div>
         </div>
       )}
-
       {/* Mapping Import Wizard */}
       <MappingImportWizard
         open={isMappingImportOpen}
@@ -993,7 +989,6 @@ function RequirementDetailPanel({
           <XMarkIcon className="w-5 h-5 text-surface-600" />
         </button>
       </div>
-
       <div className="p-4 space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto">
         {/* Reference & Title */}
         <div>
@@ -1098,7 +1093,7 @@ function RequirementDetailPanel({
                 {/* Notes */}
                 <div>
                   <label className="block text-xs text-surface-600 mb-1">Notes</label>
-                  <textarea
+                  <Textarea
                     value={ownerNotes}
                     onChange={(e) => setOwnerNotes(e.target.value)}
                     rows={3}

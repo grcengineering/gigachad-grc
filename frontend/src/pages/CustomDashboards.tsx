@@ -15,6 +15,8 @@ import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 export default function CustomDashboards() {
   const queryClient = useQueryClient();
   const [selectedDashboardId, setSelectedDashboardId] = useState<string | null>(null);
@@ -103,7 +105,6 @@ export default function CustomDashboards() {
           </button>
         </div>
       </div>
-
       {/* Loading state */}
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
@@ -198,7 +199,6 @@ export default function CustomDashboards() {
           ))}
         </div>
       )}
-
       {/* Templates section */}
       {templates.length > 0 && (
         <div className="mt-8">
@@ -234,7 +234,6 @@ export default function CustomDashboards() {
           </div>
         </div>
       )}
-
       {/* Create Dashboard Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -259,7 +258,7 @@ export default function CustomDashboards() {
                   <label className="block text-sm font-medium text-surface-700 mb-2">
                     Description (optional)
                   </label>
-                  <textarea
+                  <Textarea
                     value={newDashboardDescription}
                     onChange={(e) => setNewDashboardDescription(e.target.value)}
                     className="input w-full h-20"
@@ -287,7 +286,6 @@ export default function CustomDashboards() {
           </div>
         </div>
       )}
-
       {/* Template Gallery Modal */}
       {showTemplateGallery && (
         <TemplateGallery

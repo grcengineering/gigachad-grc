@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/Button';
 import { SkeletonDetailHeader, SkeletonDetailSection } from '@/components/Skeleton';
 import toast from 'react-hot-toast';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 interface KnowledgeEntry {
   id: string;
   title: string;
@@ -186,7 +188,6 @@ export default function KnowledgeBaseDetail() {
           </div>
         )}
       </div>
-
       {editing ? (
         <div className="bg-surface-900 border border-surface-800 rounded-lg p-6 space-y-6">
           <div>
@@ -243,7 +244,7 @@ export default function KnowledgeBaseDetail() {
             <label className="block text-sm font-medium text-surface-600 mb-1">
               Answer <span className="text-red-600">*</span>
             </label>
-            <textarea
+            <Textarea
               value={formData.answer}
               onChange={(e) => setFormData((prev) => ({ ...prev, answer: e.target.value }))}
               rows={6}
@@ -397,7 +398,6 @@ export default function KnowledgeBaseDetail() {
           )}
         </div>
       ) : null}
-
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-surface-900 border border-surface-800 rounded-lg p-6 max-w-md w-full mx-4">

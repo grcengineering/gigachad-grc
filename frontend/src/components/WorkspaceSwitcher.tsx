@@ -11,6 +11,8 @@ import { useWorkspace, Workspace } from '@/contexts/WorkspaceContext';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 interface CreateWorkspaceModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -64,7 +66,7 @@ function CreateWorkspaceModal({ isOpen, onClose, onCreate }: CreateWorkspaceModa
               <label className="block text-sm font-medium text-foreground mb-1">
                 Description (optional)
               </label>
-              <textarea
+              <Textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Brief description of this workspace..."

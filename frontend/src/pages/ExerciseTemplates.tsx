@@ -14,6 +14,8 @@ import { api } from '@/lib/api';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 // ============================================
 // Types
 // ============================================
@@ -175,7 +177,6 @@ export default function ExerciseTemplates() {
             </p>
           </div>
         </div>
-
         <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 space-y-4">
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">
@@ -225,7 +226,7 @@ export default function ExerciseTemplates() {
 
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">Description</label>
-            <textarea
+            <Textarea
               value={createForm.description}
               onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
               rows={2}
@@ -238,7 +239,7 @@ export default function ExerciseTemplates() {
             <label className="block text-sm font-medium text-slate-300 mb-2">
               Scenario Narrative
             </label>
-            <textarea
+            <Textarea
               value={createForm.scenarioNarrative}
               onChange={(e) => setCreateForm({ ...createForm, scenarioNarrative: e.target.value })}
               rows={4}
@@ -251,7 +252,7 @@ export default function ExerciseTemplates() {
             <label className="block text-sm font-medium text-slate-300 mb-2">
               Facilitator Notes
             </label>
-            <textarea
+            <Textarea
               value={createForm.facilitatorNotes}
               onChange={(e) => setCreateForm({ ...createForm, facilitatorNotes: e.target.value })}
               rows={2}

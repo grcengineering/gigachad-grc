@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 interface ControlEditModalProps {
   control: {
     title: string;
@@ -78,7 +80,7 @@ export default function ControlEditModal({
 
           <div>
             <label className="block text-sm font-medium text-surface-700 mb-1">Description</label>
-            <textarea
+            <Textarea
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               rows={4}
@@ -90,7 +92,7 @@ export default function ControlEditModal({
             <label className="block text-sm font-medium text-surface-700 mb-1">
               Implementation Guidance
             </label>
-            <textarea
+            <Textarea
               value={form.guidance}
               onChange={(e) => setForm({ ...form, guidance: e.target.value })}
               rows={4}

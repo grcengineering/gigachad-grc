@@ -11,6 +11,8 @@ import { useWorkspace, Workspace, WorkspaceMember } from '@/contexts/WorkspaceCo
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 const WORKSPACE_ROLES = [
   { value: 'owner', label: 'Owner', description: 'Full control of workspace' },
   { value: 'manager', label: 'Manager', description: 'Can manage controls, evidence, risks' },
@@ -256,7 +258,6 @@ export default function WorkspaceSettings() {
           <p className="text-muted-foreground mt-1">{workspace.name}</p>
         </div>
       </div>
-
       {/* Basic Information */}
       <section className="bg-surface-800 rounded-lg p-6 border border-surface-700 mb-6">
         <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
@@ -277,7 +278,7 @@ export default function WorkspaceSettings() {
           </div>
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">Description</label>
-            <textarea
+            <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
@@ -307,7 +308,6 @@ export default function WorkspaceSettings() {
           </div>
         </div>
       </section>
-
       {/* Members */}
       <section className="bg-surface-800 rounded-lg p-6 border border-surface-700 mb-6">
         <div className="flex items-center justify-between mb-4">
@@ -370,7 +370,6 @@ export default function WorkspaceSettings() {
           )}
         </div>
       </section>
-
       {/* Danger Zone */}
       <section className="bg-red-500/10 rounded-lg p-6 border border-red-500/30">
         <h2 className="text-lg font-semibold text-red-600 mb-4">Danger Zone</h2>
@@ -389,7 +388,6 @@ export default function WorkspaceSettings() {
           </button>
         </div>
       </section>
-
       {/* Add Member Modal */}
       <AddMemberModal
         isOpen={showAddMember}
@@ -398,7 +396,6 @@ export default function WorkspaceSettings() {
         existingMemberIds={existingMemberIds}
         onSuccess={() => refetch()}
       />
-
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">

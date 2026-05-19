@@ -23,6 +23,8 @@ import clsx from 'clsx';
 import { Button } from '@/components/ui/Button';
 import { SkeletonGrid } from '@/components/Skeleton';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 const TYPE_ICONS: Record<string, any> = {
   screenshot: PhotoIcon,
   document: DocumentTextIcon,
@@ -416,7 +418,6 @@ function UploadModal({
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Backdrop */}
       <div className="fixed inset-0 bg-black/60" onClick={onClose} />
-
       {/* Modal content - positioned on top */}
       <div className="relative min-h-screen flex items-center justify-center p-4">
         <div className="relative bg-surface-900 border border-surface-800 rounded-xl w-full max-w-lg p-6 shadow-2xl">
@@ -518,7 +519,7 @@ function UploadModal({
 
             <div>
               <label className="label">Description (optional)</label>
-              <textarea
+              <Textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 className="input mt-1"

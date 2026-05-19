@@ -13,6 +13,8 @@ import {
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 type TabType = 'general' | 'branding' | 'domain' | 'embed';
 
 export default function TrustCenterSettings() {
@@ -300,7 +302,7 @@ function BrandingSettings({
             <label className="block text-sm font-medium text-surface-600 mb-1">
               Company Description
             </label>
-            <textarea
+            <Textarea
               value={config.description || ''}
               onChange={(e) => onUpdate({ description: e.target.value })}
               rows={3}
@@ -313,7 +315,6 @@ function BrandingSettings({
           </div>
         </div>
       </div>
-
       <div className="pt-6 border-t border-surface-800">
         <h3 className="text-lg font-medium text-surface-100 mb-4">Visual Branding</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -349,7 +350,6 @@ function BrandingSettings({
           </div>
         </div>
       </div>
-
       {/* Preview */}
       <div className="pt-6 border-t border-surface-800">
         <h3 className="text-lg font-medium text-surface-100 mb-4">Preview</h3>
@@ -576,7 +576,6 @@ function EmbedSettings({ config }: { config: TrustCenterConfig }) {
           </button>
         </div>
       </div>
-
       {/* Button Link */}
       <div className="pt-6 border-t border-surface-800">
         <div className="flex items-center gap-2 mb-2">
@@ -632,7 +631,6 @@ function EmbedSettings({ config }: { config: TrustCenterConfig }) {
           </a>
         </div>
       </div>
-
       {/* Direct Link */}
       <div className="pt-6 border-t border-surface-800">
         <div className="flex items-center gap-2 mb-2">

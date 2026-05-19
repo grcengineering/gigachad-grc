@@ -15,6 +15,8 @@ import { api } from '@/lib/api';
 import clsx from 'clsx';
 import { format } from 'date-fns';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 // ============================================
 // Types
 // ============================================
@@ -283,7 +285,6 @@ export default function BCDRIncidentDetail() {
           </span>
         </div>
       </div>
-
       {/* Quick Actions */}
       {isActive && (
         <div className="flex items-center gap-3">
@@ -301,7 +302,6 @@ export default function BCDRIncidentDetail() {
           </Button>
         </div>
       )}
-
       <div className="grid grid-cols-3 gap-6">
         {/* Main Content */}
         <div className="col-span-2 space-y-6">
@@ -495,13 +495,12 @@ export default function BCDRIncidentDetail() {
           </div>
         </div>
       </div>
-
       {/* Add Note Modal */}
       {showAddNote && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-slate-800 rounded-xl shadow-2xl w-full max-w-md p-6">
             <h2 className="text-xl font-semibold text-white mb-4">Add Timeline Entry</h2>
-            <textarea
+            <Textarea
               value={noteDescription}
               onChange={(e) => setNoteDescription(e.target.value)}
               rows={4}
@@ -519,7 +518,6 @@ export default function BCDRIncidentDetail() {
           </div>
         </div>
       )}
-
       {/* Activate Plan Modal */}
       {showActivatePlan && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -548,7 +546,6 @@ export default function BCDRIncidentDetail() {
           </div>
         </div>
       )}
-
       {/* Activate Team Modal */}
       {showActivateTeam && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">

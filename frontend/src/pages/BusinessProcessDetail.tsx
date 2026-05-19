@@ -18,6 +18,8 @@ import clsx from 'clsx';
 import { Button } from '@/components/ui/Button';
 import { SkeletonDetailHeader, SkeletonDetailSection } from '@/components/Skeleton';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 interface BusinessProcess {
   id: string;
   process_id: string;
@@ -281,7 +283,6 @@ export default function BusinessProcessDetail() {
           </Button>
         </div>
       </div>
-
       {/* Tabs */}
       <div className="border-b border-surface-700">
         <nav className="flex gap-6">
@@ -301,7 +302,6 @@ export default function BusinessProcessDetail() {
           ))}
         </nav>
       </div>
-
       {/* Content */}
       {activeTab === 'overview' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -449,7 +449,6 @@ export default function BusinessProcessDetail() {
           </div>
         </div>
       )}
-
       {activeTab === 'dependencies' && (
         <div className="card p-6">
           <h3 className="text-lg font-semibold text-surface-100 mb-4">Process Dependencies</h3>
@@ -476,7 +475,6 @@ export default function BusinessProcessDetail() {
           )}
         </div>
       )}
-
       {activeTab === 'assets' && (
         <div className="card p-6">
           <h3 className="text-lg font-semibold text-surface-100 mb-4">Supporting Assets</h3>
@@ -503,7 +501,6 @@ export default function BusinessProcessDetail() {
           )}
         </div>
       )}
-
       {activeTab === 'plans' && (
         <div className="card p-6">
           <h3 className="text-lg font-semibold text-surface-100 mb-4">BC/DR Plans</h3>
@@ -533,7 +530,6 @@ export default function BusinessProcessDetail() {
           )}
         </div>
       )}
-
       {/* Edit Modal */}
       {showEditModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -570,7 +566,7 @@ export default function BusinessProcessDetail() {
                 <label className="block text-sm font-medium text-surface-700 mb-2">
                   Description
                 </label>
-                <textarea
+                <Textarea
                   value={editForm.description}
                   onChange={(e) =>
                     setEditForm((prev) => ({ ...prev, description: e.target.value }))
@@ -666,7 +662,7 @@ export default function BusinessProcessDetail() {
                 <label className="block text-sm font-medium text-surface-700 mb-2">
                   Business Impact Description
                 </label>
-                <textarea
+                <Textarea
                   value={editForm.impact_description}
                   onChange={(e) =>
                     setEditForm((prev) => ({ ...prev, impact_description: e.target.value }))
@@ -750,7 +746,7 @@ export default function BusinessProcessDetail() {
                   <label className="block text-sm font-medium text-surface-700 mb-2">
                     Workaround Description
                   </label>
-                  <textarea
+                  <Textarea
                     value={editForm.workaround_description}
                     onChange={(e) =>
                       setEditForm((prev) => ({ ...prev, workaround_description: e.target.value }))
@@ -773,7 +769,6 @@ export default function BusinessProcessDetail() {
           </div>
         </div>
       )}
-
       {/* Delete Confirmation */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">

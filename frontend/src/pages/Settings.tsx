@@ -32,6 +32,8 @@ import { ModuleSettings } from '@/components/settings/ModuleSettings';
 import SystemHealthBanner from '@/components/SystemHealthBanner';
 import ProductionReadiness from '@/components/ProductionReadiness';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 interface SettingsProps {
   section:
     | 'organization'
@@ -456,7 +458,6 @@ function OrganizationSettings() {
           </button>
         </div>
       </div>
-
       {/* Organization Settings */}
       <div className="card p-6 space-y-6">
         <h2 className="text-lg font-semibold text-surface-100">Organization Details</h2>
@@ -473,7 +474,7 @@ function OrganizationSettings() {
           </div>
           <div>
             <label className="label">Description</label>
-            <textarea
+            <Textarea
               value={orgSettings.description}
               onChange={(e) => updateOrgSetting('description', e.target.value)}
               className="input mt-1"
@@ -530,10 +531,8 @@ function OrganizationSettings() {
           </button>
         </div>
       </div>
-
       {/* Multi-Workspace Mode */}
       <MultiWorkspaceSettings />
-
       {/* Data Portability & Offboarding */}
       <div className="card p-6 space-y-4">
         <div className="flex items-start justify-between gap-4">
@@ -580,10 +579,8 @@ function OrganizationSettings() {
           </button>
         </div>
       </div>
-
       {/* Demo Data Settings */}
       <DemoDataSettings />
-
       {/* System Health & Production Readiness */}
       <div className="space-y-4 pt-4 border-t border-surface-800">
         <h2 className="text-lg font-semibold text-surface-100">System Health</h2>
@@ -1601,7 +1598,6 @@ function DashboardTemplatesSettings() {
           </div>
         )}
       </div>
-
       <div className="card p-6">
         <h3 className="text-md font-semibold text-surface-100 mb-4">Template Tips</h3>
         <ul className="space-y-2 text-sm text-surface-600">
@@ -1619,7 +1615,6 @@ function DashboardTemplatesSettings() {
           </li>
         </ul>
       </div>
-
       {/* Create Template Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -1646,7 +1641,7 @@ function DashboardTemplatesSettings() {
                   <label className="block text-sm font-medium text-surface-700 mb-2">
                     Description (optional)
                   </label>
-                  <textarea
+                  <Textarea
                     value={newTemplateDescription}
                     onChange={(e) => setNewTemplateDescription(e.target.value)}
                     className="input w-full h-20"

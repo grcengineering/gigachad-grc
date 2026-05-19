@@ -18,6 +18,8 @@ import {
   ArrowTopRightOnSquareIcon,
 } from '@heroicons/react/24/outline';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 type SectionType = 'overview' | 'certifications' | 'controls' | 'policies' | 'updates' | 'contact';
 
 export default function TrustCenter() {
@@ -466,7 +468,7 @@ function ContentModal({ section, content, onSave, onClose }: ContentModalProps) 
             <label className="block text-sm font-medium text-gray-500 dark:text-surface-600 mb-1">
               Content
             </label>
-            <textarea
+            <Textarea
               value={contentText}
               onChange={(e) => setContentText(e.target.value)}
               required

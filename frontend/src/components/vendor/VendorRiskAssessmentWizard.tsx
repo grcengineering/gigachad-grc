@@ -10,6 +10,8 @@ import { Button } from '@/components/ui/Button';
 import { vendorsApi } from '@/lib/api';
 import clsx from 'clsx';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 // ============================================
 // Types
 // ============================================
@@ -403,7 +405,7 @@ export function VendorRiskAssessmentWizard({
             </div>
             <div>
               <label className="block text-sm font-medium text-surface-700 mb-1">Description</label>
-              <textarea
+              <Textarea
                 value={state.description}
                 onChange={(e) => setState({ ...state, description: e.target.value })}
                 rows={3}

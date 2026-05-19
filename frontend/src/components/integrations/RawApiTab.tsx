@@ -13,6 +13,8 @@ import {
 } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 interface RawRequest {
   id: string;
   name: string;
@@ -300,7 +302,6 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
           </button>
         </div>
       </div>
-
       {mode === 'requests' ? (
         <div className="flex-1 flex overflow-hidden">
           {/* Request List Sidebar */}
@@ -427,7 +428,7 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
                         (one per line: Header-Name: value)
                       </span>
                     </label>
-                    <textarea
+                    <Textarea
                       value={selectedRequest.headers}
                       onChange={(e) =>
                         updateRequest(selectedRequest.id, { headers: e.target.value })
@@ -445,7 +446,7 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
                         Request Body
                         <span className="text-xs font-normal text-surface-500 ml-2">(JSON)</span>
                       </label>
-                      <textarea
+                      <Textarea
                         value={selectedRequest.body}
                         onChange={(e) =>
                           updateRequest(selectedRequest.id, { body: e.target.value })
@@ -463,7 +464,7 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
                       Description
                       <span className="text-xs font-normal text-surface-500 ml-2">(optional)</span>
                     </label>
-                    <textarea
+                    <Textarea
                       value={selectedRequest.description}
                       onChange={(e) =>
                         updateRequest(selectedRequest.id, { description: e.target.value })
@@ -552,7 +553,6 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
               </div>
             </div>
           </div>
-
           <div className="flex-1 flex flex-col min-h-0">
             <div className="flex items-center justify-between mb-2">
               <label className="text-sm font-medium text-surface-700">Integration Code</label>
@@ -563,7 +563,7 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
                 Reset to template
               </button>
             </div>
-            <textarea
+            <Textarea
               value={config.customCode || DEFAULT_CODE_TEMPLATE}
               onChange={(e) => onChange({ ...config, customCode: e.target.value })}
               className="flex-1 input font-mono text-sm resize-none"
@@ -573,7 +573,6 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
           </div>
         </div>
       )}
-
       {/* Parse Modal */}
       {showParseModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center">
@@ -585,7 +584,7 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
             <p className="text-sm text-surface-600 mb-4">
               Paste a cURL command or raw HTTP request and we'll parse it for you.
             </p>
-            <textarea
+            <Textarea
               value={parseInput}
               onChange={(e) => setParseInput(e.target.value)}
               placeholder={CURL_EXAMPLE}

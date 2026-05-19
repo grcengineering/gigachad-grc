@@ -19,6 +19,8 @@ import { EmptyState } from '@/components/EmptyState';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 const CATEGORIES = [
   { value: 'security', label: 'Security', color: 'bg-red-500/20 text-red-600' },
   { value: 'privacy', label: 'Privacy', color: 'bg-purple-500/20 text-purple-600' },
@@ -504,7 +506,7 @@ function TemplateModal({
               Use {'{{variable_name}}'} for placeholders that will be replaced when using the
               template.
             </p>
-            <textarea
+            <Textarea
               required
               value={formData.content}
               onChange={(e) => setFormData((prev) => ({ ...prev, content: e.target.value }))}

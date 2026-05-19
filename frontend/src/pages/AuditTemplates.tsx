@@ -12,6 +12,8 @@ import {
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/hooks/useToast';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 interface AuditTemplate {
   id: string;
   name: string;
@@ -140,7 +142,6 @@ export default function AuditTemplates() {
           New Template
         </Button>
       </div>
-
       {/* Filters */}
       <div className="flex gap-4">
         <select
@@ -156,7 +157,6 @@ export default function AuditTemplates() {
           ))}
         </select>
       </div>
-
       {/* Templates Grid */}
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -241,7 +241,6 @@ export default function AuditTemplates() {
           ))}
         </div>
       )}
-
       {/* Empty State */}
       {!isLoading && templates.length === 0 && (
         <div className="text-center py-12">
@@ -252,7 +251,6 @@ export default function AuditTemplates() {
           </p>
         </div>
       )}
-
       {/* Create Template Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -285,7 +283,7 @@ export default function AuditTemplates() {
                 <label className="block text-sm font-medium text-surface-700 mb-1">
                   Description
                 </label>
-                <textarea
+                <Textarea
                   value={createForm.description}
                   onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
                   rows={3}

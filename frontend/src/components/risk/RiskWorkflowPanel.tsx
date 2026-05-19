@@ -22,6 +22,8 @@ import {
   Edit2,
 } from 'lucide-react';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 // Workflow Status Constants (used for validation/reference)
 const _INTAKE_STATUSES = [
   'risk_identified',
@@ -891,7 +893,7 @@ function ValidateRiskModal({
             <label className="block text-sm text-surface-600 mb-2">
               {approve ? 'Notes (optional)' : 'Reason for rejection *'}
             </label>
-            <textarea
+            <Textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               required={!approve}
@@ -1037,7 +1039,7 @@ function SubmitAssessmentModal({
         <div className="p-4 space-y-4">
           <div>
             <label className="block text-sm text-surface-600 mb-2">Threat Description *</label>
-            <textarea
+            <Textarea
               value={formData.threatDescription}
               onChange={(e) =>
                 setFormData((prev) => ({ ...prev, threatDescription: e.target.value }))
@@ -1078,7 +1080,7 @@ function SubmitAssessmentModal({
 
           <div>
             <label className="block text-sm text-surface-600 mb-2">Vulnerabilities</label>
-            <textarea
+            <Textarea
               value={formData.vulnerabilities}
               onChange={(e) =>
                 setFormData((prev) => ({ ...prev, vulnerabilities: e.target.value }))
@@ -1125,7 +1127,7 @@ function SubmitAssessmentModal({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm text-surface-600 mb-2">Likelihood Rationale *</label>
-              <textarea
+              <Textarea
                 value={formData.likelihoodRationale}
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, likelihoodRationale: e.target.value }))
@@ -1138,7 +1140,7 @@ function SubmitAssessmentModal({
             </div>
             <div>
               <label className="block text-sm text-surface-600 mb-2">Impact Rationale *</label>
-              <textarea
+              <Textarea
                 value={formData.impactRationale}
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, impactRationale: e.target.value }))
@@ -1181,7 +1183,7 @@ function SubmitAssessmentModal({
 
           <div>
             <label className="block text-sm text-surface-600 mb-2">Assessment Notes</label>
-            <textarea
+            <Textarea
               value={formData.assessmentNotes}
               onChange={(e) =>
                 setFormData((prev) => ({ ...prev, assessmentNotes: e.target.value }))
@@ -1261,7 +1263,7 @@ function ReviewAssessmentModal({
           {approve ? (
             <div>
               <label className="block text-sm text-surface-600 mb-2">Notes (optional)</label>
-              <textarea
+              <Textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={3}
@@ -1272,7 +1274,7 @@ function ReviewAssessmentModal({
           ) : (
             <div>
               <label className="block text-sm text-surface-600 mb-2">Reason for Revision *</label>
-              <textarea
+              <Textarea
                 value={declinedReason}
                 onChange={(e) => setDeclinedReason(e.target.value)}
                 required
@@ -1386,7 +1388,7 @@ function CompleteRevisionModal({
 
           <div>
             <label className="block text-sm text-surface-600 mb-2">Assessment Notes</label>
-            <textarea
+            <Textarea
               value={formData.assessmentNotes}
               onChange={(e) =>
                 setFormData((prev) => ({ ...prev, assessmentNotes: e.target.value }))
@@ -1509,7 +1511,7 @@ function TreatmentDecisionModal({
 
           <div>
             <label className="block text-sm text-surface-600 mb-2">Justification *</label>
-            <textarea
+            <Textarea
               value={formData.justification}
               onChange={(e) => setFormData((prev) => ({ ...prev, justification: e.target.value }))}
               required
@@ -1526,7 +1528,7 @@ function TreatmentDecisionModal({
                 <label className="block text-sm text-surface-600 mb-2">
                   Mitigation Description
                 </label>
-                <textarea
+                <Textarea
                   value={formData.mitigationDescription}
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, mitigationDescription: e.target.value }))
@@ -1582,7 +1584,7 @@ function TreatmentDecisionModal({
           {formData.decision === 'avoid' && (
             <div>
               <label className="block text-sm text-surface-600 mb-2">Avoidance Strategy</label>
-              <textarea
+              <Textarea
                 value={formData.avoidStrategy}
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, avoidStrategy: e.target.value }))
@@ -1599,7 +1601,7 @@ function TreatmentDecisionModal({
             <>
               <div>
                 <label className="block text-sm text-surface-600 mb-2">Acceptance Rationale</label>
-                <textarea
+                <Textarea
                   value={formData.acceptanceRationale}
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, acceptanceRationale: e.target.value }))
@@ -1748,7 +1750,7 @@ function ExecutiveApprovalModal({
           {approve ? (
             <div>
               <label className="block text-sm text-surface-600 mb-2">Notes (optional)</label>
-              <textarea
+              <Textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={3}
@@ -1759,7 +1761,7 @@ function ExecutiveApprovalModal({
           ) : (
             <div>
               <label className="block text-sm text-surface-600 mb-2">Reason for Denial *</label>
-              <textarea
+              <Textarea
                 value={deniedReason}
                 onChange={(e) => setDeniedReason(e.target.value)}
                 required
@@ -1875,7 +1877,7 @@ function MitigationUpdateModal({
 
           <div>
             <label className="block text-sm text-surface-600 mb-2">Notes</label>
-            <textarea
+            <Textarea
               value={formData.notes}
               onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
               rows={2}
@@ -1899,7 +1901,7 @@ function MitigationUpdateModal({
               </div>
               <div>
                 <label className="block text-sm text-surface-600 mb-2">Delay Reason</label>
-                <textarea
+                <Textarea
                   value={formData.delayReason}
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, delayReason: e.target.value }))
@@ -1915,7 +1917,7 @@ function MitigationUpdateModal({
           {formData.status === 'cancelled' && (
             <div>
               <label className="block text-sm text-surface-600 mb-2">Cancellation Reason *</label>
-              <textarea
+              <Textarea
                 value={formData.cancellationReason}
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, cancellationReason: e.target.value }))

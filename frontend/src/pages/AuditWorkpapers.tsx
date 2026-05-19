@@ -14,6 +14,8 @@ import { Button } from '@/components/ui/Button';
 import { useToast } from '@/hooks/useToast';
 import clsx from 'clsx';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 interface Workpaper {
   id: string;
   workpaperNumber: string;
@@ -173,7 +175,6 @@ export default function AuditWorkpapers() {
           New Workpaper
         </Button>
       </div>
-
       {/* Status Summary */}
       <div className="grid grid-cols-5 gap-4">
         {Object.entries(statusConfig).map(([status, config]) => {
@@ -189,7 +190,6 @@ export default function AuditWorkpapers() {
           );
         })}
       </div>
-
       {/* Workpapers List */}
       {isLoading ? (
         <div className="animate-pulse space-y-4">
@@ -298,7 +298,6 @@ export default function AuditWorkpapers() {
           )}
         </div>
       )}
-
       {/* Create Workpaper Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -344,7 +343,7 @@ export default function AuditWorkpapers() {
 
               <div>
                 <label className="block text-sm font-medium text-surface-700 mb-1">Content</label>
-                <textarea
+                <Textarea
                   value={createForm.content}
                   onChange={(e) => setCreateForm((prev) => ({ ...prev, content: e.target.value }))}
                   className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white h-32"

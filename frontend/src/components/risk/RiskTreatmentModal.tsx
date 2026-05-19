@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { RiskDetail } from '../../lib/apiTypes';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 interface TreatmentFormData {
   treatmentPlan: string;
   treatmentNotes: string;
@@ -122,7 +124,7 @@ export default function RiskTreatmentModal({
           </div>
           <div>
             <label className="block text-sm text-surface-600 mb-1">Treatment Notes</label>
-            <textarea
+            <Textarea
               value={formData.treatmentNotes}
               onChange={(e) => setFormData({ ...formData, treatmentNotes: e.target.value })}
               rows={3}

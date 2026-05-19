@@ -15,6 +15,8 @@ import {
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 // ===========================================
 // Types
 // ===========================================
@@ -310,7 +312,7 @@ export default function ReportBuilder({ initialConfig, onSave, className }: Repo
             placeholder="Report Name"
             className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-white text-sm focus:outline-none focus:border-brand-500"
           />
-          <textarea
+          <Textarea
             value={config.description || ''}
             onChange={(e) => setConfig((prev) => ({ ...prev, description: e.target.value }))}
             placeholder="Description (optional)"
@@ -335,7 +337,6 @@ export default function ReportBuilder({ initialConfig, onSave, className }: Repo
           </button>
         </div>
       </div>
-
       {/* Main Canvas */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-4xl mx-auto p-6">
@@ -402,7 +403,6 @@ export default function ReportBuilder({ initialConfig, onSave, className }: Repo
           )}
         </div>
       </div>
-
       {/* Right Sidebar - Section Config */}
       {selectedSection && !isPreviewMode && (
         <SectionConfigPanel
@@ -490,7 +490,6 @@ function SectionEditor({
           <TrashIcon className="w-4 h-4" />
         </button>
       </div>
-
       {/* Section Content */}
       {section.type === 'heading' && (
         <input
@@ -501,9 +500,8 @@ function SectionEditor({
           placeholder="Section Title"
         />
       )}
-
       {section.type === 'text' && (
-        <textarea
+        <Textarea
           value={section.content || ''}
           onChange={(e) => onUpdate({ content: e.target.value })}
           rows={3}
@@ -511,7 +509,6 @@ function SectionEditor({
           placeholder="Enter text content..."
         />
       )}
-
       {section.type === 'table' && (
         <div className="text-sm text-surface-600">
           <div className="flex items-center gap-2 mb-2">
@@ -527,7 +524,6 @@ function SectionEditor({
           </div>
         </div>
       )}
-
       {section.type === 'chart' && (
         <div className="text-sm text-surface-600">
           <div className="flex items-center gap-2">
@@ -539,7 +535,6 @@ function SectionEditor({
           </div>
         </div>
       )}
-
       {section.type === 'summary' && (
         <div className="text-sm text-surface-600">
           <div className="flex items-center gap-2">
@@ -548,7 +543,6 @@ function SectionEditor({
           </div>
         </div>
       )}
-
       {section.type === 'divider' && <div className="border-t border-surface-600 my-2" />}
     </div>
   );
@@ -602,7 +596,6 @@ function SectionConfigPanel({ section, onUpdate, onClose }: SectionConfigPanelPr
           ×
         </button>
       </div>
-
       <div className="space-y-4">
         {section.type === 'heading' && (
           <div>
@@ -619,7 +612,7 @@ function SectionConfigPanel({ section, onUpdate, onClose }: SectionConfigPanelPr
         {section.type === 'text' && (
           <div>
             <label className="block text-sm text-surface-600 mb-1">Content</label>
-            <textarea
+            <Textarea
               value={section.content || ''}
               onChange={(e) => onUpdate({ content: e.target.value })}
               rows={5}

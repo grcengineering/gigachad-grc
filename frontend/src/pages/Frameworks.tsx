@@ -8,6 +8,8 @@ import toast from 'react-hot-toast';
 import { Button } from '@/components/ui/Button';
 import { SkeletonGrid } from '@/components/Skeleton';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 export default function Frameworks() {
   const queryClient = useQueryClient();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -90,7 +92,6 @@ export default function Frameworks() {
           Create Framework
         </Button>
       </div>
-
       {/* Frameworks Grid */}
       {frameworks && frameworks.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -118,7 +119,6 @@ export default function Frameworks() {
           </Button>
         </div>
       )}
-
       {/* Create Framework Modal */}
       {isCreateModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -175,7 +175,7 @@ export default function Frameworks() {
                 <label className="block text-sm font-medium text-surface-700 mb-1">
                   Description
                 </label>
-                <textarea
+                <Textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Brief description of the framework..."
@@ -201,7 +201,6 @@ export default function Frameworks() {
           </div>
         </div>
       )}
-
       {/* Delete Confirmation Modal */}
       {deleteConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">

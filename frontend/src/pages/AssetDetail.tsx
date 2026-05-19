@@ -24,6 +24,8 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 const ASSET_TYPES = [
   { value: 'server', label: 'Server', icon: HardDrive },
   { value: 'workstation', label: 'Workstation', icon: Monitor },
@@ -244,7 +246,6 @@ export default function AssetDetail() {
           </Button>
         </div>
       </div>
-
       {/* Asset Details */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Info */}
@@ -358,7 +359,6 @@ export default function AssetDetail() {
           </div>
         </div>
       </div>
-
       {/* Associated Risks */}
       {asset.risks && asset.risks.length > 0 && (
         <div className="bg-surface-800 rounded-xl border border-surface-700 p-6">
@@ -398,7 +398,6 @@ export default function AssetDetail() {
           </div>
         </div>
       )}
-
       {/* BC/DR Information */}
       <div className="bg-surface-800 rounded-xl border border-surface-700 p-6">
         <div className="flex items-center justify-between mb-4">
@@ -474,7 +473,6 @@ export default function AssetDetail() {
           </div>
         )}
       </div>
-
       {/* Edit Modal */}
       {showEditModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -611,7 +609,7 @@ export default function AssetDetail() {
                 <label className="block text-sm font-medium text-surface-700 mb-2">
                   Description
                 </label>
-                <textarea
+                <Textarea
                   value={editForm.description}
                   onChange={(e) =>
                     setEditForm((prev) => ({ ...prev, description: e.target.value }))
@@ -695,7 +693,7 @@ export default function AssetDetail() {
                   <label className="block text-sm font-medium text-surface-700 mb-2">
                     Recovery Notes
                   </label>
-                  <textarea
+                  <Textarea
                     value={editForm.recoveryNotes}
                     onChange={(e) =>
                       setEditForm((prev) => ({ ...prev, recoveryNotes: e.target.value }))
@@ -727,7 +725,6 @@ export default function AssetDetail() {
           </div>
         </div>
       )}
-
       {/* Delete Confirmation */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">

@@ -11,6 +11,8 @@ import { Button } from '@/components/ui/Button';
 import { api } from '@/lib/api';
 import clsx from 'clsx';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 // ============================================
 // Types
 // ============================================
@@ -123,7 +125,6 @@ export default function RecoveryTeams() {
           Create Team
         </Button>
       </div>
-
       {/* Stats */}
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -147,7 +148,6 @@ export default function RecoveryTeams() {
           </div>
         </div>
       )}
-
       {/* Filters */}
       <div className="flex items-center gap-4">
         <div className="flex-1 relative">
@@ -175,7 +175,6 @@ export default function RecoveryTeams() {
           </select>
         </div>
       </div>
-
       {/* Teams List */}
       {isLoading ? (
         <div className="text-center py-12">
@@ -245,7 +244,6 @@ export default function RecoveryTeams() {
           ))}
         </div>
       )}
-
       {/* Create Team Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -283,7 +281,7 @@ export default function RecoveryTeams() {
 
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">Description</label>
-                <textarea
+                <Textarea
                   value={newTeamDescription ?? ''}
                   onChange={(e) => setNewTeamDescription(e.target.value)}
                   rows={3}

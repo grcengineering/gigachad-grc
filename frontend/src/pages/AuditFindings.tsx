@@ -20,6 +20,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/useToast';
 import { useSelection, BulkActionsBar, SelectCheckbox } from '@/components/BulkActions';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 interface Finding {
   id: string;
   findingNumber: string;
@@ -636,7 +638,7 @@ function FindingForm({ finding, audits, users, onSubmit, onDelete, isLoading }: 
           <label className="block text-sm font-medium text-surface-700 mb-1">
             Description <span className="text-red-600">*</span>
           </label>
-          <textarea
+          <Textarea
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             required
@@ -723,7 +725,7 @@ function FindingForm({ finding, audits, users, onSubmit, onDelete, isLoading }: 
 
         <div className="col-span-2">
           <label className="block text-sm font-medium text-surface-700 mb-1">Root Cause</label>
-          <textarea
+          <Textarea
             value={formData.rootCause}
             onChange={(e) => setFormData({ ...formData, rootCause: e.target.value })}
             rows={2}
@@ -734,7 +736,7 @@ function FindingForm({ finding, audits, users, onSubmit, onDelete, isLoading }: 
 
         <div className="col-span-2">
           <label className="block text-sm font-medium text-surface-700 mb-1">Impact</label>
-          <textarea
+          <Textarea
             value={formData.impact}
             onChange={(e) => setFormData({ ...formData, impact: e.target.value })}
             rows={2}
@@ -745,7 +747,7 @@ function FindingForm({ finding, audits, users, onSubmit, onDelete, isLoading }: 
 
         <div className="col-span-2">
           <label className="block text-sm font-medium text-surface-700 mb-1">Recommendation</label>
-          <textarea
+          <Textarea
             value={formData.recommendation}
             onChange={(e) => setFormData({ ...formData, recommendation: e.target.value })}
             rows={2}
@@ -758,7 +760,7 @@ function FindingForm({ finding, audits, users, onSubmit, onDelete, isLoading }: 
           <label className="block text-sm font-medium text-surface-700 mb-1">
             Remediation Plan
           </label>
-          <textarea
+          <Textarea
             value={formData.remediationPlan}
             onChange={(e) => setFormData({ ...formData, remediationPlan: e.target.value })}
             rows={2}
@@ -772,7 +774,7 @@ function FindingForm({ finding, audits, users, onSubmit, onDelete, isLoading }: 
             <label className="block text-sm font-medium text-surface-700 mb-1">
               Management Response
             </label>
-            <textarea
+            <Textarea
               value={formData.managementResponse}
               onChange={(e) => setFormData({ ...formData, managementResponse: e.target.value })}
               rows={2}
@@ -782,7 +784,6 @@ function FindingForm({ finding, audits, users, onSubmit, onDelete, isLoading }: 
           </div>
         )}
       </div>
-
       <div className="flex justify-between pt-4 border-t border-surface-700">
         {onDelete && (
           <Button type="button" variant="danger" onClick={onDelete}>

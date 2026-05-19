@@ -14,6 +14,8 @@ import { Button } from '@/components/ui/Button';
 import { useToast } from '@/hooks/useToast';
 import clsx from 'clsx';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 interface TestProcedure {
   id: string;
   procedureNumber: string;
@@ -173,7 +175,6 @@ export default function TestProcedures() {
           New Procedure
         </Button>
       </div>
-
       {/* Stats */}
       {stats && (
         <div className="grid grid-cols-4 gap-4">
@@ -199,7 +200,6 @@ export default function TestProcedures() {
           </div>
         </div>
       )}
-
       {/* Procedures List */}
       {isLoading ? (
         <div className="animate-pulse space-y-4">
@@ -255,7 +255,6 @@ export default function TestProcedures() {
                     )}
                   </div>
                 </div>
-
                 {/* Record Result Form */}
                 {isRecording && (
                   <div className="mt-4 pt-4 border-t border-surface-700">
@@ -264,7 +263,7 @@ export default function TestProcedures() {
                         <label className="block text-sm font-medium text-surface-600 mb-1">
                           Actual Result
                         </label>
-                        <textarea
+                        <Textarea
                           value={resultForm.actualResult}
                           onChange={(e) =>
                             setResultForm({ ...resultForm, actualResult: e.target.value })
@@ -277,7 +276,7 @@ export default function TestProcedures() {
                         <label className="block text-sm font-medium text-surface-600 mb-1">
                           Deviations Noted
                         </label>
-                        <textarea
+                        <Textarea
                           value={resultForm.deviationsNoted}
                           onChange={(e) =>
                             setResultForm({ ...resultForm, deviationsNoted: e.target.value })
@@ -342,7 +341,6 @@ export default function TestProcedures() {
           )}
         </div>
       )}
-
       {/* Create Test Procedure Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -411,7 +409,7 @@ export default function TestProcedures() {
                 <label className="block text-sm font-medium text-surface-700 mb-1">
                   Test Method
                 </label>
-                <textarea
+                <Textarea
                   value={createForm.testMethod}
                   onChange={(e) =>
                     setCreateForm((prev) => ({ ...prev, testMethod: e.target.value }))

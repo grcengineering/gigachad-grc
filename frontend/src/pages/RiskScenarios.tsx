@@ -19,6 +19,8 @@ import { SkeletonTable } from '@/components/Skeleton';
 import { EmptyState } from '@/components/EmptyState';
 import { useToast } from '@/hooks/useToast';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 interface SimulationResult {
   inherentRisk: { score: number; level: string };
   residualRisk: { score: number; level: string };
@@ -726,10 +728,9 @@ function ScenarioForm({ scenario, onSubmit, isLoading }: ScenarioFormProps) {
           placeholder="e.g., Phishing Attack on Employees"
         />
       </div>
-
       <div>
         <label className="block text-sm font-medium text-foreground mb-1">Description *</label>
-        <textarea
+        <Textarea
           required
           rows={3}
           value={formData.description}
@@ -738,7 +739,6 @@ function ScenarioForm({ scenario, onSubmit, isLoading }: ScenarioFormProps) {
           placeholder="Describe the risk scenario in detail..."
         />
       </div>
-
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-foreground mb-1">Category *</label>
@@ -772,7 +772,6 @@ function ScenarioForm({ scenario, onSubmit, isLoading }: ScenarioFormProps) {
           </select>
         </div>
       </div>
-
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-foreground mb-1">Attack Vector *</label>
@@ -801,7 +800,6 @@ function ScenarioForm({ scenario, onSubmit, isLoading }: ScenarioFormProps) {
           />
         </div>
       </div>
-
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-foreground mb-1">Likelihood *</label>
@@ -835,7 +833,6 @@ function ScenarioForm({ scenario, onSubmit, isLoading }: ScenarioFormProps) {
           </select>
         </div>
       </div>
-
       <div>
         <label className="block text-sm font-medium text-foreground mb-1">Tags</label>
         <input
@@ -846,12 +843,11 @@ function ScenarioForm({ scenario, onSubmit, isLoading }: ScenarioFormProps) {
           placeholder="e.g., critical, compliance, data (comma-separated)"
         />
       </div>
-
       <div>
         <label className="block text-sm font-medium text-foreground mb-1">
           Mitigation Strategy
         </label>
-        <textarea
+        <Textarea
           rows={2}
           value={formData.mitigationStrategy}
           onChange={(e) => setFormData({ ...formData, mitigationStrategy: e.target.value })}
@@ -859,7 +855,6 @@ function ScenarioForm({ scenario, onSubmit, isLoading }: ScenarioFormProps) {
           placeholder="Describe how this risk can be mitigated..."
         />
       </div>
-
       <div className="flex items-center gap-2">
         <input
           type="checkbox"
@@ -872,7 +867,6 @@ function ScenarioForm({ scenario, onSubmit, isLoading }: ScenarioFormProps) {
           Save as template (available for reuse)
         </label>
       </div>
-
       <div className="flex justify-end gap-3 pt-4 border-t border-surface-700">
         <Button type="submit" isLoading={isLoading}>
           {scenario ? 'Update Scenario' : 'Create Scenario'}

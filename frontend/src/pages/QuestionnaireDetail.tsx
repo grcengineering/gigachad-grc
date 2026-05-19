@@ -17,6 +17,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 interface Questionnaire {
   id: string;
   title: string;
@@ -310,7 +312,6 @@ export default function QuestionnaireDetail() {
           </div>
         )}
       </div>
-
       {id === 'new' ? (
         <form onSubmit={handleSubmitNewQuestionnaire} className="space-y-6">
           <div className="bg-surface-900 border border-surface-800 rounded-lg p-6 space-y-4">
@@ -397,7 +398,7 @@ export default function QuestionnaireDetail() {
 
             <div>
               <label className="block text-sm font-medium text-surface-600 mb-1">Description</label>
-              <textarea
+              <Textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows={2}
@@ -516,7 +517,6 @@ export default function QuestionnaireDetail() {
           onRefresh={fetchQuestionnaire}
         />
       ) : null}
-
       {/* Edit Modal */}
       {showEditModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -596,7 +596,7 @@ export default function QuestionnaireDetail() {
                 <label className="block text-sm font-medium text-surface-600 mb-1">
                   Description
                 </label>
-                <textarea
+                <Textarea
                   value={editForm.description}
                   onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
                   rows={3}
@@ -632,7 +632,6 @@ export default function QuestionnaireDetail() {
           </div>
         </div>
       )}
-
       {/* Delete Confirmation */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -949,7 +948,7 @@ function QuestionAnswerCard({
               </div>
             </div>
 
-            <textarea
+            <Textarea
               value={currentAnswer}
               onChange={(e) => onAnswerChange(e.target.value)}
               rows={5}

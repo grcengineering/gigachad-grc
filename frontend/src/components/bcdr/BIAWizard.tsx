@@ -14,6 +14,8 @@ import { Button } from '@/components/ui/Button';
 import { api } from '@/lib/api';
 import clsx from 'clsx';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 // ============================================
 // Types
 // ============================================
@@ -274,7 +276,7 @@ export function BIAWizard({
 
       <div>
         <label className="block text-sm font-medium text-slate-300 mb-2">Description</label>
-        <textarea
+        <Textarea
           value={state.description}
           onChange={(e) => updateState('description', e.target.value)}
           rows={3}
@@ -543,7 +545,7 @@ export function BIAWizard({
 
       <div>
         <label className="block text-sm font-medium text-slate-300 mb-2">Key Stakeholders</label>
-        <textarea
+        <Textarea
           value={state.keyStakeholders}
           onChange={(e) => updateState('keyStakeholders', e.target.value)}
           rows={2}

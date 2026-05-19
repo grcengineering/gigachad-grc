@@ -14,6 +14,8 @@ import {
 } from '@heroicons/react/24/outline';
 import { mcpApi } from '../../lib/api';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 interface Workflow {
   id: string;
   name: string;
@@ -136,7 +138,6 @@ export default function MCPWorkflowBuilder() {
           Automated GRC workflows powered by MCP servers
         </p>
       </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Workflows List */}
         <div className="lg:col-span-1 bg-white dark:bg-surface-800 rounded-lg border border-gray-200 dark:border-surface-700">
@@ -332,7 +333,6 @@ export default function MCPWorkflowBuilder() {
           </div>
         </div>
       </div>
-
       {/* Execution Modal */}
       {showExecutionModal && selectedWorkflowData && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -361,7 +361,7 @@ export default function MCPWorkflowBuilder() {
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Input Parameters (JSON)
                   </label>
-                  <textarea
+                  <Textarea
                     value={JSON.stringify(executionInput, null, 2)}
                     onChange={(e) => {
                       try {

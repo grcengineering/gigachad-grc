@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { RiskDetail } from '../../lib/apiTypes';
 
+import { Textarea } from '@/components/ui/Textarea';
+
 interface RiskEditModalProps {
   risk: RiskDetail;
   isOpen: boolean;
@@ -84,7 +86,7 @@ export default function RiskEditModal({
           </div>
           <div>
             <label className="block text-sm text-surface-600 mb-1">Description</label>
-            <textarea
+            <Textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={3}
