@@ -523,7 +523,7 @@ export default function QuestionnaireDetail() {
       ) : null}
       {/* Edit Modal */}
       {showEditModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
           <div className="bg-surface-900 border border-surface-800 rounded-lg p-6 max-w-2xl w-full mx-4">
             <h3 className="text-lg font-semibold text-surface-100 mb-4">
               Edit Questionnaire Details
@@ -638,7 +638,7 @@ export default function QuestionnaireDetail() {
       )}
       {/* Delete Confirmation */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
           <div className="bg-surface-900 border border-surface-800 rounded-lg p-6 max-w-md w-full mx-4">
             <h3 className="text-lg font-semibold text-surface-100 mb-2">Delete Questionnaire</h3>
             <p className="text-surface-600 mb-6">

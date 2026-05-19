@@ -16,7 +16,7 @@ export default function NewKeyRevealModal({ keyData, onClose }: NewKeyRevealModa
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
       <div className="bg-surface-900 rounded-lg p-6 w-full max-w-lg">
         <div className="flex items-center gap-3 mb-4">
           <CheckCircleIcon className="w-6 h-6 text-green-600" />

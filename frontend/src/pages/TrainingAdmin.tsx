@@ -942,7 +942,7 @@ function CampaignModal({
     : defaultBuiltInModules;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
       <div className="bg-white dark:bg-surface-800 rounded-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-200 dark:border-surface-700">
           <div className="flex items-center justify-between">
@@ -1141,7 +1141,7 @@ function ModuleModal({ module, onClose }: { module: CustomModule | null; onClose
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
       <div className="bg-white dark:bg-surface-800 rounded-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-200 dark:border-surface-700">
           <div className="flex items-center justify-between">
@@ -1300,7 +1300,7 @@ function UploadScormModal({ moduleId, onClose }: { moduleId: string; onClose: ()
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
       <div className="bg-white dark:bg-surface-800 rounded-xl max-w-md w-full mx-4">
         <div className="p-6 border-b border-gray-200 dark:border-surface-700">
           <div className="flex items-center justify-between">
@@ -1403,7 +1403,7 @@ function ModuleDetailModal({
     DIFFICULTIES.find((d) => d.id === module.difficulty)?.label || module.difficulty;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
       <div className="bg-white dark:bg-surface-800 rounded-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-200 dark:border-surface-700">
           <div className="flex items-center justify-between">
@@ -1555,7 +1555,7 @@ function UploadNewScormModal({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
       <div className="bg-white dark:bg-surface-800 rounded-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-200 dark:border-surface-700">
           <div className="flex items-center justify-between">

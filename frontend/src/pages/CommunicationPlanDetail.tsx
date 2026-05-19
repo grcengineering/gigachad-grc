@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Badge } from '@/components/ui/Badge';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
@@ -346,9 +347,7 @@ export default function CommunicationPlanDetail() {
                       <div>
                         <div className="flex items-center gap-2 mb-1">
                           <span className="font-medium text-surface-100">{contact.name}</span>
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-600">
-                            Level {contact.escalation_level}
-                          </span>
+                          <Badge variant="info">Level {contact.escalation_level}</Badge>
                         </div>
                         <p className="text-sm text-surface-600">{contact.title}</p>
                         <p className="text-sm text-surface-600">{contact.role_in_plan}</p>
@@ -399,7 +398,7 @@ export default function CommunicationPlanDetail() {
       </div>
       {/* Edit Modal */}
       {showEditModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
           <div className="card w-full max-w-lg mx-4">
             <div className="p-4 border-b border-surface-700 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-surface-100">Edit Communication Plan</h2>
@@ -480,7 +479,7 @@ export default function CommunicationPlanDetail() {
       )}
       {/* Delete Confirmation */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
           <div className="card w-full max-w-md mx-4 p-6">
             <h2 className="text-lg font-semibold text-surface-100 mb-2">
               Delete Communication Plan?

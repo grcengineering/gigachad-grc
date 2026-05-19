@@ -365,7 +365,7 @@ export default function Dashboard() {
       </div>
       {/* Dashboard Configuration Modal */}
       {showConfigModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 grid place-items-center">
           <div className="absolute inset-0 bg-black/60" onClick={() => setShowConfigModal(false)} />
           <div className="relative bg-surface-900 border border-surface-700 rounded-xl shadow-2xl w-full max-w-md mx-4 animate-fade-in">
             <div className="flex items-center justify-between p-4 border-b border-surface-700">

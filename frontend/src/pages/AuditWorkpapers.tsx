@@ -304,7 +304,7 @@ export default function AuditWorkpapers() {
       )}
       {/* Create Workpaper Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
           <div className="bg-surface-800 rounded-lg p-6 w-full max-w-lg border border-surface-700">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-white">Create Workpaper</h2>

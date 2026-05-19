@@ -52,7 +52,7 @@ function CreateWorkspaceModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
       <div className="bg-surface-800 rounded-lg shadow-xl w-full max-w-md p-6">
         <h3 className="text-lg font-semibold text-foreground mb-4">Create New Workspace</h3>
         <form onSubmit={handleSubmit}>

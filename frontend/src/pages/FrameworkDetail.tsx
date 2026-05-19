@@ -424,7 +424,7 @@ export default function FrameworkDetail() {
       </div>
       {/* Create Requirement Modal */}
       {isCreateModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
           <div className="bg-surface-900 border border-surface-800 rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-surface-100">Add Requirement</h2>
@@ -531,7 +531,7 @@ export default function FrameworkDetail() {
       )}
       {/* Bulk Upload Modal */}
       {isUploadModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
           <div className="bg-surface-900 border border-surface-800 rounded-lg p-6 w-full max-w-xl">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-surface-100">Bulk Upload Requirements</h2>

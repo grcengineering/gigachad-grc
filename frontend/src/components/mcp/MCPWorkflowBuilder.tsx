@@ -338,7 +338,7 @@ export default function MCPWorkflowBuilder() {
       </div>
       {/* Execution Modal */}
       {showExecutionModal && selectedWorkflowData && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
           <div className="bg-white dark:bg-surface-800 rounded-lg w-full max-w-md">
             <div className="p-4 border-b border-gray-200 dark:border-surface-700 flex justify-between items-center">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">

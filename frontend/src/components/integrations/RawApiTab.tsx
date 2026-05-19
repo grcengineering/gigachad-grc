@@ -583,7 +583,7 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
       )}
       {/* Parse Modal */}
       {showParseModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center">
+        <div className="fixed inset-0 z-[60] grid place-items-center">
           <div className="absolute inset-0 bg-black/60" onClick={() => setShowParseModal(false)} />
           <div className="relative bg-surface-900 border border-surface-800 rounded-xl w-full max-w-2xl mx-4 p-6">
             <h3 className="text-lg font-semibold text-surface-100 mb-4">

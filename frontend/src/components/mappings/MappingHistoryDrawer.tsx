@@ -292,7 +292,7 @@ function HistoryEntryItem({
               type="button"
               onClick={() => setConfirming(true)}
               aria-label={`Restore mapping to state from ${timestampLabel}`}
-              className="inline-flex items-center gap-1 text-xs text-purple-700 hover:text-purple-200 px-2 py-1 rounded border border-purple-500/30 hover:bg-purple-500/10"
+              className="inline-flex items-center gap-1 text-small text-purple-700 hover:text-purple-900 px-2 py-1 border border-purple-300 rounded-md hover:bg-purple-50 transition-colors"
             >
               <ArrowUturnLeftIcon className="w-3.5 h-3.5" aria-hidden="true" />
               Restore this version

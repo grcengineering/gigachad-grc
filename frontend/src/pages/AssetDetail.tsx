@@ -479,7 +479,7 @@ export default function AssetDetail() {
       </div>
       {/* Edit Modal */}
       {showEditModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
           <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-surface-700 flex items-center justify-between">
               <h2 className="text-xl font-semibold text-white">Edit Asset</h2>
@@ -731,7 +731,7 @@ export default function AssetDetail() {
       )}
       {/* Delete Confirmation */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
           <div className="bg-surface-800 rounded-xl border border-surface-700 p-6 max-w-md w-full mx-4">
             <h3 className="text-lg font-semibold text-white mb-2">Delete Asset</h3>
             <p className="text-surface-600 mb-6">

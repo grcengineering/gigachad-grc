@@ -423,7 +423,7 @@ export default function RecoveryTeamDetail() {
       </div>
       {/* Add Member Modal */}
       {showAddMember && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
           <div className="bg-slate-800 rounded-xl shadow-2xl w-full max-w-md p-6">
             <h2 className="text-xl font-semibold text-white mb-6">Add Team Member</h2>
 
@@ -542,7 +542,7 @@ export default function RecoveryTeamDetail() {
       )}
       {/* Link Plan Modal */}
       {showLinkPlan && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
           <div className="bg-slate-800 rounded-xl shadow-2xl w-full max-w-md p-6">
             <h2 className="text-xl font-semibold text-white mb-6">Link to Plan</h2>
 

@@ -823,7 +823,7 @@ function LinkControlModal({
   );
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
       <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-lg">
         <div className="p-4 border-b border-surface-700 flex justify-between items-center">
           <h3 className="text-lg font-medium text-white">Link Control</h3>
@@ -926,7 +926,7 @@ function LinkAssetModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
       <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-lg">
         <div className="p-4 border-b border-surface-700 flex justify-between items-center">
           <h3 className="text-lg font-medium text-white">Link Assets</h3>
@@ -1012,7 +1012,7 @@ function TreatmentModal({
   const [dueDate, setDueDate] = useState(currentDueDate ? currentDueDate.split('T')[0] : '');
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
       <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-lg">
         <div className="p-4 border-b border-surface-700 flex justify-between items-center">
           <h3 className="text-lg font-medium text-white">Treatment Plan</h3>
@@ -1107,7 +1107,7 @@ function ScenarioModal({
   });
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
       <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-lg">
         <div className="p-4 border-b border-surface-700 flex justify-between items-center">
           <h3 className="text-lg font-medium text-white">Add Scenario</h3>
@@ -1287,7 +1287,7 @@ function EditRiskModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
       <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-surface-700 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-white">Edit Risk</h2>

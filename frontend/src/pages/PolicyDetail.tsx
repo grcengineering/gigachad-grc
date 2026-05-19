@@ -631,7 +631,7 @@ export default function PolicyDetail() {
       )}
       {/* Status Change Modal */}
       {statusChangeModal.isOpen && statusChangeModal.targetStatus && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 grid place-items-center">
           <div
             className="absolute inset-0 bg-black/60"
             onClick={() => {
@@ -737,7 +737,7 @@ function NewVersionModal({
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 grid place-items-center">
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
       <div className="relative bg-surface-900 border border-surface-800 rounded-xl w-full max-w-md mx-4 p-6">
         <div className="flex items-center justify-between mb-6">
@@ -841,7 +841,7 @@ function LinkControlModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 grid place-items-center">
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
       <div className="relative bg-surface-900 border border-surface-800 rounded-xl w-full max-w-lg mx-4 p-6 max-h-[80vh] flex flex-col">
         <div className="flex items-center justify-between mb-4">
@@ -965,7 +965,7 @@ function EditPolicyModal({
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 grid place-items-center">
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
       <div className="relative bg-surface-900 border border-surface-800 rounded-xl w-full max-w-lg mx-4 p-6 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">

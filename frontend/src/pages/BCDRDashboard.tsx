@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { Badge } from '@/components/ui/Badge';
 import { Link } from 'react-router-dom';
 import {
   ShieldExclamationIcon,
@@ -431,9 +432,7 @@ export default function BCDRDashboard() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-surface-100">Overdue Items</h2>
             {(summary.overdueItems?.totalOverdue ?? 0) > 0 && (
-              <span className="px-2 py-1 rounded-full bg-red-500/20 text-red-600 text-xs font-medium">
-                {summary.overdueItems?.totalOverdue} items
-              </span>
+              <Badge variant="danger">{summary.overdueItems?.totalOverdue} items</Badge>
             )}
           </div>
           {(summary.overdueItems?.totalOverdue ?? 0) === 0 ? (
@@ -544,9 +543,7 @@ export default function BCDRDashboard() {
               Vendor Recovery Gaps
             </h2>
             {vendorGapsList.length > 0 && (
-              <span className="px-2 py-1 rounded-full bg-red-500/20 text-red-600 text-xs font-medium">
-                {vendorGapsList.length} gaps
-              </span>
+              <Badge variant="danger">{vendorGapsList.length} gaps</Badge>
             )}
           </div>
           {vendorGapsList.length === 0 ? (

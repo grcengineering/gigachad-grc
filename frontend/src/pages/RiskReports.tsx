@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { Badge } from '@/components/ui/Badge';
 import { useQuery } from '@tanstack/react-query';
 import DOMPurify from 'dompurify';
 import { risksApi } from '../lib/api';
@@ -1056,9 +1057,9 @@ function TreatmentStatusPreview({ risks }: { risks: Risk[] }) {
                     ({risk.riskId})
                   </span>
                 </div>
-                <span className="px-2 py-0.5 rounded text-xs bg-brand-500/20 text-brand-500 dark:text-brand-400 capitalize">
+                <Badge variant="brand" className="capitalize">
                   {risk.treatmentPlan}
-                </span>
+                </Badge>
               </div>
             ))}
           {risks.filter((r) => r.treatmentPlan).length === 0 && (

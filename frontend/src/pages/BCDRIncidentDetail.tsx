@@ -499,7 +499,7 @@ export default function BCDRIncidentDetail() {
       </div>
       {/* Add Note Modal */}
       {showAddNote && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
           <div className="bg-slate-800 rounded-xl shadow-2xl w-full max-w-md p-6">
             <h2 className="text-xl font-semibold text-white mb-4">Add Timeline Entry</h2>
             <Textarea
@@ -522,7 +522,7 @@ export default function BCDRIncidentDetail() {
       )}
       {/* Activate Plan Modal */}
       {showActivatePlan && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
           <div className="bg-slate-800 rounded-xl shadow-2xl w-full max-w-md p-6">
             <h2 className="text-xl font-semibold text-white mb-4">Activate Plan</h2>
             <SelectNative
@@ -550,7 +550,7 @@ export default function BCDRIncidentDetail() {
       )}
       {/* Activate Team Modal */}
       {showActivateTeam && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
           <div className="bg-slate-800 rounded-xl shadow-2xl w-full max-w-md p-6">
             <h2 className="text-xl font-semibold text-white mb-4">Activate Team</h2>
             <SelectNative

@@ -163,7 +163,7 @@ function FrameworkPreviewModal({
   isActivating: boolean;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70">
+    <div className="fixed inset-0 z-50 grid place-items-center p-4 bg-black/70">
       <div className="bg-surface-900 rounded-xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl border border-surface-700">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-surface-700">

@@ -870,7 +870,7 @@ function ValidateRiskModal({
   });
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
       <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-md">
         <div className="p-4 border-b border-surface-700 flex justify-between items-center">
           <h3 className="text-lg font-medium text-white">
@@ -948,7 +948,7 @@ function StartAssessmentModal({
   });
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
       <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-md">
         <div className="p-4 border-b border-surface-700 flex justify-between items-center">
           <h3 className="text-lg font-medium text-white">Start Risk Assessment</h3>
@@ -1029,7 +1029,7 @@ function SubmitAssessmentModal({
   });
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
       <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="p-4 border-b border-surface-700 flex justify-between items-center sticky top-0 bg-surface-800">
           <h3 className="text-lg font-medium text-white">Risk Assessment Form</h3>
@@ -1250,7 +1250,7 @@ function ReviewAssessmentModal({
   });
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
       <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-md">
         <div className="p-4 border-b border-surface-700 flex justify-between items-center">
           <h3 className="text-lg font-medium text-white">
@@ -1339,7 +1339,7 @@ function CompleteRevisionModal({
   });
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
       <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="p-4 border-b border-surface-700 flex justify-between items-center">
           <h3 className="text-lg font-medium text-white">Complete Revision</h3>
@@ -1467,7 +1467,7 @@ function TreatmentDecisionModal({
   });
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
       <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="p-4 border-b border-surface-700 flex justify-between items-center">
           <h3 className="text-lg font-medium text-white">Treatment Decision</h3>
@@ -1668,7 +1668,7 @@ function AssignApproverModal({
   });
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
       <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-md">
         <div className="p-4 border-b border-surface-700 flex justify-between items-center">
           <h3 className="text-lg font-medium text-white">Assign Executive Approver</h3>
@@ -1737,7 +1737,7 @@ function ExecutiveApprovalModal({
   });
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
       <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-md">
         <div className="p-4 border-b border-surface-700 flex justify-between items-center">
           <h3 className="text-lg font-medium text-white">
@@ -1837,7 +1837,7 @@ function MitigationUpdateModal({
   });
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
       <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="p-4 border-b border-surface-700 flex justify-between items-center">
           <h3 className="text-lg font-medium text-white">Update Mitigation Status</h3>
@@ -2050,7 +2050,7 @@ function AssignRoleModal({
   });
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
       <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-md">
         <div className="p-4 border-b border-surface-700 flex justify-between items-center">
           <h3 className="text-lg font-medium text-white">Assign {roleLabel}</h3>

@@ -541,7 +541,7 @@ export default function EvidenceDetail() {
       </div>
       {/* Review Modal */}
       {isReviewing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 grid place-items-center">
           <div className="absolute inset-0 bg-black/60" onClick={() => setIsReviewing(false)} />
           <div className="relative bg-surface-900 border border-surface-800 rounded-xl w-full max-w-md mx-4 p-6">
             <h2 className="text-lg font-semibold text-surface-100 mb-4">Review Evidence</h2>
@@ -581,7 +581,7 @@ export default function EvidenceDetail() {
       {/* Image Lightbox Modal */}
       {isLightboxOpen && isImage && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90"
+          className="fixed inset-0 z-50 grid place-items-center bg-black/90"
           onClick={() => setIsLightboxOpen(false)}
         >
           {/* Close button */}

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Badge } from '@/components/ui/Badge';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { risksApi, riskTasksApi, RiskWorkflowTask } from '../lib/api';
@@ -312,11 +313,7 @@ export default function RiskQueue() {
                             >
                               {task.priority}
                             </span>
-                            {isOverdue && (
-                              <span className="px-2 py-0.5 rounded text-xs font-medium bg-red-500/20 text-red-600">
-                                Overdue
-                              </span>
-                            )}
+                            {isOverdue && <Badge variant="danger">Overdue</Badge>}
                           </div>
                           <p className="text-white font-medium mt-1">{task.title}</p>
                           <p className="text-surface-600 text-sm truncate">

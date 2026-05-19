@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Badge } from '@/components/ui/Badge';
 import { Link } from 'react-router-dom';
 import {
   MagnifyingGlassIcon,
@@ -80,10 +81,10 @@ function getStatusBadge(status: string | undefined) {
       );
     case 'flagged':
       return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-red-500/20 text-red-600">
+        <Badge variant="danger" className="inline-flex items-center gap-1">
           <XCircleIcon className="h-3 w-3" />
           Flagged
-        </span>
+        </Badge>
       );
     default:
       return (
@@ -399,10 +400,10 @@ export default function Employees() {
                     <td className="p-4 text-center">
                       <div className="flex items-center justify-center gap-2">
                         {employee.overdueTrainings > 0 && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-red-500/20 text-red-600">
+                          <Badge variant="danger" className="inline-flex items-center gap-1">
                             <AcademicCapIcon className="h-3 w-3" />
                             {employee.overdueTrainings}
-                          </span>
+                          </Badge>
                         )}
                         {employee.pendingAttestations > 0 && (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-yellow-500/20 text-yellow-600">

@@ -714,7 +714,7 @@ function MultiWorkspaceSettings() {
 
       {/* Disable Warning Modal */}
       {showDisableWarning && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
           <div className="bg-surface-800 rounded-lg shadow-xl w-full max-w-md p-6">
             <h3 className="text-lg font-semibold text-surface-100 mb-4">
               Disable Multi-Workspace Mode?
@@ -1370,7 +1370,7 @@ function ApiSettings() {
       </div>
       {/* Create Key Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
           <div className="bg-surface-900 rounded-lg p-6 w-full max-w-md">
             <h3 className="text-lg font-semibold text-surface-100 mb-4">Create API Key</h3>
             <form onSubmit={handleCreate} className="space-y-4">
@@ -1437,7 +1437,7 @@ function ApiSettings() {
       )}
       {/* New Key Display Modal */}
       {showNewKeyModal && newKey && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
           <div className="bg-surface-900 rounded-lg p-6 w-full max-w-lg">
             <div className="flex items-center gap-2 mb-4">
               <CheckCircleIcon className="w-6 h-6 text-green-600" />
@@ -1580,7 +1580,11 @@ function DashboardTemplatesSettings() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Link to={`/dashboards`} state={{ editTemplate: template.id }} className="btn-sm">
+                  <Link
+                    to={`/dashboards`}
+                    state={{ editTemplate: template.id }}
+                    className="inline-flex items-center rounded-md border border-surface-300 bg-white px-3 h-8 text-small font-medium !text-surface-900 hover:bg-surface-100 transition-colors"
+                  >
                     <PencilIcon className="w-4 h-4 mr-1" /> Edit
                   </Link>
                   <Button
@@ -1620,7 +1624,7 @@ function DashboardTemplatesSettings() {
       </div>
       {/* Create Template Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
           <div className="bg-surface-900 rounded-lg shadow-xl w-full max-w-md p-6">
             <h2 className="text-lg font-semibold text-surface-100 mb-4">
               Create Dashboard Template

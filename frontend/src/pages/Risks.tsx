@@ -775,7 +775,7 @@ export default function Risks() {
       </div>
       {/* Create Risk Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
           <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-surface-700 flex items-center justify-between">
               <h2 className="text-xl font-semibold text-white">Create New Risk</h2>

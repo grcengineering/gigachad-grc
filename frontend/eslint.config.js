@@ -126,8 +126,7 @@ export default [
     },
   },
 
-  // Design-system conformance — warn for now; flipped to error in the final
-  // migration PR once all violations have been migrated.
+  // Design-system conformance — enforced as errors. Every page conforms.
   {
     files: ['src/**/*.{ts,tsx}'],
     ignores: [
@@ -135,7 +134,7 @@ export default [
       'src/components/ui/**', // the primitives themselves implement what the rules forbid in consumers
     ],
     rules: {
-      'no-restricted-syntax': ['warn', ...designSystemRules],
+      'no-restricted-syntax': ['error', ...designSystemRules],
     },
   },
 

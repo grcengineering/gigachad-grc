@@ -483,7 +483,7 @@ function CreateAssetModal({
   isPending: boolean;
 }) {
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
       <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-lg">
         <div className="p-4 border-b border-surface-700 flex justify-between items-center">
           <h3 className="text-lg font-medium text-white">Add Manual Asset</h3>
@@ -621,7 +621,7 @@ function SyncAssetModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
   });
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
       <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-lg">
         <div className="p-4 border-b border-surface-700 flex justify-between items-center">
           <h3 className="text-lg font-medium text-white">Sync Assets from Integration</h3>

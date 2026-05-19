@@ -79,7 +79,7 @@ function AddMemberModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
       <div className="bg-surface-800 rounded-lg shadow-xl w-full max-w-md p-6">
         <h3 className="text-lg font-semibold text-foreground mb-4">Add Member</h3>
         <form onSubmit={handleSubmit}>
@@ -402,7 +402,7 @@ export default function WorkspaceSettings() {
       />
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
           <div className="bg-surface-800 rounded-lg shadow-xl w-full max-w-md p-6">
             <h3 className="text-lg font-semibold text-foreground mb-4">Archive Workspace?</h3>
             <p className="text-muted-foreground mb-6">

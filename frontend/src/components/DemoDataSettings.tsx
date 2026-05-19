@@ -243,7 +243,7 @@ export default function DemoDataSettings() {
       </div>
       {/* Reset Confirmation Modal */}
       {showResetModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 backdrop-blur-sm">
           <div className="card p-6 w-full max-w-md mx-4 space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">

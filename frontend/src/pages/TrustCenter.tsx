@@ -446,7 +446,7 @@ function ContentModal({ section, content, onSave, onClose }: ContentModalProps) 
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm grid place-items-center z-50 p-4">
       <div className="bg-gray-50 dark:bg-surface-900 border border-gray-200 dark:border-surface-800 rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <h2 className="text-2xl font-bold text-gray-800 dark:text-surface-100 mb-4">
           {content ? 'Edit Content' : 'Add New Content'}
@@ -543,7 +543,7 @@ function PreviewModal({ config, contents, onClose }: PreviewModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/75 grid place-items-center z-50 p-4">
       <div className="bg-white rounded-lg w-full max-w-5xl max-h-[90vh] overflow-y-auto relative">
         {/* Close Button */}
         <button

@@ -327,7 +327,7 @@ export default function UserManagement() {
       </div>
       {/* Groups Modal */}
       {showGroupsModal && selectedUser && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
           <div className="bg-surface-800 rounded-lg w-full max-w-lg mx-4 max-h-[80vh] overflow-hidden">
             <div className="p-4 border-b border-surface-700 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-white">
@@ -427,7 +427,7 @@ function PermissionsModal({ user, onClose }: { user: User; onClose: () => void }
   });
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
       <div className="bg-surface-800 rounded-lg w-full max-w-2xl mx-4 max-h-[80vh] overflow-hidden">
         <div className="p-4 border-b border-surface-700 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-white">Permissions - {user.displayName}</h2>

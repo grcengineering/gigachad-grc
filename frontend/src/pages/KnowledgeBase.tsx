@@ -274,7 +274,7 @@ privacy,GDPR Compliance,Are you GDPR compliant?,"We are fully GDPR compliant and
       )}
       {/* Bulk Upload Modal */}
       {showBulkUpload && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 grid place-items-center z-50">
           <div className="bg-surface-900 border border-surface-800 rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-bold text-surface-100">
