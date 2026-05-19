@@ -17,6 +17,8 @@ import clsx from 'clsx';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface DRTest {
   id: string;
   test_id: string;
@@ -186,7 +188,7 @@ export default function DRTests() {
             </div>
           </div>
           <div className="w-40">
-            <select
+            <SelectNative
               className="form-select w-full"
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
@@ -197,10 +199,10 @@ export default function DRTests() {
                   {label}
                 </option>
               ))}
-            </select>
+            </SelectNative>
           </div>
           <div className="w-36">
-            <select
+            <SelectNative
               className="form-select w-full"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -211,7 +213,7 @@ export default function DRTests() {
               <option value="in_progress">In Progress</option>
               <option value="completed">Completed</option>
               <option value="cancelled">Cancelled</option>
-            </select>
+            </SelectNative>
           </div>
           <button onClick={() => refetch()} className="btn btn-secondary">
             <ArrowPathIcon className="w-5 h-5" />

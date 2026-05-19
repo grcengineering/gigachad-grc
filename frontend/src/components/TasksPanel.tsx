@@ -17,6 +17,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface TasksPanelProps {
   entityType: string;
   entityId: string;
@@ -145,7 +147,7 @@ export default function TasksPanel({ entityType, entityId }: TasksPanelProps) {
             className="input w-full h-16"
           />
           <div className="grid grid-cols-3 gap-2">
-            <select
+            <SelectNative
               value={newTask.priority}
               onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
               className="input text-sm"
@@ -155,8 +157,8 @@ export default function TasksPanel({ entityType, entityId }: TasksPanelProps) {
                   {opt.label}
                 </option>
               ))}
-            </select>
-            <select
+            </SelectNative>
+            <SelectNative
               value={newTask.assigneeId}
               onChange={(e) => setNewTask({ ...newTask, assigneeId: e.target.value })}
               className="input text-sm"
@@ -167,7 +169,7 @@ export default function TasksPanel({ entityType, entityId }: TasksPanelProps) {
                   {user.displayName}
                 </option>
               ))}
-            </select>
+            </SelectNative>
             <Input
               type="date"
               value={newTask.dueDate}
@@ -297,7 +299,7 @@ function TaskCard({
           placeholder="Description"
         />
         <div className="grid grid-cols-2 gap-2">
-          <select
+          <SelectNative
             value={editData.status}
             onChange={(e) => setEditData({ ...editData, status: e.target.value })}
             className="input text-sm"
@@ -307,8 +309,8 @@ function TaskCard({
                 {opt.label}
               </option>
             ))}
-          </select>
-          <select
+          </SelectNative>
+          <SelectNative
             value={editData.priority}
             onChange={(e) => setEditData({ ...editData, priority: e.target.value })}
             className="input text-sm"
@@ -318,8 +320,8 @@ function TaskCard({
                 {opt.label}
               </option>
             ))}
-          </select>
-          <select
+          </SelectNative>
+          <SelectNative
             value={editData.assigneeId}
             onChange={(e) => setEditData({ ...editData, assigneeId: e.target.value })}
             className="input text-sm"
@@ -330,7 +332,7 @@ function TaskCard({
                 {user.displayName}
               </option>
             ))}
-          </select>
+          </SelectNative>
           <Input
             type="date"
             value={editData.dueDate}

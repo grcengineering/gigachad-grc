@@ -22,6 +22,9 @@ export type { LabelProps, FieldHintProps } from './Label';
 export { Select } from './Select';
 export type { SelectProps, SelectOption } from './Select';
 
+export { SelectNative } from './SelectNative';
+export type { SelectNativeProps } from './SelectNative';
+
 export { EmptyState } from './EmptyState';
 export type { EmptyStateProps } from './EmptyState';
 

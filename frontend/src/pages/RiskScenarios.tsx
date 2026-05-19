@@ -23,6 +23,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface SimulationResult {
   inherentRisk: { score: number; level: string };
   residualRisk: { score: number; level: string };
@@ -296,7 +298,7 @@ export default function RiskScenarios() {
               />
             </div>
           </div>
-          <select
+          <SelectNative
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
             className="px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-foreground"
@@ -307,8 +309,8 @@ export default function RiskScenarios() {
                 {cat}
               </option>
             ))}
-          </select>
-          <select
+          </SelectNative>
+          <SelectNative
             value={threatActorFilter}
             onChange={(e) => setThreatActorFilter(e.target.value)}
             className="px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-foreground"
@@ -319,7 +321,7 @@ export default function RiskScenarios() {
                 {actor.label}
               </option>
             ))}
-          </select>
+          </SelectNative>
           <label className="flex items-center gap-2 text-foreground">
             <input
               type="checkbox"
@@ -738,7 +740,7 @@ function ScenarioForm({ scenario, onSubmit, isLoading }: ScenarioFormProps) {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-foreground mb-1">Category *</label>
-          <select
+          <SelectNative
             required
             value={formData.category}
             onChange={(e) => setFormData({ ...formData, category: e.target.value })}
@@ -749,12 +751,12 @@ function ScenarioForm({ scenario, onSubmit, isLoading }: ScenarioFormProps) {
                 {cat}
               </option>
             ))}
-          </select>
+          </SelectNative>
         </div>
 
         <div>
           <label className="block text-sm font-medium text-foreground mb-1">Threat Actor *</label>
-          <select
+          <SelectNative
             required
             value={formData.threatActor}
             onChange={(e) => setFormData({ ...formData, threatActor: e.target.value })}
@@ -765,13 +767,13 @@ function ScenarioForm({ scenario, onSubmit, isLoading }: ScenarioFormProps) {
                 {actor.label}
               </option>
             ))}
-          </select>
+          </SelectNative>
         </div>
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-foreground mb-1">Attack Vector *</label>
-          <select
+          <SelectNative
             required
             value={formData.attackVector}
             onChange={(e) => setFormData({ ...formData, attackVector: e.target.value })}
@@ -782,7 +784,7 @@ function ScenarioForm({ scenario, onSubmit, isLoading }: ScenarioFormProps) {
                 {vector.label}
               </option>
             ))}
-          </select>
+          </SelectNative>
         </div>
 
         <div>
@@ -799,7 +801,7 @@ function ScenarioForm({ scenario, onSubmit, isLoading }: ScenarioFormProps) {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-foreground mb-1">Likelihood *</label>
-          <select
+          <SelectNative
             required
             value={formData.likelihood}
             onChange={(e) => setFormData({ ...formData, likelihood: e.target.value })}
@@ -810,12 +812,12 @@ function ScenarioForm({ scenario, onSubmit, isLoading }: ScenarioFormProps) {
                 {opt.label}
               </option>
             ))}
-          </select>
+          </SelectNative>
         </div>
 
         <div>
           <label className="block text-sm font-medium text-foreground mb-1">Impact *</label>
-          <select
+          <SelectNative
             required
             value={formData.impact}
             onChange={(e) => setFormData({ ...formData, impact: e.target.value })}
@@ -826,7 +828,7 @@ function ScenarioForm({ scenario, onSubmit, isLoading }: ScenarioFormProps) {
                 {opt.label}
               </option>
             ))}
-          </select>
+          </SelectNative>
         </div>
       </div>
       <div>

@@ -18,6 +18,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 // ============================================
 // Types
 // ============================================
@@ -306,7 +308,7 @@ export function BIAWizard({
 
       <div>
         <label className="block text-sm font-medium text-slate-300 mb-2">Process Owner</label>
-        <select
+        <SelectNative
           value={state.ownerId}
           onChange={(e) => updateState('ownerId', e.target.value)}
           className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
@@ -317,7 +319,7 @@ export function BIAWizard({
               {user.name}
             </option>
           ))}
-        </select>
+        </SelectNative>
       </div>
     </div>
   );

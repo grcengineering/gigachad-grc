@@ -17,6 +17,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface AuditRequest {
   id: string;
   requestNumber: string;
@@ -195,7 +197,7 @@ export default function AuditRequests() {
               <label className="block text-sm font-medium text-surface-700 mb-1">
                 Associated Audit *
               </label>
-              <select
+              <SelectNative
                 value={createForm.auditId}
                 onChange={(e) => setCreateForm({ ...createForm, auditId: e.target.value })}
                 className="w-full bg-surface-700 border border-surface-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
@@ -206,7 +208,7 @@ export default function AuditRequests() {
                     {audit.name}
                   </option>
                 ))}
-              </select>
+              </SelectNative>
               {audits.length === 0 && (
                 <p className="text-sm text-yellow-600 mt-1">
                   No audits found. Please create an audit first.
@@ -217,7 +219,7 @@ export default function AuditRequests() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-surface-700 mb-1">Category</label>
-                <select
+                <SelectNative
                   value={createForm.category}
                   onChange={(e) => setCreateForm({ ...createForm, category: e.target.value })}
                   className="w-full bg-surface-700 border border-surface-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
@@ -227,12 +229,12 @@ export default function AuditRequests() {
                       {label}
                     </option>
                   ))}
-                </select>
+                </SelectNative>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-surface-700 mb-1">Priority</label>
-                <select
+                <SelectNative
                   value={createForm.priority}
                   onChange={(e) => setCreateForm({ ...createForm, priority: e.target.value })}
                   className="w-full bg-surface-700 border border-surface-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
@@ -241,7 +243,7 @@ export default function AuditRequests() {
                   <option value="medium">Medium</option>
                   <option value="high">High</option>
                   <option value="critical">Critical</option>
-                </select>
+                </SelectNative>
               </div>
 
               <div>
@@ -313,7 +315,7 @@ export default function AuditRequests() {
           />
         </div>
 
-        <select
+        <SelectNative
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
           className="px-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:ring-2 focus:ring-brand-500"
@@ -326,9 +328,9 @@ export default function AuditRequests() {
           <option value="approved">Approved</option>
           <option value="rejected">Rejected</option>
           <option value="clarification_needed">Clarification Needed</option>
-        </select>
+        </SelectNative>
 
-        <select
+        <SelectNative
           value={priorityFilter}
           onChange={(e) => setPriorityFilter(e.target.value)}
           className="px-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:ring-2 focus:ring-brand-500"
@@ -338,7 +340,7 @@ export default function AuditRequests() {
           <option value="medium">Medium</option>
           <option value="high">High</option>
           <option value="critical">Critical</option>
-        </select>
+        </SelectNative>
       </div>
       {/* Requests List */}
       {loading ? (

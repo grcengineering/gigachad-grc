@@ -13,6 +13,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface QuickSetupConfig {
   name: string;
   description: string;
@@ -181,7 +183,7 @@ export default function QuickSetupTab({ typeMeta, config, onChange }: QuickSetup
     switch (field.type) {
       case 'select':
         return (
-          <select
+          <SelectNative
             value={value}
             onChange={(e) => updateCredential(field.key, e.target.value)}
             className="input w-full"
@@ -196,7 +198,7 @@ export default function QuickSetupTab({ typeMeta, config, onChange }: QuickSetup
                 </option>
               );
             })}
-          </select>
+          </SelectNative>
         );
       case 'textarea':
         return (
@@ -248,7 +250,7 @@ export default function QuickSetupTab({ typeMeta, config, onChange }: QuickSetup
           </div>
           <div>
             <label className="block text-sm text-surface-600 mb-1.5">Sync Frequency</label>
-            <select
+            <SelectNative
               value={config.syncFrequency}
               onChange={(e) => onChange({ ...config, syncFrequency: e.target.value })}
               className="input w-full"
@@ -258,7 +260,7 @@ export default function QuickSetupTab({ typeMeta, config, onChange }: QuickSetup
                   {freq.charAt(0).toUpperCase() + freq.slice(1)}
                 </option>
               ))}
-            </select>
+            </SelectNative>
           </div>
           <div className="md:col-span-2">
             <label className="block text-sm text-surface-600 mb-1.5">Description (optional)</label>

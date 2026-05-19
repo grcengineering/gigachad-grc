@@ -11,6 +11,8 @@ import { EmptyState } from '@/components/EmptyState';
 import { Button } from '@/components/ui/Button';
 import { exportData } from '@/lib/export';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 type TabKey = 'all' | MappingGapType;
 
 const TABS: { key: TabKey; label: string }[] = [
@@ -227,13 +229,12 @@ export default function MappingGaps() {
           Find requirements without coverage and controls that are not mapped to any requirement.
         </p>
       </header>
-
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <label htmlFor="gap-framework-filter" className="text-sm text-surface-700">
             Framework
           </label>
-          <select
+          <SelectNative
             id="gap-framework-filter"
             className="input min-w-[14rem]"
             value={frameworkId}
@@ -247,7 +248,7 @@ export default function MappingGaps() {
                 {f.name}
               </option>
             ))}
-          </select>
+          </SelectNative>
         </div>
 
         <div className="flex items-center gap-2">
@@ -273,7 +274,6 @@ export default function MappingGaps() {
           </Button>
         </div>
       </div>
-
       <div className="card overflow-hidden">
         <div className="border-b border-surface-700 px-4">
           <nav className="flex flex-wrap gap-6" aria-label="Tabs" role="tablist">

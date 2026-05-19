@@ -16,6 +16,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface WidgetConfigModalProps {
   widget: DashboardWidget;
   onSave: (data: Partial<DashboardWidget>) => void;
@@ -129,7 +131,7 @@ export default function WidgetConfigModal({ widget, onSave, onClose }: WidgetCon
                 <label className="block text-sm font-medium text-surface-700 mb-2">
                   Data Source
                 </label>
-                <select
+                <SelectNative
                   value={dataSource.source || ''}
                   onChange={(e) =>
                     setDataSource({ ...dataSource, source: e.target.value as DataSourceType })
@@ -142,7 +144,7 @@ export default function WidgetConfigModal({ widget, onSave, onClose }: WidgetCon
                       {ds.name}
                     </option>
                   ))}
-                </select>
+                </SelectNative>
               </div>
 
               {/* Group By */}
@@ -151,7 +153,7 @@ export default function WidgetConfigModal({ widget, onSave, onClose }: WidgetCon
                   <label className="block text-sm font-medium text-surface-700 mb-2">
                     Group By (for charts)
                   </label>
-                  <select
+                  <SelectNative
                     value={dataSource.groupBy || ''}
                     onChange={(e) =>
                       setDataSource({ ...dataSource, groupBy: e.target.value || undefined })
@@ -166,7 +168,7 @@ export default function WidgetConfigModal({ widget, onSave, onClose }: WidgetCon
                           {field.label}
                         </option>
                       ))}
-                  </select>
+                  </SelectNative>
                 </div>
               )}
 
@@ -267,14 +269,14 @@ export default function WidgetConfigModal({ widget, onSave, onClose }: WidgetCon
                   <label className="block text-sm font-medium text-surface-700 mb-2">
                     Chart Orientation
                   </label>
-                  <select
+                  <SelectNative
                     value={config.orientation || 'vertical'}
                     onChange={(e) => setConfig({ ...config, orientation: e.target.value as any })}
                     className="input w-48"
                   >
                     <option value="vertical">Vertical</option>
                     <option value="horizontal">Horizontal</option>
-                  </select>
+                  </SelectNative>
                 </div>
               )}
 
@@ -443,7 +445,7 @@ function FilterBuilder({
     <div className="space-y-2">
       {filters.map((filter, index) => (
         <div key={index} className="flex items-center gap-2">
-          <select
+          <SelectNative
             value={filter.field}
             onChange={(e) => updateFilter(index, { field: e.target.value })}
             className="input flex-1"
@@ -456,8 +458,8 @@ function FilterBuilder({
                   {field.label}
                 </option>
               ))}
-          </select>
-          <select
+          </SelectNative>
+          <SelectNative
             value={filter.operator}
             onChange={(e) => updateFilter(index, { operator: e.target.value })}
             className="input w-32"
@@ -468,7 +470,7 @@ function FilterBuilder({
             <option value={FilterOperator.LT}>less than</option>
             <option value={FilterOperator.CONTAINS}>contains</option>
             <option value={FilterOperator.IN}>in list</option>
-          </select>
+          </SelectNative>
           <Input
             type="text"
             value={filter.value}

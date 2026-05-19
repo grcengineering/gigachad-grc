@@ -22,6 +22,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface BusinessProcess {
   id: string;
   process_id: string;
@@ -596,7 +598,7 @@ export default function BusinessProcessDetail() {
                   <label className="block text-sm font-medium text-surface-700 mb-2">
                     Criticality Tier
                   </label>
-                  <select
+                  <SelectNative
                     value={editForm.criticality_tier}
                     onChange={(e) =>
                       setEditForm((prev) => ({ ...prev, criticality_tier: e.target.value }))
@@ -608,7 +610,7 @@ export default function BusinessProcessDetail() {
                         {tier.label}
                       </option>
                     ))}
-                  </select>
+                  </SelectNative>
                 </div>
               </div>
 

@@ -3,6 +3,8 @@ import type { AuthConfiguration } from './AdvancedBuilderTab';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface AuthConfigPanelProps {
   config: AuthConfiguration;
   onChange: (updates: Partial<AuthConfiguration>) => void;
@@ -121,7 +123,7 @@ export default function AuthConfigPanel({ config, onChange }: AuthConfigPanelPro
             </div>
             <div>
               <label className="text-sm text-surface-600 block mb-1.5">Location</label>
-              <select
+              <SelectNative
                 value={config.credentials.location || 'header'}
                 onChange={(e) => updateCredential('location', e.target.value)}
                 className="input w-full"
@@ -131,7 +133,7 @@ export default function AuthConfigPanel({ config, onChange }: AuthConfigPanelPro
                     {loc.label}
                   </option>
                 ))}
-              </select>
+              </SelectNative>
             </div>
           </div>
           <p className="text-xs text-surface-500 flex items-start gap-1">

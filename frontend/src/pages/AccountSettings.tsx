@@ -11,6 +11,8 @@ import clsx from 'clsx';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 const TABS = [
   { id: 'profile', label: 'Profile', icon: UserIcon },
   { id: 'notifications', label: 'Notifications', icon: BellIcon },
@@ -406,16 +408,15 @@ function AppearanceSettings() {
           Customize how GigaChad GRC looks on your device
         </p>
       </div>
-
       <div className="space-y-4">
         <div>
           <label className="label">Date Format</label>
-          <select className="input mt-1 max-w-xs">
+          <SelectNative className="input mt-1 max-w-xs">
             <option value="YYYY-MM-DD">YYYY-MM-DD (2025-01-15)</option>
             <option value="MM/DD/YYYY">MM/DD/YYYY (01/15/2025)</option>
             <option value="DD/MM/YYYY">DD/MM/YYYY (15/01/2025)</option>
             <option value="MMM DD, YYYY">MMM DD, YYYY (Jan 15, 2025)</option>
-          </select>
+          </SelectNative>
         </div>
       </div>
     </div>

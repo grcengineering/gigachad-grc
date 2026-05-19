@@ -17,6 +17,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface RawRequest {
   id: string;
   name: string;
@@ -400,7 +402,7 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
                 <div className="flex-1 overflow-y-auto p-4 space-y-4">
                   {/* Method & URL */}
                   <div className="flex gap-2">
-                    <select
+                    <SelectNative
                       value={selectedRequest.method}
                       onChange={(e) =>
                         updateRequest(selectedRequest.id, { method: e.target.value })
@@ -412,7 +414,7 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
                       <option value="PUT">PUT</option>
                       <option value="DELETE">DELETE</option>
                       <option value="PATCH">PATCH</option>
-                    </select>
+                    </SelectNative>
                     <Input
                       type="text"
                       value={selectedRequest.url}

@@ -17,6 +17,8 @@ import clsx from 'clsx';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface CommunicationPlan {
   id: string;
   name: string;
@@ -155,7 +157,7 @@ export default function CommunicationPlans() {
               </div>
             </div>
             <div className="w-40">
-              <select
+              <SelectNative
                 className="form-select w-full"
                 value={typeFilter}
                 onChange={(e) => setTypeFilter(e.target.value)}
@@ -166,7 +168,7 @@ export default function CommunicationPlans() {
                     {label}
                   </option>
                 ))}
-              </select>
+              </SelectNative>
             </div>
             <button onClick={() => refetch()} className="btn btn-secondary">
               <ArrowPathIcon className="w-5 h-5" />

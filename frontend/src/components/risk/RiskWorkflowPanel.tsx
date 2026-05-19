@@ -26,6 +26,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 // Workflow Status Constants (used for validation/reference)
 const _INTAKE_STATUSES = [
   'risk_identified',
@@ -1093,7 +1095,7 @@ function SubmitAssessmentModal({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm text-surface-600 mb-2">Likelihood Score *</label>
-              <select
+              <SelectNative
                 value={formData.likelihoodScore}
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, likelihoodScore: e.target.value }))
@@ -1105,11 +1107,11 @@ function SubmitAssessmentModal({
                 <option value="possible">Possible</option>
                 <option value="likely">Likely</option>
                 <option value="almost_certain">Almost Certain</option>
-              </select>
+              </SelectNative>
             </div>
             <div>
               <label className="block text-sm text-surface-600 mb-2">Impact Score *</label>
-              <select
+              <SelectNative
                 value={formData.impactScore}
                 onChange={(e) => setFormData((prev) => ({ ...prev, impactScore: e.target.value }))}
                 className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
@@ -1119,7 +1121,7 @@ function SubmitAssessmentModal({
                 <option value="moderate">Moderate</option>
                 <option value="major">Major</option>
                 <option value="severe">Severe</option>
-              </select>
+              </SelectNative>
             </div>
           </div>
 
@@ -1164,7 +1166,7 @@ function SubmitAssessmentModal({
               <label className="block text-sm text-surface-600 mb-2">
                 Treatment Recommendation
               </label>
-              <select
+              <SelectNative
                 value={formData.treatmentRecommendation}
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, treatmentRecommendation: e.target.value }))
@@ -1176,7 +1178,7 @@ function SubmitAssessmentModal({
                 <option value="accept">Accept</option>
                 <option value="transfer">Transfer</option>
                 <option value="avoid">Avoid</option>
-              </select>
+              </SelectNative>
             </div>
           </div>
 
@@ -1353,7 +1355,7 @@ function CompleteRevisionModal({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm text-surface-600 mb-2">Likelihood Score</label>
-              <select
+              <SelectNative
                 value={formData.likelihoodScore}
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, likelihoodScore: e.target.value }))
@@ -1366,11 +1368,11 @@ function CompleteRevisionModal({
                 <option value="possible">Possible</option>
                 <option value="likely">Likely</option>
                 <option value="almost_certain">Almost Certain</option>
-              </select>
+              </SelectNative>
             </div>
             <div>
               <label className="block text-sm text-surface-600 mb-2">Impact Score</label>
-              <select
+              <SelectNative
                 value={formData.impactScore}
                 onChange={(e) => setFormData((prev) => ({ ...prev, impactScore: e.target.value }))}
                 className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
@@ -1381,7 +1383,7 @@ function CompleteRevisionModal({
                 <option value="moderate">Moderate</option>
                 <option value="major">Major</option>
                 <option value="severe">Severe</option>
-              </select>
+              </SelectNative>
             </div>
           </div>
 
@@ -1846,7 +1848,7 @@ function MitigationUpdateModal({
         <div className="p-4 space-y-4">
           <div>
             <label className="block text-sm text-surface-600 mb-2">Status *</label>
-            <select
+            <SelectNative
               value={formData.status}
               onChange={(e) => setFormData((prev) => ({ ...prev, status: e.target.value }))}
               className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
@@ -1855,7 +1857,7 @@ function MitigationUpdateModal({
               <option value="delayed">Delayed</option>
               <option value="cancelled">Cancelled</option>
               <option value="done">Done</option>
-            </select>
+            </SelectNative>
           </div>
 
           <div>
@@ -1933,7 +1935,7 @@ function MitigationUpdateModal({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm text-surface-600 mb-2">Residual Likelihood</label>
-                <select
+                <SelectNative
                   value={formData.residualLikelihood}
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, residualLikelihood: e.target.value }))
@@ -1946,11 +1948,11 @@ function MitigationUpdateModal({
                   <option value="possible">Possible</option>
                   <option value="likely">Likely</option>
                   <option value="almost_certain">Almost Certain</option>
-                </select>
+                </SelectNative>
               </div>
               <div>
                 <label className="block text-sm text-surface-600 mb-2">Residual Impact</label>
-                <select
+                <SelectNative
                   value={formData.residualImpact}
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, residualImpact: e.target.value }))
@@ -1963,7 +1965,7 @@ function MitigationUpdateModal({
                   <option value="moderate">Moderate</option>
                   <option value="major">Major</option>
                   <option value="severe">Severe</option>
-                </select>
+                </SelectNative>
               </div>
             </div>
           )}

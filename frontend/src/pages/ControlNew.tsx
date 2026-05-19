@@ -11,6 +11,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 // Categories must match backend ControlCategory enum exactly
 const CATEGORY_OPTIONS: { value: ControlCategory; label: string }[] = [
   { value: 'access_control', label: 'Access Control' },
@@ -167,7 +169,7 @@ export default function ControlNew() {
           <label htmlFor="category" className="block text-sm font-medium text-surface-700 mb-1">
             Category <span className="text-red-600">*</span>
           </label>
-          <select
+          <SelectNative
             id="category"
             value={formData.category}
             onChange={(e) => handleChange('category', e.target.value)}
@@ -178,7 +180,7 @@ export default function ControlNew() {
                 {option.label}
               </option>
             ))}
-          </select>
+          </SelectNative>
         </div>
 
         {/* Description */}

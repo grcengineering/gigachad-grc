@@ -13,6 +13,8 @@ import clsx from 'clsx';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface BusinessProcess {
   id: string;
   process_id: string;
@@ -128,7 +130,7 @@ export default function BusinessProcesses() {
             </div>
           </div>
           <div className="w-48">
-            <select
+            <SelectNative
               className="form-select w-full"
               value={criticalityFilter}
               onChange={(e) => setCriticalityFilter(e.target.value)}
@@ -138,7 +140,7 @@ export default function BusinessProcesses() {
               <option value="tier_2_essential">Tier 2 - Essential</option>
               <option value="tier_3_important">Tier 3 - Important</option>
               <option value="tier_4_standard">Tier 4 - Standard</option>
-            </select>
+            </SelectNative>
           </div>
           <button onClick={() => refetch()} className="btn btn-secondary">
             <ArrowPathIcon className="w-5 h-5" />

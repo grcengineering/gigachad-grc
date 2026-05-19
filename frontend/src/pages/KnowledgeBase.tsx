@@ -16,6 +16,8 @@ import toast from 'react-hot-toast';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 export default function KnowledgeBase() {
   const { user } = useAuth();
   const [search, setSearch] = useState('');
@@ -199,7 +201,7 @@ privacy,GDPR Compliance,Are you GDPR compliant?,"We are fully GDPR compliant and
             className="w-full pl-10 pr-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
           />
         </div>
-        <select
+        <SelectNative
           value={category}
           onChange={(e) => setCategory(e.target.value)}
           className="px-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
@@ -209,7 +211,7 @@ privacy,GDPR Compliance,Are you GDPR compliant?,"We are fully GDPR compliant and
               {cat === 'all' ? 'All Categories' : cat.charAt(0).toUpperCase() + cat.slice(1)}
             </option>
           ))}
-        </select>
+        </SelectNative>
       </div>
       {/* Entries Grid */}
       {entries.length === 0 ? (

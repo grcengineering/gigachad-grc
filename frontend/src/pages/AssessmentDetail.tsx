@@ -9,6 +9,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface AssessmentFormProps {
   assessment: VendorAssessment | null;
   onSave: (data: Partial<VendorAssessment>) => Promise<void>;
@@ -65,7 +67,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-surface-600 mb-1">Vendor *</label>
-              <select
+              <SelectNative
                 value={formData.vendorId}
                 onChange={(e) => setFormData({ ...formData, vendorId: e.target.value })}
                 className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
@@ -77,13 +79,13 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
                     {vendor.name}
                   </option>
                 ))}
-              </select>
+              </SelectNative>
             </div>
             <div>
               <label className="block text-sm font-medium text-surface-600 mb-1">
                 Assessment Type *
               </label>
-              <select
+              <SelectNative
                 value={formData.assessmentType}
                 onChange={(e) => setFormData({ ...formData, assessmentType: e.target.value })}
                 className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
@@ -94,11 +96,11 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
                 <option value="continuous_monitoring">Continuous Monitoring</option>
                 <option value="incident_triggered">Incident Triggered</option>
                 <option value="contract_renewal">Contract Renewal</option>
-              </select>
+              </SelectNative>
             </div>
             <div>
               <label className="block text-sm font-medium text-surface-600 mb-1">Status *</label>
-              <select
+              <SelectNative
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                 className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
@@ -108,13 +110,13 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
                 <option value="in_progress">In Progress</option>
                 <option value="completed">Completed</option>
                 <option value="cancelled">Cancelled</option>
-              </select>
+              </SelectNative>
             </div>
             <div>
               <label className="block text-sm font-medium text-surface-600 mb-1">
                 Inherent Risk
               </label>
-              <select
+              <SelectNative
                 value={formData.inherentRiskScore || ''}
                 onChange={(e) => setFormData({ ...formData, inherentRiskScore: e.target.value })}
                 className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
@@ -125,7 +127,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
                 <option value="medium">Medium</option>
                 <option value="high">High</option>
                 <option value="critical">Critical</option>
-              </select>
+              </SelectNative>
             </div>
           </div>
         </div>
@@ -180,7 +182,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
               <label className="block text-sm font-medium text-surface-600 mb-1">
                 Residual Risk
               </label>
-              <select
+              <SelectNative
                 value={formData.residualRiskScore || ''}
                 onChange={(e) => setFormData({ ...formData, residualRiskScore: e.target.value })}
                 className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
@@ -191,13 +193,13 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
                 <option value="medium">Medium</option>
                 <option value="high">High</option>
                 <option value="critical">Critical</option>
-              </select>
+              </SelectNative>
             </div>
             <div>
               <label className="block text-sm font-medium text-surface-600 mb-1">
                 Security Risk
               </label>
-              <select
+              <SelectNative
                 value={formData.securityRisk || ''}
                 onChange={(e) => setFormData({ ...formData, securityRisk: e.target.value })}
                 className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
@@ -208,13 +210,13 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
                 <option value="medium">Medium</option>
                 <option value="high">High</option>
                 <option value="critical">Critical</option>
-              </select>
+              </SelectNative>
             </div>
             <div>
               <label className="block text-sm font-medium text-surface-600 mb-1">
                 Compliance Risk
               </label>
-              <select
+              <SelectNative
                 value={formData.complianceRisk || ''}
                 onChange={(e) => setFormData({ ...formData, complianceRisk: e.target.value })}
                 className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
@@ -225,13 +227,13 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
                 <option value="medium">Medium</option>
                 <option value="high">High</option>
                 <option value="critical">Critical</option>
-              </select>
+              </SelectNative>
             </div>
             <div>
               <label className="block text-sm font-medium text-surface-600 mb-1">
                 Operational Risk
               </label>
-              <select
+              <SelectNative
                 value={formData.operationalRisk || ''}
                 onChange={(e) => setFormData({ ...formData, operationalRisk: e.target.value })}
                 className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
@@ -242,13 +244,13 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
                 <option value="medium">Medium</option>
                 <option value="high">High</option>
                 <option value="critical">Critical</option>
-              </select>
+              </SelectNative>
             </div>
             <div>
               <label className="block text-sm font-medium text-surface-600 mb-1">
                 Financial Risk
               </label>
-              <select
+              <SelectNative
                 value={formData.financialRisk || ''}
                 onChange={(e) => setFormData({ ...formData, financialRisk: e.target.value })}
                 className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
@@ -259,7 +261,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
                 <option value="medium">Medium</option>
                 <option value="high">High</option>
                 <option value="critical">Critical</option>
-              </select>
+              </SelectNative>
             </div>
           </div>
         </div>
@@ -270,7 +272,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-surface-600 mb-1">Outcome</label>
-              <select
+              <SelectNative
                 value={formData.outcome || ''}
                 onChange={(e) => setFormData({ ...formData, outcome: e.target.value })}
                 className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
@@ -280,7 +282,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
                 <option value="approved_with_conditions">Approved with Conditions</option>
                 <option value="rejected">Rejected</option>
                 <option value="requires_remediation">Requires Remediation</option>
-              </select>
+              </SelectNative>
             </div>
             <div>
               <label className="block text-sm font-medium text-surface-600 mb-1">

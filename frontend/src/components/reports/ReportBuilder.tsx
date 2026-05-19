@@ -19,6 +19,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 // ===========================================
 // Types
 // ===========================================
@@ -627,7 +629,7 @@ function SectionConfigPanel({ section, onUpdate, onClose }: SectionConfigPanelPr
           <>
             <div>
               <label className="block text-sm text-surface-600 mb-1">Data Source</label>
-              <select
+              <SelectNative
                 value={section.dataSource || 'controls'}
                 onChange={(e) => onUpdate({ dataSource: e.target.value as DataSource })}
                 className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-white text-sm"
@@ -637,7 +639,7 @@ function SectionConfigPanel({ section, onUpdate, onClose }: SectionConfigPanelPr
                     {label}
                   </option>
                 ))}
-              </select>
+              </SelectNative>
             </div>
 
             <div>
@@ -667,7 +669,7 @@ function SectionConfigPanel({ section, onUpdate, onClose }: SectionConfigPanelPr
             {section.type === 'chart' && (
               <div>
                 <label className="block text-sm text-surface-600 mb-1">Chart Type</label>
-                <select
+                <SelectNative
                   value={section.chartType || 'bar'}
                   onChange={(e) => onUpdate({ chartType: e.target.value as ChartType })}
                   className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-white text-sm"
@@ -676,13 +678,13 @@ function SectionConfigPanel({ section, onUpdate, onClose }: SectionConfigPanelPr
                   <option value="pie">Pie Chart</option>
                   <option value="line">Line Chart</option>
                   <option value="donut">Donut Chart</option>
-                </select>
+                </SelectNative>
               </div>
             )}
 
             <div>
               <label className="block text-sm text-surface-600 mb-1">Group By</label>
-              <select
+              <SelectNative
                 value={section.groupBy || ''}
                 onChange={(e) => onUpdate({ groupBy: e.target.value || undefined })}
                 className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-white text-sm"
@@ -693,13 +695,13 @@ function SectionConfigPanel({ section, onUpdate, onClose }: SectionConfigPanelPr
                     {field}
                   </option>
                 ))}
-              </select>
+              </SelectNative>
             </div>
 
             <div>
               <label className="block text-sm text-surface-600 mb-1">Sort By</label>
               <div className="flex gap-2">
-                <select
+                <SelectNative
                   value={section.sortBy || ''}
                   onChange={(e) => onUpdate({ sortBy: e.target.value || undefined })}
                   className="flex-1 px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-white text-sm"
@@ -710,15 +712,15 @@ function SectionConfigPanel({ section, onUpdate, onClose }: SectionConfigPanelPr
                       {field}
                     </option>
                   ))}
-                </select>
-                <select
+                </SelectNative>
+                <SelectNative
                   value={section.sortOrder || 'asc'}
                   onChange={(e) => onUpdate({ sortOrder: e.target.value as 'asc' | 'desc' })}
                   className="w-20 px-2 py-2 bg-surface-800 border border-surface-700 rounded-lg text-white text-sm"
                 >
                   <option value="asc">↑</option>
                   <option value="desc">↓</option>
-                </select>
+                </SelectNative>
               </div>
             </div>
           </>

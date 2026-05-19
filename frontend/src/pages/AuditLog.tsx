@@ -21,6 +21,8 @@ import toast from 'react-hot-toast';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 // Action icons and colors
 const ACTION_CONFIG: Record<string, { color: string; bg: string }> = {
   created: { color: 'text-green-600', bg: 'bg-green-500/10' },
@@ -270,7 +272,7 @@ export default function AuditLog() {
             {/* Entity Type */}
             <div>
               <label className="block text-sm text-surface-600 mb-1">Entity Type</label>
-              <select
+              <SelectNative
                 value={filters.entityType}
                 onChange={(e) => updateFilter('entityType', e.target.value)}
                 className="input w-full"
@@ -281,13 +283,13 @@ export default function AuditLog() {
                     {type.charAt(0).toUpperCase() + type.slice(1)}
                   </option>
                 ))}
-              </select>
+              </SelectNative>
             </div>
 
             {/* Action */}
             <div>
               <label className="block text-sm text-surface-600 mb-1">Action</label>
-              <select
+              <SelectNative
                 value={filters.action}
                 onChange={(e) => updateFilter('action', e.target.value)}
                 className="input w-full"
@@ -299,13 +301,13 @@ export default function AuditLog() {
                       action.replace('_', ' ').slice(1)}
                   </option>
                 ))}
-              </select>
+              </SelectNative>
             </div>
 
             {/* User */}
             <div>
               <label className="block text-sm text-surface-600 mb-1">User</label>
-              <select
+              <SelectNative
                 value={filters.userId}
                 onChange={(e) => updateFilter('userId', e.target.value)}
                 className="input w-full"
@@ -316,7 +318,7 @@ export default function AuditLog() {
                     {user.name || user.email}
                   </option>
                 ))}
-              </select>
+              </SelectNative>
             </div>
 
             {/* Start Date */}

@@ -5,6 +5,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface User {
   id: string;
   displayName?: string;
@@ -140,7 +142,7 @@ export default function ControlImplementationCard({
         <div className="space-y-4">
           <div>
             <label className="block text-sm text-surface-600 mb-1">Owner</label>
-            <select
+            <SelectNative
               value={form.ownerId}
               onChange={(e) => setForm({ ...form, ownerId: e.target.value })}
               className="input w-full"
@@ -151,12 +153,12 @@ export default function ControlImplementationCard({
                   {getUserName(user)}
                 </option>
               ))}
-            </select>
+            </SelectNative>
           </div>
 
           <div>
             <label className="block text-sm text-surface-600 mb-1">Testing Frequency</label>
-            <select
+            <SelectNative
               value={form.testingFrequency}
               onChange={(e) => setForm({ ...form, testingFrequency: e.target.value })}
               className="input w-full"
@@ -167,7 +169,7 @@ export default function ControlImplementationCard({
                   {opt.label}
                 </option>
               ))}
-            </select>
+            </SelectNative>
           </div>
 
           <div>

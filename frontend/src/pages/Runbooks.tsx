@@ -15,6 +15,8 @@ import clsx from 'clsx';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface Runbook {
   id: string;
   runbook_id: string;
@@ -180,7 +182,7 @@ export default function Runbooks() {
             </div>
           </div>
           <div className="w-40">
-            <select
+            <SelectNative
               className="form-select w-full"
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
@@ -192,10 +194,10 @@ export default function Runbooks() {
               <option value="communication">Communication</option>
               <option value="network">Network</option>
               <option value="security">Security</option>
-            </select>
+            </SelectNative>
           </div>
           <div className="w-36">
-            <select
+            <SelectNative
               className="form-select w-full"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -205,7 +207,7 @@ export default function Runbooks() {
               <option value="approved">Approved</option>
               <option value="published">Published</option>
               <option value="needs_review">Needs Review</option>
-            </select>
+            </SelectNative>
           </div>
           <button onClick={() => refetch()} className="btn btn-secondary">
             <ArrowPathIcon className="w-5 h-5" />

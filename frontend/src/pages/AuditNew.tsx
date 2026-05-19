@@ -10,6 +10,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 const AUDIT_TYPE_OPTIONS = [
   { value: 'internal', label: 'Internal' },
   { value: 'external', label: 'External' },
@@ -169,7 +171,7 @@ export default function AuditNew() {
           <label htmlFor="auditType" className="block text-sm font-medium text-surface-700 mb-1">
             Audit Type <span className="text-red-600">*</span>
           </label>
-          <select
+          <SelectNative
             id="auditType"
             value={formData.auditType}
             onChange={(e) => {
@@ -186,7 +188,7 @@ export default function AuditNew() {
                 {option.label}
               </option>
             ))}
-          </select>
+          </SelectNative>
         </div>
 
         {/* Status */}
@@ -194,7 +196,7 @@ export default function AuditNew() {
           <label htmlFor="status" className="block text-sm font-medium text-surface-700 mb-1">
             Initial Status
           </label>
-          <select
+          <SelectNative
             id="status"
             value={formData.status}
             onChange={(e) => handleChange('status', e.target.value)}
@@ -205,7 +207,7 @@ export default function AuditNew() {
                 {option.label}
               </option>
             ))}
-          </select>
+          </SelectNative>
         </div>
 
         {/* Framework */}
@@ -213,7 +215,7 @@ export default function AuditNew() {
           <label htmlFor="framework" className="block text-sm font-medium text-surface-700 mb-1">
             Framework
           </label>
-          <select
+          <SelectNative
             id="framework"
             value={formData.framework}
             onChange={(e) => handleChange('framework', e.target.value)}
@@ -225,7 +227,7 @@ export default function AuditNew() {
                 {option.label}
               </option>
             ))}
-          </select>
+          </SelectNative>
         </div>
 
         {/* Planned Dates */}

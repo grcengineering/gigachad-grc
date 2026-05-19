@@ -13,6 +13,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface Contract {
   id: string;
   vendorId: string;
@@ -97,7 +99,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
               <label className="block text-sm font-medium text-surface-600 mb-1">
                 Contract Type *
               </label>
-              <select
+              <SelectNative
                 value={formData.contractType}
                 onChange={(e) => setFormData({ ...formData, contractType: e.target.value })}
                 className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
@@ -109,11 +111,11 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
                 <option value="dpa">DPA</option>
                 <option value="sla">SLA</option>
                 <option value="other">Other</option>
-              </select>
+              </SelectNative>
             </div>
             <div>
               <label className="block text-sm font-medium text-surface-600 mb-1">Status *</label>
-              <select
+              <SelectNative
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                 className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
@@ -123,7 +125,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
                 <option value="expired">Expired</option>
                 <option value="pending">Pending</option>
                 <option value="terminated">Terminated</option>
-              </select>
+              </SelectNative>
             </div>
             <div>
               <label className="block text-sm font-medium text-surface-600 mb-1">Vendor ID *</label>
@@ -171,7 +173,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
             </div>
             <div>
               <label className="block text-sm font-medium text-surface-600 mb-1">Currency</label>
-              <select
+              <SelectNative
                 value={formData.currency}
                 onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
                 className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
@@ -179,7 +181,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
                 <option value="USD">USD</option>
                 <option value="EUR">EUR</option>
                 <option value="GBP">GBP</option>
-              </select>
+              </SelectNative>
             </div>
           </div>
         </div>

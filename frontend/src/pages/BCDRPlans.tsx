@@ -14,6 +14,8 @@ import clsx from 'clsx';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface BCDRPlan {
   id: string;
   plan_id: string;
@@ -130,7 +132,7 @@ export default function BCDRPlans() {
             </div>
           </div>
           <div className="w-48">
-            <select
+            <SelectNative
               className="form-select w-full"
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
@@ -141,10 +143,10 @@ export default function BCDRPlans() {
                   {label}
                 </option>
               ))}
-            </select>
+            </SelectNative>
           </div>
           <div className="w-36">
-            <select
+            <SelectNative
               className="form-select w-full"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -155,7 +157,7 @@ export default function BCDRPlans() {
               <option value="approved">Approved</option>
               <option value="published">Published</option>
               <option value="archived">Archived</option>
-            </select>
+            </SelectNative>
           </div>
           <button onClick={() => refetch()} className="btn btn-secondary">
             <ArrowPathIcon className="w-5 h-5" />

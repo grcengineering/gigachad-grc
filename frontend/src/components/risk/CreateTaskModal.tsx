@@ -9,6 +9,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface CreateTaskModalProps {
   riskId: string;
   onClose: () => void;
@@ -149,7 +151,7 @@ export default function CreateTaskModal({ riskId, onClose, onSuccess }: CreateTa
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Task Type
               </label>
-              <select
+              <SelectNative
                 value={formData.taskType}
                 onChange={(e) => setFormData((prev) => ({ ...prev, taskType: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
@@ -159,7 +161,7 @@ export default function CreateTaskModal({ riskId, onClose, onSuccess }: CreateTa
                     {type.label}
                   </option>
                 ))}
-              </select>
+              </SelectNative>
               <p className="mt-1 text-xs text-gray-500">
                 {taskTypes.find((t) => t.value === formData.taskType)?.description}
               </p>
@@ -267,7 +269,7 @@ export default function CreateTaskModal({ riskId, onClose, onSuccess }: CreateTa
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Priority
                 </label>
-                <select
+                <SelectNative
                   value={formData.priority || 'medium'}
                   onChange={(e) => setFormData((prev) => ({ ...prev, priority: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
@@ -277,7 +279,7 @@ export default function CreateTaskModal({ riskId, onClose, onSuccess }: CreateTa
                       {p.label}
                     </option>
                   ))}
-                </select>
+                </SelectNative>
               </div>
 
               {/* Workflow Stage */}
@@ -285,7 +287,7 @@ export default function CreateTaskModal({ riskId, onClose, onSuccess }: CreateTa
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Workflow Stage
                 </label>
-                <select
+                <SelectNative
                   value={formData.workflowStage || 'intake'}
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, workflowStage: e.target.value }))
@@ -297,7 +299,7 @@ export default function CreateTaskModal({ riskId, onClose, onSuccess }: CreateTa
                       {s.label}
                     </option>
                   ))}
-                </select>
+                </SelectNative>
               </div>
             </div>
 

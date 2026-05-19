@@ -22,6 +22,8 @@ import {
 import { auditLogApi } from '@/lib/api';
 import clsx from 'clsx';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface AuditLogEntry {
   id: string;
   action: string;
@@ -169,7 +171,7 @@ export function ActivityFeed({
           <h3 className="font-medium text-white">Recent Activity</h3>
           <div className="flex items-center gap-2">
             {!entityType && (
-              <select
+              <SelectNative
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
                 className="text-xs bg-surface-700 border-surface-600 rounded-md text-surface-700 py-1 px-2"
@@ -180,7 +182,7 @@ export function ActivityFeed({
                 <option value="evidence">Evidence</option>
                 <option value="risk">Risks</option>
                 <option value="vendor">Vendors</option>
-              </select>
+              </SelectNative>
             )}
             <button
               onClick={() => refetch()}
@@ -194,7 +196,6 @@ export function ActivityFeed({
           </div>
         </div>
       )}
-
       {activities.length === 0 ? (
         <div className="p-8 text-center">
           <ArrowPathIcon className="w-10 h-10 mx-auto text-surface-600 mb-3" />
@@ -265,7 +266,6 @@ export function ActivityFeed({
           })}
         </div>
       )}
-
       {activities.length > 0 && showHeader && (
         <div className="px-4 py-3 border-t border-surface-700">
           <Link to="/audit-log" className="text-sm text-brand-400 hover:text-brand-300 font-medium">

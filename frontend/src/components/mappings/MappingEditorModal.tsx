@@ -18,6 +18,8 @@ import type {
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 export type MappingEditorMode = 'requirement-to-controls' | 'control-to-requirements';
 
 /**
@@ -545,7 +547,7 @@ function SearchStage({
       {mode === 'control-to-requirements' && !initialFrameworkLocked && (
         <label className="block">
           <span className="block text-sm font-medium text-surface-700 mb-1">Framework</span>
-          <select
+          <SelectNative
             value={selectedFrameworkId ?? ''}
             onChange={(e) => onSelectFramework(e.target.value || undefined)}
             disabled={frameworksLoading}
@@ -558,7 +560,7 @@ function SearchStage({
                 {fw.name}
               </option>
             ))}
-          </select>
+          </SelectNative>
         </label>
       )}
       <label className="block">
@@ -708,7 +710,7 @@ function PerRowFormStage({ rows, getLabel, onChange, disabled, isEditMode }: Per
                 <span className="block text-xs font-medium text-surface-600 mb-1">
                   Mapping type
                 </span>
-                <select
+                <SelectNative
                   value={row.mappingType}
                   onChange={(e) =>
                     onChange(row.candidateId, {
@@ -721,7 +723,7 @@ function PerRowFormStage({ rows, getLabel, onChange, disabled, isEditMode }: Per
                 >
                   <option value="primary">Primary</option>
                   <option value="supporting">Supporting</option>
-                </select>
+                </SelectNative>
               </label>
               <label className="block sm:col-span-2">
                 <span className="block text-xs font-medium text-surface-600 mb-1">Notes</span>

@@ -27,6 +27,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 const TYPE_ICONS: Record<string, any> = {
   screenshot: PhotoIcon,
   document: DocumentTextIcon,
@@ -177,7 +179,7 @@ export default function Evidence() {
               className="input pl-10"
             />
           </div>
-          <select
+          <SelectNative
             value={selectedType}
             onChange={(e) => setSelectedType(e.target.value)}
             className="input w-full md:w-48"
@@ -189,7 +191,7 @@ export default function Evidence() {
             <option value="report">Reports</option>
             <option value="configuration">Configurations</option>
             <option value="log">Logs</option>
-          </select>
+          </SelectNative>
         </div>
       </div>
       {/* Evidence Grid */}
@@ -503,7 +505,11 @@ function UploadModal({
 
             <div>
               <label className="label">Type</label>
-              <select value={type} onChange={(e) => setType(e.target.value)} className="input mt-1">
+              <SelectNative
+                value={type}
+                onChange={(e) => setType(e.target.value)}
+                className="input mt-1"
+              >
                 <option value="document">Document</option>
                 <option value="screenshot">Screenshot</option>
                 <option value="export">Export</option>
@@ -511,7 +517,7 @@ function UploadModal({
                 <option value="configuration">Configuration</option>
                 <option value="log">Log</option>
                 <option value="other">Other</option>
-              </select>
+              </SelectNative>
             </div>
 
             <div>

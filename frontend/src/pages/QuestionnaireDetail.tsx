@@ -21,6 +21,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface Questionnaire {
   id: string;
   title: string;
@@ -375,7 +377,7 @@ export default function QuestionnaireDetail() {
 
               <div>
                 <label className="block text-sm font-medium text-surface-600 mb-1">Priority</label>
-                <select
+                <SelectNative
                   value={formData.priority}
                   onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
                   className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
@@ -384,7 +386,7 @@ export default function QuestionnaireDetail() {
                   <option value="medium">Medium</option>
                   <option value="high">High</option>
                   <option value="urgent">Urgent</option>
-                </select>
+                </SelectNative>
               </div>
 
               <div>
@@ -574,7 +576,7 @@ export default function QuestionnaireDetail() {
                   <label className="block text-sm font-medium text-surface-600 mb-1">
                     Priority
                   </label>
-                  <select
+                  <SelectNative
                     value={editForm.priority}
                     onChange={(e) => setEditForm({ ...editForm, priority: e.target.value })}
                     className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
@@ -582,7 +584,7 @@ export default function QuestionnaireDetail() {
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
                     <option value="high">High</option>
-                  </select>
+                  </SelectNative>
                 </div>
               </div>
               <div>

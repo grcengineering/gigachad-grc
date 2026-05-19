@@ -21,6 +21,8 @@ import { RiskHeatMap } from '../components/risk/RiskHeatMap';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 type ReportType =
   | 'risk-register'
   | 'risk-summary'
@@ -652,7 +654,7 @@ export default function RiskReports() {
                       <FunnelIcon className="w-3 h-3 inline mr-1" />
                       Category
                     </label>
-                    <select
+                    <SelectNative
                       value={filters.category}
                       onChange={(e) =>
                         setFilters((prev) => ({ ...prev, category: e.target.value }))
@@ -665,13 +667,13 @@ export default function RiskReports() {
                       <option value="operational">Operational</option>
                       <option value="financial">Financial</option>
                       <option value="strategic">Strategic</option>
-                    </select>
+                    </SelectNative>
                   </div>
                   <div>
                     <label className="block text-xs text-gray-500 dark:text-surface-500 mb-1.5">
                       Risk Level
                     </label>
-                    <select
+                    <SelectNative
                       value={filters.riskLevel}
                       onChange={(e) =>
                         setFilters((prev) => ({ ...prev, riskLevel: e.target.value }))
@@ -683,13 +685,13 @@ export default function RiskReports() {
                       <option value="high">High</option>
                       <option value="medium">Medium</option>
                       <option value="low">Low</option>
-                    </select>
+                    </SelectNative>
                   </div>
                   <div>
                     <label className="block text-xs text-gray-500 dark:text-surface-500 mb-1.5">
                       Status
                     </label>
-                    <select
+                    <SelectNative
                       value={filters.status}
                       onChange={(e) => setFilters((prev) => ({ ...prev, status: e.target.value }))}
                       className="w-full px-3 py-2 bg-gray-50 dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white text-sm"
@@ -699,7 +701,7 @@ export default function RiskReports() {
                       <option value="in_treatment">In Treatment</option>
                       <option value="mitigated">Mitigated</option>
                       <option value="accepted">Accepted</option>
-                    </select>
+                    </SelectNative>
                   </div>
                 </div>
 

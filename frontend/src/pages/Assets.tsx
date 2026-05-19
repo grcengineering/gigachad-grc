@@ -26,6 +26,8 @@ import toast from 'react-hot-toast';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface AssetListResponse {
   assets: Asset[];
   total: number;
@@ -270,7 +272,7 @@ export default function Assets() {
 
           {/* Filters */}
           <div className="flex gap-3">
-            <select
+            <SelectNative
               value={filters.source}
               onChange={(e) => updateFilter('source', e.target.value)}
               className="px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
@@ -281,9 +283,9 @@ export default function Assets() {
                   {source}
                 </option>
               ))}
-            </select>
+            </SelectNative>
 
-            <select
+            <SelectNative
               value={filters.type}
               onChange={(e) => updateFilter('type', e.target.value)}
               className="px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
@@ -294,9 +296,9 @@ export default function Assets() {
                   {type.label}
                 </option>
               ))}
-            </select>
+            </SelectNative>
 
-            <select
+            <SelectNative
               value={filters.criticality}
               onChange={(e) => updateFilter('criticality', e.target.value)}
               className="px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
@@ -307,9 +309,9 @@ export default function Assets() {
                   {level.label}
                 </option>
               ))}
-            </select>
+            </SelectNative>
 
-            <select
+            <SelectNative
               value={filters.status}
               onChange={(e) => updateFilter('status', e.target.value)}
               className="px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
@@ -320,7 +322,7 @@ export default function Assets() {
                   {status.label}
                 </option>
               ))}
-            </select>
+            </SelectNative>
           </div>
         </div>
       </div>
@@ -510,7 +512,7 @@ function CreateAssetModal({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm text-surface-600 mb-2">Type *</label>
-              <select
+              <SelectNative
                 value={asset.type}
                 onChange={(e) => onChange({ ...asset, type: e.target.value })}
                 className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
@@ -520,11 +522,11 @@ function CreateAssetModal({
                     {type.label}
                   </option>
                 ))}
-              </select>
+              </SelectNative>
             </div>
             <div>
               <label className="block text-sm text-surface-600 mb-2">Criticality</label>
-              <select
+              <SelectNative
                 value={asset.criticality}
                 onChange={(e) => onChange({ ...asset, criticality: e.target.value })}
                 className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
@@ -534,7 +536,7 @@ function CreateAssetModal({
                     {level.label}
                   </option>
                 ))}
-              </select>
+              </SelectNative>
             </div>
           </div>
           <div>

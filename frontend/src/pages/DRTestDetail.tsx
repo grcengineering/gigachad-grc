@@ -25,6 +25,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface DRTest {
   id: string;
   test_id: string;
@@ -310,7 +312,7 @@ export default function DRTestDetail() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-surface-700 mb-2">Test Type</label>
-                <select
+                <SelectNative
                   value={editForm.test_type}
                   onChange={(e) => setEditForm({ ...editForm, test_type: e.target.value })}
                   className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-surface-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -320,7 +322,7 @@ export default function DRTestDetail() {
                       {type.label}
                     </option>
                   ))}
-                </select>
+                </SelectNative>
               </div>
               <div>
                 <label className="block text-sm font-medium text-surface-700 mb-2">
@@ -750,7 +752,7 @@ export default function DRTestDetail() {
                   <label className="block text-sm font-medium text-surface-700 mb-2">
                     Test Type
                   </label>
-                  <select
+                  <SelectNative
                     value={editForm.test_type}
                     onChange={(e) =>
                       setEditForm((prev) => ({ ...prev, test_type: e.target.value }))
@@ -762,11 +764,11 @@ export default function DRTestDetail() {
                         {type.label}
                       </option>
                     ))}
-                  </select>
+                  </SelectNative>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-surface-700 mb-2">Status</label>
-                  <select
+                  <SelectNative
                     value={editForm.status}
                     onChange={(e) => setEditForm((prev) => ({ ...prev, status: e.target.value }))}
                     className="input w-full"
@@ -776,7 +778,7 @@ export default function DRTestDetail() {
                         {status.label}
                       </option>
                     ))}
-                  </select>
+                  </SelectNative>
                 </div>
               </div>
 
@@ -851,7 +853,7 @@ export default function DRTestDetail() {
             >
               <div>
                 <label className="block text-sm font-medium text-surface-700 mb-2">Result *</label>
-                <select
+                <SelectNative
                   value={completeForm.result}
                   onChange={(e) => setCompleteForm((prev) => ({ ...prev, result: e.target.value }))}
                   className="input w-full"
@@ -861,7 +863,7 @@ export default function DRTestDetail() {
                       {result.label}
                     </option>
                   ))}
-                </select>
+                </SelectNative>
               </div>
 
               <div>

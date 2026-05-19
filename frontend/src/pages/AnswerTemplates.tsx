@@ -23,6 +23,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 const CATEGORIES = [
   { value: 'security', label: 'Security', color: 'bg-red-500/20 text-red-600' },
   { value: 'privacy', label: 'Privacy', color: 'bg-purple-500/20 text-purple-600' },
@@ -163,7 +165,7 @@ export default function AnswerTemplates() {
           />
         </div>
 
-        <select
+        <SelectNative
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
           className="px-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
@@ -174,7 +176,7 @@ export default function AnswerTemplates() {
               {cat.label}
             </option>
           ))}
-        </select>
+        </SelectNative>
 
         <label className="flex items-center gap-2 text-sm text-surface-600 cursor-pointer">
           <input
@@ -482,7 +484,7 @@ function TemplateModal({
 
           <div>
             <label className="block text-sm font-medium text-surface-600 mb-1">Category</label>
-            <select
+            <SelectNative
               value={formData.category}
               onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value }))}
               className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
@@ -493,7 +495,7 @@ function TemplateModal({
                   {cat.label}
                 </option>
               ))}
-            </select>
+            </SelectNative>
           </div>
 
           <div>

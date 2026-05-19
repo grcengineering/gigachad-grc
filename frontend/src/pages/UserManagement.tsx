@@ -14,6 +14,8 @@ import toast from 'react-hot-toast';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface User {
   id: string;
   keycloakId?: string;
@@ -176,7 +178,7 @@ export default function UserManagement() {
               />
             </div>
           </div>
-          <select
+          <SelectNative
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             className="bg-surface-900 border border-surface-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
@@ -184,8 +186,8 @@ export default function UserManagement() {
             <option value="">All Statuses</option>
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
-          </select>
-          <select
+          </SelectNative>
+          <SelectNative
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
             className="bg-surface-900 border border-surface-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
@@ -195,7 +197,7 @@ export default function UserManagement() {
             <option value="compliance_manager">Compliance Manager</option>
             <option value="auditor">Auditor</option>
             <option value="viewer">Viewer</option>
-          </select>
+          </SelectNative>
         </div>
       </div>
       {/* Users Table */}

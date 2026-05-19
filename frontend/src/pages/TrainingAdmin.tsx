@@ -24,6 +24,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 // Types
 interface CustomModule {
   id: string;
@@ -1189,7 +1191,7 @@ function ModuleModal({ module, onClose }: { module: CustomModule | null; onClose
               <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
                 Category
               </label>
-              <select
+              <SelectNative
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
@@ -1199,13 +1201,13 @@ function ModuleModal({ module, onClose }: { module: CustomModule | null; onClose
                     {cat.label}
                   </option>
                 ))}
-              </select>
+              </SelectNative>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
                 Difficulty
               </label>
-              <select
+              <SelectNative
                 value={formData.difficulty}
                 onChange={(e) => setFormData({ ...formData, difficulty: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
@@ -1215,7 +1217,7 @@ function ModuleModal({ module, onClose }: { module: CustomModule | null; onClose
                     {diff.label}
                   </option>
                 ))}
-              </select>
+              </SelectNative>
             </div>
           </div>
 
@@ -1674,7 +1676,7 @@ function UploadNewScormModal({ onClose }: { onClose: () => void }) {
                 <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
                   Category
                 </label>
-                <select
+                <SelectNative
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
@@ -1684,13 +1686,13 @@ function UploadNewScormModal({ onClose }: { onClose: () => void }) {
                       {cat.label}
                     </option>
                   ))}
-                </select>
+                </SelectNative>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
                   Difficulty
                 </label>
-                <select
+                <SelectNative
                   value={formData.difficulty}
                   onChange={(e) => setFormData({ ...formData, difficulty: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
@@ -1700,7 +1702,7 @@ function UploadNewScormModal({ onClose }: { onClose: () => void }) {
                       {diff.label}
                     </option>
                   ))}
-                </select>
+                </SelectNative>
               </div>
             </div>
 

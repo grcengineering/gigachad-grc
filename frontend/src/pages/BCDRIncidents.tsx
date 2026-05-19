@@ -15,6 +15,8 @@ import { formatDistanceToNow } from 'date-fns';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 // ============================================
 // Types
 // ============================================
@@ -212,7 +214,7 @@ export default function BCDRIncidents() {
         </div>
         <div className="flex items-center gap-2">
           <FunnelIcon className="h-5 w-5 text-slate-400" />
-          <select
+          <SelectNative
             value={status}
             onChange={(e) => setStatus(e.target.value)}
             className="px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
@@ -222,7 +224,7 @@ export default function BCDRIncidents() {
                 {opt.label}
               </option>
             ))}
-          </select>
+          </SelectNative>
         </div>
       </div>
       {/* Incidents List */}

@@ -12,6 +12,8 @@ import {
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 type ConfigTab = 'scoring' | 'categories' | 'workflow' | 'slas' | 'appetite';
 
 interface LikelihoodScaleItem {
@@ -949,7 +951,7 @@ function WorkflowSettingsTab({
           <p className="text-gray-500 dark:text-surface-600 text-sm mb-3">
             Risk level that requires executive approval for accept/transfer/avoid
           </p>
-          <select
+          <SelectNative
             value={settings.executiveApprovalThreshold ?? 'high'}
             onChange={(e) => handleChange('executiveApprovalThreshold', e.target.value)}
             className="w-full px-4 py-2 bg-gray-50 dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white"
@@ -958,7 +960,7 @@ function WorkflowSettingsTab({
             <option value="high">High and above</option>
             <option value="medium">Medium and above</option>
             <option value="none">No approval required</option>
-          </select>
+          </SelectNative>
         </div>
       </div>
       <div className="space-y-4 pt-4 border-t border-surface-700">
@@ -966,7 +968,7 @@ function WorkflowSettingsTab({
 
         <div className="p-4 bg-gray-50 dark:bg-surface-700/50 rounded-lg">
           <p className="text-gray-900 dark:text-white mb-2">Default Review Frequency</p>
-          <select
+          <SelectNative
             value={settings.defaultReviewFrequency ?? 'quarterly'}
             onChange={(e) => handleChange('defaultReviewFrequency', e.target.value)}
             className="w-full px-4 py-2 bg-gray-50 dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white"
@@ -975,7 +977,7 @@ function WorkflowSettingsTab({
             <option value="quarterly">Quarterly</option>
             <option value="semi_annually">Semi-Annually</option>
             <option value="annually">Annually</option>
-          </select>
+          </SelectNative>
         </div>
       </div>
       <div className="space-y-4 pt-4 border-t border-surface-700">
@@ -1545,7 +1547,6 @@ function RiskAppetiteTab({
           risk levels and influences treatment decisions.
         </p>
       </div>
-
       <div className="space-y-4">
         {appetite.map((item) => (
           <div key={item.category} className="p-4 bg-gray-50 dark:bg-surface-700/50 rounded-lg">
@@ -1554,7 +1555,7 @@ function RiskAppetiteTab({
                 <div className={`w-3 h-3 rounded-full ${getLevelColor(item.level)}`} />
                 <p className="text-gray-900 dark:text-white font-medium">{item.category}</p>
               </div>
-              <select
+              <SelectNative
                 value={item.level}
                 onChange={(e) => handleLevelChange(item.category, e.target.value)}
                 className="px-3 py-1 bg-gray-50 dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white text-sm"
@@ -1562,13 +1563,12 @@ function RiskAppetiteTab({
                 <option value="low">Low Appetite</option>
                 <option value="medium">Medium Appetite</option>
                 <option value="high">High Appetite</option>
-              </select>
+              </SelectNative>
             </div>
             <p className="text-gray-500 dark:text-surface-600 text-sm">{item.description}</p>
           </div>
         ))}
       </div>
-
       <div className="p-4 bg-gray-50 dark:bg-surface-700/50 rounded-lg">
         <h4 className="text-gray-900 dark:text-white font-medium mb-3">Appetite Legend</h4>
         <div className="flex gap-6">

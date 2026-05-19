@@ -20,6 +20,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   draft: { label: 'Draft', color: 'badge-neutral' },
   in_review: { label: 'In Review', color: 'badge-warning' },
@@ -345,7 +347,7 @@ function UploadPolicyModal({ onClose, onSuccess }: { onClose: () => void; onSucc
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="label">Category *</label>
-              <select
+              <SelectNative
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 className="input mt-1"
@@ -355,7 +357,7 @@ function UploadPolicyModal({ onClose, onSuccess }: { onClose: () => void; onSucc
                     {opt.label}
                   </option>
                 ))}
-              </select>
+              </SelectNative>
             </div>
             <div>
               <label className="label">Version</label>

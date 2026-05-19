@@ -13,6 +13,8 @@ import clsx from 'clsx';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 // ===========================================
 // Types
 // ===========================================
@@ -406,7 +408,7 @@ function FilterConditionRow({
       {showAndLabel && <span className="text-xs text-surface-500 font-medium">AND</span>}
       <div className="flex items-center gap-2">
         {/* Field Select */}
-        <select
+        <SelectNative
           value={condition.field}
           onChange={(e) => handleFieldChange(e.target.value)}
           className="flex-1 px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-sm text-white"
@@ -416,10 +418,10 @@ function FilterConditionRow({
               {f.label}
             </option>
           ))}
-        </select>
+        </SelectNative>
 
         {/* Operator Select */}
-        <select
+        <SelectNative
           value={condition.operator}
           onChange={(e) => onUpdate({ operator: e.target.value as FilterOperator, value: '' })}
           className="w-36 px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-sm text-white"
@@ -429,7 +431,7 @@ function FilterConditionRow({
               {op.label}
             </option>
           ))}
-        </select>
+        </SelectNative>
 
         {/* Value Input */}
         {operatorConfig?.requiresValue && (
@@ -470,7 +472,7 @@ function ValueInput({ field, operator, value, onChange }: ValueInputProps) {
   // Boolean field
   if (field.type === 'boolean') {
     return (
-      <select
+      <SelectNative
         value={String(value || '')}
         onChange={(e) => onChange(e.target.value === 'true')}
         className="flex-1 px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-sm text-white"
@@ -478,7 +480,7 @@ function ValueInput({ field, operator, value, onChange }: ValueInputProps) {
         <option value="">Select...</option>
         <option value="true">Yes</option>
         <option value="false">No</option>
-      </select>
+      </SelectNative>
     );
   }
 
@@ -507,7 +509,7 @@ function ValueInput({ field, operator, value, onChange }: ValueInputProps) {
                 </span>
               );
             })}
-            <select
+            <SelectNative
               value=""
               onChange={(e) => {
                 if (e.target.value && !selectedValues.includes(e.target.value)) {
@@ -524,14 +526,14 @@ function ValueInput({ field, operator, value, onChange }: ValueInputProps) {
                     {o.label}
                   </option>
                 ))}
-            </select>
+            </SelectNative>
           </div>
         </div>
       );
     } else {
       // Single select
       return (
-        <select
+        <SelectNative
           value={String(value || '')}
           onChange={(e) => onChange(e.target.value)}
           className="flex-1 px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-sm text-white"
@@ -542,7 +544,7 @@ function ValueInput({ field, operator, value, onChange }: ValueInputProps) {
               {o.label}
             </option>
           ))}
-        </select>
+        </SelectNative>
       );
     }
   }

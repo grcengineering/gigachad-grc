@@ -28,6 +28,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 type TabType = 'status' | 'history';
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; next?: string[] }> = {
@@ -987,7 +989,7 @@ function EditPolicyModal({
 
           <div>
             <label className="label">Category *</label>
-            <select
+            <SelectNative
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               className="input mt-1"
@@ -997,7 +999,7 @@ function EditPolicyModal({
                   {opt.label}
                 </option>
               ))}
-            </select>
+            </SelectNative>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

@@ -36,6 +36,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface SettingsProps {
   section:
     | 'organization'
@@ -496,7 +498,7 @@ function OrganizationSettings() {
             </div>
             <div>
               <label className="label">Timezone</label>
-              <select
+              <SelectNative
                 value={orgSettings.timezone}
                 onChange={(e) => updateOrgSetting('timezone', e.target.value)}
                 className="input mt-1"
@@ -505,12 +507,12 @@ function OrganizationSettings() {
                 <option value="America/New_York">Eastern Time</option>
                 <option value="America/Los_Angeles">Pacific Time</option>
                 <option value="Europe/London">London</option>
-              </select>
+              </SelectNative>
             </div>
           </div>
           <div>
             <label className="label">Industry</label>
-            <select
+            <SelectNative
               value={orgSettings.industry}
               onChange={(e) => updateOrgSetting('industry', e.target.value)}
               className="input mt-1"
@@ -523,7 +525,7 @@ function OrganizationSettings() {
               <option value="manufacturing">Manufacturing</option>
               <option value="government">Government</option>
               <option value="other">Other</option>
-            </select>
+            </SelectNative>
           </div>
         </div>
 
@@ -895,7 +897,7 @@ function CommunicationsSettings() {
 
         <div>
           <label className="label">Email Provider</label>
-          <select
+          <SelectNative
             className="input mt-1"
             value={emailProvider}
             onChange={(e) => setEmailProvider(e.target.value as EmailProvider)}
@@ -904,7 +906,7 @@ function CommunicationsSettings() {
             <option value="smtp">SMTP Server</option>
             <option value="sendgrid">SendGrid</option>
             <option value="ses">AWS SES</option>
-          </select>
+          </SelectNative>
         </div>
 
         {emailProvider !== 'disabled' && (
@@ -996,7 +998,7 @@ function CommunicationsSettings() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-surface-800/50 rounded-lg">
                 <div>
                   <label className="label">AWS Region</label>
-                  <select
+                  <SelectNative
                     className="input mt-1"
                     value={emailForm.sesRegion}
                     onChange={(e) => setEmailForm((f) => ({ ...f, sesRegion: e.target.value }))}
@@ -1004,7 +1006,7 @@ function CommunicationsSettings() {
                     <option value="us-east-1">US East (N. Virginia)</option>
                     <option value="us-west-2">US West (Oregon)</option>
                     <option value="eu-west-1">EU (Ireland)</option>
-                  </select>
+                  </SelectNative>
                 </div>
                 <div>
                   <label className="label">Access Key ID</label>
@@ -2298,7 +2300,7 @@ function AISettings() {
             </div>
             <div>
               <label className="label">Model</label>
-              <select
+              <SelectNative
                 value={model}
                 onChange={(e) => setModel(e.target.value)}
                 className="input mt-1"
@@ -2308,7 +2310,7 @@ function AISettings() {
                     {m.name}
                   </option>
                 ))}
-              </select>
+              </SelectNative>
             </div>
           </div>
         )}

@@ -6,6 +6,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface EndpointConfig {
   name: string;
   description: string;
@@ -181,7 +183,7 @@ export default function VisualConfigBuilder({ config, onChange, onTest, isTestLo
             </div>
             <div>
               <label className="block text-xs text-surface-600 mb-1">Send In</label>
-              <select
+              <SelectNative
                 value={config.authConfig?.location || 'header'}
                 onChange={(e) =>
                   updateAuthConfig({
@@ -193,7 +195,7 @@ export default function VisualConfigBuilder({ config, onChange, onTest, isTestLo
               >
                 <option value="header">Header</option>
                 <option value="query">Query Parameter</option>
-              </select>
+              </SelectNative>
             </div>
           </div>
         )}
@@ -413,7 +415,7 @@ function EndpointCard({
           <div className="flex gap-4">
             <div className="w-32">
               <label className="block text-xs text-surface-600 mb-1">Method</label>
-              <select
+              <SelectNative
                 value={endpoint.method}
                 onChange={(e) => onChange({ method: e.target.value as any })}
                 className="input w-full text-sm"
@@ -423,7 +425,7 @@ function EndpointCard({
                     {m}
                   </option>
                 ))}
-              </select>
+              </SelectNative>
             </div>
             <div className="flex-1">
               <label className="block text-xs text-surface-600 mb-1">Path</label>

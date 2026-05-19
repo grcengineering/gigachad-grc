@@ -14,6 +14,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface Props {
   controlId: string;
   implementationId: string;
@@ -259,7 +261,7 @@ export default function CollectorConfigModal({
             </div>
             <div>
               <label className="label">Evidence Type</label>
-              <select
+              <SelectNative
                 value={evidenceType}
                 onChange={(e) => setEvidenceType(e.target.value)}
                 className="input mt-1"
@@ -268,7 +270,7 @@ export default function CollectorConfigModal({
                 <option value="config">Configuration</option>
                 <option value="log">Log</option>
                 <option value="report">Report</option>
-              </select>
+              </SelectNative>
             </div>
           </div>
 
@@ -322,7 +324,7 @@ export default function CollectorConfigModal({
             {mode === 'integration' && (
               <div className="mt-4">
                 <label className="label">Integration</label>
-                <select
+                <SelectNative
                   value={integrationId}
                   onChange={(e) => setIntegrationId(e.target.value)}
                   className="input mt-1"
@@ -333,7 +335,7 @@ export default function CollectorConfigModal({
                       {int.name} ({int.type})
                     </option>
                   ))}
-                </select>
+                </SelectNative>
               </div>
             )}
 
@@ -358,7 +360,7 @@ export default function CollectorConfigModal({
             <div className="flex gap-4">
               <div className="w-32">
                 <label className="label">Method</label>
-                <select
+                <SelectNative
                   value={method}
                   onChange={(e) => setMethod(e.target.value)}
                   className="input mt-1"
@@ -368,7 +370,7 @@ export default function CollectorConfigModal({
                       {m}
                     </option>
                   ))}
-                </select>
+                </SelectNative>
               </div>
               <div className="flex-1">
                 <label className="label">Endpoint Path</label>
@@ -425,7 +427,7 @@ export default function CollectorConfigModal({
 
               <div>
                 <label className="label">Auth Type</label>
-                <select
+                <SelectNative
                   value={authType}
                   onChange={(e) => setAuthType(e.target.value)}
                   className="input mt-1"
@@ -435,7 +437,7 @@ export default function CollectorConfigModal({
                   <option value="oauth2">OAuth 2.0</option>
                   <option value="bearer">Bearer Token</option>
                   <option value="basic">Basic Auth</option>
-                </select>
+                </SelectNative>
               </div>
 
               {authType === 'api_key' && (
@@ -462,14 +464,14 @@ export default function CollectorConfigModal({
                   </div>
                   <div>
                     <label className="label">Send In</label>
-                    <select
+                    <SelectNative
                       value={authConfig.location}
                       onChange={(e) => setAuthConfig({ ...authConfig, location: e.target.value })}
                       className="input mt-1"
                     >
                       <option value="header">Header</option>
                       <option value="query">Query Parameter</option>
-                    </select>
+                    </SelectNative>
                   </div>
                 </div>
               )}
@@ -635,7 +637,7 @@ export default function CollectorConfigModal({
             {scheduleEnabled && (
               <div>
                 <label className="label">Frequency</label>
-                <select
+                <SelectNative
                   value={scheduleFrequency}
                   onChange={(e) => setScheduleFrequency(e.target.value)}
                   className="input mt-1"
@@ -645,7 +647,7 @@ export default function CollectorConfigModal({
                       {freq.label}
                     </option>
                   ))}
-                </select>
+                </SelectNative>
               </div>
             )}
           </div>

@@ -18,6 +18,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 // ============================================
 // Types
 // ============================================
@@ -453,7 +455,7 @@ export default function RecoveryTeamDetail() {
 
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">Role</label>
-                <select
+                <SelectNative
                   value={memberRole}
                   onChange={(e) => setMemberRole(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
@@ -463,13 +465,13 @@ export default function RecoveryTeamDetail() {
                       {opt.label}
                     </option>
                   ))}
-                </select>
+                </SelectNative>
               </div>
 
               {!isExternal ? (
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">User</label>
-                  <select
+                  <SelectNative
                     value={memberUserId}
                     onChange={(e) => setMemberUserId(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
@@ -480,7 +482,7 @@ export default function RecoveryTeamDetail() {
                         {user.name} ({user.email})
                       </option>
                     ))}
-                  </select>
+                  </SelectNative>
                 </div>
               ) : (
                 <>
@@ -547,7 +549,7 @@ export default function RecoveryTeamDetail() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">BC/DR Plan</label>
-                <select
+                <SelectNative
                   value={selectedPlanId}
                   onChange={(e) => setSelectedPlanId(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
@@ -558,7 +560,7 @@ export default function RecoveryTeamDetail() {
                       {plan.title}
                     </option>
                   ))}
-                </select>
+                </SelectNative>
               </div>
 
               <div>

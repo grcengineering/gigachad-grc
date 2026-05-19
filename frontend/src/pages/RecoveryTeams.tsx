@@ -15,6 +15,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 // ============================================
 // Types
 // ============================================
@@ -164,7 +166,7 @@ export default function RecoveryTeams() {
         </div>
         <div className="flex items-center gap-2">
           <FunnelIcon className="h-5 w-5 text-slate-400" />
-          <select
+          <SelectNative
             value={teamType}
             onChange={(e) => setTeamType(e.target.value)}
             className="px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
@@ -174,7 +176,7 @@ export default function RecoveryTeams() {
                 {opt.label}
               </option>
             ))}
-          </select>
+          </SelectNative>
         </div>
       </div>
       {/* Teams List */}
@@ -268,7 +270,7 @@ export default function RecoveryTeams() {
 
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">Team Type</label>
-                <select
+                <SelectNative
                   value={newTeamType}
                   onChange={(e) => setNewTeamType(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
@@ -278,7 +280,7 @@ export default function RecoveryTeams() {
                       {opt.label}
                     </option>
                   ))}
-                </select>
+                </SelectNative>
               </div>
 
               <div>

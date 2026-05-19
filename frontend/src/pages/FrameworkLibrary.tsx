@@ -24,6 +24,8 @@ import api from '@/lib/api';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface CatalogFramework {
   id: string;
   name: string;
@@ -477,7 +479,7 @@ export default function FrameworkLibrary() {
 
         <div className="flex items-center gap-2">
           <FunnelIcon className="w-5 h-5 text-surface-600" />
-          <select
+          <SelectNative
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
             className="px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:ring-2 focus:ring-brand-500/50"
@@ -488,7 +490,7 @@ export default function FrameworkLibrary() {
                 {cat.charAt(0).toUpperCase() + cat.slice(1)}
               </option>
             ))}
-          </select>
+          </SelectNative>
         </div>
 
         <label className="flex items-center gap-2 cursor-pointer">

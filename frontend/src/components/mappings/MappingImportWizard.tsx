@@ -20,6 +20,8 @@ import type {
   MappingImportRowStatus,
 } from '@/lib/apiTypes';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 export interface MappingImportWizardProps {
   open: boolean;
   onClose: () => void;
@@ -338,7 +340,6 @@ function UploadStage({
           </li>
         </ul>
       </div>
-
       {showFrameworkSelector && (
         <div>
           <label
@@ -347,7 +348,7 @@ function UploadStage({
           >
             Framework (optional)
           </label>
-          <select
+          <SelectNative
             id="mapping-import-framework"
             value={selectedFrameworkId}
             onChange={(e) => onFrameworkChange(e.target.value)}
@@ -360,13 +361,12 @@ function UploadStage({
                 {fw.version ? ` (${fw.version})` : ''}
               </option>
             ))}
-          </select>
+          </SelectNative>
           <p className="text-xs text-surface-500 mt-1">
             Helps you organise; the file still drives which framework each row maps to.
           </p>
         </div>
       )}
-
       <div
         className={clsx(
           'relative border-2 border-dashed rounded-xl p-8 text-center transition-colors',

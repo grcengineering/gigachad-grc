@@ -18,6 +18,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface Workpaper {
   id: string;
   workpaperNumber: string;
@@ -328,7 +330,7 @@ export default function AuditWorkpapers() {
 
               <div>
                 <label className="block text-sm font-medium text-surface-700 mb-1">Type</label>
-                <select
+                <SelectNative
                   value={createForm.workpaperType}
                   onChange={(e) =>
                     setCreateForm((prev) => ({ ...prev, workpaperType: e.target.value }))
@@ -340,7 +342,7 @@ export default function AuditWorkpapers() {
                   <option value="testing">Testing</option>
                   <option value="analysis">Analysis</option>
                   <option value="summary">Summary</option>
-                </select>
+                </SelectNative>
               </div>
 
               <div>

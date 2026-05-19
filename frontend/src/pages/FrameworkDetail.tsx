@@ -37,6 +37,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 const STATUS_CONFIG = {
   compliant: { icon: CheckCircleIcon, color: 'text-green-600', bg: 'bg-green-400/10' },
   partial: { icon: ExclamationTriangleIcon, color: 'text-yellow-600', bg: 'bg-yellow-400/10' },
@@ -1052,7 +1054,7 @@ function RequirementDetailPanel({
                 {/* Owner Select */}
                 <div>
                   <label className="block text-xs text-surface-600 mb-1">Owner</label>
-                  <select
+                  <SelectNative
                     value={selectedOwner}
                     onChange={(e) => setSelectedOwner(e.target.value)}
                     className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-sm text-surface-100 focus:outline-none focus:border-brand-500"
@@ -1063,13 +1065,13 @@ function RequirementDetailPanel({
                         {user.displayName} ({user.role})
                       </option>
                     ))}
-                  </select>
+                  </SelectNative>
                 </div>
 
                 {/* Priority */}
                 <div>
                   <label className="block text-xs text-surface-600 mb-1">Priority</label>
-                  <select
+                  <SelectNative
                     value={priority}
                     onChange={(e) => setPriority(e.target.value)}
                     className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-sm text-surface-100 focus:outline-none focus:border-brand-500"
@@ -1078,7 +1080,7 @@ function RequirementDetailPanel({
                     <option value="high">High</option>
                     <option value="medium">Medium</option>
                     <option value="low">Low</option>
-                  </select>
+                  </SelectNative>
                 </div>
 
                 {/* Due Date */}

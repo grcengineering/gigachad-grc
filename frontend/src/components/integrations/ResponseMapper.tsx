@@ -9,6 +9,8 @@ import type { ResponseMapping } from './AdvancedBuilderTab';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface ResponseMapperProps {
   mappings: ResponseMapping[];
   onChange: (mappings: ResponseMapping[]) => void;
@@ -221,7 +223,7 @@ export default function ResponseMapper({
                 {/* Data Type */}
                 <div>
                   <label className="text-xs text-surface-500 block mb-1">Data Type</label>
-                  <select
+                  <SelectNative
                     value={mapping.dataType}
                     onChange={(e) =>
                       updateMapping(mapping.id, {
@@ -235,13 +237,13 @@ export default function ResponseMapper({
                         {type.label}
                       </option>
                     ))}
-                  </select>
+                  </SelectNative>
                 </div>
 
                 {/* Transformation */}
                 <div>
                   <label className="text-xs text-surface-500 block mb-1">Transformation</label>
-                  <select
+                  <SelectNative
                     value={mapping.transformation || ''}
                     onChange={(e) =>
                       updateMapping(mapping.id, { transformation: e.target.value || undefined })
@@ -253,7 +255,7 @@ export default function ResponseMapper({
                         {t.label}
                       </option>
                     ))}
-                  </select>
+                  </SelectNative>
                 </div>
               </div>
 

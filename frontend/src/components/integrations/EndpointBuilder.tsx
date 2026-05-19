@@ -7,6 +7,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface EndpointBuilderProps {
   endpoint: ApiEndpoint;
   onChange: (updates: Partial<ApiEndpoint>) => void;
@@ -91,7 +93,7 @@ export default function EndpointBuilder({ endpoint, onChange, onDelete }: Endpoi
       </div>
       {/* Method & Path */}
       <div className="flex gap-2">
-        <select
+        <SelectNative
           value={endpoint.method}
           onChange={(e) => onChange({ method: e.target.value as (typeof HTTP_METHODS)[number] })}
           className={clsx(
@@ -108,7 +110,7 @@ export default function EndpointBuilder({ endpoint, onChange, onDelete }: Endpoi
               {method}
             </option>
           ))}
-        </select>
+        </SelectNative>
         <Input
           type="text"
           value={endpoint.path}
@@ -237,7 +239,7 @@ export default function EndpointBuilder({ endpoint, onChange, onDelete }: Endpoi
       {/* Pagination */}
       <div>
         <label className="text-sm font-medium text-surface-700 block mb-2">Pagination</label>
-        <select
+        <SelectNative
           value={endpoint.pagination?.type || 'none'}
           onChange={(e) =>
             onChange({
@@ -254,7 +256,7 @@ export default function EndpointBuilder({ endpoint, onChange, onDelete }: Endpoi
               {type.label} - {type.description}
             </option>
           ))}
-        </select>
+        </SelectNative>
 
         {endpoint.pagination?.type === 'offset' && (
           <div className="grid grid-cols-2 gap-3">

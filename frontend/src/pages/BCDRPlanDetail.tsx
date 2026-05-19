@@ -22,6 +22,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface BCDRPlan {
   id: string;
   plan_id: string;
@@ -276,7 +278,7 @@ export default function BCDRPlanDetail() {
 
             <div>
               <label className="label">Plan Type</label>
-              <select
+              <SelectNative
                 value={editForm.plan_type}
                 onChange={(e) => setEditForm((prev) => ({ ...prev, plan_type: e.target.value }))}
                 className="input mt-1"
@@ -286,7 +288,7 @@ export default function BCDRPlanDetail() {
                     {type.label}
                   </option>
                 ))}
-              </select>
+              </SelectNative>
             </div>
 
             <div>
@@ -648,7 +650,7 @@ export default function BCDRPlanDetail() {
                   <label className="block text-sm font-medium text-surface-700 mb-2">
                     Plan Type
                   </label>
-                  <select
+                  <SelectNative
                     value={editForm.plan_type}
                     onChange={(e) =>
                       setEditForm((prev) => ({ ...prev, plan_type: e.target.value }))
@@ -660,11 +662,11 @@ export default function BCDRPlanDetail() {
                         {type.label}
                       </option>
                     ))}
-                  </select>
+                  </SelectNative>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-surface-700 mb-2">Status</label>
-                  <select
+                  <SelectNative
                     value={editForm.status}
                     onChange={(e) => setEditForm((prev) => ({ ...prev, status: e.target.value }))}
                     className="input w-full"
@@ -674,7 +676,7 @@ export default function BCDRPlanDetail() {
                         {status.label}
                       </option>
                     ))}
-                  </select>
+                  </SelectNative>
                 </div>
               </div>
 

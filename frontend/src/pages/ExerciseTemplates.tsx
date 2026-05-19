@@ -18,6 +18,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 // ============================================
 // Types
 // ============================================
@@ -196,7 +198,7 @@ export default function ExerciseTemplates() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">Category</label>
-              <select
+              <SelectNative
                 value={createForm.category}
                 onChange={(e) => setCreateForm({ ...createForm, category: e.target.value })}
                 className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
@@ -206,7 +208,7 @@ export default function ExerciseTemplates() {
                     {opt.label}
                   </option>
                 ))}
-              </select>
+              </SelectNative>
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">
@@ -308,7 +310,7 @@ export default function ExerciseTemplates() {
         </div>
         <div className="flex items-center gap-2">
           <FunnelIcon className="h-5 w-5 text-slate-400" />
-          <select
+          <SelectNative
             value={category}
             onChange={(e) => setCategory(e.target.value)}
             className="px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
@@ -318,7 +320,7 @@ export default function ExerciseTemplates() {
                 {opt.label}
               </option>
             ))}
-          </select>
+          </SelectNative>
         </div>
       </div>
       {/* Category Stats */}

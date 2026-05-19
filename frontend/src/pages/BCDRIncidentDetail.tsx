@@ -17,6 +17,8 @@ import { format } from 'date-fns';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 // ============================================
 // Types
 // ============================================
@@ -250,7 +252,7 @@ export default function BCDRIncidentDetail() {
         <div className="flex items-center gap-3">
           {isActive && (
             <>
-              <select
+              <SelectNative
                 value={incident.status}
                 onChange={(e) => handleStatusChange(e.target.value)}
                 className="px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
@@ -261,7 +263,7 @@ export default function BCDRIncidentDetail() {
                     {s}
                   </option>
                 ))}
-              </select>
+              </SelectNative>
               {incident.status === 'resolved' && (
                 <Button variant="primary" onClick={() => setShowCloseIncident(true)}>
                   Close with PIR
@@ -523,7 +525,7 @@ export default function BCDRIncidentDetail() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-slate-800 rounded-xl shadow-2xl w-full max-w-md p-6">
             <h2 className="text-xl font-semibold text-white mb-4">Activate Plan</h2>
-            <select
+            <SelectNative
               value={selectedPlanId}
               onChange={(e) => setSelectedPlanId(e.target.value)}
               className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
@@ -534,7 +536,7 @@ export default function BCDRIncidentDetail() {
                   {plan.title}
                 </option>
               ))}
-            </select>
+            </SelectNative>
             <div className="flex items-center justify-end gap-3 mt-4">
               <Button variant="secondary" onClick={() => setShowActivatePlan(false)}>
                 Cancel
@@ -551,7 +553,7 @@ export default function BCDRIncidentDetail() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-slate-800 rounded-xl shadow-2xl w-full max-w-md p-6">
             <h2 className="text-xl font-semibold text-white mb-4">Activate Team</h2>
-            <select
+            <SelectNative
               value={selectedTeamId}
               onChange={(e) => setSelectedTeamId(e.target.value)}
               className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
@@ -562,7 +564,7 @@ export default function BCDRIncidentDetail() {
                   {team.name}
                 </option>
               ))}
-            </select>
+            </SelectNative>
             <div className="flex items-center justify-end gap-3 mt-4">
               <Button variant="secondary" onClick={() => setShowActivateTeam(false)}>
                 Cancel

@@ -29,6 +29,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 // Review frequency labels
 const FREQUENCY_LABELS: Record<string, string> = {
   monthly: 'Monthly',
@@ -308,7 +310,7 @@ function VendorForm({
 
             <div>
               <label className="block text-sm font-medium text-surface-700 mb-1">Category *</label>
-              <select
+              <SelectNative
                 required
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
@@ -319,12 +321,12 @@ function VendorForm({
                 <option value="professional_services">Professional Services</option>
                 <option value="hardware_vendor">Hardware Vendor</option>
                 <option value="consultant">Consultant</option>
-              </select>
+              </SelectNative>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-surface-700 mb-1">Tier *</label>
-              <select
+              <SelectNative
                 required
                 value={formData.tier}
                 onChange={(e) => setFormData({ ...formData, tier: e.target.value })}
@@ -334,12 +336,12 @@ function VendorForm({
                 <option value="tier_2">Tier 2 (High)</option>
                 <option value="tier_3">Tier 3 (Medium)</option>
                 <option value="tier_4">Tier 4 (Low)</option>
-              </select>
+              </SelectNative>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-surface-700 mb-1">Status *</label>
-              <select
+              <SelectNative
                 required
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
@@ -350,7 +352,7 @@ function VendorForm({
                 <option value="pending_onboarding">Pending Onboarding</option>
                 <option value="offboarding">Offboarding</option>
                 <option value="terminated">Terminated</option>
-              </select>
+              </SelectNative>
             </div>
 
             <div>

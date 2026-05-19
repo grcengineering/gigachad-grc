@@ -30,6 +30,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 // View mode types
 type ViewMode = 'month' | 'week' | 'list';
 
@@ -724,7 +726,7 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
               </div>
               <div>
                 <label className="block text-sm font-medium text-surface-700 mb-1">Priority</label>
-                <select
+                <SelectNative
                   value={newEventPriority}
                   onChange={(e) => setNewEventPriority(e.target.value)}
                   className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent"
@@ -733,7 +735,7 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
                   <option value="medium">Medium</option>
                   <option value="high">High</option>
                   <option value="critical">Critical</option>
-                </select>
+                </SelectNative>
               </div>
               <div className="flex justify-end gap-2 pt-4">
                 <button

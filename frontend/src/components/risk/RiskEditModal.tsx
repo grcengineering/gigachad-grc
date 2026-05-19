@@ -6,6 +6,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface RiskEditModalProps {
   risk: RiskDetail;
   isOpen: boolean;
@@ -97,7 +99,7 @@ export default function RiskEditModal({
           </div>
           <div>
             <label className="block text-sm text-surface-600 mb-1">Category</label>
-            <select
+            <SelectNative
               value={formData.category}
               onChange={(e) => setFormData({ ...formData, category: e.target.value })}
               className="w-full bg-surface-900 border border-surface-700 rounded-lg px-3 py-2 text-white"
@@ -107,11 +109,11 @@ export default function RiskEditModal({
                   {cat.replace('_', ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
                 </option>
               ))}
-            </select>
+            </SelectNative>
           </div>
           <div>
             <label className="block text-sm text-surface-600 mb-1">Review Frequency</label>
-            <select
+            <SelectNative
               value={formData.reviewFrequency}
               onChange={(e) => setFormData({ ...formData, reviewFrequency: e.target.value })}
               className="w-full bg-surface-900 border border-surface-700 rounded-lg px-3 py-2 text-white"
@@ -121,7 +123,7 @@ export default function RiskEditModal({
                   {freq.label}
                 </option>
               ))}
-            </select>
+            </SelectNative>
           </div>
           <div className="flex justify-end gap-3 pt-4">
             <button

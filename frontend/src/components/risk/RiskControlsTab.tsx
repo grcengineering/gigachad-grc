@@ -1,6 +1,8 @@
 import { memo, useCallback } from 'react';
 import { Plus, X, Target } from 'lucide-react';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface Control {
   id: string;
   controlId?: string;
@@ -66,7 +68,6 @@ function RiskControlsTab({
           Link Control
         </button>
       </div>
-
       {controls.length === 0 ? (
         <div className="text-center py-8 text-surface-600">
           <Target className="w-12 h-12 mx-auto mb-3 opacity-50" />
@@ -98,7 +99,7 @@ function RiskControlsTab({
                       </span>
                     )}
                     {control.effectiveness && onUpdateEffectiveness && (
-                      <select
+                      <SelectNative
                         value={control.effectiveness}
                         onChange={(e) => onUpdateEffectiveness(control.id, e.target.value)}
                         className={`text-xs bg-transparent border-none cursor-pointer ${getEffectivenessColor(
@@ -110,7 +111,7 @@ function RiskControlsTab({
                             {eff.label} Effectiveness
                           </option>
                         ))}
-                      </select>
+                      </SelectNative>
                     )}
                   </div>
                 </div>

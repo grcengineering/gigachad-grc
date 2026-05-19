@@ -14,6 +14,8 @@ import {
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface Audit {
   id: string;
   auditId: string;
@@ -113,7 +115,7 @@ export default function Audits() {
           />
         </div>
 
-        <select
+        <SelectNative
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
           className="px-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:ring-2 focus:ring-brand-500"
@@ -125,9 +127,9 @@ export default function Audits() {
           <option value="reporting">Reporting</option>
           <option value="completed">Completed</option>
           <option value="cancelled">Cancelled</option>
-        </select>
+        </SelectNative>
 
-        <select
+        <SelectNative
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value)}
           className="px-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:ring-2 focus:ring-brand-500"
@@ -137,7 +139,7 @@ export default function Audits() {
           <option value="external">External</option>
           <option value="surveillance">Surveillance</option>
           <option value="certification">Certification</option>
-        </select>
+        </SelectNative>
       </div>
       {/* Audits List */}
       {isLoading ? (

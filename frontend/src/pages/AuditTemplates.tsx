@@ -16,6 +16,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface AuditTemplate {
   id: string;
   name: string;
@@ -146,7 +148,7 @@ export default function AuditTemplates() {
       </div>
       {/* Filters */}
       <div className="flex gap-4">
-        <select
+        <SelectNative
           value={selectedType}
           onChange={(e) => setSelectedType(e.target.value)}
           className="bg-surface-800 border border-surface-600 rounded-lg px-3 py-2 text-white"
@@ -157,7 +159,7 @@ export default function AuditTemplates() {
               {label}
             </option>
           ))}
-        </select>
+        </SelectNative>
       </div>
       {/* Templates Grid */}
       {isLoading ? (
@@ -299,7 +301,7 @@ export default function AuditTemplates() {
                   <label className="block text-sm font-medium text-surface-700 mb-1">
                     Audit Type
                   </label>
-                  <select
+                  <SelectNative
                     value={createForm.auditType}
                     onChange={(e) => setCreateForm({ ...createForm, auditType: e.target.value })}
                     className="w-full bg-surface-700 border border-surface-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
@@ -309,7 +311,7 @@ export default function AuditTemplates() {
                         {label}
                       </option>
                     ))}
-                  </select>
+                  </SelectNative>
                 </div>
 
                 <div>

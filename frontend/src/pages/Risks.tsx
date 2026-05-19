@@ -85,6 +85,8 @@ const RISK_FILTER_FIELDS = [
 import { AlertTriangle, Plus, Search, BarChart3, Shield, Clock, Target, X } from 'lucide-react';
 import clsx from 'clsx';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 // Risk create form schema
 const riskCreateSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200, 'Title must be less than 200 characters'),
@@ -599,7 +601,7 @@ export default function Risks() {
 
           {/* Quick Filters */}
           <div className="flex gap-3">
-            <select
+            <SelectNative
               value={filters.category}
               onChange={(e) => updateFilter('category', e.target.value)}
               className="px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
@@ -610,9 +612,9 @@ export default function Risks() {
                   {cat.label}
                 </option>
               ))}
-            </select>
+            </SelectNative>
 
-            <select
+            <SelectNative
               value={filters.status}
               onChange={(e) => updateFilter('status', e.target.value)}
               className="px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
@@ -623,9 +625,9 @@ export default function Risks() {
                   {status.label}
                 </option>
               ))}
-            </select>
+            </SelectNative>
 
-            <select
+            <SelectNative
               value={filters.riskLevel}
               onChange={(e) => updateFilter('riskLevel', e.target.value)}
               className="px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
@@ -636,7 +638,7 @@ export default function Risks() {
                   {level.label}
                 </option>
               ))}
-            </select>
+            </SelectNative>
 
             <button
               onClick={() => navigate('/risks/heatmap')}

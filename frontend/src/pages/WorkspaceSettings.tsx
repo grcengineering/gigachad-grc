@@ -15,6 +15,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 const WORKSPACE_ROLES = [
   { value: 'owner', label: 'Owner', description: 'Full control of workspace' },
   { value: 'manager', label: 'Manager', description: 'Can manage controls, evidence, risks' },
@@ -86,7 +88,7 @@ function AddMemberModal({
               <label className="block text-sm font-medium text-foreground mb-1">
                 Select User *
               </label>
-              <select
+              <SelectNative
                 value={selectedUserId}
                 onChange={(e) => setSelectedUserId(e.target.value)}
                 className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-brand-500"
@@ -98,7 +100,7 @@ function AddMemberModal({
                     {user.displayName || user.email} ({user.email})
                   </option>
                 ))}
-              </select>
+              </SelectNative>
               {availableUsers.length === 0 && (
                 <p className="text-sm text-muted-foreground mt-1">
                   All organization members are already in this workspace.
@@ -107,7 +109,7 @@ function AddMemberModal({
             </div>
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">Role</label>
-              <select
+              <SelectNative
                 value={selectedRole}
                 onChange={(e) => setSelectedRole(e.target.value)}
                 className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-brand-500"
@@ -117,7 +119,7 @@ function AddMemberModal({
                     {role.label} - {role.description}
                   </option>
                 ))}
-              </select>
+              </SelectNative>
             </div>
           </div>
           <div className="mt-6 flex justify-end gap-3">
@@ -341,7 +343,7 @@ export default function WorkspaceSettings() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <select
+                <SelectNative
                   value={member.role}
                   onChange={(e) =>
                     updateMemberMutation.mutate({ userId: member.userId, role: e.target.value })
@@ -353,7 +355,7 @@ export default function WorkspaceSettings() {
                       {role.label}
                     </option>
                   ))}
-                </select>
+                </SelectNative>
                 <button
                   onClick={() => removeMemberMutation.mutate(member.userId)}
                   className="p-1.5 text-red-600 hover:text-red-700 hover:bg-red-500/10 rounded"

@@ -28,6 +28,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 const ASSET_TYPES = [
   { value: 'server', label: 'Server', icon: HardDrive },
   { value: 'workstation', label: 'Workstation', icon: Monitor },
@@ -510,7 +512,7 @@ export default function AssetDetail() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-surface-700 mb-2">Type *</label>
-                  <select
+                  <SelectNative
                     value={editForm.type}
                     onChange={(e) => setEditForm((prev) => ({ ...prev, type: e.target.value }))}
                     className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
@@ -520,11 +522,11 @@ export default function AssetDetail() {
                         {type.label}
                       </option>
                     ))}
-                  </select>
+                  </SelectNative>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-surface-700 mb-2">Status</label>
-                  <select
+                  <SelectNative
                     value={editForm.status}
                     onChange={(e) => setEditForm((prev) => ({ ...prev, status: e.target.value }))}
                     className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
@@ -534,7 +536,7 @@ export default function AssetDetail() {
                         {status.label}
                       </option>
                     ))}
-                  </select>
+                  </SelectNative>
                 </div>
               </div>
 
@@ -543,7 +545,7 @@ export default function AssetDetail() {
                   <label className="block text-sm font-medium text-surface-700 mb-2">
                     Criticality
                   </label>
-                  <select
+                  <SelectNative
                     value={editForm.criticality}
                     onChange={(e) =>
                       setEditForm((prev) => ({ ...prev, criticality: e.target.value }))
@@ -555,7 +557,7 @@ export default function AssetDetail() {
                         {level.label}
                       </option>
                     ))}
-                  </select>
+                  </SelectNative>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-surface-700 mb-2">
@@ -675,7 +677,7 @@ export default function AssetDetail() {
                     <label className="block text-sm font-medium text-surface-700 mb-2">
                       BC/DR Criticality
                     </label>
-                    <select
+                    <SelectNative
                       value={editForm.bcdrCriticality}
                       onChange={(e) =>
                         setEditForm((prev) => ({ ...prev, bcdrCriticality: e.target.value }))
@@ -687,7 +689,7 @@ export default function AssetDetail() {
                       <option value="tier_2_essential">Tier 2 - Essential</option>
                       <option value="tier_3_important">Tier 3 - Important</option>
                       <option value="tier_4_standard">Tier 4 - Standard</option>
-                    </select>
+                    </SelectNative>
                   </div>
                 </div>
 

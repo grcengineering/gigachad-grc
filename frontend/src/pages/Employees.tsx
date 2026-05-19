@@ -20,6 +20,8 @@ import { employeeComplianceApi } from '../lib/api';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface Employee {
   id: string;
   email: string;
@@ -265,7 +267,7 @@ export default function Employees() {
           <div className="flex flex-wrap gap-4 pt-4 border-t border-border">
             <div className="flex items-center gap-2">
               <label className="text-sm text-muted-foreground">Department:</label>
-              <select
+              <SelectNative
                 value={departmentFilter}
                 onChange={(e) => setDepartmentFilter(e.target.value)}
                 className="input"
@@ -276,11 +278,11 @@ export default function Employees() {
                     {dept}
                   </option>
                 ))}
-              </select>
+              </SelectNative>
             </div>
             <div className="flex items-center gap-2">
               <label className="text-sm text-muted-foreground">Compliance:</label>
-              <select
+              <SelectNative
                 value={complianceFilter}
                 onChange={(e) => setComplianceFilter(e.target.value)}
                 className="input"
@@ -289,7 +291,7 @@ export default function Employees() {
                 <option value="compliant">Compliant (80+)</option>
                 <option value="at_risk">At Risk (60-79)</option>
                 <option value="non_compliant">Non-Compliant (&lt;60)</option>
-              </select>
+              </SelectNative>
             </div>
             <button
               onClick={() => {

@@ -18,6 +18,8 @@ import { scheduledReportsApi, ScheduledReport } from '@/lib/api';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface ScheduledReportsProps {
   className?: string;
 }
@@ -426,7 +428,7 @@ function ReportScheduleModal({ isOpen, onClose, report, onSave }: ReportSchedule
         {/* Report Type */}
         <div>
           <label className="block text-sm font-medium text-surface-700 mb-1">Report Type</label>
-          <select
+          <SelectNative
             value={formData.reportType}
             onChange={(e) => setFormData({ ...formData, reportType: e.target.value })}
             className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
@@ -436,7 +438,7 @@ function ReportScheduleModal({ isOpen, onClose, report, onSave }: ReportSchedule
                 {type.label}
               </option>
             ))}
-          </select>
+          </SelectNative>
         </div>
 
         {/* Format */}
@@ -464,7 +466,7 @@ function ReportScheduleModal({ isOpen, onClose, report, onSave }: ReportSchedule
         {/* Frequency */}
         <div>
           <label className="block text-sm font-medium text-surface-700 mb-1">Frequency</label>
-          <select
+          <SelectNative
             value={formData.frequency}
             onChange={(e) => setFormData({ ...formData, frequency: e.target.value as any })}
             className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
@@ -474,14 +476,14 @@ function ReportScheduleModal({ isOpen, onClose, report, onSave }: ReportSchedule
                 {opt.label}
               </option>
             ))}
-          </select>
+          </SelectNative>
         </div>
 
         {/* Day Selection */}
         {formData.frequency === 'weekly' && (
           <div>
             <label className="block text-sm font-medium text-surface-700 mb-1">Day of Week</label>
-            <select
+            <SelectNative
               value={formData.dayOfWeek}
               onChange={(e) => setFormData({ ...formData, dayOfWeek: Number(e.target.value) })}
               className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
@@ -491,14 +493,14 @@ function ReportScheduleModal({ isOpen, onClose, report, onSave }: ReportSchedule
                   {day.label}
                 </option>
               ))}
-            </select>
+            </SelectNative>
           </div>
         )}
 
         {(formData.frequency === 'monthly' || formData.frequency === 'quarterly') && (
           <div>
             <label className="block text-sm font-medium text-surface-700 mb-1">Day of Month</label>
-            <select
+            <SelectNative
               value={formData.dayOfMonth}
               onChange={(e) => setFormData({ ...formData, dayOfMonth: Number(e.target.value) })}
               className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
@@ -509,7 +511,7 @@ function ReportScheduleModal({ isOpen, onClose, report, onSave }: ReportSchedule
                   {day > 28 ? '*' : ''}
                 </option>
               ))}
-            </select>
+            </SelectNative>
             <p className="text-xs text-surface-500 mt-1">
               * Days 29-31 will run on the last day of shorter months
             </p>

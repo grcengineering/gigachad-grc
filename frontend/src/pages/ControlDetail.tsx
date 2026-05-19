@@ -39,6 +39,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 type TabType = 'details' | 'comments' | 'tasks' | 'history';
 
 const STATUS_OPTIONS = [
@@ -365,7 +367,7 @@ export default function ControlDetail() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="label mb-1">Owner</label>
-                      <select
+                      <SelectNative
                         value={implForm.ownerId}
                         onChange={(e) => setImplForm({ ...implForm, ownerId: e.target.value })}
                         className="input w-full"
@@ -376,11 +378,11 @@ export default function ControlDetail() {
                             {user.displayName} ({user.role})
                           </option>
                         ))}
-                      </select>
+                      </SelectNative>
                     </div>
                     <div>
                       <label className="label mb-1">Testing Frequency</label>
-                      <select
+                      <SelectNative
                         value={implForm.testingFrequency}
                         onChange={(e) =>
                           setImplForm({ ...implForm, testingFrequency: e.target.value })
@@ -392,7 +394,7 @@ export default function ControlDetail() {
                             {opt.label}
                           </option>
                         ))}
-                      </select>
+                      </SelectNative>
                     </div>
                     <div>
                       <label className="label mb-1">Effectiveness Score (0-100)</label>
@@ -453,7 +455,7 @@ export default function ControlDetail() {
               <div className="space-y-4">
                 <div>
                   <label className="label mb-2 block">Status</label>
-                  <select
+                  <SelectNative
                     value={implementation.status}
                     onChange={(e) => updateStatusMutation.mutate(e.target.value)}
                     disabled={!hasPermission('controls:update')}
@@ -464,7 +466,7 @@ export default function ControlDetail() {
                         {opt.label}
                       </option>
                     ))}
-                  </select>
+                  </SelectNative>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 pt-4 border-t border-surface-800">

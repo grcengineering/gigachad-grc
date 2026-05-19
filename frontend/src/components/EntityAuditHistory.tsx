@@ -20,6 +20,8 @@ import {
 import clsx from 'clsx';
 import { auditApi } from '@/lib/api';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface AuditLogEntry {
   id: string;
   action: string;
@@ -305,7 +307,6 @@ function AuditLogItem({ entry }: { entry: AuditLogEntry }) {
     <div className="relative pl-8 pb-6 last:pb-0">
       {/* Timeline line */}
       <div className="absolute left-[11px] top-6 bottom-0 w-px bg-surface-700 last:hidden" />
-
       {/* Timeline dot */}
       <div
         className={clsx(
@@ -317,7 +318,6 @@ function AuditLogItem({ entry }: { entry: AuditLogEntry }) {
       >
         <ActionIcon className={clsx('w-3.5 h-3.5', colors.text)} />
       </div>
-
       {/* Content */}
       <div
         className={clsx(
@@ -435,7 +435,7 @@ export function EntityAuditHistory({ entityType, entityId, limit = 50 }: EntityA
         <div className="flex items-center gap-2">
           {/* Filter */}
           {uniqueActions.length > 1 && (
-            <select
+            <SelectNative
               value={filterAction}
               onChange={(e) => setFilterAction(e.target.value)}
               className="text-xs bg-surface-800 border border-surface-700 rounded-md text-surface-700 py-1.5 px-2"
@@ -446,7 +446,7 @@ export function EntityAuditHistory({ entityType, entityId, limit = 50 }: EntityA
                   {action.replace(/_/g, ' ').replace(/\./g, ' ')}
                 </option>
               ))}
-            </select>
+            </SelectNative>
           )}
 
           {/* Refresh */}
@@ -462,7 +462,6 @@ export function EntityAuditHistory({ entityType, entityId, limit = 50 }: EntityA
           </button>
         </div>
       </div>
-
       {/* Timeline */}
       {isLoading ? (
         <div className="space-y-4">

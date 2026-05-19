@@ -19,6 +19,8 @@ import clsx from 'clsx';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 const STATUS_CONFIG: Record<string, { label: string; color: string; bgColor: string }> = {
   planning: { label: 'Planning', color: 'text-blue-600', bgColor: 'bg-blue-500/20' },
   fieldwork: { label: 'Fieldwork', color: 'text-yellow-600', bgColor: 'bg-yellow-500/20' },
@@ -286,7 +288,7 @@ export default function AuditDetail() {
         <div className="bg-surface-800 rounded-lg border border-surface-700 p-4">
           <p className="text-surface-600 text-sm mb-1">Status</p>
           {isEditing ? (
-            <select
+            <SelectNative
               value={editForm.status}
               onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
               className="w-full bg-surface-700 border border-surface-600 rounded-md px-3 py-2 text-white"
@@ -296,7 +298,7 @@ export default function AuditDetail() {
                   {label}
                 </option>
               ))}
-            </select>
+            </SelectNative>
           ) : (
             <span
               className={clsx(

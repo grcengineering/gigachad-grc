@@ -32,6 +32,8 @@ import { AdvancedFilters, conditionsToQueryParams } from '@/components/AdvancedF
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 // Define filter fields for controls
 const CONTROL_FILTER_FIELDS = [
   { key: 'title', label: 'Title', type: 'string' as const },
@@ -318,7 +320,7 @@ export default function Controls() {
               className="input pl-10"
             />
           </div>
-          <select
+          <SelectNative
             value={selectedCategory}
             onChange={(e) => updateFilter('category', e.target.value)}
             className="input w-full md:w-48"
@@ -329,8 +331,8 @@ export default function Controls() {
                 {cat.category.replace('_', ' ')} ({cat.count})
               </option>
             ))}
-          </select>
-          <select
+          </SelectNative>
+          <SelectNative
             value={selectedStatus}
             onChange={(e) => updateFilter('status', e.target.value)}
             className="input w-full md:w-40"
@@ -340,8 +342,8 @@ export default function Controls() {
             <option value="in_progress">In Progress</option>
             <option value="not_started">Not Started</option>
             <option value="not_applicable">N/A</option>
-          </select>
-          <select
+          </SelectNative>
+          <SelectNative
             value={selectedFramework}
             onChange={(e) => updateFilter('framework', e.target.value)}
             className="input w-full md:w-48"
@@ -352,7 +354,7 @@ export default function Controls() {
                 {fw.name}
               </option>
             ))}
-          </select>
+          </SelectNative>
         </div>
       </div>
       {/* Controls Table */}

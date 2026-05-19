@@ -20,6 +20,8 @@ import toast from 'react-hot-toast';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 type ConfigTab = 'tiers' | 'categories' | 'assessments' | 'contracts' | 'features';
 
 export default function TPRMConfiguration() {
@@ -368,7 +370,7 @@ function TierFrequencyTab({
               </div>
               <div className="flex items-center gap-3 flex-wrap">
                 <label className="text-sm text-surface-600">Review every:</label>
-                <select
+                <SelectNative
                   value={getSelectValue(tier.key)}
                   onChange={(e) => handleFrequencyChange(tier.key, e.target.value)}
                   className="px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white min-w-[180px]"
@@ -384,7 +386,7 @@ function TierFrequencyTab({
                   {!referenceData.frequencyOptions.find((o) => o.value === 'custom') && (
                     <option value="custom">Custom...</option>
                   )}
-                </select>
+                </SelectNative>
 
                 {showCustomInput[tier.key] && (
                   <div className="flex items-center gap-2">
@@ -642,7 +644,7 @@ function AssessmentSettingsTab({
               </p>
             </div>
           </div>
-          <select
+          <SelectNative
             value={settings.defaultAssessmentType ?? 'standard'}
             onChange={(e) => handleChange('defaultAssessmentType', e.target.value)}
             className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
@@ -652,7 +654,7 @@ function AssessmentSettingsTab({
             <option value="soc2_review">SOC 2 Review</option>
             <option value="security_review">Security Review</option>
             <option value="privacy_review">Privacy Review</option>
-          </select>
+          </SelectNative>
         </div>
       </div>
     </div>

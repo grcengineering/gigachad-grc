@@ -29,6 +29,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 // Using RiskDetail from apiTypes as RiskDetailData
 
 const RISK_LEVELS = [
@@ -865,7 +867,7 @@ function LinkControlModal({
           {selectedControlId && (
             <div>
               <label className="block text-sm text-surface-600 mb-2">Control Effectiveness</label>
-              <select
+              <SelectNative
                 value={effectiveness}
                 onChange={(e) => setEffectiveness(e.target.value)}
                 className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
@@ -873,7 +875,7 @@ function LinkControlModal({
                 <option value="none">None</option>
                 <option value="partial">Partial</option>
                 <option value="full">Full</option>
-              </select>
+              </SelectNative>
             </div>
           )}
         </div>
@@ -1144,7 +1146,7 @@ function ScenarioModal({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm text-surface-600 mb-2">Threat Actor</label>
-              <select
+              <SelectNative
                 value={scenario.threatActor}
                 onChange={(e) => setScenario((prev) => ({ ...prev, threatActor: e.target.value }))}
                 className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
@@ -1153,7 +1155,7 @@ function ScenarioModal({
                 <option value="insider">Insider</option>
                 <option value="external">External</option>
                 <option value="natural">Natural Event</option>
-              </select>
+              </SelectNative>
             </div>
             <div>
               <label className="block text-sm text-surface-600 mb-2">Attack Vector</label>
@@ -1169,7 +1171,7 @@ function ScenarioModal({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm text-surface-600 mb-2">Likelihood</label>
-              <select
+              <SelectNative
                 value={scenario.likelihood}
                 onChange={(e) => setScenario((prev) => ({ ...prev, likelihood: e.target.value }))}
                 className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
@@ -1179,11 +1181,11 @@ function ScenarioModal({
                     {l.replace('_', ' ')}
                   </option>
                 ))}
-              </select>
+              </SelectNative>
             </div>
             <div>
               <label className="block text-sm text-surface-600 mb-2">Impact</label>
-              <select
+              <SelectNative
                 value={scenario.impact}
                 onChange={(e) => setScenario((prev) => ({ ...prev, impact: e.target.value }))}
                 className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
@@ -1193,7 +1195,7 @@ function ScenarioModal({
                     {i}
                   </option>
                 ))}
-              </select>
+              </SelectNative>
             </div>
           </div>
           <div className="flex justify-end gap-3 pt-2">
@@ -1332,7 +1334,7 @@ function EditRiskModal({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-surface-700 mb-2">Category</label>
-              <select
+              <SelectNative
                 value={formData.category}
                 onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value }))}
                 className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
@@ -1342,11 +1344,11 @@ function EditRiskModal({
                     {cat.label}
                   </option>
                 ))}
-              </select>
+              </SelectNative>
             </div>
             <div>
               <label className="block text-sm font-medium text-surface-700 mb-2">Source</label>
-              <select
+              <SelectNative
                 value={formData.source}
                 onChange={(e) => setFormData((prev) => ({ ...prev, source: e.target.value }))}
                 className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
@@ -1356,7 +1358,7 @@ function EditRiskModal({
                     {src.label}
                   </option>
                 ))}
-              </select>
+              </SelectNative>
             </div>
           </div>
 
@@ -1365,7 +1367,7 @@ function EditRiskModal({
             <label className="block text-sm font-medium text-surface-700 mb-2">
               Initial Severity
             </label>
-            <select
+            <SelectNative
               value={formData.initialSeverity}
               onChange={(e) =>
                 setFormData((prev) => ({ ...prev, initialSeverity: e.target.value as any }))
@@ -1377,7 +1379,7 @@ function EditRiskModal({
                   {sev.label}
                 </option>
               ))}
-            </select>
+            </SelectNative>
           </div>
 
           {/* Tags */}

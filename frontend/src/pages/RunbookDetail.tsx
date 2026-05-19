@@ -19,6 +19,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface RunbookStep {
   id: string;
   step_number: number;
@@ -286,7 +288,7 @@ export default function RunbookDetail() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <label className="block text-sm font-medium text-surface-700 mb-2">Category</label>
-                <select
+                <SelectNative
                   className="form-select w-full"
                   value={editForm.category}
                   onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
@@ -296,11 +298,11 @@ export default function RunbookDetail() {
                       {cat.icon} {cat.label}
                     </option>
                   ))}
-                </select>
+                </SelectNative>
               </div>
               <div>
                 <label className="block text-sm font-medium text-surface-700 mb-2">Status</label>
-                <select
+                <SelectNative
                   className="form-select w-full"
                   value={editForm.status}
                   onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
@@ -310,7 +312,7 @@ export default function RunbookDetail() {
                       {status.label}
                     </option>
                   ))}
-                </select>
+                </SelectNative>
               </div>
               <div>
                 <label className="block text-sm font-medium text-surface-700 mb-2">
@@ -587,7 +589,7 @@ export default function RunbookDetail() {
                   <label className="block text-sm font-medium text-surface-700 mb-2">
                     Category
                   </label>
-                  <select
+                  <SelectNative
                     className="form-select w-full"
                     value={editForm.category}
                     onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
@@ -597,11 +599,11 @@ export default function RunbookDetail() {
                         {cat.label}
                       </option>
                     ))}
-                  </select>
+                  </SelectNative>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-surface-700 mb-2">Status</label>
-                  <select
+                  <SelectNative
                     className="form-select w-full"
                     value={editForm.status}
                     onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
@@ -611,7 +613,7 @@ export default function RunbookDetail() {
                         {status.label}
                       </option>
                     ))}
-                  </select>
+                  </SelectNative>
                 </div>
               </div>
               <div className="flex justify-end gap-3 pt-4">

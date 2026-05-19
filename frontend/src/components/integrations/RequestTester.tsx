@@ -13,6 +13,8 @@ import type { ApiEndpoint, AuthConfiguration } from './AdvancedBuilderTab';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface RequestTesterProps {
   endpoints: ApiEndpoint[];
   authConfig: AuthConfiguration;
@@ -180,7 +182,7 @@ export default function RequestTester({
         </div>
         <div>
           <label className="text-sm text-surface-600 block mb-1.5">Endpoint to Test</label>
-          <select
+          <SelectNative
             value={selectedEndpointId || ''}
             onChange={(e) => setSelectedEndpointId(e.target.value || null)}
             className="input w-full"
@@ -195,7 +197,7 @@ export default function RequestTester({
                 </option>
               ))
             )}
-          </select>
+          </SelectNative>
         </div>
       </div>
       {/* Request Preview */}

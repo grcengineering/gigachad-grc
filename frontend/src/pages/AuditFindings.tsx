@@ -24,6 +24,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface Finding {
   id: string;
   findingNumber: string;
@@ -247,7 +249,6 @@ export default function AuditFindings() {
           New Finding
         </Button>
       </div>
-
       {/* Stats Cards */}
       {statsData && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -274,7 +275,6 @@ export default function AuditFindings() {
           </div>
         </div>
       )}
-
       {/* Bulk Actions */}
       {selection.selectedItems.length > 0 && (
         <BulkActionsBar
@@ -305,7 +305,6 @@ export default function AuditFindings() {
           }}
         />
       )}
-
       {/* Filters */}
       <div className="flex items-center gap-4">
         <Button
@@ -325,12 +324,11 @@ export default function AuditFindings() {
           </button>
         )}
       </div>
-
       {showFilters && (
         <div className="bg-surface-800 rounded-lg p-4 border border-surface-700 grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-medium text-surface-700 mb-1">Audit</label>
-            <select
+            <SelectNative
               value={filters.auditId}
               onChange={(e) => setFilter('auditId', e.target.value)}
               className="w-full bg-surface-700 border border-surface-600 rounded-md px-3 py-2 text-white"
@@ -341,11 +339,11 @@ export default function AuditFindings() {
                   {audit.name}
                 </option>
               ))}
-            </select>
+            </SelectNative>
           </div>
           <div>
             <label className="block text-sm font-medium text-surface-700 mb-1">Status</label>
-            <select
+            <SelectNative
               value={filters.status}
               onChange={(e) => setFilter('status', e.target.value)}
               className="w-full bg-surface-700 border border-surface-600 rounded-md px-3 py-2 text-white"
@@ -356,11 +354,11 @@ export default function AuditFindings() {
                   {s.label}
                 </option>
               ))}
-            </select>
+            </SelectNative>
           </div>
           <div>
             <label className="block text-sm font-medium text-surface-700 mb-1">Severity</label>
-            <select
+            <SelectNative
               value={filters.severity}
               onChange={(e) => setFilter('severity', e.target.value)}
               className="w-full bg-surface-700 border border-surface-600 rounded-md px-3 py-2 text-white"
@@ -371,11 +369,11 @@ export default function AuditFindings() {
                   {label}
                 </option>
               ))}
-            </select>
+            </SelectNative>
           </div>
           <div>
             <label className="block text-sm font-medium text-surface-700 mb-1">Category</label>
-            <select
+            <SelectNative
               value={filters.category}
               onChange={(e) => setFilter('category', e.target.value)}
               className="w-full bg-surface-700 border border-surface-600 rounded-md px-3 py-2 text-white"
@@ -386,11 +384,10 @@ export default function AuditFindings() {
                   {c.label}
                 </option>
               ))}
-            </select>
+            </SelectNative>
           </div>
         </div>
       )}
-
       {/* Findings Table */}
       {isLoading ? (
         <SkeletonTable rows={8} columns={6} />
@@ -515,7 +512,6 @@ export default function AuditFindings() {
           </table>
         </div>
       )}
-
       {/* Create/Edit Modal */}
       <Modal
         isOpen={isCreateModalOpen || !!editingFinding}
@@ -607,7 +603,7 @@ function FindingForm({ finding, audits, users, onSubmit, onDelete, isLoading }: 
           <label className="block text-sm font-medium text-surface-700 mb-1">
             Audit <span className="text-red-600">*</span>
           </label>
-          <select
+          <SelectNative
             value={formData.auditId}
             onChange={(e) => setFormData({ ...formData, auditId: e.target.value })}
             required
@@ -619,7 +615,7 @@ function FindingForm({ finding, audits, users, onSubmit, onDelete, isLoading }: 
                 {audit.name}
               </option>
             ))}
-          </select>
+          </SelectNative>
         </div>
 
         <div className="col-span-2">
@@ -652,7 +648,7 @@ function FindingForm({ finding, audits, users, onSubmit, onDelete, isLoading }: 
 
         <div>
           <label className="block text-sm font-medium text-surface-700 mb-1">Category</label>
-          <select
+          <SelectNative
             value={formData.category}
             onChange={(e) => setFormData({ ...formData, category: e.target.value })}
             className="w-full bg-surface-700 border border-surface-600 rounded-md px-3 py-2 text-white"
@@ -662,12 +658,12 @@ function FindingForm({ finding, audits, users, onSubmit, onDelete, isLoading }: 
                 {c.label}
               </option>
             ))}
-          </select>
+          </SelectNative>
         </div>
 
         <div>
           <label className="block text-sm font-medium text-surface-700 mb-1">Severity</label>
-          <select
+          <SelectNative
             value={formData.severity}
             onChange={(e) => setFormData({ ...formData, severity: e.target.value })}
             className="w-full bg-surface-700 border border-surface-600 rounded-md px-3 py-2 text-white"
@@ -677,13 +673,13 @@ function FindingForm({ finding, audits, users, onSubmit, onDelete, isLoading }: 
                 {label}
               </option>
             ))}
-          </select>
+          </SelectNative>
         </div>
 
         {finding && (
           <div>
             <label className="block text-sm font-medium text-surface-700 mb-1">Status</label>
-            <select
+            <SelectNative
               value={formData.status}
               onChange={(e) => setFormData({ ...formData, status: e.target.value })}
               className="w-full bg-surface-700 border border-surface-600 rounded-md px-3 py-2 text-white"
@@ -693,7 +689,7 @@ function FindingForm({ finding, audits, users, onSubmit, onDelete, isLoading }: 
                   {s.label}
                 </option>
               ))}
-            </select>
+            </SelectNative>
           </div>
         )}
 
@@ -711,7 +707,7 @@ function FindingForm({ finding, audits, users, onSubmit, onDelete, isLoading }: 
           <label className="block text-sm font-medium text-surface-700 mb-1">
             Remediation Owner
           </label>
-          <select
+          <SelectNative
             value={formData.remediationOwner}
             onChange={(e) => setFormData({ ...formData, remediationOwner: e.target.value })}
             className="w-full bg-surface-700 border border-surface-600 rounded-md px-3 py-2 text-white"
@@ -722,7 +718,7 @@ function FindingForm({ finding, audits, users, onSubmit, onDelete, isLoading }: 
                 {user.firstName} {user.lastName} ({user.email})
               </option>
             ))}
-          </select>
+          </SelectNative>
         </div>
 
         <div className="col-span-2">

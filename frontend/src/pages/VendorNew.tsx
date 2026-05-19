@@ -10,6 +10,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 const CATEGORY_OPTIONS = [
   { value: 'software_vendor', label: 'Software Vendor' },
   { value: 'cloud_provider', label: 'Cloud Provider' },
@@ -148,7 +150,7 @@ export default function VendorNew() {
             <label htmlFor="category" className="block text-sm font-medium text-surface-700 mb-1">
               Category <span className="text-red-600">*</span>
             </label>
-            <select
+            <SelectNative
               id="category"
               value={formData.category}
               onChange={(e) => handleChange('category', e.target.value)}
@@ -159,13 +161,13 @@ export default function VendorNew() {
                   {option.label}
                 </option>
               ))}
-            </select>
+            </SelectNative>
           </div>
           <div>
             <label htmlFor="tier" className="block text-sm font-medium text-surface-700 mb-1">
               Vendor Tier
             </label>
-            <select
+            <SelectNative
               id="tier"
               value={formData.tier}
               onChange={(e) => handleChange('tier', e.target.value)}
@@ -176,7 +178,7 @@ export default function VendorNew() {
                   {option.label}
                 </option>
               ))}
-            </select>
+            </SelectNative>
           </div>
         </div>
 
@@ -185,7 +187,7 @@ export default function VendorNew() {
           <label htmlFor="status" className="block text-sm font-medium text-surface-700 mb-1">
             Status
           </label>
-          <select
+          <SelectNative
             id="status"
             value={formData.status}
             onChange={(e) => handleChange('status', e.target.value)}
@@ -196,7 +198,7 @@ export default function VendorNew() {
                 {option.label}
               </option>
             ))}
-          </select>
+          </SelectNative>
         </div>
 
         {/* Website */}

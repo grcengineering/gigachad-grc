@@ -18,6 +18,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface TestProcedure {
   id: string;
   procedureNumber: string;
@@ -293,7 +295,7 @@ export default function TestProcedures() {
                         <label className="block text-sm font-medium text-surface-600 mb-1">
                           Conclusion
                         </label>
-                        <select
+                        <SelectNative
                           value={resultForm.conclusion}
                           onChange={(e) =>
                             setResultForm({ ...resultForm, conclusion: e.target.value })
@@ -304,7 +306,7 @@ export default function TestProcedures() {
                           <option value="partially_effective">Partially Effective</option>
                           <option value="ineffective">Ineffective</option>
                           <option value="not_applicable">Not Applicable</option>
-                        </select>
+                        </SelectNative>
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-surface-600 mb-1">
@@ -374,7 +376,7 @@ export default function TestProcedures() {
                   <label className="block text-sm font-medium text-surface-700 mb-1">
                     Test Type
                   </label>
-                  <select
+                  <SelectNative
                     value={createForm.testType}
                     onChange={(e) =>
                       setCreateForm((prev) => ({ ...prev, testType: e.target.value }))
@@ -385,7 +387,7 @@ export default function TestProcedures() {
                     <option value="observation">Observation</option>
                     <option value="inspection">Inspection</option>
                     <option value="reperformance">Reperformance</option>
-                  </select>
+                  </SelectNative>
                 </div>
 
                 <div>

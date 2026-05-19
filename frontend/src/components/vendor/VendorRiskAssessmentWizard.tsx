@@ -14,6 +14,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 // ============================================
 // Types
 // ============================================
@@ -566,7 +568,7 @@ export function VendorRiskAssessmentWizard({
             {Object.entries(IMPACT_OPTIONS).map(([key, options]) => (
               <div key={key}>
                 <h4 className="font-medium text-surface-200 mb-2 capitalize">{key} Impact</h4>
-                <select
+                <SelectNative
                   value={
                     state[
                       `impact${key.charAt(0).toUpperCase() + key.slice(1)}` as keyof WizardState
@@ -587,7 +589,7 @@ export function VendorRiskAssessmentWizard({
                       {opt.label} ({opt.value} pts)
                     </option>
                   ))}
-                </select>
+                </SelectNative>
               </div>
             ))}
           </div>

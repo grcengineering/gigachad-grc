@@ -6,6 +6,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface TreatmentFormData {
   treatmentPlan: string;
   treatmentNotes: string;
@@ -103,7 +105,7 @@ export default function RiskTreatmentModal({
           </div>
           <div>
             <label className="block text-sm text-surface-600 mb-1">Target Residual Risk</label>
-            <select
+            <SelectNative
               value={formData.targetResidualRisk}
               onChange={(e) => setFormData({ ...formData, targetResidualRisk: e.target.value })}
               className="w-full bg-surface-900 border border-surface-700 rounded-lg px-3 py-2 text-white"
@@ -113,7 +115,7 @@ export default function RiskTreatmentModal({
                   {level.label}
                 </option>
               ))}
-            </select>
+            </SelectNative>
           </div>
           <div>
             <label className="block text-sm text-surface-600 mb-1">Treatment Due Date</label>
