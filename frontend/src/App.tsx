@@ -129,6 +129,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 // Module route guard - checks if current route's module is enabled
 const DisabledModulePage = lazy(() => import('./pages/DisabledModulePage'));
+const DesignSystem = lazy(() => import('./pages/DesignSystem'));
 
 // Import module context for route checking
 import { useModules, ModuleId } from './contexts/ModuleContext';
@@ -1155,6 +1156,14 @@ export default function App() {
             }
           />
         </Route>
+        <Route
+          path="/design-system"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <DesignSystem />
+            </Suspense>
+          }
+        />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </Suspense>

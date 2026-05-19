@@ -1,145 +1,66 @@
-import { forwardRef, InputHTMLAttributes, ReactNode, useId } from 'react';
-import clsx from 'clsx';
+import { InputHTMLAttributes, forwardRef, ReactNode } from 'react';
+import { cn } from '@/lib/cn';
 
-export interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> {
-  label?: string;
-  error?: string;
-  hint?: string;
+export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+  invalid?: boolean;
   leftIcon?: ReactNode;
-  rightIcon?: ReactNode;
-  size?: 'sm' | 'md' | 'lg';
-  fullWidth?: boolean;
+  rightSlot?: ReactNode;
+  inputSize?: 'sm' | 'md' | 'lg';
 }
 
-const sizeStyles = {
-  sm: 'px-3 py-1.5 text-sm',
-  md: 'px-3 py-2 text-sm',
-  lg: 'px-4 py-3 text-base',
+const sizes = {
+  sm: 'h-8 text-small',
+  md: 'h-9 text-body',
+  lg: 'h-10 text-body',
 };
 
-/**
- * Accessible Input Component
- * 
- * Features:
- * - Automatic label association with unique IDs
- * - Error state with aria-invalid and aria-describedby
- * - Hint text support
- * - Screen reader friendly
- */
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  (
-    {
-      label,
-      error,
-      hint,
-      leftIcon,
-      rightIcon,
-      size = 'md',
-      fullWidth = false,
-      className,
-      id: providedId,
-      required,
-      disabled,
-      type = 'text',
-      ...props
-    },
-    ref
-  ) => {
-    // Generate unique IDs for accessibility
-    const generatedId = useId();
-    const id = providedId || generatedId;
-    const errorId = `${id}-error`;
-    const hintId = `${id}-hint`;
-
-    // Build aria-describedby from available descriptions
-    const describedBy = [
-      error && errorId,
-      hint && !error && hintId,
-    ].filter(Boolean).join(' ') || undefined;
-
-    return (
-      <div className={clsx('flex flex-col gap-1', fullWidth && 'w-full')}>
-        {label && (
-          <label
-            htmlFor={id}
-            className="text-sm font-medium text-surface-300"
-          >
-            {label}
-            {required && (
-              <span className="text-red-500 ml-1" aria-hidden="true">*</span>
-            )}
-            {required && <span className="sr-only">(required)</span>}
-          </label>
-        )}
-        
-        <div className="relative">
+  ({ className, invalid, leftIcon, rightSlot, inputSize = 'md', ...props }, ref) => {
+    if (leftIcon || rightSlot) {
+      return (
+        <div className="relative w-full">
           {leftIcon && (
-            <div 
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-surface-500"
-              aria-hidden="true"
-            >
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-surface-500 pointer-events-none">
               {leftIcon}
-            </div>
+            </span>
           )}
-          
           <input
             ref={ref}
-            id={id}
-            type={type}
-            disabled={disabled}
-            required={required}
-            aria-invalid={error ? 'true' : undefined}
-            aria-describedby={describedBy}
-            aria-required={required}
-            className={clsx(
-              'w-full rounded-lg border bg-surface-900 text-surface-100',
-              'placeholder:text-surface-500',
-              'transition-colors duration-200',
-              'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-surface-900',
-              error
-                ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
-                : 'border-surface-700 focus:border-blue-500 focus:ring-blue-500',
-              disabled && 'opacity-60 cursor-not-allowed bg-surface-800',
-              leftIcon && 'pl-10',
-              rightIcon && 'pr-10',
-              sizeStyles[size],
+            className={cn(
+              'w-full rounded-md border bg-white px-3 text-surface-900 placeholder:text-surface-600 transition-colors',
+              'focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-1 focus-visible:ring-offset-surface-50',
+              'disabled:opacity-50 disabled:cursor-not-allowed',
+              invalid ? 'border-red-500/60' : 'border-surface-300 hover:border-surface-400',
+              sizes[inputSize],
+              leftIcon && 'pl-9',
+              rightSlot && 'pr-9',
               className
             )}
             {...props}
           />
-          
-          {rightIcon && (
-            <div 
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-surface-500"
-              aria-hidden="true"
-            >
-              {rightIcon}
-            </div>
+          {rightSlot && (
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-surface-500">
+              {rightSlot}
+            </span>
           )}
         </div>
+      );
+    }
 
-        {error && (
-          <p 
-            id={errorId} 
-            className="text-sm text-red-500"
-            role="alert"
-            aria-live="polite"
-          >
-            {error}
-          </p>
+    return (
+      <input
+        ref={ref}
+        className={cn(
+          'w-full rounded-md border bg-white px-3 text-surface-900 placeholder:text-surface-600 transition-colors',
+          'focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-1 focus-visible:ring-offset-surface-50',
+          'disabled:opacity-50 disabled:cursor-not-allowed',
+          invalid ? 'border-red-500/60' : 'border-surface-300 hover:border-surface-400',
+          sizes[inputSize],
+          className
         )}
-
-        {hint && !error && (
-          <p id={hintId} className="text-sm text-surface-500">
-            {hint}
-          </p>
-        )}
-      </div>
+        {...props}
+      />
     );
   }
 );
-
 Input.displayName = 'Input';
-
-export default Input;
-
