@@ -18,7 +18,7 @@ import {
 } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import { SkeletonGrid } from '@/components/Skeleton';
 import api from '@/lib/api';
 

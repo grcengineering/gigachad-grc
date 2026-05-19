@@ -21,7 +21,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { CheckCircleIcon as CheckCircleSolidIcon } from '@heroicons/react/24/solid';
 import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import {
   TRAINING_MODULES,
   COMBINED_TRAINING,

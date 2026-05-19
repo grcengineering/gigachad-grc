@@ -1,6 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { LockClosedIcon, ArrowLeftIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import { MODULE_DEFINITIONS, ModuleId } from '@/contexts/ModuleContext';
 
 interface DisabledModulePageProps {

@@ -8,7 +8,7 @@ import { frameworksApi, mappingsApi } from '@/lib/api';
 import type { Framework, MappingGapRow, MappingGapType } from '@/lib/apiTypes';
 import { useAuth } from '@/contexts/AuthContext';
 import { EmptyState } from '@/components/EmptyState';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import { exportData } from '@/lib/export';
 
 type TabKey = 'all' | MappingGapType;

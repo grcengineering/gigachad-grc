@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { PlusIcon } from '@heroicons/react/24/outline';
 import { contractsApi } from '@/lib/api';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import { SkeletonTable } from '@/components/Skeleton';
 import { EmptyState } from '@/components/EmptyState';
 

@@ -11,7 +11,7 @@ import {
   CheckCircleIcon,
 } from '@heroicons/react/24/outline';
 import { auditsApi, auditFindingsApi, auditRequestsApi } from '../lib/api';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import { SkeletonDetailHeader, SkeletonDetailSection } from '@/components/Skeleton';
 import { ConfirmModal } from '@/components/Modal';
 import toast from 'react-hot-toast';

@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { XMarkIcon, CheckIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
-import { Button } from './Button';
+import { Button } from '@/components/ui/Button';
 import { ConfirmModal } from './Modal';
 import clsx from 'clsx';
 

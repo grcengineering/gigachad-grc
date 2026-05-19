@@ -5,7 +5,7 @@ import { controlsApi } from '@/lib/api';
 import { CreateControlData, ControlCategory } from '@/lib/apiTypes';
 import toast from 'react-hot-toast';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 
 // Categories must match backend ControlCategory enum exactly
 const CATEGORY_OPTIONS: { value: ControlCategory; label: string }[] = [

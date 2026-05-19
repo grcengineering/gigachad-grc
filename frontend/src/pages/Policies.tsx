@@ -11,7 +11,7 @@ import {
   ArrowUpTrayIcon,
 } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import { SkeletonTable } from '@/components/Skeleton';
 import { ExportDropdown } from '@/components/ExportDropdown';
 import { exportConfigs } from '@/lib/export';

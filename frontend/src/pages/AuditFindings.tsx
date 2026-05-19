@@ -11,7 +11,7 @@ import {
   XCircleIcon,
   ArrowPathIcon,
 } from '@heroicons/react/24/outline';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/Modal';
 import { EmptyState } from '@/components/EmptyState';
 import { SkeletonTable } from '@/components/Skeleton';

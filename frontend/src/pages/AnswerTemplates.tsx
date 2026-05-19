@@ -14,7 +14,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { answerTemplatesApi, AnswerTemplate, CreateAnswerTemplateData } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/EmptyState';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';

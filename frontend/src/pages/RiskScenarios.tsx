@@ -13,7 +13,7 @@ import {
   ChartBarIcon,
 } from '@heroicons/react/24/outline';
 import { riskScenariosApi, RiskScenario } from '@/lib/api';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/Modal';
 import { SkeletonTable } from '@/components/Skeleton';
 import { EmptyState } from '@/components/EmptyState';

@@ -16,7 +16,7 @@ import {
   ArrowTopRightOnSquareIcon,
   DocumentTextIcon,
 } from '@heroicons/react/24/outline';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import { Tooltip } from '@/components/Tooltip';
 import clsx from 'clsx';
 

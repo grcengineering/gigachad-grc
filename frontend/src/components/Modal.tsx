@@ -1,6 +1,6 @@
 import { useEffect, useRef, ReactNode } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
-import { Button } from './Button';
+import { Button } from '@/components/ui/Button';
 import clsx from 'clsx';
 
 interface ModalProps {

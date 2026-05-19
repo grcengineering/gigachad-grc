@@ -1,5 +1,5 @@
 // UI Components
-export * from './Button';
+export * from '@/components/ui/Button';
 export * from './Skeleton';
 export * from './Form';
 export * from './Modal';
@@ -10,4 +10,3 @@ export * from './DashboardWidgets';
 export * from './ScheduledReports';
 export { default as Loading } from './Loading';
 export { default as ErrorBoundary } from './ErrorBoundary';
-

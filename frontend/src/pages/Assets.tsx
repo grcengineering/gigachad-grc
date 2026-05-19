@@ -18,7 +18,7 @@ import {
   AlertTriangle,
   CheckCircle,
 } from 'lucide-react';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import { SkeletonTable } from '@/components/Skeleton';
 import { ExportDropdown } from '@/components/ExportDropdown';
 import { exportConfigs } from '@/lib/export';

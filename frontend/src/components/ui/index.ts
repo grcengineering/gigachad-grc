@@ -1,5 +1,5 @@
-export { Button } from './Button';
-export type { ButtonProps, ButtonVariant, ButtonSize } from './Button';
+export { Button } from '@/components/ui/Button';
+export type { ButtonProps, ButtonVariant, ButtonSize } from '@/components/ui/Button';
 
 export { Card, CardHeader, CardTitle, CardDescription, CardBody, CardFooter } from './Card';
 export type { CardProps, CardDensity } from './Card';

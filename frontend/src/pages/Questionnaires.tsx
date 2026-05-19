@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { PlusIcon } from '@heroicons/react/24/outline';
 import { questionnairesApi } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import { SkeletonTable } from '@/components/Skeleton';
 import { EmptyState } from '@/components/EmptyState';
 

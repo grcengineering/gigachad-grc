@@ -7,7 +7,7 @@ import {
   ExclamationTriangleIcon,
   ArrowLeftIcon,
 } from '@heroicons/react/24/outline';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import { SkeletonGrid } from '@/components/Skeleton';
 import { EmptyState, NoResultsEmptyState } from '@/components/EmptyState';
 import { auditsApi, auditRequestsApi } from '@/lib/api';

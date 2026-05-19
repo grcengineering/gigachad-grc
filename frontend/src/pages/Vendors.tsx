@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { PlusIcon, BuildingOfficeIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { vendorsApi } from '@/lib/api';
 import { Vendor } from '@/lib/apiTypes';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import { SkeletonTable } from '@/components/Skeleton';
 import { ExportDropdown } from '@/components/ExportDropdown';
 import { exportConfigs } from '@/lib/export';

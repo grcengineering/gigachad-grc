@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { permissionsApi } from '@/lib/api';
 import { useModules, MODULE_DEFINITIONS, ModuleId, MODULE_PRESETS } from '@/contexts/ModuleContext';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import toast from 'react-hot-toast';
 
 type ModuleConfigApiResponse = { enabledModules: string[] };

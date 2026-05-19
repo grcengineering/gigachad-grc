@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { Button } from './Button';
+import { Button } from '@/components/ui/Button';
 import {
   DocumentTextIcon,
   FolderOpenIcon,

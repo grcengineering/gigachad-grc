@@ -15,7 +15,7 @@ import { vendorsApi, tprmConfigApi, TprmFeatureSettings } from '../lib/api';
 import { Vendor } from '../lib/apiTypes';
 import { safeHref } from '../lib/safeHref';
 import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import { SkeletonDetailHeader, SkeletonDetailSection } from '@/components/Skeleton';
 import { ConfirmModal } from '@/components/Modal';
 import { SOC2AnalysisPanel } from '@/components/vendor/SOC2AnalysisPanel';

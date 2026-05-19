@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import { Textarea } from '@/components/Form';
 import { useToast } from '@/hooks/useToast';
 import { useModules } from '@/contexts/ModuleContext';

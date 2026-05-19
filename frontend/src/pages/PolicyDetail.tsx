@@ -21,7 +21,7 @@ import {
   ChatBubbleLeftRightIcon,
 } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import { SkeletonDetailHeader, SkeletonDetailSection } from '@/components/Skeleton';
 
 type TabType = 'status' | 'history';

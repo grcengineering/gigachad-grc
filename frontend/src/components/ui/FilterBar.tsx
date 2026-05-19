@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/cn';
-import { Button } from './Button';
+import { Button } from '@/components/ui/Button';
 
 export interface ActiveFilter {
   key: string;

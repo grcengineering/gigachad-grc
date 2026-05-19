@@ -4,7 +4,7 @@ import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { ArrowLeftIcon, PencilIcon, TrashIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { knowledgeBaseApi } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import { SkeletonDetailHeader, SkeletonDetailSection } from '@/components/Skeleton';
 import toast from 'react-hot-toast';
 

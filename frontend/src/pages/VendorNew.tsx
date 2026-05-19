@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { vendorsApi } from '@/lib/api';
 import toast from 'react-hot-toast';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 
 const CATEGORY_OPTIONS = [
   { value: 'software_vendor', label: 'Software Vendor' },

@@ -9,7 +9,7 @@ import { useToast } from '../hooks/useToast';
 import { useCurrentWorkspaceId } from '../contexts/WorkspaceContext';
 import { useDebounce } from '../hooks/useDebounce';
 import { usePrefetch } from '../hooks/usePrefetch';
-import { Button } from '../components/Button';
+import { Button } from '@/components/ui/Button';
 import { useModules } from '../contexts/ModuleContext';
 import { FormField, Input, Textarea, Select } from '../components/Form';
 import { SkeletonTable, SkeletonStatCard } from '../components/Skeleton';

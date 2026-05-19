@@ -10,7 +10,7 @@ import {
   XMarkIcon,
   PaperAirplaneIcon,
 } from '@heroicons/react/24/outline';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import { useToast } from '@/hooks/useToast';
 import clsx from 'clsx';
 

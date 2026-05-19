@@ -10,7 +10,7 @@ import {
   ChevronRightIcon,
 } from '@heroicons/react/24/outline';
 import { questionnairesApi } from '../lib/api';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import { SkeletonDetailHeader, SkeletonDetailSection } from '@/components/Skeleton';
 import { KnowledgeBaseSearchPanel } from '@/components/trust/KnowledgeBaseSearchPanel';
 import { useAuth } from '@/contexts/AuthContext';

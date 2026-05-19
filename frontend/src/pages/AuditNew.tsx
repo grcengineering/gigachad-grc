@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { auditsApi } from '@/lib/api';
 import toast from 'react-hot-toast';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 
 const AUDIT_TYPE_OPTIONS = [
   { value: 'internal', label: 'Internal' },

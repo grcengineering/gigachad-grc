@@ -18,7 +18,7 @@ import {
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import BulkUploadModal from '@/components/BulkUploadModal';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import { SkeletonTable } from '@/components/Skeleton';
 import { ExportDropdown } from '@/components/ExportDropdown';
 import { exportConfigs } from '@/lib/export';

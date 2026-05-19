@@ -6,7 +6,7 @@ import {
   CheckCircleIcon,
   ShieldExclamationIcon,
 } from '@heroicons/react/24/outline';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import { vendorsApi } from '@/lib/api';
 import clsx from 'clsx';
 

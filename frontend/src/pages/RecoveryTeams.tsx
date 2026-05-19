@@ -7,7 +7,7 @@ import {
   FunnelIcon,
   LinkIcon,
 } from '@heroicons/react/24/outline';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import { api } from '@/lib/api';
 import clsx from 'clsx';
 

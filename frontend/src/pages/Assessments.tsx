@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { PlusIcon, DocumentCheckIcon } from '@heroicons/react/24/outline';
 import { assessmentsApi } from '../lib/api';
 import { VendorAssessment } from '../lib/apiTypes';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import { SkeletonTable } from '@/components/Skeleton';
 import toast from 'react-hot-toast';
 

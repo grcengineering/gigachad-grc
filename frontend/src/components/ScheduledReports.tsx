@@ -10,7 +10,7 @@ import {
   PauseIcon,
   CheckCircleIcon,
 } from '@heroicons/react/24/outline';
-import { Button } from './Button';
+import { Button } from '@/components/ui/Button';
 import { Modal } from './Modal';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
