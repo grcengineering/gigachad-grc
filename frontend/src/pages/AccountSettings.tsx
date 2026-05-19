@@ -25,7 +25,7 @@ export default function AccountSettings() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-surface-100">Account Settings</h1>
-        <p className="text-surface-400 mt-1">Manage your personal preferences</p>
+        <p className="text-surface-600 mt-1">Manage your personal preferences</p>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6">
@@ -40,7 +40,7 @@ export default function AccountSettings() {
                   'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
                   activeTab === tab.id
                     ? 'bg-brand-600/20 text-brand-400'
-                    : 'text-surface-400 hover:bg-surface-800 hover:text-surface-100'
+                    : 'text-surface-600 hover:bg-surface-800 hover:text-surface-100'
                 )}
               >
                 <tab.icon className="w-5 h-5" />
@@ -69,7 +69,7 @@ function ProfileSettings({ user }: { user: any }) {
 
       <div className="flex items-center gap-4">
         <div className="w-16 h-16 rounded-full bg-surface-700 flex items-center justify-center">
-          <span className="text-2xl font-medium text-surface-300">
+          <span className="text-2xl font-medium text-surface-700">
             {user?.name?.charAt(0)?.toUpperCase() || 'U'}
           </span>
         </div>
@@ -153,13 +153,13 @@ function NotificationPreferences() {
           <h2 className="text-lg font-semibold text-surface-100">
             Risk Workflow Task Notifications
           </h2>
-          <p className="text-surface-400 text-sm mt-1">
+          <p className="text-surface-600 text-sm mt-1">
             Choose how you want to be notified when tasks are assigned to you or completed.
           </p>
         </div>
 
         <div className="space-y-4">
-          <h3 className="text-sm font-medium text-surface-300">Notification Channels</h3>
+          <h3 className="text-sm font-medium text-surface-700">Notification Channels</h3>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Email */}
@@ -167,7 +167,7 @@ function NotificationPreferences() {
               <div className="flex items-center justify-between mb-2">
                 <span className="text-surface-100 font-medium flex items-center gap-2">
                   <svg
-                    className="w-5 h-5 text-surface-400"
+                    className="w-5 h-5 text-surface-600"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -195,7 +195,7 @@ function NotificationPreferences() {
             <label className="flex flex-col p-4 bg-surface-800/50 rounded-lg cursor-pointer hover:bg-surface-800 border-2 transition-colors border-transparent has-[:checked]:border-brand-500">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-surface-100 font-medium flex items-center gap-2">
-                  <BellIcon className="w-5 h-5 text-surface-400" />
+                  <BellIcon className="w-5 h-5 text-surface-600" />
                   In-App
                 </span>
                 <input
@@ -212,7 +212,7 @@ function NotificationPreferences() {
             <label className="flex flex-col p-4 bg-surface-800/50 rounded-lg cursor-pointer hover:bg-surface-800 border-2 transition-colors border-transparent has-[:checked]:border-brand-500">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-surface-100 font-medium flex items-center gap-2">
-                  <svg className="w-5 h-5 text-surface-400" viewBox="0 0 24 24" fill="currentColor">
+                  <svg className="w-5 h-5 text-surface-600" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zM6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zM8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zM18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zM17.688 8.834a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312zM15.165 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zM15.165 17.688a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z" />
                   </svg>
                   Slack
@@ -247,7 +247,7 @@ function NotificationPreferences() {
             </div>
           )}
 
-          <h3 className="text-sm font-medium text-surface-300 pt-4">Notification Timing</h3>
+          <h3 className="text-sm font-medium text-surface-700 pt-4">Notification Timing</h3>
 
           <div className="flex flex-wrap gap-3">
             {[
@@ -295,12 +295,12 @@ function NotificationPreferences() {
       {/* General Notifications */}
       <div className="card p-6 space-y-6">
         <h2 className="text-lg font-semibold text-surface-100">General Notifications</h2>
-        <p className="text-surface-400 text-sm">
+        <p className="text-surface-600 text-sm">
           Choose how you want to be notified about other activity.
         </p>
 
         <div className="space-y-4">
-          <h3 className="text-sm font-medium text-surface-300">Email Notifications</h3>
+          <h3 className="text-sm font-medium text-surface-700">Email Notifications</h3>
 
           <div className="space-y-3">
             <label className="flex items-center justify-between p-3 bg-surface-800/50 rounded-lg cursor-pointer hover:bg-surface-800">
@@ -375,7 +375,7 @@ function NotificationPreferences() {
             </label>
           </div>
 
-          <h3 className="text-sm font-medium text-surface-300 pt-4">In-App Notifications</h3>
+          <h3 className="text-sm font-medium text-surface-700 pt-4">In-App Notifications</h3>
 
           <label className="flex items-center justify-between p-3 bg-surface-800/50 rounded-lg cursor-pointer hover:bg-surface-800">
             <div>
@@ -454,11 +454,11 @@ function SecuritySettings() {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold text-surface-100">Two-Factor Authentication</h2>
-            <p className="text-surface-400 text-sm mt-1">
+            <p className="text-surface-600 text-sm mt-1">
               Add an extra layer of security to your account
             </p>
           </div>
-          <span className="px-3 py-1 text-sm rounded-full bg-surface-700 text-surface-300">
+          <span className="px-3 py-1 text-sm rounded-full bg-surface-700 text-surface-700">
             Not enabled
           </span>
         </div>
@@ -471,12 +471,12 @@ function SecuritySettings() {
 
       <div className="card p-6 space-y-6">
         <h2 className="text-lg font-semibold text-surface-100">Active Sessions</h2>
-        <p className="text-surface-400 text-sm">Manage your active sessions across devices</p>
+        <p className="text-surface-600 text-sm">Manage your active sessions across devices</p>
 
         <div className="space-y-3">
           <div className="flex items-center justify-between p-3 bg-surface-800/50 rounded-lg">
             <div className="flex items-center gap-3">
-              <ComputerDesktopIcon className="w-8 h-8 text-surface-400" />
+              <ComputerDesktopIcon className="w-8 h-8 text-surface-600" />
               <div>
                 <p className="text-surface-100 font-medium">MacOS - Chrome</p>
                 <p className="text-surface-500 text-sm">Current session • Last active now</p>
@@ -488,7 +488,7 @@ function SecuritySettings() {
           </div>
         </div>
 
-        <button className="text-red-400 text-sm hover:text-red-300">
+        <button className="text-red-600 text-sm hover:text-red-700">
           Sign out of all other sessions
         </button>
       </div>

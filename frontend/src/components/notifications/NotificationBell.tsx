@@ -28,9 +28,13 @@ const severityIcons = {
 };
 
 // Map entity types to routes
-const getEntityLink = (entityType?: string, entityId?: string, _metadata?: Record<string, unknown>): string | null => {
+const getEntityLink = (
+  entityType?: string,
+  entityId?: string,
+  _metadata?: Record<string, unknown>
+): string | null => {
   if (!entityType || !entityId) return null;
-  
+
   switch (entityType) {
     case 'control':
       return `/controls/${entityId}`;
@@ -119,7 +123,7 @@ export default function NotificationBell() {
       {/* Bell Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 rounded-lg text-surface-400 hover:text-surface-100 hover:bg-surface-800 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-colors"
+        className="relative p-2 rounded-lg text-surface-600 hover:text-surface-100 hover:bg-surface-800 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-colors"
         aria-label="Notifications"
       >
         {unreadCount > 0 ? (
@@ -127,7 +131,7 @@ export default function NotificationBell() {
         ) : (
           <BellIcon className="h-5 w-5" />
         )}
-        
+
         {/* Badge */}
         {unreadCount > 0 && (
           <span className="absolute -top-1 -right-1 flex items-center justify-center h-4 w-4 text-[10px] font-bold text-white bg-red-500 rounded-full">
@@ -156,7 +160,7 @@ export default function NotificationBell() {
               <Link
                 to="/settings/notifications"
                 onClick={() => setIsOpen(false)}
-                className="p-1 text-surface-400 hover:text-surface-100 rounded"
+                className="p-1 text-surface-600 hover:text-surface-100 rounded"
                 title="Notification settings"
               >
                 <Cog6ToothIcon className="h-4 w-4" />
@@ -167,47 +171,57 @@ export default function NotificationBell() {
           {/* Notifications List */}
           <div className="max-h-80 overflow-y-auto">
             {isLoading ? (
-              <div className="p-4 text-center text-surface-400">
+              <div className="p-4 text-center text-surface-600">
                 <div className="animate-spin h-5 w-5 border-2 border-brand-500 border-t-transparent rounded-full mx-auto"></div>
                 <p className="mt-2 text-xs">Loading...</p>
               </div>
             ) : notifications.length === 0 ? (
-              <div className="p-6 text-center text-surface-400">
+              <div className="p-6 text-center text-surface-600">
                 <BellIcon className="h-10 w-10 mx-auto mb-2 opacity-50" />
                 <p className="text-sm">No notifications yet</p>
               </div>
             ) : (
               <ul className="divide-y divide-surface-700">
                 {notifications.map((notification) => {
-                  const link = getEntityLink(notification.entityType, notification.entityId, notification.metadata);
-                  
+                  const link = getEntityLink(
+                    notification.entityType,
+                    notification.entityId,
+                    notification.metadata
+                  );
+
                   const NotificationContent = (
-                    <div className={`p-3 hover:bg-surface-800 transition-colors cursor-pointer ${!notification.isRead ? 'bg-surface-800/50' : ''}`}>
+                    <div
+                      className={`p-3 hover:bg-surface-800 transition-colors cursor-pointer ${!notification.isRead ? 'bg-surface-800/50' : ''}`}
+                    >
                       <div className="flex items-start space-x-2">
                         {/* Severity Icon */}
                         <span className="text-sm flex-shrink-0">
                           {severityIcons[notification.severity]}
                         </span>
-                        
+
                         <div className="flex-1 min-w-0">
                           {/* Title with unread indicator */}
                           <div className="flex items-center justify-between">
-                            <p className={`text-xs font-medium truncate ${notification.isRead ? 'text-surface-300' : 'text-surface-100'}`}>
+                            <p
+                              className={`text-xs font-medium truncate ${notification.isRead ? 'text-surface-700' : 'text-surface-100'}`}
+                            >
                               {notification.title}
                             </p>
                             {!notification.isRead && (
                               <span className="ml-2 h-1.5 w-1.5 bg-brand-500 rounded-full flex-shrink-0"></span>
                             )}
                           </div>
-                          
+
                           {/* Message */}
-                          <p className="text-xs text-surface-400 mt-0.5 line-clamp-2">
+                          <p className="text-xs text-surface-600 mt-0.5 line-clamp-2">
                             {notification.message}
                           </p>
-                          
+
                           {/* Timestamp */}
                           <span className="text-[10px] text-surface-500 mt-1 block">
-                            {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
+                            {formatDistanceToNow(new Date(notification.createdAt), {
+                              addSuffix: true,
+                            })}
                           </span>
                         </div>
 
@@ -220,7 +234,7 @@ export default function NotificationBell() {
                                 e.stopPropagation();
                                 markReadMutation.mutate({ id: notification.id });
                               }}
-                              className="p-1 text-surface-500 hover:text-green-400 rounded"
+                              className="p-1 text-surface-500 hover:text-green-600 rounded"
                               title="Mark as read"
                             >
                               <CheckIcon className="h-3 w-3" />
@@ -232,7 +246,7 @@ export default function NotificationBell() {
                               e.stopPropagation();
                               deleteMutation.mutate(notification.id);
                             }}
-                            className="p-1 text-surface-500 hover:text-red-400 rounded"
+                            className="p-1 text-surface-500 hover:text-red-600 rounded"
                             title="Delete"
                           >
                             <TrashIcon className="h-3 w-3" />
@@ -245,10 +259,7 @@ export default function NotificationBell() {
                   return (
                     <li key={notification.id}>
                       {link ? (
-                        <Link
-                          to={link}
-                          onClick={() => handleNotificationClick(notification)}
-                        >
+                        <Link to={link} onClick={() => handleNotificationClick(notification)}>
                           {NotificationContent}
                         </Link>
                       ) : (
@@ -280,4 +291,3 @@ export default function NotificationBell() {
     </div>
   );
 }
-

@@ -126,10 +126,10 @@ export default function MCPSettings() {
 
   const getStatusBadge = (status: MCPServer['status']) => {
     const styles = {
-      connected: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+      connected: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-600',
       disconnected: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400',
-      connecting: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-      error: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+      connecting: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-600',
+      error: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-600',
     };
     return (
       <span className={`px-2 py-1 text-xs font-medium rounded-full ${styles[status]}`}>
@@ -143,7 +143,9 @@ export default function MCPSettings() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">MCP Server Management</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            MCP Server Management
+          </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
             Manage Model Context Protocol servers for automated GRC workflows
           </p>
@@ -173,7 +175,7 @@ export default function MCPSettings() {
         <div className="bg-white dark:bg-surface-800 rounded-lg p-4 border border-gray-200 dark:border-surface-700">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-              <CheckCircleIcon className="w-6 h-6 text-green-600 dark:text-green-400" />
+              <CheckCircleIcon className="w-6 h-6 text-green-600 dark:text-green-600" />
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -186,7 +188,7 @@ export default function MCPSettings() {
         <div className="bg-white dark:bg-surface-800 rounded-lg p-4 border border-gray-200 dark:border-surface-700">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
-              <ExclamationCircleIcon className="w-6 h-6 text-red-600 dark:text-red-400" />
+              <ExclamationCircleIcon className="w-6 h-6 text-red-600 dark:text-red-600" />
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -199,7 +201,7 @@ export default function MCPSettings() {
         <div className="bg-white dark:bg-surface-800 rounded-lg p-4 border border-gray-200 dark:border-surface-700">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-              <Cog6ToothIcon className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+              <Cog6ToothIcon className="w-6 h-6 text-purple-600 dark:text-purple-600" />
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -214,7 +216,9 @@ export default function MCPSettings() {
       {/* Server List */}
       <div className="bg-white dark:bg-surface-800 rounded-lg border border-gray-200 dark:border-surface-700">
         <div className="p-4 border-b border-gray-200 dark:border-surface-700">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Registered Servers</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            Registered Servers
+          </h2>
         </div>
 
         {loadingServers ? (
@@ -226,10 +230,7 @@ export default function MCPSettings() {
           <div className="p-8 text-center">
             <CpuChipIcon className="w-12 h-12 mx-auto text-gray-400" />
             <p className="mt-2 text-gray-600 dark:text-gray-400">No servers configured</p>
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="mt-4 btn-secondary"
-            >
+            <button onClick={() => setShowAddModal(true)} className="mt-4 btn-secondary">
               Add your first server
             </button>
           </div>
@@ -260,7 +261,7 @@ export default function MCPSettings() {
                             e.stopPropagation();
                             disconnectMutation.mutate(server.id);
                           }}
-                          className="p-2 text-gray-500 hover:text-red-600 dark:hover:text-red-400"
+                          className="p-2 text-gray-500 hover:text-red-600 dark:hover:text-red-600"
                           title="Disconnect"
                         >
                           <StopIcon className="w-5 h-5" />
@@ -271,7 +272,7 @@ export default function MCPSettings() {
                             e.stopPropagation();
                             connectMutation.mutate(server.id);
                           }}
-                          className="p-2 text-gray-500 hover:text-green-600 dark:hover:text-green-400"
+                          className="p-2 text-gray-500 hover:text-green-600 dark:hover:text-green-600"
                           title="Connect"
                         >
                           <PlayIcon className="w-5 h-5" />
@@ -284,7 +285,7 @@ export default function MCPSettings() {
                             deleteMutation.mutate(server.id);
                           }
                         }}
-                        className="p-2 text-gray-500 hover:text-red-600 dark:hover:text-red-400"
+                        className="p-2 text-gray-500 hover:text-red-600 dark:hover:text-red-600"
                         title="Delete"
                       >
                         <TrashIcon className="w-5 h-5" />
@@ -293,7 +294,7 @@ export default function MCPSettings() {
                   </div>
                 </div>
                 {server.lastError && (
-                  <p className="mt-2 text-sm text-red-600 dark:text-red-400">{server.lastError}</p>
+                  <p className="mt-2 text-sm text-red-600 dark:text-red-600">{server.lastError}</p>
                 )}
               </div>
             ))}
@@ -373,9 +374,7 @@ export default function MCPSettings() {
                           <input
                             type="password"
                             value={envVars[envVar] || ''}
-                            onChange={(e) =>
-                              setEnvVars({ ...envVars, [envVar]: e.target.value })
-                            }
+                            onChange={(e) => setEnvVars({ ...envVars, [envVar]: e.target.value })}
                             className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
                             placeholder={`Enter ${envVar}`}
                           />
@@ -394,21 +393,28 @@ export default function MCPSettings() {
                       <p className="text-sm text-gray-500 dark:text-gray-400">
                         Configure the integrations you want to use. Leave blank to skip.
                       </p>
-                      
+
                       {selectedTemplate.configGroups ? (
                         // Render grouped configuration
                         <div className="space-y-4">
                           {selectedTemplate.configGroups.map((group) => (
-                            <details key={group.name} className="border border-gray-200 dark:border-surface-700 rounded-lg">
+                            <details
+                              key={group.name}
+                              className="border border-gray-200 dark:border-surface-700 rounded-lg"
+                            >
                               <summary className="px-4 py-3 cursor-pointer font-medium text-gray-900 dark:text-white bg-gray-50 dark:bg-surface-700/50 rounded-t-lg">
                                 {group.name}
-                                {group.keys.some(k => envVars[k]) && (
-                                  <span className="ml-2 text-xs text-green-600 dark:text-green-400">● Configured</span>
+                                {group.keys.some((k) => envVars[k]) && (
+                                  <span className="ml-2 text-xs text-green-600 dark:text-green-600">
+                                    ● Configured
+                                  </span>
                                 )}
                               </summary>
                               <div className="p-4 space-y-3">
                                 {group.keys.map((key) => {
-                                  const envDef = selectedTemplate.optionalEnv?.find(e => e.key === key);
+                                  const envDef = selectedTemplate.optionalEnv?.find(
+                                    (e) => e.key === key
+                                  );
                                   if (!envDef) return null;
                                   return (
                                     <div key={key}>
@@ -419,7 +425,14 @@ export default function MCPSettings() {
                                         </span>
                                       </label>
                                       <input
-                                        type={key.toLowerCase().includes('secret') || key.toLowerCase().includes('password') || key.toLowerCase().includes('token') || key.toLowerCase().includes('key') ? 'password' : 'text'}
+                                        type={
+                                          key.toLowerCase().includes('secret') ||
+                                          key.toLowerCase().includes('password') ||
+                                          key.toLowerCase().includes('token') ||
+                                          key.toLowerCase().includes('key')
+                                            ? 'password'
+                                            : 'text'
+                                        }
                                         value={envVars[key] || ''}
                                         onChange={(e) =>
                                           setEnvVars({ ...envVars, [key]: e.target.value })
@@ -446,7 +459,14 @@ export default function MCPSettings() {
                                 </span>
                               </label>
                               <input
-                                type={envDef.key.toLowerCase().includes('secret') || envDef.key.toLowerCase().includes('password') || envDef.key.toLowerCase().includes('token') || envDef.key.toLowerCase().includes('key') ? 'password' : 'text'}
+                                type={
+                                  envDef.key.toLowerCase().includes('secret') ||
+                                  envDef.key.toLowerCase().includes('password') ||
+                                  envDef.key.toLowerCase().includes('token') ||
+                                  envDef.key.toLowerCase().includes('key')
+                                    ? 'password'
+                                    : 'text'
+                                }
                                 value={envVars[envDef.key] || ''}
                                 onChange={(e) =>
                                   setEnvVars({ ...envVars, [envDef.key]: e.target.value })
@@ -462,10 +482,7 @@ export default function MCPSettings() {
                   )}
 
                   <div className="flex justify-end gap-2 pt-4 border-t border-gray-200 dark:border-surface-700">
-                    <button
-                      onClick={() => setSelectedTemplate(null)}
-                      className="btn-secondary"
-                    >
+                    <button onClick={() => setSelectedTemplate(null)} className="btn-secondary">
                       Back
                     </button>
                     <button
@@ -522,22 +539,36 @@ export default function MCPSettings() {
                 </h3>
                 <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-surface-700/50 rounded-lg">
                   <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Server ID</p>
-                    <p className="font-mono text-sm text-gray-900 dark:text-white mt-1">{selectedServer.id}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                      Server ID
+                    </p>
+                    <p className="font-mono text-sm text-gray-900 dark:text-white mt-1">
+                      {selectedServer.id}
+                    </p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Transport Protocol</p>
-                    <p className="text-sm text-gray-900 dark:text-white mt-1">{selectedServer.transport}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                      Transport Protocol
+                    </p>
+                    <p className="text-sm text-gray-900 dark:text-white mt-1">
+                      {selectedServer.transport}
+                    </p>
                   </div>
                   {selectedServer.templateId && (
                     <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Template Type</p>
-                      <p className="text-sm text-gray-900 dark:text-white mt-1">{selectedServer.templateId}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                        Template Type
+                      </p>
+                      <p className="text-sm text-gray-900 dark:text-white mt-1">
+                        {selectedServer.templateId}
+                      </p>
                     </div>
                   )}
                   {selectedServer.createdAt && (
                     <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Created</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                        Created
+                      </p>
                       <p className="text-sm text-gray-900 dark:text-white mt-1">
                         {new Date(selectedServer.createdAt).toLocaleString()}
                       </p>
@@ -545,13 +576,19 @@ export default function MCPSettings() {
                   )}
                   {selectedServer.createdBy && (
                     <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Created By</p>
-                      <p className="text-sm text-gray-900 dark:text-white mt-1">{selectedServer.createdBy}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                        Created By
+                      </p>
+                      <p className="text-sm text-gray-900 dark:text-white mt-1">
+                        {selectedServer.createdBy}
+                      </p>
                     </div>
                   )}
                   {selectedServer.lastConnected && (
                     <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Last Connected</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                        Last Connected
+                      </p>
                       <p className="text-sm text-gray-900 dark:text-white mt-1">
                         {new Date(selectedServer.lastConnected).toLocaleString()}
                       </p>
@@ -565,7 +602,9 @@ export default function MCPSettings() {
                 <h3 className="font-medium text-gray-900 dark:text-white mb-3 flex items-center gap-2">
                   <Cog6ToothIcon className="w-5 h-5" />
                   Configuration Details
-                  <span className="text-xs text-gray-500 dark:text-gray-400 font-normal">(for audit purposes)</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400 font-normal">
+                    (for audit purposes)
+                  </span>
                 </h3>
                 <div className="p-4 bg-gray-50 dark:bg-surface-700/50 rounded-lg space-y-4">
                   {/* Configured Integrations */}
@@ -573,13 +612,13 @@ export default function MCPSettings() {
                     <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
                       Configured Integrations
                     </p>
-                    {selectedServer.configuration?.configuredIntegrations && 
-                     selectedServer.configuration.configuredIntegrations.length > 0 ? (
+                    {selectedServer.configuration?.configuredIntegrations &&
+                    selectedServer.configuration.configuredIntegrations.length > 0 ? (
                       <div className="flex flex-wrap gap-2">
                         {selectedServer.configuration.configuredIntegrations.map((integration) => (
                           <span
                             key={integration}
-                            className="px-3 py-1 text-sm bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded-full flex items-center gap-1"
+                            className="px-3 py-1 text-sm bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-600 rounded-full flex items-center gap-1"
                           >
                             <CheckCircleIcon className="w-4 h-4" />
                             {integration}
@@ -598,13 +637,13 @@ export default function MCPSettings() {
                     <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
                       Evidence Types Collected
                     </p>
-                    {selectedServer.configuration?.evidenceTypes && 
-                     selectedServer.configuration.evidenceTypes.length > 0 ? (
+                    {selectedServer.configuration?.evidenceTypes &&
+                    selectedServer.configuration.evidenceTypes.length > 0 ? (
                       <div className="flex flex-wrap gap-2">
                         {selectedServer.configuration.evidenceTypes.map((type) => (
                           <span
                             key={type}
-                            className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 rounded"
+                            className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-600 rounded"
                           >
                             {type}
                           </span>
@@ -623,8 +662,9 @@ export default function MCPSettings() {
                       <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
                         Execution Command
                       </p>
-                      <code className="block p-2 bg-gray-900 dark:bg-black text-green-400 text-sm font-mono rounded overflow-x-auto">
-                        {selectedServer.configuration.command} {selectedServer.configuration.args?.join(' ')}
+                      <code className="block p-2 bg-gray-900 dark:bg-black text-green-600 text-sm font-mono rounded overflow-x-auto">
+                        {selectedServer.configuration.command}{' '}
+                        {selectedServer.configuration.args?.join(' ')}
                       </code>
                     </div>
                   )}
@@ -637,7 +677,10 @@ export default function MCPSettings() {
                     <div className="grid grid-cols-2 gap-2">
                       {[
                         { name: 'AWS', keys: ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY'] },
-                        { name: 'Azure', keys: ['AZURE_TENANT_ID', 'AZURE_CLIENT_ID', 'AZURE_CLIENT_SECRET'] },
+                        {
+                          name: 'Azure',
+                          keys: ['AZURE_TENANT_ID', 'AZURE_CLIENT_ID', 'AZURE_CLIENT_SECRET'],
+                        },
                         { name: 'GitHub', keys: ['GITHUB_TOKEN'] },
                         { name: 'Okta', keys: ['OKTA_DOMAIN', 'OKTA_API_TOKEN'] },
                         { name: 'Google', keys: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] },
@@ -645,13 +688,16 @@ export default function MCPSettings() {
                         { name: 'OpenAI', keys: ['OPENAI_API_KEY'] },
                         { name: 'Anthropic', keys: ['ANTHROPIC_API_KEY'] },
                       ].map((provider) => {
-                        const isConfigured = selectedServer.configuration?.configuredIntegrations?.includes(provider.name);
+                        const isConfigured =
+                          selectedServer.configuration?.configuredIntegrations?.includes(
+                            provider.name
+                          );
                         return (
                           <div
                             key={provider.name}
                             className={`flex items-center gap-2 p-2 rounded text-sm ${
                               isConfigured
-                                ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
+                                ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-600'
                                 : 'bg-gray-100 dark:bg-surface-700 text-gray-500 dark:text-gray-400'
                             }`}
                           >
@@ -758,8 +804,8 @@ export default function MCPSettings() {
               {/* Audit Trail Footer */}
               <div className="border-t border-gray-200 dark:border-surface-700 pt-4">
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  This configuration information is logged for audit purposes. 
-                  Changes to server configuration are tracked in the Audit Log.
+                  This configuration information is logged for audit purposes. Changes to server
+                  configuration are tracked in the Audit Log.
                 </p>
               </div>
             </div>
@@ -769,4 +815,3 @@ export default function MCPSettings() {
     </div>
   );
 }
-

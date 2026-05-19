@@ -43,28 +43,28 @@ const ACTION_META: Record<
   create: {
     label: 'Created',
     icon: PlusCircleIcon,
-    text: 'text-emerald-400',
+    text: 'text-emerald-600',
     bg: 'bg-emerald-500/10',
     border: 'border-emerald-500/30',
   },
   update: {
     label: 'Updated',
     icon: PencilSquareIcon,
-    text: 'text-blue-400',
+    text: 'text-blue-600',
     bg: 'bg-blue-500/10',
     border: 'border-blue-500/30',
   },
   delete: {
     label: 'Deleted',
     icon: TrashIcon,
-    text: 'text-red-400',
+    text: 'text-red-600',
     bg: 'bg-red-500/10',
     border: 'border-red-500/30',
   },
   restore: {
     label: 'Restored',
     icon: ArrowUturnLeftIcon,
-    text: 'text-purple-400',
+    text: 'text-purple-600',
     bg: 'bg-purple-500/10',
     border: 'border-purple-500/30',
   },
@@ -138,13 +138,13 @@ function DiffRows({ prev, current }: DiffRowsProps) {
             key={field}
             className="flex flex-col gap-1 p-2 rounded-lg bg-surface-900/40 border border-surface-700"
           >
-            <span className="text-xs text-surface-400 font-medium">{FIELD_LABELS[field]}</span>
+            <span className="text-xs text-surface-600 font-medium">{FIELD_LABELS[field]}</span>
             <div className="flex items-center gap-2 text-sm flex-wrap">
-              <span className="text-red-400 line-through opacity-75">
+              <span className="text-red-600 line-through opacity-75">
                 {formatFieldValue(field, oldVal)}
               </span>
               <span className="text-surface-500">{'→'}</span>
-              <span className="text-emerald-400">{formatFieldValue(field, newVal)}</span>
+              <span className="text-emerald-600">{formatFieldValue(field, newVal)}</span>
             </div>
           </div>
         );
@@ -160,12 +160,12 @@ interface InitialStateRowsProps {
 
 function InitialStateRows({ snapshot, emphasis = 'emerald' }: InitialStateRowsProps) {
   const fields: Array<'mappingType' | 'notes'> = ['mappingType', 'notes'];
-  const valueColor = emphasis === 'red' ? 'text-red-300' : 'text-emerald-400';
+  const valueColor = emphasis === 'red' ? 'text-red-700' : 'text-emerald-600';
   return (
     <div className="mt-3 space-y-1.5">
       {fields.map((field) => (
         <div key={field} className="flex items-start gap-2 text-sm">
-          <span className="text-surface-400 min-w-[110px]">{FIELD_LABELS[field]}:</span>
+          <span className="text-surface-600 min-w-[110px]">{FIELD_LABELS[field]}:</span>
           <span className={valueColor}>
             {formatFieldValue(field, (snapshot[field] ?? null) as string | null)}
           </span>
@@ -271,7 +271,7 @@ function HistoryEntryItem({
 
         {entry.action === 'delete' && (
           <div className="mt-2">
-            <p className="text-sm text-red-300">Mapping deleted</p>
+            <p className="text-sm text-red-700">Mapping deleted</p>
             <InitialStateRows snapshot={entry.snapshot} emphasis="red" />
           </div>
         )}
@@ -281,7 +281,7 @@ function HistoryEntryItem({
         )}
 
         {entry.reason && (
-          <p className="text-xs italic text-surface-400 mt-3">Reason: {entry.reason}</p>
+          <p className="text-xs italic text-surface-600 mt-3">Reason: {entry.reason}</p>
         )}
 
         {/* Restore action */}
@@ -291,7 +291,7 @@ function HistoryEntryItem({
               type="button"
               onClick={() => setConfirming(true)}
               aria-label={`Restore mapping to state from ${timestampLabel}`}
-              className="inline-flex items-center gap-1 text-xs text-purple-300 hover:text-purple-200 px-2 py-1 rounded border border-purple-500/30 hover:bg-purple-500/10"
+              className="inline-flex items-center gap-1 text-xs text-purple-700 hover:text-purple-200 px-2 py-1 rounded border border-purple-500/30 hover:bg-purple-500/10"
             >
               <ArrowUturnLeftIcon className="w-3.5 h-3.5" aria-hidden="true" />
               Restore this version
@@ -301,7 +301,7 @@ function HistoryEntryItem({
 
         {restoreVisible && confirming && (
           <div className="mt-3 space-y-2 rounded-md border border-purple-500/30 bg-purple-500/5 p-2">
-            <label className="block text-xs text-surface-300">
+            <label className="block text-xs text-surface-700">
               <span className="block mb-1 font-medium">Restore reason (optional)</span>
               <input
                 type="text"
@@ -321,7 +321,7 @@ function HistoryEntryItem({
                   setReason('');
                 }}
                 disabled={isRestoring}
-                className="text-xs px-2 py-1 text-surface-300 hover:text-surface-100 disabled:opacity-50"
+                className="text-xs px-2 py-1 text-surface-700 hover:text-surface-100 disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -457,7 +457,7 @@ export function MappingHistoryDrawer({
                       type="button"
                       onClick={onClose}
                       aria-label="Close history drawer"
-                      className="rounded-lg p-1.5 text-surface-400 hover:bg-surface-700 hover:text-surface-200 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      className="rounded-lg p-1.5 text-surface-600 hover:bg-surface-700 hover:text-surface-200 focus:outline-none focus:ring-2 focus:ring-brand-500"
                     >
                       <XMarkIcon className="h-5 w-5" aria-hidden="true" />
                     </button>
@@ -475,14 +475,14 @@ export function MappingHistoryDrawer({
                     {!isLoading && error && (
                       <div className="text-center py-10">
                         {status === 403 ? (
-                          <p className="text-surface-400">
+                          <p className="text-surface-600">
                             You do not have permission to view this history.
                           </p>
                         ) : status === 404 ? (
-                          <p className="text-surface-400">Mapping not found.</p>
+                          <p className="text-surface-600">Mapping not found.</p>
                         ) : (
                           <>
-                            <p className="text-red-400">Failed to load history</p>
+                            <p className="text-red-600">Failed to load history</p>
                             <button
                               type="button"
                               onClick={() => refetch()}
@@ -501,7 +501,7 @@ export function MappingHistoryDrawer({
                           className="w-10 h-10 mx-auto text-surface-600 mb-3"
                           aria-hidden="true"
                         />
-                        <p className="text-surface-400">No history recorded yet</p>
+                        <p className="text-surface-600">No history recorded yet</p>
                       </div>
                     )}
 

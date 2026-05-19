@@ -52,7 +52,7 @@ export default function PermissionGroups() {
 
   const { data: groups, isLoading } = useQuery({
     queryKey: ['permission-groups'],
-    queryFn: () => permissionsApi.listGroups().then(res => res.data),
+    queryFn: () => permissionsApi.listGroups().then((res) => res.data),
   });
 
   const deleteMutation = useMutation({
@@ -75,7 +75,7 @@ export default function PermissionGroups() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Permission Groups</h1>
-          <p className="text-surface-400 mt-1">Define roles and their access levels</p>
+          <p className="text-surface-600 mt-1">Define roles and their access levels</p>
         </div>
         <div className="flex gap-2">
           <button
@@ -103,44 +103,41 @@ export default function PermissionGroups() {
           title="No Permission Groups"
           description="Create your first permission group or seed the defaults to get started."
           action={{
-            label: "Seed Default Groups",
+            label: 'Seed Default Groups',
             onClick: () => seedMutation.mutate(),
           }}
           secondaryAction={{
-            label: "Create Custom Group",
+            label: 'Create Custom Group',
             onClick: () => setShowCreateModal(true),
           }}
         />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {groups?.map((group: PermissionGroup) => (
-            <div
-              key={group.id}
-              className="bg-surface-800 rounded-lg border border-surface-700 p-5"
-            >
+            <div key={group.id} className="bg-surface-800 rounded-lg border border-surface-700 p-5">
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <div className="flex items-center gap-2">
                     <h3 className="text-lg font-semibold text-white">{group.name}</h3>
                     {group.isSystem && (
-                      <span className="text-xs bg-surface-600 text-surface-300 px-2 py-0.5 rounded">
+                      <span className="text-xs bg-surface-600 text-surface-700 px-2 py-0.5 rounded">
                         System
                       </span>
                     )}
                   </div>
-                  <p className="text-surface-400 text-sm mt-1">{group.description}</p>
+                  <p className="text-surface-600 text-sm mt-1">{group.description}</p>
                 </div>
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => setShowMembersModal(group)}
-                    className="p-2 text-surface-400 hover:text-white hover:bg-surface-700 rounded-lg"
+                    className="p-2 text-surface-600 hover:text-white hover:bg-surface-700 rounded-lg"
                     title="View Members"
                   >
                     <UserGroupIcon className="w-5 h-5" />
                   </button>
                   <button
                     onClick={() => setEditingGroup(group)}
-                    className="p-2 text-surface-400 hover:text-white hover:bg-surface-700 rounded-lg"
+                    className="p-2 text-surface-600 hover:text-white hover:bg-surface-700 rounded-lg"
                     title="Edit Group"
                   >
                     <PencilSquareIcon className="w-5 h-5" />
@@ -152,7 +149,7 @@ export default function PermissionGroups() {
                           deleteMutation.mutate(group.id);
                         }
                       }}
-                      className="p-2 text-surface-400 hover:text-red-400 hover:bg-surface-700 rounded-lg"
+                      className="p-2 text-surface-600 hover:text-red-600 hover:bg-surface-700 rounded-lg"
                       title="Delete Group"
                     >
                       <TrashIcon className="w-5 h-5" />
@@ -174,15 +171,17 @@ export default function PermissionGroups() {
                     </span>
                   ))}
                   {group.permissions.length > 6 && (
-                    <span className="px-2 py-1 text-xs text-surface-400">
+                    <span className="px-2 py-1 text-xs text-surface-600">
                       +{group.permissions.length - 6} more
                     </span>
                   )}
                 </div>
               </div>
 
-              <div className="mt-4 pt-4 border-t border-surface-700 flex items-center justify-between text-sm text-surface-400">
-                <span>{group.memberCount} member{group.memberCount !== 1 ? 's' : ''}</span>
+              <div className="mt-4 pt-4 border-t border-surface-700 flex items-center justify-between text-sm text-surface-600">
+                <span>
+                  {group.memberCount} member{group.memberCount !== 1 ? 's' : ''}
+                </span>
                 <span>Updated {new Date(group.updatedAt).toLocaleDateString()}</span>
               </div>
             </div>
@@ -203,10 +202,7 @@ export default function PermissionGroups() {
 
       {/* Members Modal */}
       {showMembersModal && (
-        <GroupMembersModal
-          group={showMembersModal}
-          onClose={() => setShowMembersModal(null)}
-        />
+        <GroupMembersModal group={showMembersModal} onClose={() => setShowMembersModal(null)} />
       )}
     </div>
   );
@@ -245,10 +241,10 @@ function PermissionGroupModal({
   });
 
   const toggleAction = (resource: string, action: string) => {
-    setPermissions(prev => {
+    setPermissions((prev) => {
       const current = prev[resource] || [];
       if (current.includes(action)) {
-        const updated = current.filter(a => a !== action);
+        const updated = current.filter((a) => a !== action);
         if (updated.length === 0) {
           const { [resource]: _, ...rest } = prev;
           return rest;
@@ -260,7 +256,7 @@ function PermissionGroupModal({
   };
 
   const toggleAllActions = (resource: string) => {
-    setPermissions(prev => {
+    setPermissions((prev) => {
       const current = prev[resource] || [];
       if (current.length === ACTIONS.length) {
         const { [resource]: _, ...rest } = prev;
@@ -293,7 +289,7 @@ function PermissionGroupModal({
           <h2 className="text-lg font-semibold text-white">
             {group ? 'Edit Permission Group' : 'Create Permission Group'}
           </h2>
-          <button onClick={onClose} className="p-1 text-surface-400 hover:text-white">
+          <button onClick={onClose} className="p-1 text-surface-600 hover:text-white">
             <XMarkIcon className="w-5 h-5" />
           </button>
         </div>
@@ -302,7 +298,7 @@ function PermissionGroupModal({
           {/* Name and Description */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm text-surface-400 mb-1">Group Name</label>
+              <label className="block text-sm text-surface-600 mb-1">Group Name</label>
               <input
                 type="text"
                 value={name}
@@ -312,7 +308,7 @@ function PermissionGroupModal({
               />
             </div>
             <div>
-              <label className="block text-sm text-surface-400 mb-1">Description</label>
+              <label className="block text-sm text-surface-600 mb-1">Description</label>
               <input
                 type="text"
                 value={description}
@@ -325,26 +321,29 @@ function PermissionGroupModal({
 
           {/* Permission Matrix */}
           <div>
-            <label className="block text-sm text-surface-400 mb-3">Permission Matrix</label>
+            <label className="block text-sm text-surface-600 mb-3">Permission Matrix</label>
             <div className="bg-surface-900 rounded-lg border border-surface-700 overflow-hidden">
               <table className="w-full">
                 <thead>
                   <tr className="bg-surface-800">
-                    <th className="text-left text-surface-400 font-medium px-4 py-3 w-48">
+                    <th className="text-left text-surface-600 font-medium px-4 py-3 w-48">
                       Resource
                     </th>
-                    {ACTIONS.map(action => (
-                      <th key={action} className="text-center text-surface-400 font-medium px-2 py-3 text-xs uppercase">
+                    {ACTIONS.map((action) => (
+                      <th
+                        key={action}
+                        className="text-center text-surface-600 font-medium px-2 py-3 text-xs uppercase"
+                      >
                         {action}
                       </th>
                     ))}
-                    <th className="text-center text-surface-400 font-medium px-2 py-3 text-xs uppercase">
+                    <th className="text-center text-surface-600 font-medium px-2 py-3 text-xs uppercase">
                       All
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-surface-700">
-                  {RESOURCES.map(resource => {
+                  {RESOURCES.map((resource) => {
                     const currentActions = permissions[resource.id] || [];
                     const allSelected = currentActions.length === ACTIONS.length;
                     return (
@@ -353,7 +352,7 @@ function PermissionGroupModal({
                           <div className="text-white text-sm font-medium">{resource.label}</div>
                           <div className="text-surface-500 text-xs">{resource.description}</div>
                         </td>
-                        {ACTIONS.map(action => (
+                        {ACTIONS.map((action) => (
                           <td key={action} className="text-center px-2 py-3">
                             <button
                               onClick={() => toggleAction(resource.id, action)}
@@ -378,9 +377,7 @@ function PermissionGroupModal({
                                 : 'border-surface-600 hover:border-surface-500'
                             }`}
                           >
-                            {allSelected && (
-                              <CheckIcon className="w-4 h-4 text-white" />
-                            )}
+                            {allSelected && <CheckIcon className="w-4 h-4 text-white" />}
                           </button>
                         </td>
                       </tr>
@@ -412,34 +409,26 @@ function PermissionGroupModal({
   );
 }
 
-function GroupMembersModal({
-  group,
-  onClose,
-}: {
-  group: PermissionGroup;
-  onClose: () => void;
-}) {
+function GroupMembersModal({ group, onClose }: { group: PermissionGroup; onClose: () => void }) {
   const { data: members, isLoading } = useQuery({
     queryKey: ['group-members', group.id],
-    queryFn: () => permissionsApi.getGroupMembers(group.id).then(res => res.data),
+    queryFn: () => permissionsApi.getGroupMembers(group.id).then((res) => res.data),
   });
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-surface-800 rounded-lg w-full max-w-lg mx-4 max-h-[80vh] overflow-hidden">
         <div className="p-4 border-b border-surface-700 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-white">
-            Members of {group.name}
-          </h2>
-          <button onClick={onClose} className="p-1 text-surface-400 hover:text-white">
+          <h2 className="text-lg font-semibold text-white">Members of {group.name}</h2>
+          <button onClick={onClose} className="p-1 text-surface-600 hover:text-white">
             <XMarkIcon className="w-5 h-5" />
           </button>
         </div>
         <div className="p-4 overflow-y-auto max-h-[60vh]">
           {isLoading ? (
-            <div className="text-center text-surface-400 py-8">Loading members...</div>
+            <div className="text-center text-surface-600 py-8">Loading members...</div>
           ) : members?.length === 0 ? (
-            <div className="text-center text-surface-400 py-8">No members in this group</div>
+            <div className="text-center text-surface-600 py-8">No members in this group</div>
           ) : (
             <div className="space-y-2">
               {members?.map((member: any) => (
@@ -452,7 +441,7 @@ function GroupMembersModal({
                   </div>
                   <div className="flex-1">
                     <div className="text-white font-medium">{member.displayName}</div>
-                    <div className="text-surface-400 text-sm">{member.email}</div>
+                    <div className="text-surface-600 text-sm">{member.email}</div>
                   </div>
                   <div className="text-surface-500 text-xs">
                     Joined {new Date(member.joinedAt).toLocaleDateString()}
@@ -466,6 +455,3 @@ function GroupMembersModal({
     </div>
   );
 }
-
-
-

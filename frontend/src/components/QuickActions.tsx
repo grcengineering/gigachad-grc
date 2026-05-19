@@ -35,7 +35,7 @@ export function QuickActions({ className }: QuickActionsProps) {
       description: 'Create a custom control',
       icon: ShieldCheckIcon,
       action: () => navigate('/controls/new'),
-      color: 'text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20',
+      color: 'text-emerald-600 bg-emerald-500/10 hover:bg-emerald-500/20',
     },
     {
       id: 'new-risk',
@@ -43,7 +43,7 @@ export function QuickActions({ className }: QuickActionsProps) {
       description: 'Register a risk',
       icon: ExclamationTriangleIcon,
       action: () => navigate('/risks/new'),
-      color: 'text-amber-400 bg-amber-500/10 hover:bg-amber-500/20',
+      color: 'text-amber-600 bg-amber-500/10 hover:bg-amber-500/20',
     },
     {
       id: 'upload-evidence',
@@ -51,7 +51,7 @@ export function QuickActions({ className }: QuickActionsProps) {
       description: 'Add evidence files',
       icon: ArrowUpTrayIcon,
       action: () => navigate('/evidence/new'),
-      color: 'text-blue-400 bg-blue-500/10 hover:bg-blue-500/20',
+      color: 'text-blue-600 bg-blue-500/10 hover:bg-blue-500/20',
     },
     {
       id: 'new-vendor',
@@ -59,7 +59,7 @@ export function QuickActions({ className }: QuickActionsProps) {
       description: 'Add a vendor',
       icon: BuildingOfficeIcon,
       action: () => navigate('/vendors/new'),
-      color: 'text-purple-400 bg-purple-500/10 hover:bg-purple-500/20',
+      color: 'text-purple-600 bg-purple-500/10 hover:bg-purple-500/20',
     },
     {
       id: 'new-policy',
@@ -67,7 +67,7 @@ export function QuickActions({ className }: QuickActionsProps) {
       description: 'Create a policy',
       icon: DocumentTextIcon,
       action: () => navigate('/policies/new'),
-      color: 'text-cyan-400 bg-cyan-500/10 hover:bg-cyan-500/20',
+      color: 'text-cyan-600 bg-cyan-500/10 hover:bg-cyan-500/20',
     },
   ];
 
@@ -143,7 +143,7 @@ export function QuickActionsBar() {
         <button
           key={action.id}
           onClick={action.action}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-md text-surface-400 hover:text-white hover:bg-surface-700 transition-colors"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-md text-surface-600 hover:text-white hover:bg-surface-700 transition-colors"
           title={action.label}
         >
           <action.icon className="w-4 h-4" />
@@ -155,7 +155,11 @@ export function QuickActionsBar() {
 }
 
 // Mini floating action button
-export function FloatingQuickAction({ onOpenCommandPalette }: { onOpenCommandPalette: () => void }) {
+export function FloatingQuickAction({
+  onOpenCommandPalette,
+}: {
+  onOpenCommandPalette: () => void;
+}) {
   return (
     <button
       onClick={onOpenCommandPalette}
@@ -168,4 +172,3 @@ export function FloatingQuickAction({ onOpenCommandPalette }: { onOpenCommandPal
 }
 
 export default QuickActions;
-

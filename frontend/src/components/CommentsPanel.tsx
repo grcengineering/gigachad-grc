@@ -86,10 +86,8 @@ export default function CommentsPanel({ entityType, entityId }: CommentsPanelPro
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
-        <ChatBubbleLeftRightIcon className="w-5 h-5 text-surface-400" />
-        <h3 className="text-sm font-semibold text-surface-100">
-          Comments ({comments.length})
-        </h3>
+        <ChatBubbleLeftRightIcon className="w-5 h-5 text-surface-600" />
+        <h3 className="text-sm font-semibold text-surface-100">Comments ({comments.length})</h3>
       </div>
 
       {/* New Comment Form */}
@@ -140,17 +138,19 @@ export default function CommentsPanel({ entityType, entityId }: CommentsPanelPro
                       <span className="badge badge-success text-xs">Resolved</span>
                     )}
                   </div>
-                  <p className="text-sm text-surface-300">{comment.content}</p>
+                  <p className="text-sm text-surface-700">{comment.content}</p>
                 </div>
                 <div className="flex items-center gap-1">
                   <button
-                    onClick={() => resolveMutation.mutate({
-                      id: comment.id,
-                      isResolved: !comment.isResolved,
-                    })}
+                    onClick={() =>
+                      resolveMutation.mutate({
+                        id: comment.id,
+                        isResolved: !comment.isResolved,
+                      })
+                    }
                     className={clsx(
                       'p-1 rounded hover:bg-surface-700 transition-colors',
-                      comment.isResolved ? 'text-green-400' : 'text-surface-500'
+                      comment.isResolved ? 'text-green-600' : 'text-surface-500'
                     )}
                     title={comment.isResolved ? 'Unresolve' : 'Mark as resolved'}
                   >
@@ -159,7 +159,7 @@ export default function CommentsPanel({ entityType, entityId }: CommentsPanelPro
                   {comment.authorId === user?.id && (
                     <button
                       onClick={() => deleteMutation.mutate(comment.id)}
-                      className="p-1 rounded text-surface-500 hover:text-red-400 hover:bg-surface-700 transition-colors"
+                      className="p-1 rounded text-surface-500 hover:text-red-600 hover:bg-surface-700 transition-colors"
                       title="Delete"
                     >
                       <TrashIcon className="w-4 h-4" />
@@ -174,14 +174,14 @@ export default function CommentsPanel({ entityType, entityId }: CommentsPanelPro
                   {comment.replies.map((reply: any) => (
                     <div key={reply.id} className="text-sm">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium text-surface-300">
+                        <span className="font-medium text-surface-700">
                           {reply.author?.displayName || 'Unknown'}
                         </span>
                         <span className="text-xs text-surface-500">
                           {formatDate(reply.createdAt)}
                         </span>
                       </div>
-                      <p className="text-surface-400">{reply.content}</p>
+                      <p className="text-surface-600">{reply.content}</p>
                     </div>
                   ))}
                 </div>
@@ -210,7 +210,7 @@ export default function CommentsPanel({ entityType, entityId }: CommentsPanelPro
                       setReplyingTo(null);
                       setReplyContent('');
                     }}
-                    className="p-1 text-surface-500 hover:text-surface-300"
+                    className="p-1 text-surface-500 hover:text-surface-700"
                   >
                     <XMarkIcon className="w-4 h-4" />
                   </button>
@@ -218,7 +218,7 @@ export default function CommentsPanel({ entityType, entityId }: CommentsPanelPro
               ) : (
                 <button
                   onClick={() => setReplyingTo(comment.id)}
-                  className="mt-2 text-xs text-surface-500 hover:text-surface-300"
+                  className="mt-2 text-xs text-surface-500 hover:text-surface-700"
                 >
                   Reply
                 </button>
@@ -230,4 +230,3 @@ export default function CommentsPanel({ entityType, entityId }: CommentsPanelPro
     </div>
   );
 }
-

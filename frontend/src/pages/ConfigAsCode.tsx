@@ -23,7 +23,7 @@ export default function ConfigAsCode() {
     return (
       <div className="p-6">
         <div className="bg-yellow-600/20 border border-yellow-600/50 rounded-lg p-4">
-          <p className="text-yellow-400">Access denied. Admin privileges required.</p>
+          <p className="text-yellow-600">Access denied. Admin privileges required.</p>
         </div>
       </div>
     );
@@ -35,7 +35,9 @@ export default function ConfigAsCode() {
       fallback={
         <div className="p-6">
           <div className="bg-red-600/20 border border-red-600/50 rounded-lg p-4">
-            <p className="text-red-400">Error loading Configuration as Code. The module will remain enabled.</p>
+            <p className="text-red-600">
+              Error loading Configuration as Code. The module will remain enabled.
+            </p>
             <button
               onClick={() => window.location.reload()}
               className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
@@ -65,13 +67,11 @@ function ConfigAsCodeContent() {
   const [importFormat, setImportFormat] = useState<'yaml' | 'json'>('yaml');
 
   const exportMutation = useMutation({
-    mutationFn: (data: {
-      format: 'yaml' | 'json' | 'terraform';
-      resources?: string[];
-    }) => configAsCodeApi.export(data),
+    mutationFn: (data: { format: 'yaml' | 'json' | 'terraform'; resources?: string[] }) =>
+      configAsCodeApi.export(data),
     onSuccess: (response) => {
       const { content, filename, mimeType } = response.data;
-      
+
       // Create blob and download
       const blob = new Blob([content], { type: mimeType });
       const url = URL.createObjectURL(blob);
@@ -83,7 +83,9 @@ function ConfigAsCodeContent() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
-      toast.success(`Configuration exported successfully (${response.data.resourceCount} resources)`);
+      toast.success(
+        `Configuration exported successfully (${response.data.resourceCount} resources)`
+      );
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || 'Failed to export configuration');
@@ -124,7 +126,7 @@ function ConfigAsCodeContent() {
     reader.onload = (event) => {
       const content = event.target?.result as string;
       setImportConfig(content);
-      
+
       // Auto-detect format from file extension
       if (file.name.endsWith('.json')) {
         setImportFormat('json');
@@ -149,7 +151,7 @@ function ConfigAsCodeContent() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-surface-100">Configuration as Code</h1>
-        <p className="text-surface-400 mt-1">
+        <p className="text-surface-600 mt-1">
           Manage your GRC resources declaratively with version control
         </p>
       </div>
@@ -159,9 +161,10 @@ function ConfigAsCodeContent() {
         <nav className="flex gap-4">
           <button
             onClick={() => setActiveTab('ide')}
-            className={activeTab === 'ide' 
-              ? 'px-4 py-2 border-b-2 border-brand-500 text-brand-300 font-medium'
-              : 'px-4 py-2 text-surface-400 hover:text-surface-200'
+            className={
+              activeTab === 'ide'
+                ? 'px-4 py-2 border-b-2 border-brand-500 text-brand-300 font-medium'
+                : 'px-4 py-2 text-surface-600 hover:text-surface-200'
             }
           >
             <div className="flex items-center gap-2">
@@ -171,9 +174,10 @@ function ConfigAsCodeContent() {
           </button>
           <button
             onClick={() => setActiveTab('export')}
-            className={activeTab === 'export'
-              ? 'px-4 py-2 border-b-2 border-brand-500 text-brand-300 font-medium'
-              : 'px-4 py-2 text-surface-400 hover:text-surface-200'
+            className={
+              activeTab === 'export'
+                ? 'px-4 py-2 border-b-2 border-brand-500 text-brand-300 font-medium'
+                : 'px-4 py-2 text-surface-600 hover:text-surface-200'
             }
           >
             <div className="flex items-center gap-2">
@@ -243,22 +247,19 @@ function ExportImportContent({
 
   return (
     <div className="space-y-6">
-
       {/* Export Section */}
       <div className="card p-6">
         <div className="flex items-center gap-3 mb-4">
           <ArrowDownTrayIcon className="w-6 h-6 text-brand-400" />
           <h2 className="text-lg font-semibold text-surface-100">Export Configuration</h2>
         </div>
-        <p className="text-surface-400 mb-4">
+        <p className="text-surface-600 mb-4">
           Export your current GRC state to a configuration file for version control.
         </p>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-surface-300 mb-2">
-              Format
-            </label>
+            <label className="block text-sm font-medium text-surface-700 mb-2">Format</label>
             <div className="flex gap-4">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -268,7 +269,7 @@ function ExportImportContent({
                   onChange={(e) => setExportFormat(e.target.value as 'yaml')}
                   className="w-4 h-4 text-brand-500"
                 />
-                <span className="text-surface-300">YAML</span>
+                <span className="text-surface-700">YAML</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -278,13 +279,13 @@ function ExportImportContent({
                   onChange={(e) => setExportFormat(e.target.value as 'json')}
                   className="w-4 h-4 text-brand-500"
                 />
-                <span className="text-surface-300">JSON</span>
+                <span className="text-surface-700">JSON</span>
               </label>
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-surface-300 mb-2">
+            <label className="block text-sm font-medium text-surface-700 mb-2">
               Resources to Export (leave empty for all)
             </label>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
@@ -297,12 +298,14 @@ function ExportImportContent({
                       if (e.target.checked) {
                         setSelectedResources([...selectedResources, option.value]);
                       } else {
-                        setSelectedResources(selectedResources.filter((r: string) => r !== option.value));
+                        setSelectedResources(
+                          selectedResources.filter((r: string) => r !== option.value)
+                        );
                       }
                     }}
                     className="w-4 h-4 text-brand-500 rounded"
                   />
-                  <span className="text-surface-300 text-sm">{option.label}</span>
+                  <span className="text-surface-700 text-sm">{option.label}</span>
                 </label>
               ))}
             </div>
@@ -325,15 +328,13 @@ function ExportImportContent({
           <ArrowUpTrayIcon className="w-6 h-6 text-brand-400" />
           <h2 className="text-lg font-semibold text-surface-100">Import Configuration</h2>
         </div>
-        <p className="text-surface-400 mb-4">
+        <p className="text-surface-600 mb-4">
           Import a configuration file to apply changes to your GRC resources.
         </p>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-surface-300 mb-2">
-              Format
-            </label>
+            <label className="block text-sm font-medium text-surface-700 mb-2">Format</label>
             <div className="flex gap-4">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -343,7 +344,7 @@ function ExportImportContent({
                   onChange={(e) => setImportFormat(e.target.value as 'yaml')}
                   className="w-4 h-4 text-brand-500"
                 />
-                <span className="text-surface-300">YAML</span>
+                <span className="text-surface-700">YAML</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -353,25 +354,25 @@ function ExportImportContent({
                   onChange={(e) => setImportFormat(e.target.value as 'json')}
                   className="w-4 h-4 text-brand-500"
                 />
-                <span className="text-surface-300">JSON</span>
+                <span className="text-surface-700">JSON</span>
               </label>
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-surface-300 mb-2">
+            <label className="block text-sm font-medium text-surface-700 mb-2">
               Configuration File
             </label>
             <input
               type="file"
               accept=".yaml,.yml,.json"
               onChange={handleFileUpload}
-              className="block w-full text-sm text-surface-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-brand-500 file:text-white hover:file:bg-brand-600"
+              className="block w-full text-sm text-surface-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-brand-500 file:text-white hover:file:bg-brand-600"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-surface-300 mb-2">
+            <label className="block text-sm font-medium text-surface-700 mb-2">
               Configuration Content
             </label>
             <textarea
@@ -408,13 +409,15 @@ function ExportImportContent({
         <div className="flex items-start gap-3">
           <CodeBracketIcon className="w-5 h-5 text-brand-400 flex-shrink-0 mt-0.5" />
           <div>
-            <h3 className="text-sm font-medium text-surface-200 mb-1">About Configuration as Code</h3>
-            <p className="text-sm text-surface-400">
-              This feature allows you to manage your GRC resources (controls, frameworks, policies, etc.) 
-              declaratively through version-controlled configuration files. Export your current state, 
-              make changes in your preferred editor, and import to apply updates.
+            <h3 className="text-sm font-medium text-surface-200 mb-1">
+              About Configuration as Code
+            </h3>
+            <p className="text-sm text-surface-600">
+              This feature allows you to manage your GRC resources (controls, frameworks, policies,
+              etc.) declaratively through version-controlled configuration files. Export your
+              current state, make changes in your preferred editor, and import to apply updates.
             </p>
-            <p className="text-sm text-surface-400 mt-2">
+            <p className="text-sm text-surface-600 mt-2">
               <strong>Note:</strong> Terraform format support and Git sync are coming soon.
             </p>
           </div>
@@ -423,4 +426,3 @@ function ExportImportContent({
     </div>
   );
 }
-

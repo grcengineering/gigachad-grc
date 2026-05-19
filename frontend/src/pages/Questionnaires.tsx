@@ -16,16 +16,21 @@ export default function Questionnaires() {
 
   const { data: questionnaires = [], isLoading: loading } = useQuery({
     queryKey: ['questionnaires', filter, organizationId],
-    queryFn: () => questionnairesApi.list({ 
-      organizationId,
-      ...(filter !== 'all' ? { status: filter } : {})
-    }).then((res) => res.data),
+    queryFn: () =>
+      questionnairesApi
+        .list({
+          organizationId,
+          ...(filter !== 'all' ? { status: filter } : {}),
+        })
+        .then((res) => res.data),
     enabled: !!organizationId,
   });
 
   const getCompletionPercentage = (questions: { status: string }[]) => {
     if (questions.length === 0) return 0;
-    const answered = questions.filter(q => q.status === 'answered' || q.status === 'approved').length;
+    const answered = questions.filter(
+      (q) => q.status === 'answered' || q.status === 'approved'
+    ).length;
     return Math.round((answered / questions.length) * 100);
   };
 
@@ -35,7 +40,7 @@ export default function Questionnaires() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-surface-100">Security Questionnaires</h1>
-            <p className="mt-1 text-surface-400">
+            <p className="mt-1 text-surface-600">
               Respond to incoming customer security questionnaires
             </p>
           </div>
@@ -51,7 +56,7 @@ export default function Questionnaires() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-surface-100">Security Questionnaires</h1>
-          <p className="mt-1 text-surface-400">
+          <p className="mt-1 text-surface-600">
             Respond to incoming customer security questionnaires
           </p>
         </div>
@@ -72,10 +77,12 @@ export default function Questionnaires() {
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               filter === status
                 ? 'bg-brand-600 text-white'
-                : 'bg-surface-800 text-surface-300 hover:bg-surface-700'
+                : 'bg-surface-800 text-surface-700 hover:bg-surface-700'
             }`}
           >
-            {status === 'all' ? 'All' : status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+            {status === 'all'
+              ? 'All'
+              : status.replace('_', ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
           </button>
         ))}
       </div>
@@ -87,7 +94,7 @@ export default function Questionnaires() {
           title="No incoming questionnaires"
           description="When customers send security questionnaires, you can log and track them here. Use the knowledge base to quickly answer common questions."
           action={{
-            label: "Log New Request",
+            label: 'Log New Request',
             onClick: () => navigate('/questionnaires/new'),
             icon: <PlusIcon className="w-5 h-5" />,
           }}
@@ -97,22 +104,22 @@ export default function Questionnaires() {
           <table className="w-full">
             <thead className="bg-surface-800 border-b border-surface-700">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-surface-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-surface-600 uppercase tracking-wider">
                   Customer Request
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-surface-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-surface-600 uppercase tracking-wider">
                   From
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-surface-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-surface-600 uppercase tracking-wider">
                   Priority
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-surface-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-surface-600 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-surface-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-surface-600 uppercase tracking-wider">
                   Completion
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-surface-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-surface-600 uppercase tracking-wider">
                   Due Date
                 </th>
               </tr>
@@ -128,7 +135,9 @@ export default function Questionnaires() {
                   >
                     <td className="px-6 py-4">
                       <div>
-                        <div className="text-sm font-medium text-surface-100">{questionnaire.title}</div>
+                        <div className="text-sm font-medium text-surface-100">
+                          {questionnaire.title}
+                        </div>
                         <div className="text-sm text-surface-500">
                           {questionnaire.questions.length} questions
                         </div>
@@ -136,29 +145,41 @@ export default function Questionnaires() {
                     </td>
                     <td className="px-6 py-4">
                       <div>
-                        <div className="text-sm text-surface-300">{questionnaire.requesterName}</div>
+                        <div className="text-sm text-surface-700">
+                          {questionnaire.requesterName}
+                        </div>
                         {questionnaire.company && (
                           <div className="text-sm text-surface-500">{questionnaire.company}</div>
                         )}
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full capitalize ${
-                        questionnaire.priority === 'urgent' ? 'bg-red-500/20 text-red-400' :
-                        questionnaire.priority === 'high' ? 'bg-orange-500/20 text-orange-400' :
-                        questionnaire.priority === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                        'bg-green-500/20 text-green-400'
-                      }`}>
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-medium rounded-full capitalize ${
+                          questionnaire.priority === 'urgent'
+                            ? 'bg-red-500/20 text-red-600'
+                            : questionnaire.priority === 'high'
+                              ? 'bg-orange-500/20 text-orange-600'
+                              : questionnaire.priority === 'medium'
+                                ? 'bg-yellow-500/20 text-yellow-600'
+                                : 'bg-green-500/20 text-green-600'
+                        }`}
+                      >
                         {questionnaire.priority}
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full capitalize ${
-                        questionnaire.status === 'completed' ? 'bg-green-500/20 text-green-400' :
-                        questionnaire.status === 'in_progress' ? 'bg-blue-500/20 text-blue-400' :
-                        questionnaire.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
-                        'bg-surface-700 text-surface-400'
-                      }`}>
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-medium rounded-full capitalize ${
+                          questionnaire.status === 'completed'
+                            ? 'bg-green-500/20 text-green-600'
+                            : questionnaire.status === 'in_progress'
+                              ? 'bg-blue-500/20 text-blue-600'
+                              : questionnaire.status === 'pending'
+                                ? 'bg-yellow-500/20 text-yellow-600'
+                                : 'bg-surface-700 text-surface-600'
+                        }`}
+                      >
                         {questionnaire.status.replace('_', ' ')}
                       </span>
                     </td>
@@ -168,17 +189,21 @@ export default function Questionnaires() {
                         <div className="w-24 h-2 bg-surface-700 rounded-full overflow-hidden">
                           <div
                             className={`h-full ${
-                              completion === 100 ? 'bg-green-500' :
-                              completion >= 50 ? 'bg-blue-500' :
-                              'bg-yellow-500'
+                              completion === 100
+                                ? 'bg-green-500'
+                                : completion >= 50
+                                  ? 'bg-blue-500'
+                                  : 'bg-yellow-500'
                             }`}
                             style={{ width: `${completion}%` }}
                           />
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-surface-300">
-                      {questionnaire.dueDate ? new Date(questionnaire.dueDate).toLocaleDateString() : '—'}
+                    <td className="px-6 py-4 text-sm text-surface-700">
+                      {questionnaire.dueDate
+                        ? new Date(questionnaire.dueDate).toLocaleDateString()
+                        : '—'}
                     </td>
                   </tr>
                 );

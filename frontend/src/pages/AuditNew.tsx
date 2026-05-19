@@ -134,21 +134,21 @@ export default function AuditNew() {
       <div>
         <Link
           to="/audits"
-          className="inline-flex items-center text-sm text-surface-400 hover:text-surface-100 mb-4"
+          className="inline-flex items-center text-sm text-surface-600 hover:text-surface-100 mb-4"
         >
           <ArrowLeftIcon className="w-4 h-4 mr-1" />
           Back to Audits
         </Link>
         <h1 className="text-2xl font-bold text-surface-100">Create New Audit</h1>
-        <p className="text-surface-400 mt-1">Start a new compliance audit</p>
+        <p className="text-surface-600 mt-1">Start a new compliance audit</p>
       </div>
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="card p-6 space-y-6">
         {/* Audit Name */}
         <div>
-          <label htmlFor="name" className="block text-sm font-medium text-surface-300 mb-1">
-            Audit Name <span className="text-red-400">*</span>
+          <label htmlFor="name" className="block text-sm font-medium text-surface-700 mb-1">
+            Audit Name <span className="text-red-600">*</span>
           </label>
           <input
             id="name"
@@ -158,13 +158,13 @@ export default function AuditNew() {
             placeholder="e.g., SOC 2 Type II 2025"
             className={`input ${errors.name ? 'border-red-500' : ''}`}
           />
-          {errors.name && <p className="mt-1 text-sm text-red-400">{errors.name}</p>}
+          {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
         </div>
 
         {/* Audit Type */}
         <div>
-          <label htmlFor="auditType" className="block text-sm font-medium text-surface-300 mb-1">
-            Audit Type <span className="text-red-400">*</span>
+          <label htmlFor="auditType" className="block text-sm font-medium text-surface-700 mb-1">
+            Audit Type <span className="text-red-600">*</span>
           </label>
           <select
             id="auditType"
@@ -188,7 +188,7 @@ export default function AuditNew() {
 
         {/* Status */}
         <div>
-          <label htmlFor="status" className="block text-sm font-medium text-surface-300 mb-1">
+          <label htmlFor="status" className="block text-sm font-medium text-surface-700 mb-1">
             Initial Status
           </label>
           <select
@@ -207,7 +207,7 @@ export default function AuditNew() {
 
         {/* Framework */}
         <div>
-          <label htmlFor="framework" className="block text-sm font-medium text-surface-300 mb-1">
+          <label htmlFor="framework" className="block text-sm font-medium text-surface-700 mb-1">
             Framework
           </label>
           <select
@@ -230,7 +230,7 @@ export default function AuditNew() {
           <div>
             <label
               htmlFor="plannedStartDate"
-              className="block text-sm font-medium text-surface-300 mb-1"
+              className="block text-sm font-medium text-surface-700 mb-1"
             >
               Planned Start Date
             </label>
@@ -245,7 +245,7 @@ export default function AuditNew() {
           <div>
             <label
               htmlFor="plannedEndDate"
-              className="block text-sm font-medium text-surface-300 mb-1"
+              className="block text-sm font-medium text-surface-700 mb-1"
             >
               Planned End Date
             </label>
@@ -261,7 +261,7 @@ export default function AuditNew() {
 
         {/* Description */}
         <div>
-          <label htmlFor="description" className="block text-sm font-medium text-surface-300 mb-1">
+          <label htmlFor="description" className="block text-sm font-medium text-surface-700 mb-1">
             Description
           </label>
           <textarea

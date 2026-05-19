@@ -223,14 +223,14 @@ export default function MappingGaps() {
     <div className="p-6 space-y-6">
       <header>
         <h1 className="text-2xl font-semibold text-surface-100">Mapping Gap Analysis</h1>
-        <p className="text-sm text-surface-400 mt-1">
+        <p className="text-sm text-surface-600 mt-1">
           Find requirements without coverage and controls that are not mapped to any requirement.
         </p>
       </header>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <label htmlFor="gap-framework-filter" className="text-sm text-surface-300">
+          <label htmlFor="gap-framework-filter" className="text-sm text-surface-700">
             Framework
           </label>
           <select
@@ -288,7 +288,7 @@ export default function MappingGaps() {
                   'py-3 px-1 border-b-2 font-medium text-sm transition-colors',
                   activeTab === tab.key
                     ? 'border-brand-500 text-brand-400'
-                    : 'border-transparent text-surface-400 hover:text-surface-200 hover:border-surface-600'
+                    : 'border-transparent text-surface-600 hover:text-surface-200 hover:border-surface-600'
                 )}
               >
                 {tab.label}
@@ -321,7 +321,7 @@ export default function MappingGaps() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-left text-surface-400 border-b border-surface-700">
+                  <tr className="text-left text-surface-600 border-b border-surface-700">
                     {showTypeColumn && <th className="py-2 px-3 font-medium">Type</th>}
                     {showFrameworkColumn && <th className="py-2 px-3 font-medium">Framework</th>}
                     <th className="py-2 px-3 font-medium">
@@ -346,10 +346,10 @@ export default function MappingGaps() {
                         className="border-b border-surface-800 hover:bg-surface-800/50"
                       >
                         {showTypeColumn && (
-                          <td className="py-2 px-3 text-surface-300">{TYPE_LABEL[row.type]}</td>
+                          <td className="py-2 px-3 text-surface-700">{TYPE_LABEL[row.type]}</td>
                         )}
                         {showFrameworkColumn && (
-                          <td className="py-2 px-3 text-surface-300">
+                          <td className="py-2 px-3 text-surface-700">
                             {row.framework?.name ?? '—'}
                           </td>
                         )}
@@ -359,7 +359,7 @@ export default function MappingGaps() {
                           </Link>
                         </td>
                         {activeTab === 'all' && (
-                          <td className="py-2 px-3 text-surface-300">
+                          <td className="py-2 px-3 text-surface-700">
                             {row.requirement ? 'Requirement' : row.control ? 'Control' : '—'}
                           </td>
                         )}

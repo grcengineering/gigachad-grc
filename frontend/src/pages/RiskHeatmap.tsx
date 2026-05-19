@@ -35,7 +35,10 @@ const IMPACT_LABELS: Record<string, string> = {
 };
 
 // Calculate risk level from likelihood and impact indices
-function getRiskLevel(likelihoodIdx: number, impactIdx: number): 'low' | 'medium' | 'high' | 'critical' {
+function getRiskLevel(
+  likelihoodIdx: number,
+  impactIdx: number
+): 'low' | 'medium' | 'high' | 'critical' {
   const score = (likelihoodIdx + 1) * (impactIdx + 1);
   if (score >= 16) return 'critical';
   if (score >= 9) return 'high';
@@ -84,7 +87,7 @@ export default function RiskHeatmap() {
 
   // Build a lookup map for the matrix
   const matrixMap = new Map<string, HeatmapCell>();
-  heatmapData?.matrix.forEach(cell => {
+  heatmapData?.matrix.forEach((cell) => {
     matrixMap.set(`${cell.likelihood}-${cell.impact}`, cell);
   });
 
@@ -95,20 +98,20 @@ export default function RiskHeatmap() {
   // Export to PNG using html2canvas
   const exportToPNG = useCallback(async () => {
     if (!heatmapRef.current) return;
-    
+
     setIsExporting(true);
     setShowExportMenu(false);
-    
+
     try {
       // Dynamically import html2canvas
       const html2canvas = (await import('html2canvas')).default;
-      
+
       const canvas = await html2canvas(heatmapRef.current, {
         backgroundColor: '#1f2937', // dark background
         scale: 2, // Higher resolution
         logging: false,
       });
-      
+
       // Download the image
       const link = document.createElement('a');
       link.download = `risk-heatmap-${new Date().toISOString().split('T')[0]}.png`;
@@ -125,42 +128,39 @@ export default function RiskHeatmap() {
   // Export to PDF using jspdf + html2canvas
   const exportToPDF = useCallback(async () => {
     if (!heatmapRef.current) return;
-    
+
     setIsExporting(true);
     setShowExportMenu(false);
-    
+
     try {
       // Dynamically import dependencies
       const [html2canvas, { jsPDF }] = await Promise.all([
-        import('html2canvas').then(m => m.default),
+        import('html2canvas').then((m) => m.default),
         import('jspdf'),
       ]);
-      
+
       const canvas = await html2canvas(heatmapRef.current, {
         backgroundColor: '#1f2937',
         scale: 2,
         logging: false,
       });
-      
+
       const imgData = canvas.toDataURL('image/png');
       const imgWidth = canvas.width;
       const imgHeight = canvas.height;
-      
+
       // Calculate PDF dimensions (A4 landscape)
       const pdfWidth = 297; // mm
       const pdfHeight = 210; // mm
-      
-      const ratio = Math.min(
-        (pdfWidth - 20) / imgWidth,
-        (pdfHeight - 40) / imgHeight
-      );
-      
+
+      const ratio = Math.min((pdfWidth - 20) / imgWidth, (pdfHeight - 40) / imgHeight);
+
       const pdf = new jsPDF({
         orientation: 'landscape',
         unit: 'mm',
         format: 'a4',
       });
-      
+
       // Add title
       pdf.setFontSize(18);
       pdf.setTextColor(255, 255, 255);
@@ -168,53 +168,53 @@ export default function RiskHeatmap() {
       pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
       pdf.setTextColor(255, 255, 255);
       pdf.text('Risk Heatmap', 10, 15);
-      
+
       // Add date
       pdf.setFontSize(10);
       pdf.setTextColor(156, 163, 175);
       pdf.text(`Generated: ${new Date().toLocaleString()}`, 10, 22);
-      
+
       // Add the heatmap image
       const scaledWidth = imgWidth * ratio;
       const scaledHeight = imgHeight * ratio;
       const x = (pdfWidth - scaledWidth) / 2;
-      
+
       pdf.addImage(imgData, 'PNG', x, 28, scaledWidth, scaledHeight);
-      
+
       // Add legend at bottom
       const legendY = 28 + scaledHeight + 5;
       pdf.setFontSize(9);
       pdf.setTextColor(255, 255, 255);
-      
+
       const legendItems = [
         { color: '#10b981', label: 'Low Risk' },
         { color: '#f59e0b', label: 'Medium Risk' },
         { color: '#f97316', label: 'High Risk' },
         { color: '#ef4444', label: 'Critical Risk' },
       ];
-      
+
       let legendX = 10;
-      legendItems.forEach(item => {
+      legendItems.forEach((item) => {
         pdf.setFillColor(item.color);
         pdf.rect(legendX, legendY, 4, 4, 'F');
         pdf.text(item.label, legendX + 6, legendY + 3);
         legendX += 35;
       });
-      
+
       // Add summary stats if available
       if (dashboard) {
         pdf.setFontSize(8);
         pdf.setTextColor(156, 163, 175);
         const statsY = legendY + 10;
         pdf.text(`Total Risks: ${dashboard.totalRisks || 0}`, 10, statsY);
-        
+
         let statsX = 60;
         dashboard.byRiskLevel?.forEach((level: any) => {
           pdf.text(`${level.level}: ${level.count}`, statsX, statsY);
           statsX += 30;
         });
       }
-      
+
       // Save the PDF
       pdf.save(`risk-heatmap-${new Date().toISOString().split('T')[0]}.pdf`);
     } catch (error) {
@@ -232,18 +232,18 @@ export default function RiskHeatmap() {
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate('/risks')}
-            className="p-2 hover:bg-surface-700 rounded-lg text-surface-400"
+            className="p-2 hover:bg-surface-700 rounded-lg text-surface-600"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
             <h1 className="text-2xl font-semibold text-white">Risk Heatmap</h1>
-            <p className="text-surface-400 mt-1">
+            <p className="text-surface-600 mt-1">
               Visual distribution of risks by likelihood and impact
             </p>
           </div>
         </div>
-        
+
         {/* Export Menu */}
         <div className="relative">
           <button
@@ -258,12 +258,12 @@ export default function RiskHeatmap() {
             )}
             <span>Export</span>
           </button>
-          
+
           {showExportMenu && !isExporting && (
             <div className="absolute right-0 mt-2 w-48 bg-surface-800 border border-surface-700 rounded-lg shadow-xl z-10">
               <button
                 onClick={exportToPNG}
-                className="w-full flex items-center gap-3 px-4 py-3 text-left text-surface-300 hover:bg-surface-700 transition-colors"
+                className="w-full flex items-center gap-3 px-4 py-3 text-left text-surface-700 hover:bg-surface-700 transition-colors"
               >
                 <FileImage className="w-4 h-4" />
                 <div>
@@ -273,7 +273,7 @@ export default function RiskHeatmap() {
               </button>
               <button
                 onClick={exportToPDF}
-                className="w-full flex items-center gap-3 px-4 py-3 text-left text-surface-300 hover:bg-surface-700 transition-colors border-t border-surface-700"
+                className="w-full flex items-center gap-3 px-4 py-3 text-left text-surface-700 hover:bg-surface-700 transition-colors border-t border-surface-700"
               >
                 <FileText className="w-4 h-4" />
                 <div>
@@ -291,7 +291,7 @@ export default function RiskHeatmap() {
         <div className="lg:col-span-2 bg-surface-800 rounded-xl border border-surface-700 p-6">
           {isLoading ? (
             <div className="flex items-center justify-center h-96">
-              <div className="text-surface-400">Loading heatmap...</div>
+              <div className="text-surface-600">Loading heatmap...</div>
             </div>
           ) : (
             <div ref={heatmapRef} className="space-y-4 p-4" data-export="true">
@@ -299,26 +299,26 @@ export default function RiskHeatmap() {
               <div className="flex items-center justify-end gap-4 text-sm">
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 bg-emerald-500/40 rounded" />
-                  <span className="text-surface-400">Low</span>
+                  <span className="text-surface-600">Low</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 bg-amber-500/40 rounded" />
-                  <span className="text-surface-400">Medium</span>
+                  <span className="text-surface-600">Medium</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 bg-orange-500/40 rounded" />
-                  <span className="text-surface-400">High</span>
+                  <span className="text-surface-600">High</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 bg-red-500/40 rounded" />
-                  <span className="text-surface-400">Critical</span>
+                  <span className="text-surface-600">Critical</span>
                 </div>
               </div>
 
               {/* Matrix */}
               <div className="relative">
                 {/* Y-axis label */}
-                <div className="absolute -left-6 top-1/2 -translate-y-1/2 -rotate-90 text-surface-400 text-sm font-medium whitespace-nowrap">
+                <div className="absolute -left-6 top-1/2 -translate-y-1/2 -rotate-90 text-surface-600 text-sm font-medium whitespace-nowrap">
                   LIKELIHOOD →
                 </div>
 
@@ -326,10 +326,10 @@ export default function RiskHeatmap() {
                   {/* Impact labels (top) */}
                   <div className="flex mb-2">
                     <div className="w-24 shrink-0" /> {/* Spacer for likelihood labels */}
-                    {IMPACTS.map(impact => (
+                    {IMPACTS.map((impact) => (
                       <div
                         key={impact}
-                        className="flex-1 text-center text-xs text-surface-400 font-medium"
+                        className="flex-1 text-center text-xs text-surface-600 font-medium"
                       >
                         {IMPACT_LABELS[impact]}
                       </div>
@@ -340,7 +340,7 @@ export default function RiskHeatmap() {
                   {[...LIKELIHOODS].reverse().map((likelihood, rowIdx) => (
                     <div key={likelihood} className="flex">
                       {/* Likelihood label */}
-                      <div className="w-24 shrink-0 flex items-center text-xs text-surface-400 font-medium pr-2">
+                      <div className="w-24 shrink-0 flex items-center text-xs text-surface-600 font-medium pr-2">
                         {LIKELIHOOD_LABELS[likelihood]}
                       </div>
                       {/* Cells */}
@@ -368,12 +368,12 @@ export default function RiskHeatmap() {
                   ))}
 
                   {/* X-axis label */}
-                  <div className="text-center text-surface-400 text-sm font-medium mt-4">
+                  <div className="text-center text-surface-600 text-sm font-medium mt-4">
                     IMPACT →
                   </div>
                 </div>
               </div>
-              
+
               {/* Timestamp for exports */}
               <div className="text-xs text-surface-500 text-right mt-4">
                 Generated: {new Date().toLocaleString()}
@@ -393,20 +393,20 @@ export default function RiskHeatmap() {
               <div className="space-y-4">
                 <div className="flex gap-4 text-sm">
                   <div className="flex-1">
-                    <span className="text-surface-400">Likelihood:</span>
+                    <span className="text-surface-600">Likelihood:</span>
                     <span className="text-white ml-2 capitalize">
                       {LIKELIHOOD_LABELS[selectedCell.likelihood]}
                     </span>
                   </div>
                   <div className="flex-1">
-                    <span className="text-surface-400">Impact:</span>
+                    <span className="text-surface-600">Impact:</span>
                     <span className="text-white ml-2 capitalize">
                       {IMPACT_LABELS[selectedCell.impact]}
                     </span>
                   </div>
                 </div>
                 <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {selectedCell.risks.map(risk => (
+                  {selectedCell.risks.map((risk) => (
                     <button
                       key={risk.id}
                       onClick={() => navigate(`/risks/${risk.id}`)}
@@ -421,9 +421,7 @@ export default function RiskHeatmap() {
             ) : (
               <div className="text-center py-8">
                 <Info className="w-8 h-8 text-surface-500 mx-auto mb-2" />
-                <p className="text-surface-400">
-                  Click on any cell with risks to see the details
-                </p>
+                <p className="text-surface-600">Click on any cell with risks to see the details</p>
               </div>
             )}
           </div>
@@ -447,8 +445,8 @@ export default function RiskHeatmap() {
                   return (
                     <div key={level.level} className="space-y-1">
                       <div className="flex justify-between text-sm">
-                        <span className="text-surface-300 capitalize">{level.level}</span>
-                        <span className="text-surface-400">
+                        <span className="text-surface-700 capitalize">{level.level}</span>
+                        <span className="text-surface-600">
                           {level.count} ({percentage}%)
                         </span>
                       </div>
@@ -475,7 +473,7 @@ export default function RiskHeatmap() {
                     key={cat.category}
                     className="flex justify-between items-center p-2 bg-surface-700 rounded"
                   >
-                    <span className="text-surface-300 capitalize">{cat.category}</span>
+                    <span className="text-surface-700 capitalize">{cat.category}</span>
                     <span className="text-white font-medium">{cat.count}</span>
                   </div>
                 ))}
@@ -484,13 +482,10 @@ export default function RiskHeatmap() {
           )}
         </div>
       </div>
-      
+
       {/* Click outside handler for export menu */}
       {showExportMenu && (
-        <div
-          className="fixed inset-0 z-0"
-          onClick={() => setShowExportMenu(false)}
-        />
+        <div className="fixed inset-0 z-0" onClick={() => setShowExportMenu(false)} />
       )}
     </div>
   );

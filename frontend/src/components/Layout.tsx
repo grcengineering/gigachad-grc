@@ -175,7 +175,11 @@ const navSections: NavSection[] = [
       { name: 'TPRM Configuration', href: '/settings/tprm', icon: BuildingOfficeIcon },
       { name: 'Trust Configuration', href: '/settings/trust', icon: ChatBubbleLeftRightIcon },
       { name: 'Training Configuration', href: '/settings/training', icon: AcademicCapIcon },
-      { name: 'Employee Compliance Configuration', href: '/settings/employee-compliance', icon: UserGroupIcon },
+      {
+        name: 'Employee Compliance Configuration',
+        href: '/settings/employee-compliance',
+        icon: UserGroupIcon,
+      },
       { name: 'Module Configuration', href: '/settings/modules', icon: CubeIcon },
       { name: 'Configuration as Code', href: '/settings/config-as-code', icon: CodeBracketIcon },
     ],
@@ -205,29 +209,29 @@ function isNavItemMatch(pathname: string, href: string): boolean {
 function findActiveNavItem(pathname: string, items: NavItem[]): string | null {
   let bestMatch: string | null = null;
   let bestMatchLength = 0;
-  
+
   for (const item of items) {
     if (isNavItemMatch(pathname, item.href) && item.href.length > bestMatchLength) {
       bestMatch = item.href;
       bestMatchLength = item.href.length;
     }
   }
-  
+
   return bestMatch;
 }
 
 function NavSectionComponent({ section }: { section: NavSection }) {
   const location = useLocation();
   const { isRouteEnabled } = useModules();
-  
+
   // Filter items based on module enablement
   const filteredItems = section.items.filter((item) => {
     // Check if route is enabled (this handles module-based filtering)
     return isRouteEnabled(item.href);
   });
-  
+
   const activeItemHref = findActiveNavItem(location.pathname, filteredItems);
-  
+
   const [isOpen, setIsOpen] = useState(() => {
     // Auto-expand section if current path matches any item
     return activeItemHref !== null;
@@ -243,18 +247,18 @@ function NavSectionComponent({ section }: { section: NavSection }) {
           'flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300',
           hasActiveItem
             ? 'text-brand-400'
-            : 'text-surface-400 hover:bg-surface-800 hover:text-surface-100'
+            : 'text-surface-600 hover:bg-surface-800 hover:text-surface-100'
         )}
       >
         <div className="flex items-center gap-3">
           <section.icon className="w-5 h-5" />
           {section.name}
         </div>
-        <ChevronRightIcon 
+        <ChevronRightIcon
           className={clsx(
             'w-4 h-4 transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
             isOpen && 'rotate-90'
-          )} 
+          )}
         />
       </button>
 
@@ -267,12 +271,13 @@ function NavSectionComponent({ section }: { section: NavSection }) {
         }}
       >
         <div className="overflow-hidden">
-          <div 
+          <div
             className="space-y-1 py-1"
             style={{
               opacity: isOpen ? 1 : 0,
               transform: isOpen ? 'translateY(0)' : 'translateY(-8px)',
-              transition: 'opacity 300ms cubic-bezier(0.4, 0, 0.2, 1), transform 300ms cubic-bezier(0.4, 0, 0.2, 1)',
+              transition:
+                'opacity 300ms cubic-bezier(0.4, 0, 0.2, 1), transform 300ms cubic-bezier(0.4, 0, 0.2, 1)',
             }}
           >
             {filteredItems.map((item, index) => {
@@ -285,7 +290,7 @@ function NavSectionComponent({ section }: { section: NavSection }) {
                     'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200',
                     isActive
                       ? 'bg-brand-600/20 text-brand-400 font-medium'
-                      : 'text-surface-400 hover:bg-surface-800 hover:text-surface-100'
+                      : 'text-surface-600 hover:bg-surface-800 hover:text-surface-100'
                   )}
                   style={{
                     transitionDelay: isOpen ? `${index * 30}ms` : '0ms',
@@ -367,7 +372,7 @@ export default function Layout() {
                 'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
                 isDashboardActive
                   ? 'bg-brand-600/20 text-brand-400'
-                  : 'text-surface-400 hover:bg-surface-800 hover:text-surface-100'
+                  : 'text-surface-600 hover:bg-surface-800 hover:text-surface-100'
               )}
               onClick={() => setSidebarOpen(false)}
             >
@@ -383,7 +388,7 @@ export default function Layout() {
                   'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ml-2',
                   isActive
                     ? 'bg-brand-600/20 text-brand-400'
-                    : 'text-surface-400 hover:bg-surface-800 hover:text-surface-100'
+                    : 'text-surface-600 hover:bg-surface-800 hover:text-surface-100'
                 )
               }
               onClick={() => setSidebarOpen(false)}
@@ -417,18 +422,20 @@ export default function Layout() {
           <div className="p-4 border-t border-surface-800">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-8 h-8 rounded-full bg-surface-700 flex items-center justify-center">
-                <span className="text-sm font-medium text-surface-300">
+                <span className="text-sm font-medium text-surface-700">
                   {user?.name?.charAt(0)?.toUpperCase() || 'U'}
                 </span>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-surface-100 truncate">{user?.name}</p>
-                <p className="text-xs text-surface-500 truncate capitalize">{user?.role?.replace('_', ' ')}</p>
+                <p className="text-xs text-surface-500 truncate capitalize">
+                  {user?.role?.replace('_', ' ')}
+                </p>
               </div>
             </div>
             <button
               onClick={logout}
-              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-surface-400 hover:text-surface-100 hover:bg-surface-800 rounded-lg transition-colors"
+              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-surface-600 hover:text-surface-100 hover:bg-surface-800 rounded-lg transition-colors"
             >
               <ArrowRightOnRectangleIcon className="w-5 h-5" />
               Sign out
@@ -440,7 +447,7 @@ export default function Layout() {
       {/* Main content */}
       <div className="lg:pl-64">
         {/* Top bar */}
-        <header 
+        <header
           role="banner"
           aria-label="Site header"
           className="sticky top-0 z-[60] bg-surface-900/80 backdrop-blur-sm border-b border-surface-800"
@@ -448,7 +455,7 @@ export default function Layout() {
           <div className="flex items-center justify-between gap-4 px-4 py-3 lg:px-6">
             <div className="flex items-center gap-2">
               <button
-                className="lg:hidden p-2 -ml-2 text-surface-400 hover:text-surface-100"
+                className="lg:hidden p-2 -ml-2 text-surface-600 hover:text-surface-100"
                 onClick={() => setSidebarOpen(true)}
               >
                 <Bars3Icon className="w-6 h-6" />
@@ -462,7 +469,7 @@ export default function Layout() {
               {/* Keyboard Shortcuts Button */}
               <button
                 onClick={() => setShowShortcuts(true)}
-                className="p-2 text-surface-400 hover:text-surface-100 hover:bg-surface-800 rounded-lg transition-colors"
+                className="p-2 text-surface-600 hover:text-surface-100 hover:bg-surface-800 rounded-lg transition-colors"
                 title="Keyboard Shortcuts (⌘/)"
               >
                 <CommandLineIcon className="w-5 h-5" />
@@ -471,7 +478,7 @@ export default function Layout() {
               {/* Help Center Link */}
               <NavLink
                 to="/help"
-                className="p-2 text-surface-400 hover:text-surface-100 hover:bg-surface-800 rounded-lg transition-colors"
+                className="p-2 text-surface-600 hover:text-surface-100 hover:bg-surface-800 rounded-lg transition-colors"
                 title="Help Center"
               >
                 <QuestionMarkCircleIcon className="w-5 h-5" />
@@ -479,7 +486,7 @@ export default function Layout() {
 
               <NavLink
                 to="/account"
-                className="p-2 text-surface-400 hover:text-surface-100 hover:bg-surface-800 rounded-lg transition-colors"
+                className="p-2 text-surface-600 hover:text-surface-100 hover:bg-surface-800 rounded-lg transition-colors"
                 title="Account Settings"
               >
                 <CogIcon className="w-5 h-5" />
@@ -492,27 +499,16 @@ export default function Layout() {
         </header>
 
         {/* Page content */}
-        <main 
-          id="main-content"
-          role="main"
-          aria-label="Main content"
-          className="p-4 lg:p-6"
-        >
+        <main id="main-content" role="main" aria-label="Main content" className="p-4 lg:p-6">
           <Outlet />
         </main>
       </div>
 
       {/* Command Palette */}
-      <CommandPalette
-        isOpen={commandPalette.isOpen}
-        onClose={commandPalette.close}
-      />
+      <CommandPalette isOpen={commandPalette.isOpen} onClose={commandPalette.close} />
 
       {/* Keyboard Shortcuts Modal */}
-      <KeyboardShortcutsModal
-        isOpen={showShortcuts}
-        onClose={() => setShowShortcuts(false)}
-      />
+      <KeyboardShortcutsModal isOpen={showShortcuts} onClose={() => setShowShortcuts(false)} />
 
       {/* Onboarding Tour */}
       <OnboardingTour

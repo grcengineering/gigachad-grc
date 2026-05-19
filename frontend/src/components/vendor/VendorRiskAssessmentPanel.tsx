@@ -62,34 +62,50 @@ interface VendorRiskAssessmentPanelProps {
 // Helper Components
 // ============================================
 
-function ScoreBar({ label, score, maxScore, color }: { label: string; score: number; maxScore: number; color: string }) {
+function ScoreBar({
+  label,
+  score,
+  maxScore,
+  color,
+}: {
+  label: string;
+  score: number;
+  maxScore: number;
+  color: string;
+}) {
   const percentage = (score / maxScore) * 100;
   return (
     <div className="flex items-center gap-3">
-      <span className="text-sm text-surface-400 w-24">{label}</span>
+      <span className="text-sm text-surface-600 w-24">{label}</span>
       <div className="flex-1 h-2 bg-surface-800 rounded-full overflow-hidden">
-        <div
-          className={clsx('h-full transition-all', color)}
-          style={{ width: `${percentage}%` }}
-        />
+        <div className={clsx('h-full transition-all', color)} style={{ width: `${percentage}%` }} />
       </div>
-      <span className="text-sm font-medium text-surface-300 w-12 text-right">{score}/{maxScore}</span>
+      <span className="text-sm font-medium text-surface-700 w-12 text-right">
+        {score}/{maxScore}
+      </span>
     </div>
   );
 }
 
 function RiskBadge({ level }: { level: string }) {
   const config: Record<string, { bg: string; text: string; border: string }> = {
-    Critical: { bg: 'bg-red-500/10', text: 'text-red-400', border: 'border-red-500/30' },
-    High: { bg: 'bg-orange-500/10', text: 'text-orange-400', border: 'border-orange-500/30' },
-    Medium: { bg: 'bg-yellow-500/10', text: 'text-yellow-400', border: 'border-yellow-500/30' },
-    Low: { bg: 'bg-green-500/10', text: 'text-green-400', border: 'border-green-500/30' },
-    Minimal: { bg: 'bg-blue-500/10', text: 'text-blue-400', border: 'border-blue-500/30' },
+    Critical: { bg: 'bg-red-500/10', text: 'text-red-600', border: 'border-red-500/30' },
+    High: { bg: 'bg-orange-500/10', text: 'text-orange-600', border: 'border-orange-500/30' },
+    Medium: { bg: 'bg-yellow-500/10', text: 'text-yellow-600', border: 'border-yellow-500/30' },
+    Low: { bg: 'bg-green-500/10', text: 'text-green-600', border: 'border-green-500/30' },
+    Minimal: { bg: 'bg-blue-500/10', text: 'text-blue-600', border: 'border-blue-500/30' },
   };
   const style = config[level] || config.Medium;
 
   return (
-    <span className={clsx('px-3 py-1 rounded-full text-sm font-medium border', style.bg, style.text, style.border)}>
+    <span
+      className={clsx(
+        'px-3 py-1 rounded-full text-sm font-medium border',
+        style.bg,
+        style.text,
+        style.border
+      )}
+    >
       {level} Risk
     </span>
   );
@@ -164,8 +180,8 @@ export function VendorRiskAssessmentPanel({
           <h3 className="text-lg font-medium text-surface-100">Risk Assessment</h3>
         </div>
         <div className="flex items-center justify-center py-8">
-          <ArrowPathIcon className="w-6 h-6 text-surface-400 animate-spin" />
-          <span className="ml-2 text-surface-400">Loading assessments...</span>
+          <ArrowPathIcon className="w-6 h-6 text-surface-600 animate-spin" />
+          <span className="ml-2 text-surface-600">Loading assessments...</span>
         </div>
       </div>
     );
@@ -179,8 +195,8 @@ export function VendorRiskAssessmentPanel({
           <h3 className="text-lg font-medium text-surface-100">Risk Assessment</h3>
         </div>
         <div className="text-center py-6">
-          <ExclamationTriangleIcon className="w-10 h-10 mx-auto mb-2 text-red-400" />
-          <p className="text-surface-400">{error}</p>
+          <ExclamationTriangleIcon className="w-10 h-10 mx-auto mb-2 text-red-600" />
+          <p className="text-surface-600">{error}</p>
           <Button variant="ghost" size="sm" className="mt-2" onClick={fetchAssessments}>
             Retry
           </Button>
@@ -200,11 +216,14 @@ export function VendorRiskAssessmentPanel({
         </div>
         <div className="text-center py-8">
           <ShieldExclamationIcon className="w-12 h-12 mx-auto mb-3 text-surface-600" />
-          <h4 className="text-lg font-medium text-surface-300 mb-2">No Risk Assessment</h4>
-          <p className="text-surface-400 mb-4">
+          <h4 className="text-lg font-medium text-surface-700 mb-2">No Risk Assessment</h4>
+          <p className="text-surface-600 mb-4">
             Conduct a risk assessment to evaluate this vendor's security posture
           </p>
-          <Button onClick={onStartAssessment} leftIcon={<ShieldExclamationIcon className="w-4 h-4" />}>
+          <Button
+            onClick={onStartAssessment}
+            leftIcon={<ShieldExclamationIcon className="w-4 h-4" />}
+          >
             Start Risk Assessment
           </Button>
         </div>
@@ -226,22 +245,29 @@ export function VendorRiskAssessmentPanel({
       </div>
 
       {/* Latest Assessment Summary */}
-      <div className={clsx(
-        'p-4 rounded-lg border mb-6',
-        latestAssessment.riskLevel === 'Critical' ? 'bg-red-500/5 border-red-500/20' :
-        latestAssessment.riskLevel === 'High' ? 'bg-orange-500/5 border-orange-500/20' :
-        latestAssessment.riskLevel === 'Medium' ? 'bg-yellow-500/5 border-yellow-500/20' :
-        'bg-green-500/5 border-green-500/20'
-      )}>
+      <div
+        className={clsx(
+          'p-4 rounded-lg border mb-6',
+          latestAssessment.riskLevel === 'Critical'
+            ? 'bg-red-500/5 border-red-500/20'
+            : latestAssessment.riskLevel === 'High'
+              ? 'bg-orange-500/5 border-orange-500/20'
+              : latestAssessment.riskLevel === 'Medium'
+                ? 'bg-yellow-500/5 border-yellow-500/20'
+                : 'bg-green-500/5 border-green-500/20'
+        )}
+      >
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <span className="text-3xl font-bold text-surface-100">{latestAssessment.totalScore}</span>
+              <span className="text-3xl font-bold text-surface-100">
+                {latestAssessment.totalScore}
+              </span>
               <RiskBadge level={latestAssessment.riskLevel} />
             </div>
             <h4 className="font-medium text-surface-200 mb-1">{latestAssessment.title}</h4>
             {latestAssessment.description && (
-              <p className="text-sm text-surface-400 mb-2">{latestAssessment.description}</p>
+              <p className="text-sm text-surface-600 mb-2">{latestAssessment.description}</p>
             )}
             <div className="flex items-center gap-4 text-xs text-surface-500">
               <span className="flex items-center gap-1">
@@ -263,31 +289,31 @@ export function VendorRiskAssessmentPanel({
 
       {/* Score Breakdown */}
       <div className="mb-6">
-        <h4 className="text-sm font-medium text-surface-300 mb-3">Score Breakdown</h4>
+        <h4 className="text-sm font-medium text-surface-700 mb-3">Score Breakdown</h4>
         <div className="space-y-2">
-          <ScoreBar 
-            label="Asset" 
-            score={latestAssessment.assetScore} 
-            maxScore={25} 
-            color={getScoreColor(latestAssessment.assetScore, 25)} 
+          <ScoreBar
+            label="Asset"
+            score={latestAssessment.assetScore}
+            maxScore={25}
+            color={getScoreColor(latestAssessment.assetScore, 25)}
           />
-          <ScoreBar 
-            label="Threat" 
-            score={latestAssessment.threatScore} 
-            maxScore={25} 
-            color={getScoreColor(latestAssessment.threatScore, 25)} 
+          <ScoreBar
+            label="Threat"
+            score={latestAssessment.threatScore}
+            maxScore={25}
+            color={getScoreColor(latestAssessment.threatScore, 25)}
           />
-          <ScoreBar 
-            label="Likelihood" 
-            score={latestAssessment.likelihood.score} 
-            maxScore={25} 
-            color={getScoreColor(latestAssessment.likelihood.score, 25)} 
+          <ScoreBar
+            label="Likelihood"
+            score={latestAssessment.likelihood.score}
+            maxScore={25}
+            color={getScoreColor(latestAssessment.likelihood.score, 25)}
           />
-          <ScoreBar 
-            label="Impact" 
-            score={latestAssessment.impact.score} 
-            maxScore={25} 
-            color={getScoreColor(latestAssessment.impact.score, 25)} 
+          <ScoreBar
+            label="Impact"
+            score={latestAssessment.impact.score}
+            maxScore={25}
+            color={getScoreColor(latestAssessment.impact.score, 25)}
           />
         </div>
       </div>
@@ -298,7 +324,7 @@ export function VendorRiskAssessmentPanel({
           <CheckCircleIcon className="w-5 h-5 text-brand-400 mt-0.5 flex-shrink-0" />
           <div>
             <h5 className="text-sm font-medium text-surface-200">Recommended Action</h5>
-            <p className="text-sm text-surface-400">{latestAssessment.recommendedAction}</p>
+            <p className="text-sm text-surface-600">{latestAssessment.recommendedAction}</p>
           </div>
         </div>
       </div>
@@ -307,17 +333,19 @@ export function VendorRiskAssessmentPanel({
       <div className="grid grid-cols-2 gap-4 mb-6">
         <div className="p-3 bg-surface-800/30 rounded-lg">
           <h5 className="text-xs text-surface-500 uppercase tracking-wide mb-1">Likelihood</h5>
-          <p className="text-lg font-semibold text-surface-200">{latestAssessment.likelihood.level}</p>
-          <p className="text-xs text-surface-400">
-            Freq: {latestAssessment.likelihood.frequency} | 
-            Cap: {latestAssessment.likelihood.capability} | 
-            Ctrl: {latestAssessment.likelihood.controlStrength}
+          <p className="text-lg font-semibold text-surface-200">
+            {latestAssessment.likelihood.level}
+          </p>
+          <p className="text-xs text-surface-600">
+            Freq: {latestAssessment.likelihood.frequency} | Cap:{' '}
+            {latestAssessment.likelihood.capability} | Ctrl:{' '}
+            {latestAssessment.likelihood.controlStrength}
           </p>
         </div>
         <div className="p-3 bg-surface-800/30 rounded-lg">
           <h5 className="text-xs text-surface-500 uppercase tracking-wide mb-1">Impact</h5>
           <p className="text-lg font-semibold text-surface-200">{latestAssessment.impact.level}</p>
-          <p className="text-xs text-surface-400">Total: {latestAssessment.impact.total} points</p>
+          <p className="text-xs text-surface-600">Total: {latestAssessment.impact.total} points</p>
         </div>
       </div>
 
@@ -328,13 +356,13 @@ export function VendorRiskAssessmentPanel({
             onClick={() => setShowHistory(!showHistory)}
             className="flex items-center justify-between w-full text-left"
           >
-            <span className="text-sm font-medium text-surface-300">
+            <span className="text-sm font-medium text-surface-700">
               Assessment History ({history.length} total)
             </span>
             {showHistory ? (
-              <ChevronUpIcon className="w-4 h-4 text-surface-400" />
+              <ChevronUpIcon className="w-4 h-4 text-surface-600" />
             ) : (
-              <ChevronDownIcon className="w-4 h-4 text-surface-400" />
+              <ChevronDownIcon className="w-4 h-4 text-surface-600" />
             )}
           </button>
 
@@ -346,13 +374,15 @@ export function VendorRiskAssessmentPanel({
                   className="flex items-center justify-between p-3 bg-surface-800/30 rounded-lg"
                 >
                   <div>
-                    <p className="text-sm font-medium text-surface-300">{assessment.title}</p>
+                    <p className="text-sm font-medium text-surface-700">{assessment.title}</p>
                     <p className="text-xs text-surface-500">
                       {formatDate(assessment.date)} by {assessment.assessor}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-lg font-bold text-surface-300">{assessment.totalScore}</span>
+                    <span className="text-lg font-bold text-surface-700">
+                      {assessment.totalScore}
+                    </span>
                     <RiskBadge level={assessment.riskLevel} />
                   </div>
                 </div>

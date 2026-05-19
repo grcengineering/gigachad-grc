@@ -32,9 +32,9 @@ type WizardStage = 'upload' | 'preview' | 'result';
 const ACCEPTED_EXTENSIONS = '.csv,.xlsx';
 
 const STATUS_PILL_CLASSES: Record<MappingImportRowStatus, string> = {
-  will_create: 'bg-green-500/20 text-green-300 border border-green-500/40',
-  duplicate: 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/40',
-  error: 'bg-red-500/20 text-red-300 border border-red-500/40',
+  will_create: 'bg-green-500/20 text-green-700 border border-green-500/40',
+  duplicate: 'bg-yellow-500/20 text-yellow-700 border border-yellow-500/40',
+  error: 'bg-red-500/20 text-red-700 border border-red-500/40',
 };
 
 const STATUS_PILL_LABEL: Record<MappingImportRowStatus, string> = {
@@ -189,7 +189,7 @@ export function MappingImportWizard({
           <div className="flex items-center justify-between p-6 border-b border-surface-700">
             <div>
               <h2 className="text-xl font-semibold text-surface-100">Import mappings</h2>
-              <p className="text-sm text-surface-400 mt-1">
+              <p className="text-sm text-surface-600 mt-1">
                 {stage === 'upload' && 'Upload a CSV or XLSX file to validate before committing.'}
                 {stage === 'preview' && 'Review parsed rows before importing.'}
                 {stage === 'result' && 'Import complete.'}
@@ -199,7 +199,7 @@ export function MappingImportWizard({
               type="button"
               onClick={handleClose}
               aria-label="Close import wizard"
-              className="p-2 text-surface-400 hover:text-surface-200 hover:bg-surface-800 rounded-lg transition-colors"
+              className="p-2 text-surface-600 hover:text-surface-200 hover:bg-surface-800 rounded-lg transition-colors"
             >
               <XMarkIcon className="w-5 h-5" />
             </button>
@@ -228,7 +228,7 @@ export function MappingImportWizard({
             {errorMessage && stage !== 'result' && (
               <div
                 role="alert"
-                className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-sm text-red-300"
+                className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-sm text-red-700"
               >
                 {errorMessage}
               </div>
@@ -312,28 +312,28 @@ function UploadStage({
 }: UploadStageProps) {
   return (
     <div className="space-y-4">
-      <div className="p-4 bg-surface-800/50 rounded-lg border border-surface-700 text-sm text-surface-300">
+      <div className="p-4 bg-surface-800/50 rounded-lg border border-surface-700 text-sm text-surface-700">
         <p className="font-medium text-surface-200 mb-2">Required columns</p>
-        <ul className="space-y-1 text-xs text-surface-400 list-disc list-inside">
+        <ul className="space-y-1 text-xs text-surface-600 list-disc list-inside">
           <li>
-            <span className="font-mono text-surface-300">framework_code</span> — e.g.{' '}
+            <span className="font-mono text-surface-700">framework_code</span> — e.g.{' '}
             <span className="font-mono">soc2:2017</span>
           </li>
           <li>
-            <span className="font-mono text-surface-300">requirement_ref</span> — requirement
+            <span className="font-mono text-surface-700">requirement_ref</span> — requirement
             reference within the framework
           </li>
           <li>
-            <span className="font-mono text-surface-300">control_code</span> — control ID, e.g.{' '}
+            <span className="font-mono text-surface-700">control_code</span> — control ID, e.g.{' '}
             <span className="font-mono">AC-001</span>
           </li>
           <li>
-            <span className="font-mono text-surface-300">mapping_type</span> —{' '}
+            <span className="font-mono text-surface-700">mapping_type</span> —{' '}
             <span className="font-mono">primary</span> or{' '}
             <span className="font-mono">supporting</span>
           </li>
           <li>
-            <span className="font-mono text-surface-300">notes</span> — optional, up to 4096
+            <span className="font-mono text-surface-700">notes</span> — optional, up to 4096
             characters
           </li>
         </ul>
@@ -343,7 +343,7 @@ function UploadStage({
         <div>
           <label
             htmlFor="mapping-import-framework"
-            className="block text-sm font-medium text-surface-300 mb-2"
+            className="block text-sm font-medium text-surface-700 mb-2"
           >
             Framework (optional)
           </label>
@@ -392,9 +392,9 @@ function UploadStage({
 
         {file ? (
           <div className="space-y-2">
-            <DocumentTextIcon className="w-12 h-12 mx-auto text-green-400" />
+            <DocumentTextIcon className="w-12 h-12 mx-auto text-green-600" />
             <p className="text-surface-100 font-medium">{file.name}</p>
-            <p className="text-surface-400 text-sm">{(file.size / 1024).toFixed(1)} KB</p>
+            <p className="text-surface-600 text-sm">{(file.size / 1024).toFixed(1)} KB</p>
             <button
               type="button"
               onClick={() => onSelectFile(null)}
@@ -406,7 +406,7 @@ function UploadStage({
         ) : (
           <div className="space-y-2">
             <CloudArrowUpIcon className="w-12 h-12 mx-auto text-surface-500" />
-            <p className="text-surface-300">
+            <p className="text-surface-700">
               Drag and drop your file here, or{' '}
               <button
                 type="button"
@@ -429,14 +429,14 @@ function PreviewStage({ result }: { result: ImportResult }) {
     <div className="space-y-4">
       <div className="grid grid-cols-4 gap-4">
         <SummaryTile label="Total rows" value={result.totalRows} accent="text-surface-200" />
-        <SummaryTile label="Will create" value={result.successful} accent="text-green-400" />
-        <SummaryTile label="Duplicates" value={result.duplicates} accent="text-yellow-400" />
-        <SummaryTile label="Errors" value={result.errors.length} accent="text-red-400" />
+        <SummaryTile label="Will create" value={result.successful} accent="text-green-600" />
+        <SummaryTile label="Duplicates" value={result.duplicates} accent="text-yellow-600" />
+        <SummaryTile label="Errors" value={result.errors.length} accent="text-red-600" />
       </div>
 
       <div className="border border-surface-700 rounded-lg overflow-hidden">
         <table className="w-full text-sm" aria-label="Import preview rows">
-          <thead className="bg-surface-800 text-xs uppercase text-surface-400">
+          <thead className="bg-surface-800 text-xs uppercase text-surface-600">
             <tr>
               <th className="px-3 py-2 text-left">Row</th>
               <th className="px-3 py-2 text-left">Framework</th>
@@ -462,7 +462,7 @@ function PreviewStage({ result }: { result: ImportResult }) {
                   data-status={row.status}
                   className="hover:bg-surface-800/40"
                 >
-                  <td className="px-3 py-2 font-mono text-surface-400">{row.row}</td>
+                  <td className="px-3 py-2 font-mono text-surface-600">{row.row}</td>
                   <td className="px-3 py-2 text-surface-200">
                     {getRowValue(row, 'framework_code')}
                   </td>
@@ -471,7 +471,7 @@ function PreviewStage({ result }: { result: ImportResult }) {
                   </td>
                   <td className="px-3 py-2 text-surface-200">{getRowValue(row, 'control_code')}</td>
                   <td className="px-3 py-2 text-surface-200">{getRowValue(row, 'mapping_type')}</td>
-                  <td className="px-3 py-2 text-surface-400 truncate max-w-xs">
+                  <td className="px-3 py-2 text-surface-600 truncate max-w-xs">
                     {getRowValue(row, 'notes')}
                   </td>
                   <td className="px-3 py-2">
@@ -484,7 +484,7 @@ function PreviewStage({ result }: { result: ImportResult }) {
                       {STATUS_PILL_LABEL[row.status]}
                     </span>
                     {row.status === 'error' && row.errorMessage && (
-                      <p className="text-xs text-red-400 mt-1">{row.errorMessage}</p>
+                      <p className="text-xs text-red-600 mt-1">{row.errorMessage}</p>
                     )}
                   </td>
                 </tr>
@@ -503,13 +503,13 @@ function ResultStage({ result }: { result: ImportResult }) {
     <div className="space-y-4">
       <div className="flex items-center gap-3">
         {hasErrors ? (
-          <ExclamationTriangleIcon className="w-8 h-8 text-yellow-400" />
+          <ExclamationTriangleIcon className="w-8 h-8 text-yellow-600" />
         ) : (
-          <CheckCircleIcon className="w-8 h-8 text-green-400" />
+          <CheckCircleIcon className="w-8 h-8 text-green-600" />
         )}
         <div>
           <h3 className="text-lg font-medium text-surface-100">Import complete</h3>
-          <p className="text-surface-400">
+          <p className="text-surface-600">
             Processed {result.totalRows} row{result.totalRows === 1 ? '' : 's'} from the file
           </p>
         </div>
@@ -517,21 +517,21 @@ function ResultStage({ result }: { result: ImportResult }) {
 
       <div className="grid grid-cols-4 gap-4">
         <SummaryTile label="Total rows" value={result.totalRows} accent="text-surface-200" />
-        <SummaryTile label="Created" value={result.successful} accent="text-green-400" />
-        <SummaryTile label="Duplicates" value={result.duplicates} accent="text-yellow-400" />
-        <SummaryTile label="Errors" value={result.errors.length} accent="text-red-400" />
+        <SummaryTile label="Created" value={result.successful} accent="text-green-600" />
+        <SummaryTile label="Duplicates" value={result.duplicates} accent="text-yellow-600" />
+        <SummaryTile label="Errors" value={result.errors.length} accent="text-red-600" />
       </div>
 
       {hasErrors && (
         <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
-          <h4 className="font-medium text-red-400 mb-2">Errors</h4>
+          <h4 className="font-medium text-red-600 mb-2">Errors</h4>
           <ul
             aria-label="Import errors"
-            className="max-h-40 overflow-y-auto space-y-1 text-sm text-surface-300"
+            className="max-h-40 overflow-y-auto space-y-1 text-sm text-surface-700"
           >
             {result.errors.map((err) => (
               <li key={err.row}>
-                <span className="font-mono text-red-400">Row {err.row}:</span> {err.message}
+                <span className="font-mono text-red-600">Row {err.row}:</span> {err.message}
               </li>
             ))}
           </ul>
@@ -545,7 +545,7 @@ function SummaryTile({ label, value, accent }: { label: string; value: number; a
   return (
     <div className="bg-surface-800 rounded-lg p-4 text-center">
       <div className={clsx('text-2xl font-bold', accent)}>{value}</div>
-      <div className="text-sm text-surface-400">{label}</div>
+      <div className="text-sm text-surface-600">{label}</div>
     </div>
   );
 }

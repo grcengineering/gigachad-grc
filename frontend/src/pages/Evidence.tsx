@@ -52,12 +52,14 @@ export default function Evidence() {
   const { data: evidenceData, isLoading } = useQuery({
     queryKey: ['evidence', debouncedSearch, selectedType, workspaceId],
     queryFn: () =>
-      evidenceApi.list({
-        search: debouncedSearch || undefined,
-        type: selectedType ? [selectedType] : undefined,
-        workspaceId: workspaceId || undefined,
-        limit: 25, // Reduced from 50
-      }).then((res) => res.data),
+      evidenceApi
+        .list({
+          search: debouncedSearch || undefined,
+          type: selectedType ? [selectedType] : undefined,
+          workspaceId: workspaceId || undefined,
+          limit: 25, // Reduced from 50
+        })
+        .then((res) => res.data),
     staleTime: 30 * 1000, // 30 second cache
   });
 
@@ -101,9 +103,7 @@ export default function Evidence() {
     },
   });
 
-  const evidence = Array.isArray(evidenceData) 
-    ? evidenceData 
-    : (evidenceData as any)?.data || [];
+  const evidence = Array.isArray(evidenceData) ? evidenceData : (evidenceData as any)?.data || [];
 
   const isLinkedToControl = (item: any) => {
     if (!linkToControlId) return false;
@@ -119,19 +119,15 @@ export default function Evidence() {
             <div className="flex items-center gap-3">
               <LinkIcon className="w-5 h-5 text-brand-400" />
               <div>
-                <p className="text-sm font-medium text-surface-100">
-                  Linking evidence to control
-                </p>
-                <p className="text-xs text-surface-400">
+                <p className="text-sm font-medium text-surface-100">Linking evidence to control</p>
+                <p className="text-xs text-surface-600">
                   <span className="font-mono text-brand-400">{linkControl.controlId}</span>
-                  {' - '}{linkControl.title}
+                  {' - '}
+                  {linkControl.title}
                 </p>
               </div>
             </div>
-            <Link
-              to={`/controls/${linkToControlId}`}
-              className="btn-outline text-sm"
-            >
+            <Link to={`/controls/${linkToControlId}`} className="btn-outline text-sm">
               <ArrowLeftIcon className="w-4 h-4 mr-1" />
               Back to Control
             </Link>
@@ -143,14 +139,17 @@ export default function Evidence() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-surface-100">Evidence Library</h1>
-          <p className="text-surface-400 mt-1">
+          <p className="text-surface-600 mt-1">
             {linkToControlId
               ? 'Select evidence to link to the control, or upload new evidence'
               : 'Manage evidence files and link them to controls'}
           </p>
         </div>
         {hasPermission('evidence:upload') && (
-          <Button onClick={() => setShowUploadModal(true)} leftIcon={<CloudArrowUpIcon className="w-4 h-4" />}>
+          <Button
+            onClick={() => setShowUploadModal(true)}
+            leftIcon={<CloudArrowUpIcon className="w-4 h-4" />}
+          >
             Upload Evidence
           </Button>
         )}
@@ -207,36 +206,28 @@ export default function Evidence() {
           {evidence.map((item: any) => {
             const Icon = TYPE_ICONS[item.type] || TYPE_ICONS.default;
             const isLinked = isLinkedToControl(item);
-            
+
             return (
               <Link
                 key={item.id}
                 to={`/evidence/${item.id}`}
                 className={clsx(
                   'card p-4 transition-colors block',
-                  isLinked
-                    ? 'border-green-500/50 bg-green-500/5'
-                    : 'hover:border-surface-700'
+                  isLinked ? 'border-green-500/50 bg-green-500/5' : 'hover:border-surface-700'
                 )}
               >
                 <div className="flex items-start gap-3">
                   <div className="p-2 bg-surface-800 rounded-lg">
-                    <Icon className="w-6 h-6 text-surface-400" />
+                    <Icon className="w-6 h-6 text-surface-600" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-medium text-surface-100 truncate">
-                      {item.title}
-                    </h3>
-                    <p className="text-xs text-surface-500 mt-1">
-                      {item.filename}
-                    </p>
+                    <h3 className="text-sm font-medium text-surface-100 truncate">{item.title}</h3>
+                    <p className="text-xs text-surface-500 mt-1">{item.filename}</p>
                     <div className="flex items-center gap-2 mt-2">
                       <span className={clsx('badge text-xs', STATUS_STYLES[item.status])}>
                         {item.status.replace('_', ' ')}
                       </span>
-                      <span className="text-xs text-surface-500 capitalize">
-                        {item.type}
-                      </span>
+                      <span className="text-xs text-surface-500 capitalize">{item.type}</span>
                     </div>
                     {item.controlLinks?.length > 0 && (
                       <p className="text-xs text-surface-500 mt-2">
@@ -249,7 +240,7 @@ export default function Evidence() {
                   <span className="text-xs text-surface-500 flex-1">
                     {new Date(item.createdAt).toLocaleDateString()}
                   </span>
-                  
+
                   {/* Link/Unlink button when in linking mode */}
                   {linkToControlId && (
                     <button
@@ -272,7 +263,7 @@ export default function Evidence() {
                       className={clsx(
                         'px-2 py-1 text-xs rounded-md transition-colors flex items-center gap-1',
                         isLinked
-                          ? 'bg-green-500/20 text-green-400 hover:bg-red-500/20 hover:text-red-400'
+                          ? 'bg-green-500/20 text-green-600 hover:bg-red-500/20 hover:text-red-600'
                           : 'bg-brand-500/20 text-brand-400 hover:bg-brand-500/30'
                       )}
                     >
@@ -280,15 +271,16 @@ export default function Evidence() {
                       {isLinked ? 'Linked ✓' : 'Link'}
                     </button>
                   )}
-                  
-                  <button 
+
+                  <button
                     onClick={async (e) => {
                       e.preventDefault();
                       e.stopPropagation();
                       try {
                         const response = await evidenceApi.getDownloadUrl(item.id);
                         const urlData = response.data?.url || response.data;
-                        const url = typeof urlData === 'string' ? urlData : (urlData as any)?.url || '';
+                        const url =
+                          typeof urlData === 'string' ? urlData : (urlData as any)?.url || '';
                         if (url) {
                           // Create a temporary link and click it to download
                           const link = document.createElement('a');
@@ -304,7 +296,7 @@ export default function Evidence() {
                         toast.error('Failed to download file');
                       }
                     }}
-                    className="p-1 text-surface-400 hover:text-surface-100"
+                    className="p-1 text-surface-600 hover:text-surface-100"
                     title="Download"
                   >
                     <ArrowDownTrayIcon className="w-4 h-4" />
@@ -318,10 +310,7 @@ export default function Evidence() {
 
       {/* Upload Modal */}
       {showUploadModal && (
-        <UploadModal
-          onClose={() => setShowUploadModal(false)}
-          linkToControlId={linkToControlId}
-        />
+        <UploadModal onClose={() => setShowUploadModal(false)} linkToControlId={linkToControlId} />
       )}
     </div>
   );
@@ -338,14 +327,14 @@ function StatCard({
 }) {
   const colorClasses = {
     surface: 'text-surface-100',
-    yellow: 'text-yellow-400',
-    orange: 'text-orange-400',
-    red: 'text-red-400',
+    yellow: 'text-yellow-600',
+    orange: 'text-orange-600',
+    red: 'text-red-600',
   };
 
   return (
     <div className="card p-4">
-      <p className="text-sm text-surface-400">{label}</p>
+      <p className="text-sm text-surface-600">{label}</p>
       <p className={clsx('text-2xl font-bold mt-1', colorClasses[color])}>{value}</p>
     </div>
   );
@@ -390,19 +379,23 @@ function UploadModal({
     },
     onError: (error: any) => {
       console.error('Upload error:', error);
-      const message = error?.response?.data?.message || error?.message || 'Failed to upload evidence';
+      const message =
+        error?.response?.data?.message || error?.message || 'Failed to upload evidence';
       toast.error(message);
     },
   });
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    if (acceptedFiles[0]) {
-      setFile(acceptedFiles[0]);
-      if (!title) {
-        setTitle(acceptedFiles[0].name.replace(/\.[^/.]+$/, ''));
+  const onDrop = useCallback(
+    (acceptedFiles: File[]) => {
+      if (acceptedFiles[0]) {
+        setFile(acceptedFiles[0]);
+        if (!title) {
+          setTitle(acceptedFiles[0].name.replace(/\.[^/.]+$/, ''));
+        }
       }
-    }
-  }, [title]);
+    },
+    [title]
+  );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -423,13 +416,13 @@ function UploadModal({
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Backdrop */}
       <div className="fixed inset-0 bg-black/60" onClick={onClose} />
-      
+
       {/* Modal content - positioned on top */}
       <div className="relative min-h-screen flex items-center justify-center p-4">
         <div className="relative bg-surface-900 border border-surface-800 rounded-xl w-full max-w-lg p-6 shadow-2xl">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-semibold text-surface-100">Upload Evidence</h2>
-            <button onClick={onClose} className="text-surface-400 hover:text-surface-100">
+            <button onClick={onClose} className="text-surface-600 hover:text-surface-100">
               <XMarkIcon className="w-5 h-5" />
             </button>
           </div>
@@ -452,13 +445,13 @@ function UploadModal({
                 isDragActive
                   ? 'border-brand-500 bg-brand-500/10 scale-[1.02]'
                   : file
-                  ? 'border-green-500 bg-green-500/10'
-                  : 'border-surface-700 hover:border-surface-600'
+                    ? 'border-green-500 bg-green-500/10'
+                    : 'border-surface-700 hover:border-surface-600'
               )}
             >
               <input {...getInputProps()} />
               {file ? (
-                <div className="flex items-center justify-center gap-2 text-green-400">
+                <div className="flex items-center justify-center gap-2 text-green-600">
                   <CheckIcon className="w-6 h-6" />
                   <span className="truncate max-w-xs">{file.name}</span>
                   <button
@@ -470,19 +463,23 @@ function UploadModal({
                     }}
                     className="ml-2 p-1 hover:bg-surface-700 rounded"
                   >
-                    <XMarkIcon className="w-4 h-4 text-surface-400" />
+                    <XMarkIcon className="w-4 h-4 text-surface-600" />
                   </button>
                 </div>
               ) : (
                 <>
-                  <CloudArrowUpIcon className={clsx(
-                    'w-12 h-12 mx-auto mb-4 transition-colors',
-                    isDragActive ? 'text-brand-400' : 'text-surface-500'
-                  )} />
-                  <p className={clsx(
-                    'transition-colors',
-                    isDragActive ? 'text-brand-300' : 'text-surface-300'
-                  )}>
+                  <CloudArrowUpIcon
+                    className={clsx(
+                      'w-12 h-12 mx-auto mb-4 transition-colors',
+                      isDragActive ? 'text-brand-400' : 'text-surface-500'
+                    )}
+                  />
+                  <p
+                    className={clsx(
+                      'transition-colors',
+                      isDragActive ? 'text-brand-300' : 'text-surface-700'
+                    )}
+                  >
                     {isDragActive
                       ? 'Drop the file here...'
                       : 'Drag and drop a file here, or click to select'}
@@ -494,62 +491,57 @@ function UploadModal({
               )}
             </div>
 
-          {/* Form fields */}
-          <div>
-            <label className="label">Title</label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="input mt-1"
-              placeholder="Evidence title"
-            />
+            {/* Form fields */}
+            <div>
+              <label className="label">Title</label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="input mt-1"
+                placeholder="Evidence title"
+              />
+            </div>
+
+            <div>
+              <label className="label">Type</label>
+              <select value={type} onChange={(e) => setType(e.target.value)} className="input mt-1">
+                <option value="document">Document</option>
+                <option value="screenshot">Screenshot</option>
+                <option value="export">Export</option>
+                <option value="report">Report</option>
+                <option value="configuration">Configuration</option>
+                <option value="log">Log</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="label">Description (optional)</label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="input mt-1"
+                rows={3}
+                placeholder="Brief description of this evidence"
+              />
+            </div>
           </div>
 
-          <div>
-            <label className="label">Type</label>
-            <select
-              value={type}
-              onChange={(e) => setType(e.target.value)}
-              className="input mt-1"
+          <div className="flex justify-end gap-3 mt-6">
+            <Button variant="secondary" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => uploadMutation.mutate()}
+              disabled={!file || !title}
+              isLoading={uploadMutation.isPending}
             >
-              <option value="document">Document</option>
-              <option value="screenshot">Screenshot</option>
-              <option value="export">Export</option>
-              <option value="report">Report</option>
-              <option value="configuration">Configuration</option>
-              <option value="log">Log</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="label">Description (optional)</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="input mt-1"
-              rows={3}
-              placeholder="Brief description of this evidence"
-            />
+              Upload
+            </Button>
           </div>
         </div>
-
-        <div className="flex justify-end gap-3 mt-6">
-          <Button variant="secondary" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button
-            onClick={() => uploadMutation.mutate()}
-            disabled={!file || !title}
-            isLoading={uploadMutation.isPending}
-          >
-            Upload
-          </Button>
-        </div>
-      </div>
       </div>
     </div>
   );
 }
-

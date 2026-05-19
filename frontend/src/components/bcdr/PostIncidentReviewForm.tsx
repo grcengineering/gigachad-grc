@@ -1,8 +1,5 @@
 import { useState } from 'react';
-import {
-  PlusIcon,
-  TrashIcon,
-} from '@heroicons/react/24/outline';
+import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/Button';
 import { api } from '@/lib/api';
 
@@ -77,9 +74,10 @@ export function PostIncidentReviewForm({
         actualDowntimeMinutes: actualDowntimeMinutes || undefined,
         dataLossMinutes: dataLossMinutes || undefined,
         financialImpact: financialImpact || undefined,
-        improvementActions: improvementActions.length > 0
-          ? improvementActions.filter((a) => a.description.trim())
-          : undefined,
+        improvementActions:
+          improvementActions.length > 0
+            ? improvementActions.filter((a) => a.description.trim())
+            : undefined,
       });
       onComplete();
     } catch (err: any) {
@@ -128,7 +126,9 @@ export function PostIncidentReviewForm({
           <input
             type="number"
             value={actualDowntimeMinutes}
-            onChange={(e) => setActualDowntimeMinutes(e.target.value ? parseInt(e.target.value) : '')}
+            onChange={(e) =>
+              setActualDowntimeMinutes(e.target.value ? parseInt(e.target.value) : '')
+            }
             className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
             min="0"
           />
@@ -163,12 +163,10 @@ export function PostIncidentReviewForm({
 
       <div>
         <div className="flex items-center justify-between mb-2">
-          <label className="block text-sm font-medium text-slate-300">
-            Improvement Actions
-          </label>
+          <label className="block text-sm font-medium text-slate-300">Improvement Actions</label>
           <button
             onClick={addImprovementAction}
-            className="flex items-center gap-1 text-sm text-cyan-400 hover:text-cyan-300"
+            className="flex items-center gap-1 text-sm text-cyan-600 hover:text-cyan-700"
           >
             <PlusIcon className="h-4 w-4" />
             Add Action
@@ -183,7 +181,9 @@ export function PostIncidentReviewForm({
                   <input
                     type="text"
                     value={action.description}
-                    onChange={(e) => updateImprovementAction(action.id, 'description', e.target.value)}
+                    onChange={(e) =>
+                      updateImprovementAction(action.id, 'description', e.target.value)
+                    }
                     className="w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded text-white text-sm"
                     placeholder="Action description..."
                   />
@@ -198,14 +198,16 @@ export function PostIncidentReviewForm({
                     <input
                       type="date"
                       value={action.dueDate}
-                      onChange={(e) => updateImprovementAction(action.id, 'dueDate', e.target.value)}
+                      onChange={(e) =>
+                        updateImprovementAction(action.id, 'dueDate', e.target.value)
+                      }
                       className="px-3 py-2 bg-slate-600 border border-slate-500 rounded text-white text-sm"
                     />
                   </div>
                 </div>
                 <button
                   onClick={() => removeImprovementAction(action.id)}
-                  className="p-1 text-slate-400 hover:text-red-400"
+                  className="p-1 text-slate-400 hover:text-red-600"
                 >
                   <TrashIcon className="h-4 w-4" />
                 </button>
@@ -223,7 +225,7 @@ export function PostIncidentReviewForm({
 
       {error && (
         <div className="bg-red-500/20 border border-red-500 rounded-lg p-3">
-          <p className="text-red-400 text-sm">{error}</p>
+          <p className="text-red-600 text-sm">{error}</p>
         </div>
       )}
 

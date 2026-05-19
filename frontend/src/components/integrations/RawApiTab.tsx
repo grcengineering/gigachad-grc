@@ -126,16 +126,14 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
   const updateRequest = (id: string, updates: Partial<RawRequest>) => {
     onChange({
       ...config,
-      rawRequests: config.rawRequests.map(r => 
-        r.id === id ? { ...r, ...updates } : r
-      ),
+      rawRequests: config.rawRequests.map((r) => (r.id === id ? { ...r, ...updates } : r)),
     });
   };
 
   const deleteRequest = (id: string) => {
     onChange({
       ...config,
-      rawRequests: config.rawRequests.filter(r => r.id !== id),
+      rawRequests: config.rawRequests.filter((r) => r.id !== id),
     });
     if (selectedRequestId === id) {
       setSelectedRequestId(config.rawRequests[0]?.id || null);
@@ -143,7 +141,7 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
   };
 
   const duplicateRequest = (id: string) => {
-    const original = config.rawRequests.find(r => r.id === id);
+    const original = config.rawRequests.find((r) => r.id === id);
     if (original) {
       const duplicate: RawRequest = {
         ...original,
@@ -166,41 +164,43 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
       let body = '';
 
       const input = parseInput.trim();
-      
+
       // Parse cURL command
       if (input.toLowerCase().startsWith('curl')) {
         // Extract method
         const methodMatch = input.match(/-X\s+(\w+)/i);
         if (methodMatch) method = methodMatch[1].toUpperCase();
-        
+
         // Extract URL (handle quoted strings)
-        const urlMatch = input.match(/curl\s+(?:-[^\s]+\s+)*["']?([^"'\s]+)["']?/i) ||
-                        input.match(/["']?(https?:\/\/[^"'\s]+)["']?/);
+        const urlMatch =
+          input.match(/curl\s+(?:-[^\s]+\s+)*["']?([^"'\s]+)["']?/i) ||
+          input.match(/["']?(https?:\/\/[^"'\s]+)["']?/);
         if (urlMatch) url = urlMatch[1];
-        
+
         // Extract headers
         const headerMatches = input.matchAll(/-H\s+["']([^"']+)["']/gi);
         for (const match of headerMatches) {
           headers.push(match[1]);
         }
-        
+
         // Extract body
-        const bodyMatch = input.match(/-d\s+["'](.+?)["'](?:\s|$)/is) ||
-                         input.match(/--data\s+["'](.+?)["'](?:\s|$)/is);
+        const bodyMatch =
+          input.match(/-d\s+["'](.+?)["'](?:\s|$)/is) ||
+          input.match(/--data\s+["'](.+?)["'](?:\s|$)/is);
         if (bodyMatch) body = bodyMatch[1];
-        
-      // Parse raw HTTP request
+
+        // Parse raw HTTP request
       } else if (input.match(/^(GET|POST|PUT|DELETE|PATCH)\s/i)) {
         const lines = input.split('\n');
         const firstLine = lines[0].trim();
         const [reqMethod, path] = firstLine.split(/\s+/);
         method = reqMethod.toUpperCase();
-        
+
         // Find host header for full URL
-        const hostLine = lines.find(l => l.toLowerCase().startsWith('host:'));
+        const hostLine = lines.find((l) => l.toLowerCase().startsWith('host:'));
         const host = hostLine?.split(':').slice(1).join(':').trim() || 'api.example.com';
         url = `https://${host}${path}`;
-        
+
         // Extract headers (skip first line and empty lines)
         let inBody = false;
         for (let i = 1; i < lines.length; i++) {
@@ -241,14 +241,14 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
   };
 
   const testRequest = async () => {
-    const request = config.rawRequests.find(r => r.id === selectedRequestId);
+    const request = config.rawRequests.find((r) => r.id === selectedRequestId);
     if (!request) return;
 
     setIsTesting(true);
     setTestResult(null);
 
     // Simulate test (in production this would go through backend)
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     setTestResult({
       success: true,
@@ -267,7 +267,7 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
     setIsTesting(false);
   };
 
-  const selectedRequest = config.rawRequests.find(r => r.id === selectedRequestId);
+  const selectedRequest = config.rawRequests.find((r) => r.id === selectedRequestId);
 
   return (
     <div className="h-full flex flex-col">
@@ -280,7 +280,7 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
               'px-4 py-2 text-sm font-medium rounded-md transition-colors flex items-center gap-2',
               mode === 'requests'
                 ? 'bg-surface-700 text-surface-100'
-                : 'text-surface-400 hover:text-surface-200'
+                : 'text-surface-600 hover:text-surface-200'
             )}
           >
             <CommandLineIcon className="w-4 h-4" />
@@ -292,7 +292,7 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
               'px-4 py-2 text-sm font-medium rounded-md transition-colors flex items-center gap-2',
               mode === 'code'
                 ? 'bg-surface-700 text-surface-100'
-                : 'text-surface-400 hover:text-surface-200'
+                : 'text-surface-600 hover:text-surface-200'
             )}
           >
             <CodeBracketIcon className="w-4 h-4" />
@@ -307,10 +307,7 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
           <div className="w-64 border-r border-surface-800 flex flex-col">
             <div className="p-3 border-b border-surface-800">
               <div className="flex gap-2">
-                <button
-                  onClick={addRequest}
-                  className="flex-1 btn-secondary text-xs py-1.5"
-                >
+                <button onClick={addRequest} className="flex-1 btn-secondary text-xs py-1.5">
                   <PlusIcon className="w-3.5 h-3.5 mr-1" />
                   New
                 </button>
@@ -324,7 +321,7 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
               </div>
             </div>
             <div className="flex-1 overflow-y-auto p-2 space-y-1">
-              {config.rawRequests.map(request => (
+              {config.rawRequests.map((request) => (
                 <button
                   key={request.id}
                   onClick={() => setSelectedRequestId(request.id)}
@@ -336,19 +333,19 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
                   )}
                 >
                   <div className="flex items-center gap-2">
-                    <span className={clsx(
-                      'px-1.5 py-0.5 text-[10px] font-mono rounded font-bold',
-                      request.method === 'GET' && 'bg-green-500/20 text-green-400',
-                      request.method === 'POST' && 'bg-blue-500/20 text-blue-400',
-                      request.method === 'PUT' && 'bg-yellow-500/20 text-yellow-400',
-                      request.method === 'DELETE' && 'bg-red-500/20 text-red-400',
-                      request.method === 'PATCH' && 'bg-purple-500/20 text-purple-400',
-                    )}>
+                    <span
+                      className={clsx(
+                        'px-1.5 py-0.5 text-[10px] font-mono rounded font-bold',
+                        request.method === 'GET' && 'bg-green-500/20 text-green-600',
+                        request.method === 'POST' && 'bg-blue-500/20 text-blue-600',
+                        request.method === 'PUT' && 'bg-yellow-500/20 text-yellow-600',
+                        request.method === 'DELETE' && 'bg-red-500/20 text-red-600',
+                        request.method === 'PATCH' && 'bg-purple-500/20 text-purple-600'
+                      )}
+                    >
                       {request.method}
                     </span>
-                    <span className="text-xs text-surface-200 truncate flex-1">
-                      {request.name}
-                    </span>
+                    <span className="text-xs text-surface-200 truncate flex-1">{request.name}</span>
                   </div>
                   {request.url && (
                     <div className="text-[10px] text-surface-500 truncate mt-1 font-mono">
@@ -359,7 +356,9 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
               ))}
               {config.rawRequests.length === 0 && (
                 <div className="text-center py-8 text-surface-500 text-xs">
-                  No requests yet.<br />Click "New" or "Paste" to add one.
+                  No requests yet.
+                  <br />
+                  Click "New" or "Paste" to add one.
                 </div>
               )}
             </div>
@@ -380,14 +379,14 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => duplicateRequest(selectedRequest.id)}
-                      className="p-1.5 text-surface-400 hover:text-surface-200 hover:bg-surface-800 rounded transition-colors"
+                      className="p-1.5 text-surface-600 hover:text-surface-200 hover:bg-surface-800 rounded transition-colors"
                       title="Duplicate"
                     >
                       <DocumentDuplicateIcon className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => deleteRequest(selectedRequest.id)}
-                      className="p-1.5 text-surface-400 hover:text-red-400 hover:bg-surface-800 rounded transition-colors"
+                      className="p-1.5 text-surface-600 hover:text-red-600 hover:bg-surface-800 rounded transition-colors"
                       title="Delete"
                     >
                       <TrashIcon className="w-4 h-4" />
@@ -400,7 +399,9 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
                   <div className="flex gap-2">
                     <select
                       value={selectedRequest.method}
-                      onChange={(e) => updateRequest(selectedRequest.id, { method: e.target.value })}
+                      onChange={(e) =>
+                        updateRequest(selectedRequest.id, { method: e.target.value })
+                      }
                       className="input w-28 font-mono text-sm"
                     >
                       <option value="GET">GET</option>
@@ -420,7 +421,7 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
 
                   {/* Headers */}
                   <div>
-                    <label className="text-sm font-medium text-surface-300 block mb-2">
+                    <label className="text-sm font-medium text-surface-700 block mb-2">
                       Headers
                       <span className="text-xs font-normal text-surface-500 ml-2">
                         (one per line: Header-Name: value)
@@ -428,7 +429,9 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
                     </label>
                     <textarea
                       value={selectedRequest.headers}
-                      onChange={(e) => updateRequest(selectedRequest.id, { headers: e.target.value })}
+                      onChange={(e) =>
+                        updateRequest(selectedRequest.id, { headers: e.target.value })
+                      }
                       placeholder="Authorization: Bearer YOUR_TOKEN&#10;Content-Type: application/json"
                       rows={4}
                       className="input w-full font-mono text-sm"
@@ -438,13 +441,15 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
                   {/* Body */}
                   {['POST', 'PUT', 'PATCH'].includes(selectedRequest.method) && (
                     <div>
-                      <label className="text-sm font-medium text-surface-300 block mb-2">
+                      <label className="text-sm font-medium text-surface-700 block mb-2">
                         Request Body
                         <span className="text-xs font-normal text-surface-500 ml-2">(JSON)</span>
                       </label>
                       <textarea
                         value={selectedRequest.body}
-                        onChange={(e) => updateRequest(selectedRequest.id, { body: e.target.value })}
+                        onChange={(e) =>
+                          updateRequest(selectedRequest.id, { body: e.target.value })
+                        }
                         placeholder={'{\n  "key": "value"\n}'}
                         rows={6}
                         className="input w-full font-mono text-sm"
@@ -454,13 +459,15 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
 
                   {/* Description */}
                   <div>
-                    <label className="text-sm font-medium text-surface-300 block mb-2">
+                    <label className="text-sm font-medium text-surface-700 block mb-2">
                       Description
                       <span className="text-xs font-normal text-surface-500 ml-2">(optional)</span>
                     </label>
                     <textarea
                       value={selectedRequest.description}
-                      onChange={(e) => updateRequest(selectedRequest.id, { description: e.target.value })}
+                      onChange={(e) =>
+                        updateRequest(selectedRequest.id, { description: e.target.value })
+                      }
                       placeholder="What data does this request collect?"
                       rows={2}
                       className="input w-full text-sm"
@@ -488,31 +495,33 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
                     </button>
 
                     {testResult && (
-                      <div className={clsx(
-                        'mt-4 rounded-lg border overflow-hidden',
-                        testResult.success
-                          ? 'border-green-500/30 bg-green-500/5'
-                          : 'border-red-500/30 bg-red-500/5'
-                      )}>
-                        <div className={clsx(
-                          'flex items-center justify-between p-3',
-                          testResult.success ? 'bg-green-500/10' : 'bg-red-500/10'
-                        )}>
+                      <div
+                        className={clsx(
+                          'mt-4 rounded-lg border overflow-hidden',
+                          testResult.success
+                            ? 'border-green-500/30 bg-green-500/5'
+                            : 'border-red-500/30 bg-red-500/5'
+                        )}
+                      >
+                        <div
+                          className={clsx(
+                            'flex items-center justify-between p-3',
+                            testResult.success ? 'bg-green-500/10' : 'bg-red-500/10'
+                          )}
+                        >
                           <div className="flex items-center gap-2">
                             {testResult.success ? (
-                              <CheckCircleIcon className="w-5 h-5 text-green-400" />
+                              <CheckCircleIcon className="w-5 h-5 text-green-600" />
                             ) : (
-                              <XCircleIcon className="w-5 h-5 text-red-400" />
+                              <XCircleIcon className="w-5 h-5 text-red-600" />
                             )}
                             <span className="font-mono text-sm">
                               {testResult.status} {testResult.statusText}
                             </span>
                           </div>
-                          <span className="text-xs text-surface-500">
-                            {testResult.duration}ms
-                          </span>
+                          <span className="text-xs text-surface-500">{testResult.duration}ms</span>
                         </div>
-                        <pre className="p-3 text-xs font-mono text-surface-300 overflow-x-auto max-h-48">
+                        <pre className="p-3 text-xs font-mono text-surface-700 overflow-x-auto max-h-48">
                           {JSON.stringify(testResult.response, null, 2)}
                         </pre>
                       </div>
@@ -533,11 +542,12 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
           <div className="p-4 bg-surface-800/50 rounded-lg border border-surface-700">
             <div className="flex items-start gap-2">
               <InformationCircleIcon className="w-5 h-5 text-brand-400 flex-shrink-0 mt-0.5" />
-              <div className="text-sm text-surface-400">
-                <p className="font-medium text-surface-300 mb-1">Custom Integration Code</p>
+              <div className="text-sm text-surface-600">
+                <p className="font-medium text-surface-700 mb-1">Custom Integration Code</p>
                 <p>
-                  Write JavaScript code to define exactly how your integration collects data. 
-                  The <code className="text-brand-400">sync()</code> function is called during each sync cycle.
+                  Write JavaScript code to define exactly how your integration collects data. The{' '}
+                  <code className="text-brand-400">sync()</code> function is called during each sync
+                  cycle.
                 </p>
               </div>
             </div>
@@ -545,7 +555,7 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
 
           <div className="flex-1 flex flex-col min-h-0">
             <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium text-surface-300">Integration Code</label>
+              <label className="text-sm font-medium text-surface-700">Integration Code</label>
               <button
                 onClick={() => onChange({ ...config, customCode: DEFAULT_CODE_TEMPLATE })}
                 className="text-xs text-brand-400 hover:text-brand-300"
@@ -572,7 +582,7 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
             <h3 className="text-lg font-semibold text-surface-100 mb-4">
               Paste cURL or HTTP Request
             </h3>
-            <p className="text-sm text-surface-400 mb-4">
+            <p className="text-sm text-surface-600 mb-4">
               Paste a cURL command or raw HTTP request and we'll parse it for you.
             </p>
             <textarea
@@ -586,7 +596,11 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
               <button onClick={() => setShowParseModal(false)} className="btn-secondary">
                 Cancel
               </button>
-              <button onClick={parseCurlOrHttp} className="btn-primary" disabled={!parseInput.trim()}>
+              <button
+                onClick={parseCurlOrHttp}
+                className="btn-primary"
+                disabled={!parseInput.trim()}
+              >
                 Parse & Add
               </button>
             </div>
@@ -596,4 +610,3 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
     </div>
   );
 }
-

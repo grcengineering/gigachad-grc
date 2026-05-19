@@ -91,7 +91,7 @@ function KpiCardWidget({ data, config }: { data: any[]; config: any }) {
         {formattedValue}
       </div>
       {config?.comparisonPeriod && (
-        <div className="text-sm text-surface-400 mt-2">vs {config.comparisonPeriod}</div>
+        <div className="text-sm text-surface-600 mt-2">vs {config.comparisonPeriod}</div>
       )}
     </div>
   );
@@ -353,7 +353,7 @@ function TableWidget({ data, config }: { data: any[]; config: any }) {
             {columns.map((col: any) => (
               <th
                 key={col.field}
-                className="text-left py-2 px-3 font-medium text-surface-300"
+                className="text-left py-2 px-3 font-medium text-surface-700"
                 style={{ width: col.width }}
               >
                 {col.header}
@@ -365,7 +365,7 @@ function TableWidget({ data, config }: { data: any[]; config: any }) {
           {displayData.map((row, i) => (
             <tr key={i} className="border-b border-surface-800 hover:bg-surface-800/50">
               {columns.map((col: any) => (
-                <td key={col.field} className="py-2 px-3 text-surface-400">
+                <td key={col.field} className="py-2 px-3 text-surface-600">
                   {formatValue(row[col.field])}
                 </td>
               ))}
@@ -408,7 +408,7 @@ function ProgressWidget({ data, config }: { data: any[]; config: any }) {
   return (
     <div className="flex flex-col justify-center h-full">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-surface-400 text-sm">
+        <span className="text-surface-600 text-sm">
           {value} / {target}
         </span>
         <span className="text-surface-200 font-medium">{percentage}%</span>
@@ -442,7 +442,7 @@ function ListWidget({ data, config: _config }: { data: any[]; config: any }) {
           >
             <span className="text-surface-200 truncate">{formatValue(displayFields[0]?.[1])}</span>
             {displayFields[1] && (
-              <span className="text-surface-400 text-sm">{formatValue(displayFields[1][1])}</span>
+              <span className="text-surface-600 text-sm">{formatValue(displayFields[1][1])}</span>
             )}
           </div>
         );
@@ -596,7 +596,7 @@ function IframeWidget({ config }: { config: any }) {
       <div className="flex flex-col items-center justify-center h-full text-amber-500">
         <AlertTriangle className="h-8 w-8 mb-2" />
         <p className="text-sm">{validation.error}</p>
-        {url && <p className="text-xs text-surface-400 mt-1 truncate max-w-full px-4">{url}</p>}
+        {url && <p className="text-xs text-surface-600 mt-1 truncate max-w-full px-4">{url}</p>}
       </div>
     );
   }

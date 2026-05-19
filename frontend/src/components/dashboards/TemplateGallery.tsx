@@ -35,13 +35,11 @@ export default function TemplateGallery({ onClose, onSelectTemplate }: TemplateG
         <div className="flex items-center justify-between p-4 border-b border-surface-700">
           <div>
             <h2 className="text-lg font-semibold text-surface-100">Dashboard Templates</h2>
-            <p className="text-sm text-surface-400">
-              Choose a template to get started quickly
-            </p>
+            <p className="text-sm text-surface-600">Choose a template to get started quickly</p>
           </div>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-surface-700 rounded text-surface-400 hover:text-surface-200"
+            className="p-1 hover:bg-surface-700 rounded text-surface-600 hover:text-surface-200"
           >
             <XMarkIcon className="w-5 h-5" />
           </button>
@@ -55,7 +53,7 @@ export default function TemplateGallery({ onClose, onSelectTemplate }: TemplateG
             </div>
           ) : templates?.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-surface-400">No templates available yet</p>
+              <p className="text-surface-600">No templates available yet</p>
               <p className="text-sm text-surface-500 mt-2">
                 Templates are created by admins and shared across the organization
               </p>
@@ -71,7 +69,7 @@ export default function TemplateGallery({ onClose, onSelectTemplate }: TemplateG
                     <div>
                       <h3 className="font-medium text-surface-200">{template.name}</h3>
                       {template.description && (
-                        <p className="text-sm text-surface-400 mt-1">{template.description}</p>
+                        <p className="text-sm text-surface-600 mt-1">{template.description}</p>
                       )}
                     </div>
                   </div>
@@ -130,7 +128,3 @@ export default function TemplateGallery({ onClose, onSelectTemplate }: TemplateG
     </div>
   );
 }
-
-
-
-

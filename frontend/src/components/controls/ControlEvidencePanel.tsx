@@ -40,7 +40,7 @@ export default function ControlEvidencePanel({
       </div>
 
       {evidence.length === 0 ? (
-        <div className="text-center py-8 text-surface-400">
+        <div className="text-center py-8 text-surface-600">
           <DocumentTextIcon className="w-12 h-12 mx-auto mb-3 opacity-50" />
           <p>No evidence linked to this control</p>
           <Link
@@ -61,7 +61,7 @@ export default function ControlEvidencePanel({
                 to={`/evidence/${item.id}`}
                 className="flex items-center gap-3 text-surface-100 hover:text-primary-400"
               >
-                <DocumentTextIcon className="w-5 h-5 text-surface-400" />
+                <DocumentTextIcon className="w-5 h-5 text-surface-600" />
                 <div>
                   <p className="font-medium">{item.filename}</p>
                   <p className="text-xs text-surface-500">
@@ -72,7 +72,7 @@ export default function ControlEvidencePanel({
               <button
                 onClick={() => onUnlink(item.id)}
                 disabled={isUnlinking}
-                className="p-1.5 text-surface-400 hover:text-red-400 hover:bg-red-500/10 rounded"
+                className="p-1.5 text-surface-600 hover:text-red-600 hover:bg-red-500/10 rounded"
                 title="Unlink evidence"
               >
                 <XMarkIcon className="w-4 h-4" />

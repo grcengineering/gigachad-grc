@@ -78,7 +78,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
           <h3 className="text-lg font-medium text-surface-100 mb-4">Basic Information</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-surface-400 mb-1">
+              <label className="block text-sm font-medium text-surface-600 mb-1">
                 Contract Title *
               </label>
               <input
@@ -90,7 +90,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-surface-400 mb-1">
+              <label className="block text-sm font-medium text-surface-600 mb-1">
                 Contract Type *
               </label>
               <select
@@ -108,7 +108,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-surface-400 mb-1">Status *</label>
+              <label className="block text-sm font-medium text-surface-600 mb-1">Status *</label>
               <select
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
@@ -122,7 +122,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-surface-400 mb-1">Vendor ID *</label>
+              <label className="block text-sm font-medium text-surface-600 mb-1">Vendor ID *</label>
               <input
                 type="text"
                 value={formData.vendorId}
@@ -136,7 +136,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
 
         {/* Description */}
         <div>
-          <label className="block text-sm font-medium text-surface-400 mb-1">Description</label>
+          <label className="block text-sm font-medium text-surface-600 mb-1">Description</label>
           <textarea
             value={formData.description || ''}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -150,7 +150,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
           <h3 className="text-lg font-medium text-surface-100 mb-4">Financial Information</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-surface-400 mb-1">
+              <label className="block text-sm font-medium text-surface-600 mb-1">
                 Contract Value
               </label>
               <input
@@ -166,7 +166,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-surface-400 mb-1">Currency</label>
+              <label className="block text-sm font-medium text-surface-600 mb-1">Currency</label>
               <select
                 value={formData.currency}
                 onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
@@ -185,7 +185,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
           <h3 className="text-lg font-medium text-surface-100 mb-4">Important Dates</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-surface-400 mb-1">
+              <label className="block text-sm font-medium text-surface-600 mb-1">
                 Start Date *
               </label>
               <input
@@ -197,7 +197,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-surface-400 mb-1">End Date *</label>
+              <label className="block text-sm font-medium text-surface-600 mb-1">End Date *</label>
               <input
                 type="date"
                 value={formData.endDate}
@@ -207,7 +207,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-surface-400 mb-1">
+              <label className="block text-sm font-medium text-surface-600 mb-1">
                 Renewal Date
               </label>
               <input
@@ -226,7 +226,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
                 onChange={(e) => setFormData({ ...formData, autoRenew: e.target.checked })}
                 className="w-4 h-4 bg-surface-800 border-surface-700 rounded text-brand-600 focus:ring-brand-500"
               />
-              <span className="text-sm text-surface-300">Auto-renew contract</span>
+              <span className="text-sm text-surface-700">Auto-renew contract</span>
             </label>
           </div>
         </div>
@@ -242,7 +242,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
                 onChange={(e) => setFormData({ ...formData, requiresSoc2: e.target.checked })}
                 className="w-4 h-4 bg-surface-800 border-surface-700 rounded text-brand-600 focus:ring-brand-500"
               />
-              <span className="text-sm text-surface-300">SOC 2 Required</span>
+              <span className="text-sm text-surface-700">SOC 2 Required</span>
             </label>
             <label className="flex items-center gap-2">
               <input
@@ -251,7 +251,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
                 onChange={(e) => setFormData({ ...formData, requiresIso27001: e.target.checked })}
                 className="w-4 h-4 bg-surface-800 border-surface-700 rounded text-brand-600 focus:ring-brand-500"
               />
-              <span className="text-sm text-surface-300">ISO 27001 Required</span>
+              <span className="text-sm text-surface-700">ISO 27001 Required</span>
             </label>
             <label className="flex items-center gap-2">
               <input
@@ -260,7 +260,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
                 onChange={(e) => setFormData({ ...formData, requiresHipaa: e.target.checked })}
                 className="w-4 h-4 bg-surface-800 border-surface-700 rounded text-brand-600 focus:ring-brand-500"
               />
-              <span className="text-sm text-surface-300">HIPAA Required</span>
+              <span className="text-sm text-surface-700">HIPAA Required</span>
             </label>
             <label className="flex items-center gap-2">
               <input
@@ -269,7 +269,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
                 onChange={(e) => setFormData({ ...formData, requiresGdpr: e.target.checked })}
                 className="w-4 h-4 bg-surface-800 border-surface-700 rounded text-brand-600 focus:ring-brand-500"
               />
-              <span className="text-sm text-surface-300">GDPR Required</span>
+              <span className="text-sm text-surface-700">GDPR Required</span>
             </label>
           </div>
         </div>
@@ -280,7 +280,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 text-surface-300 hover:text-surface-100 transition-colors"
+          className="px-4 py-2 text-surface-700 hover:text-surface-100 transition-colors"
         >
           Cancel
         </button>
@@ -311,18 +311,18 @@ function ContractView({
         <div className="flex items-start justify-between">
           <div>
             <h2 className="text-2xl font-bold text-surface-100">{contract.title}</h2>
-            <p className="mt-1 text-surface-400">{contract.vendor.name}</p>
+            <p className="mt-1 text-surface-600">{contract.vendor.name}</p>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={onEdit}
-              className="p-2 text-surface-400 hover:text-surface-100 hover:bg-surface-800 rounded-lg transition-colors"
+              className="p-2 text-surface-600 hover:text-surface-100 hover:bg-surface-800 rounded-lg transition-colors"
             >
               <PencilIcon className="w-5 h-5" />
             </button>
             <button
               onClick={onDelete}
-              className="p-2 text-red-400 hover:text-red-300 hover:bg-surface-800 rounded-lg transition-colors"
+              className="p-2 text-red-600 hover:text-red-700 hover:bg-surface-800 rounded-lg transition-colors"
             >
               <TrashIcon className="w-5 h-5" />
             </button>
@@ -334,21 +334,21 @@ function ContractView({
           <h3 className="text-lg font-medium text-surface-100 mb-4">Basic Information</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <dt className="text-sm font-medium text-surface-400 mb-1">Contract Type</dt>
+              <dt className="text-sm font-medium text-surface-600 mb-1">Contract Type</dt>
               <dd className="text-sm text-surface-100 uppercase">{contract.contractType}</dd>
             </div>
             <div>
-              <dt className="text-sm font-medium text-surface-400 mb-1">Status</dt>
+              <dt className="text-sm font-medium text-surface-600 mb-1">Status</dt>
               <dd>
                 <span
                   className={`inline-flex px-2 py-1 text-xs font-medium rounded-full capitalize ${
                     contract.status === 'active'
-                      ? 'bg-green-500/20 text-green-400'
+                      ? 'bg-green-500/20 text-green-600'
                       : contract.status === 'expired'
-                        ? 'bg-red-500/20 text-red-400'
+                        ? 'bg-red-500/20 text-red-600'
                         : contract.status === 'pending'
-                          ? 'bg-yellow-500/20 text-yellow-400'
-                          : 'bg-surface-700 text-surface-400'
+                          ? 'bg-yellow-500/20 text-yellow-600'
+                          : 'bg-surface-700 text-surface-600'
                   }`}
                 >
                   {contract.status}
@@ -357,7 +357,7 @@ function ContractView({
             </div>
             {contract.description && (
               <div className="md:col-span-2">
-                <dt className="text-sm font-medium text-surface-400 mb-1">Description</dt>
+                <dt className="text-sm font-medium text-surface-600 mb-1">Description</dt>
                 <dd className="text-sm text-surface-100">{contract.description}</dd>
               </div>
             )}
@@ -370,7 +370,7 @@ function ContractView({
             <h3 className="text-lg font-medium text-surface-100 mb-4">Financial Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <dt className="text-sm font-medium text-surface-400 mb-1">Contract Value</dt>
+                <dt className="text-sm font-medium text-surface-600 mb-1">Contract Value</dt>
                 <dd className="text-sm text-surface-100">
                   {contract.currency} {contract.contractValue.toLocaleString()}
                 </dd>
@@ -384,20 +384,20 @@ function ContractView({
           <h3 className="text-lg font-medium text-surface-100 mb-4">Important Dates</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
-              <dt className="text-sm font-medium text-surface-400 mb-1">Start Date</dt>
+              <dt className="text-sm font-medium text-surface-600 mb-1">Start Date</dt>
               <dd className="text-sm text-surface-100">
                 {new Date(contract.startDate).toLocaleDateString()}
               </dd>
             </div>
             <div>
-              <dt className="text-sm font-medium text-surface-400 mb-1">End Date</dt>
+              <dt className="text-sm font-medium text-surface-600 mb-1">End Date</dt>
               <dd className="text-sm text-surface-100">
                 {new Date(contract.endDate).toLocaleDateString()}
               </dd>
             </div>
             {contract.renewalDate && (
               <div>
-                <dt className="text-sm font-medium text-surface-400 mb-1">Renewal Date</dt>
+                <dt className="text-sm font-medium text-surface-600 mb-1">Renewal Date</dt>
                 <dd className="text-sm text-surface-100">
                   {new Date(contract.renewalDate).toLocaleDateString()}
                 </dd>
@@ -405,7 +405,7 @@ function ContractView({
             )}
           </div>
           <div className="mt-4">
-            <span className="text-sm text-surface-400">
+            <span className="text-sm text-surface-600">
               Auto-renew:{' '}
               <span className="text-surface-100">{contract.autoRenew ? 'Yes' : 'No'}</span>
             </span>
@@ -452,7 +452,7 @@ function ContractView({
           <div>
             <h3 className="text-lg font-medium text-surface-100 mb-4">Contract Document</h3>
             <div className="flex items-center gap-3">
-              <DocumentArrowDownIcon className="w-5 h-5 text-surface-400" />
+              <DocumentArrowDownIcon className="w-5 h-5 text-surface-600" />
               <div className="flex-1">
                 <p className="text-sm font-medium text-surface-100">{contract.filename}</p>
                 <p className="text-xs text-surface-500">
@@ -534,7 +534,7 @@ export default function ContractDetail() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-surface-400">Loading contract...</div>
+        <div className="text-surface-600">Loading contract...</div>
       </div>
     );
   }
@@ -544,7 +544,7 @@ export default function ContractDetail() {
       <div className="flex items-center gap-4">
         <button
           onClick={() => navigate('/contracts')}
-          className="p-2 text-surface-400 hover:text-surface-100 hover:bg-surface-800 rounded-lg transition-colors"
+          className="p-2 text-surface-600 hover:text-surface-100 hover:bg-surface-800 rounded-lg transition-colors"
         >
           <ArrowLeftIcon className="w-5 h-5" />
         </button>
@@ -553,7 +553,7 @@ export default function ContractDetail() {
             {id === 'new' ? 'New Contract' : 'Contract Details'}
           </h1>
           {contract && (
-            <p className="mt-1 text-surface-400">
+            <p className="mt-1 text-surface-600">
               {contract.vendor.name} - {contract.contractType.toUpperCase()}
             </p>
           )}
@@ -580,7 +580,7 @@ export default function ContractDetail() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-surface-900 border border-surface-800 rounded-lg p-6 max-w-md w-full mx-4">
             <h3 className="text-lg font-semibold text-surface-100 mb-2">Delete Contract</h3>
-            <p className="text-surface-400 mb-6">
+            <p className="text-surface-600 mb-6">
               Are you sure you want to delete this contract? This action cannot be undone.
             </p>
             <div className="flex justify-end gap-2">

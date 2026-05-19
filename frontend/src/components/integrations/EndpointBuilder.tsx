@@ -1,10 +1,5 @@
 import { useState } from 'react';
-import {
-  TrashIcon,
-  PlusIcon,
-  XMarkIcon,
-  InformationCircleIcon,
-} from '@heroicons/react/24/outline';
+import { TrashIcon, PlusIcon, XMarkIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 import type { ApiEndpoint } from './AdvancedBuilderTab';
 
@@ -68,7 +63,8 @@ export default function EndpointBuilder({ endpoint, onChange, onDelete }: Endpoi
     onChange({ queryParams: newParams });
   };
 
-  const showRequestBody = endpoint.method === 'POST' || endpoint.method === 'PUT' || endpoint.method === 'PATCH';
+  const showRequestBody =
+    endpoint.method === 'POST' || endpoint.method === 'PUT' || endpoint.method === 'PATCH';
 
   return (
     <div className="space-y-6">
@@ -83,7 +79,7 @@ export default function EndpointBuilder({ endpoint, onChange, onDelete }: Endpoi
         />
         <button
           onClick={onDelete}
-          className="p-2 text-surface-400 hover:text-red-400 hover:bg-surface-800 rounded-lg transition-colors"
+          className="p-2 text-surface-600 hover:text-red-600 hover:bg-surface-800 rounded-lg transition-colors"
           title="Delete endpoint"
         >
           <TrashIcon className="w-5 h-5" />
@@ -94,18 +90,20 @@ export default function EndpointBuilder({ endpoint, onChange, onDelete }: Endpoi
       <div className="flex gap-2">
         <select
           value={endpoint.method}
-          onChange={(e) => onChange({ method: e.target.value as typeof HTTP_METHODS[number] })}
+          onChange={(e) => onChange({ method: e.target.value as (typeof HTTP_METHODS)[number] })}
           className={clsx(
             'input w-28 font-mono text-sm',
-            endpoint.method === 'GET' && 'text-green-400',
-            endpoint.method === 'POST' && 'text-blue-400',
-            endpoint.method === 'PUT' && 'text-yellow-400',
-            endpoint.method === 'DELETE' && 'text-red-400',
-            endpoint.method === 'PATCH' && 'text-purple-400',
+            endpoint.method === 'GET' && 'text-green-600',
+            endpoint.method === 'POST' && 'text-blue-600',
+            endpoint.method === 'PUT' && 'text-yellow-600',
+            endpoint.method === 'DELETE' && 'text-red-600',
+            endpoint.method === 'PATCH' && 'text-purple-600'
           )}
         >
-          {HTTP_METHODS.map(method => (
-            <option key={method} value={method}>{method}</option>
+          {HTTP_METHODS.map((method) => (
+            <option key={method} value={method}>
+              {method}
+            </option>
           ))}
         </select>
         <input
@@ -125,7 +123,7 @@ export default function EndpointBuilder({ endpoint, onChange, onDelete }: Endpoi
       {/* Headers */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <label className="text-sm font-medium text-surface-300">Headers</label>
+          <label className="text-sm font-medium text-surface-700">Headers</label>
           <button
             onClick={addHeader}
             className="text-xs text-brand-400 hover:text-brand-300 flex items-center gap-1"
@@ -153,7 +151,7 @@ export default function EndpointBuilder({ endpoint, onChange, onDelete }: Endpoi
               />
               <button
                 onClick={() => removeHeader(key)}
-                className="p-2 text-surface-400 hover:text-red-400 hover:bg-surface-800 rounded-lg transition-colors"
+                className="p-2 text-surface-600 hover:text-red-600 hover:bg-surface-800 rounded-lg transition-colors"
               >
                 <XMarkIcon className="w-4 h-4" />
               </button>
@@ -168,7 +166,7 @@ export default function EndpointBuilder({ endpoint, onChange, onDelete }: Endpoi
       {/* Query Parameters */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <label className="text-sm font-medium text-surface-300">Query Parameters</label>
+          <label className="text-sm font-medium text-surface-700">Query Parameters</label>
           <button
             onClick={addQueryParam}
             className="text-xs text-brand-400 hover:text-brand-300 flex items-center gap-1"
@@ -196,7 +194,7 @@ export default function EndpointBuilder({ endpoint, onChange, onDelete }: Endpoi
               />
               <button
                 onClick={() => removeQueryParam(key)}
-                className="p-2 text-surface-400 hover:text-red-400 hover:bg-surface-800 rounded-lg transition-colors"
+                className="p-2 text-surface-600 hover:text-red-600 hover:bg-surface-800 rounded-lg transition-colors"
               >
                 <XMarkIcon className="w-4 h-4" />
               </button>
@@ -212,7 +210,7 @@ export default function EndpointBuilder({ endpoint, onChange, onDelete }: Endpoi
       {showRequestBody && (
         <div>
           <div className="flex items-center justify-between mb-2">
-            <label className="text-sm font-medium text-surface-300">Request Body</label>
+            <label className="text-sm font-medium text-surface-700">Request Body</label>
             <button
               onClick={() => setShowBodyEditor(!showBodyEditor)}
               className="text-xs text-brand-400 hover:text-brand-300"
@@ -230,8 +228,9 @@ export default function EndpointBuilder({ endpoint, onChange, onDelete }: Endpoi
             />
           )}
           {!showBodyEditor && endpoint.body && (
-            <pre className="p-3 bg-surface-800 rounded-lg text-xs text-surface-300 overflow-x-auto">
-              {endpoint.body.slice(0, 200)}{endpoint.body.length > 200 && '...'}
+            <pre className="p-3 bg-surface-800 rounded-lg text-xs text-surface-700 overflow-x-auto">
+              {endpoint.body.slice(0, 200)}
+              {endpoint.body.length > 200 && '...'}
             </pre>
           )}
         </div>
@@ -239,18 +238,20 @@ export default function EndpointBuilder({ endpoint, onChange, onDelete }: Endpoi
 
       {/* Pagination */}
       <div>
-        <label className="text-sm font-medium text-surface-300 block mb-2">Pagination</label>
+        <label className="text-sm font-medium text-surface-700 block mb-2">Pagination</label>
         <select
           value={endpoint.pagination?.type || 'none'}
-          onChange={(e) => onChange({ 
-            pagination: { 
-              ...endpoint.pagination, 
-              type: e.target.value as 'offset' | 'cursor' | 'page' | 'none' 
-            } 
-          })}
+          onChange={(e) =>
+            onChange({
+              pagination: {
+                ...endpoint.pagination,
+                type: e.target.value as 'offset' | 'cursor' | 'page' | 'none',
+              },
+            })
+          }
           className="input w-full text-sm mb-3"
         >
-          {PAGINATION_TYPES.map(type => (
+          {PAGINATION_TYPES.map((type) => (
             <option key={type.value} value={type.value}>
               {type.label} - {type.description}
             </option>
@@ -260,37 +261,46 @@ export default function EndpointBuilder({ endpoint, onChange, onDelete }: Endpoi
         {endpoint.pagination?.type === 'offset' && (
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-surface-400 block mb-1">Limit Parameter</label>
+              <label className="text-xs text-surface-600 block mb-1">Limit Parameter</label>
               <input
                 type="text"
                 value={endpoint.pagination.limitParam || ''}
-                onChange={(e) => onChange({ 
-                  pagination: { ...endpoint.pagination!, limitParam: e.target.value } 
-                })}
+                onChange={(e) =>
+                  onChange({
+                    pagination: { ...endpoint.pagination!, limitParam: e.target.value },
+                  })
+                }
                 placeholder="limit"
                 className="input w-full text-sm"
               />
             </div>
             <div>
-              <label className="text-xs text-surface-400 block mb-1">Offset Parameter</label>
+              <label className="text-xs text-surface-600 block mb-1">Offset Parameter</label>
               <input
                 type="text"
                 value={endpoint.pagination.offsetParam || ''}
-                onChange={(e) => onChange({ 
-                  pagination: { ...endpoint.pagination!, offsetParam: e.target.value } 
-                })}
+                onChange={(e) =>
+                  onChange({
+                    pagination: { ...endpoint.pagination!, offsetParam: e.target.value },
+                  })
+                }
                 placeholder="offset"
                 className="input w-full text-sm"
               />
             </div>
             <div>
-              <label className="text-xs text-surface-400 block mb-1">Max Per Page</label>
+              <label className="text-xs text-surface-600 block mb-1">Max Per Page</label>
               <input
                 type="number"
                 value={endpoint.pagination.maxPerPage || ''}
-                onChange={(e) => onChange({ 
-                  pagination: { ...endpoint.pagination!, maxPerPage: parseInt(e.target.value) || undefined } 
-                })}
+                onChange={(e) =>
+                  onChange({
+                    pagination: {
+                      ...endpoint.pagination!,
+                      maxPerPage: parseInt(e.target.value) || undefined,
+                    },
+                  })
+                }
                 placeholder="100"
                 className="input w-full text-sm"
               />
@@ -301,25 +311,29 @@ export default function EndpointBuilder({ endpoint, onChange, onDelete }: Endpoi
         {endpoint.pagination?.type === 'page' && (
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-surface-400 block mb-1">Page Parameter</label>
+              <label className="text-xs text-surface-600 block mb-1">Page Parameter</label>
               <input
                 type="text"
                 value={endpoint.pagination.pageParam || ''}
-                onChange={(e) => onChange({ 
-                  pagination: { ...endpoint.pagination!, pageParam: e.target.value } 
-                })}
+                onChange={(e) =>
+                  onChange({
+                    pagination: { ...endpoint.pagination!, pageParam: e.target.value },
+                  })
+                }
                 placeholder="page"
                 className="input w-full text-sm"
               />
             </div>
             <div>
-              <label className="text-xs text-surface-400 block mb-1">Page Size Parameter</label>
+              <label className="text-xs text-surface-600 block mb-1">Page Size Parameter</label>
               <input
                 type="text"
                 value={endpoint.pagination.limitParam || ''}
-                onChange={(e) => onChange({ 
-                  pagination: { ...endpoint.pagination!, limitParam: e.target.value } 
-                })}
+                onChange={(e) =>
+                  onChange({
+                    pagination: { ...endpoint.pagination!, limitParam: e.target.value },
+                  })
+                }
                 placeholder="per_page"
                 className="input w-full text-sm"
               />
@@ -330,25 +344,29 @@ export default function EndpointBuilder({ endpoint, onChange, onDelete }: Endpoi
         {endpoint.pagination?.type === 'cursor' && (
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-surface-400 block mb-1">Cursor Parameter</label>
+              <label className="text-xs text-surface-600 block mb-1">Cursor Parameter</label>
               <input
                 type="text"
                 value={endpoint.pagination.cursorParam || ''}
-                onChange={(e) => onChange({ 
-                  pagination: { ...endpoint.pagination!, cursorParam: e.target.value } 
-                })}
+                onChange={(e) =>
+                  onChange({
+                    pagination: { ...endpoint.pagination!, cursorParam: e.target.value },
+                  })
+                }
                 placeholder="cursor"
                 className="input w-full text-sm"
               />
             </div>
             <div>
-              <label className="text-xs text-surface-400 block mb-1">Limit Parameter</label>
+              <label className="text-xs text-surface-600 block mb-1">Limit Parameter</label>
               <input
                 type="text"
                 value={endpoint.pagination.limitParam || ''}
-                onChange={(e) => onChange({ 
-                  pagination: { ...endpoint.pagination!, limitParam: e.target.value } 
-                })}
+                onChange={(e) =>
+                  onChange({
+                    pagination: { ...endpoint.pagination!, limitParam: e.target.value },
+                  })
+                }
                 placeholder="limit"
                 className="input w-full text-sm"
               />
@@ -359,7 +377,3 @@ export default function EndpointBuilder({ endpoint, onChange, onDelete }: Endpoi
     </div>
   );
 }
-
-
-
-

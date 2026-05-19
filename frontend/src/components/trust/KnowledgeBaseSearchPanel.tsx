@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
-import { 
-  MagnifyingGlassIcon, 
-  BookOpenIcon, 
+import {
+  MagnifyingGlassIcon,
+  BookOpenIcon,
   CheckBadgeIcon,
   ClockIcon,
   XMarkIcon,
   ArrowPathIcon,
   DocumentDuplicateIcon,
-  SparklesIcon
+  SparklesIcon,
 } from '@heroicons/react/24/outline';
 import { knowledgeBaseApi } from '../../lib/api';
 import { KnowledgeBaseEntry } from '../../lib/apiTypes';
@@ -40,39 +40,42 @@ export function KnowledgeBaseSearchPanel({
   const organizationId = user?.organizationId;
 
   // Debounced search
-  const searchKnowledgeBase = useCallback(async (query: string) => {
-    if (!query.trim() || query.length < 3) {
-      setResults([]);
-      return;
-    }
-    if (!organizationId) {
-      // Panel can't search without a tenant context; parent handles the
-      // sign-in prompt at the page level.
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const response = await knowledgeBaseApi.search(organizationId, query);
-      setResults(response.data || []);
-    } catch (error) {
-      console.error('Error searching knowledge base:', error);
-      // Fallback to list with search param
-      try {
-        const fallbackResponse = await knowledgeBaseApi.list({ 
-          organizationId, 
-          search: query,
-          status: 'approved'
-        });
-        setResults(fallbackResponse.data || []);
-      } catch (fallbackError) {
-        console.error('Fallback search failed:', fallbackError);
+  const searchKnowledgeBase = useCallback(
+    async (query: string) => {
+      if (!query.trim() || query.length < 3) {
         setResults([]);
+        return;
       }
-    } finally {
-      setLoading(false);
-    }
-  }, [organizationId]);
+      if (!organizationId) {
+        // Panel can't search without a tenant context; parent handles the
+        // sign-in prompt at the page level.
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const response = await knowledgeBaseApi.search(organizationId, query);
+        setResults(response.data || []);
+      } catch (error) {
+        console.error('Error searching knowledge base:', error);
+        // Fallback to list with search param
+        try {
+          const fallbackResponse = await knowledgeBaseApi.list({
+            organizationId,
+            search: query,
+            status: 'approved',
+          });
+          setResults(fallbackResponse.data || []);
+        } catch (fallbackError) {
+          console.error('Fallback search failed:', fallbackError);
+          setResults([]);
+        }
+      } finally {
+        setLoading(false);
+      }
+    },
+    [organizationId]
+  );
 
   // Auto-search based on question text when panel opens
   useEffect(() => {
@@ -83,10 +86,27 @@ export function KnowledgeBaseSearchPanel({
         .toLowerCase()
         .replace(/[?.,!]/g, '')
         .split(' ')
-        .filter(word => word.length > 3 && !['what', 'when', 'where', 'which', 'does', 'have', 'your', 'this', 'that', 'with', 'from', 'into'].includes(word))
+        .filter(
+          (word) =>
+            word.length > 3 &&
+            ![
+              'what',
+              'when',
+              'where',
+              'which',
+              'does',
+              'have',
+              'your',
+              'this',
+              'that',
+              'with',
+              'from',
+              'into',
+            ].includes(word)
+        )
         .slice(0, 5)
         .join(' ');
-      
+
       if (keyTerms) {
         setSearchQuery(keyTerms);
         searchKnowledgeBase(keyTerms);
@@ -133,10 +153,12 @@ export function KnowledgeBaseSearchPanel({
   if (!isOpen) return null;
 
   return (
-    <div className={clsx(
-      'bg-surface-900 border border-surface-700 rounded-xl shadow-xl overflow-hidden',
-      className
-    )}>
+    <div
+      className={clsx(
+        'bg-surface-900 border border-surface-700 rounded-xl shadow-xl overflow-hidden',
+        className
+      )}
+    >
       {/* Header */}
       <div className="bg-surface-800 px-4 py-3 flex items-center justify-between border-b border-surface-700">
         <div className="flex items-center gap-2">
@@ -146,7 +168,7 @@ export function KnowledgeBaseSearchPanel({
         {onClose && (
           <button
             onClick={onClose}
-            className="p-1 text-surface-400 hover:text-surface-200 rounded transition-colors"
+            className="p-1 text-surface-600 hover:text-surface-200 rounded transition-colors"
           >
             <XMarkIcon className="w-5 h-5" />
           </button>
@@ -165,23 +187,22 @@ export function KnowledgeBaseSearchPanel({
             className="w-full pl-9 pr-3 py-2 bg-surface-800 border border-surface-600 rounded-lg text-surface-100 text-sm focus:outline-none focus:border-brand-500 placeholder:text-surface-500"
           />
           {loading && (
-            <ArrowPathIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400 animate-spin" />
+            <ArrowPathIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-600 animate-spin" />
           )}
         </div>
         <p className="text-xs text-surface-500 mt-2">
-          {results.length > 0 
+          {results.length > 0
             ? `Found ${results.length} matching entries`
             : searchQuery.length > 0 && searchQuery.length < 3
               ? 'Type at least 3 characters to search'
-              : 'Search by keywords, tags, or categories'
-          }
+              : 'Search by keywords, tags, or categories'}
         </p>
       </div>
 
       {/* Results List */}
       <div className="max-h-80 overflow-y-auto">
         {results.length === 0 && !loading && searchQuery.length >= 3 && (
-          <div className="p-6 text-center text-surface-400">
+          <div className="p-6 text-center text-surface-600">
             <BookOpenIcon className="w-10 h-10 mx-auto mb-2 opacity-50" />
             <p className="text-sm">No matching entries found</p>
             <p className="text-xs mt-1">Try different keywords</p>
@@ -193,9 +214,7 @@ export function KnowledgeBaseSearchPanel({
             key={entry.id}
             className={clsx(
               'border-b border-surface-700 last:border-b-0 transition-colors',
-              selectedEntry?.id === entry.id 
-                ? 'bg-brand-500/10' 
-                : 'hover:bg-surface-800'
+              selectedEntry?.id === entry.id ? 'bg-brand-500/10' : 'hover:bg-surface-800'
             )}
           >
             <button
@@ -209,19 +228,20 @@ export function KnowledgeBaseSearchPanel({
                       {entry.title}
                     </span>
                     {entry.status === 'approved' && (
-                      <CheckBadgeIcon className="w-4 h-4 text-green-400 flex-shrink-0" title="Approved" />
+                      <CheckBadgeIcon
+                        className="w-4 h-4 text-green-600 flex-shrink-0"
+                        title="Approved"
+                      />
                     )}
                   </div>
                   {entry.question && (
-                    <p className="text-xs text-surface-400 line-clamp-1 mb-1">
+                    <p className="text-xs text-surface-600 line-clamp-1 mb-1">
                       Q: {entry.question}
                     </p>
                   )}
                   <div className="flex items-center gap-2 text-xs text-surface-500">
                     {entry.category && (
-                      <span className="px-1.5 py-0.5 bg-surface-700 rounded">
-                        {entry.category}
-                      </span>
+                      <span className="px-1.5 py-0.5 bg-surface-700 rounded">{entry.category}</span>
                     )}
                     {entry.usageCount && entry.usageCount > 0 && (
                       <span className="flex items-center gap-1">
@@ -242,12 +262,15 @@ export function KnowledgeBaseSearchPanel({
                     {entry.answer || 'No answer content'}
                   </p>
                 </div>
-                
+
                 {/* Tags */}
                 {entry.tags && entry.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1">
                     {entry.tags.map((tag, idx) => (
-                      <span key={idx} className="px-2 py-0.5 text-xs bg-surface-700 text-surface-300 rounded">
+                      <span
+                        key={idx}
+                        className="px-2 py-0.5 text-xs bg-surface-700 text-surface-700 rounded"
+                      >
                         {tag}
                       </span>
                     ))}
@@ -286,4 +309,3 @@ export function KnowledgeBaseSearchPanel({
     </div>
   );
 }
-

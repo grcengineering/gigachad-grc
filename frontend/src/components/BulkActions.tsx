@@ -168,7 +168,7 @@ export function BulkActionsBar({
         <div className="flex items-center gap-4">
           <button
             onClick={onClear}
-            className="p-1.5 hover:bg-surface-700 rounded-lg text-surface-400 transition-colors"
+            className="p-1.5 hover:bg-surface-700 rounded-lg text-surface-600 transition-colors"
             aria-label="Clear selection"
           >
             <XMarkIcon className="w-5 h-5" />
@@ -180,7 +180,7 @@ export function BulkActionsBar({
 
         <div className="flex items-center gap-2">
           {isProcessing ? (
-            <div className="flex items-center gap-2 text-surface-400">
+            <div className="flex items-center gap-2 text-surface-600">
               <ArrowPathIcon className="w-4 h-4 animate-spin" />
               <span className="text-sm">{processingLabel}</span>
             </div>
@@ -258,10 +258,7 @@ export function StatusUpdateDropdown({
 
       {isOpen && (
         <>
-          <div
-            className="fixed inset-0 z-40"
-            onClick={() => setIsOpen(false)}
-          />
+          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
           <div className="absolute right-0 mt-2 w-48 bg-surface-800 border border-surface-700 rounded-lg shadow-xl z-50 overflow-hidden">
             {options.map((option) => (
               <button
@@ -272,9 +269,7 @@ export function StatusUpdateDropdown({
                 }}
                 className="w-full px-4 py-2.5 text-left text-sm text-surface-200 hover:bg-surface-700 flex items-center gap-2 transition-colors"
               >
-                {option.color && (
-                  <span className={clsx('w-2 h-2 rounded-full', option.color)} />
-                )}
+                {option.color && <span className={clsx('w-2 h-2 rounded-full', option.color)} />}
                 {option.label}
               </button>
             ))}
@@ -286,4 +281,3 @@ export function StatusUpdateDropdown({
 }
 
 export default BulkActionsBar;
-

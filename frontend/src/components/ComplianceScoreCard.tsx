@@ -1,5 +1,9 @@
 import { useMemo } from 'react';
-import { ChartBarIcon, ArrowTrendingUpIcon, ArrowTrendingDownIcon } from '@heroicons/react/24/outline';
+import {
+  ChartBarIcon,
+  ArrowTrendingUpIcon,
+  ArrowTrendingDownIcon,
+} from '@heroicons/react/24/outline';
 
 interface ComplianceScoreCardProps {
   score: number;
@@ -44,15 +48,15 @@ export function ComplianceScoreCard({
     >
       <div className="flex items-start justify-between mb-4">
         <div>
-          <h3 className="text-sm font-medium text-surface-400">
+          <h3 className="text-sm font-medium text-surface-600">
             {frameworkName || 'Overall Compliance'}
           </h3>
           <div className="flex items-baseline gap-2 mt-1">
-            <span className={`text-4xl font-bold ${scoreColor}`}>
-              {score}%
-            </span>
+            <span className={`text-4xl font-bold ${scoreColor}`}>{score}%</span>
             {trend !== null && (
-              <span className={`flex items-center text-sm ${trend >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+              <span
+                className={`flex items-center text-sm ${trend >= 0 ? 'text-green-500' : 'text-red-500'}`}
+              >
                 {trend >= 0 ? (
                   <ArrowTrendingUpIcon className="h-4 w-4 mr-1" />
                 ) : (
@@ -78,16 +82,13 @@ export function ComplianceScoreCard({
 
       {/* Stats */}
       <div className="flex justify-between text-sm">
-        <span className="text-surface-400">
+        <span className="text-surface-600">
           {implementedControls} of {totalControls} controls implemented
         </span>
-        <span className={scoreColor}>
-          {totalControls - implementedControls} remaining
-        </span>
+        <span className={scoreColor}>{totalControls - implementedControls} remaining</span>
       </div>
     </div>
   );
 }
 
 export default ComplianceScoreCard;
-

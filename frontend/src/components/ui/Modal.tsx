@@ -127,7 +127,7 @@ export function Modal({
                         </Dialog.Title>
                       )}
                       {description && (
-                        <Dialog.Description className="mt-1 text-sm text-surface-400">
+                        <Dialog.Description className="mt-1 text-sm text-surface-600">
                           {description}
                         </Dialog.Description>
                       )}
@@ -139,7 +139,7 @@ export function Modal({
                         type="button"
                         onClick={onClose}
                         className={clsx(
-                          'rounded-lg p-1.5 text-surface-400',
+                          'rounded-lg p-1.5 text-surface-600',
                           'hover:bg-surface-700 hover:text-surface-200',
                           'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-surface-800',
                           'transition-colors'

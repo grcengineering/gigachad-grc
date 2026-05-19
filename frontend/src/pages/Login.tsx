@@ -61,20 +61,20 @@ export default function Login() {
         <div className="flex flex-col items-center mb-8">
           <img src={branding.logoUrl} alt="Logo" className="w-16 h-16 object-contain mb-4" />
           <h1 className="text-3xl font-bold text-surface-100">{branding.platformName}</h1>
-          <p className="text-surface-400 mt-2">Governance, Risk, and Compliance Platform</p>
+          <p className="text-surface-600 mt-2">Governance, Risk, and Compliance Platform</p>
         </div>
 
         {/* Error display */}
         {error && (
           <div className="mb-4 p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
-            <p className="text-red-400 text-sm">{error}</p>
+            <p className="text-red-600 text-sm">{error}</p>
           </div>
         )}
 
         {/* Login card */}
         <div className="card p-8">
           <h2 className="text-xl font-semibold text-surface-100 text-center mb-2">Welcome Back</h2>
-          <p className="text-surface-400 text-center mb-8">
+          <p className="text-surface-600 text-center mb-8">
             Sign in to access your compliance dashboard
           </p>
 

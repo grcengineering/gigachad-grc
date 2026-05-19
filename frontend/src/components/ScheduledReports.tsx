@@ -87,7 +87,7 @@ export function ScheduledReports({ className }: ScheduledReportsProps) {
         nextRun: calculateNextRun(report.schedule),
       };
       const newReport = await scheduledReportsApi.create(reportWithNextRun);
-      setReports(prev => [...prev, newReport]);
+      setReports((prev) => [...prev, newReport]);
       toast.success('Scheduled report created');
     } catch (error) {
       console.error('Failed to create report:', error);
@@ -102,7 +102,7 @@ export function ScheduledReports({ className }: ScheduledReportsProps) {
         ...(updates.schedule ? { nextRun: calculateNextRun(updates.schedule) } : {}),
       };
       const updated = await scheduledReportsApi.update(id, updatesWithNextRun);
-      setReports(prev => prev.map(r => r.id === id ? updated : r));
+      setReports((prev) => prev.map((r) => (r.id === id ? updated : r)));
       toast.success('Report updated');
     } catch (error) {
       console.error('Failed to update report:', error);
@@ -113,7 +113,7 @@ export function ScheduledReports({ className }: ScheduledReportsProps) {
   const deleteReport = async (id: string) => {
     try {
       await scheduledReportsApi.delete(id);
-      setReports(prev => prev.filter(r => r.id !== id));
+      setReports((prev) => prev.filter((r) => r.id !== id));
       toast.success('Scheduled report deleted');
     } catch (error) {
       console.error('Failed to delete report:', error);
@@ -122,7 +122,7 @@ export function ScheduledReports({ className }: ScheduledReportsProps) {
   };
 
   const toggleEnabled = (id: string) => {
-    const report = reports.find(r => r.id === id);
+    const report = reports.find((r) => r.id === id);
     if (report) {
       updateReport(id, { enabled: !report.enabled });
     }
@@ -148,9 +148,7 @@ export function ScheduledReports({ className }: ScheduledReportsProps) {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-xl font-semibold text-white">Scheduled Reports</h2>
-          <p className="text-surface-400 text-sm mt-1">
-            Automate report generation and delivery
-          </p>
+          <p className="text-surface-600 text-sm mt-1">Automate report generation and delivery</p>
         </div>
         <Button
           onClick={() => setShowCreateModal(true)}
@@ -168,17 +166,15 @@ export function ScheduledReports({ className }: ScheduledReportsProps) {
       ) : reports.length === 0 ? (
         <div className="text-center py-12 bg-surface-800 border border-surface-700 rounded-xl">
           <ClockIcon className="w-12 h-12 mx-auto text-surface-600 mb-4" />
-          <h3 className="text-lg font-medium text-surface-300 mb-2">No scheduled reports</h3>
+          <h3 className="text-lg font-medium text-surface-700 mb-2">No scheduled reports</h3>
           <p className="text-surface-500 mb-4">
             Set up automated reports to be delivered on a schedule
           </p>
-          <Button onClick={() => setShowCreateModal(true)}>
-            Create Your First Schedule
-          </Button>
+          <Button onClick={() => setShowCreateModal(true)}>Create Your First Schedule</Button>
         </div>
       ) : (
         <div className="space-y-4">
-          {reports.map(report => (
+          {reports.map((report) => (
             <ReportCard
               key={report.id}
               report={report}
@@ -226,27 +222,30 @@ interface ReportCardProps {
 }
 
 function ReportCard({ report, onEdit, onDelete, onToggle, onRunNow }: ReportCardProps) {
-  const reportType = REPORT_TYPES.find(t => t.value === report.reportType);
-  
+  const reportType = REPORT_TYPES.find((t) => t.value === report.reportType);
+
   return (
-    <div className={clsx(
-      'bg-surface-800 border rounded-xl p-4',
-      report.enabled ? 'border-surface-700' : 'border-surface-700/50 opacity-60'
-    )}>
+    <div
+      className={clsx(
+        'bg-surface-800 border rounded-xl p-4',
+        report.enabled ? 'border-surface-700' : 'border-surface-700/50 opacity-60'
+      )}
+    >
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-4">
-          <div className={clsx(
-            'p-2 rounded-lg',
-            report.enabled ? 'bg-brand-500/20' : 'bg-surface-700'
-          )}>
-            <DocumentChartBarIcon className={clsx(
-              'w-6 h-6',
-              report.enabled ? 'text-brand-400' : 'text-surface-500'
-            )} />
+          <div
+            className={clsx(
+              'p-2 rounded-lg',
+              report.enabled ? 'bg-brand-500/20' : 'bg-surface-700'
+            )}
+          >
+            <DocumentChartBarIcon
+              className={clsx('w-6 h-6', report.enabled ? 'text-brand-400' : 'text-surface-500')}
+            />
           </div>
           <div>
             <h3 className="font-medium text-surface-100">{report.name}</h3>
-            <p className="text-sm text-surface-400 mt-1">
+            <p className="text-sm text-surface-600 mt-1">
               {reportType?.label || report.reportType} • {report.format.toUpperCase()}
             </p>
             <div className="flex items-center gap-4 mt-2 text-sm">
@@ -280,8 +279,8 @@ function ReportCard({ report, onEdit, onDelete, onToggle, onRunNow }: ReportCard
             onClick={onToggle}
             className={clsx(
               'p-2 rounded-lg transition-colors',
-              report.enabled 
-                ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
+              report.enabled
+                ? 'bg-green-500/20 text-green-600 hover:bg-green-500/30'
                 : 'bg-surface-700 text-surface-500 hover:bg-surface-600'
             )}
             title={report.enabled ? 'Disable' : 'Enable'}
@@ -292,15 +291,12 @@ function ReportCard({ report, onEdit, onDelete, onToggle, onRunNow }: ReportCard
               <PauseIcon className="w-5 h-5" />
             )}
           </button>
-          <button
-            onClick={onEdit}
-            className="p-2 hover:bg-surface-700 rounded-lg text-surface-400"
-          >
+          <button onClick={onEdit} className="p-2 hover:bg-surface-700 rounded-lg text-surface-600">
             <PencilIcon className="w-5 h-5" />
           </button>
           <button
             onClick={onDelete}
-            className="p-2 hover:bg-surface-700 rounded-lg text-surface-400 hover:text-red-400"
+            className="p-2 hover:bg-surface-700 rounded-lg text-surface-600 hover:text-red-600"
           >
             <TrashIcon className="w-5 h-5" />
           </button>
@@ -376,11 +372,11 @@ function ReportScheduleModal({ isOpen, onClose, report, onSave }: ReportSchedule
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const recipients = formData.recipients
       .split(',')
-      .map(r => r.trim())
-      .filter(r => r);
+      .map((r) => r.trim())
+      .filter((r) => r);
 
     if (!formData.name || recipients.length === 0) {
       toast.error('Please fill in all required fields');
@@ -394,7 +390,10 @@ function ReportScheduleModal({ isOpen, onClose, report, onSave }: ReportSchedule
       schedule: {
         frequency: formData.frequency,
         dayOfWeek: formData.frequency === 'weekly' ? formData.dayOfWeek : undefined,
-        dayOfMonth: formData.frequency === 'monthly' || formData.frequency === 'quarterly' ? formData.dayOfMonth : undefined,
+        dayOfMonth:
+          formData.frequency === 'monthly' || formData.frequency === 'quarterly'
+            ? formData.dayOfMonth
+            : undefined,
         time: formData.time,
       },
       recipients,
@@ -412,9 +411,7 @@ function ReportScheduleModal({ isOpen, onClose, report, onSave }: ReportSchedule
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Name */}
         <div>
-          <label className="block text-sm font-medium text-surface-300 mb-1">
-            Report Name *
-          </label>
+          <label className="block text-sm font-medium text-surface-700 mb-1">Report Name *</label>
           <input
             type="text"
             value={formData.name}
@@ -426,27 +423,25 @@ function ReportScheduleModal({ isOpen, onClose, report, onSave }: ReportSchedule
 
         {/* Report Type */}
         <div>
-          <label className="block text-sm font-medium text-surface-300 mb-1">
-            Report Type
-          </label>
+          <label className="block text-sm font-medium text-surface-700 mb-1">Report Type</label>
           <select
             value={formData.reportType}
             onChange={(e) => setFormData({ ...formData, reportType: e.target.value })}
             className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
           >
-            {REPORT_TYPES.map(type => (
-              <option key={type.value} value={type.value}>{type.label}</option>
+            {REPORT_TYPES.map((type) => (
+              <option key={type.value} value={type.value}>
+                {type.label}
+              </option>
             ))}
           </select>
         </div>
 
         {/* Format */}
         <div>
-          <label className="block text-sm font-medium text-surface-300 mb-1">
-            Format
-          </label>
+          <label className="block text-sm font-medium text-surface-700 mb-1">Format</label>
           <div className="flex gap-2">
-            {['pdf', 'csv', 'xlsx'].map(format => (
+            {['pdf', 'csv', 'xlsx'].map((format) => (
               <button
                 key={format}
                 type="button"
@@ -455,7 +450,7 @@ function ReportScheduleModal({ isOpen, onClose, report, onSave }: ReportSchedule
                   'px-4 py-2 rounded-lg text-sm',
                   formData.format === format
                     ? 'bg-brand-500 text-white'
-                    : 'bg-surface-700 text-surface-300 hover:bg-surface-600'
+                    : 'bg-surface-700 text-surface-700 hover:bg-surface-600'
                 )}
               >
                 {format.toUpperCase()}
@@ -466,16 +461,16 @@ function ReportScheduleModal({ isOpen, onClose, report, onSave }: ReportSchedule
 
         {/* Frequency */}
         <div>
-          <label className="block text-sm font-medium text-surface-300 mb-1">
-            Frequency
-          </label>
+          <label className="block text-sm font-medium text-surface-700 mb-1">Frequency</label>
           <select
             value={formData.frequency}
             onChange={(e) => setFormData({ ...formData, frequency: e.target.value as any })}
             className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
           >
-            {FREQUENCY_OPTIONS.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            {FREQUENCY_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
             ))}
           </select>
         </div>
@@ -483,16 +478,16 @@ function ReportScheduleModal({ isOpen, onClose, report, onSave }: ReportSchedule
         {/* Day Selection */}
         {formData.frequency === 'weekly' && (
           <div>
-            <label className="block text-sm font-medium text-surface-300 mb-1">
-              Day of Week
-            </label>
+            <label className="block text-sm font-medium text-surface-700 mb-1">Day of Week</label>
             <select
               value={formData.dayOfWeek}
               onChange={(e) => setFormData({ ...formData, dayOfWeek: Number(e.target.value) })}
               className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
             >
-              {DAYS_OF_WEEK.map(day => (
-                <option key={day.value} value={day.value}>{day.label}</option>
+              {DAYS_OF_WEEK.map((day) => (
+                <option key={day.value} value={day.value}>
+                  {day.label}
+                </option>
               ))}
             </select>
           </div>
@@ -500,16 +495,17 @@ function ReportScheduleModal({ isOpen, onClose, report, onSave }: ReportSchedule
 
         {(formData.frequency === 'monthly' || formData.frequency === 'quarterly') && (
           <div>
-            <label className="block text-sm font-medium text-surface-300 mb-1">
-              Day of Month
-            </label>
+            <label className="block text-sm font-medium text-surface-700 mb-1">Day of Month</label>
             <select
               value={formData.dayOfMonth}
               onChange={(e) => setFormData({ ...formData, dayOfMonth: Number(e.target.value) })}
               className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
             >
-              {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
-                <option key={day} value={day}>{day}{day > 28 ? '*' : ''}</option>
+              {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                <option key={day} value={day}>
+                  {day}
+                  {day > 28 ? '*' : ''}
+                </option>
               ))}
             </select>
             <p className="text-xs text-surface-500 mt-1">
@@ -520,9 +516,7 @@ function ReportScheduleModal({ isOpen, onClose, report, onSave }: ReportSchedule
 
         {/* Time */}
         <div>
-          <label className="block text-sm font-medium text-surface-300 mb-1">
-            Time
-          </label>
+          <label className="block text-sm font-medium text-surface-700 mb-1">Time</label>
           <input
             type="time"
             value={formData.time}
@@ -533,7 +527,7 @@ function ReportScheduleModal({ isOpen, onClose, report, onSave }: ReportSchedule
 
         {/* Recipients */}
         <div>
-          <label className="block text-sm font-medium text-surface-300 mb-1">
+          <label className="block text-sm font-medium text-surface-700 mb-1">
             Recipients * (comma-separated emails)
           </label>
           <input
@@ -550,9 +544,7 @@ function ReportScheduleModal({ isOpen, onClose, report, onSave }: ReportSchedule
           <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>
-          <Button type="submit">
-            {report ? 'Update Schedule' : 'Create Schedule'}
-          </Button>
+          <Button type="submit">{report ? 'Update Schedule' : 'Create Schedule'}</Button>
         </div>
       </form>
     </Modal>
@@ -569,7 +561,7 @@ function formatSchedule(schedule: ScheduledReport['schedule']): string {
     case 'daily':
       return `Daily at ${time}`;
     case 'weekly': {
-      const day = DAYS_OF_WEEK.find(d => d.value === schedule.dayOfWeek)?.label || '';
+      const day = DAYS_OF_WEEK.find((d) => d.value === schedule.dayOfWeek)?.label || '';
       return `Every ${day} at ${time}`;
     }
     case 'monthly':
@@ -584,10 +576,10 @@ function formatSchedule(schedule: ScheduledReport['schedule']): string {
 function calculateNextRun(schedule: ScheduledReport['schedule']): string {
   const now = new Date();
   const [hours, minutes] = schedule.time.split(':').map(Number);
-  
+
   let nextRun = new Date(now);
   nextRun.setHours(hours, minutes, 0, 0);
-  
+
   // If time has passed today, move to next occurrence
   if (nextRun <= now) {
     switch (schedule.frequency) {
@@ -605,31 +597,30 @@ function calculateNextRun(schedule: ScheduledReport['schedule']): string {
       case 'quarterly': {
         const targetDate = schedule.dayOfMonth || 1;
         const monthIncrement = schedule.frequency === 'quarterly' ? 3 : 1;
-        
+
         // Try setting the target date in the current month first
         nextRun.setDate(targetDate);
-        
+
         if (nextRun <= now) {
           // Move to next month/quarter, handling day-of-month overflow
           const targetMonth = now.getMonth() + monthIncrement;
           const targetYear = now.getFullYear() + Math.floor(targetMonth / 12);
           const normalizedMonth = targetMonth % 12;
-          
+
           // Get the last day of the target month
           const lastDayOfMonth = new Date(targetYear, normalizedMonth + 1, 0).getDate();
-          
+
           // Clamp the target date to the max days in that month
           const clampedDate = Math.min(targetDate, lastDayOfMonth);
-          
+
           nextRun = new Date(targetYear, normalizedMonth, clampedDate, hours, minutes, 0, 0);
         }
         break;
       }
     }
   }
-  
+
   return nextRun.toISOString();
 }
 
 export default ScheduledReports;
-

@@ -395,7 +395,7 @@ export function MappingEditorModal({
           <button
             type="button"
             onClick={handleBack}
-            className="inline-flex items-center gap-1 text-sm text-surface-400 hover:text-surface-200"
+            className="inline-flex items-center gap-1 text-sm text-surface-600 hover:text-surface-200"
           >
             <ArrowLeftIcon className="h-4 w-4" aria-hidden="true" />
             Back
@@ -453,7 +453,7 @@ export function MappingEditorModal({
         {errorMessage && (
           <div
             role="alert"
-            className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-sm text-red-300"
+            className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-sm text-red-700"
           >
             {errorMessage}
           </div>
@@ -535,7 +535,7 @@ function SearchStage({
 }: SearchStageProps) {
   return (
     <div className="space-y-3">
-      <p className="text-sm text-surface-400">
+      <p className="text-sm text-surface-600">
         {mode === 'requirement-to-controls'
           ? 'Search for controls to map to this requirement.'
           : 'Pick a framework and search for requirements to map to this control.'}
@@ -543,7 +543,7 @@ function SearchStage({
 
       {mode === 'control-to-requirements' && !initialFrameworkLocked && (
         <label className="block">
-          <span className="block text-sm font-medium text-surface-300 mb-1">Framework</span>
+          <span className="block text-sm font-medium text-surface-700 mb-1">Framework</span>
           <select
             value={selectedFrameworkId ?? ''}
             onChange={(e) => onSelectFramework(e.target.value || undefined)}
@@ -562,7 +562,7 @@ function SearchStage({
       )}
 
       <label className="block">
-        <span className="block text-sm font-medium text-surface-300 mb-1">Search</span>
+        <span className="block text-sm font-medium text-surface-700 mb-1">Search</span>
         <div className="relative">
           <MagnifyingGlassIcon
             className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-surface-500"
@@ -624,9 +624,9 @@ function MultiSelectStage({
       </label>
 
       {isLoading ? (
-        <p className="text-sm text-surface-400">Loading…</p>
+        <p className="text-sm text-surface-600">Loading…</p>
       ) : candidates.length === 0 ? (
-        <p className="text-sm text-surface-400">No candidates available.</p>
+        <p className="text-sm text-surface-600">No candidates available.</p>
       ) : (
         <ul
           role="list"
@@ -661,7 +661,7 @@ function MultiSelectStage({
                   />
                   <span className="flex-1">
                     <span className="block font-mono text-sm text-surface-200">{primary}</span>
-                    <span className="block text-sm text-surface-400">{secondary}</span>
+                    <span className="block text-sm text-surface-600">{secondary}</span>
                   </span>
                 </label>
               </li>
@@ -683,12 +683,12 @@ interface PerRowFormStageProps {
 
 function PerRowFormStage({ rows, getLabel, onChange, disabled, isEditMode }: PerRowFormStageProps) {
   if (rows.length === 0) {
-    return <p className="text-sm text-surface-400">Nothing selected.</p>;
+    return <p className="text-sm text-surface-600">Nothing selected.</p>;
   }
 
   return (
     <div className="space-y-3">
-      <p className="text-sm text-surface-400">
+      <p className="text-sm text-surface-600">
         {isEditMode
           ? 'Update mapping type and notes.'
           : 'Set mapping type and optional notes for each selection.'}
@@ -706,7 +706,7 @@ function PerRowFormStage({ rows, getLabel, onChange, disabled, isEditMode }: Per
             )}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <label className="block sm:col-span-1">
-                <span className="block text-xs font-medium text-surface-400 mb-1">
+                <span className="block text-xs font-medium text-surface-600 mb-1">
                   Mapping type
                 </span>
                 <select
@@ -725,7 +725,7 @@ function PerRowFormStage({ rows, getLabel, onChange, disabled, isEditMode }: Per
                 </select>
               </label>
               <label className="block sm:col-span-2">
-                <span className="block text-xs font-medium text-surface-400 mb-1">Notes</span>
+                <span className="block text-xs font-medium text-surface-600 mb-1">Notes</span>
                 <input
                   type="text"
                   value={row.notes}
@@ -788,7 +788,7 @@ function SuggestionsPanel({
       )}
 
       {state.status === 'loading' && (
-        <p role="status" className="text-xs text-surface-400">
+        <p role="status" className="text-xs text-surface-600">
           <span
             className="mr-2 inline-block h-3 w-3 animate-spin rounded-full border-2 border-surface-400/30 border-t-surface-200 align-middle"
             aria-hidden="true"
@@ -821,7 +821,7 @@ function SuggestionsPanel({
       )}
 
       {state.status === 'ready' && state.suggestions.length === 0 && (
-        <p className="text-xs text-surface-400">No suggestions available.</p>
+        <p className="text-xs text-surface-600">No suggestions available.</p>
       )}
 
       {state.status === 'ready' && state.suggestions.length > 0 && (
@@ -841,8 +841,8 @@ function SuggestionsPanel({
                       </span>
                       <ConfidenceBadge value={s.confidence} />
                     </div>
-                    <p className="text-sm text-surface-300 mt-0.5">{s.candidateTitle}</p>
-                    <p className="text-xs text-surface-400 mt-1">{s.rationale}</p>
+                    <p className="text-sm text-surface-700 mt-0.5">{s.candidateTitle}</p>
+                    <p className="text-xs text-surface-600 mt-1">{s.rationale}</p>
                   </div>
                   <button
                     type="button"
@@ -867,10 +867,10 @@ function ConfidenceBadge({ value }: { value: number }) {
   const pct = Math.round(value * 100);
   const band =
     value >= SUGGESTION_AUTO_SELECT_THRESHOLD
-      ? 'bg-green-500/15 text-green-300 border-green-500/30'
+      ? 'bg-green-500/15 text-green-700 border-green-500/30'
       : value >= 0.4
-        ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
-        : 'bg-red-500/15 text-red-300 border-red-500/30';
+        ? 'bg-amber-500/15 text-amber-700 border-amber-500/30'
+        : 'bg-red-500/15 text-red-700 border-red-500/30';
   return (
     <span
       className={clsx(

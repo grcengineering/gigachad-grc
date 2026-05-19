@@ -273,10 +273,10 @@ export default function Dashboard() {
       {/* Error Banner */}
       {hasErrors && (
         <div className="bg-yellow-600/20 border border-yellow-600/50 rounded-lg p-4 flex items-start gap-3">
-          <ExclamationTriangleIcon className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+          <ExclamationTriangleIcon className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
           <div className="flex-1">
-            <p className="text-sm font-medium text-yellow-400">Some data failed to load</p>
-            <p className="text-sm text-yellow-300/80 mt-1">
+            <p className="text-sm font-medium text-yellow-600">Some data failed to load</p>
+            <p className="text-sm text-yellow-700/80 mt-1">
               The dashboard is showing partial data. Some widgets may be empty or show default
               values.
             </p>
@@ -289,13 +289,13 @@ export default function Dashboard() {
         <div className="flex items-center gap-4">
           <div>
             <h1 className="text-2xl font-bold text-surface-100">Dashboard</h1>
-            <p className="text-surface-400 mt-1">Your compliance overview at a glance</p>
+            <p className="text-surface-600 mt-1">Your compliance overview at a glance</p>
           </div>
           {/* Dashboard Selector Dropdown */}
           <div className="relative">
             <button
               onClick={() => setShowDashboardSelector(!showDashboardSelector)}
-              className="btn btn-ghost btn-sm flex items-center gap-1 text-surface-400 hover:text-surface-200"
+              className="btn btn-ghost btn-sm flex items-center gap-1 text-surface-600 hover:text-surface-200"
             >
               <Squares2X2Icon className="w-4 h-4" />
               <span className="hidden sm:inline">Switch Dashboard</span>
@@ -309,7 +309,7 @@ export default function Dashboard() {
                 />
                 <div className="absolute left-0 mt-2 w-64 bg-surface-800 border border-surface-700 rounded-lg shadow-xl z-20">
                   <div className="p-3 border-b border-surface-700">
-                    <p className="text-sm font-medium text-surface-300">My Dashboards</p>
+                    <p className="text-sm font-medium text-surface-700">My Dashboards</p>
                   </div>
                   <div className="max-h-64 overflow-y-auto">
                     {userDashboards.length === 0 ? (
@@ -324,11 +324,11 @@ export default function Dashboard() {
                           }}
                           className="w-full text-left px-3 py-2 hover:bg-surface-700 flex items-center justify-between group"
                         >
-                          <span className="text-sm text-surface-300 group-hover:text-surface-100">
+                          <span className="text-sm text-surface-700 group-hover:text-surface-100">
                             {dashboard.name}
                           </span>
                           {dashboard.isDefault && (
-                            <span className="text-xs text-yellow-400">Default</span>
+                            <span className="text-xs text-yellow-600">Default</span>
                           )}
                         </button>
                       ))
@@ -370,13 +370,13 @@ export default function Dashboard() {
               <h3 className="text-lg font-semibold text-surface-100">Customize Dashboard</h3>
               <button
                 onClick={() => setShowConfigModal(false)}
-                className="text-surface-400 hover:text-surface-100 transition-colors"
+                className="text-surface-600 hover:text-surface-100 transition-colors"
               >
                 <XMarkIcon className="w-5 h-5" />
               </button>
             </div>
             <div className="p-4 space-y-3 max-h-[60vh] overflow-y-auto">
-              <p className="text-sm text-surface-400 mb-4">
+              <p className="text-sm text-surface-600 mb-4">
                 Toggle widgets to show or hide them on your dashboard.
               </p>
               {(Object.keys(WIDGET_LABELS) as Array<keyof DashboardConfig['widgets']>).map(
@@ -388,7 +388,7 @@ export default function Dashboard() {
                       'w-full flex items-center justify-between p-3 rounded-lg border transition-all',
                       config.widgets[widget]
                         ? 'bg-brand-500/10 border-brand-500/30 text-surface-100'
-                        : 'bg-surface-800 border-surface-700 text-surface-400'
+                        : 'bg-surface-800 border-surface-700 text-surface-600'
                     )}
                   >
                     <span className="font-medium">{WIDGET_LABELS[widget]}</span>
@@ -404,7 +404,7 @@ export default function Dashboard() {
             <div className="flex items-center justify-between p-4 border-t border-surface-700">
               <button
                 onClick={resetConfig}
-                className="text-sm text-surface-400 hover:text-surface-100 transition-colors"
+                className="text-sm text-surface-600 hover:text-surface-100 transition-colors"
               >
                 Reset to Default
               </button>
@@ -462,12 +462,12 @@ export default function Dashboard() {
       {config.widgets.alertBanner && actionItems > 0 && (
         <div className="bg-amber-50 dark:bg-yellow-500/10 border border-amber-300 dark:border-yellow-500/30 rounded-lg p-4">
           <div className="flex items-center gap-3">
-            <ExclamationTriangleIcon className="w-5 h-5 text-amber-600 dark:text-yellow-400 flex-shrink-0" />
+            <ExclamationTriangleIcon className="w-5 h-5 text-amber-600 dark:text-yellow-600 flex-shrink-0" />
             <div className="flex-1">
-              <span className="text-amber-700 dark:text-yellow-400 font-medium">
+              <span className="text-amber-700 dark:text-yellow-600 font-medium">
                 {actionItems} items need attention:
               </span>
-              <span className="text-gray-600 dark:text-surface-400 ml-2">
+              <span className="text-gray-600 dark:text-surface-600 ml-2">
                 {(safeSummary.evidence?.pendingReview ?? 0) > 0 &&
                   `${safeSummary.evidence?.pendingReview} pending review`}
                 {(safeSummary.evidence?.expiringSoon ?? 0) > 0 &&
@@ -604,7 +604,7 @@ export default function Dashboard() {
                       className="w-2.5 h-2.5 rounded-full"
                       style={{ backgroundColor: item.color }}
                     />
-                    <span className="text-xs text-surface-400 capitalize">
+                    <span className="text-xs text-surface-600 capitalize">
                       {item.name}: {String(item.value)}
                     </span>
                   </div>
@@ -651,7 +651,7 @@ export default function Dashboard() {
                   </div>
                 </div>
                 <div className="flex items-center justify-between mt-4 pt-3 border-t border-surface-700">
-                  <p className="text-sm text-surface-400">
+                  <p className="text-sm text-surface-600">
                     <span className="font-semibold text-surface-200">{risksData.risks.length}</span>{' '}
                     risks tracked
                   </p>
@@ -680,7 +680,7 @@ export default function Dashboard() {
                 <div className="w-16 h-16 rounded-full bg-surface-700 flex items-center justify-center mb-4">
                   <ExclamationTriangleIcon className="w-8 h-8 text-surface-500" />
                 </div>
-                <p className="text-surface-400 text-sm mb-2">No risks registered yet</p>
+                <p className="text-surface-600 text-sm mb-2">No risks registered yet</p>
                 <Link
                   to="/risks"
                   className="text-brand-400 text-sm hover:text-brand-300 flex items-center gap-1"
@@ -745,7 +745,7 @@ export default function Dashboard() {
                       className="w-2.5 h-2.5 rounded-full"
                       style={{ backgroundColor: item.color }}
                     />
-                    <span className="text-xs text-surface-400">
+                    <span className="text-xs text-surface-600">
                       {item.name}: {item.value}
                     </span>
                   </div>
@@ -769,10 +769,10 @@ export default function Dashboard() {
                     return (
                       <div key={category}>
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm text-surface-400 capitalize">
+                          <span className="text-sm text-surface-600 capitalize">
                             {category.replace(/_/g, ' ')}
                           </span>
-                          <span className="text-sm text-surface-300">{String(count)}</span>
+                          <span className="text-sm text-surface-700">{String(count)}</span>
                         </div>
                         <div className="w-full h-1.5 bg-surface-800 rounded-full overflow-hidden">
                           <div
@@ -815,11 +815,11 @@ export default function Dashboard() {
 
 const COLOR_CLASSES = {
   brand: 'bg-brand-600/20 text-brand-400',
-  green: 'bg-green-600/20 text-green-400',
-  blue: 'bg-blue-600/20 text-blue-400',
-  yellow: 'bg-yellow-600/20 text-yellow-400',
-  red: 'bg-red-600/20 text-red-400',
-  purple: 'bg-purple-600/20 text-purple-400',
+  green: 'bg-green-600/20 text-green-600',
+  blue: 'bg-blue-600/20 text-blue-600',
+  yellow: 'bg-yellow-600/20 text-yellow-600',
+  red: 'bg-red-600/20 text-red-600',
+  purple: 'bg-purple-600/20 text-purple-600',
 } as const;
 
 const StatCard = memo(function StatCard({
@@ -844,7 +844,7 @@ const StatCard = memo(function StatCard({
     >
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm text-surface-400">{title}</p>
+          <p className="text-sm text-surface-600">{title}</p>
           <p className="stat-value mt-1">{value}</p>
         </div>
         <div className={clsx('p-2 rounded-lg', COLOR_CLASSES[color])}>
@@ -888,15 +888,15 @@ const VendorRiskSummary = memo(function VendorRiskSummary({ data }: VendorRiskSu
   // Memoize criticality data
   const criticialityData = useMemo(
     () => [
-      { label: 'Critical', count: stats.critical, color: 'bg-red-500', textColor: 'text-red-400' },
-      { label: 'High', count: stats.high, color: 'bg-orange-500', textColor: 'text-orange-400' },
+      { label: 'Critical', count: stats.critical, color: 'bg-red-500', textColor: 'text-red-600' },
+      { label: 'High', count: stats.high, color: 'bg-orange-500', textColor: 'text-orange-600' },
       {
         label: 'Medium',
         count: stats.medium,
         color: 'bg-yellow-500',
-        textColor: 'text-yellow-400',
+        textColor: 'text-yellow-600',
       },
-      { label: 'Low', count: stats.low, color: 'bg-green-500', textColor: 'text-green-400' },
+      { label: 'Low', count: stats.low, color: 'bg-green-500', textColor: 'text-green-600' },
     ],
     [stats]
   );
@@ -909,7 +909,7 @@ const VendorRiskSummary = memo(function VendorRiskSummary({ data }: VendorRiskSu
         <div className="w-12 h-12 rounded-full bg-surface-700 flex items-center justify-center mb-3">
           <ExclamationTriangleIcon className="w-6 h-6 text-surface-500" />
         </div>
-        <p className="text-surface-400 text-sm">No vendors configured yet</p>
+        <p className="text-surface-600 text-sm">No vendors configured yet</p>
         <Link to="/vendors" className="text-brand-400 text-sm mt-2 hover:text-brand-300">
           Add your first vendor →
         </Link>
@@ -923,21 +923,21 @@ const VendorRiskSummary = memo(function VendorRiskSummary({ data }: VendorRiskSu
       <div className="grid grid-cols-3 gap-4">
         <div className="text-center p-3 bg-surface-800/50 rounded-lg">
           <p className="text-2xl font-bold text-surface-100">{stats.total}</p>
-          <p className="text-xs text-surface-400">Total Vendors</p>
+          <p className="text-xs text-surface-600">Total Vendors</p>
         </div>
         <div className="text-center p-3 bg-surface-800/50 rounded-lg">
-          <p className="text-2xl font-bold text-green-400">{stats.active}</p>
-          <p className="text-xs text-surface-400">Active</p>
+          <p className="text-2xl font-bold text-green-600">{stats.active}</p>
+          <p className="text-xs text-surface-600">Active</p>
         </div>
         <div className="text-center p-3 bg-surface-800/50 rounded-lg">
-          <p className="text-2xl font-bold text-yellow-400">{stats.pendingReview}</p>
-          <p className="text-xs text-surface-400">Pending Review</p>
+          <p className="text-2xl font-bold text-yellow-600">{stats.pendingReview}</p>
+          <p className="text-xs text-surface-600">Pending Review</p>
         </div>
       </div>
 
       {/* Criticality Breakdown */}
       <div>
-        <p className="text-sm text-surface-400 mb-2">By Criticality</p>
+        <p className="text-sm text-surface-600 mb-2">By Criticality</p>
         <div className="flex gap-1 h-3 rounded-full overflow-hidden bg-surface-800">
           {criticialityData.map(
             (item) =>
@@ -955,7 +955,7 @@ const VendorRiskSummary = memo(function VendorRiskSummary({ data }: VendorRiskSu
           {criticialityData.map((item) => (
             <div key={item.label} className="flex items-center gap-1.5">
               <div className={`w-2 h-2 rounded-full ${item.color}`} />
-              <span className="text-xs text-surface-400">
+              <span className="text-xs text-surface-600">
                 {item.label}: <span className={item.textColor}>{item.count}</span>
               </span>
             </div>
@@ -965,7 +965,7 @@ const VendorRiskSummary = memo(function VendorRiskSummary({ data }: VendorRiskSu
 
       {/* Recent Vendors */}
       <div>
-        <p className="text-sm text-surface-400 mb-2">Recent Vendors</p>
+        <p className="text-sm text-surface-600 mb-2">Recent Vendors</p>
         <div className="space-y-2">
           {vendors.slice(0, 4).map((vendor: any) => (
             <Link
@@ -994,10 +994,10 @@ const VendorRiskSummary = memo(function VendorRiskSummary({ data }: VendorRiskSu
                 className={clsx(
                   'text-xs px-2 py-0.5 rounded',
                   vendor.status === 'active'
-                    ? 'bg-green-500/20 text-green-400'
+                    ? 'bg-green-500/20 text-green-600'
                     : vendor.status === 'pending_review'
-                      ? 'bg-yellow-500/20 text-yellow-400'
-                      : 'bg-surface-600 text-surface-400'
+                      ? 'bg-yellow-500/20 text-yellow-600'
+                      : 'bg-surface-600 text-surface-600'
                 )}
               >
                 {vendor.status?.replace('_', ' ')}

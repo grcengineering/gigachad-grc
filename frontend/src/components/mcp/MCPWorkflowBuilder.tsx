@@ -113,9 +113,9 @@ export default function MCPWorkflowBuilder() {
 
   const getStatusBadge = (status: WorkflowExecution['status']) => {
     const styles = {
-      completed: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-      failed: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-      running: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+      completed: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-600',
+      failed: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-600',
+      running: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-600',
       cancelled: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400',
     };
     return (
@@ -141,7 +141,9 @@ export default function MCPWorkflowBuilder() {
         {/* Workflows List */}
         <div className="lg:col-span-1 bg-white dark:bg-surface-800 rounded-lg border border-gray-200 dark:border-surface-700">
           <div className="p-4 border-b border-gray-200 dark:border-surface-700">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Available Workflows</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Available Workflows
+            </h2>
           </div>
 
           {loadingWorkflows ? (
@@ -162,15 +164,19 @@ export default function MCPWorkflowBuilder() {
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg ${
-                        selectedWorkflow === workflow.id
-                          ? 'bg-brand-100 dark:bg-brand-900/30'
-                          : 'bg-gray-100 dark:bg-surface-700'
-                      }`}>
+                      <div
+                        className={`p-2 rounded-lg ${
+                          selectedWorkflow === workflow.id
+                            ? 'bg-brand-100 dark:bg-brand-900/30'
+                            : 'bg-gray-100 dark:bg-surface-700'
+                        }`}
+                      >
                         {getTriggerIcon(workflow.trigger.type)}
                       </div>
                       <div>
-                        <h3 className="font-medium text-gray-900 dark:text-white">{workflow.name}</h3>
+                        <h3 className="font-medium text-gray-900 dark:text-white">
+                          {workflow.name}
+                        </h3>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
                           {workflow.stepCount} steps • {workflow.trigger.type}
                         </p>
@@ -248,7 +254,9 @@ export default function MCPWorkflowBuilder() {
           {/* Recent Executions */}
           <div className="bg-white dark:bg-surface-800 rounded-lg border border-gray-200 dark:border-surface-700">
             <div className="p-4 border-b border-gray-200 dark:border-surface-700">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Executions</h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Recent Executions
+              </h2>
             </div>
 
             {executions.length === 0 ? (
@@ -282,7 +290,7 @@ export default function MCPWorkflowBuilder() {
                             {execution.status === 'running' && (
                               <button
                                 onClick={() => cancelMutation.mutate(execution.id)}
-                                className="p-2 text-gray-500 hover:text-red-600 dark:hover:text-red-400"
+                                className="p-2 text-gray-500 hover:text-red-600 dark:hover:text-red-600"
                                 title="Cancel"
                               >
                                 <StopIcon className="w-5 h-5" />
@@ -312,7 +320,7 @@ export default function MCPWorkflowBuilder() {
                         </div>
 
                         {execution.error && (
-                          <p className="mt-2 text-sm text-red-600 dark:text-red-400">
+                          <p className="mt-2 text-sm text-red-600 dark:text-red-600">
                             {execution.error}
                           </p>
                         )}
@@ -345,9 +353,7 @@ export default function MCPWorkflowBuilder() {
             </div>
 
             <div className="p-4 space-y-4">
-              <p className="text-gray-600 dark:text-gray-400">
-                {selectedWorkflowData.description}
-              </p>
+              <p className="text-gray-600 dark:text-gray-400">{selectedWorkflowData.description}</p>
 
               {/* Input fields would go here based on workflow definition */}
               <div className="space-y-3">
@@ -372,10 +378,7 @@ export default function MCPWorkflowBuilder() {
               </div>
 
               <div className="flex justify-end gap-2 pt-4">
-                <button
-                  onClick={() => setShowExecutionModal(false)}
-                  className="btn-secondary"
-                >
+                <button onClick={() => setShowExecutionModal(false)} className="btn-secondary">
                   Cancel
                 </button>
                 <button
@@ -403,4 +406,3 @@ export default function MCPWorkflowBuilder() {
     </div>
   );
 }
-

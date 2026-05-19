@@ -56,7 +56,10 @@ export default function PolicyDetail() {
   const [_showDeleteConfirm, _setShowDeleteConfirm] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isLinkControlOpen, setIsLinkControlOpen] = useState(false);
-  const [statusChangeModal, setStatusChangeModal] = useState<{ isOpen: boolean; targetStatus: string | null }>({
+  const [statusChangeModal, setStatusChangeModal] = useState<{
+    isOpen: boolean;
+    targetStatus: string | null;
+  }>({
     isOpen: false,
     targetStatus: null,
   });
@@ -71,7 +74,7 @@ export default function PolicyDetail() {
   });
 
   const updateStatusMutation = useMutation({
-    mutationFn: ({ status, notes }: { status: string; notes?: string }) => 
+    mutationFn: ({ status, notes }: { status: string; notes?: string }) =>
       policiesApi.updateStatus(id!, status, notes),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['policy', id] });
@@ -137,7 +140,7 @@ export default function PolicyDetail() {
   if (!policy) {
     return (
       <div className="text-center py-12">
-        <p className="text-surface-400">Policy not found</p>
+        <p className="text-surface-600">Policy not found</p>
       </div>
     );
   }
@@ -151,7 +154,7 @@ export default function PolicyDetail() {
       <div>
         <Link
           to="/policies"
-          className="inline-flex items-center text-sm text-surface-400 hover:text-surface-100 mb-4"
+          className="inline-flex items-center text-sm text-surface-600 hover:text-surface-100 mb-4"
         >
           <ArrowLeftIcon className="w-4 h-4 mr-1" />
           Back to Policies
@@ -163,28 +166,40 @@ export default function PolicyDetail() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-surface-100">{policy.title}</h1>
-              <p className="text-surface-400 mt-1">{policy.description || 'No description'}</p>
+              <p className="text-surface-600 mt-1">{policy.description || 'No description'}</p>
               <div className="flex items-center gap-3 mt-3">
                 <span className={clsx('badge', statusConfig.color)}>{statusConfig.label}</span>
                 <span className="text-surface-500">•</span>
-                <span className="font-mono text-surface-400">v{policy.version}</span>
+                <span className="font-mono text-surface-600">v{policy.version}</span>
                 <span className="text-surface-500">•</span>
-                <span className="text-surface-400 capitalize">
+                <span className="text-surface-600 capitalize">
                   {policy.category?.replace(/_/g, ' ')}
                 </span>
               </div>
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={handleDownload} leftIcon={<ArrowDownTrayIcon className="w-4 h-4" />}>
+            <Button
+              variant="outline"
+              onClick={handleDownload}
+              leftIcon={<ArrowDownTrayIcon className="w-4 h-4" />}
+            >
               Download
             </Button>
             {canEdit && (
               <>
-                <Button variant="outline" onClick={() => setIsEditOpen(true)} leftIcon={<PencilIcon className="w-4 h-4" />}>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsEditOpen(true)}
+                  leftIcon={<PencilIcon className="w-4 h-4" />}
+                >
                   Edit
                 </Button>
-                <Button variant="outline" onClick={() => setIsNewVersionOpen(true)} leftIcon={<ArrowUpTrayIcon className="w-4 h-4" />}>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsNewVersionOpen(true)}
+                  leftIcon={<ArrowUpTrayIcon className="w-4 h-4" />}
+                >
                   New Version
                 </Button>
               </>
@@ -204,7 +219,9 @@ export default function PolicyDetail() {
                 <div className="flex flex-col items-center justify-center py-16 text-surface-500">
                   <DocumentTextIcon className="w-16 h-16 mb-4" />
                   <p className="text-center">File preview not available</p>
-                  <p className="text-sm text-surface-400 mt-2">The policy file may not have been uploaded yet.</p>
+                  <p className="text-sm text-surface-600 mt-2">
+                    The policy file may not have been uploaded yet.
+                  </p>
                   <button onClick={handleDownload} className="btn-outline mt-4">
                     <ArrowDownTrayIcon className="w-4 h-4 mr-2" />
                     Try Download
@@ -254,12 +271,10 @@ export default function PolicyDetail() {
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="font-mono text-surface-200">v{version.version}</span>
-                        {index === 0 && (
-                          <span className="badge badge-info text-xs">Current</span>
-                        )}
+                        {index === 0 && <span className="badge badge-info text-xs">Current</span>}
                       </div>
                       {version.changeNotes && (
-                        <p className="text-sm text-surface-400 mt-1">{version.changeNotes}</p>
+                        <p className="text-sm text-surface-600 mt-1">{version.changeNotes}</p>
                       )}
                       <p className="text-xs text-surface-500 mt-1">
                         {new Date(version.createdAt).toLocaleString()}
@@ -284,7 +299,7 @@ export default function PolicyDetail() {
                     'py-3 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2',
                     activeTab === 'status'
                       ? 'border-brand-500 text-brand-400'
-                      : 'border-transparent text-surface-400 hover:text-surface-200 hover:border-surface-600'
+                      : 'border-transparent text-surface-600 hover:text-surface-200 hover:border-surface-600'
                   )}
                 >
                   <ChatBubbleLeftRightIcon className="w-4 h-4" />
@@ -296,7 +311,7 @@ export default function PolicyDetail() {
                     'py-3 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2',
                     activeTab === 'history'
                       ? 'border-brand-500 text-brand-400'
-                      : 'border-transparent text-surface-400 hover:text-surface-200 hover:border-surface-600'
+                      : 'border-transparent text-surface-600 hover:text-surface-200 hover:border-surface-600'
                   )}
                 >
                   <ClockIcon className="w-4 h-4" />
@@ -316,7 +331,7 @@ export default function PolicyDetail() {
                     <div className="relative">
                       {/* Timeline line */}
                       <div className="absolute left-4 top-2 bottom-2 w-0.5 bg-surface-700" />
-                      
+
                       <div className="space-y-4">
                         {policy?.statusHistory?.map((entry: any, index: number) => (
                           <div key={entry.id} className="relative flex gap-4 pl-10">
@@ -327,22 +342,32 @@ export default function PolicyDetail() {
                                 index === 0 ? 'bg-brand-500' : 'bg-surface-600'
                               )}
                             />
-                            
+
                             <div className="flex-1 pb-4">
                               <div className="flex items-center gap-2 flex-wrap">
                                 {entry.fromStatus ? (
                                   <>
-                                    <span className={clsx('badge text-xs', STATUS_CONFIG[entry.fromStatus]?.color || 'badge-neutral')}>
+                                    <span
+                                      className={clsx(
+                                        'badge text-xs',
+                                        STATUS_CONFIG[entry.fromStatus]?.color || 'badge-neutral'
+                                      )}
+                                    >
                                       {STATUS_CONFIG[entry.fromStatus]?.label || entry.fromStatus}
                                     </span>
                                     <span className="text-surface-500">→</span>
                                   </>
                                 ) : null}
-                                <span className={clsx('badge text-xs', STATUS_CONFIG[entry.toStatus]?.color || 'badge-neutral')}>
+                                <span
+                                  className={clsx(
+                                    'badge text-xs',
+                                    STATUS_CONFIG[entry.toStatus]?.color || 'badge-neutral'
+                                  )}
+                                >
                                   {STATUS_CONFIG[entry.toStatus]?.label || entry.toStatus}
                                 </span>
                               </div>
-                              
+
                               <div className="mt-2 text-sm">
                                 <span className="text-surface-200 font-medium">
                                   {entry.changedByName || entry.changedBy?.displayName || 'Unknown'}
@@ -351,9 +376,9 @@ export default function PolicyDetail() {
                                   {new Date(entry.createdAt).toLocaleString()}
                                 </span>
                               </div>
-                              
+
                               {entry.notes && (
-                                <p className="mt-1 text-sm text-surface-400 italic">
+                                <p className="mt-1 text-sm text-surface-600 italic">
                                   "{entry.notes}"
                                 </p>
                               )}
@@ -367,9 +392,7 @@ export default function PolicyDetail() {
                   )}
                 </div>
               )}
-              {activeTab === 'history' && (
-                <EntityAuditHistory entityType="policy" entityId={id!} />
-              )}
+              {activeTab === 'history' && <EntityAuditHistory entityType="policy" entityId={id!} />}
             </div>
           </div>
 
@@ -378,10 +401,7 @@ export default function PolicyDetail() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-surface-100">Linked Controls</h2>
               {canEdit && (
-                <button
-                  onClick={() => setIsLinkControlOpen(true)}
-                  className="btn-outline text-sm"
-                >
+                <button onClick={() => setIsLinkControlOpen(true)} className="btn-outline text-sm">
                   <LinkIcon className="w-4 h-4 mr-2" />
                   Link to Control
                 </button>
@@ -412,7 +432,7 @@ export default function PolicyDetail() {
                     {canEdit && (
                       <button
                         onClick={() => unlinkControlMutation.mutate(link.control?.id)}
-                        className="p-1 text-surface-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="p-1 text-surface-500 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
                         title="Unlink"
                       >
                         <XMarkIcon className="w-4 h-4" />
@@ -439,7 +459,9 @@ export default function PolicyDetail() {
                   return (
                     <button
                       key={nextStatus}
-                      onClick={() => setStatusChangeModal({ isOpen: true, targetStatus: nextStatus })}
+                      onClick={() =>
+                        setStatusChangeModal({ isOpen: true, targetStatus: nextStatus })
+                      }
                       disabled={updateStatusMutation.isPending}
                       className="btn-outline w-full justify-center"
                     >
@@ -483,7 +505,7 @@ export default function PolicyDetail() {
                     className={clsx(
                       'text-sm',
                       policy.nextReviewDue && new Date(policy.nextReviewDue) < new Date()
-                        ? 'text-red-400'
+                        ? 'text-red-600'
                         : 'text-surface-200'
                     )}
                   >
@@ -539,7 +561,7 @@ export default function PolicyDetail() {
           {/* Danger Zone */}
           {canEdit && (
             <div className="card p-6 border-red-500/30">
-              <h3 className="text-sm font-semibold text-red-400 mb-4">Danger Zone</h3>
+              <h3 className="text-sm font-semibold text-red-600 mb-4">Danger Zone</h3>
               <button
                 onClick={() => {
                   if (confirm('Are you sure you want to delete this policy?')) {
@@ -547,7 +569,7 @@ export default function PolicyDetail() {
                   }
                 }}
                 disabled={deleteMutation.isPending}
-                className="btn-outline w-full text-red-400 border-red-400/50 hover:bg-red-400/10"
+                className="btn-outline w-full text-red-600 border-red-400/50 hover:bg-red-400/10"
               >
                 <TrashIcon className="w-4 h-4 mr-2" />
                 Delete Policy
@@ -612,18 +634,19 @@ export default function PolicyDetail() {
                   setStatusChangeModal({ isOpen: false, targetStatus: null });
                   setStatusChangeNotes('');
                 }}
-                className="text-surface-400 hover:text-surface-100"
+                className="text-surface-600 hover:text-surface-100"
               >
                 <XMarkIcon className="w-5 h-5" />
               </button>
             </div>
 
             <div className="mb-4">
-              <p className="text-surface-300">
+              <p className="text-surface-700">
                 Move this policy from{' '}
-                <span className={clsx('badge', statusConfig.color)}>{statusConfig.label}</span>
-                {' '}to{' '}
-                <span className={clsx('badge', STATUS_CONFIG[statusChangeModal.targetStatus]?.color)}>
+                <span className={clsx('badge', statusConfig.color)}>{statusConfig.label}</span> to{' '}
+                <span
+                  className={clsx('badge', STATUS_CONFIG[statusChangeModal.targetStatus]?.color)}
+                >
                   {STATUS_CONFIG[statusChangeModal.targetStatus]?.label}
                 </span>
               </p>
@@ -708,7 +731,7 @@ function NewVersionModal({
       <div className="relative bg-surface-900 border border-surface-800 rounded-xl w-full max-w-md mx-4 p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-semibold text-surface-100">Upload New Version</h2>
-          <button onClick={onClose} className="text-surface-400 hover:text-surface-100">
+          <button onClick={onClose} className="text-surface-600 hover:text-surface-100">
             <XMarkIcon className="w-5 h-5" />
           </button>
         </div>
@@ -781,7 +804,8 @@ function LinkControlModal({
 
   const { data: controlsData } = useQuery({
     queryKey: ['controls-for-linking', search],
-    queryFn: () => controlsApi.list({ search: search || undefined, limit: 50 }).then((res) => res.data),
+    queryFn: () =>
+      controlsApi.list({ search: search || undefined, limit: 50 }).then((res) => res.data),
   });
 
   const linkMutation = useMutation({
@@ -811,12 +835,12 @@ function LinkControlModal({
       <div className="relative bg-surface-900 border border-surface-800 rounded-xl w-full max-w-lg mx-4 p-6 max-h-[80vh] flex flex-col">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-surface-100">Link Policy to Controls</h2>
-          <button onClick={onClose} className="text-surface-400 hover:text-surface-100">
+          <button onClick={onClose} className="text-surface-600 hover:text-surface-100">
             <XMarkIcon className="w-5 h-5" />
           </button>
         </div>
 
-        <p className="text-sm text-surface-400 mb-4">
+        <p className="text-sm text-surface-600 mb-4">
           Select controls to link this policy as evidence:
         </p>
 
@@ -863,7 +887,7 @@ function LinkControlModal({
         </div>
 
         {selectedControlIds.length > 0 && (
-          <p className="text-sm text-surface-400 mt-3">
+          <p className="text-sm text-surface-600 mt-3">
             {selectedControlIds.length} control(s) selected
           </p>
         )}
@@ -913,7 +937,12 @@ function EditPolicyModal({
         type: category as any,
         effectiveDate: effectiveDate || undefined,
         reviewDate: nextReviewDue || undefined,
-        tags: tags ? tags.split(',').map((t: string) => t.trim()).filter(Boolean) : [],
+        tags: tags
+          ? tags
+              .split(',')
+              .map((t: string) => t.trim())
+              .filter(Boolean)
+          : [],
       }),
     onSuccess: () => {
       toast.success('Policy updated!');
@@ -930,7 +959,7 @@ function EditPolicyModal({
       <div className="relative bg-surface-900 border border-surface-800 rounded-xl w-full max-w-lg mx-4 p-6 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-semibold text-surface-100">Edit Policy</h2>
-          <button onClick={onClose} className="text-surface-400 hover:text-surface-100">
+          <button onClick={onClose} className="text-surface-600 hover:text-surface-100">
             <XMarkIcon className="w-5 h-5" />
           </button>
         </div>
@@ -1029,4 +1058,3 @@ function formatFileSize(bytes: number): string {
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
-

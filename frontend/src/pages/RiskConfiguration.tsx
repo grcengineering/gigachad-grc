@@ -100,7 +100,11 @@ export default function RiskConfiguration() {
   const queryClient = useQueryClient();
 
   // Fetch current configuration
-  const { data: config, isLoading, error } = useQuery<RiskConfiguration>({
+  const {
+    data: config,
+    isLoading,
+    error,
+  } = useQuery<RiskConfiguration>({
     queryKey: ['risk-config'],
     queryFn: async () => {
       const response = await riskConfigApi.get();
@@ -141,7 +145,9 @@ export default function RiskConfiguration() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500 dark:text-gray-500 dark:text-surface-400">Loading configuration...</div>
+        <div className="text-gray-500 dark:text-gray-500 dark:text-surface-600">
+          Loading configuration...
+        </div>
       </div>
     );
   }
@@ -149,7 +155,7 @@ export default function RiskConfiguration() {
   if (error) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-red-500 dark:text-red-400">Failed to load configuration</div>
+        <div className="text-red-500 dark:text-red-600">Failed to load configuration</div>
       </div>
     );
   }
@@ -159,8 +165,12 @@ export default function RiskConfiguration() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-900 dark:text-white">Risk Configuration</h1>
-          <p className="text-gray-500 dark:text-gray-500 dark:text-surface-400 mt-1">Configure risk management settings and methodology</p>
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-900 dark:text-white">
+            Risk Configuration
+          </h1>
+          <p className="text-gray-500 dark:text-gray-500 dark:text-surface-600 mt-1">
+            Configure risk management settings and methodology
+          </p>
         </div>
         <div className="flex items-center gap-3">
           {updateMutation.isPending && (
@@ -176,7 +186,7 @@ export default function RiskConfiguration() {
               }
             }}
             disabled={resetMutation.isPending}
-            className="px-4 py-2 bg-gray-100 dark:bg-surface-700 text-gray-700 dark:text-surface-300 rounded-lg hover:bg-gray-200 dark:hover:bg-surface-600 flex items-center gap-2"
+            className="px-4 py-2 bg-gray-100 dark:bg-surface-700 text-gray-700 dark:text-surface-700 rounded-lg hover:bg-gray-200 dark:hover:bg-surface-600 flex items-center gap-2"
           >
             <ArrowPathIcon className="w-4 h-4" />
             Reset to Defaults
@@ -186,14 +196,14 @@ export default function RiskConfiguration() {
 
       {/* Tabs */}
       <div className="flex gap-2 border-b border-gray-200 dark:border-surface-700 pb-px">
-        {tabs.map(tab => (
+        {tabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
               activeTab === tab.key
                 ? 'border-brand-500 text-brand-500 dark:text-brand-400'
-                : 'border-transparent text-gray-500 dark:text-gray-500 dark:text-surface-400 hover:text-gray-700 dark:hover:text-surface-300'
+                : 'border-transparent text-gray-500 dark:text-gray-500 dark:text-surface-600 hover:text-gray-700 dark:hover:text-surface-700'
             }`}
           >
             <tab.icon className="w-4 h-4" />
@@ -205,34 +215,19 @@ export default function RiskConfiguration() {
       {/* Tab Content */}
       <div className="bg-white dark:bg-surface-800 rounded-xl border border-gray-200 dark:border-surface-700 p-6">
         {activeTab === 'scoring' && config && (
-          <ScoringMethodology
-            config={config}
-            onUpdate={(data) => updateMutation.mutate(data)}
-          />
+          <ScoringMethodology config={config} onUpdate={(data) => updateMutation.mutate(data)} />
         )}
         {activeTab === 'categories' && config && (
-          <RiskCategories
-            config={config}
-            onUpdate={(data) => updateMutation.mutate(data)}
-          />
+          <RiskCategories config={config} onUpdate={(data) => updateMutation.mutate(data)} />
         )}
         {activeTab === 'workflow' && config && (
-          <WorkflowSettingsTab
-            config={config}
-            onUpdate={(data) => updateMutation.mutate(data)}
-          />
+          <WorkflowSettingsTab config={config} onUpdate={(data) => updateMutation.mutate(data)} />
         )}
         {activeTab === 'slas' && config && (
-          <SLASettingsTab
-            config={config}
-            onUpdate={(data) => updateMutation.mutate(data)}
-          />
+          <SLASettingsTab config={config} onUpdate={(data) => updateMutation.mutate(data)} />
         )}
         {activeTab === 'appetite' && config && (
-          <RiskAppetiteTab
-            config={config}
-            onUpdate={(data) => updateMutation.mutate(data)}
-          />
+          <RiskAppetiteTab config={config} onUpdate={(data) => updateMutation.mutate(data)} />
         )}
       </div>
     </div>
@@ -261,7 +256,8 @@ function ScoringMethodology({
   const methodologyDetails = {
     qualitative: {
       title: 'Qualitative Risk Assessment',
-      description: 'Uses subjective judgment and categorical scales to assess risk levels. Best for organizations starting their risk management journey or when precise data is unavailable.',
+      description:
+        'Uses subjective judgment and categorical scales to assess risk levels. Best for organizations starting their risk management journey or when precise data is unavailable.',
       formula: 'Risk Score = Likelihood Rating × Impact Rating',
       pros: [
         'Easy to understand and communicate',
@@ -286,8 +282,10 @@ function ScoringMethodology({
     },
     quantitative: {
       title: 'Quantitative Risk Assessment',
-      description: 'Uses numerical data and statistical methods to calculate risk in monetary terms. Enables precise cost-benefit analysis and ROI calculations for security investments.',
-      formula: 'ALE = SLE × ARO\nwhere:\n• ALE = Annual Loss Expectancy\n• SLE = Single Loss Expectancy (Asset Value × Exposure Factor)\n• ARO = Annual Rate of Occurrence',
+      description:
+        'Uses numerical data and statistical methods to calculate risk in monetary terms. Enables precise cost-benefit analysis and ROI calculations for security investments.',
+      formula:
+        'ALE = SLE × ARO\nwhere:\n• ALE = Annual Loss Expectancy\n• SLE = Single Loss Expectancy (Asset Value × Exposure Factor)\n• ARO = Annual Rate of Occurrence',
       pros: [
         'Objective and data-driven',
         'Enables precise ROI calculations',
@@ -309,12 +307,19 @@ function ScoringMethodology({
         'Insurance and actuarial analysis',
         'Regulatory compliance (Basel, Solvency II)',
       ],
-      standards: ['FAIR (Factor Analysis of Information Risk)', 'Basel III', 'Solvency II', 'Monte Carlo Simulation'],
+      standards: [
+        'FAIR (Factor Analysis of Information Risk)',
+        'Basel III',
+        'Solvency II',
+        'Monte Carlo Simulation',
+      ],
     },
     hybrid: {
       title: 'Hybrid Risk Assessment',
-      description: 'Combines qualitative and quantitative methods, using qualitative assessments for initial screening and quantitative analysis for high-priority risks requiring detailed analysis.',
-      formula: 'Initial: Likelihood × Impact Matrix\nDetailed: ALE = SLE × ARO (for high-priority risks)',
+      description:
+        'Combines qualitative and quantitative methods, using qualitative assessments for initial screening and quantitative analysis for high-priority risks requiring detailed analysis.',
+      formula:
+        'Initial: Likelihood × Impact Matrix\nDetailed: ALE = SLE × ARO (for high-priority risks)',
       pros: [
         'Flexibility for different risk types',
         'Efficient resource allocation',
@@ -353,103 +358,155 @@ function ScoringMethodology({
             {showMethodologyDetails ? 'Hide Details' : 'Learn More'}
           </button>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Qualitative */}
-          <label className={`p-4 rounded-lg border cursor-pointer transition-all ${
-            methodology === 'qualitative' 
-              ? 'border-brand-500 bg-brand-500/10 ring-2 ring-brand-500' 
-              : 'border-gray-200 dark:border-surface-700 bg-gray-50 dark:bg-surface-700/50 hover:border-brand-500/50'
-          }`}>
+          <label
+            className={`p-4 rounded-lg border cursor-pointer transition-all ${
+              methodology === 'qualitative'
+                ? 'border-brand-500 bg-brand-500/10 ring-2 ring-brand-500'
+                : 'border-gray-200 dark:border-surface-700 bg-gray-50 dark:bg-surface-700/50 hover:border-brand-500/50'
+            }`}
+          >
             <input
               type="radio"
               name="methodology"
               value="qualitative"
               checked={methodology === 'qualitative'}
-              onChange={e => handleMethodologyChange(e.target.value)}
+              onChange={(e) => handleMethodologyChange(e.target.value)}
               className="sr-only"
             />
             <div className="flex items-start gap-3">
-              <div className={`p-2 rounded-lg ${methodology === 'qualitative' ? 'bg-brand-500/20' : 'bg-gray-200 dark:bg-surface-600'}`}>
-                <ChartBarIcon className={`w-5 h-5 ${methodology === 'qualitative' ? 'text-brand-400' : 'text-gray-500 dark:text-surface-400'}`} />
+              <div
+                className={`p-2 rounded-lg ${methodology === 'qualitative' ? 'bg-brand-500/20' : 'bg-gray-200 dark:bg-surface-600'}`}
+              >
+                <ChartBarIcon
+                  className={`w-5 h-5 ${methodology === 'qualitative' ? 'text-brand-400' : 'text-gray-500 dark:text-surface-600'}`}
+                />
               </div>
               <div className="flex-1">
                 <p className="text-gray-900 dark:text-white font-medium">Qualitative</p>
-                <p className="text-gray-500 dark:text-surface-400 text-sm mt-1">
+                <p className="text-gray-500 dark:text-surface-600 text-sm mt-1">
                   Likelihood × Impact matrix using categorical scales (1-5)
                 </p>
                 <div className="mt-3 flex flex-wrap gap-1">
-                  <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 text-xs rounded">Easy</span>
-                  <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 text-xs rounded">Fast</span>
-                  <span className="px-2 py-0.5 bg-purple-500/20 text-purple-400 text-xs rounded">ISO 31000</span>
+                  <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-600 text-xs rounded">
+                    Easy
+                  </span>
+                  <span className="px-2 py-0.5 bg-blue-500/20 text-blue-600 text-xs rounded">
+                    Fast
+                  </span>
+                  <span className="px-2 py-0.5 bg-purple-500/20 text-purple-600 text-xs rounded">
+                    ISO 31000
+                  </span>
                 </div>
               </div>
             </div>
           </label>
 
           {/* Quantitative */}
-          <label className={`p-4 rounded-lg border cursor-pointer transition-all ${
-            methodology === 'quantitative' 
-              ? 'border-brand-500 bg-brand-500/10 ring-2 ring-brand-500' 
-              : 'border-gray-200 dark:border-surface-700 bg-gray-50 dark:bg-surface-700/50 hover:border-brand-500/50'
-          }`}>
+          <label
+            className={`p-4 rounded-lg border cursor-pointer transition-all ${
+              methodology === 'quantitative'
+                ? 'border-brand-500 bg-brand-500/10 ring-2 ring-brand-500'
+                : 'border-gray-200 dark:border-surface-700 bg-gray-50 dark:bg-surface-700/50 hover:border-brand-500/50'
+            }`}
+          >
             <input
               type="radio"
               name="methodology"
               value="quantitative"
               checked={methodology === 'quantitative'}
-              onChange={e => handleMethodologyChange(e.target.value)}
+              onChange={(e) => handleMethodologyChange(e.target.value)}
               className="sr-only"
             />
             <div className="flex items-start gap-3">
-              <div className={`p-2 rounded-lg ${methodology === 'quantitative' ? 'bg-brand-500/20' : 'bg-gray-200 dark:bg-surface-600'}`}>
-                <svg className={`w-5 h-5 ${methodology === 'quantitative' ? 'text-brand-400' : 'text-gray-500 dark:text-surface-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <div
+                className={`p-2 rounded-lg ${methodology === 'quantitative' ? 'bg-brand-500/20' : 'bg-gray-200 dark:bg-surface-600'}`}
+              >
+                <svg
+                  className={`w-5 h-5 ${methodology === 'quantitative' ? 'text-brand-400' : 'text-gray-500 dark:text-surface-600'}`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
                 </svg>
               </div>
               <div className="flex-1">
                 <p className="text-gray-900 dark:text-white font-medium">Quantitative</p>
-                <p className="text-gray-500 dark:text-surface-400 text-sm mt-1">
+                <p className="text-gray-500 dark:text-surface-600 text-sm mt-1">
                   Annual Loss Expectancy (ALE) using financial data
                 </p>
                 <div className="mt-3 flex flex-wrap gap-1">
-                  <span className="px-2 py-0.5 bg-amber-500/20 text-amber-400 text-xs rounded">Advanced</span>
-                  <span className="px-2 py-0.5 bg-green-500/20 text-green-400 text-xs rounded">ROI</span>
-                  <span className="px-2 py-0.5 bg-purple-500/20 text-purple-400 text-xs rounded">FAIR</span>
+                  <span className="px-2 py-0.5 bg-amber-500/20 text-amber-600 text-xs rounded">
+                    Advanced
+                  </span>
+                  <span className="px-2 py-0.5 bg-green-500/20 text-green-600 text-xs rounded">
+                    ROI
+                  </span>
+                  <span className="px-2 py-0.5 bg-purple-500/20 text-purple-600 text-xs rounded">
+                    FAIR
+                  </span>
                 </div>
               </div>
             </div>
           </label>
 
           {/* Hybrid */}
-          <label className={`p-4 rounded-lg border cursor-pointer transition-all ${
-            methodology === 'hybrid' 
-              ? 'border-brand-500 bg-brand-500/10 ring-2 ring-brand-500' 
-              : 'border-gray-200 dark:border-surface-700 bg-gray-50 dark:bg-surface-700/50 hover:border-brand-500/50'
-          }`}>
+          <label
+            className={`p-4 rounded-lg border cursor-pointer transition-all ${
+              methodology === 'hybrid'
+                ? 'border-brand-500 bg-brand-500/10 ring-2 ring-brand-500'
+                : 'border-gray-200 dark:border-surface-700 bg-gray-50 dark:bg-surface-700/50 hover:border-brand-500/50'
+            }`}
+          >
             <input
               type="radio"
               name="methodology"
               value="hybrid"
               checked={methodology === 'hybrid'}
-              onChange={e => handleMethodologyChange(e.target.value)}
+              onChange={(e) => handleMethodologyChange(e.target.value)}
               className="sr-only"
             />
             <div className="flex items-start gap-3">
-              <div className={`p-2 rounded-lg ${methodology === 'hybrid' ? 'bg-brand-500/20' : 'bg-gray-200 dark:bg-surface-600'}`}>
-                <svg className={`w-5 h-5 ${methodology === 'hybrid' ? 'text-brand-400' : 'text-gray-500 dark:text-surface-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+              <div
+                className={`p-2 rounded-lg ${methodology === 'hybrid' ? 'bg-brand-500/20' : 'bg-gray-200 dark:bg-surface-600'}`}
+              >
+                <svg
+                  className={`w-5 h-5 ${methodology === 'hybrid' ? 'text-brand-400' : 'text-gray-500 dark:text-surface-600'}`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"
+                  />
                 </svg>
               </div>
               <div className="flex-1">
                 <p className="text-gray-900 dark:text-white font-medium">Hybrid</p>
-                <p className="text-gray-500 dark:text-surface-400 text-sm mt-1">
+                <p className="text-gray-500 dark:text-surface-600 text-sm mt-1">
                   Qualitative screening + Quantitative deep-dive
                 </p>
                 <div className="mt-3 flex flex-wrap gap-1">
-                  <span className="px-2 py-0.5 bg-cyan-500/20 text-cyan-400 text-xs rounded">Flexible</span>
-                  <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-xs rounded">Scalable</span>
-                  <span className="px-2 py-0.5 bg-purple-500/20 text-purple-400 text-xs rounded">Best Practice</span>
+                  <span className="px-2 py-0.5 bg-cyan-500/20 text-cyan-600 text-xs rounded">
+                    Flexible
+                  </span>
+                  <span className="px-2 py-0.5 bg-orange-500/20 text-orange-600 text-xs rounded">
+                    Scalable
+                  </span>
+                  <span className="px-2 py-0.5 bg-purple-500/20 text-purple-600 text-xs rounded">
+                    Best Practice
+                  </span>
                 </div>
               </div>
             </div>
@@ -460,28 +517,42 @@ function ScoringMethodology({
       {/* Methodology Details Panel */}
       {showMethodologyDetails && currentMethodology && (
         <div className="p-6 bg-gray-50 dark:bg-surface-700/30 rounded-xl border border-gray-200 dark:border-surface-700">
-          <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">{currentMethodology.title}</h4>
-          <p className="text-gray-600 dark:text-surface-300 text-sm mb-4">{currentMethodology.description}</p>
-          
+          <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+            {currentMethodology.title}
+          </h4>
+          <p className="text-gray-600 dark:text-surface-700 text-sm mb-4">
+            {currentMethodology.description}
+          </p>
+
           {/* Formula */}
           <div className="mb-6 p-4 bg-gray-900 dark:bg-surface-900 rounded-lg">
             <p className="text-xs text-gray-400 mb-2 uppercase tracking-wider">Formula</p>
-            <pre className="text-emerald-400 font-mono text-sm whitespace-pre-wrap">{currentMethodology.formula}</pre>
+            <pre className="text-emerald-600 font-mono text-sm whitespace-pre-wrap">
+              {currentMethodology.formula}
+            </pre>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Advantages */}
             <div>
-              <h5 className="text-sm font-medium text-emerald-400 mb-3 flex items-center gap-2">
+              <h5 className="text-sm font-medium text-emerald-600 mb-3 flex items-center gap-2">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
                 </svg>
                 Advantages
               </h5>
               <ul className="space-y-2">
                 {currentMethodology.pros.map((pro, i) => (
-                  <li key={i} className="text-sm text-gray-600 dark:text-surface-300 flex items-start gap-2">
-                    <span className="text-emerald-400 mt-1">•</span>
+                  <li
+                    key={i}
+                    className="text-sm text-gray-600 dark:text-surface-700 flex items-start gap-2"
+                  >
+                    <span className="text-emerald-600 mt-1">•</span>
                     {pro}
                   </li>
                 ))}
@@ -490,16 +561,24 @@ function ScoringMethodology({
 
             {/* Limitations */}
             <div>
-              <h5 className="text-sm font-medium text-amber-400 mb-3 flex items-center gap-2">
+              <h5 className="text-sm font-medium text-amber-600 mb-3 flex items-center gap-2">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
                 </svg>
                 Limitations
               </h5>
               <ul className="space-y-2">
                 {currentMethodology.cons.map((con, i) => (
-                  <li key={i} className="text-sm text-gray-600 dark:text-surface-300 flex items-start gap-2">
-                    <span className="text-amber-400 mt-1">•</span>
+                  <li
+                    key={i}
+                    className="text-sm text-gray-600 dark:text-surface-700 flex items-start gap-2"
+                  >
+                    <span className="text-amber-600 mt-1">•</span>
                     {con}
                   </li>
                 ))}
@@ -510,16 +589,24 @@ function ScoringMethodology({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 pt-6 border-t border-gray-200 dark:border-surface-700">
             {/* Best For */}
             <div>
-              <h5 className="text-sm font-medium text-blue-400 mb-3 flex items-center gap-2">
+              <h5 className="text-sm font-medium text-blue-600 mb-3 flex items-center gap-2">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
                 </svg>
                 Best For
               </h5>
               <ul className="space-y-2">
                 {currentMethodology.bestFor.map((item, i) => (
-                  <li key={i} className="text-sm text-gray-600 dark:text-surface-300 flex items-start gap-2">
-                    <span className="text-blue-400 mt-1">•</span>
+                  <li
+                    key={i}
+                    className="text-sm text-gray-600 dark:text-surface-700 flex items-start gap-2"
+                  >
+                    <span className="text-blue-600 mt-1">•</span>
                     {item}
                   </li>
                 ))}
@@ -528,15 +615,23 @@ function ScoringMethodology({
 
             {/* Supporting Standards */}
             <div>
-              <h5 className="text-sm font-medium text-purple-400 mb-3 flex items-center gap-2">
+              <h5 className="text-sm font-medium text-purple-600 mb-3 flex items-center gap-2">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
                 </svg>
                 Supporting Standards & Frameworks
               </h5>
               <div className="flex flex-wrap gap-2">
                 {currentMethodology.standards.map((std, i) => (
-                  <span key={i} className="px-3 py-1 bg-purple-500/20 text-purple-400 text-xs rounded-full">
+                  <span
+                    key={i}
+                    className="px-3 py-1 bg-purple-500/20 text-purple-600 text-xs rounded-full"
+                  >
                     {std}
                   </span>
                 ))}
@@ -549,59 +644,84 @@ function ScoringMethodology({
       {/* Quantitative-specific settings */}
       {(methodology === 'quantitative' || methodology === 'hybrid') && (
         <div className="p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-          <h4 className="text-blue-400 font-medium mb-3 flex items-center gap-2">
+          <h4 className="text-blue-600 font-medium mb-3 flex items-center gap-2">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
             Quantitative Analysis Settings
           </h4>
-          <p className="text-gray-600 dark:text-surface-300 text-sm mb-4">
-            When using quantitative or hybrid methodology, risks can include financial data for ALE calculation.
+          <p className="text-gray-600 dark:text-surface-700 text-sm mb-4">
+            When using quantitative or hybrid methodology, risks can include financial data for ALE
+            calculation.
           </p>
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div className="p-3 bg-surface-800/50 rounded-lg">
-              <p className="text-gray-500 dark:text-surface-400">Currency</p>
+              <p className="text-gray-500 dark:text-surface-600">Currency</p>
               <p className="text-gray-900 dark:text-white font-medium">USD ($)</p>
             </div>
             <div className="p-3 bg-surface-800/50 rounded-lg">
-              <p className="text-gray-500 dark:text-surface-400">Analysis Period</p>
+              <p className="text-gray-500 dark:text-surface-600">Analysis Period</p>
               <p className="text-gray-900 dark:text-white font-medium">Annual (12 months)</p>
             </div>
           </div>
           <p className="text-xs text-gray-500 dark:text-surface-500 mt-3">
-            Configure additional quantitative settings including asset values, exposure factors, and historical loss data in individual risk assessments.
+            Configure additional quantitative settings including asset values, exposure factors, and
+            historical loss data in individual risk assessments.
           </p>
         </div>
       )}
 
       <div className="grid grid-cols-2 gap-6">
         <div>
-          <h4 className="text-gray-900 dark:text-gray-900 dark:text-white font-medium mb-3">Likelihood Scale</h4>
+          <h4 className="text-gray-900 dark:text-gray-900 dark:text-white font-medium mb-3">
+            Likelihood Scale
+          </h4>
           <div className="space-y-2">
             {config.likelihoodScale.map((level) => (
-              <div key={level.value} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-50 dark:bg-surface-700/50 rounded-lg">
+              <div
+                key={level.value}
+                className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-50 dark:bg-surface-700/50 rounded-lg"
+              >
                 <span className="w-6 h-6 rounded bg-gray-200 dark:bg-surface-600 flex items-center justify-center text-gray-900 dark:text-gray-900 dark:text-white text-sm font-medium">
                   {level.weight}
                 </span>
                 <div className="flex-1">
-                  <p className="text-gray-900 dark:text-gray-900 dark:text-white text-sm">{level.label}</p>
-                  <p className="text-gray-500 dark:text-gray-500 dark:text-surface-400 text-xs">{level.description}</p>
+                  <p className="text-gray-900 dark:text-gray-900 dark:text-white text-sm">
+                    {level.label}
+                  </p>
+                  <p className="text-gray-500 dark:text-gray-500 dark:text-surface-600 text-xs">
+                    {level.description}
+                  </p>
                 </div>
               </div>
             ))}
           </div>
         </div>
         <div>
-          <h4 className="text-gray-900 dark:text-gray-900 dark:text-white font-medium mb-3">Impact Scale</h4>
+          <h4 className="text-gray-900 dark:text-gray-900 dark:text-white font-medium mb-3">
+            Impact Scale
+          </h4>
           <div className="space-y-2">
             {config.impactScale.map((level) => (
-              <div key={level.value} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-50 dark:bg-surface-700/50 rounded-lg">
+              <div
+                key={level.value}
+                className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-50 dark:bg-surface-700/50 rounded-lg"
+              >
                 <span className="w-6 h-6 rounded bg-gray-200 dark:bg-surface-600 flex items-center justify-center text-gray-900 dark:text-gray-900 dark:text-white text-sm font-medium">
                   {level.weight}
                 </span>
                 <div className="flex-1">
-                  <p className="text-gray-900 dark:text-gray-900 dark:text-white text-sm">{level.label}</p>
-                  <p className="text-gray-500 dark:text-gray-500 dark:text-surface-400 text-xs">{level.description}</p>
+                  <p className="text-gray-900 dark:text-gray-900 dark:text-white text-sm">
+                    {level.label}
+                  </p>
+                  <p className="text-gray-500 dark:text-gray-500 dark:text-surface-600 text-xs">
+                    {level.description}
+                  </p>
                 </div>
               </div>
             ))}
@@ -610,22 +730,31 @@ function ScoringMethodology({
       </div>
 
       <div>
-        <h4 className="text-gray-900 dark:text-gray-900 dark:text-white font-medium mb-3">Risk Level Matrix</h4>
+        <h4 className="text-gray-900 dark:text-gray-900 dark:text-white font-medium mb-3">
+          Risk Level Matrix
+        </h4>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr>
-                <th className="p-2 text-gray-500 dark:text-gray-500 dark:text-surface-400 text-left"></th>
-                {config.impactScale.map(i => (
-                  <th key={i.value} className="p-2 text-center text-gray-500 dark:text-gray-500 dark:text-surface-400">{i.label}</th>
+                <th className="p-2 text-gray-500 dark:text-gray-500 dark:text-surface-600 text-left"></th>
+                {config.impactScale.map((i) => (
+                  <th
+                    key={i.value}
+                    className="p-2 text-center text-gray-500 dark:text-gray-500 dark:text-surface-600"
+                  >
+                    {i.label}
+                  </th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {[...config.likelihoodScale].reverse().map((likelihood) => (
                 <tr key={likelihood.value}>
-                  <td className="p-2 text-gray-500 dark:text-gray-500 dark:text-surface-400">{likelihood.label}</td>
-                  {config.impactScale.map(impact => {
+                  <td className="p-2 text-gray-500 dark:text-gray-500 dark:text-surface-600">
+                    {likelihood.label}
+                  </td>
+                  {config.impactScale.map((impact) => {
                     const score = likelihood.weight * impact.weight;
                     let color = 'bg-emerald-500/50';
                     if (score >= config.riskLevelThresholds.critical) color = 'bg-red-500/50';
@@ -633,7 +762,10 @@ function ScoringMethodology({
                     else if (score >= config.riskLevelThresholds.medium) color = 'bg-amber-500/50';
                     else if (score >= config.riskLevelThresholds.low) color = 'bg-emerald-500/50';
                     return (
-                      <td key={impact.value} className={`p-2 text-center ${color} text-gray-900 dark:text-white`}>
+                      <td
+                        key={impact.value}
+                        className={`p-2 text-center ${color} text-gray-900 dark:text-white`}
+                      >
                         {score}
                       </td>
                     );
@@ -672,7 +804,7 @@ function RiskCategories({
   };
 
   const handleRemoveCategory = (id: string) => {
-    const updated = categories.filter(c => c.id !== id);
+    const updated = categories.filter((c) => c.id !== id);
     setCategories(updated);
     onUpdate({ categories: updated });
   };
@@ -680,24 +812,32 @@ function RiskCategories({
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium text-gray-900 dark:text-gray-900 dark:text-white mb-4">Risk Categories</h3>
-        <p className="text-gray-500 dark:text-gray-500 dark:text-surface-400 text-sm mb-4">Define the categories used to classify risks in your organization.</p>
+        <h3 className="text-lg font-medium text-gray-900 dark:text-gray-900 dark:text-white mb-4">
+          Risk Categories
+        </h3>
+        <p className="text-gray-500 dark:text-gray-500 dark:text-surface-600 text-sm mb-4">
+          Define the categories used to classify risks in your organization.
+        </p>
       </div>
 
       <div className="space-y-3">
-        {categories.map(cat => (
-          <div key={cat.id} className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-50 dark:bg-surface-700/50 rounded-lg">
-            <div
-              className="w-4 h-4 rounded"
-              style={{ backgroundColor: cat.color }}
-            />
+        {categories.map((cat) => (
+          <div
+            key={cat.id}
+            className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-50 dark:bg-surface-700/50 rounded-lg"
+          >
+            <div className="w-4 h-4 rounded" style={{ backgroundColor: cat.color }} />
             <div className="flex-1">
-              <p className="text-gray-900 dark:text-gray-900 dark:text-white font-medium">{cat.name}</p>
-              <p className="text-gray-500 dark:text-gray-500 dark:text-surface-400 text-sm">{cat.description}</p>
+              <p className="text-gray-900 dark:text-gray-900 dark:text-white font-medium">
+                {cat.name}
+              </p>
+              <p className="text-gray-500 dark:text-gray-500 dark:text-surface-600 text-sm">
+                {cat.description}
+              </p>
             </div>
             <button
               onClick={() => handleRemoveCategory(cat.id)}
-              className="text-gray-500 dark:text-gray-500 dark:text-surface-400 hover:text-red-500 dark:hover:text-red-400 text-sm"
+              className="text-gray-500 dark:text-gray-500 dark:text-surface-600 hover:text-red-500 dark:hover:text-red-600 text-sm"
             >
               Remove
             </button>
@@ -712,20 +852,20 @@ function RiskCategories({
             type="text"
             placeholder="Category name"
             value={newCategory.name ?? ''}
-            onChange={e => setNewCategory(prev => ({ ...prev, name: e.target.value }))}
+            onChange={(e) => setNewCategory((prev) => ({ ...prev, name: e.target.value }))}
             className="flex-1 px-4 py-2 bg-gray-50 dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white"
           />
           <input
             type="text"
             placeholder="Description"
             value={newCategory.description ?? ''}
-            onChange={e => setNewCategory(prev => ({ ...prev, description: e.target.value }))}
+            onChange={(e) => setNewCategory((prev) => ({ ...prev, description: e.target.value }))}
             className="flex-1 px-4 py-2 bg-gray-50 dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white"
           />
           <input
             type="color"
             value={newCategory.color ?? '#6366f1'}
-            onChange={e => setNewCategory(prev => ({ ...prev, color: e.target.value }))}
+            onChange={(e) => setNewCategory((prev) => ({ ...prev, color: e.target.value }))}
             className="w-12 h-10 rounded cursor-pointer"
           />
           <button
@@ -762,22 +902,28 @@ function WorkflowSettingsTab({
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Workflow Settings</h3>
-        <p className="text-gray-500 dark:text-surface-400 text-sm mb-4">Configure how risks flow through the assessment and treatment process.</p>
+        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+          Workflow Settings
+        </h3>
+        <p className="text-gray-500 dark:text-surface-600 text-sm mb-4">
+          Configure how risks flow through the assessment and treatment process.
+        </p>
       </div>
 
       <div className="space-y-4">
         <h4 className="text-gray-900 dark:text-white font-medium">Assessment Workflow</h4>
-        
+
         <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-surface-700/50 rounded-lg">
           <div>
             <p className="text-gray-900 dark:text-white">Require Formal Assessment</p>
-            <p className="text-gray-500 dark:text-surface-400 text-sm">All risks must go through assessment phase</p>
+            <p className="text-gray-500 dark:text-surface-600 text-sm">
+              All risks must go through assessment phase
+            </p>
           </div>
           <input
             type="checkbox"
             checked={settings.requireAssessment ?? true}
-            onChange={e => handleChange('requireAssessment', e.target.checked)}
+            onChange={(e) => handleChange('requireAssessment', e.target.checked)}
             className="rounded border-surface-600"
           />
         </label>
@@ -785,12 +931,14 @@ function WorkflowSettingsTab({
         <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-surface-700/50 rounded-lg">
           <div>
             <p className="text-gray-900 dark:text-white">Require GRC Review</p>
-            <p className="text-gray-500 dark:text-surface-400 text-sm">Assessments must be reviewed by GRC team</p>
+            <p className="text-gray-500 dark:text-surface-600 text-sm">
+              Assessments must be reviewed by GRC team
+            </p>
           </div>
           <input
             type="checkbox"
             checked={settings.requireGrcReview ?? true}
-            onChange={e => handleChange('requireGrcReview', e.target.checked)}
+            onChange={(e) => handleChange('requireGrcReview', e.target.checked)}
             className="rounded border-surface-600"
           />
         </label>
@@ -799,10 +947,12 @@ function WorkflowSettingsTab({
           <div className="flex items-center justify-between mb-2">
             <p className="text-gray-900 dark:text-white">Executive Approval Threshold</p>
           </div>
-          <p className="text-gray-500 dark:text-surface-400 text-sm mb-3">Risk level that requires executive approval for accept/transfer/avoid</p>
+          <p className="text-gray-500 dark:text-surface-600 text-sm mb-3">
+            Risk level that requires executive approval for accept/transfer/avoid
+          </p>
           <select
             value={settings.executiveApprovalThreshold ?? 'high'}
-            onChange={e => handleChange('executiveApprovalThreshold', e.target.value)}
+            onChange={(e) => handleChange('executiveApprovalThreshold', e.target.value)}
             className="w-full px-4 py-2 bg-gray-50 dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white"
           >
             <option value="critical">Critical only</option>
@@ -815,12 +965,12 @@ function WorkflowSettingsTab({
 
       <div className="space-y-4 pt-4 border-t border-surface-700">
         <h4 className="text-gray-900 dark:text-white font-medium">Review Settings</h4>
-        
+
         <div className="p-4 bg-gray-50 dark:bg-surface-700/50 rounded-lg">
           <p className="text-gray-900 dark:text-white mb-2">Default Review Frequency</p>
           <select
             value={settings.defaultReviewFrequency ?? 'quarterly'}
-            onChange={e => handleChange('defaultReviewFrequency', e.target.value)}
+            onChange={(e) => handleChange('defaultReviewFrequency', e.target.value)}
             className="w-full px-4 py-2 bg-gray-50 dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white"
           >
             <option value="monthly">Monthly</option>
@@ -833,16 +983,18 @@ function WorkflowSettingsTab({
 
       <div className="space-y-4 pt-4 border-t border-surface-700">
         <h4 className="text-gray-900 dark:text-white font-medium">Notifications</h4>
-        
+
         <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-surface-700/50 rounded-lg">
           <div>
             <p className="text-gray-900 dark:text-white">Notify on Status Change</p>
-            <p className="text-gray-500 dark:text-surface-400 text-sm">Send notifications when risk status changes</p>
+            <p className="text-gray-500 dark:text-surface-600 text-sm">
+              Send notifications when risk status changes
+            </p>
           </div>
           <input
             type="checkbox"
             checked={settings.notifyOnStatusChange ?? true}
-            onChange={e => handleChange('notifyOnStatusChange', e.target.checked)}
+            onChange={(e) => handleChange('notifyOnStatusChange', e.target.checked)}
             className="rounded border-surface-600"
           />
         </label>
@@ -851,11 +1003,13 @@ function WorkflowSettingsTab({
           <div className="flex items-center justify-between mb-2">
             <p className="text-gray-900 dark:text-white">Due Date Reminder</p>
           </div>
-          <p className="text-gray-500 dark:text-surface-400 text-sm mb-3">Days before due date to send reminder</p>
+          <p className="text-gray-500 dark:text-surface-600 text-sm mb-3">
+            Days before due date to send reminder
+          </p>
           <input
             type="number"
             value={settings.dueDateReminderDays ?? 7}
-            onChange={e => handleChange('dueDateReminderDays', parseInt(e.target.value))}
+            onChange={(e) => handleChange('dueDateReminderDays', parseInt(e.target.value))}
             min="1"
             max="30"
             className="w-full px-4 py-2 bg-gray-50 dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white"
@@ -917,7 +1071,10 @@ function SLASettingsTab({
     onUpdate({ slaSettings: updated });
   };
 
-  const handleReviewCycleSLAChange = (level: keyof SLASettings['reviewCycleSLA'], value: number) => {
+  const handleReviewCycleSLAChange = (
+    level: keyof SLASettings['reviewCycleSLA'],
+    value: number
+  ) => {
     const updated = { ...settings, reviewCycleSLA: { ...settings.reviewCycleSLA, [level]: value } };
     setSettings(updated);
     onUpdate({ slaSettings: updated });
@@ -935,10 +1092,12 @@ function SLASettingsTab({
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">SLA Configuration</h3>
-        <p className="text-gray-500 dark:text-surface-400 text-sm">
-          Define service level agreements for each step in the risk management workflow. 
-          SLA breaches can trigger escalations and notifications.
+        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+          SLA Configuration
+        </h3>
+        <p className="text-gray-500 dark:text-surface-600 text-sm">
+          Define service level agreements for each step in the risk management workflow. SLA
+          breaches can trigger escalations and notifications.
         </p>
       </div>
 
@@ -948,7 +1107,7 @@ function SLASettingsTab({
           <ClockIcon className="w-5 h-5 text-brand-400" />
           Workflow Stage SLAs
         </h4>
-        <p className="text-gray-500 dark:text-surface-400 text-sm">
+        <p className="text-gray-500 dark:text-surface-600 text-sm">
           Maximum time allowed for each stage of the risk workflow.
         </p>
 
@@ -957,18 +1116,18 @@ function SLASettingsTab({
             <label className="block text-gray-900 dark:text-white text-sm font-medium mb-2">
               Intake → Assessment Start
             </label>
-            <p className="text-gray-500 dark:text-surface-400 text-xs mb-3">
+            <p className="text-gray-500 dark:text-surface-600 text-xs mb-3">
               Time from risk identification to beginning assessment
             </p>
             <div className="flex items-center gap-3">
               <input
                 type="number"
                 value={settings.intakeToAssessment}
-                onChange={e => handleChange('intakeToAssessment', parseInt(e.target.value) || 0)}
+                onChange={(e) => handleChange('intakeToAssessment', parseInt(e.target.value) || 0)}
                 min="1"
                 className="w-24 px-3 py-2 bg-white dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white text-sm"
               />
-              <span className="text-gray-500 dark:text-surface-400 text-sm">hours</span>
+              <span className="text-gray-500 dark:text-surface-600 text-sm">hours</span>
               <span className="text-gray-400 dark:text-surface-500 text-xs ml-auto">
                 ({formatHours(settings.intakeToAssessment)})
               </span>
@@ -979,18 +1138,18 @@ function SLASettingsTab({
             <label className="block text-gray-900 dark:text-white text-sm font-medium mb-2">
               Assessment Duration
             </label>
-            <p className="text-gray-500 dark:text-surface-400 text-xs mb-3">
+            <p className="text-gray-500 dark:text-surface-600 text-xs mb-3">
               Maximum time for risk assessor to complete analysis
             </p>
             <div className="flex items-center gap-3">
               <input
                 type="number"
                 value={settings.assessmentDuration}
-                onChange={e => handleChange('assessmentDuration', parseInt(e.target.value) || 0)}
+                onChange={(e) => handleChange('assessmentDuration', parseInt(e.target.value) || 0)}
                 min="1"
                 className="w-24 px-3 py-2 bg-white dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white text-sm"
               />
-              <span className="text-gray-500 dark:text-surface-400 text-sm">hours</span>
+              <span className="text-gray-500 dark:text-surface-600 text-sm">hours</span>
               <span className="text-gray-400 dark:text-surface-500 text-xs ml-auto">
                 ({formatHours(settings.assessmentDuration)})
               </span>
@@ -1001,18 +1160,18 @@ function SLASettingsTab({
             <label className="block text-gray-900 dark:text-white text-sm font-medium mb-2">
               GRC Review Duration
             </label>
-            <p className="text-gray-500 dark:text-surface-400 text-xs mb-3">
+            <p className="text-gray-500 dark:text-surface-600 text-xs mb-3">
               Maximum time for GRC team to review and approve assessment
             </p>
             <div className="flex items-center gap-3">
               <input
                 type="number"
                 value={settings.grcReviewDuration}
-                onChange={e => handleChange('grcReviewDuration', parseInt(e.target.value) || 0)}
+                onChange={(e) => handleChange('grcReviewDuration', parseInt(e.target.value) || 0)}
                 min="1"
                 className="w-24 px-3 py-2 bg-white dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white text-sm"
               />
-              <span className="text-gray-500 dark:text-surface-400 text-sm">hours</span>
+              <span className="text-gray-500 dark:text-surface-600 text-sm">hours</span>
               <span className="text-gray-400 dark:text-surface-500 text-xs ml-auto">
                 ({formatHours(settings.grcReviewDuration)})
               </span>
@@ -1023,18 +1182,20 @@ function SLASettingsTab({
             <label className="block text-gray-900 dark:text-white text-sm font-medium mb-2">
               Treatment Decision
             </label>
-            <p className="text-gray-500 dark:text-surface-400 text-xs mb-3">
+            <p className="text-gray-500 dark:text-surface-600 text-xs mb-3">
               Maximum time to select treatment option (mitigate, accept, transfer, avoid)
             </p>
             <div className="flex items-center gap-3">
               <input
                 type="number"
                 value={settings.treatmentDecisionDuration}
-                onChange={e => handleChange('treatmentDecisionDuration', parseInt(e.target.value) || 0)}
+                onChange={(e) =>
+                  handleChange('treatmentDecisionDuration', parseInt(e.target.value) || 0)
+                }
                 min="1"
                 className="w-24 px-3 py-2 bg-white dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white text-sm"
               />
-              <span className="text-gray-500 dark:text-surface-400 text-sm">hours</span>
+              <span className="text-gray-500 dark:text-surface-600 text-sm">hours</span>
               <span className="text-gray-400 dark:text-surface-500 text-xs ml-auto">
                 ({formatHours(settings.treatmentDecisionDuration)})
               </span>
@@ -1045,18 +1206,20 @@ function SLASettingsTab({
             <label className="block text-gray-900 dark:text-white text-sm font-medium mb-2">
               Executive Approval
             </label>
-            <p className="text-gray-500 dark:text-surface-400 text-xs mb-3">
+            <p className="text-gray-500 dark:text-surface-600 text-xs mb-3">
               Maximum time for executive to approve high-risk decisions
             </p>
             <div className="flex items-center gap-3">
               <input
                 type="number"
                 value={settings.executiveApprovalDuration}
-                onChange={e => handleChange('executiveApprovalDuration', parseInt(e.target.value) || 0)}
+                onChange={(e) =>
+                  handleChange('executiveApprovalDuration', parseInt(e.target.value) || 0)
+                }
                 min="1"
                 className="w-24 px-3 py-2 bg-white dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white text-sm"
               />
-              <span className="text-gray-500 dark:text-surface-400 text-sm">hours</span>
+              <span className="text-gray-500 dark:text-surface-600 text-sm">hours</span>
               <span className="text-gray-400 dark:text-surface-500 text-xs ml-auto">
                 ({formatHours(settings.executiveApprovalDuration)})
               </span>
@@ -1068,67 +1231,69 @@ function SLASettingsTab({
       {/* Mitigation SLAs by Risk Level */}
       <div className="space-y-4 pt-6 border-t border-gray-200 dark:border-surface-700">
         <h4 className="text-gray-900 dark:text-white font-medium flex items-center gap-2">
-          <ExclamationTriangleIcon className="w-5 h-5 text-amber-400" />
+          <ExclamationTriangleIcon className="w-5 h-5 text-amber-600" />
           Mitigation SLAs by Risk Level
         </h4>
-        <p className="text-gray-500 dark:text-surface-400 text-sm">
+        <p className="text-gray-500 dark:text-surface-600 text-sm">
           Maximum time to implement mitigation controls based on risk severity.
         </p>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
-            <label className="block text-red-400 text-sm font-medium mb-2">Critical</label>
+            <label className="block text-red-600 text-sm font-medium mb-2">Critical</label>
             <div className="flex items-center gap-2">
               <input
                 type="number"
                 value={settings.mitigationSLA.critical}
-                onChange={e => handleMitigationSLAChange('critical', parseInt(e.target.value) || 0)}
+                onChange={(e) =>
+                  handleMitigationSLAChange('critical', parseInt(e.target.value) || 0)
+                }
                 min="1"
                 className="w-20 px-3 py-2 bg-white dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white text-sm"
               />
-              <span className="text-gray-500 dark:text-surface-400 text-sm">days</span>
+              <span className="text-gray-500 dark:text-surface-600 text-sm">days</span>
             </div>
           </div>
 
           <div className="p-4 bg-orange-500/10 border border-orange-500/30 rounded-lg">
-            <label className="block text-orange-400 text-sm font-medium mb-2">High</label>
+            <label className="block text-orange-600 text-sm font-medium mb-2">High</label>
             <div className="flex items-center gap-2">
               <input
                 type="number"
                 value={settings.mitigationSLA.high}
-                onChange={e => handleMitigationSLAChange('high', parseInt(e.target.value) || 0)}
+                onChange={(e) => handleMitigationSLAChange('high', parseInt(e.target.value) || 0)}
                 min="1"
                 className="w-20 px-3 py-2 bg-white dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white text-sm"
               />
-              <span className="text-gray-500 dark:text-surface-400 text-sm">days</span>
+              <span className="text-gray-500 dark:text-surface-600 text-sm">days</span>
             </div>
           </div>
 
           <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
-            <label className="block text-amber-400 text-sm font-medium mb-2">Medium</label>
+            <label className="block text-amber-600 text-sm font-medium mb-2">Medium</label>
             <div className="flex items-center gap-2">
               <input
                 type="number"
                 value={settings.mitigationSLA.medium}
-                onChange={e => handleMitigationSLAChange('medium', parseInt(e.target.value) || 0)}
+                onChange={(e) => handleMitigationSLAChange('medium', parseInt(e.target.value) || 0)}
                 min="1"
                 className="w-20 px-3 py-2 bg-white dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white text-sm"
               />
-              <span className="text-gray-500 dark:text-surface-400 text-sm">days</span>
+              <span className="text-gray-500 dark:text-surface-600 text-sm">days</span>
             </div>
           </div>
 
           <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
-            <label className="block text-emerald-400 text-sm font-medium mb-2">Low</label>
+            <label className="block text-emerald-600 text-sm font-medium mb-2">Low</label>
             <div className="flex items-center gap-2">
               <input
                 type="number"
                 value={settings.mitigationSLA.low}
-                onChange={e => handleMitigationSLAChange('low', parseInt(e.target.value) || 0)}
+                onChange={(e) => handleMitigationSLAChange('low', parseInt(e.target.value) || 0)}
                 min="1"
                 className="w-20 px-3 py-2 bg-white dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white text-sm"
               />
-              <span className="text-gray-500 dark:text-surface-400 text-sm">days</span>
+              <span className="text-gray-500 dark:text-surface-600 text-sm">days</span>
             </div>
           </div>
         </div>
@@ -1137,67 +1302,71 @@ function SLASettingsTab({
       {/* Review Cycle SLAs by Risk Level */}
       <div className="space-y-4 pt-6 border-t border-gray-200 dark:border-surface-700">
         <h4 className="text-gray-900 dark:text-white font-medium flex items-center gap-2">
-          <ArrowPathIcon className="w-5 h-5 text-blue-400" />
+          <ArrowPathIcon className="w-5 h-5 text-blue-600" />
           Review Cycle SLAs by Risk Level
         </h4>
-        <p className="text-gray-500 dark:text-surface-400 text-sm">
+        <p className="text-gray-500 dark:text-surface-600 text-sm">
           Maximum interval between periodic risk reviews based on risk severity.
         </p>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
-            <label className="block text-red-400 text-sm font-medium mb-2">Critical</label>
+            <label className="block text-red-600 text-sm font-medium mb-2">Critical</label>
             <div className="flex items-center gap-2">
               <input
                 type="number"
                 value={settings.reviewCycleSLA.critical}
-                onChange={e => handleReviewCycleSLAChange('critical', parseInt(e.target.value) || 0)}
+                onChange={(e) =>
+                  handleReviewCycleSLAChange('critical', parseInt(e.target.value) || 0)
+                }
                 min="1"
                 className="w-20 px-3 py-2 bg-white dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white text-sm"
               />
-              <span className="text-gray-500 dark:text-surface-400 text-sm">days</span>
+              <span className="text-gray-500 dark:text-surface-600 text-sm">days</span>
             </div>
           </div>
 
           <div className="p-4 bg-orange-500/10 border border-orange-500/30 rounded-lg">
-            <label className="block text-orange-400 text-sm font-medium mb-2">High</label>
+            <label className="block text-orange-600 text-sm font-medium mb-2">High</label>
             <div className="flex items-center gap-2">
               <input
                 type="number"
                 value={settings.reviewCycleSLA.high}
-                onChange={e => handleReviewCycleSLAChange('high', parseInt(e.target.value) || 0)}
+                onChange={(e) => handleReviewCycleSLAChange('high', parseInt(e.target.value) || 0)}
                 min="1"
                 className="w-20 px-3 py-2 bg-white dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white text-sm"
               />
-              <span className="text-gray-500 dark:text-surface-400 text-sm">days</span>
+              <span className="text-gray-500 dark:text-surface-600 text-sm">days</span>
             </div>
           </div>
 
           <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
-            <label className="block text-amber-400 text-sm font-medium mb-2">Medium</label>
+            <label className="block text-amber-600 text-sm font-medium mb-2">Medium</label>
             <div className="flex items-center gap-2">
               <input
                 type="number"
                 value={settings.reviewCycleSLA.medium}
-                onChange={e => handleReviewCycleSLAChange('medium', parseInt(e.target.value) || 0)}
+                onChange={(e) =>
+                  handleReviewCycleSLAChange('medium', parseInt(e.target.value) || 0)
+                }
                 min="1"
                 className="w-20 px-3 py-2 bg-white dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white text-sm"
               />
-              <span className="text-gray-500 dark:text-surface-400 text-sm">days</span>
+              <span className="text-gray-500 dark:text-surface-600 text-sm">days</span>
             </div>
           </div>
 
           <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
-            <label className="block text-emerald-400 text-sm font-medium mb-2">Low</label>
+            <label className="block text-emerald-600 text-sm font-medium mb-2">Low</label>
             <div className="flex items-center gap-2">
               <input
                 type="number"
                 value={settings.reviewCycleSLA.low}
-                onChange={e => handleReviewCycleSLAChange('low', parseInt(e.target.value) || 0)}
+                onChange={(e) => handleReviewCycleSLAChange('low', parseInt(e.target.value) || 0)}
                 min="1"
                 className="w-20 px-3 py-2 bg-white dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white text-sm"
               />
-              <span className="text-gray-500 dark:text-surface-400 text-sm">days</span>
+              <span className="text-gray-500 dark:text-surface-600 text-sm">days</span>
             </div>
           </div>
         </div>
@@ -1206,10 +1375,10 @@ function SLASettingsTab({
       {/* Escalation Settings */}
       <div className="space-y-4 pt-6 border-t border-gray-200 dark:border-surface-700">
         <h4 className="text-gray-900 dark:text-white font-medium flex items-center gap-2">
-          <BellAlertIcon className="w-5 h-5 text-purple-400" />
+          <BellAlertIcon className="w-5 h-5 text-purple-600" />
           Escalation & Breach Handling
         </h4>
-        <p className="text-gray-500 dark:text-surface-400 text-sm">
+        <p className="text-gray-500 dark:text-surface-600 text-sm">
           Configure how SLA breaches and near-breaches are handled.
         </p>
 
@@ -1217,14 +1386,14 @@ function SLASettingsTab({
           <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-surface-700/50 rounded-lg">
             <div>
               <p className="text-gray-900 dark:text-white">Enable Escalation Warnings</p>
-              <p className="text-gray-500 dark:text-surface-400 text-sm">
+              <p className="text-gray-500 dark:text-surface-600 text-sm">
                 Notify when SLA is approaching breach threshold
               </p>
             </div>
             <input
               type="checkbox"
               checked={settings.escalationEnabled}
-              onChange={e => handleChange('escalationEnabled', e.target.checked)}
+              onChange={(e) => handleChange('escalationEnabled', e.target.checked)}
               className="rounded border-surface-600"
             />
           </label>
@@ -1234,21 +1403,24 @@ function SLASettingsTab({
               <label className="block text-gray-900 dark:text-white text-sm font-medium mb-2">
                 Escalation Threshold
               </label>
-              <p className="text-gray-500 dark:text-surface-400 text-xs mb-3">
+              <p className="text-gray-500 dark:text-surface-600 text-xs mb-3">
                 Percentage of SLA time elapsed before warning is triggered
               </p>
               <div className="flex items-center gap-3">
                 <input
                   type="number"
                   value={settings.escalationThresholdPercent}
-                  onChange={e => handleChange('escalationThresholdPercent', parseInt(e.target.value) || 0)}
+                  onChange={(e) =>
+                    handleChange('escalationThresholdPercent', parseInt(e.target.value) || 0)
+                  }
                   min="50"
                   max="99"
                   className="w-20 px-3 py-2 bg-white dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white text-sm"
                 />
-                <span className="text-gray-500 dark:text-surface-400 text-sm">%</span>
+                <span className="text-gray-500 dark:text-surface-600 text-sm">%</span>
                 <span className="text-gray-400 dark:text-surface-500 text-xs">
-                  (e.g., warn at {settings.escalationThresholdPercent}% of 48 hours = {Math.round(48 * settings.escalationThresholdPercent / 100)} hours)
+                  (e.g., warn at {settings.escalationThresholdPercent}% of 48 hours ={' '}
+                  {Math.round((48 * settings.escalationThresholdPercent) / 100)} hours)
                 </span>
               </div>
             </div>
@@ -1257,14 +1429,14 @@ function SLASettingsTab({
           <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-surface-700/50 rounded-lg">
             <div>
               <p className="text-gray-900 dark:text-white">Auto-Escalate on Breach</p>
-              <p className="text-gray-500 dark:text-surface-400 text-sm">
+              <p className="text-gray-500 dark:text-surface-600 text-sm">
                 Automatically escalate to management when SLA is breached
               </p>
             </div>
             <input
               type="checkbox"
               checked={settings.autoEscalateOnBreach}
-              onChange={e => handleChange('autoEscalateOnBreach', e.target.checked)}
+              onChange={(e) => handleChange('autoEscalateOnBreach', e.target.checked)}
               className="rounded border-surface-600"
             />
           </label>
@@ -1272,14 +1444,14 @@ function SLASettingsTab({
           <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-surface-700/50 rounded-lg">
             <div>
               <p className="text-gray-900 dark:text-white">Breach Notifications</p>
-              <p className="text-gray-500 dark:text-surface-400 text-sm">
+              <p className="text-gray-500 dark:text-surface-600 text-sm">
                 Send notifications when an SLA is breached
               </p>
             </div>
             <input
               type="checkbox"
               checked={settings.breachNotificationEnabled}
-              onChange={e => handleChange('breachNotificationEnabled', e.target.checked)}
+              onChange={(e) => handleChange('breachNotificationEnabled', e.target.checked)}
               className="rounded border-surface-600"
             />
           </label>
@@ -1288,18 +1460,20 @@ function SLASettingsTab({
             <label className="block text-gray-900 dark:text-white text-sm font-medium mb-2">
               Breach Grace Period
             </label>
-            <p className="text-gray-500 dark:text-surface-400 text-xs mb-3">
+            <p className="text-gray-500 dark:text-surface-600 text-xs mb-3">
               Additional time before a breach is marked as critical
             </p>
             <div className="flex items-center gap-3">
               <input
                 type="number"
                 value={settings.breachGracePeriodHours}
-                onChange={e => handleChange('breachGracePeriodHours', parseInt(e.target.value) || 0)}
+                onChange={(e) =>
+                  handleChange('breachGracePeriodHours', parseInt(e.target.value) || 0)
+                }
                 min="0"
                 className="w-20 px-3 py-2 bg-white dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white text-sm"
               />
-              <span className="text-gray-500 dark:text-surface-400 text-sm">hours</span>
+              <span className="text-gray-500 dark:text-surface-600 text-sm">hours</span>
             </div>
           </div>
         </div>
@@ -1310,23 +1484,27 @@ function SLASettingsTab({
         <h4 className="text-brand-400 font-medium mb-3">SLA Summary</h4>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
           <div>
-            <p className="text-gray-500 dark:text-surface-400">Total Workflow SLA</p>
+            <p className="text-gray-500 dark:text-surface-600">Total Workflow SLA</p>
             <p className="text-gray-900 dark:text-white font-medium">
               {formatHours(
-                settings.intakeToAssessment + 
-                settings.assessmentDuration + 
-                settings.grcReviewDuration + 
-                settings.treatmentDecisionDuration
+                settings.intakeToAssessment +
+                  settings.assessmentDuration +
+                  settings.grcReviewDuration +
+                  settings.treatmentDecisionDuration
               )}
             </p>
           </div>
           <div>
-            <p className="text-gray-500 dark:text-surface-400">Critical Risk Mitigation</p>
-            <p className="text-gray-900 dark:text-white font-medium">{settings.mitigationSLA.critical} days</p>
+            <p className="text-gray-500 dark:text-surface-600">Critical Risk Mitigation</p>
+            <p className="text-gray-900 dark:text-white font-medium">
+              {settings.mitigationSLA.critical} days
+            </p>
           </div>
           <div>
-            <p className="text-gray-500 dark:text-surface-400">Critical Risk Review Cycle</p>
-            <p className="text-gray-900 dark:text-white font-medium">{settings.reviewCycleSLA.critical} days</p>
+            <p className="text-gray-500 dark:text-surface-600">Critical Risk Review Cycle</p>
+            <p className="text-gray-900 dark:text-white font-medium">
+              {settings.reviewCycleSLA.critical} days
+            </p>
           </div>
         </div>
       </div>
@@ -1348,19 +1526,21 @@ function RiskAppetiteTab({
   }, [config.riskAppetite]);
 
   const handleLevelChange = (category: string, level: string) => {
-    const updated = appetite.map(a => 
-      a.category === category ? { ...a, level } : a
-    );
+    const updated = appetite.map((a) => (a.category === category ? { ...a, level } : a));
     setAppetite(updated);
     onUpdate({ riskAppetite: updated });
   };
 
   const getLevelColor = (level: string) => {
     switch (level) {
-      case 'low': return 'bg-emerald-500';
-      case 'medium': return 'bg-amber-500';
-      case 'high': return 'bg-red-500';
-      default: return 'bg-surface-500';
+      case 'low':
+        return 'bg-emerald-500';
+      case 'medium':
+        return 'bg-amber-500';
+      case 'high':
+        return 'bg-red-500';
+      default:
+        return 'bg-surface-500';
     }
   };
 
@@ -1368,14 +1548,14 @@ function RiskAppetiteTab({
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Risk Appetite</h3>
-        <p className="text-gray-500 dark:text-surface-400 text-sm mb-4">
-          Define your organization's risk appetite for each category. This determines acceptable risk levels 
-          and influences treatment decisions.
+        <p className="text-gray-500 dark:text-surface-600 text-sm mb-4">
+          Define your organization's risk appetite for each category. This determines acceptable
+          risk levels and influences treatment decisions.
         </p>
       </div>
 
       <div className="space-y-4">
-        {appetite.map(item => (
+        {appetite.map((item) => (
           <div key={item.category} className="p-4 bg-gray-50 dark:bg-surface-700/50 rounded-lg">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
@@ -1384,7 +1564,7 @@ function RiskAppetiteTab({
               </div>
               <select
                 value={item.level}
-                onChange={e => handleLevelChange(item.category, e.target.value)}
+                onChange={(e) => handleLevelChange(item.category, e.target.value)}
                 className="px-3 py-1 bg-gray-50 dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white text-sm"
               >
                 <option value="low">Low Appetite</option>
@@ -1392,7 +1572,7 @@ function RiskAppetiteTab({
                 <option value="high">High Appetite</option>
               </select>
             </div>
-            <p className="text-gray-500 dark:text-surface-400 text-sm">{item.description}</p>
+            <p className="text-gray-500 dark:text-surface-600 text-sm">{item.description}</p>
           </div>
         ))}
       </div>
@@ -1402,15 +1582,15 @@ function RiskAppetiteTab({
         <div className="flex gap-6">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-emerald-500" />
-            <span className="text-surface-300 text-sm">Low - Minimal risk tolerance</span>
+            <span className="text-surface-700 text-sm">Low - Minimal risk tolerance</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-amber-500" />
-            <span className="text-surface-300 text-sm">Medium - Moderate risk tolerance</span>
+            <span className="text-surface-700 text-sm">Medium - Moderate risk tolerance</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-red-500" />
-            <span className="text-surface-300 text-sm">High - Aggressive risk tolerance</span>
+            <span className="text-surface-700 text-sm">High - Aggressive risk tolerance</span>
           </div>
         </div>
       </div>

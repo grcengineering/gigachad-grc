@@ -14,7 +14,11 @@ import toast from 'react-hot-toast';
 const WORKSPACE_ROLES = [
   { value: 'owner', label: 'Owner', description: 'Full control of workspace' },
   { value: 'manager', label: 'Manager', description: 'Can manage controls, evidence, risks' },
-  { value: 'contributor', label: 'Contributor', description: 'Can add evidence, update implementations' },
+  {
+    value: 'contributor',
+    label: 'Contributor',
+    description: 'Can add evidence, update implementations',
+  },
   { value: 'viewer', label: 'Viewer', description: 'Read-only access' },
 ];
 
@@ -38,13 +42,11 @@ function AddMemberModal({
   // Fetch organization users
   const { data: orgUsers = [] } = useQuery({
     queryKey: ['org-users'],
-    queryFn: () => api.get('/api/users').then(r => r.data?.data || r.data || []),
+    queryFn: () => api.get('/api/users').then((r) => r.data?.data || r.data || []),
     enabled: isOpen,
   });
 
-  const availableUsers = orgUsers.filter(
-    (user: any) => !existingMemberIds.includes(user.id)
-  );
+  const availableUsers = orgUsers.filter((user: any) => !existingMemberIds.includes(user.id));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,9 +102,7 @@ function AddMemberModal({
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">
-                Role
-              </label>
+              <label className="block text-sm font-medium text-foreground mb-1">Role</label>
               <select
                 value={selectedRole}
                 onChange={(e) => setSelectedRole(e.target.value)}
@@ -150,9 +150,13 @@ export default function WorkspaceSettings() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Fetch workspace details
-  const { data: workspace, isLoading, refetch } = useQuery({
+  const {
+    data: workspace,
+    isLoading,
+    refetch,
+  } = useQuery({
     queryKey: ['workspace', id],
-    queryFn: () => api.get(`/api/workspaces/${id}`).then(r => r.data),
+    queryFn: () => api.get(`/api/workspaces/${id}`).then((r) => r.data),
     enabled: !!id,
   });
 
@@ -272,9 +276,7 @@ export default function WorkspaceSettings() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">
-              Description
-            </label>
+            <label className="block text-sm font-medium text-foreground mb-1">Description</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -283,9 +285,7 @@ export default function WorkspaceSettings() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">
-              Slug
-            </label>
+            <label className="block text-sm font-medium text-foreground mb-1">Slug</label>
             <input
               type="text"
               value={workspace.slug}
@@ -341,7 +341,9 @@ export default function WorkspaceSettings() {
               <div className="flex items-center gap-2">
                 <select
                   value={member.role}
-                  onChange={(e) => updateMemberMutation.mutate({ userId: member.userId, role: e.target.value })}
+                  onChange={(e) =>
+                    updateMemberMutation.mutate({ userId: member.userId, role: e.target.value })
+                  }
                   className="px-2 py-1 text-sm bg-surface-700 border border-surface-600 rounded text-foreground focus:outline-none"
                 >
                   {WORKSPACE_ROLES.map((role) => (
@@ -352,7 +354,7 @@ export default function WorkspaceSettings() {
                 </select>
                 <button
                   onClick={() => removeMemberMutation.mutate(member.userId)}
-                  className="p-1.5 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded"
+                  className="p-1.5 text-red-600 hover:text-red-700 hover:bg-red-500/10 rounded"
                   title="Remove member"
                 >
                   <TrashIcon className="w-4 h-4" />
@@ -371,7 +373,7 @@ export default function WorkspaceSettings() {
 
       {/* Danger Zone */}
       <section className="bg-red-500/10 rounded-lg p-6 border border-red-500/30">
-        <h2 className="text-lg font-semibold text-red-400 mb-4">Danger Zone</h2>
+        <h2 className="text-lg font-semibold text-red-600 mb-4">Danger Zone</h2>
         <div className="flex items-center justify-between">
           <div>
             <p className="text-foreground font-medium">Archive this workspace</p>
@@ -403,8 +405,8 @@ export default function WorkspaceSettings() {
           <div className="bg-surface-800 rounded-lg shadow-xl w-full max-w-md p-6">
             <h3 className="text-lg font-semibold text-foreground mb-4">Archive Workspace?</h3>
             <p className="text-muted-foreground mb-6">
-              Are you sure you want to archive <strong>{workspace.name}</strong>? 
-              This workspace will be hidden but data will be preserved.
+              Are you sure you want to archive <strong>{workspace.name}</strong>? This workspace
+              will be hidden but data will be preserved.
             </p>
             <div className="flex justify-end gap-3">
               <button
@@ -430,4 +432,3 @@ export default function WorkspaceSettings() {
     </div>
   );
 }
-

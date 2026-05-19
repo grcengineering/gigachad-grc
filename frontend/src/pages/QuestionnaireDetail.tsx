@@ -1,6 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeftIcon, DocumentArrowUpIcon, PencilIcon, TrashIcon, CheckIcon, BookOpenIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import {
+  ArrowLeftIcon,
+  DocumentArrowUpIcon,
+  PencilIcon,
+  TrashIcon,
+  CheckIcon,
+  BookOpenIcon,
+  ChevronRightIcon,
+} from '@heroicons/react/24/outline';
 import { questionnairesApi } from '../lib/api';
 import { Button } from '@/components/Button';
 import { SkeletonDetailHeader, SkeletonDetailSection } from '@/components/Skeleton';
@@ -136,27 +144,32 @@ export default function QuestionnaireDetail() {
       // Parse based on file type
       if (file.name.endsWith('.csv')) {
         // CSV parsing - assume first column is questions
-        const lines = text.split('\n').filter(line => line.trim());
+        const lines = text.split('\n').filter((line) => line.trim());
         // Skip header row if it looks like a header
         const startIndex = lines[0]?.toLowerCase().includes('question') ? 1 : 0;
-        questions = lines.slice(startIndex).map(line => {
-          // Get first column value (handles quoted CSV)
-          const match = line.match(/^"([^"]*)"|^([^,]*)/);
-          return match ? (match[1] || match[2]).trim() : line.trim();
-        }).filter(q => q.length > 0);
+        questions = lines
+          .slice(startIndex)
+          .map((line) => {
+            // Get first column value (handles quoted CSV)
+            const match = line.match(/^"([^"]*)"|^([^,]*)/);
+            return match ? (match[1] || match[2]).trim() : line.trim();
+          })
+          .filter((q) => q.length > 0);
       } else if (file.name.endsWith('.txt')) {
         // Plain text - one question per line
-        questions = text.split('\n')
-          .map(line => line.trim())
-          .filter(line => line.length > 0);
+        questions = text
+          .split('\n')
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
       } else {
         // For other formats, just split by lines and clean up
-        questions = text.split('\n')
-          .map(line => {
+        questions = text
+          .split('\n')
+          .map((line) => {
             // Remove common numbering patterns: 1., 1), Q1., etc.
             return line.replace(/^\s*(\d+[.)]|Q\d+[.)]?)\s*/, '').trim();
           })
-          .filter(line => line.length > 0);
+          .filter((line) => line.length > 0);
       }
 
       // Update form with parsed questions
@@ -192,8 +205,8 @@ export default function QuestionnaireDetail() {
       // Parse questions from text (one per line, or numbered)
       const questionLines = formData.questionsText
         .split('\n')
-        .map(line => line.trim())
-        .filter(line => line.length > 0);
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0);
 
       // Create the questionnaire
       const response = await fetch('/api/questionnaires', {
@@ -260,17 +273,20 @@ export default function QuestionnaireDetail() {
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate('/questionnaires')}
-            className="p-2 text-surface-400 hover:text-surface-100 hover:bg-surface-800 rounded-lg transition-colors"
+            className="p-2 text-surface-600 hover:text-surface-100 hover:bg-surface-800 rounded-lg transition-colors"
           >
             <ArrowLeftIcon className="w-5 h-5" />
           </button>
           <div>
             <h1 className="text-3xl font-bold text-surface-100">
-              {id === 'new' ? 'Log Incoming Questionnaire' : questionnaire?.title || 'Customer Questionnaire'}
+              {id === 'new'
+                ? 'Log Incoming Questionnaire'
+                : questionnaire?.title || 'Customer Questionnaire'}
             </h1>
             {questionnaire && (
-              <p className="mt-1 text-surface-400">
-                Received from {questionnaire.requesterName} {questionnaire.company && `at ${questionnaire.company}`}
+              <p className="mt-1 text-surface-600">
+                Received from {questionnaire.requesterName}{' '}
+                {questionnaire.company && `at ${questionnaire.company}`}
               </p>
             )}
           </div>
@@ -302,8 +318,8 @@ export default function QuestionnaireDetail() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-surface-400 mb-1">
-                  Requester Name <span className="text-red-400">*</span>
+                <label className="block text-sm font-medium text-surface-600 mb-1">
+                  Requester Name <span className="text-red-600">*</span>
                 </label>
                 <input
                   type="text"
@@ -316,8 +332,8 @@ export default function QuestionnaireDetail() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-surface-400 mb-1">
-                  Requester Email <span className="text-red-400">*</span>
+                <label className="block text-sm font-medium text-surface-600 mb-1">
+                  Requester Email <span className="text-red-600">*</span>
                 </label>
                 <input
                   type="email"
@@ -330,9 +346,7 @@ export default function QuestionnaireDetail() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-surface-400 mb-1">
-                  Company
-                </label>
+                <label className="block text-sm font-medium text-surface-600 mb-1">Company</label>
                 <input
                   type="text"
                   value={formData.company}
@@ -343,8 +357,8 @@ export default function QuestionnaireDetail() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-surface-400 mb-1">
-                  Title <span className="text-red-400">*</span>
+                <label className="block text-sm font-medium text-surface-600 mb-1">
+                  Title <span className="text-red-600">*</span>
                 </label>
                 <input
                   type="text"
@@ -357,9 +371,7 @@ export default function QuestionnaireDetail() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-surface-400 mb-1">
-                  Priority
-                </label>
+                <label className="block text-sm font-medium text-surface-600 mb-1">Priority</label>
                 <select
                   value={formData.priority}
                   onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
@@ -373,9 +385,7 @@ export default function QuestionnaireDetail() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-surface-400 mb-1">
-                  Due Date
-                </label>
+                <label className="block text-sm font-medium text-surface-600 mb-1">Due Date</label>
                 <input
                   type="date"
                   value={formData.dueDate}
@@ -386,9 +396,7 @@ export default function QuestionnaireDetail() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-surface-400 mb-1">
-                Description
-              </label>
+              <label className="block text-sm font-medium text-surface-600 mb-1">Description</label>
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -400,9 +408,12 @@ export default function QuestionnaireDetail() {
           </div>
 
           <div className="bg-surface-900 border border-surface-800 rounded-lg p-6 space-y-4">
-            <h2 className="text-xl font-semibold text-surface-100">Upload Questionnaire <span className="text-red-400">*</span></h2>
-            <p className="text-sm text-surface-400">
-              Upload the questionnaire file you received from the customer. Supports CSV, Excel, Word, PDF, and text files.
+            <h2 className="text-xl font-semibold text-surface-100">
+              Upload Questionnaire <span className="text-red-600">*</span>
+            </h2>
+            <p className="text-sm text-surface-600">
+              Upload the questionnaire file you received from the customer. Supports CSV, Excel,
+              Word, PDF, and text files.
             </p>
 
             {!formData.questionsText ? (
@@ -426,23 +437,20 @@ export default function QuestionnaireDetail() {
                   <span className="text-surface-100 text-lg mb-2">
                     {parsing ? 'Parsing file...' : 'Click to upload questionnaire'}
                   </span>
-                  <span className="text-sm text-surface-400 mb-1">
-                    or drag and drop
-                  </span>
-                  <span className="text-xs text-surface-500">
-                    CSV, Excel, Word, PDF, or TXT
-                  </span>
+                  <span className="text-sm text-surface-600 mb-1">or drag and drop</span>
+                  <span className="text-xs text-surface-500">CSV, Excel, Word, PDF, or TXT</span>
                 </label>
               </div>
             ) : (
               <div className="space-y-3">
                 <div className="flex items-center justify-between p-4 bg-surface-800 rounded-lg border border-surface-700">
                   <div className="flex items-center gap-3">
-                    <DocumentArrowUpIcon className="w-6 h-6 text-green-400" />
+                    <DocumentArrowUpIcon className="w-6 h-6 text-green-600" />
                     <div>
                       <p className="text-surface-100 font-medium">{uploadedFile?.name}</p>
-                      <p className="text-sm text-surface-400">
-                        {formData.questionsText.split('\n').filter(l => l.trim()).length} questions parsed
+                      <p className="text-sm text-surface-600">
+                        {formData.questionsText.split('\n').filter((l) => l.trim()).length}{' '}
+                        questions parsed
                       </p>
                     </div>
                   </div>
@@ -460,17 +468,25 @@ export default function QuestionnaireDetail() {
 
                 {/* Preview of parsed questions */}
                 <div className="border border-surface-700 rounded-lg p-4 max-h-60 overflow-y-auto">
-                  <h4 className="text-sm font-medium text-surface-400 mb-2">Parsed Questions Preview:</h4>
-                  <ol className="space-y-1 text-sm text-surface-300">
-                    {formData.questionsText.split('\n').filter(l => l.trim()).slice(0, 10).map((q, i) => (
-                      <li key={i} className="flex gap-2">
-                        <span className="text-surface-500 min-w-[2rem]">{i + 1}.</span>
-                        <span>{q}</span>
-                      </li>
-                    ))}
-                    {formData.questionsText.split('\n').filter(l => l.trim()).length > 10 && (
+                  <h4 className="text-sm font-medium text-surface-600 mb-2">
+                    Parsed Questions Preview:
+                  </h4>
+                  <ol className="space-y-1 text-sm text-surface-700">
+                    {formData.questionsText
+                      .split('\n')
+                      .filter((l) => l.trim())
+                      .slice(0, 10)
+                      .map((q, i) => (
+                        <li key={i} className="flex gap-2">
+                          <span className="text-surface-500 min-w-[2rem]">{i + 1}.</span>
+                          <span>{q}</span>
+                        </li>
+                      ))}
+                    {formData.questionsText.split('\n').filter((l) => l.trim()).length > 10 && (
                       <li className="text-surface-500 italic">
-                        ... and {formData.questionsText.split('\n').filter(l => l.trim()).length - 10} more questions
+                        ... and{' '}
+                        {formData.questionsText.split('\n').filter((l) => l.trim()).length - 10}{' '}
+                        more questions
                       </li>
                     )}
                   </ol>
@@ -494,8 +510,8 @@ export default function QuestionnaireDetail() {
           </div>
         </form>
       ) : questionnaire ? (
-        <QuestionnaireWorkspace 
-          questionnaire={questionnaire} 
+        <QuestionnaireWorkspace
+          questionnaire={questionnaire}
           onUpdateAnswer={updateAnswer}
           onRefresh={fetchQuestionnaire}
         />
@@ -505,35 +521,62 @@ export default function QuestionnaireDetail() {
       {showEditModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-surface-900 border border-surface-800 rounded-lg p-6 max-w-2xl w-full mx-4">
-            <h3 className="text-lg font-semibold text-surface-100 mb-4">Edit Questionnaire Details</h3>
+            <h3 className="text-lg font-semibold text-surface-100 mb-4">
+              Edit Questionnaire Details
+            </h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-surface-400 mb-1">Title</label>
-                <input type="text" value={editForm.title} onChange={(e) => setEditForm({...editForm, title: e.target.value})} 
-                  className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500" />
+                <label className="block text-sm font-medium text-surface-600 mb-1">Title</label>
+                <input
+                  type="text"
+                  value={editForm.title}
+                  onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                  className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+                />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-surface-400 mb-1">Requester Name</label>
-                  <input type="text" value={editForm.requesterName} onChange={(e) => setEditForm({...editForm, requesterName: e.target.value})} 
-                    className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500" />
+                  <label className="block text-sm font-medium text-surface-600 mb-1">
+                    Requester Name
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.requesterName}
+                    onChange={(e) => setEditForm({ ...editForm, requesterName: e.target.value })}
+                    className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-surface-400 mb-1">Requester Email</label>
-                  <input type="email" value={editForm.requesterEmail} onChange={(e) => setEditForm({...editForm, requesterEmail: e.target.value})} 
-                    className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500" />
+                  <label className="block text-sm font-medium text-surface-600 mb-1">
+                    Requester Email
+                  </label>
+                  <input
+                    type="email"
+                    value={editForm.requesterEmail}
+                    onChange={(e) => setEditForm({ ...editForm, requesterEmail: e.target.value })}
+                    className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+                  />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-surface-400 mb-1">Company</label>
-                  <input type="text" value={editForm.company} onChange={(e) => setEditForm({...editForm, company: e.target.value})} 
-                    className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500" />
+                  <label className="block text-sm font-medium text-surface-600 mb-1">Company</label>
+                  <input
+                    type="text"
+                    value={editForm.company}
+                    onChange={(e) => setEditForm({ ...editForm, company: e.target.value })}
+                    className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-surface-400 mb-1">Priority</label>
-                  <select value={editForm.priority} onChange={(e) => setEditForm({...editForm, priority: e.target.value})} 
-                    className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500">
+                  <label className="block text-sm font-medium text-surface-600 mb-1">
+                    Priority
+                  </label>
+                  <select
+                    value={editForm.priority}
+                    onChange={(e) => setEditForm({ ...editForm, priority: e.target.value })}
+                    className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+                  >
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
                     <option value="high">High</option>
@@ -541,32 +584,50 @@ export default function QuestionnaireDetail() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-surface-400 mb-1">Due Date</label>
-                <input type="date" value={editForm.dueDate} onChange={(e) => setEditForm({...editForm, dueDate: e.target.value})} 
-                  className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500" />
+                <label className="block text-sm font-medium text-surface-600 mb-1">Due Date</label>
+                <input
+                  type="date"
+                  value={editForm.dueDate}
+                  onChange={(e) => setEditForm({ ...editForm, dueDate: e.target.value })}
+                  className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+                />
               </div>
               <div>
-                <label className="block text-sm font-medium text-surface-400 mb-1">Description</label>
-                <textarea value={editForm.description} onChange={(e) => setEditForm({...editForm, description: e.target.value})} rows={3}
-                  className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500" />
+                <label className="block text-sm font-medium text-surface-600 mb-1">
+                  Description
+                </label>
+                <textarea
+                  value={editForm.description}
+                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                  rows={3}
+                  className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+                />
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-6">
-              <Button variant="secondary" onClick={() => setShowEditModal(false)}>Cancel</Button>
-              <Button onClick={async () => {
-                try {
-                  await questionnairesApi.update(id!, {
-                    ...editForm,
-                    dueDate: editForm.dueDate ? new Date(editForm.dueDate).toISOString() : undefined,
-                  });
-                  toast.success('Questionnaire updated successfully');
-                  setShowEditModal(false);
-                  fetchQuestionnaire();
-                } catch (error) {
-                  console.error('Error updating questionnaire:', error);
-                  toast.error('Failed to update questionnaire');
-                }
-              }}>Save Changes</Button>
+              <Button variant="secondary" onClick={() => setShowEditModal(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={async () => {
+                  try {
+                    await questionnairesApi.update(id!, {
+                      ...editForm,
+                      dueDate: editForm.dueDate
+                        ? new Date(editForm.dueDate).toISOString()
+                        : undefined,
+                    });
+                    toast.success('Questionnaire updated successfully');
+                    setShowEditModal(false);
+                    fetchQuestionnaire();
+                  } catch (error) {
+                    console.error('Error updating questionnaire:', error);
+                    toast.error('Failed to update questionnaire');
+                  }
+                }}
+              >
+                Save Changes
+              </Button>
             </div>
           </div>
         </div>
@@ -577,19 +638,29 @@ export default function QuestionnaireDetail() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-surface-900 border border-surface-800 rounded-lg p-6 max-w-md w-full mx-4">
             <h3 className="text-lg font-semibold text-surface-100 mb-2">Delete Questionnaire</h3>
-            <p className="text-surface-400 mb-6">Are you sure you want to delete "{questionnaire?.title}"? This action cannot be undone.</p>
+            <p className="text-surface-600 mb-6">
+              Are you sure you want to delete "{questionnaire?.title}"? This action cannot be
+              undone.
+            </p>
             <div className="flex justify-end gap-2">
-              <Button variant="secondary" onClick={() => setShowDeleteConfirm(false)}>Cancel</Button>
-              <Button variant="danger" onClick={async () => {
-                try {
-                  await questionnairesApi.delete(id!);
-                  toast.success('Questionnaire deleted successfully');
-                  navigate('/questionnaires');
-                } catch (error) {
-                  console.error('Error deleting questionnaire:', error);
-                  toast.error('Failed to delete questionnaire');
-                }
-              }}>Delete</Button>
+              <Button variant="secondary" onClick={() => setShowDeleteConfirm(false)}>
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                onClick={async () => {
+                  try {
+                    await questionnairesApi.delete(id!);
+                    toast.success('Questionnaire deleted successfully');
+                    navigate('/questionnaires');
+                  } catch (error) {
+                    console.error('Error deleting questionnaire:', error);
+                    toast.error('Failed to delete questionnaire');
+                  }
+                }}
+              >
+                Delete
+              </Button>
             </div>
           </div>
         </div>
@@ -609,31 +680,35 @@ function QuestionnaireWorkspace({
   onRefresh: () => void;
 }) {
   const [activeQuestionId, setActiveQuestionId] = useState<string | null>(
-    questionnaire.questions.find(q => q.status === 'pending')?.id || questionnaire.questions[0]?.id || null
+    questionnaire.questions.find((q) => q.status === 'pending')?.id ||
+      questionnaire.questions[0]?.id ||
+      null
   );
   const [showKbPanel, setShowKbPanel] = useState(true);
   const [answers, setAnswers] = useState<Record<string, string>>(() => {
     const initial: Record<string, string> = {};
-    questionnaire.questions.forEach(q => {
+    questionnaire.questions.forEach((q) => {
       initial[q.id] = q.answerText || '';
     });
     return initial;
   });
 
-  const activeQuestion = questionnaire.questions.find(q => q.id === activeQuestionId);
-  const answeredCount = questionnaire.questions.filter(q => q.status === 'answered' || q.status === 'approved').length;
-  const pendingCount = questionnaire.questions.filter(q => q.status === 'pending').length;
+  const activeQuestion = questionnaire.questions.find((q) => q.id === activeQuestionId);
+  const answeredCount = questionnaire.questions.filter(
+    (q) => q.status === 'answered' || q.status === 'approved'
+  ).length;
+  const pendingCount = questionnaire.questions.filter((q) => q.status === 'pending').length;
   const totalCount = questionnaire.questions.length;
   const progressPercent = totalCount > 0 ? Math.round((answeredCount / totalCount) * 100) : 0;
 
   const handleAnswerSelect = (answer: string, _kbEntryId?: string) => {
     if (activeQuestionId) {
-      setAnswers(prev => ({ ...prev, [activeQuestionId]: answer }));
+      setAnswers((prev) => ({ ...prev, [activeQuestionId]: answer }));
     }
   };
 
   const handleAnswerChange = (questionId: string, answer: string) => {
-    setAnswers(prev => ({ ...prev, [questionId]: answer }));
+    setAnswers((prev) => ({ ...prev, [questionId]: answer }));
   };
 
   const handleSaveAnswer = async (questionId: string, answer: string, kbEntryId?: string) => {
@@ -643,8 +718,10 @@ function QuestionnaireWorkspace({
 
   // Navigate to next unanswered question
   const goToNextPending = () => {
-    const currentIndex = questionnaire.questions.findIndex(q => q.id === activeQuestionId);
-    const nextPending = questionnaire.questions.find((q, i) => i > currentIndex && q.status === 'pending');
+    const currentIndex = questionnaire.questions.findIndex((q) => q.id === activeQuestionId);
+    const nextPending = questionnaire.questions.find(
+      (q, i) => i > currentIndex && q.status === 'pending'
+    );
     if (nextPending) {
       setActiveQuestionId(nextPending.id);
     }
@@ -658,25 +735,33 @@ function QuestionnaireWorkspace({
           <div className="flex items-center gap-4">
             <div>
               <h2 className="text-lg font-semibold text-surface-100">Progress</h2>
-              <p className="text-sm text-surface-400">
+              <p className="text-sm text-surface-600">
                 {answeredCount} of {totalCount} questions answered
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <span className={clsx(
-                'px-2 py-1 text-xs font-medium rounded-full capitalize',
-                questionnaire.status === 'completed' ? 'bg-green-500/20 text-green-400' :
-                questionnaire.status === 'in_progress' ? 'bg-blue-500/20 text-blue-400' :
-                'bg-amber-500/20 text-amber-400'
-              )}>
+              <span
+                className={clsx(
+                  'px-2 py-1 text-xs font-medium rounded-full capitalize',
+                  questionnaire.status === 'completed'
+                    ? 'bg-green-500/20 text-green-600'
+                    : questionnaire.status === 'in_progress'
+                      ? 'bg-blue-500/20 text-blue-600'
+                      : 'bg-amber-500/20 text-amber-600'
+                )}
+              >
                 {questionnaire.status.replace('_', ' ')}
               </span>
-              <span className={clsx(
-                'px-2 py-1 text-xs font-medium rounded-full capitalize',
-                questionnaire.priority === 'urgent' ? 'bg-red-500/20 text-red-400' :
-                questionnaire.priority === 'high' ? 'bg-orange-500/20 text-orange-400' :
-                'bg-surface-700 text-surface-300'
-              )}>
+              <span
+                className={clsx(
+                  'px-2 py-1 text-xs font-medium rounded-full capitalize',
+                  questionnaire.priority === 'urgent'
+                    ? 'bg-red-500/20 text-red-600'
+                    : questionnaire.priority === 'high'
+                      ? 'bg-orange-500/20 text-orange-600'
+                      : 'bg-surface-700 text-surface-700'
+                )}
+              >
                 {questionnaire.priority} priority
               </span>
             </div>
@@ -704,10 +789,10 @@ function QuestionnaireWorkspace({
             </button>
           </div>
         </div>
-        
+
         {/* Progress Bar */}
         <div className="relative h-2 bg-surface-700 rounded-full overflow-hidden">
-          <div 
+          <div
             className="absolute inset-y-0 left-0 bg-gradient-to-r from-brand-600 to-brand-400 transition-all duration-500"
             style={{ width: `${progressPercent}%` }}
           />
@@ -730,10 +815,7 @@ function QuestionnaireWorkspace({
       {/* Split Panel Layout */}
       <div className="flex gap-4">
         {/* Questions Panel */}
-        <div className={clsx(
-          'space-y-3 transition-all',
-          showKbPanel ? 'w-2/3' : 'w-full'
-        )}>
+        <div className={clsx('space-y-3 transition-all', showKbPanel ? 'w-2/3' : 'w-full')}>
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-surface-100">Questions</h3>
             {pendingCount > 0 && (
@@ -745,7 +827,7 @@ function QuestionnaireWorkspace({
               </button>
             )}
           </div>
-          
+
           <div className="space-y-3 max-h-[calc(100vh-380px)] overflow-y-auto pr-2">
             {questionnaire.questions.map((question, index) => (
               <QuestionAnswerCard
@@ -806,19 +888,19 @@ function QuestionAnswerCard({
   };
 
   const statusColors = {
-    answered: 'bg-green-500/20 text-green-400 border-green-500/30',
-    approved: 'bg-green-500/20 text-green-400 border-green-500/30',
-    in_progress: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-    pending: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-    rejected: 'bg-red-500/20 text-red-400 border-red-500/30',
+    answered: 'bg-green-500/20 text-green-600 border-green-500/30',
+    approved: 'bg-green-500/20 text-green-600 border-green-500/30',
+    in_progress: 'bg-blue-500/20 text-blue-600 border-blue-500/30',
+    pending: 'bg-amber-500/20 text-amber-600 border-amber-500/30',
+    rejected: 'bg-red-500/20 text-red-600 border-red-500/30',
   };
 
   return (
-    <div 
+    <div
       className={clsx(
         'bg-surface-900 border rounded-lg transition-all cursor-pointer',
-        isActive 
-          ? 'border-brand-500 ring-2 ring-brand-500/20' 
+        isActive
+          ? 'border-brand-500 ring-2 ring-brand-500/20'
           : 'border-surface-800 hover:border-surface-600'
       )}
       onClick={onSelect}
@@ -827,41 +909,46 @@ function QuestionAnswerCard({
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
-              <span className="flex items-center justify-center w-6 h-6 text-xs font-bold bg-surface-700 text-surface-300 rounded-full">
+              <span className="flex items-center justify-center w-6 h-6 text-xs font-bold bg-surface-700 text-surface-700 rounded-full">
                 {question.questionNumber || index + 1}
               </span>
               {question.category && (
-                <span className="px-2 py-0.5 text-xs bg-surface-700 text-surface-300 rounded">
+                <span className="px-2 py-0.5 text-xs bg-surface-700 text-surface-700 rounded">
                   {question.category}
                 </span>
               )}
-              <span className={clsx(
-                'px-2 py-0.5 text-xs rounded-full capitalize border',
-                statusColors[question.status as keyof typeof statusColors] || statusColors.pending
-              )}>
+              <span
+                className={clsx(
+                  'px-2 py-0.5 text-xs rounded-full capitalize border',
+                  statusColors[question.status as keyof typeof statusColors] || statusColors.pending
+                )}
+              >
                 {question.status.replace('_', ' ')}
               </span>
             </div>
             <p className="text-surface-100 font-medium leading-relaxed">{question.questionText}</p>
           </div>
-          <ChevronRightIcon className={clsx(
-            'w-5 h-5 text-surface-400 transition-transform flex-shrink-0 ml-2',
-            isActive && 'rotate-90'
-          )} />
+          <ChevronRightIcon
+            className={clsx(
+              'w-5 h-5 text-surface-600 transition-transform flex-shrink-0 ml-2',
+              isActive && 'rotate-90'
+            )}
+          />
         </div>
-        
+
         {isActive && (
-          <div className="space-y-3 mt-4 pt-4 border-t border-surface-700" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="space-y-3 mt-4 pt-4 border-t border-surface-700"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between">
-              <label className="block text-sm font-medium text-surface-400">
-                Your Answer
-              </label>
+              <label className="block text-sm font-medium text-surface-600">Your Answer</label>
               <div className="flex items-center gap-2 text-xs text-surface-500">
                 <BookOpenIcon className="w-4 h-4" />
                 Use KB panel to find answers →
               </div>
             </div>
-            
+
             <textarea
               value={currentAnswer}
               onChange={(e) => onAnswerChange(e.target.value)}
@@ -869,7 +956,7 @@ function QuestionAnswerCard({
               className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500 resize-y"
               placeholder="Enter your answer here, or use the Knowledge Base panel to find a pre-approved answer..."
             />
-            
+
             <div className="flex items-center justify-between">
               <div className="text-xs text-surface-500">
                 {currentAnswer.length > 0 && (

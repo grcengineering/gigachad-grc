@@ -116,9 +116,7 @@ export default function RecoveryTeams() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Recovery Teams</h1>
-          <p className="text-slate-400 mt-1">
-            Define and manage teams for BC/DR incident response
-          </p>
+          <p className="text-slate-400 mt-1">Define and manage teams for BC/DR incident response</p>
         </div>
         <Button variant="primary" onClick={() => setShowCreateModal(true)}>
           <PlusIcon className="h-4 w-4 mr-2" />
@@ -135,15 +133,17 @@ export default function RecoveryTeams() {
           </div>
           <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
             <p className="text-slate-400 text-sm">Active Teams</p>
-            <p className="text-2xl font-bold text-green-400 mt-1">{stats.active_count || 0}</p>
+            <p className="text-2xl font-bold text-green-600 mt-1">{stats.active_count || 0}</p>
           </div>
           <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
             <p className="text-slate-400 text-sm">Total Members</p>
-            <p className="text-2xl font-bold text-cyan-400 mt-1">{stats.total_members || 0}</p>
+            <p className="text-2xl font-bold text-cyan-600 mt-1">{stats.total_members || 0}</p>
           </div>
           <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
             <p className="text-slate-400 text-sm">Crisis Management</p>
-            <p className="text-2xl font-bold text-red-400 mt-1">{stats.crisis_management_count || 0}</p>
+            <p className="text-2xl font-bold text-red-600 mt-1">
+              {stats.crisis_management_count || 0}
+            </p>
           </div>
         </div>
       )}
@@ -233,7 +233,7 @@ export default function RecoveryTeams() {
                     className={clsx(
                       'px-2 py-1 rounded text-xs font-medium',
                       team.isActive
-                        ? 'bg-green-500/20 text-green-400'
+                        ? 'bg-green-500/20 text-green-600'
                         : 'bg-slate-600 text-slate-400'
                     )}
                   >
@@ -255,7 +255,7 @@ export default function RecoveryTeams() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Team Name <span className="text-red-400">*</span>
+                  Team Name <span className="text-red-600">*</span>
                 </label>
                 <input
                   type="text"
@@ -267,9 +267,7 @@ export default function RecoveryTeams() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Team Type
-                </label>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Team Type</label>
                 <select
                   value={newTeamType}
                   onChange={(e) => setNewTeamType(e.target.value)}
@@ -284,9 +282,7 @@ export default function RecoveryTeams() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Description
-                </label>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Description</label>
                 <textarea
                   value={newTeamDescription ?? ''}
                   onChange={(e) => setNewTeamDescription(e.target.value)}

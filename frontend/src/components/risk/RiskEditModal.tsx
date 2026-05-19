@@ -67,13 +67,13 @@ export default function RiskEditModal({
       <div className="bg-surface-800 rounded-xl border border-surface-700 p-6 w-full max-w-lg">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-semibold text-white">Edit Risk</h2>
-          <button onClick={onClose} className="text-surface-400 hover:text-white">
+          <button onClick={onClose} className="text-surface-600 hover:text-white">
             <X className="w-5 h-5" />
           </button>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm text-surface-400 mb-1">Title</label>
+            <label className="block text-sm text-surface-600 mb-1">Title</label>
             <input
               type="text"
               value={formData.title}
@@ -83,7 +83,7 @@ export default function RiskEditModal({
             />
           </div>
           <div>
-            <label className="block text-sm text-surface-400 mb-1">Description</label>
+            <label className="block text-sm text-surface-600 mb-1">Description</label>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -92,7 +92,7 @@ export default function RiskEditModal({
             />
           </div>
           <div>
-            <label className="block text-sm text-surface-400 mb-1">Category</label>
+            <label className="block text-sm text-surface-600 mb-1">Category</label>
             <select
               value={formData.category}
               onChange={(e) => setFormData({ ...formData, category: e.target.value })}
@@ -106,7 +106,7 @@ export default function RiskEditModal({
             </select>
           </div>
           <div>
-            <label className="block text-sm text-surface-400 mb-1">Review Frequency</label>
+            <label className="block text-sm text-surface-600 mb-1">Review Frequency</label>
             <select
               value={formData.reviewFrequency}
               onChange={(e) => setFormData({ ...formData, reviewFrequency: e.target.value })}
@@ -123,7 +123,7 @@ export default function RiskEditModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-surface-400 hover:text-white"
+              className="px-4 py-2 text-surface-600 hover:text-white"
             >
               Cancel
             </button>

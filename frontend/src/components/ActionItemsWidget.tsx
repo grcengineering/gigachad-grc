@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { 
-  CheckCircleIcon, 
-  ClockIcon, 
+import {
+  CheckCircleIcon,
+  ClockIcon,
   ExclamationTriangleIcon,
   ChevronRightIcon,
 } from '@heroicons/react/24/outline';
@@ -89,7 +89,7 @@ export function ActionItemsWidget({
   };
 
   const displayedTasks = tasks?.slice(0, limit) || [];
-  const pendingCount = tasks?.filter(t => t.status !== 'completed').length || 0;
+  const pendingCount = tasks?.filter((t) => t.status !== 'completed').length || 0;
 
   const getEntityLink = (type: string, id: string) => {
     switch (type) {
@@ -135,7 +135,7 @@ export function ActionItemsWidget({
         <div>
           <h3 className="text-lg font-semibold text-surface-100">Action Items</h3>
           {pendingCount > 0 && (
-            <p className="text-sm text-surface-400">
+            <p className="text-sm text-surface-600">
               {pendingCount} pending task{pendingCount !== 1 ? 's' : ''}
             </p>
           )}
@@ -143,7 +143,7 @@ export function ActionItemsWidget({
         {showCreateButton && (
           <button
             onClick={() => navigate('/tasks')}
-            className="flex items-center gap-1 text-sm text-blue-400 hover:text-blue-300"
+            className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700"
           >
             View All
             <ChevronRightIcon className="h-4 w-4" />
@@ -156,10 +156,8 @@ export function ActionItemsWidget({
         {displayedTasks.length === 0 ? (
           <div className="p-8 text-center">
             <CheckCircleIcon className="h-12 w-12 text-green-500 mx-auto mb-3" />
-            <p className="text-surface-300 font-medium">All caught up!</p>
-            <p className="text-surface-400 text-sm mt-1">
-              No pending action items
-            </p>
+            <p className="text-surface-700 font-medium">All caught up!</p>
+            <p className="text-surface-600 text-sm mt-1">No pending action items</p>
           </div>
         ) : (
           displayedTasks.map((task) => {
@@ -168,10 +166,7 @@ export function ActionItemsWidget({
             const isDueSoon = task.dueDate && getDaysUntilDue(task.dueDate) <= 3 && !isOverdue;
 
             return (
-              <div
-                key={task.id}
-                className="p-4 hover:bg-surface-700/50 transition-colors"
-              >
+              <div key={task.id} className="p-4 hover:bg-surface-700/50 transition-colors">
                 <div className="flex items-start gap-3">
                   {/* Checkbox / Status */}
                   <button
@@ -179,9 +174,10 @@ export function ActionItemsWidget({
                     disabled={task.status === 'completed'}
                     className={`
                       flex-shrink-0 mt-0.5 p-1 rounded-md transition-colors
-                      ${task.status === 'completed'
-                        ? 'text-green-500 cursor-default'
-                        : 'text-surface-400 hover:text-green-500 hover:bg-green-500/10'
+                      ${
+                        task.status === 'completed'
+                          ? 'text-green-500 cursor-default'
+                          : 'text-surface-600 hover:text-green-500 hover:bg-green-500/10'
                       }
                     `}
                     aria-label={task.status === 'completed' ? 'Completed' : 'Mark as complete'}
@@ -196,41 +192,45 @@ export function ActionItemsWidget({
                         onClick={() => navigate(getEntityLink(task.entityType, task.entityId))}
                         className={`
                           text-left font-medium truncate
-                          ${task.status === 'completed'
-                            ? 'text-surface-400 line-through'
-                            : 'text-surface-100 hover:text-blue-400'
+                          ${
+                            task.status === 'completed'
+                              ? 'text-surface-600 line-through'
+                              : 'text-surface-100 hover:text-blue-600'
                           }
                         `}
                       >
                         {task.title}
                       </button>
-                      <span className={`
+                      <span
+                        className={`
                         flex-shrink-0 text-xs px-2 py-0.5 rounded-full font-medium
                         ${priorityColors[task.priority] || priorityColors.medium}
-                      `}>
+                      `}
+                      >
                         {task.priority}
                       </span>
                     </div>
 
                     {task.description && (
-                      <p className="text-sm text-surface-400 mt-1 line-clamp-1">
+                      <p className="text-sm text-surface-600 mt-1 line-clamp-1">
                         {task.description}
                       </p>
                     )}
 
-                    <div className="flex items-center gap-3 mt-2 text-xs text-surface-400">
+                    <div className="flex items-center gap-3 mt-2 text-xs text-surface-600">
                       {task.dueDate && (
-                        <span className={`
+                        <span
+                          className={`
                           flex items-center gap-1
                           ${isOverdue ? 'text-red-500' : isDueSoon ? 'text-yellow-500' : ''}
-                        `}>
+                        `}
+                        >
                           <ClockIcon className="h-3.5 w-3.5" />
                           {isOverdue
                             ? `Overdue by ${Math.abs(getDaysUntilDue(task.dueDate))} days`
                             : isDueSoon
                               ? `Due in ${getDaysUntilDue(task.dueDate)} days`
-                              : new Date(task.dueDate).toLocaleDateString()
-                          }
+                              : new Date(task.dueDate).toLocaleDateString()}
                         </span>
                       )}
                       <span className="capitalize">{task.entityType}</span>
@@ -248,7 +248,7 @@ export function ActionItemsWidget({
         <div className="p-4 border-t border-surface-700">
           <button
             onClick={() => navigate('/tasks')}
-            className="text-sm text-blue-400 hover:text-blue-300 w-full text-center"
+            className="text-sm text-blue-600 hover:text-blue-700 w-full text-center"
           >
             View all {tasks.length} tasks
           </button>
@@ -259,4 +259,3 @@ export function ActionItemsWidget({
 }
 
 export default ActionItemsWidget;
-

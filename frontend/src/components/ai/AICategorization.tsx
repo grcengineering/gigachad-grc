@@ -1,12 +1,7 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { aiApi, CategorizationRequest, CategorizationResponse } from '@/lib/api';
-import {
-  SparklesIcon,
-  TagIcon,
-  ArrowPathIcon,
-  CheckIcon,
-} from '@heroicons/react/24/outline';
+import { SparklesIcon, TagIcon, ArrowPathIcon, CheckIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 
@@ -61,27 +56,32 @@ export default function AICategorization({
   };
 
   const getConfidenceColor = (score: number) => {
-    if (score >= 0.8) return 'text-emerald-400 bg-emerald-500/20';
-    if (score >= 0.6) return 'text-yellow-400 bg-yellow-500/20';
-    return 'text-orange-400 bg-orange-500/20';
+    if (score >= 0.8) return 'text-emerald-600 bg-emerald-500/20';
+    if (score >= 0.6) return 'text-yellow-600 bg-yellow-500/20';
+    return 'text-orange-600 bg-orange-500/20';
   };
 
   return (
-    <div className={clsx('bg-gradient-to-br from-cyan-900/20 to-teal-900/20 rounded-xl border border-cyan-500/30 overflow-hidden', className)}>
+    <div
+      className={clsx(
+        'bg-gradient-to-br from-cyan-900/20 to-teal-900/20 rounded-xl border border-cyan-500/30 overflow-hidden',
+        className
+      )}
+    >
       {/* Header */}
       <div className="flex items-center justify-between p-3 border-b border-cyan-500/30">
         <div className="flex items-center gap-2">
-          <TagIcon className="w-4 h-4 text-cyan-400" />
+          <TagIcon className="w-4 h-4 text-cyan-600" />
           <span className="text-sm font-medium text-white">AI Category Suggestion</span>
         </div>
-        
+
         <button
           onClick={handleCategorize}
           disabled={categorizeMutation.isPending || !title || !description}
           className={clsx(
             'flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all',
             categorizeMutation.isPending
-              ? 'bg-cyan-500/30 text-cyan-300 cursor-wait'
+              ? 'bg-cyan-500/30 text-cyan-700 cursor-wait'
               : 'bg-cyan-500/50 hover:bg-cyan-500/70 text-white'
           )}
         >
@@ -99,26 +99,31 @@ export default function AICategorization({
         <div className="p-3 space-y-3">
           {/* Primary Suggestion */}
           <div className="space-y-2">
-            <div className="text-xs text-surface-400">Suggested Category</div>
+            <div className="text-xs text-surface-600">Suggested Category</div>
             <button
               onClick={() => handleSelectCategory(result.suggestedCategory)}
               className="w-full flex items-center justify-between p-2 bg-surface-800/50 hover:bg-surface-800 rounded-lg transition-colors group"
             >
               <div className="flex items-center gap-2">
                 <span className="text-white font-medium">{result.suggestedCategory}</span>
-                <span className={clsx('px-1.5 py-0.5 rounded text-xs', getConfidenceColor(result.confidenceScore))}>
+                <span
+                  className={clsx(
+                    'px-1.5 py-0.5 rounded text-xs',
+                    getConfidenceColor(result.confidenceScore)
+                  )}
+                >
                   {Math.round(result.confidenceScore * 100)}%
                 </span>
               </div>
-              <CheckIcon className="w-4 h-4 text-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <CheckIcon className="w-4 h-4 text-cyan-600 opacity-0 group-hover:opacity-100 transition-opacity" />
             </button>
-            <p className="text-xs text-surface-400">{result.rationale}</p>
+            <p className="text-xs text-surface-600">{result.rationale}</p>
           </div>
 
           {/* Alternatives */}
           {result.alternativeCategories.length > 0 && (
             <div className="space-y-2">
-              <div className="text-xs text-surface-400">Alternatives</div>
+              <div className="text-xs text-surface-600">Alternatives</div>
               <div className="space-y-1">
                 {result.alternativeCategories.map((alt, i) => (
                   <button
@@ -126,12 +131,17 @@ export default function AICategorization({
                     onClick={() => handleSelectCategory(alt.category)}
                     className="w-full flex items-center justify-between p-2 bg-surface-800/30 hover:bg-surface-800/50 rounded-lg transition-colors text-sm group"
                   >
-                    <span className="text-surface-300">{alt.category}</span>
+                    <span className="text-surface-700">{alt.category}</span>
                     <div className="flex items-center gap-2">
-                      <span className={clsx('px-1.5 py-0.5 rounded text-xs', getConfidenceColor(alt.confidence))}>
+                      <span
+                        className={clsx(
+                          'px-1.5 py-0.5 rounded text-xs',
+                          getConfidenceColor(alt.confidence)
+                        )}
+                      >
                         {Math.round(alt.confidence * 100)}%
                       </span>
-                      <CheckIcon className="w-3.5 h-3.5 text-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <CheckIcon className="w-3.5 h-3.5 text-cyan-600 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
                   </button>
                 ))}
@@ -142,12 +152,12 @@ export default function AICategorization({
           {/* Suggested Tags */}
           {result.suggestedTags && result.suggestedTags.length > 0 && (
             <div className="space-y-2">
-              <div className="text-xs text-surface-400">Suggested Tags</div>
+              <div className="text-xs text-surface-600">Suggested Tags</div>
               <div className="flex flex-wrap gap-1.5">
                 {result.suggestedTags.map((tag, i) => (
                   <span
                     key={i}
-                    className="px-2 py-0.5 bg-cyan-500/20 text-cyan-300 rounded text-xs"
+                    className="px-2 py-0.5 bg-cyan-500/20 text-cyan-700 rounded text-xs"
                   >
                     {tag}
                   </span>
@@ -160,4 +170,3 @@ export default function AICategorization({
     </div>
   );
 }
-

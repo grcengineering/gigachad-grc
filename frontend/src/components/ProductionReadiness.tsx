@@ -87,18 +87,10 @@ export function ProductionReadiness() {
   }
 
   const scoreColor =
-    data.score >= 80
-      ? 'text-green-400'
-      : data.score >= 60
-        ? 'text-yellow-400'
-        : 'text-red-400';
+    data.score >= 80 ? 'text-green-600' : data.score >= 60 ? 'text-yellow-600' : 'text-red-600';
 
   const scoreBackground =
-    data.score >= 80
-      ? 'bg-green-500/20'
-      : data.score >= 60
-        ? 'bg-yellow-500/20'
-        : 'bg-red-500/20';
+    data.score >= 80 ? 'bg-green-500/20' : data.score >= 60 ? 'bg-yellow-500/20' : 'bg-red-500/20';
 
   return (
     <div className="bg-surface-800 rounded-xl overflow-hidden">
@@ -136,13 +128,13 @@ export function ProductionReadiness() {
             <div className="flex items-center gap-2 mb-2">
               {data.ready ? (
                 <>
-                  <CheckCircleIcon className="h-5 w-5 text-green-400" />
-                  <span className="font-medium text-green-400">Production Ready</span>
+                  <CheckCircleIcon className="h-5 w-5 text-green-600" />
+                  <span className="font-medium text-green-600">Production Ready</span>
                 </>
               ) : (
                 <>
-                  <XCircleIcon className="h-5 w-5 text-red-400" />
-                  <span className="font-medium text-red-400">Not Production Ready</span>
+                  <XCircleIcon className="h-5 w-5 text-red-600" />
+                  <span className="font-medium text-red-600">Not Production Ready</span>
                 </>
               )}
             </div>
@@ -158,14 +150,14 @@ export function ProductionReadiness() {
       {/* Blockers */}
       {data.blockers.length > 0 && (
         <div className="p-6 border-b border-white/10 bg-red-500/5">
-          <h4 className="text-sm font-medium text-red-400 mb-3 flex items-center gap-2">
+          <h4 className="text-sm font-medium text-red-600 mb-3 flex items-center gap-2">
             <XCircleIcon className="h-4 w-4" />
             Critical Blockers ({data.blockers.length})
           </h4>
           <ul className="space-y-2">
             {data.blockers.map((blocker, index) => (
               <li key={index} className="flex items-start gap-2 text-sm text-foreground/80">
-                <ChevronRightIcon className="h-4 w-4 mt-0.5 text-red-400 flex-shrink-0" />
+                <ChevronRightIcon className="h-4 w-4 mt-0.5 text-red-600 flex-shrink-0" />
                 {blocker}
               </li>
             ))}
@@ -176,14 +168,14 @@ export function ProductionReadiness() {
       {/* Warnings */}
       {data.warnings.length > 0 && (
         <div className="p-6 border-b border-white/10 bg-yellow-500/5">
-          <h4 className="text-sm font-medium text-yellow-400 mb-3 flex items-center gap-2">
+          <h4 className="text-sm font-medium text-yellow-600 mb-3 flex items-center gap-2">
             <ExclamationTriangleIcon className="h-4 w-4" />
             Warnings ({data.warnings.length})
           </h4>
           <ul className="space-y-2">
             {data.warnings.map((warning, index) => (
               <li key={index} className="flex items-start gap-2 text-sm text-foreground/80">
-                <ChevronRightIcon className="h-4 w-4 mt-0.5 text-yellow-400 flex-shrink-0" />
+                <ChevronRightIcon className="h-4 w-4 mt-0.5 text-yellow-600 flex-shrink-0" />
                 {warning}
               </li>
             ))}
@@ -213,9 +205,9 @@ export function ProductionReadiness() {
       {data.ready && data.warnings.length === 0 && (
         <div className="p-6 bg-green-500/5">
           <div className="flex items-center gap-3">
-            <CheckCircleIcon className="h-8 w-8 text-green-400" />
+            <CheckCircleIcon className="h-8 w-8 text-green-600" />
             <div>
-              <p className="font-medium text-green-400">Excellent Configuration!</p>
+              <p className="font-medium text-green-600">Excellent Configuration!</p>
               <p className="text-sm text-foreground/60">
                 Your GigaChad GRC instance is properly configured for production use.
               </p>
@@ -228,4 +220,3 @@ export function ProductionReadiness() {
 }
 
 export default ProductionReadiness;
-

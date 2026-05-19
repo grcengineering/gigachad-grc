@@ -27,7 +27,11 @@ export default function AIRiskAssistant() {
   const { isModuleEnabled } = useModules();
   const aiEnabled = isModuleEnabled('ai');
 
-  const { mutate, data, isPending: isLoading } = useMutation({
+  const {
+    mutate,
+    data,
+    isPending: isLoading,
+  } = useMutation({
     mutationFn: analyzeRisk,
     onError: () => {
       toast.error('AI analysis failed. Please try again or adjust your description.');
@@ -38,9 +42,11 @@ export default function AIRiskAssistant() {
     return (
       <div className="p-6 space-y-4">
         <h1 className="text-2xl font-semibold text-white">AI Risk Assistant</h1>
-        <p className="text-surface-400">
+        <p className="text-surface-600">
           The AI module is not enabled for this environment. Ask an administrator to set
-          <code className="mx-1 text-xs bg-surface-900 px-2 py-1 rounded">VITE_ENABLE_AI_MODULE=true</code>
+          <code className="mx-1 text-xs bg-surface-900 px-2 py-1 rounded">
+            VITE_ENABLE_AI_MODULE=true
+          </code>
           and provide AI provider API keys.
         </p>
       </div>
@@ -51,8 +57,9 @@ export default function AIRiskAssistant() {
     <div className="p-6 space-y-6 max-w-3xl">
       <div>
         <h1 className="text-2xl font-semibold text-white">AI Risk Assistant</h1>
-        <p className="text-surface-400 mt-1">
-          Paste a risk description and let the AI assistant suggest categorization and a treatment plan.
+        <p className="text-surface-600 mt-1">
+          Paste a risk description and let the AI assistant suggest categorization and a treatment
+          plan.
         </p>
       </div>
 
@@ -81,9 +88,7 @@ export default function AIRiskAssistant() {
       {data && (
         <div className="card p-4 space-y-3">
           <h2 className="text-lg font-semibold text-white">Suggested Analysis</h2>
-          {data.summary && (
-            <p className="text-surface-300 whitespace-pre-wrap">{data.summary}</p>
-          )}
+          {data.summary && <p className="text-surface-700 whitespace-pre-wrap">{data.summary}</p>}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2 text-sm">
             {data.suggestedCategory && (
               <div>
@@ -117,5 +122,3 @@ export default function AIRiskAssistant() {
     </div>
   );
 }
-
-

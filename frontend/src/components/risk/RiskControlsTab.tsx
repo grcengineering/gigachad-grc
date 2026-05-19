@@ -18,9 +18,9 @@ interface RiskControlsTabProps {
 }
 
 const CONTROL_EFFECTIVENESS = [
-  { value: 'none', label: 'None', color: 'text-red-400' },
-  { value: 'partial', label: 'Partial', color: 'text-amber-400' },
-  { value: 'full', label: 'Full', color: 'text-emerald-400' },
+  { value: 'none', label: 'None', color: 'text-red-600' },
+  { value: 'partial', label: 'Partial', color: 'text-amber-600' },
+  { value: 'full', label: 'Full', color: 'text-emerald-600' },
 ];
 
 function RiskControlsTab({
@@ -30,25 +30,28 @@ function RiskControlsTab({
   onUpdateEffectiveness,
   isUnlinking = false,
 }: RiskControlsTabProps) {
-  const handleUnlink = useCallback((controlId: string) => {
-    onUnlinkControl(controlId);
-  }, [onUnlinkControl]);
+  const handleUnlink = useCallback(
+    (controlId: string) => {
+      onUnlinkControl(controlId);
+    },
+    [onUnlinkControl]
+  );
   const getStatusColor = (status?: string) => {
     switch (status) {
       case 'implemented':
-        return 'bg-emerald-500/20 text-emerald-400';
+        return 'bg-emerald-500/20 text-emerald-600';
       case 'in_progress':
-        return 'bg-amber-500/20 text-amber-400';
+        return 'bg-amber-500/20 text-amber-600';
       case 'planned':
-        return 'bg-blue-500/20 text-blue-400';
+        return 'bg-blue-500/20 text-blue-600';
       default:
-        return 'bg-surface-500/20 text-surface-400';
+        return 'bg-surface-500/20 text-surface-600';
     }
   };
 
   const getEffectivenessColor = (effectiveness?: string) => {
     const config = CONTROL_EFFECTIVENESS.find((e) => e.value === effectiveness);
-    return config?.color || 'text-surface-400';
+    return config?.color || 'text-surface-600';
   };
 
   return (
@@ -65,13 +68,10 @@ function RiskControlsTab({
       </div>
 
       {controls.length === 0 ? (
-        <div className="text-center py-8 text-surface-400">
+        <div className="text-center py-8 text-surface-600">
           <Target className="w-12 h-12 mx-auto mb-3 opacity-50" />
           <p>No controls linked to this risk</p>
-          <button
-            onClick={onLinkControl}
-            className="mt-3 text-brand-400 hover:text-brand-300"
-          >
+          <button onClick={onLinkControl} className="mt-3 text-brand-400 hover:text-brand-300">
             Link a control
           </button>
         </div>
@@ -83,20 +83,16 @@ function RiskControlsTab({
               className="flex items-center justify-between p-4 bg-surface-900 rounded-lg border border-surface-700"
             >
               <div className="flex items-center gap-4">
-                <Target className="w-5 h-5 text-surface-400" />
+                <Target className="w-5 h-5 text-surface-600" />
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-brand-400 font-mono text-sm">
-                      {control.controlId}
-                    </span>
+                    <span className="text-brand-400 font-mono text-sm">{control.controlId}</span>
                     <span className="text-white">{control.title}</span>
                   </div>
                   <div className="flex items-center gap-2 mt-1">
                     {control.status && (
                       <span
-                        className={`text-xs px-2 py-0.5 rounded ${getStatusColor(
-                          control.status
-                        )}`}
+                        className={`text-xs px-2 py-0.5 rounded ${getStatusColor(control.status)}`}
                       >
                         {control.status?.replace('_', ' ')}
                       </span>
@@ -104,9 +100,7 @@ function RiskControlsTab({
                     {control.effectiveness && onUpdateEffectiveness && (
                       <select
                         value={control.effectiveness}
-                        onChange={(e) =>
-                          onUpdateEffectiveness(control.id, e.target.value)
-                        }
+                        onChange={(e) => onUpdateEffectiveness(control.id, e.target.value)}
                         className={`text-xs bg-transparent border-none cursor-pointer ${getEffectivenessColor(
                           control.effectiveness
                         )}`}
@@ -124,7 +118,7 @@ function RiskControlsTab({
               <button
                 onClick={() => handleUnlink(control.id)}
                 disabled={isUnlinking}
-                className="p-2 hover:bg-red-500/20 rounded-lg text-red-400 disabled:opacity-50"
+                className="p-2 hover:bg-red-500/20 rounded-lg text-red-600 disabled:opacity-50"
                 title="Unlink control"
               >
                 <X className="w-4 h-4" />

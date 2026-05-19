@@ -63,20 +63,20 @@ interface FindingStats {
 }
 
 const SEVERITY_CONFIG: Record<string, { label: string; color: string; bgColor: string }> = {
-  critical: { label: 'Critical', color: 'text-red-400', bgColor: 'bg-red-500/20' },
-  high: { label: 'High', color: 'text-orange-400', bgColor: 'bg-orange-500/20' },
-  medium: { label: 'Medium', color: 'text-yellow-400', bgColor: 'bg-yellow-500/20' },
-  low: { label: 'Low', color: 'text-blue-400', bgColor: 'bg-blue-500/20' },
-  observation: { label: 'Observation', color: 'text-surface-400', bgColor: 'bg-surface-500/20' },
+  critical: { label: 'Critical', color: 'text-red-600', bgColor: 'bg-red-500/20' },
+  high: { label: 'High', color: 'text-orange-600', bgColor: 'bg-orange-500/20' },
+  medium: { label: 'Medium', color: 'text-yellow-600', bgColor: 'bg-yellow-500/20' },
+  low: { label: 'Low', color: 'text-blue-600', bgColor: 'bg-blue-500/20' },
+  observation: { label: 'Observation', color: 'text-surface-600', bgColor: 'bg-surface-500/20' },
 };
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ElementType }> = {
-  open: { label: 'Open', color: 'text-red-400', icon: ExclamationTriangleIcon },
-  acknowledged: { label: 'Acknowledged', color: 'text-yellow-400', icon: ClockIcon },
-  remediation_planned: { label: 'Planned', color: 'text-blue-400', icon: ClockIcon },
-  remediation_in_progress: { label: 'In Progress', color: 'text-cyan-400', icon: ArrowPathIcon },
-  resolved: { label: 'Resolved', color: 'text-green-400', icon: CheckCircleIcon },
-  accepted_risk: { label: 'Risk Accepted', color: 'text-purple-400', icon: XCircleIcon },
+  open: { label: 'Open', color: 'text-red-600', icon: ExclamationTriangleIcon },
+  acknowledged: { label: 'Acknowledged', color: 'text-yellow-600', icon: ClockIcon },
+  remediation_planned: { label: 'Planned', color: 'text-blue-600', icon: ClockIcon },
+  remediation_in_progress: { label: 'In Progress', color: 'text-cyan-600', icon: ArrowPathIcon },
+  resolved: { label: 'Resolved', color: 'text-green-600', icon: CheckCircleIcon },
+  accepted_risk: { label: 'Risk Accepted', color: 'text-purple-600', icon: XCircleIcon },
 };
 
 const CATEGORY_OPTIONS = [
@@ -123,22 +123,29 @@ export default function AuditFindings() {
   // Queries
   const { data: findings, isLoading } = useQuery({
     queryKey: ['audit-findings', filters],
-    queryFn: () => auditFindingsApi.list(filters.auditId || filters.status || filters.severity || filters.category ? filters : undefined).then(r => r.data),
+    queryFn: () =>
+      auditFindingsApi
+        .list(
+          filters.auditId || filters.status || filters.severity || filters.category
+            ? filters
+            : undefined
+        )
+        .then((r) => r.data),
   });
 
   const { data: stats } = useQuery({
     queryKey: ['audit-findings-stats'],
-    queryFn: () => auditFindingsApi.getStats().then(r => r.data),
+    queryFn: () => auditFindingsApi.getStats().then((r) => r.data),
   });
 
   const { data: audits } = useQuery({
     queryKey: ['audits'],
-    queryFn: () => auditsApi.list().then(r => r.data),
+    queryFn: () => auditsApi.list().then((r) => r.data),
   });
 
   const { data: users } = useQuery({
     queryKey: ['users'],
-    queryFn: () => usersApi.list().then(r => r.data?.data || []),
+    queryFn: () => usersApi.list().then((r) => r.data?.data || []),
   });
 
   const findingsData = (findings || []) as unknown as Finding[];
@@ -162,7 +169,8 @@ export default function AuditFindings() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Record<string, unknown> }) => auditFindingsApi.update(id, data),
+    mutationFn: ({ id, data }: { id: string; data: Record<string, unknown> }) =>
+      auditFindingsApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['audit-findings'] });
       queryClient.invalidateQueries({ queryKey: ['audit-findings-stats'] });
@@ -203,7 +211,9 @@ export default function AuditFindings() {
   const handleBulkDelete = async () => {
     const count = selection.selectedItems.length;
     try {
-      await Promise.all(selection.selectedItems.map((f: Finding) => deleteMutation.mutateAsync(f.id)));
+      await Promise.all(
+        selection.selectedItems.map((f: Finding) => deleteMutation.mutateAsync(f.id))
+      );
       toast.success(`Deleted ${count} findings`);
       selection.clearSelection();
     } catch {
@@ -222,9 +232,14 @@ export default function AuditFindings() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-white">Audit Findings</h1>
-          <p className="text-surface-400 mt-1">Track and remediate audit findings and observations</p>
+          <p className="text-surface-600 mt-1">
+            Track and remediate audit findings and observations
+          </p>
         </div>
-        <Button leftIcon={<PlusIcon className="w-5 h-5" />} onClick={() => setIsCreateModalOpen(true)}>
+        <Button
+          leftIcon={<PlusIcon className="w-5 h-5" />}
+          onClick={() => setIsCreateModalOpen(true)}
+        >
           New Finding
         </Button>
       </div>
@@ -233,24 +248,24 @@ export default function AuditFindings() {
       {statsData && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-surface-800 rounded-lg p-4 border border-surface-700">
-            <p className="text-surface-400 text-sm">Total Findings</p>
+            <p className="text-surface-600 text-sm">Total Findings</p>
             <p className="text-2xl font-bold text-white mt-1">{statsData.total}</p>
           </div>
           <div className="bg-surface-800 rounded-lg p-4 border border-surface-700">
-            <p className="text-surface-400 text-sm">Overdue</p>
-            <p className="text-2xl font-bold text-red-400 mt-1">{statsData.overdue}</p>
+            <p className="text-surface-600 text-sm">Overdue</p>
+            <p className="text-2xl font-bold text-red-600 mt-1">{statsData.overdue}</p>
           </div>
           <div className="bg-surface-800 rounded-lg p-4 border border-surface-700">
-            <p className="text-surface-400 text-sm">Critical/High</p>
-            <p className="text-2xl font-bold text-orange-400 mt-1">
-              {(statsData.bySeverity.find(s => s.severity === 'critical')?.count || 0) +
-               (statsData.bySeverity.find(s => s.severity === 'high')?.count || 0)}
+            <p className="text-surface-600 text-sm">Critical/High</p>
+            <p className="text-2xl font-bold text-orange-600 mt-1">
+              {(statsData.bySeverity.find((s) => s.severity === 'critical')?.count || 0) +
+                (statsData.bySeverity.find((s) => s.severity === 'high')?.count || 0)}
             </p>
           </div>
           <div className="bg-surface-800 rounded-lg p-4 border border-surface-700">
-            <p className="text-surface-400 text-sm">Open</p>
-            <p className="text-2xl font-bold text-yellow-400 mt-1">
-              {statsData.byStatus.find(s => s.status === 'open')?.count || 0}
+            <p className="text-surface-600 text-sm">Open</p>
+            <p className="text-2xl font-bold text-yellow-600 mt-1">
+              {statsData.byStatus.find((s) => s.status === 'open')?.count || 0}
             </p>
           </div>
         </div>
@@ -263,8 +278,14 @@ export default function AuditFindings() {
           totalCount={findingsData.length}
           onClear={selection.clearSelection}
           actions={[
-            { id: 'delete', label: 'Delete', variant: 'danger', requiresConfirmation: true, confirmMessage: 'Are you sure you want to delete these findings?' },
-            ...STATUS_OPTIONS.map(s => ({
+            {
+              id: 'delete',
+              label: 'Delete',
+              variant: 'danger',
+              requiresConfirmation: true,
+              confirmMessage: 'Are you sure you want to delete these findings?',
+            },
+            ...STATUS_OPTIONS.map((s) => ({
               id: `status-${s.value}`,
               label: `Set ${s.label}`,
               variant: 'secondary' as const,
@@ -304,7 +325,7 @@ export default function AuditFindings() {
       {showFilters && (
         <div className="bg-surface-800 rounded-lg p-4 border border-surface-700 grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
-            <label className="block text-sm font-medium text-surface-300 mb-1">Audit</label>
+            <label className="block text-sm font-medium text-surface-700 mb-1">Audit</label>
             <select
               value={filters.auditId}
               onChange={(e) => setFilter('auditId', e.target.value)}
@@ -312,25 +333,29 @@ export default function AuditFindings() {
             >
               <option value="">All Audits</option>
               {(audits as { id: string; name: string }[])?.map((audit) => (
-                <option key={audit.id} value={audit.id}>{audit.name}</option>
+                <option key={audit.id} value={audit.id}>
+                  {audit.name}
+                </option>
               ))}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-surface-300 mb-1">Status</label>
+            <label className="block text-sm font-medium text-surface-700 mb-1">Status</label>
             <select
               value={filters.status}
               onChange={(e) => setFilter('status', e.target.value)}
               className="w-full bg-surface-700 border border-surface-600 rounded-md px-3 py-2 text-white"
             >
               <option value="">All Statuses</option>
-              {STATUS_OPTIONS.map(s => (
-                <option key={s.value} value={s.value}>{s.label}</option>
+              {STATUS_OPTIONS.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label}
+                </option>
               ))}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-surface-300 mb-1">Severity</label>
+            <label className="block text-sm font-medium text-surface-700 mb-1">Severity</label>
             <select
               value={filters.severity}
               onChange={(e) => setFilter('severity', e.target.value)}
@@ -338,20 +363,24 @@ export default function AuditFindings() {
             >
               <option value="">All Severities</option>
               {Object.entries(SEVERITY_CONFIG).map(([value, { label }]) => (
-                <option key={value} value={value}>{label}</option>
+                <option key={value} value={value}>
+                  {label}
+                </option>
               ))}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-surface-300 mb-1">Category</label>
+            <label className="block text-sm font-medium text-surface-700 mb-1">Category</label>
             <select
               value={filters.category}
               onChange={(e) => setFilter('category', e.target.value)}
               className="w-full bg-surface-700 border border-surface-600 rounded-md px-3 py-2 text-white"
             >
               <option value="">All Categories</option>
-              {CATEGORY_OPTIONS.map(c => (
-                <option key={c.value} value={c.value}>{c.label}</option>
+              {CATEGORY_OPTIONS.map((c) => (
+                <option key={c.value} value={c.value}>
+                  {c.label}
+                </option>
               ))}
             </select>
           </div>
@@ -367,7 +396,7 @@ export default function AuditFindings() {
           title="No findings yet"
           description="Audit findings will appear here as audits are conducted. Track open findings, assign remediation tasks, and monitor progress."
           action={{
-            label: "Create Finding",
+            label: 'Create Finding',
             onClick: () => setIsCreateModalOpen(true),
           }}
         />
@@ -383,12 +412,18 @@ export default function AuditFindings() {
                     onChange={selection.toggleAll}
                   />
                 </th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-surface-300">Finding</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-surface-300">Audit</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-surface-300">Severity</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-surface-300">Status</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-surface-300">Target Date</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-surface-300">Owner</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-surface-700">
+                  Finding
+                </th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-surface-700">Audit</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-surface-700">
+                  Severity
+                </th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-surface-700">Status</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-surface-700">
+                  Target Date
+                </th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-surface-700">Owner</th>
                 <th className="w-10"></th>
               </tr>
             </thead>
@@ -397,7 +432,10 @@ export default function AuditFindings() {
                 const severity = SEVERITY_CONFIG[finding.severity] || SEVERITY_CONFIG.medium;
                 const status = STATUS_CONFIG[finding.status] || STATUS_CONFIG.open;
                 const StatusIcon = status.icon;
-                const isOverdue = finding.targetDate && new Date(finding.targetDate) < new Date() && !['resolved', 'accepted_risk'].includes(finding.status);
+                const isOverdue =
+                  finding.targetDate &&
+                  new Date(finding.targetDate) < new Date() &&
+                  !['resolved', 'accepted_risk'].includes(finding.status);
 
                 return (
                   <tr
@@ -413,10 +451,14 @@ export default function AuditFindings() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <span className="text-surface-400 font-mono text-sm">{finding.findingNumber}</span>
+                        <span className="text-surface-600 font-mono text-sm">
+                          {finding.findingNumber}
+                        </span>
                         <div>
                           <p className="text-white font-medium">{finding.title}</p>
-                          <p className="text-surface-400 text-sm truncate max-w-md">{finding.description}</p>
+                          <p className="text-surface-600 text-sm truncate max-w-md">
+                            {finding.description}
+                          </p>
                         </div>
                       </div>
                     </td>
@@ -434,7 +476,9 @@ export default function AuditFindings() {
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${severity.bgColor} ${severity.color}`}>
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${severity.bgColor} ${severity.color}`}
+                      >
                         {severity.label}
                       </span>
                     </td>
@@ -446,7 +490,7 @@ export default function AuditFindings() {
                     </td>
                     <td className="px-4 py-3">
                       {finding.targetDate ? (
-                        <span className={isOverdue ? 'text-red-400' : 'text-surface-300'}>
+                        <span className={isOverdue ? 'text-red-600' : 'text-surface-700'}>
                           {new Date(finding.targetDate).toLocaleDateString()}
                           {isOverdue && <span className="ml-1 text-xs">(Overdue)</span>}
                         </span>
@@ -454,7 +498,7 @@ export default function AuditFindings() {
                         <span className="text-surface-500">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-surface-300 text-sm">
+                    <td className="px-4 py-3 text-surface-700 text-sm">
                       {finding.remediationOwner || '—'}
                     </td>
                     <td className="px-4 py-3">
@@ -489,12 +533,16 @@ export default function AuditFindings() {
               createMutation.mutate(data);
             }
           }}
-          onDelete={editingFinding ? () => {
-            if (confirm('Are you sure you want to delete this finding?')) {
-              deleteMutation.mutate(editingFinding.id);
-              setEditingFinding(null);
-            }
-          } : undefined}
+          onDelete={
+            editingFinding
+              ? () => {
+                  if (confirm('Are you sure you want to delete this finding?')) {
+                    deleteMutation.mutate(editingFinding.id);
+                    setEditingFinding(null);
+                  }
+                }
+              : undefined
+          }
           isLoading={createMutation.isPending || updateMutation.isPending}
         />
       </Modal>
@@ -552,8 +600,8 @@ function FindingForm({ finding, audits, users, onSubmit, onDelete, isLoading }: 
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid grid-cols-2 gap-4">
         <div className="col-span-2">
-          <label className="block text-sm font-medium text-surface-300 mb-1">
-            Audit <span className="text-red-400">*</span>
+          <label className="block text-sm font-medium text-surface-700 mb-1">
+            Audit <span className="text-red-600">*</span>
           </label>
           <select
             value={formData.auditId}
@@ -563,14 +611,16 @@ function FindingForm({ finding, audits, users, onSubmit, onDelete, isLoading }: 
           >
             <option value="">Select Audit</option>
             {audits?.map((audit) => (
-              <option key={audit.id} value={audit.id}>{audit.name}</option>
+              <option key={audit.id} value={audit.id}>
+                {audit.name}
+              </option>
             ))}
           </select>
         </div>
 
         <div className="col-span-2">
-          <label className="block text-sm font-medium text-surface-300 mb-1">
-            Title <span className="text-red-400">*</span>
+          <label className="block text-sm font-medium text-surface-700 mb-1">
+            Title <span className="text-red-600">*</span>
           </label>
           <input
             type="text"
@@ -583,8 +633,8 @@ function FindingForm({ finding, audits, users, onSubmit, onDelete, isLoading }: 
         </div>
 
         <div className="col-span-2">
-          <label className="block text-sm font-medium text-surface-300 mb-1">
-            Description <span className="text-red-400">*</span>
+          <label className="block text-sm font-medium text-surface-700 mb-1">
+            Description <span className="text-red-600">*</span>
           </label>
           <textarea
             value={formData.description}
@@ -597,48 +647,54 @@ function FindingForm({ finding, audits, users, onSubmit, onDelete, isLoading }: 
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-surface-300 mb-1">Category</label>
+          <label className="block text-sm font-medium text-surface-700 mb-1">Category</label>
           <select
             value={formData.category}
             onChange={(e) => setFormData({ ...formData, category: e.target.value })}
             className="w-full bg-surface-700 border border-surface-600 rounded-md px-3 py-2 text-white"
           >
-            {CATEGORY_OPTIONS.map(c => (
-              <option key={c.value} value={c.value}>{c.label}</option>
+            {CATEGORY_OPTIONS.map((c) => (
+              <option key={c.value} value={c.value}>
+                {c.label}
+              </option>
             ))}
           </select>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-surface-300 mb-1">Severity</label>
+          <label className="block text-sm font-medium text-surface-700 mb-1">Severity</label>
           <select
             value={formData.severity}
             onChange={(e) => setFormData({ ...formData, severity: e.target.value })}
             className="w-full bg-surface-700 border border-surface-600 rounded-md px-3 py-2 text-white"
           >
             {Object.entries(SEVERITY_CONFIG).map(([value, { label }]) => (
-              <option key={value} value={value}>{label}</option>
+              <option key={value} value={value}>
+                {label}
+              </option>
             ))}
           </select>
         </div>
 
         {finding && (
           <div>
-            <label className="block text-sm font-medium text-surface-300 mb-1">Status</label>
+            <label className="block text-sm font-medium text-surface-700 mb-1">Status</label>
             <select
               value={formData.status}
               onChange={(e) => setFormData({ ...formData, status: e.target.value })}
               className="w-full bg-surface-700 border border-surface-600 rounded-md px-3 py-2 text-white"
             >
-              {STATUS_OPTIONS.map(s => (
-                <option key={s.value} value={s.value}>{s.label}</option>
+              {STATUS_OPTIONS.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label}
+                </option>
               ))}
             </select>
           </div>
         )}
 
         <div>
-          <label className="block text-sm font-medium text-surface-300 mb-1">Target Date</label>
+          <label className="block text-sm font-medium text-surface-700 mb-1">Target Date</label>
           <input
             type="date"
             value={formData.targetDate}
@@ -648,7 +704,9 @@ function FindingForm({ finding, audits, users, onSubmit, onDelete, isLoading }: 
         </div>
 
         <div className={finding ? '' : 'col-span-2'}>
-          <label className="block text-sm font-medium text-surface-300 mb-1">Remediation Owner</label>
+          <label className="block text-sm font-medium text-surface-700 mb-1">
+            Remediation Owner
+          </label>
           <select
             value={formData.remediationOwner}
             onChange={(e) => setFormData({ ...formData, remediationOwner: e.target.value })}
@@ -664,7 +722,7 @@ function FindingForm({ finding, audits, users, onSubmit, onDelete, isLoading }: 
         </div>
 
         <div className="col-span-2">
-          <label className="block text-sm font-medium text-surface-300 mb-1">Root Cause</label>
+          <label className="block text-sm font-medium text-surface-700 mb-1">Root Cause</label>
           <textarea
             value={formData.rootCause}
             onChange={(e) => setFormData({ ...formData, rootCause: e.target.value })}
@@ -675,7 +733,7 @@ function FindingForm({ finding, audits, users, onSubmit, onDelete, isLoading }: 
         </div>
 
         <div className="col-span-2">
-          <label className="block text-sm font-medium text-surface-300 mb-1">Impact</label>
+          <label className="block text-sm font-medium text-surface-700 mb-1">Impact</label>
           <textarea
             value={formData.impact}
             onChange={(e) => setFormData({ ...formData, impact: e.target.value })}
@@ -686,7 +744,7 @@ function FindingForm({ finding, audits, users, onSubmit, onDelete, isLoading }: 
         </div>
 
         <div className="col-span-2">
-          <label className="block text-sm font-medium text-surface-300 mb-1">Recommendation</label>
+          <label className="block text-sm font-medium text-surface-700 mb-1">Recommendation</label>
           <textarea
             value={formData.recommendation}
             onChange={(e) => setFormData({ ...formData, recommendation: e.target.value })}
@@ -697,7 +755,9 @@ function FindingForm({ finding, audits, users, onSubmit, onDelete, isLoading }: 
         </div>
 
         <div className="col-span-2">
-          <label className="block text-sm font-medium text-surface-300 mb-1">Remediation Plan</label>
+          <label className="block text-sm font-medium text-surface-700 mb-1">
+            Remediation Plan
+          </label>
           <textarea
             value={formData.remediationPlan}
             onChange={(e) => setFormData({ ...formData, remediationPlan: e.target.value })}
@@ -709,7 +769,9 @@ function FindingForm({ finding, audits, users, onSubmit, onDelete, isLoading }: 
 
         {finding && (
           <div className="col-span-2">
-            <label className="block text-sm font-medium text-surface-300 mb-1">Management Response</label>
+            <label className="block text-sm font-medium text-surface-700 mb-1">
+              Management Response
+            </label>
             <textarea
               value={formData.managementResponse}
               onChange={(e) => setFormData({ ...formData, managementResponse: e.target.value })}

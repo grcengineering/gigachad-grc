@@ -45,7 +45,10 @@ export default function ControlEditModal({
       title: form.title,
       description: form.description,
       guidance: form.guidance,
-      tags: form.tags.split(',').map((t) => t.trim()).filter(Boolean),
+      tags: form.tags
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean),
     });
   };
 
@@ -56,14 +59,14 @@ export default function ControlEditModal({
       <div className="bg-surface-800 rounded-xl border border-surface-700 p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-semibold text-white">Edit Control</h2>
-          <button onClick={onClose} className="text-surface-400 hover:text-white">
+          <button onClick={onClose} className="text-surface-600 hover:text-white">
             <XMarkIcon className="w-5 h-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-surface-300 mb-1">Title</label>
+            <label className="block text-sm font-medium text-surface-700 mb-1">Title</label>
             <input
               type="text"
               value={form.title}
@@ -74,7 +77,7 @@ export default function ControlEditModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-surface-300 mb-1">Description</label>
+            <label className="block text-sm font-medium text-surface-700 mb-1">Description</label>
             <textarea
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -84,7 +87,9 @@ export default function ControlEditModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-surface-300 mb-1">Implementation Guidance</label>
+            <label className="block text-sm font-medium text-surface-700 mb-1">
+              Implementation Guidance
+            </label>
             <textarea
               value={form.guidance}
               onChange={(e) => setForm({ ...form, guidance: e.target.value })}
@@ -95,7 +100,7 @@ export default function ControlEditModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-surface-300 mb-1">Tags</label>
+            <label className="block text-sm font-medium text-surface-700 mb-1">Tags</label>
             <input
               type="text"
               value={form.tags}

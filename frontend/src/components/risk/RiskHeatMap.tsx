@@ -48,7 +48,10 @@ const IMPACT_LABELS: Record<string, string> = {
 };
 
 // Risk level colors based on likelihood + impact combination
-const getCellRiskLevel = (likelihoodIdx: number, impactIdx: number): 'low' | 'medium' | 'high' | 'critical' => {
+const getCellRiskLevel = (
+  likelihoodIdx: number,
+  impactIdx: number
+): 'low' | 'medium' | 'high' | 'critical' => {
   const score = (likelihoodIdx + 1) * (impactIdx + 1);
   if (score <= 4) return 'low';
   if (score <= 9) return 'medium';
@@ -74,7 +77,12 @@ const RISK_DOT_COLORS = {
 // Risk Heat Map Component
 // ===========================================
 
-export function RiskHeatMap({ risks, onRiskClick, showLegend = true, className }: RiskHeatMapProps) {
+export function RiskHeatMap({
+  risks,
+  onRiskClick,
+  showLegend = true,
+  className,
+}: RiskHeatMapProps) {
   const navigate = useNavigate();
   const [hoveredCell, setHoveredCell] = useState<string | null>(null);
   const [selectedCell, setSelectedCell] = useState<string | null>(null);
@@ -82,16 +90,16 @@ export function RiskHeatMap({ risks, onRiskClick, showLegend = true, className }
   // Group risks by cell
   const risksByCell = useMemo(() => {
     const grouped: Record<string, Risk[]> = {};
-    
-    risks.forEach(risk => {
+
+    risks.forEach((risk) => {
       const likelihood = risk.likelihood?.toLowerCase() || 'possible';
       const impact = risk.impact?.toLowerCase() || 'moderate';
       const key = `${likelihood}-${impact}`;
-      
+
       if (!grouped[key]) grouped[key] = [];
       grouped[key].push(risk);
     });
-    
+
     return grouped;
   }, [risks]);
 
@@ -111,21 +119,24 @@ export function RiskHeatMap({ risks, onRiskClick, showLegend = true, className }
 
   // Calculate stats
   const stats = useMemo(() => {
-    let low = 0, medium = 0, high = 0, critical = 0;
-    
+    let low = 0,
+      medium = 0,
+      high = 0,
+      critical = 0;
+
     LIKELIHOOD_LEVELS.forEach((likelihood, lIdx) => {
       IMPACT_LEVELS.forEach((impact, iIdx) => {
         const key = `${likelihood}-${impact}`;
         const count = risksByCell[key]?.length || 0;
         const level = getCellRiskLevel(lIdx, iIdx);
-        
+
         if (level === 'low') low += count;
         else if (level === 'medium') medium += count;
         else if (level === 'high') high += count;
         else critical += count;
       });
     });
-    
+
     return { low, medium, high, critical, total: risks.length };
   }, [risksByCell, risks.length]);
 
@@ -135,7 +146,7 @@ export function RiskHeatMap({ risks, onRiskClick, showLegend = true, className }
       <div className="flex">
         {/* Y-axis label */}
         <div className="flex flex-col justify-center items-center w-8 mr-2">
-          <span className="text-xs text-surface-400 transform -rotate-90 whitespace-nowrap">
+          <span className="text-xs text-surface-600 transform -rotate-90 whitespace-nowrap">
             LIKELIHOOD →
           </span>
         </div>
@@ -146,7 +157,7 @@ export function RiskHeatMap({ risks, onRiskClick, showLegend = true, className }
             {/* Render from bottom-left to top-right */}
             {[...LIKELIHOOD_LEVELS].reverse().map((likelihood, reversedLIdx) => {
               const lIdx = LIKELIHOOD_LEVELS.length - 1 - reversedLIdx;
-              
+
               return IMPACT_LEVELS.map((impact, iIdx) => {
                 const key = `${likelihood}-${impact}`;
                 const cellRisks = risksByCell[key] || [];
@@ -169,11 +180,13 @@ export function RiskHeatMap({ risks, onRiskClick, showLegend = true, className }
                   >
                     {/* Risk count badge */}
                     {cellRisks.length > 0 && (
-                      <div className={clsx(
-                        'w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm',
-                        RISK_DOT_COLORS[riskLevel],
-                        'text-surface-900'
-                      )}>
+                      <div
+                        className={clsx(
+                          'w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm',
+                          RISK_DOT_COLORS[riskLevel],
+                          'text-surface-900'
+                        )}
+                      >
                         {cellRisks.length}
                       </div>
                     )}
@@ -182,7 +195,7 @@ export function RiskHeatMap({ risks, onRiskClick, showLegend = true, className }
                     {isHovered && cellRisks.length > 0 && (
                       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 pointer-events-none">
                         <div className="bg-surface-900 border border-surface-700 rounded-lg shadow-xl p-3 min-w-[200px]">
-                          <p className="text-xs text-surface-400 mb-1">
+                          <p className="text-xs text-surface-600 mb-1">
                             {LIKELIHOOD_LABELS[likelihood]} × {IMPACT_LABELS[impact]}
                           </p>
                           <p className="text-sm font-medium text-surface-100">
@@ -202,7 +215,7 @@ export function RiskHeatMap({ risks, onRiskClick, showLegend = true, className }
           <div className="grid grid-cols-5 gap-1 mt-2">
             {IMPACT_LEVELS.map((impact) => (
               <div key={impact} className="text-center">
-                <span className="text-xs text-surface-400">{IMPACT_LABELS[impact]}</span>
+                <span className="text-xs text-surface-600">{IMPACT_LABELS[impact]}</span>
               </div>
             ))}
           </div>
@@ -214,7 +227,7 @@ export function RiskHeatMap({ risks, onRiskClick, showLegend = true, className }
         {/* Y-axis labels */}
         <div className="flex flex-col justify-between ml-2 py-1">
           {[...LIKELIHOOD_LEVELS].reverse().map((likelihood) => (
-            <span key={likelihood} className="text-xs text-surface-400 whitespace-nowrap">
+            <span key={likelihood} className="text-xs text-surface-600 whitespace-nowrap">
               {LIKELIHOOD_LABELS[likelihood]}
             </span>
           ))}
@@ -226,11 +239,12 @@ export function RiskHeatMap({ risks, onRiskClick, showLegend = true, className }
         <div className="bg-surface-800 border border-surface-700 rounded-lg p-4">
           <div className="flex items-center justify-between mb-3">
             <h4 className="font-medium text-surface-100">
-              {LIKELIHOOD_LABELS[selectedCell.split('-')[0]]} × {IMPACT_LABELS[selectedCell.split('-')[1]]}
+              {LIKELIHOOD_LABELS[selectedCell.split('-')[0]]} ×{' '}
+              {IMPACT_LABELS[selectedCell.split('-')[1]]}
             </h4>
             <button
               onClick={() => setSelectedCell(null)}
-              className="text-xs text-surface-400 hover:text-surface-200"
+              className="text-xs text-surface-600 hover:text-surface-200"
             >
               Close
             </button>
@@ -243,7 +257,7 @@ export function RiskHeatMap({ risks, onRiskClick, showLegend = true, className }
                 className="p-2 bg-surface-700/50 hover:bg-surface-700 rounded-lg cursor-pointer transition-colors"
               >
                 <p className="text-sm font-medium text-surface-100">{risk.title}</p>
-                <p className="text-xs text-surface-400">
+                <p className="text-xs text-surface-600">
                   {risk.riskId} • {risk.category || 'Uncategorized'}
                 </p>
               </div>
@@ -258,19 +272,19 @@ export function RiskHeatMap({ risks, onRiskClick, showLegend = true, className }
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded bg-emerald-400" />
-              <span className="text-xs text-surface-400">Low ({stats.low})</span>
+              <span className="text-xs text-surface-600">Low ({stats.low})</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded bg-amber-400" />
-              <span className="text-xs text-surface-400">Medium ({stats.medium})</span>
+              <span className="text-xs text-surface-600">Medium ({stats.medium})</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded bg-orange-400" />
-              <span className="text-xs text-surface-400">High ({stats.high})</span>
+              <span className="text-xs text-surface-600">High ({stats.high})</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded bg-red-400" />
-              <span className="text-xs text-surface-400">Critical ({stats.critical})</span>
+              <span className="text-xs text-surface-600">Critical ({stats.critical})</span>
             </div>
           </div>
           <span className="text-xs text-surface-500">
@@ -291,31 +305,35 @@ interface CompactRiskHeatMapProps {
   className?: string;
 }
 
-export function CompactRiskHeatMap({ risks, className, showCounts = true }: CompactRiskHeatMapProps & { showCounts?: boolean }) {
+export function CompactRiskHeatMap({
+  risks,
+  className,
+  showCounts = true,
+}: CompactRiskHeatMapProps & { showCounts?: boolean }) {
   const navigate = useNavigate();
 
   const risksByCell = useMemo(() => {
     const grouped: Record<string, number> = {};
-    
-    risks.forEach(risk => {
+
+    risks.forEach((risk) => {
       const likelihood = risk.likelihood?.toLowerCase() || 'possible';
       const impact = risk.impact?.toLowerCase() || 'moderate';
       const key = `${likelihood}-${impact}`;
       grouped[key] = (grouped[key] || 0) + 1;
     });
-    
+
     return grouped;
   }, [risks]);
 
   return (
-    <div 
+    <div
       className={clsx('cursor-pointer', className)}
       onClick={() => navigate('/risks?view=heatmap')}
     >
       <div className="grid grid-cols-5 gap-1">
         {[...LIKELIHOOD_LEVELS].reverse().map((likelihood, reversedLIdx) => {
           const lIdx = LIKELIHOOD_LEVELS.length - 1 - reversedLIdx;
-          
+
           return IMPACT_LEVELS.map((impact, iIdx) => {
             const key = `${likelihood}-${impact}`;
             const count = risksByCell[key] || 0;
@@ -342,5 +360,3 @@ export function CompactRiskHeatMap({ risks, className, showCounts = true }: Comp
 }
 
 export default RiskHeatMap;
-
-

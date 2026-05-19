@@ -31,11 +31,11 @@ interface Runbook {
 }
 
 const statusColors: Record<string, string> = {
-  draft: 'bg-surface-600 text-surface-300',
-  approved: 'bg-blue-500/20 text-blue-400',
-  published: 'bg-green-500/20 text-green-400',
-  needs_review: 'bg-yellow-500/20 text-yellow-400',
-  archived: 'bg-surface-700 text-surface-400',
+  draft: 'bg-surface-600 text-surface-700',
+  approved: 'bg-blue-500/20 text-blue-600',
+  published: 'bg-green-500/20 text-green-600',
+  needs_review: 'bg-yellow-500/20 text-yellow-600',
+  archived: 'bg-surface-700 text-surface-600',
 };
 
 const categoryIcons: Record<string, string> = {
@@ -60,7 +60,12 @@ export default function Runbooks() {
     setPage(1);
   }, [debouncedSearch, statusFilter, categoryFilter]);
 
-  const { data: runbooksData, isLoading, error, refetch } = useQuery({
+  const {
+    data: runbooksData,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ['runbooks', debouncedSearch, statusFilter, categoryFilter, page],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -69,7 +74,7 @@ export default function Runbooks() {
       if (categoryFilter) params.append('category', categoryFilter);
       params.append('page', page.toString());
       params.append('limit', '24'); // Multiple of 3 for grid layout
-      
+
       const res = await api.get(`/api/bcdr/runbooks?${params}`);
       return res.data;
     },
@@ -94,9 +99,9 @@ export default function Runbooks() {
     return (
       <div className="p-6">
         <div className="card p-8 text-center">
-          <ExclamationCircleIcon className="w-12 h-12 mx-auto mb-4 text-red-400" />
+          <ExclamationCircleIcon className="w-12 h-12 mx-auto mb-4 text-red-600" />
           <h2 className="text-lg font-semibold text-surface-100 mb-2">Failed to load Runbooks</h2>
-          <p className="text-surface-400 mb-4">
+          <p className="text-surface-600 mb-4">
             {(error as Error).message || 'An unexpected error occurred'}
           </p>
           <button onClick={() => refetch()} className="btn btn-primary">
@@ -113,7 +118,7 @@ export default function Runbooks() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-surface-100">Runbooks</h1>
-          <p className="text-surface-400 mt-1">
+          <p className="text-surface-600 mt-1">
             Step-by-step recovery procedures for systems and processes
           </p>
         </div>
@@ -126,7 +131,7 @@ export default function Runbooks() {
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="card p-4">
-          <p className="text-surface-400 text-sm">Total Runbooks</p>
+          <p className="text-surface-600 text-sm">Total Runbooks</p>
           {statsLoading ? (
             <div className="h-8 w-16 bg-surface-700 rounded animate-pulse mt-1"></div>
           ) : (
@@ -134,27 +139,27 @@ export default function Runbooks() {
           )}
         </div>
         <div className="card p-4">
-          <p className="text-surface-400 text-sm">Published</p>
+          <p className="text-surface-600 text-sm">Published</p>
           {statsLoading ? (
             <div className="h-8 w-16 bg-surface-700 rounded animate-pulse mt-1"></div>
           ) : (
-            <p className="text-2xl font-bold text-green-400">{stats?.published_count || 0}</p>
+            <p className="text-2xl font-bold text-green-600">{stats?.published_count || 0}</p>
           )}
         </div>
         <div className="card p-4">
-          <p className="text-surface-400 text-sm">Drafts</p>
+          <p className="text-surface-600 text-sm">Drafts</p>
           {statsLoading ? (
             <div className="h-8 w-16 bg-surface-700 rounded animate-pulse mt-1"></div>
           ) : (
-            <p className="text-2xl font-bold text-surface-300">{stats?.draft_count || 0}</p>
+            <p className="text-2xl font-bold text-surface-700">{stats?.draft_count || 0}</p>
           )}
         </div>
         <div className="card p-4">
-          <p className="text-surface-400 text-sm">Needs Review</p>
+          <p className="text-surface-600 text-sm">Needs Review</p>
           {statsLoading ? (
             <div className="h-8 w-16 bg-surface-700 rounded animate-pulse mt-1"></div>
           ) : (
-            <p className="text-2xl font-bold text-yellow-400">{stats?.needs_review_count || 0}</p>
+            <p className="text-2xl font-bold text-yellow-600">{stats?.needs_review_count || 0}</p>
           )}
         </div>
       </div>
@@ -164,7 +169,7 @@ export default function Runbooks() {
         <div className="flex flex-wrap gap-4">
           <div className="flex-1 min-w-64">
             <div className="relative">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-400" />
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-600" />
               <input
                 type="text"
                 placeholder="Search runbooks..."
@@ -220,10 +225,13 @@ export default function Runbooks() {
           ))}
         </div>
       ) : !runbooks || runbooks.length === 0 ? (
-        <div className="card p-8 text-center text-surface-400">
+        <div className="card p-8 text-center text-surface-600">
           <BookOpenIcon className="w-12 h-12 mx-auto mb-4 opacity-50" />
           <p>No runbooks found</p>
-          <Link to="/bcdr/runbooks/new" className="text-brand-400 hover:text-brand-300 mt-2 inline-block">
+          <Link
+            to="/bcdr/runbooks/new"
+            className="text-brand-400 hover:text-brand-300 mt-2 inline-block"
+          >
             Create your first runbook →
           </Link>
         </div>
@@ -238,44 +246,40 @@ export default function Runbooks() {
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <span className="text-2xl">{categoryIcons[runbook.category] || '📋'}</span>
-                  <span className={clsx(
-                    "px-2 py-0.5 rounded text-xs font-medium",
-                    statusColors[runbook.status]
-                  )}>
+                  <span
+                    className={clsx(
+                      'px-2 py-0.5 rounded text-xs font-medium',
+                      statusColors[runbook.status]
+                    )}
+                  >
                     {runbook.status.replace('_', ' ')}
                   </span>
                 </div>
-                <span className="text-surface-400 text-xs">v{runbook.version}</span>
+                <span className="text-surface-600 text-xs">v{runbook.version}</span>
               </div>
-              
-              <h3 className="text-lg font-semibold text-surface-100 mb-1">
-                {runbook.title}
-              </h3>
-              <p className="text-surface-400 text-sm mb-3">
-                {runbook.runbook_id}
-              </p>
-              
+
+              <h3 className="text-lg font-semibold text-surface-100 mb-1">{runbook.title}</h3>
+              <p className="text-surface-600 text-sm mb-3">{runbook.runbook_id}</p>
+
               {runbook.description && (
-                <p className="text-surface-400 text-sm mb-4 line-clamp-2">
-                  {runbook.description}
-                </p>
+                <p className="text-surface-600 text-sm mb-4 line-clamp-2">{runbook.description}</p>
               )}
-              
+
               <div className="space-y-2 text-sm">
                 {runbook.system_name && (
                   <div className="flex justify-between">
-                    <span className="text-surface-400">System</span>
-                    <span className="text-surface-300">{runbook.system_name}</span>
+                    <span className="text-surface-600">System</span>
+                    <span className="text-surface-700">{runbook.system_name}</span>
                   </div>
                 )}
                 <div className="flex justify-between">
-                  <span className="text-surface-400">Steps</span>
-                  <span className="text-surface-300">{runbook.step_count || 0}</span>
+                  <span className="text-surface-600">Steps</span>
+                  <span className="text-surface-700">{runbook.step_count || 0}</span>
                 </div>
                 {runbook.estimated_duration_minutes && (
                   <div className="flex justify-between">
-                    <span className="text-surface-400">Duration</span>
-                    <span className="text-surface-300 flex items-center gap-1">
+                    <span className="text-surface-600">Duration</span>
+                    <span className="text-surface-700 flex items-center gap-1">
                       <ClockIcon className="w-4 h-4" />
                       {runbook.estimated_duration_minutes}m
                     </span>
@@ -283,8 +287,10 @@ export default function Runbooks() {
                 )}
                 {runbook.process_name && (
                   <div className="flex justify-between">
-                    <span className="text-surface-400">Process</span>
-                    <span className="text-surface-300 truncate max-w-32">{runbook.process_name}</span>
+                    <span className="text-surface-600">Process</span>
+                    <span className="text-surface-700 truncate max-w-32">
+                      {runbook.process_name}
+                    </span>
                   </div>
                 )}
               </div>
@@ -303,7 +309,7 @@ export default function Runbooks() {
           >
             Previous
           </button>
-          <span className="text-surface-400 text-sm">
+          <span className="text-surface-600 text-sm">
             Page {page} of {totalPages}
           </span>
           <button
@@ -318,4 +324,3 @@ export default function Runbooks() {
     </div>
   );
 }
-

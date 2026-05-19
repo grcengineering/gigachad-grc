@@ -11,7 +11,7 @@ export default function ScheduledReportsPage() {
             <DocumentChartBarIcon className="w-8 h-8 text-brand-500" />
             Report Scheduling
           </h1>
-          <p className="text-surface-400 mt-1">
+          <p className="text-surface-600 mt-1">
             Configure automated report generation and email delivery
           </p>
         </div>
@@ -22,8 +22,3 @@ export default function ScheduledReportsPage() {
     </div>
   );
 }
-
-
-
-
-

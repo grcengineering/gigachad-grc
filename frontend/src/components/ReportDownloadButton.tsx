@@ -109,8 +109,20 @@ export function ReportDownloadButton({
         {downloading ? (
           <>
             <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+                fill="none"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+              />
             </svg>
             Generating...
           </>
@@ -143,10 +155,10 @@ export function ReportDownloadButton({
       >
         <Menu.Items className="absolute right-0 mt-2 w-72 origin-top-right rounded-lg bg-surface-800 border border-surface-700 shadow-lg focus:outline-none z-50">
           <div className="p-2">
-            <p className="px-3 py-2 text-xs font-medium text-surface-400 uppercase tracking-wider">
+            <p className="px-3 py-2 text-xs font-medium text-surface-600 uppercase tracking-wider">
               Download Reports
             </p>
-            
+
             {REPORT_TYPES.map((report) => {
               const isDisabled = report.requiresFramework && !frameworkId;
               const isDownloading = downloading === report.id;
@@ -166,18 +178,28 @@ export function ReportDownloadButton({
                       <div className="flex-shrink-0 mt-0.5">
                         {isDownloading ? (
                           <svg className="animate-spin h-5 w-5 text-blue-500" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                              fill="none"
+                            />
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                            />
                           </svg>
                         ) : (
-                          <DocumentArrowDownIcon className="h-5 w-5 text-surface-400" />
+                          <DocumentArrowDownIcon className="h-5 w-5 text-surface-600" />
                         )}
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-surface-100">
-                          {report.name}
-                        </p>
-                        <p className="text-xs text-surface-400">
+                        <p className="text-sm font-medium text-surface-100">{report.name}</p>
+                        <p className="text-xs text-surface-600">
                           {report.description}
                           {report.requiresFramework && !frameworkId && (
                             <span className="block text-yellow-500 mt-1">
@@ -199,4 +221,3 @@ export function ReportDownloadButton({
 }
 
 export default ReportDownloadButton;
-

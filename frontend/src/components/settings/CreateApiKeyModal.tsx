@@ -51,7 +51,7 @@ export default function CreateApiKeyModal({
         <h3 className="text-lg font-semibold text-surface-100 mb-4">Create API Key</h3>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-surface-300 mb-1">Name</label>
+            <label className="block text-sm font-medium text-surface-700 mb-1">Name</label>
             <input
               type="text"
               value={name}
@@ -62,7 +62,7 @@ export default function CreateApiKeyModal({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-surface-300 mb-1">
+            <label className="block text-sm font-medium text-surface-700 mb-1">
               Description (optional)
             </label>
             <input
@@ -74,7 +74,7 @@ export default function CreateApiKeyModal({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-surface-300 mb-2">Scopes</label>
+            <label className="block text-sm font-medium text-surface-700 mb-2">Scopes</label>
             <div className="space-y-2">
               {availableScopes.map((scope) => (
                 <label key={scope} className="flex items-center gap-2">
@@ -84,7 +84,7 @@ export default function CreateApiKeyModal({
                     onChange={() => toggleScope(scope)}
                     className="rounded border-surface-600 bg-surface-800 text-primary-500 focus:ring-primary-500"
                   />
-                  <span className="text-surface-300 text-sm">{scope}</span>
+                  <span className="text-surface-700 text-sm">{scope}</span>
                 </label>
               ))}
             </div>
@@ -93,11 +93,7 @@ export default function CreateApiKeyModal({
             <button type="button" onClick={onClose} className="btn-secondary">
               Cancel
             </button>
-            <button
-              type="submit"
-              className="btn-primary"
-              disabled={createMutation.isPending}
-            >
+            <button type="submit" className="btn-primary" disabled={createMutation.isPending}>
               {createMutation.isPending ? 'Creating...' : 'Create Key'}
             </button>
           </div>

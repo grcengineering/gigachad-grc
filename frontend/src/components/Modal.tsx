@@ -60,7 +60,7 @@ export function Modal({
       'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
     );
     const firstElement = focusableElements[0] as HTMLElement;
-    
+
     if (firstElement) {
       // Small delay to ensure the modal is fully rendered
       setTimeout(() => firstElement.focus(), 50);
@@ -108,7 +108,7 @@ export function Modal({
                 </h2>
               )}
               {description && (
-                <p id="modal-description" className="text-surface-400 mt-1 text-sm">
+                <p id="modal-description" className="text-surface-600 mt-1 text-sm">
                   {description}
                 </p>
               )}
@@ -116,7 +116,7 @@ export function Modal({
             {showCloseButton && (
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-surface-700 rounded-lg text-surface-400 transition-colors"
+                className="p-2 hover:bg-surface-700 rounded-lg text-surface-600 transition-colors"
                 aria-label="Close modal"
               >
                 <XMarkIcon className="w-5 h-5" />
@@ -126,9 +126,7 @@ export function Modal({
         )}
 
         {/* Content */}
-        <div className={clsx(!title && !showCloseButton && 'pt-0', 'p-6')}>
-          {children}
-        </div>
+        <div className={clsx(!title && !showCloseButton && 'pt-0', 'p-6')}>{children}</div>
       </div>
     </div>
   );
@@ -157,14 +155,8 @@ export function ConfirmModal({
   isLoading = false,
 }: ConfirmModalProps) {
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={title}
-      size="sm"
-      showCloseButton={false}
-    >
-      <p className="text-surface-300 mb-6">{message}</p>
+    <Modal isOpen={isOpen} onClose={onClose} title={title} size="sm" showCloseButton={false}>
+      <p className="text-surface-700 mb-6">{message}</p>
       <div className="flex justify-end gap-3">
         <Button variant="secondary" onClick={onClose} disabled={isLoading}>
           Cancel
@@ -183,8 +175,3 @@ export function ConfirmModal({
 }
 
 export default Modal;
-
-
-
-
-

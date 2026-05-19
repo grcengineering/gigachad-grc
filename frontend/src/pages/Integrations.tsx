@@ -24,25 +24,25 @@ const STATUS_CONFIG: Record<string, { label: string; icon: any; color: string; b
   active: {
     label: 'Active',
     icon: CheckCircleIcon,
-    color: 'text-green-400',
+    color: 'text-green-600',
     badge: 'badge-success',
   },
   inactive: {
     label: 'Inactive',
     icon: XCircleIcon,
-    color: 'text-surface-400',
+    color: 'text-surface-600',
     badge: 'badge-neutral',
   },
   error: {
     label: 'Error',
     icon: ExclamationTriangleIcon,
-    color: 'text-red-400',
+    color: 'text-red-600',
     badge: 'badge-danger',
   },
   pending_setup: {
     label: 'Setup Required',
     icon: CogIcon,
-    color: 'text-yellow-400',
+    color: 'text-yellow-600',
     badge: 'badge-warning',
   },
 };
@@ -141,9 +141,9 @@ export default function Integrations() {
   });
 
   // Handle API response - could be array directly or { data: [...] }
-  const createdIntegrations: any[] = Array.isArray(integrationsData) 
-    ? (integrationsData as any[]) 
-    : (((integrationsData as any)?.data as any[]) || []);
+  const createdIntegrations: any[] = Array.isArray(integrationsData)
+    ? (integrationsData as any[])
+    : ((integrationsData as any)?.data as any[]) || [];
 
   // Create map of created integrations by type
   const createdIntegrationsMap = createdIntegrations.reduce((acc: any, integration: any) => {
@@ -152,12 +152,15 @@ export default function Integrations() {
   }, {});
 
   // Group integration types by category
-  const groupedIntegrations: Record<string, Array<{ type: string; meta: any; integration?: any }>> = {};
+  const groupedIntegrations: Record<
+    string,
+    Array<{ type: string; meta: any; integration?: any }>
+  > = {};
 
   if (integrationTypes) {
     Object.entries(integrationTypes).forEach(([type, meta]: [string, any]) => {
       const integration = createdIntegrationsMap[type];
-      
+
       // Filter by status filter
       if (statusFilter !== 'all') {
         if (statusFilter === 'configured' && !integration) {
@@ -166,11 +169,14 @@ export default function Integrations() {
         if (statusFilter === 'active' && integration?.status !== 'active') {
           return; // Skip non-active integrations
         }
-        if (statusFilter === 'with_evidence' && (!integration || (integration.totalEvidenceCollected || 0) === 0)) {
+        if (
+          statusFilter === 'with_evidence' &&
+          (!integration || (integration.totalEvidenceCollected || 0) === 0)
+        ) {
           return; // Skip integrations without evidence
         }
       }
-      
+
       // Filter by search query
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
@@ -194,13 +200,16 @@ export default function Integrations() {
     });
 
     // Sort each category alphabetically
-    Object.keys(groupedIntegrations).forEach(category => {
+    Object.keys(groupedIntegrations).forEach((category) => {
       groupedIntegrations[category].sort((a, b) => a.meta.name.localeCompare(b.meta.name));
     });
   }
-  
+
   // Count visible integrations
-  const visibleCount = Object.values(groupedIntegrations).reduce((sum, items) => sum + items.length, 0);
+  const visibleCount = Object.values(groupedIntegrations).reduce(
+    (sum, items) => sum + items.length,
+    0
+  );
 
   const handleConfigureIntegration = (type: string, existingIntegration?: any) => {
     setSelectedType(type);
@@ -219,7 +228,7 @@ export default function Integrations() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-surface-100">Integrations</h1>
-        <p className="text-surface-400 mt-1">
+        <p className="text-surface-600 mt-1">
           Connect external services for automated evidence collection
         </p>
       </div>
@@ -227,7 +236,7 @@ export default function Integrations() {
       {/* Search Bar */}
       <div className="card p-4">
         <div className="relative">
-          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-400" />
+          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-600" />
           <input
             type="text"
             placeholder="Search integrations by name, description, or category..."
@@ -238,7 +247,7 @@ export default function Integrations() {
           {searchQuery && (
             <button
               onClick={() => handleSearchChange('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-surface-400 hover:text-surface-100"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-surface-600 hover:text-surface-100"
             >
               <XMarkIcon className="w-5 h-5" />
             </button>
@@ -255,7 +264,7 @@ export default function Integrations() {
             statusFilter === 'all' ? 'ring-2 ring-surface-500' : 'hover:bg-surface-800/50'
           )}
         >
-          <p className="text-sm text-surface-400">Available Integrations</p>
+          <p className="text-sm text-surface-600">Available Integrations</p>
           <p className="text-2xl font-bold text-surface-100 mt-1">
             {integrationTypes ? Object.keys(integrationTypes).length : 0}
           </p>
@@ -264,59 +273,65 @@ export default function Integrations() {
           onClick={() => setStatusFilter(statusFilter === 'configured' ? 'all' : 'configured')}
           className={clsx(
             'card p-4 text-left transition-all',
-            statusFilter === 'configured' ? 'ring-2 ring-green-500' : 'hover:bg-surface-800/50 cursor-pointer'
+            statusFilter === 'configured'
+              ? 'ring-2 ring-green-500'
+              : 'hover:bg-surface-800/50 cursor-pointer'
           )}
         >
-          <p className="text-sm text-surface-400">Configured</p>
-          <p className="text-2xl font-bold text-green-400 mt-1">
-            {stats?.total || 0}
-          </p>
+          <p className="text-sm text-surface-600">Configured</p>
+          <p className="text-2xl font-bold text-green-600 mt-1">{stats?.total || 0}</p>
           {statusFilter === 'configured' && (
-            <p className="text-xs text-green-400 mt-1">Click to clear filter</p>
+            <p className="text-xs text-green-600 mt-1">Click to clear filter</p>
           )}
         </button>
         <button
           onClick={() => setStatusFilter(statusFilter === 'active' ? 'all' : 'active')}
           className={clsx(
             'card p-4 text-left transition-all',
-            statusFilter === 'active' ? 'ring-2 ring-brand-500' : 'hover:bg-surface-800/50 cursor-pointer'
+            statusFilter === 'active'
+              ? 'ring-2 ring-brand-500'
+              : 'hover:bg-surface-800/50 cursor-pointer'
           )}
         >
-          <p className="text-sm text-surface-400">Active</p>
-          <p className="text-2xl font-bold text-brand-400 mt-1">
-            {stats?.byStatus?.active || 0}
-          </p>
+          <p className="text-sm text-surface-600">Active</p>
+          <p className="text-2xl font-bold text-brand-400 mt-1">{stats?.byStatus?.active || 0}</p>
           {statusFilter === 'active' && (
             <p className="text-xs text-brand-400 mt-1">Click to clear filter</p>
           )}
         </button>
         <button
-          onClick={() => setStatusFilter(statusFilter === 'with_evidence' ? 'all' : 'with_evidence')}
+          onClick={() =>
+            setStatusFilter(statusFilter === 'with_evidence' ? 'all' : 'with_evidence')
+          }
           className={clsx(
             'card p-4 text-left transition-all',
-            statusFilter === 'with_evidence' ? 'ring-2 ring-purple-500' : 'hover:bg-surface-800/50 cursor-pointer'
+            statusFilter === 'with_evidence'
+              ? 'ring-2 ring-purple-500'
+              : 'hover:bg-surface-800/50 cursor-pointer'
           )}
         >
-          <p className="text-sm text-surface-400">Evidence Collected</p>
-          <p className="text-2xl font-bold text-purple-400 mt-1">
+          <p className="text-sm text-surface-600">Evidence Collected</p>
+          <p className="text-2xl font-bold text-purple-600 mt-1">
             {stats?.totalEvidenceCollected || 0}
           </p>
           {statusFilter === 'with_evidence' && (
-            <p className="text-xs text-purple-400 mt-1">Click to clear filter</p>
+            <p className="text-xs text-purple-600 mt-1">Click to clear filter</p>
           )}
         </button>
       </div>
-      
+
       {/* Active Filter Indicator */}
       {statusFilter !== 'all' && (
         <div className="flex items-center gap-2 text-sm">
-          <span className="text-surface-400">Filtering by:</span>
-          <span className={clsx(
-            'px-2 py-1 rounded-full text-xs font-medium',
-            statusFilter === 'configured' && 'bg-green-500/20 text-green-400',
-            statusFilter === 'active' && 'bg-brand-500/20 text-brand-400',
-            statusFilter === 'with_evidence' && 'bg-purple-500/20 text-purple-400'
-          )}>
+          <span className="text-surface-600">Filtering by:</span>
+          <span
+            className={clsx(
+              'px-2 py-1 rounded-full text-xs font-medium',
+              statusFilter === 'configured' && 'bg-green-500/20 text-green-600',
+              statusFilter === 'active' && 'bg-brand-500/20 text-brand-400',
+              statusFilter === 'with_evidence' && 'bg-purple-500/20 text-purple-600'
+            )}
+          >
             {statusFilter === 'configured' && 'Configured Integrations'}
             {statusFilter === 'active' && 'Active Integrations'}
             {statusFilter === 'with_evidence' && 'With Evidence'}
@@ -324,7 +339,7 @@ export default function Integrations() {
           <span className="text-surface-500">({visibleCount} results)</span>
           <button
             onClick={() => setStatusFilter('all')}
-            className="text-surface-400 hover:text-surface-100 ml-2"
+            className="text-surface-600 hover:text-surface-100 ml-2"
           >
             <XMarkIcon className="w-4 h-4" />
           </button>
@@ -363,7 +378,9 @@ export default function Integrations() {
                         key={type}
                         className={clsx(
                           'card p-6 transition-colors cursor-pointer',
-                          isConfigured ? 'hover:border-surface-700' : 'hover:border-brand-500/50 opacity-75'
+                          isConfigured
+                            ? 'hover:border-surface-700'
+                            : 'hover:border-brand-500/50 opacity-75'
                         )}
                         onClick={() => handleConfigureIntegration(type, integration)}
                       >
@@ -386,19 +403,22 @@ export default function Integrations() {
                           <StatusIcon className={clsx('w-5 h-5', statusConfig.color)} />
                         </div>
 
-                        <p className="text-sm text-surface-400 mb-4 line-clamp-2">
+                        <p className="text-sm text-surface-600 mb-4 line-clamp-2">
                           {meta.description}
                         </p>
 
                         {type === 'slack' && (
-                          <p className="text-xs text-blue-400 mb-4">
-                            💡 For Slack <em>notifications</em>, configure in Settings → Communications
+                          <p className="text-xs text-blue-600 mb-4">
+                            💡 For Slack <em>notifications</em>, configure in Settings →
+                            Communications
                           </p>
                         )}
 
                         {integration?.lastSyncError && (
                           <div className="p-2 bg-red-500/10 border border-red-500/20 rounded-lg mb-4">
-                            <p className="text-xs text-red-400 truncate">{integration.lastSyncError}</p>
+                            <p className="text-xs text-red-600 truncate">
+                              {integration.lastSyncError}
+                            </p>
                           </div>
                         )}
 
@@ -443,10 +463,15 @@ export default function Integrations() {
                                   testMutation.mutate(integration.id);
                                 }}
                                 disabled={testMutation.isPending}
-                                className="p-1.5 text-surface-400 hover:text-surface-100 hover:bg-surface-800 rounded transition-colors"
+                                className="p-1.5 text-surface-600 hover:text-surface-100 hover:bg-surface-800 rounded transition-colors"
                                 title="Test Connection"
                               >
-                                <ArrowPathIcon className={clsx('w-4 h-4', testMutation.isPending && 'animate-spin')} />
+                                <ArrowPathIcon
+                                  className={clsx(
+                                    'w-4 h-4',
+                                    testMutation.isPending && 'animate-spin'
+                                  )}
+                                />
                               </button>
                               {integration.status === 'active' && (
                                 <button
@@ -455,7 +480,7 @@ export default function Integrations() {
                                     syncMutation.mutate(integration.id);
                                   }}
                                   disabled={syncMutation.isPending}
-                                  className="p-1.5 text-surface-400 hover:text-green-400 hover:bg-surface-800 rounded transition-colors"
+                                  className="p-1.5 text-surface-600 hover:text-green-600 hover:bg-surface-800 rounded transition-colors"
                                   title="Trigger Sync"
                                 >
                                   <PlayIcon className="w-4 h-4" />
@@ -464,12 +489,14 @@ export default function Integrations() {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  if (confirm('Are you sure you want to delete this integration?')) {
+                                  if (
+                                    confirm('Are you sure you want to delete this integration?')
+                                  ) {
                                     deleteMutation.mutate(integration.id);
                                   }
                                 }}
                                 disabled={deleteMutation.isPending}
-                                className="p-1.5 text-surface-400 hover:text-red-400 hover:bg-surface-800 rounded transition-colors"
+                                className="p-1.5 text-surface-600 hover:text-red-600 hover:bg-surface-800 rounded transition-colors"
                                 title="Delete"
                               >
                                 <TrashIcon className="w-4 h-4" />
@@ -511,4 +538,3 @@ export default function Integrations() {
     </div>
   );
 }
-

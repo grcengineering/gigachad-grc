@@ -99,7 +99,7 @@ export function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShortcutsPro
                   </Dialog.Title>
                   <button
                     onClick={onClose}
-                    className="p-2 rounded-lg hover:bg-surface-700 text-surface-400 hover:text-white transition-colors"
+                    className="p-2 rounded-lg hover:bg-surface-700 text-surface-600 hover:text-white transition-colors"
                   >
                     <XMarkIcon className="w-5 h-5" />
                   </button>
@@ -108,25 +108,20 @@ export function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShortcutsPro
                 <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[70vh] overflow-y-auto">
                   {shortcutGroups.map((group) => (
                     <div key={group.name}>
-                      <h3 className="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">
+                      <h3 className="text-sm font-semibold text-surface-700 uppercase tracking-wider mb-3">
                         {group.name}
                       </h3>
                       <div className="space-y-2">
                         {group.shortcuts.map((shortcut, idx) => (
-                          <div
-                            key={idx}
-                            className="flex items-center justify-between py-2"
-                          >
-                            <span className="text-surface-300 text-sm">
-                              {shortcut.description}
-                            </span>
+                          <div key={idx} className="flex items-center justify-between py-2">
+                            <span className="text-surface-700 text-sm">{shortcut.description}</span>
                             <div className="flex items-center gap-1">
                               {shortcut.keys.map((key, keyIdx) => (
                                 <Fragment key={keyIdx}>
                                   {keyIdx > 0 && (
                                     <span className="text-surface-600 text-xs mx-0.5">+</span>
                                   )}
-                                  <kbd className="px-2 py-1 text-xs font-medium bg-surface-700 text-surface-300 rounded border border-surface-600">
+                                  <kbd className="px-2 py-1 text-xs font-medium bg-surface-700 text-surface-700 rounded border border-surface-600">
                                     {key}
                                   </kbd>
                                 </Fragment>
@@ -141,7 +136,10 @@ export function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShortcutsPro
 
                 <div className="px-6 py-4 bg-surface-900/50 border-t border-surface-700">
                   <p className="text-xs text-surface-500 text-center">
-                    Press <kbd className="px-1.5 py-0.5 bg-surface-700 rounded text-surface-400">⌘</kbd> + <kbd className="px-1.5 py-0.5 bg-surface-700 rounded text-surface-400">/</kbd> to toggle this help
+                    Press{' '}
+                    <kbd className="px-1.5 py-0.5 bg-surface-700 rounded text-surface-600">⌘</kbd> +{' '}
+                    <kbd className="px-1.5 py-0.5 bg-surface-700 rounded text-surface-600">/</kbd>{' '}
+                    to toggle this help
                   </p>
                 </div>
               </Dialog.Panel>
@@ -154,9 +152,7 @@ export function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShortcutsPro
 }
 
 // Hook to handle all keyboard shortcuts
-export function useKeyboardShortcuts(options: {
-  onShowShortcuts?: () => void;
-}) {
+export function useKeyboardShortcuts(options: { onShowShortcuts?: () => void }) {
   const navigate = useNavigate();
   const [pendingKey, setPendingKey] = useState<string | null>(null);
 
@@ -164,11 +160,7 @@ export function useKeyboardShortcuts(options: {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Ignore if user is typing in an input
       const target = e.target as HTMLElement;
-      if (
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.isContentEditable
-      ) {
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
         return;
       }
 
@@ -188,16 +180,16 @@ export function useKeyboardShortcuts(options: {
         if (pendingKey === 'G') {
           // Navigation shortcuts
           const navMap: Record<string, string> = {
-            'H': '/',
-            'C': '/controls',
-            'R': '/risks',
-            'P': '/policies',
-            'E': '/evidence',
-            'V': '/vendors',
-            'F': '/frameworks',
-            'S': '/settings',
-            'A': '/audits',
-            'T': '/tools/awareness',
+            H: '/',
+            C: '/controls',
+            R: '/risks',
+            P: '/policies',
+            E: '/evidence',
+            V: '/vendors',
+            F: '/frameworks',
+            S: '/settings',
+            A: '/audits',
+            T: '/tools/awareness',
           };
           if (navMap[key]) {
             e.preventDefault();
@@ -206,11 +198,11 @@ export function useKeyboardShortcuts(options: {
         } else if (pendingKey === 'N') {
           // New item shortcuts
           const newMap: Record<string, string> = {
-            'C': '/controls/new',
-            'R': '/risks/new',
-            'P': '/policies/new',
-            'E': '/evidence/new',
-            'V': '/vendors/new',
+            C: '/controls/new',
+            R: '/risks/new',
+            P: '/policies/new',
+            E: '/evidence/new',
+            V: '/vendors/new',
           };
           if (newMap[key]) {
             e.preventDefault();
@@ -241,4 +233,3 @@ export function useKeyboardShortcuts(options: {
 }
 
 export default KeyboardShortcutsModal;
-

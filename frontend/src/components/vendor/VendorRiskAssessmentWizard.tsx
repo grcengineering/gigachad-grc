@@ -52,9 +52,21 @@ interface WizardState {
 // ============================================
 
 const ASSET_DATA_TYPE_OPTIONS = [
-  { value: 25, label: 'Sensitive end-user, customer, or employee data', description: 'PII, PHI, payment data' },
-  { value: 20, label: 'Sensitive business information', description: 'Source code, contracts, financials' },
-  { value: 10, label: 'Internal productivity data', description: 'Policies, documentation, internal tools' },
+  {
+    value: 25,
+    label: 'Sensitive end-user, customer, or employee data',
+    description: 'PII, PHI, payment data',
+  },
+  {
+    value: 20,
+    label: 'Sensitive business information',
+    description: 'Source code, contracts, financials',
+  },
+  {
+    value: 10,
+    label: 'Internal productivity data',
+    description: 'Policies, documentation, internal tools',
+  },
   { value: 5, label: 'Public data', description: 'Marketing materials, public documentation' },
 ];
 
@@ -189,7 +201,7 @@ function RadioOption({
           )}
         />
         <div>
-          <p className={clsx('font-medium', selected ? 'text-surface-100' : 'text-surface-300')}>
+          <p className={clsx('font-medium', selected ? 'text-surface-100' : 'text-surface-700')}>
             {label}
             <span className="ml-2 text-xs text-surface-500">({value} pts)</span>
           </p>
@@ -200,21 +212,37 @@ function RadioOption({
   );
 }
 
-function ScoreIndicator({ score, maxScore, label }: { score: number; maxScore: number; label: string }) {
+function ScoreIndicator({
+  score,
+  maxScore,
+  label,
+}: {
+  score: number;
+  maxScore: number;
+  label: string;
+}) {
   const percentage = (score / maxScore) * 100;
   return (
     <div className="flex items-center gap-2">
-      <span className="text-sm text-surface-400 w-20">{label}</span>
+      <span className="text-sm text-surface-600 w-20">{label}</span>
       <div className="flex-1 h-2 bg-surface-800 rounded-full overflow-hidden">
         <div
           className={clsx(
             'h-full transition-all',
-            percentage >= 80 ? 'bg-red-500' : percentage >= 60 ? 'bg-orange-500' : percentage >= 40 ? 'bg-yellow-500' : 'bg-green-500'
+            percentage >= 80
+              ? 'bg-red-500'
+              : percentage >= 60
+                ? 'bg-orange-500'
+                : percentage >= 40
+                  ? 'bg-yellow-500'
+                  : 'bg-green-500'
           )}
           style={{ width: `${percentage}%` }}
         />
       </div>
-      <span className="text-sm font-medium text-surface-300 w-12 text-right">{score}/{maxScore}</span>
+      <span className="text-sm font-medium text-surface-700 w-12 text-right">
+        {score}/{maxScore}
+      </span>
     </div>
   );
 }
@@ -262,10 +290,35 @@ export function VendorRiskAssessmentWizard({
   // Calculate scores
   const assetScore = Math.max(state.assetDataType, state.assetRole);
   const threatScore = Math.max(state.threatActor, state.threatObjective);
-  const likelihoodTotal = state.likelihoodFrequency + state.likelihoodCapability + state.likelihoodControl;
-  const likelihoodScore = likelihoodTotal >= 60 ? 25 : likelihoodTotal >= 45 ? 20 : likelihoodTotal >= 30 ? 15 : likelihoodTotal >= 15 ? 10 : 5;
-  const impactTotal = state.impactProductivity + state.impactResponse + state.impactRecovery + state.impactCompetitive + state.impactLegal + state.impactReputation;
-  const impactScore = impactTotal >= 25 ? 25 : impactTotal >= 20 ? 20 : impactTotal >= 15 ? 15 : impactTotal >= 10 ? 10 : 5;
+  const likelihoodTotal =
+    state.likelihoodFrequency + state.likelihoodCapability + state.likelihoodControl;
+  const likelihoodScore =
+    likelihoodTotal >= 60
+      ? 25
+      : likelihoodTotal >= 45
+        ? 20
+        : likelihoodTotal >= 30
+          ? 15
+          : likelihoodTotal >= 15
+            ? 10
+            : 5;
+  const impactTotal =
+    state.impactProductivity +
+    state.impactResponse +
+    state.impactRecovery +
+    state.impactCompetitive +
+    state.impactLegal +
+    state.impactReputation;
+  const impactScore =
+    impactTotal >= 25
+      ? 25
+      : impactTotal >= 20
+        ? 20
+        : impactTotal >= 15
+          ? 15
+          : impactTotal >= 10
+            ? 10
+            : 5;
   const totalScore = assetScore + threatScore + likelihoodScore + impactScore;
 
   const getRiskLevel = (score: number) => {
@@ -287,7 +340,11 @@ export function VendorRiskAssessmentWizard({
       case 2:
         return state.threatActor > 0 || state.threatObjective > 0;
       case 3:
-        return state.likelihoodFrequency > 0 && state.likelihoodCapability > 0 && state.likelihoodControl > 0;
+        return (
+          state.likelihoodFrequency > 0 &&
+          state.likelihoodCapability > 0 &&
+          state.likelihoodControl > 0
+        );
       case 4:
         return true; // All impact fields have default of 0
       default:
@@ -334,7 +391,9 @@ export function VendorRiskAssessmentWizard({
         return (
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-surface-300 mb-1">Risk Title *</label>
+              <label className="block text-sm font-medium text-surface-700 mb-1">
+                Risk Title *
+              </label>
               <input
                 type="text"
                 value={state.title}
@@ -343,7 +402,7 @@ export function VendorRiskAssessmentWizard({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-surface-300 mb-1">Description</label>
+              <label className="block text-sm font-medium text-surface-700 mb-1">Description</label>
               <textarea
                 value={state.description}
                 onChange={(e) => setState({ ...state, description: e.target.value })}
@@ -353,7 +412,9 @@ export function VendorRiskAssessmentWizard({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-surface-300 mb-1">Assessor Name *</label>
+              <label className="block text-sm font-medium text-surface-700 mb-1">
+                Assessor Name *
+              </label>
               <input
                 type="text"
                 value={state.assessor}
@@ -368,7 +429,9 @@ export function VendorRiskAssessmentWizard({
         return (
           <div className="space-y-6">
             <div>
-              <h4 className="font-medium text-surface-200 mb-3">What type of data does this vendor process?</h4>
+              <h4 className="font-medium text-surface-200 mb-3">
+                What type of data does this vendor process?
+              </h4>
               <div className="space-y-2">
                 {ASSET_DATA_TYPE_OPTIONS.map((opt) => (
                   <RadioOption
@@ -383,7 +446,9 @@ export function VendorRiskAssessmentWizard({
               </div>
             </div>
             <div>
-              <h4 className="font-medium text-surface-200 mb-3">What is the vendor's role in your infrastructure?</h4>
+              <h4 className="font-medium text-surface-200 mb-3">
+                What is the vendor's role in your infrastructure?
+              </h4>
               <div className="space-y-2">
                 {ASSET_ROLE_OPTIONS.map((opt) => (
                   <RadioOption
@@ -404,7 +469,9 @@ export function VendorRiskAssessmentWizard({
         return (
           <div className="space-y-6">
             <div>
-              <h4 className="font-medium text-surface-200 mb-3">Who is the most likely threat actor?</h4>
+              <h4 className="font-medium text-surface-200 mb-3">
+                Who is the most likely threat actor?
+              </h4>
               <div className="space-y-2">
                 {THREAT_ACTOR_OPTIONS.map((opt) => (
                   <RadioOption
@@ -419,7 +486,9 @@ export function VendorRiskAssessmentWizard({
               </div>
             </div>
             <div>
-              <h4 className="font-medium text-surface-200 mb-3">What is the primary threat objective?</h4>
+              <h4 className="font-medium text-surface-200 mb-3">
+                What is the primary threat objective?
+              </h4>
               <div className="space-y-2">
                 {THREAT_OBJECTIVE_OPTIONS.map((opt) => (
                   <RadioOption
@@ -494,8 +563,19 @@ export function VendorRiskAssessmentWizard({
               <div key={key}>
                 <h4 className="font-medium text-surface-200 mb-2 capitalize">{key} Impact</h4>
                 <select
-                  value={state[`impact${key.charAt(0).toUpperCase() + key.slice(1)}` as keyof WizardState]}
-                  onChange={(e) => setState({ ...state, [`impact${key.charAt(0).toUpperCase() + key.slice(1)}`]: parseInt(e.target.value) })}
+                  value={
+                    state[
+                      `impact${key.charAt(0).toUpperCase() + key.slice(1)}` as keyof WizardState
+                    ]
+                  }
+                  onChange={(e) =>
+                    setState({
+                      ...state,
+                      [`impact${key.charAt(0).toUpperCase() + key.slice(1)}`]: parseInt(
+                        e.target.value
+                      ),
+                    })
+                  }
                   className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
                 >
                   {options.map((opt) => (
@@ -512,21 +592,31 @@ export function VendorRiskAssessmentWizard({
       case 5:
         return (
           <div className="space-y-6">
-            <div className={clsx(
-              'p-6 rounded-lg border text-center',
-              riskLevel === 'Critical' ? 'bg-red-500/10 border-red-500/30' :
-              riskLevel === 'High' ? 'bg-orange-500/10 border-orange-500/30' :
-              riskLevel === 'Medium' ? 'bg-yellow-500/10 border-yellow-500/30' :
-              'bg-green-500/10 border-green-500/30'
-            )}>
+            <div
+              className={clsx(
+                'p-6 rounded-lg border text-center',
+                riskLevel === 'Critical'
+                  ? 'bg-red-500/10 border-red-500/30'
+                  : riskLevel === 'High'
+                    ? 'bg-orange-500/10 border-orange-500/30'
+                    : riskLevel === 'Medium'
+                      ? 'bg-yellow-500/10 border-yellow-500/30'
+                      : 'bg-green-500/10 border-green-500/30'
+              )}
+            >
               <div className="text-5xl font-bold mb-2">{totalScore}</div>
-              <div className={clsx(
-                'text-xl font-semibold',
-                riskLevel === 'Critical' ? 'text-red-400' :
-                riskLevel === 'High' ? 'text-orange-400' :
-                riskLevel === 'Medium' ? 'text-yellow-400' :
-                'text-green-400'
-              )}>
+              <div
+                className={clsx(
+                  'text-xl font-semibold',
+                  riskLevel === 'Critical'
+                    ? 'text-red-600'
+                    : riskLevel === 'High'
+                      ? 'text-orange-600'
+                      : riskLevel === 'Medium'
+                        ? 'text-yellow-600'
+                        : 'text-green-600'
+                )}
+              >
                 {riskLevel} Risk
               </div>
             </div>
@@ -540,12 +630,16 @@ export function VendorRiskAssessmentWizard({
 
             <div className="p-4 bg-surface-800/50 rounded-lg">
               <h4 className="font-medium text-surface-200 mb-2">Recommended Action</h4>
-              <p className="text-surface-400">
-                {riskLevel === 'Critical' ? 'Immediate action required - escalate to leadership' :
-                 riskLevel === 'High' ? 'Develop mitigation plan within 30 days' :
-                 riskLevel === 'Medium' ? 'Address within quarterly planning' :
-                 riskLevel === 'Low' ? 'Monitor and address as resources allow' :
-                 'Accept or monitor only'}
+              <p className="text-surface-600">
+                {riskLevel === 'Critical'
+                  ? 'Immediate action required - escalate to leadership'
+                  : riskLevel === 'High'
+                    ? 'Develop mitigation plan within 30 days'
+                    : riskLevel === 'Medium'
+                      ? 'Address within quarterly planning'
+                      : riskLevel === 'Low'
+                        ? 'Monitor and address as resources allow'
+                        : 'Accept or monitor only'}
               </p>
             </div>
           </div>
@@ -565,12 +659,12 @@ export function VendorRiskAssessmentWizard({
             <ShieldExclamationIcon className="w-6 h-6 text-brand-400" />
             <div>
               <h2 className="text-lg font-semibold text-surface-100">Vendor Risk Assessment</h2>
-              <p className="text-sm text-surface-400">{vendorName}</p>
+              <p className="text-sm text-surface-600">{vendorName}</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-surface-400 hover:text-surface-100 hover:bg-surface-800 rounded-lg"
+            className="p-2 text-surface-600 hover:text-surface-100 hover:bg-surface-800 rounded-lg"
           >
             <XMarkIcon className="w-5 h-5" />
           </button>
@@ -584,29 +678,28 @@ export function VendorRiskAssessmentWizard({
                 <div
                   className={clsx(
                     'w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium',
-                    i < step ? 'bg-brand-500 text-white' :
-                    i === step ? 'bg-brand-500/20 text-brand-400 border border-brand-500' :
-                    'bg-surface-800 text-surface-500'
+                    i < step
+                      ? 'bg-brand-500 text-white'
+                      : i === step
+                        ? 'bg-brand-500/20 text-brand-400 border border-brand-500'
+                        : 'bg-surface-800 text-surface-500'
                   )}
                 >
                   {i < step ? <CheckCircleIcon className="w-5 h-5" /> : i + 1}
                 </div>
                 {i < steps.length - 1 && (
-                  <div className={clsx(
-                    'w-8 h-0.5 mx-1',
-                    i < step ? 'bg-brand-500' : 'bg-surface-700'
-                  )} />
+                  <div
+                    className={clsx('w-8 h-0.5 mx-1', i < step ? 'bg-brand-500' : 'bg-surface-700')}
+                  />
                 )}
               </div>
             ))}
           </div>
-          <p className="text-sm text-surface-400 mt-2">{steps[step].description}</p>
+          <p className="text-sm text-surface-600 mt-2">{steps[step].description}</p>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
-          {renderStep()}
-        </div>
+        <div className="flex-1 overflow-y-auto p-6">{renderStep()}</div>
 
         {/* Footer */}
         <div className="flex items-center justify-between p-4 border-t border-surface-800">

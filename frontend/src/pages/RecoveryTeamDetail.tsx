@@ -255,7 +255,7 @@ export default function RecoveryTeamDetail() {
         <span
           className={clsx(
             'px-3 py-1 rounded text-sm font-medium',
-            team.isActive ? 'bg-green-500/20 text-green-400' : 'bg-slate-600 text-slate-400'
+            team.isActive ? 'bg-green-500/20 text-green-600' : 'bg-slate-600 text-slate-400'
           )}
         >
           {team.isActive ? 'Active' : 'Inactive'}
@@ -329,16 +329,16 @@ export default function RecoveryTeamDetail() {
                         className={clsx(
                           'px-2 py-0.5 rounded text-xs',
                           member.role === 'team_lead'
-                            ? 'bg-red-500/20 text-red-400'
+                            ? 'bg-red-500/20 text-red-600'
                             : member.role === 'alternate_lead'
-                            ? 'bg-orange-500/20 text-orange-400'
-                            : 'bg-slate-600 text-slate-300'
+                              ? 'bg-orange-500/20 text-orange-600'
+                              : 'bg-slate-600 text-slate-300'
                         )}
                       >
                         {ROLE_OPTIONS.find((r) => r.value === member.role)?.label || member.role}
                       </span>
                       {!member.isPrimary && (
-                        <span className="px-2 py-0.5 bg-purple-500/20 text-purple-400 rounded text-xs">
+                        <span className="px-2 py-0.5 bg-purple-500/20 text-purple-600 rounded text-xs">
                           Alternate
                         </span>
                       )}
@@ -364,7 +364,7 @@ export default function RecoveryTeamDetail() {
                 </div>
                 <button
                   onClick={() => handleRemoveMember(member.id)}
-                  className="p-2 text-slate-400 hover:text-red-400"
+                  className="p-2 text-slate-400 hover:text-red-600"
                 >
                   <TrashIcon className="h-4 w-4" />
                 </button>
@@ -409,7 +409,7 @@ export default function RecoveryTeamDetail() {
                 </div>
                 <button
                   onClick={() => handleUnlinkPlan(link.planId)}
-                  className="p-2 text-slate-400 hover:text-red-400"
+                  className="p-2 text-slate-400 hover:text-red-600"
                 >
                   <TrashIcon className="h-4 w-4" />
                 </button>
@@ -547,9 +547,7 @@ export default function RecoveryTeamDetail() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  BC/DR Plan
-                </label>
+                <label className="block text-sm font-medium text-slate-300 mb-2">BC/DR Plan</label>
                 <select
                   value={selectedPlanId}
                   onChange={(e) => setSelectedPlanId(e.target.value)}

@@ -42,10 +42,7 @@ const SETUP_STEPS: Omit<SetupStep, 'status'>[] = [
       'Verify DATABASE_URL is correctly set in .env',
       'Check that the database user has proper permissions',
     ],
-    commands: [
-      'docker compose ps postgres',
-      'docker compose exec postgres pg_isready',
-    ],
+    commands: ['docker compose ps postgres', 'docker compose exec postgres pg_isready'],
   },
   {
     id: 'encryption-key',
@@ -69,9 +66,7 @@ const SETUP_STEPS: Omit<SetupStep, 'status'>[] = [
       'Or configure Keycloak and create users there',
       'Admin users can manage all system settings',
     ],
-    commands: [
-      'docker compose exec controls npm run seed:admin',
-    ],
+    commands: ['docker compose exec controls npm run seed:admin'],
   },
   {
     id: 'organization',
@@ -95,9 +90,7 @@ const SETUP_STEPS: Omit<SetupStep, 'status'>[] = [
       'Configure client credentials in .env',
       'Set up user federation if using LDAP/AD',
     ],
-    commands: [
-      'docker compose logs keycloak',
-    ],
+    commands: ['docker compose logs keycloak'],
   },
   {
     id: 'backup-config',
@@ -110,10 +103,7 @@ const SETUP_STEPS: Omit<SetupStep, 'status'>[] = [
       'Configure S3 bucket and credentials',
       'Add backup.sh to crontab for scheduled backups',
     ],
-    commands: [
-      'crontab -e',
-      '# Add: 0 2 * * * /opt/gigachad-grc/deploy/backup.sh',
-    ],
+    commands: ['crontab -e', '# Add: 0 2 * * * /opt/gigachad-grc/deploy/backup.sh'],
   },
 ];
 
@@ -155,9 +145,10 @@ export function SetupWizard({ onClose }: { onClose: () => void }) {
     }
   };
 
-  const progress = steps.length > 0
-    ? Math.round((steps.filter((s) => s.status === 'completed').length / steps.length) * 100)
-    : 0;
+  const progress =
+    steps.length > 0
+      ? Math.round((steps.filter((s) => s.status === 'completed').length / steps.length) * 100)
+      : 0;
 
   const currentStepData = steps[currentStep];
   const isComplete = progress === 100;
@@ -227,16 +218,14 @@ export function SetupWizard({ onClose }: { onClose: () => void }) {
                   key={step.id}
                   onClick={() => setCurrentStep(index)}
                   className={`w-full text-left p-3 rounded-lg mb-2 transition-colors ${
-                    isActive
-                      ? 'bg-primary/20 border border-primary/50'
-                      : 'hover:bg-white/5'
+                    isActive ? 'bg-primary/20 border border-primary/50' : 'hover:bg-white/5'
                   }`}
                 >
                   <div className="flex items-center gap-3">
                     <div
                       className={`p-2 rounded-lg ${
                         isCompleted
-                          ? 'bg-green-500/20 text-green-400'
+                          ? 'bg-green-500/20 text-green-600'
                           : isActive
                             ? 'bg-primary/20 text-primary'
                             : 'bg-surface-700 text-foreground/40'
@@ -252,7 +241,7 @@ export function SetupWizard({ onClose }: { onClose: () => void }) {
                       <p
                         className={`text-sm font-medium truncate ${
                           isCompleted
-                            ? 'text-green-400'
+                            ? 'text-green-600'
                             : isActive
                               ? 'text-foreground'
                               : 'text-foreground/60'
@@ -274,13 +263,11 @@ export function SetupWizard({ onClose }: { onClose: () => void }) {
                 <div className="flex items-center gap-3 mb-4">
                   <div
                     className={`p-3 rounded-xl ${
-                      currentStepData.status === 'completed'
-                        ? 'bg-green-500/20'
-                        : 'bg-primary/20'
+                      currentStepData.status === 'completed' ? 'bg-green-500/20' : 'bg-primary/20'
                     }`}
                   >
                     {currentStepData.status === 'completed' ? (
-                      <CheckCircleIcon className="h-8 w-8 text-green-400" />
+                      <CheckCircleIcon className="h-8 w-8 text-green-600" />
                     ) : (
                       <currentStepData.icon className="h-8 w-8 text-primary" />
                     )}
@@ -289,12 +276,10 @@ export function SetupWizard({ onClose }: { onClose: () => void }) {
                     <h3 className="text-lg font-semibold text-foreground">
                       {currentStepData.title}
                     </h3>
-                    <p className="text-sm text-foreground/60">
-                      {currentStepData.description}
-                    </p>
+                    <p className="text-sm text-foreground/60">{currentStepData.description}</p>
                   </div>
                   {currentStepData.status === 'completed' && (
-                    <span className="ml-auto px-3 py-1 bg-green-500/20 text-green-400 text-sm font-medium rounded-full">
+                    <span className="ml-auto px-3 py-1 bg-green-500/20 text-green-600 text-sm font-medium rounded-full">
                       Completed
                     </span>
                   )}
@@ -303,15 +288,10 @@ export function SetupWizard({ onClose }: { onClose: () => void }) {
                 {currentStepData.status !== 'completed' && (
                   <>
                     <div className="bg-surface-700/50 rounded-lg p-4 mb-4">
-                      <h4 className="text-sm font-medium text-foreground mb-3">
-                        Instructions
-                      </h4>
+                      <h4 className="text-sm font-medium text-foreground mb-3">Instructions</h4>
                       <ol className="space-y-2">
                         {currentStepData.instructions.map((instruction, i) => (
-                          <li
-                            key={i}
-                            className="flex items-start gap-2 text-sm text-foreground/80"
-                          >
+                          <li key={i} className="flex items-start gap-2 text-sm text-foreground/80">
                             <span className="text-primary font-medium">{i + 1}.</span>
                             {instruction}
                           </li>
@@ -321,16 +301,14 @@ export function SetupWizard({ onClose }: { onClose: () => void }) {
 
                     {currentStepData.commands && currentStepData.commands.length > 0 && (
                       <div className="bg-surface-900 rounded-lg p-4">
-                        <h4 className="text-sm font-medium text-foreground mb-3">
-                          Commands
-                        </h4>
+                        <h4 className="text-sm font-medium text-foreground mb-3">Commands</h4>
                         <div className="space-y-2">
                           {currentStepData.commands.map((command, i) => (
                             <div
                               key={i}
                               className="flex items-center gap-2 bg-black/30 rounded px-3 py-2"
                             >
-                              <code className="text-sm text-green-400 font-mono flex-1">
+                              <code className="text-sm text-green-600 font-mono flex-1">
                                 {command}
                               </code>
                               <button
@@ -349,13 +327,13 @@ export function SetupWizard({ onClose }: { onClose: () => void }) {
 
                 {currentStepData.status === 'completed' && (
                   <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
-                    <div className="flex items-center gap-2 text-green-400">
+                    <div className="flex items-center gap-2 text-green-600">
                       <CheckCircleIcon className="h-5 w-5" />
                       <span className="font-medium">This step is complete</span>
                     </div>
                     <p className="text-sm text-foreground/60 mt-2">
-                      {currentStepData.title} has been properly configured. You can proceed
-                      to the next step or review the configuration.
+                      {currentStepData.title} has been properly configured. You can proceed to the
+                      next step or review the configuration.
                     </p>
                   </div>
                 )}
@@ -447,4 +425,3 @@ export function useSetupWizard() {
 }
 
 export default SetupWizard;
-

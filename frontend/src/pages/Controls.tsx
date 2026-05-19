@@ -22,37 +22,60 @@ import { Button } from '@/components/Button';
 import { SkeletonTable } from '@/components/Skeleton';
 import { ExportDropdown } from '@/components/ExportDropdown';
 import { exportConfigs } from '@/lib/export';
-import { useSelection, SelectCheckbox, BulkActionsBar, StatusUpdateDropdown } from '@/components/BulkActions';
+import {
+  useSelection,
+  SelectCheckbox,
+  BulkActionsBar,
+  StatusUpdateDropdown,
+} from '@/components/BulkActions';
 import { AdvancedFilters, conditionsToQueryParams } from '@/components/AdvancedFilters';
 
 // Define filter fields for controls
 const CONTROL_FILTER_FIELDS = [
   { key: 'title', label: 'Title', type: 'string' as const },
   { key: 'controlId', label: 'Control ID', type: 'string' as const },
-  { key: 'category', label: 'Category', type: 'select' as const, options: [
-    { value: 'access_control', label: 'Access Control' },
-    { value: 'data_protection', label: 'Data Protection' },
-    { value: 'network_security', label: 'Network Security' },
-    { value: 'physical_security', label: 'Physical Security' },
-    { value: 'incident_response', label: 'Incident Response' },
-    { value: 'business_continuity', label: 'Business Continuity' },
-    { value: 'compliance', label: 'Compliance' },
-    { value: 'risk_management', label: 'Risk Management' },
-  ]},
-  { key: 'status', label: 'Status', type: 'select' as const, options: [
-    { value: 'implemented', label: 'Implemented' },
-    { value: 'in_progress', label: 'In Progress' },
-    { value: 'not_started', label: 'Not Started' },
-    { value: 'not_applicable', label: 'N/A' },
-  ]},
+  {
+    key: 'category',
+    label: 'Category',
+    type: 'select' as const,
+    options: [
+      { value: 'access_control', label: 'Access Control' },
+      { value: 'data_protection', label: 'Data Protection' },
+      { value: 'network_security', label: 'Network Security' },
+      { value: 'physical_security', label: 'Physical Security' },
+      { value: 'incident_response', label: 'Incident Response' },
+      { value: 'business_continuity', label: 'Business Continuity' },
+      { value: 'compliance', label: 'Compliance' },
+      { value: 'risk_management', label: 'Risk Management' },
+    ],
+  },
+  {
+    key: 'status',
+    label: 'Status',
+    type: 'select' as const,
+    options: [
+      { value: 'implemented', label: 'Implemented' },
+      { value: 'in_progress', label: 'In Progress' },
+      { value: 'not_started', label: 'Not Started' },
+      { value: 'not_applicable', label: 'N/A' },
+    ],
+  },
   { key: 'owner', label: 'Owner', type: 'string' as const },
 ];
 
 const STATUS_CONFIG = {
-  implemented: { label: 'Implemented', icon: CheckCircleIcon, color: 'text-green-400 bg-green-400/10' },
-  in_progress: { label: 'In Progress', icon: ClockIcon, color: 'text-yellow-400 bg-yellow-400/10' },
-  not_started: { label: 'Not Started', icon: MinusCircleIcon, color: 'text-surface-400 bg-surface-400/10' },
-  not_applicable: { label: 'N/A', icon: XCircleIcon, color: 'text-blue-400 bg-blue-400/10' },
+  implemented: {
+    label: 'Implemented',
+    icon: CheckCircleIcon,
+    color: 'text-green-600 bg-green-400/10',
+  },
+  in_progress: { label: 'In Progress', icon: ClockIcon, color: 'text-yellow-600 bg-yellow-400/10' },
+  not_started: {
+    label: 'Not Started',
+    icon: MinusCircleIcon,
+    color: 'text-surface-600 bg-surface-400/10',
+  },
+  not_applicable: { label: 'N/A', icon: XCircleIcon, color: 'text-blue-600 bg-blue-400/10' },
 };
 
 const STATUS_OPTIONS = [
@@ -84,15 +107,18 @@ export default function Controls() {
   const debouncedSearch = useDebounce(searchInput, 300);
 
   // Update URL when filters change
-  const updateFilter = useCallback((key: string, value: string) => {
-    const newParams = new URLSearchParams(searchParams);
-    if (value) {
-      newParams.set(key, value);
-    } else {
-      newParams.delete(key);
-    }
-    setSearchParams(newParams, { replace: true });
-  }, [searchParams, setSearchParams]);
+  const updateFilter = useCallback(
+    (key: string, value: string) => {
+      const newParams = new URLSearchParams(searchParams);
+      if (value) {
+        newParams.set(key, value);
+      } else {
+        newParams.delete(key);
+      }
+      setSearchParams(newParams, { replace: true });
+    },
+    [searchParams, setSearchParams]
+  );
 
   // Sync debounced search to URL
   const updateSearch = useCallback((value: string) => {
@@ -110,13 +136,15 @@ export default function Controls() {
   const { data: controlsData, isLoading } = useQuery({
     queryKey: ['controls', debouncedSearch, selectedCategory, selectedStatus, selectedFramework],
     queryFn: () =>
-      controlsApi.list({
-        search: debouncedSearch || undefined,
-        category: selectedCategory ? [selectedCategory] : undefined,
-        status: selectedStatus ? [selectedStatus] : undefined,
-        frameworkId: selectedFramework || undefined,
-        limit: 25, // Reduced from 50 for faster initial load
-      }).then((res) => res.data),
+      controlsApi
+        .list({
+          search: debouncedSearch || undefined,
+          category: selectedCategory ? [selectedCategory] : undefined,
+          status: selectedStatus ? [selectedStatus] : undefined,
+          frameworkId: selectedFramework || undefined,
+          limit: 25, // Reduced from 50 for faster initial load
+        })
+        .then((res) => res.data),
     staleTime: 30 * 1000, // 30 second cache
   });
 
@@ -139,7 +167,7 @@ export default function Controls() {
   const bulkDeleteMutation = useMutation({
     mutationFn: async (ids: string[]) => {
       // Delete controls one by one (backend may not have bulk delete endpoint)
-      await Promise.all(ids.map(id => controlsApi.delete(id)));
+      await Promise.all(ids.map((id) => controlsApi.delete(id)));
       return ids.length; // Return count for use in onSuccess
     },
     onSuccess: (deletedCount) => {
@@ -155,9 +183,7 @@ export default function Controls() {
   // Bulk status update mutation
   const bulkStatusMutation = useMutation({
     mutationFn: async ({ ids, status }: { ids: string[]; status: string }) => {
-      await Promise.all(ids.map(id => 
-        controlsApi.update(id, { implementation: { status } })
-      ));
+      await Promise.all(ids.map((id) => controlsApi.update(id, { implementation: { status } })));
       return ids.length; // Return count for use in onSuccess
     },
     onSuccess: (updatedCount) => {
@@ -172,7 +198,7 @@ export default function Controls() {
 
   const handleBulkAction = async (actionId: string) => {
     const selectedIds = Array.from(selection.selectedIds);
-    
+
     if (actionId === 'delete') {
       setIsProcessing(true);
       try {
@@ -221,7 +247,7 @@ export default function Controls() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-surface-100">Controls</h1>
-          <p className="text-surface-400 mt-1">
+          <p className="text-surface-600 mt-1">
             Manage your security controls and track implementation status
           </p>
         </div>
@@ -278,10 +304,7 @@ export default function Controls() {
       </div>
 
       {/* Bulk Upload Modal */}
-      <BulkUploadModal 
-        isOpen={isBulkUploadOpen} 
-        onClose={() => setIsBulkUploadOpen(false)} 
-      />
+      <BulkUploadModal isOpen={isBulkUploadOpen} onClose={() => setIsBulkUploadOpen(false)} />
 
       {/* Filters */}
       <div className="card p-4">
@@ -372,7 +395,7 @@ export default function Controls() {
                   const isSelected = selection.isSelected(control.id);
 
                   return (
-                    <tr 
+                    <tr
                       key={control.id}
                       className={clsx(isSelected && 'bg-brand-500/10')}
                       onMouseEnter={() => prefetchControl(control.id)}
@@ -413,17 +436,12 @@ export default function Controls() {
                         </div>
                       </td>
                       <td>
-                        <span className="text-surface-400">
-                          {control.evidenceCount || 0}
-                        </span>
+                        <span className="text-surface-600">{control.evidenceCount || 0}</span>
                       </td>
                       <td>
                         <div className="flex flex-wrap gap-1">
                           {control.frameworkMappings?.slice(0, 2).map((mapping: any) => (
-                            <span
-                              key={mapping.frameworkId}
-                              className="badge badge-info text-xs"
-                            >
+                            <span key={mapping.frameworkId} className="badge badge-info text-xs">
                               {mapping.frameworkName}
                             </span>
                           ))}

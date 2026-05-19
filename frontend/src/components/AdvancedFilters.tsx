@@ -15,7 +15,20 @@ import clsx from 'clsx';
 // Types
 // ===========================================
 
-type FilterOperator = 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'starts_with' | 'ends_with' | 'greater_than' | 'less_than' | 'between' | 'in' | 'not_in' | 'is_empty' | 'is_not_empty';
+type FilterOperator =
+  | 'equals'
+  | 'not_equals'
+  | 'contains'
+  | 'not_contains'
+  | 'starts_with'
+  | 'ends_with'
+  | 'greater_than'
+  | 'less_than'
+  | 'between'
+  | 'in'
+  | 'not_in'
+  | 'is_empty'
+  | 'is_not_empty';
 
 interface FilterField {
   key: string;
@@ -50,8 +63,16 @@ interface AdvancedFiltersProps {
 // ===========================================
 
 const OPERATORS: Record<string, { label: string; requiresValue: boolean; types: string[] }> = {
-  equals: { label: 'equals', requiresValue: true, types: ['string', 'number', 'date', 'select', 'boolean'] },
-  not_equals: { label: 'does not equal', requiresValue: true, types: ['string', 'number', 'date', 'select', 'boolean'] },
+  equals: {
+    label: 'equals',
+    requiresValue: true,
+    types: ['string', 'number', 'date', 'select', 'boolean'],
+  },
+  not_equals: {
+    label: 'does not equal',
+    requiresValue: true,
+    types: ['string', 'number', 'date', 'select', 'boolean'],
+  },
   contains: { label: 'contains', requiresValue: true, types: ['string'] },
   not_contains: { label: 'does not contain', requiresValue: true, types: ['string'] },
   starts_with: { label: 'starts with', requiresValue: true, types: ['string'] },
@@ -61,8 +82,16 @@ const OPERATORS: Record<string, { label: string; requiresValue: boolean; types: 
   between: { label: 'between', requiresValue: true, types: ['number', 'date'] },
   in: { label: 'is any of', requiresValue: true, types: ['select', 'multi_select'] },
   not_in: { label: 'is none of', requiresValue: true, types: ['select', 'multi_select'] },
-  is_empty: { label: 'is empty', requiresValue: false, types: ['string', 'select', 'multi_select'] },
-  is_not_empty: { label: 'is not empty', requiresValue: false, types: ['string', 'select', 'multi_select'] },
+  is_empty: {
+    label: 'is empty',
+    requiresValue: false,
+    types: ['string', 'select', 'multi_select'],
+  },
+  is_not_empty: {
+    label: 'is not empty',
+    requiresValue: false,
+    types: ['string', 'select', 'multi_select'],
+  },
 };
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
@@ -94,12 +123,15 @@ export function AdvancedFilters({ fields, onApply, storageKey, className }: Adva
   }, [storageKey]);
 
   // Save presets to localStorage
-  const savePresetsToStorage = useCallback((newPresets: FilterPreset[]) => {
-    if (storageKey) {
-      localStorage.setItem(`filters_${storageKey}`, JSON.stringify(newPresets));
-    }
-    setPresets(newPresets);
-  }, [storageKey]);
+  const savePresetsToStorage = useCallback(
+    (newPresets: FilterPreset[]) => {
+      if (storageKey) {
+        localStorage.setItem(`filters_${storageKey}`, JSON.stringify(newPresets));
+      }
+      setPresets(newPresets);
+    },
+    [storageKey]
+  );
 
   const addCondition = () => {
     const newCondition: FilterCondition = {
@@ -113,12 +145,12 @@ export function AdvancedFilters({ fields, onApply, storageKey, className }: Adva
   };
 
   const updateCondition = (id: string, updates: Partial<FilterCondition>) => {
-    setConditions(conditions.map(c => c.id === id ? { ...c, ...updates } : c));
+    setConditions(conditions.map((c) => (c.id === id ? { ...c, ...updates } : c)));
     setActivePresetId(null);
   };
 
   const removeCondition = (id: string) => {
-    setConditions(conditions.filter(c => c.id !== id));
+    setConditions(conditions.filter((c) => c.id !== id));
     setActivePresetId(null);
   };
 
@@ -135,14 +167,14 @@ export function AdvancedFilters({ fields, onApply, storageKey, className }: Adva
 
   const savePreset = () => {
     if (!presetName.trim()) return;
-    
+
     const newPreset: FilterPreset = {
       id: generateId(),
       name: presetName.trim(),
       conditions: [...conditions],
       createdAt: new Date().toISOString(),
     };
-    
+
     savePresetsToStorage([...presets, newPreset]);
     setPresetName('');
     setShowSavePreset(false);
@@ -155,13 +187,13 @@ export function AdvancedFilters({ fields, onApply, storageKey, className }: Adva
   };
 
   const deletePreset = (presetId: string) => {
-    savePresetsToStorage(presets.filter(p => p.id !== presetId));
+    savePresetsToStorage(presets.filter((p) => p.id !== presetId));
     if (activePresetId === presetId) {
       setActivePresetId(null);
     }
   };
 
-  const getFieldByKey = (key: string) => fields.find(f => f.key === key);
+  const getFieldByKey = (key: string) => fields.find((f) => f.key === key);
 
   const getOperatorsForField = (fieldKey: string) => {
     const field = getFieldByKey(fieldKey);
@@ -186,7 +218,9 @@ export function AdvancedFilters({ fields, onApply, storageKey, className }: Adva
               {activeFilterCount}
             </span>
           ) : (
-            <ChevronDownIcon className={clsx('w-4 h-4 transition-transform', isOpen && 'rotate-180')} />
+            <ChevronDownIcon
+              className={clsx('w-4 h-4 transition-transform', isOpen && 'rotate-180')}
+            />
           )
         }
       >
@@ -205,7 +239,7 @@ export function AdvancedFilters({ fields, onApply, storageKey, className }: Adva
                 {conditions.length > 0 && (
                   <button
                     onClick={clearAll}
-                    className="text-sm text-surface-400 hover:text-surface-200"
+                    className="text-sm text-surface-600 hover:text-surface-200"
                   >
                     Clear all
                   </button>
@@ -214,7 +248,7 @@ export function AdvancedFilters({ fields, onApply, storageKey, className }: Adva
                   onClick={() => setIsOpen(false)}
                   className="p-1 hover:bg-surface-700 rounded"
                 >
-                  <XMarkIcon className="w-5 h-5 text-surface-400" />
+                  <XMarkIcon className="w-5 h-5 text-surface-600" />
                 </button>
               </div>
             </div>
@@ -224,14 +258,14 @@ export function AdvancedFilters({ fields, onApply, storageKey, className }: Adva
               <div className="p-3 border-b border-surface-700 bg-surface-800/50">
                 <p className="text-xs text-surface-500 mb-2">Saved Filters</p>
                 <div className="flex flex-wrap gap-2">
-                  {presets.map(preset => (
+                  {presets.map((preset) => (
                     <div
                       key={preset.id}
                       className={clsx(
                         'group flex items-center gap-1 px-2 py-1 rounded-lg text-sm cursor-pointer',
                         activePresetId === preset.id
                           ? 'bg-brand-500/20 text-brand-400'
-                          : 'bg-surface-700 text-surface-300 hover:bg-surface-600'
+                          : 'bg-surface-700 text-surface-700 hover:bg-surface-600'
                       )}
                       onClick={() => loadPreset(preset)}
                     >
@@ -242,7 +276,7 @@ export function AdvancedFilters({ fields, onApply, storageKey, className }: Adva
                           e.stopPropagation();
                           deletePreset(preset.id);
                         }}
-                        className="ml-1 opacity-0 group-hover:opacity-100 hover:text-red-400"
+                        className="ml-1 opacity-0 group-hover:opacity-100 hover:text-red-600"
                       >
                         <XMarkIcon className="w-3 h-3" />
                       </button>
@@ -348,27 +382,27 @@ function FilterConditionRow({
   onRemove,
   showAndLabel,
 }: FilterConditionRowProps) {
-  const field = fields.find(f => f.key === condition.field);
+  const field = fields.find((f) => f.key === condition.field);
   const operatorConfig = OPERATORS[condition.operator];
 
   const handleFieldChange = (fieldKey: string) => {
-    const newField = fields.find(f => f.key === fieldKey);
+    const newField = fields.find((f) => f.key === fieldKey);
     const validOperators = Object.entries(OPERATORS)
       .filter(([_, config]) => config.types.includes(newField?.type || 'string'))
       .map(([key]) => key);
-    
+
     onUpdate({
       field: fieldKey,
-      operator: validOperators.includes(condition.operator) ? condition.operator : (validOperators[0] as FilterOperator),
+      operator: validOperators.includes(condition.operator)
+        ? condition.operator
+        : (validOperators[0] as FilterOperator),
       value: '',
     });
   };
 
   return (
     <div className="space-y-2">
-      {showAndLabel && (
-        <span className="text-xs text-surface-500 font-medium">AND</span>
-      )}
+      {showAndLabel && <span className="text-xs text-surface-500 font-medium">AND</span>}
       <div className="flex items-center gap-2">
         {/* Field Select */}
         <select
@@ -376,8 +410,10 @@ function FilterConditionRow({
           onChange={(e) => handleFieldChange(e.target.value)}
           className="flex-1 px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-sm text-white"
         >
-          {fields.map(f => (
-            <option key={f.key} value={f.key}>{f.label}</option>
+          {fields.map((f) => (
+            <option key={f.key} value={f.key}>
+              {f.label}
+            </option>
           ))}
         </select>
 
@@ -387,8 +423,10 @@ function FilterConditionRow({
           onChange={(e) => onUpdate({ operator: e.target.value as FilterOperator, value: '' })}
           className="w-36 px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-sm text-white"
         >
-          {operators.map(op => (
-            <option key={op.value} value={op.value}>{op.label}</option>
+          {operators.map((op) => (
+            <option key={op.value} value={op.value}>
+              {op.label}
+            </option>
           ))}
         </select>
 
@@ -405,7 +443,7 @@ function FilterConditionRow({
         {/* Remove Button */}
         <button
           onClick={onRemove}
-          className="p-2 hover:bg-surface-700 rounded-lg text-surface-400 hover:text-red-400"
+          className="p-2 hover:bg-surface-700 rounded-lg text-surface-600 hover:text-red-600"
         >
           <TrashIcon className="w-4 h-4" />
         </button>
@@ -451,8 +489,8 @@ function ValueInput({ field, operator, value, onChange }: ValueInputProps) {
       return (
         <div className="flex-1">
           <div className="flex flex-wrap gap-1 p-2 bg-surface-700 border border-surface-600 rounded-lg min-h-[38px]">
-            {selectedValues.map(v => {
-              const opt = field.options?.find(o => o.value === v);
+            {selectedValues.map((v) => {
+              const opt = field.options?.find((o) => o.value === v);
               return (
                 <span
                   key={v}
@@ -460,7 +498,7 @@ function ValueInput({ field, operator, value, onChange }: ValueInputProps) {
                 >
                   {opt?.label || v}
                   <button
-                    onClick={() => onChange(selectedValues.filter(sv => sv !== v))}
+                    onClick={() => onChange(selectedValues.filter((sv) => sv !== v))}
                     className="hover:text-brand-300"
                   >
                     <XMarkIcon className="w-3 h-3" />
@@ -479,9 +517,11 @@ function ValueInput({ field, operator, value, onChange }: ValueInputProps) {
             >
               <option value="">Add...</option>
               {field.options
-                .filter(o => !selectedValues.includes(o.value))
-                .map(o => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
+                .filter((o) => !selectedValues.includes(o.value))
+                .map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
                 ))}
             </select>
           </div>
@@ -496,8 +536,10 @@ function ValueInput({ field, operator, value, onChange }: ValueInputProps) {
           className="flex-1 px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-sm text-white"
         >
           <option value="">Select...</option>
-          {field.options.map(o => (
-            <option key={o.value} value={o.value}>{o.label}</option>
+          {field.options.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
           ))}
         </select>
       );
@@ -547,13 +589,13 @@ function ValueInput({ field, operator, value, onChange }: ValueInputProps) {
 
 export function conditionsToQueryParams(conditions: FilterCondition[]): Record<string, string> {
   const params: Record<string, string> = {};
-  
-  conditions.forEach(condition => {
+
+  conditions.forEach((condition) => {
     const key = condition.field;
-    const value = Array.isArray(condition.value) 
-      ? condition.value.join(',') 
+    const value = Array.isArray(condition.value)
+      ? condition.value.join(',')
       : String(condition.value || '');
-    
+
     // Simple mapping - extend based on your API needs
     if (condition.operator === 'equals') {
       params[key] = value;
@@ -564,13 +606,8 @@ export function conditionsToQueryParams(conditions: FilterCondition[]): Record<s
     }
     // Add more operators as needed
   });
-  
+
   return params;
 }
 
 export default AdvancedFilters;
-
-
-
-
-

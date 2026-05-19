@@ -48,9 +48,9 @@ const SEVERITY_COLORS: Record<string, string> = {
 };
 
 const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
-  active: { bg: 'bg-red-500/20', text: 'text-red-400' },
-  recovering: { bg: 'bg-orange-500/20', text: 'text-orange-400' },
-  resolved: { bg: 'bg-green-500/20', text: 'text-green-400' },
+  active: { bg: 'bg-red-500/20', text: 'text-red-600' },
+  recovering: { bg: 'bg-orange-500/20', text: 'text-orange-600' },
+  resolved: { bg: 'bg-green-500/20', text: 'text-green-600' },
   closed: { bg: 'bg-slate-600/50', text: 'text-slate-400' },
 };
 
@@ -102,7 +102,7 @@ export default function BCDRIncidents() {
       const response = await api.get('/bcdr/incidents/active');
       const data = response.data;
       // Handle both array response and { data: [] } response format
-      setActiveIncidents(Array.isArray(data) ? data : (data?.data || []));
+      setActiveIncidents(Array.isArray(data) ? data : data?.data || []);
     } catch (error) {
       console.error('Failed to load active incidents:', error);
       setActiveIncidents([]);
@@ -133,12 +133,13 @@ export default function BCDRIncidents() {
         <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <ExclamationTriangleIcon className="h-6 w-6 text-red-400 animate-pulse" />
+              <ExclamationTriangleIcon className="h-6 w-6 text-red-600 animate-pulse" />
               <div>
-                <h3 className="text-lg font-medium text-red-400">
-                  {safeActiveIncidents.length} Active Incident{safeActiveIncidents.length > 1 ? 's' : ''}
+                <h3 className="text-lg font-medium text-red-600">
+                  {safeActiveIncidents.length} Active Incident
+                  {safeActiveIncidents.length > 1 ? 's' : ''}
                 </h3>
-                <p className="text-sm text-red-300">
+                <p className="text-sm text-red-700">
                   {safeActiveIncidents.map((i) => i.title).join(', ')}
                 </p>
               </div>
@@ -177,19 +178,19 @@ export default function BCDRIncidents() {
           </div>
           <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
             <p className="text-slate-400 text-sm">Active</p>
-            <p className="text-2xl font-bold text-red-400 mt-1">{stats.active_count || 0}</p>
+            <p className="text-2xl font-bold text-red-600 mt-1">{stats.active_count || 0}</p>
           </div>
           <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
             <p className="text-slate-400 text-sm">Recovering</p>
-            <p className="text-2xl font-bold text-orange-400 mt-1">{stats.recovering_count || 0}</p>
+            <p className="text-2xl font-bold text-orange-600 mt-1">{stats.recovering_count || 0}</p>
           </div>
           <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
             <p className="text-slate-400 text-sm">Resolved</p>
-            <p className="text-2xl font-bold text-green-400 mt-1">{stats.resolved_count || 0}</p>
+            <p className="text-2xl font-bold text-green-600 mt-1">{stats.resolved_count || 0}</p>
           </div>
           <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
             <p className="text-slate-400 text-sm">Avg Resolution</p>
-            <p className="text-2xl font-bold text-cyan-400 mt-1">
+            <p className="text-2xl font-bold text-cyan-600 mt-1">
               {stats.avg_resolution_minutes
                 ? `${Math.round(stats.avg_resolution_minutes / 60)}h`
                 : 'N/A'}
@@ -250,8 +251,8 @@ export default function BCDRIncidents() {
                 incident.status === 'active'
                   ? 'border-red-500/50'
                   : incident.status === 'recovering'
-                  ? 'border-orange-500/50'
-                  : 'border-slate-700'
+                    ? 'border-orange-500/50'
+                    : 'border-slate-700'
               )}
               onClick={() => navigate(`/bcdr/incidents/${incident.id}`)}
             >

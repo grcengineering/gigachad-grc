@@ -539,7 +539,7 @@ export default function RiskReports() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Risk Reports</h1>
-          <p className="text-gray-500 dark:text-surface-400 mt-1">
+          <p className="text-gray-500 dark:text-surface-600 mt-1">
             Generate and export risk reports
           </p>
         </div>
@@ -575,7 +575,7 @@ export default function RiskReports() {
                         className={`w-4 h-4 ${
                           selectedReport === template.id
                             ? 'text-brand-400'
-                            : 'text-gray-500 dark:text-surface-400'
+                            : 'text-gray-500 dark:text-surface-600'
                         }`}
                       />
                     </div>
@@ -614,7 +614,7 @@ export default function RiskReports() {
                     <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                       {selectedTemplate.name}
                     </h3>
-                    <p className="text-gray-500 dark:text-surface-400 text-sm">
+                    <p className="text-gray-500 dark:text-surface-600 text-sm">
                       {selectedTemplate.description}
                     </p>
                   </div>
@@ -714,7 +714,7 @@ export default function RiskReports() {
                           className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
                             exportFormat === format
                               ? 'bg-brand-500 text-white'
-                              : 'bg-gray-100 dark:bg-surface-700 text-gray-600 dark:text-surface-400 hover:bg-gray-200 dark:hover:bg-surface-600 hover:text-gray-700 dark:hover:text-surface-300'
+                              : 'bg-gray-100 dark:bg-surface-700 text-gray-600 dark:text-surface-600 hover:bg-gray-200 dark:hover:bg-surface-600 hover:text-gray-700 dark:hover:text-surface-700'
                           }`}
                         >
                           {format.toUpperCase()}
@@ -763,7 +763,7 @@ export default function RiskReports() {
                 </h3>
 
                 {isLoading ? (
-                  <div className="text-center py-8 text-gray-500 dark:text-surface-400">
+                  <div className="text-center py-8 text-gray-500 dark:text-surface-600">
                     Loading preview...
                   </div>
                 ) : (
@@ -796,7 +796,7 @@ export default function RiskReports() {
           ) : (
             <div className="bg-white dark:bg-surface-800 rounded-xl border border-gray-200 dark:border-surface-700 p-12 text-center">
               <DocumentChartBarIcon className="w-12 h-12 text-gray-400 dark:text-surface-600 mx-auto mb-4" />
-              <p className="text-gray-600 dark:text-surface-400 text-lg font-medium">
+              <p className="text-gray-600 dark:text-surface-600 text-lg font-medium">
                 Select a Report Template
               </p>
               <p className="text-gray-500 dark:text-surface-500 text-sm mt-1">
@@ -823,25 +823,25 @@ function ExecutiveSummaryPreview({ data, risks }: { data: any; risks: Risk[] }) 
           <p className="text-2xl font-bold text-gray-900 dark:text-white">
             {data?.totalRisks || risks.length}
           </p>
-          <p className="text-gray-500 dark:text-surface-400 text-xs mt-1">Total Risks</p>
+          <p className="text-gray-500 dark:text-surface-600 text-xs mt-1">Total Risks</p>
         </div>
         <div className="p-4 bg-gray-50 dark:bg-surface-700/50 rounded-lg text-center border border-gray-200 dark:border-surface-600/50">
-          <p className="text-2xl font-bold text-red-500 dark:text-red-400">
+          <p className="text-2xl font-bold text-red-500 dark:text-red-600">
             {data?.openRisks || risks.filter((r) => r.status === 'open').length}
           </p>
-          <p className="text-gray-500 dark:text-surface-400 text-xs mt-1">Open</p>
+          <p className="text-gray-500 dark:text-surface-600 text-xs mt-1">Open</p>
         </div>
         <div className="p-4 bg-gray-50 dark:bg-surface-700/50 rounded-lg text-center border border-gray-200 dark:border-surface-600/50">
-          <p className="text-2xl font-bold text-amber-500 dark:text-amber-400">
+          <p className="text-2xl font-bold text-amber-500 dark:text-amber-600">
             {data?.inTreatment || risks.filter((r) => r.status === 'in_treatment').length}
           </p>
-          <p className="text-gray-500 dark:text-surface-400 text-xs mt-1">In Treatment</p>
+          <p className="text-gray-500 dark:text-surface-600 text-xs mt-1">In Treatment</p>
         </div>
         <div className="p-4 bg-gray-50 dark:bg-surface-700/50 rounded-lg text-center border border-gray-200 dark:border-surface-600/50">
-          <p className="text-2xl font-bold text-emerald-500 dark:text-emerald-400">
+          <p className="text-2xl font-bold text-emerald-500 dark:text-emerald-600">
             {data?.mitigatedThisMonth || risks.filter((r) => r.status === 'mitigated').length}
           </p>
-          <p className="text-gray-500 dark:text-surface-400 text-xs mt-1">Mitigated</p>
+          <p className="text-gray-500 dark:text-surface-600 text-xs mt-1">Mitigated</p>
         </div>
       </div>
 
@@ -866,7 +866,7 @@ function ExecutiveSummaryPreview({ data, risks }: { data: any; risks: Risk[] }) 
                   </span>
                   <span className="text-gray-900 dark:text-white text-sm">{risk.title}</span>
                 </div>
-                <span className="text-gray-500 dark:text-surface-400 text-xs capitalize">
+                <span className="text-gray-500 dark:text-surface-600 text-xs capitalize">
                   {risk.status?.replace(/_/g, ' ')}
                 </span>
               </div>
@@ -883,7 +883,7 @@ function RiskRegisterPreview({ risks }: { risks: Risk[] }) {
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="text-left text-gray-500 dark:text-surface-400 border-b border-gray-200 dark:border-surface-700">
+          <tr className="text-left text-gray-500 dark:text-surface-600 border-b border-gray-200 dark:border-surface-700">
             <th className="pb-2 text-xs font-medium">Risk ID</th>
             <th className="pb-2 text-xs font-medium">Title</th>
             <th className="pb-2 text-xs font-medium">Category</th>
@@ -898,7 +898,7 @@ function RiskRegisterPreview({ risks }: { risks: Risk[] }) {
                 {risk.riskId}
               </td>
               <td className="py-2.5 text-gray-900 dark:text-white text-sm">{risk.title}</td>
-              <td className="py-2.5 text-gray-600 dark:text-surface-300 capitalize text-sm">
+              <td className="py-2.5 text-gray-600 dark:text-surface-700 capitalize text-sm">
                 {risk.category}
               </td>
               <td className="py-2.5">
@@ -916,7 +916,7 @@ function RiskRegisterPreview({ risks }: { risks: Risk[] }) {
                   {risk.inherentRisk}
                 </span>
               </td>
-              <td className="py-2.5 text-gray-600 dark:text-surface-300 capitalize text-sm">
+              <td className="py-2.5 text-gray-600 dark:text-surface-700 capitalize text-sm">
                 {risk.status?.replace(/_/g, ' ')}
               </td>
             </tr>
@@ -969,7 +969,7 @@ function RiskSummaryPreview({ data, risks }: { data: any; risks: Risk[] }) {
                   data?.byRiskLevel?.find((r: any) => r.level === level)?.count ||
                   0}
               </p>
-              <p className="text-gray-500 dark:text-surface-400 text-xs capitalize mt-1">{level}</p>
+              <p className="text-gray-500 dark:text-surface-600 text-xs capitalize mt-1">{level}</p>
             </div>
           ))}
         </div>
@@ -982,7 +982,7 @@ function RiskSummaryPreview({ data, risks }: { data: any; risks: Risk[] }) {
               key={cat.category}
               className="flex justify-between items-center py-1.5 border-b border-gray-200 dark:border-surface-700/50"
             >
-              <span className="text-gray-600 dark:text-surface-300 capitalize text-sm">
+              <span className="text-gray-600 dark:text-surface-700 capitalize text-sm">
                 {cat.category}
               </span>
               <span className="text-gray-900 dark:text-white font-medium text-sm">{cat.count}</span>
@@ -1014,23 +1014,23 @@ function TreatmentStatusPreview({ risks }: { risks: Risk[] }) {
           <p className="text-xl font-bold text-gray-900 dark:text-white">
             {treatmentCounts.mitigate}
           </p>
-          <p className="text-gray-500 dark:text-surface-400 text-xs mt-1">Mitigating</p>
+          <p className="text-gray-500 dark:text-surface-600 text-xs mt-1">Mitigating</p>
         </div>
         <div className="p-3 bg-gray-50 dark:bg-surface-700/50 rounded-lg text-center border border-gray-200 dark:border-surface-600/50">
           <p className="text-xl font-bold text-gray-900 dark:text-white">
             {treatmentCounts.accept}
           </p>
-          <p className="text-gray-500 dark:text-surface-400 text-xs mt-1">Accepting</p>
+          <p className="text-gray-500 dark:text-surface-600 text-xs mt-1">Accepting</p>
         </div>
         <div className="p-3 bg-gray-50 dark:bg-surface-700/50 rounded-lg text-center border border-gray-200 dark:border-surface-600/50">
           <p className="text-xl font-bold text-gray-900 dark:text-white">
             {treatmentCounts.transfer}
           </p>
-          <p className="text-gray-500 dark:text-surface-400 text-xs mt-1">Transferring</p>
+          <p className="text-gray-500 dark:text-surface-600 text-xs mt-1">Transferring</p>
         </div>
         <div className="p-3 bg-gray-50 dark:bg-surface-700/50 rounded-lg text-center border border-gray-200 dark:border-surface-600/50">
           <p className="text-xl font-bold text-gray-900 dark:text-white">{treatmentCounts.avoid}</p>
-          <p className="text-gray-500 dark:text-surface-400 text-xs mt-1">Avoiding</p>
+          <p className="text-gray-500 dark:text-surface-600 text-xs mt-1">Avoiding</p>
         </div>
       </div>
 
@@ -1081,7 +1081,7 @@ interface TrendDataPoint {
 function RiskTrendsPreview({ trendData }: { trendData: TrendDataPoint[] }) {
   if (trendData.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500 dark:text-surface-400">
+      <div className="text-center py-8 text-gray-500 dark:text-surface-600">
         No trend data available
       </div>
     );
@@ -1106,10 +1106,10 @@ function RiskTrendsPreview({ trendData }: { trendData: TrendDataPoint[] }) {
       <div className="grid grid-cols-3 gap-3">
         <div className="p-3 bg-gray-50 dark:bg-surface-700/50 rounded-lg border border-gray-200 dark:border-surface-600/50">
           <div className="flex items-center justify-between">
-            <span className="text-gray-500 dark:text-surface-400 text-xs">Open Risks</span>
+            <span className="text-gray-500 dark:text-surface-600 text-xs">Open Risks</span>
             {openChange !== 0 && (
               <span
-                className={`flex items-center text-xs ${openChange > 0 ? 'text-red-500 dark:text-red-400' : 'text-emerald-500 dark:text-emerald-400'}`}
+                className={`flex items-center text-xs ${openChange > 0 ? 'text-red-500 dark:text-red-600' : 'text-emerald-500 dark:text-emerald-600'}`}
               >
                 {openChange > 0 ? (
                   <ArrowTrendingUpIcon className="w-3 h-3 mr-0.5" />
@@ -1126,10 +1126,10 @@ function RiskTrendsPreview({ trendData }: { trendData: TrendDataPoint[] }) {
         </div>
         <div className="p-3 bg-gray-50 dark:bg-surface-700/50 rounded-lg border border-gray-200 dark:border-surface-600/50">
           <div className="flex items-center justify-between">
-            <span className="text-gray-500 dark:text-surface-400 text-xs">Mitigated</span>
+            <span className="text-gray-500 dark:text-surface-600 text-xs">Mitigated</span>
             {mitigatedChange !== 0 && (
               <span
-                className={`flex items-center text-xs ${mitigatedChange > 0 ? 'text-emerald-500 dark:text-emerald-400' : 'text-amber-500 dark:text-amber-400'}`}
+                className={`flex items-center text-xs ${mitigatedChange > 0 ? 'text-emerald-500 dark:text-emerald-600' : 'text-amber-500 dark:text-amber-600'}`}
               >
                 {mitigatedChange > 0 ? (
                   <ArrowTrendingUpIcon className="w-3 h-3 mr-0.5" />
@@ -1145,8 +1145,8 @@ function RiskTrendsPreview({ trendData }: { trendData: TrendDataPoint[] }) {
           </p>
         </div>
         <div className="p-3 bg-gray-50 dark:bg-surface-700/50 rounded-lg border border-gray-200 dark:border-surface-600/50">
-          <span className="text-gray-500 dark:text-surface-400 text-xs">Critical/High</span>
-          <p className="text-xl font-bold text-red-500 dark:text-red-400 mt-1">
+          <span className="text-gray-500 dark:text-surface-600 text-xs">Critical/High</span>
+          <p className="text-xl font-bold text-red-500 dark:text-red-600 mt-1">
             {latestData.criticalHighRisks}
           </p>
         </div>
@@ -1186,11 +1186,11 @@ function RiskTrendsPreview({ trendData }: { trendData: TrendDataPoint[] }) {
         <div className="flex items-center justify-center gap-4 mt-4 pt-3 border-t border-gray-200 dark:border-surface-700/50">
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 bg-red-500/70 rounded" />
-            <span className="text-xs text-gray-500 dark:text-surface-400">Open Risks</span>
+            <span className="text-xs text-gray-500 dark:text-surface-600">Open Risks</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 bg-emerald-500/70 rounded" />
-            <span className="text-xs text-gray-500 dark:text-surface-400">Mitigated</span>
+            <span className="text-xs text-gray-500 dark:text-surface-600">Mitigated</span>
           </div>
         </div>
       </div>
@@ -1203,7 +1203,7 @@ function RiskTrendsPreview({ trendData }: { trendData: TrendDataPoint[] }) {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-gray-500 dark:text-surface-400 border-b border-gray-200 dark:border-surface-700">
+              <tr className="text-left text-gray-500 dark:text-surface-600 border-b border-gray-200 dark:border-surface-700">
                 <th className="pb-2 text-xs font-medium">Month</th>
                 <th className="pb-2 text-xs font-medium text-right">Total</th>
                 <th className="pb-2 text-xs font-medium text-right">Open</th>
@@ -1218,16 +1218,16 @@ function RiskTrendsPreview({ trendData }: { trendData: TrendDataPoint[] }) {
                 .map((data, index) => (
                   <tr key={index} className="border-b border-gray-200 dark:border-surface-700/50">
                     <td className="py-2 text-gray-900 dark:text-white">{data.month}</td>
-                    <td className="py-2 text-gray-600 dark:text-surface-300 text-right">
+                    <td className="py-2 text-gray-600 dark:text-surface-700 text-right">
                       {data.totalRisks}
                     </td>
-                    <td className="py-2 text-red-500 dark:text-red-400 text-right">
+                    <td className="py-2 text-red-500 dark:text-red-600 text-right">
                       {data.openRisks}
                     </td>
-                    <td className="py-2 text-emerald-500 dark:text-emerald-400 text-right">
+                    <td className="py-2 text-emerald-500 dark:text-emerald-600 text-right">
                       {data.mitigatedRisks}
                     </td>
-                    <td className="py-2 text-amber-500 dark:text-amber-400 text-right">
+                    <td className="py-2 text-amber-500 dark:text-amber-600 text-right">
                       {data.criticalHighRisks}
                     </td>
                   </tr>

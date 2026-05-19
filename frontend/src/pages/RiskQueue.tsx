@@ -38,8 +38,8 @@ export default function RiskQueue() {
 
   // Task mutations
   const startTaskMutation = useMutation({
-    mutationFn: ({ taskId, riskId }: { taskId: string; riskId: string }) => 
-      riskTasksApi.start(taskId).then(res => ({ ...res, riskId })),
+    mutationFn: ({ taskId, riskId }: { taskId: string; riskId: string }) =>
+      riskTasksApi.start(taskId).then((res) => ({ ...res, riskId })),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['risk-tasks'] });
       toast.success('Task started');
@@ -111,7 +111,13 @@ export default function RiskQueue() {
   });
 
   const myTasks = myTasksData?.data?.tasks || [];
-  const stats = taskStats?.data || { pending: 0, inProgress: 0, overdue: 0, completedThisWeek: 0, total: 0 };
+  const stats = taskStats?.data || {
+    pending: 0,
+    inProgress: 0,
+    overdue: 0,
+    completedThisWeek: 0,
+    total: 0,
+  };
 
   const tabs = [
     {
@@ -126,28 +132,28 @@ export default function RiskQueue() {
       label: 'My Assessments',
       count: assessmentQueue?.risks?.length || 0,
       icon: ClockIcon,
-      color: 'text-amber-400',
+      color: 'text-amber-600',
     },
     {
       key: 'treatments' as QueueTab,
       label: 'Treatment Decisions',
       count: treatmentQueue?.risks?.length || 0,
       icon: ExclamationTriangleIcon,
-      color: 'text-orange-400',
+      color: 'text-orange-600',
     },
     {
       key: 'approvals' as QueueTab,
       label: 'Executive Approvals',
       count: approvalQueue?.risks?.length || 0,
       icon: UserIcon,
-      color: 'text-purple-400',
+      color: 'text-purple-600',
     },
     {
       key: 'reviews' as QueueTab,
       label: 'GRC Reviews',
       count: reviewQueue?.risks?.length || 0,
       icon: CheckCircleIcon,
-      color: 'text-cyan-400',
+      color: 'text-cyan-600',
     },
   ];
 
@@ -201,12 +207,12 @@ export default function RiskQueue() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-semibold text-white">My Risk Queue</h1>
-        <p className="text-surface-400 mt-1">Tasks and actions awaiting your attention</p>
+        <p className="text-surface-600 mt-1">Tasks and actions awaiting your attention</p>
       </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        {tabs.map(tab => (
+        {tabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
@@ -217,12 +223,14 @@ export default function RiskQueue() {
             }`}
           >
             <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-lg ${activeTab === tab.key ? 'bg-brand-500/30' : 'bg-surface-700'}`}>
+              <div
+                className={`p-2 rounded-lg ${activeTab === tab.key ? 'bg-brand-500/30' : 'bg-surface-700'}`}
+              >
                 <tab.icon className={`w-5 h-5 ${tab.color}`} />
               </div>
               <div>
                 <p className="text-2xl font-bold text-white">{tab.count}</p>
-                <p className="text-sm text-surface-400">{tab.label}</p>
+                <p className="text-sm text-surface-600">{tab.label}</p>
               </div>
             </div>
           </button>
@@ -233,10 +241,10 @@ export default function RiskQueue() {
       <div className="bg-surface-800 rounded-xl border border-surface-700">
         <div className="p-4 border-b border-surface-700">
           <h2 className="text-lg font-medium text-white">
-            {tabs.find(t => t.key === activeTab)?.label}
+            {tabs.find((t) => t.key === activeTab)?.label}
           </h2>
           {activeTab === 'tasks' && stats.overdue > 0 && (
-            <p className="text-red-400 text-sm mt-1">
+            <p className="text-red-600 text-sm mt-1">
               {stats.overdue} overdue task{stats.overdue > 1 ? 's' : ''}
             </p>
           )}
@@ -248,29 +256,31 @@ export default function RiskQueue() {
             <>
               {myTasks.length === 0 ? (
                 <div className="p-8 text-center">
-                  <CheckCircleIcon className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
-                  <p className="text-surface-400">No tasks assigned to you</p>
+                  <CheckCircleIcon className="w-12 h-12 text-emerald-600 mx-auto mb-3" />
+                  <p className="text-surface-600">No tasks assigned to you</p>
                   <p className="text-surface-500 text-sm mt-1">You're all caught up!</p>
                 </div>
               ) : (
                 myTasks.map((task: RiskWorkflowTask) => {
                   const isOverdue = task.dueDate && isPast(new Date(task.dueDate));
                   return (
-                    <div 
-                      key={task.id} 
+                    <div
+                      key={task.id}
                       className={`p-4 hover:bg-surface-700/50 transition-colors ${
                         isOverdue ? 'bg-red-900/10' : ''
                       }`}
                     >
                       <div className="flex items-center gap-4">
                         {/* Status Icon */}
-                        <div className={`p-2 rounded-lg ${
-                          task.status === 'in_progress' ? 'bg-blue-500/20' : 'bg-amber-500/20'
-                        }`}>
+                        <div
+                          className={`p-2 rounded-lg ${
+                            task.status === 'in_progress' ? 'bg-blue-500/20' : 'bg-amber-500/20'
+                          }`}
+                        >
                           {task.status === 'in_progress' ? (
-                            <ClockIcon className="w-5 h-5 text-blue-400" />
+                            <ClockIcon className="w-5 h-5 text-blue-600" />
                           ) : (
-                            <ClipboardDocumentListIcon className="w-5 h-5 text-amber-400" />
+                            <ClipboardDocumentListIcon className="w-5 h-5 text-amber-600" />
                           )}
                         </div>
 
@@ -280,38 +290,46 @@ export default function RiskQueue() {
                             <span className="text-brand-400 font-mono text-sm">
                               {task.risk?.riskId}
                             </span>
-                            <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                              task.status === 'in_progress' 
-                                ? 'bg-blue-500/20 text-blue-400' 
-                                : 'bg-amber-500/20 text-amber-400'
-                            }`}>
+                            <span
+                              className={`px-2 py-0.5 rounded text-xs font-medium ${
+                                task.status === 'in_progress'
+                                  ? 'bg-blue-500/20 text-blue-600'
+                                  : 'bg-amber-500/20 text-amber-600'
+                              }`}
+                            >
                               {task.status.replace('_', ' ')}
                             </span>
-                            <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                              task.priority === 'critical' ? 'bg-red-500/20 text-red-400' :
-                              task.priority === 'high' ? 'bg-orange-500/20 text-orange-400' :
-                              task.priority === 'medium' ? 'bg-amber-500/20 text-amber-400' :
-                              'bg-gray-500/20 text-gray-400'
-                            }`}>
+                            <span
+                              className={`px-2 py-0.5 rounded text-xs font-medium ${
+                                task.priority === 'critical'
+                                  ? 'bg-red-500/20 text-red-600'
+                                  : task.priority === 'high'
+                                    ? 'bg-orange-500/20 text-orange-600'
+                                    : task.priority === 'medium'
+                                      ? 'bg-amber-500/20 text-amber-600'
+                                      : 'bg-gray-500/20 text-gray-400'
+                              }`}
+                            >
                               {task.priority}
                             </span>
                             {isOverdue && (
-                              <span className="px-2 py-0.5 rounded text-xs font-medium bg-red-500/20 text-red-400">
+                              <span className="px-2 py-0.5 rounded text-xs font-medium bg-red-500/20 text-red-600">
                                 Overdue
                               </span>
                             )}
                           </div>
                           <p className="text-white font-medium mt-1">{task.title}</p>
-                          <p className="text-surface-400 text-sm truncate">
+                          <p className="text-surface-600 text-sm truncate">
                             Risk: {task.risk?.title}
                           </p>
-                          
+
                           {/* Meta Info */}
                           <div className="flex items-center gap-4 mt-2 text-xs text-surface-500">
                             <span>Type: {task.taskType.replace('_', ' ')}</span>
                             {task.dueDate && (
-                              <span className={isOverdue ? 'text-red-400 font-medium' : ''}>
-                                Due: {formatDistanceToNow(new Date(task.dueDate), { addSuffix: true })}
+                              <span className={isOverdue ? 'text-red-600 font-medium' : ''}>
+                                Due:{' '}
+                                {formatDistanceToNow(new Date(task.dueDate), { addSuffix: true })}
                               </span>
                             )}
                             <span>Assigned: {format(new Date(task.assignedAt), 'MMM d')}</span>
@@ -322,7 +340,9 @@ export default function RiskQueue() {
                         <div className="flex items-center gap-2 shrink-0">
                           {task.status === 'pending' && (
                             <button
-                              onClick={() => startTaskMutation.mutate({ taskId: task.id, riskId: task.riskId })}
+                              onClick={() =>
+                                startTaskMutation.mutate({ taskId: task.id, riskId: task.riskId })
+                              }
                               disabled={startTaskMutation.isPending}
                               className="flex items-center gap-1 px-3 py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm"
                             >
@@ -361,8 +381,8 @@ export default function RiskQueue() {
             <>
               {getActiveQueue().length === 0 ? (
                 <div className="p-8 text-center">
-                  <CheckCircleIcon className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
-                  <p className="text-surface-400">No items in this queue</p>
+                  <CheckCircleIcon className="w-12 h-12 text-emerald-600 mx-auto mb-3" />
+                  <p className="text-surface-600">No items in this queue</p>
                   <p className="text-surface-500 text-sm mt-1">You're all caught up!</p>
                 </div>
               ) : (
@@ -370,25 +390,29 @@ export default function RiskQueue() {
                   <div key={risk.id} className="p-4 hover:bg-surface-700/50 transition-colors">
                     <div className="flex items-center gap-4">
                       {/* Risk Level Indicator */}
-                      <div className={`w-3 h-3 rounded-full ${getRiskLevelColor(risk.inherentRisk)}`} />
+                      <div
+                        className={`w-3 h-3 rounded-full ${getRiskLevelColor(risk.inherentRisk)}`}
+                      />
 
                       {/* Risk Info */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="text-brand-400 font-mono text-sm">{risk.riskId}</span>
-                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${getRiskLevelColor(risk.inherentRisk)} text-white`}>
+                          <span
+                            className={`px-2 py-0.5 rounded text-xs font-medium ${getRiskLevelColor(risk.inherentRisk)} text-white`}
+                          >
                             {risk.inherentRisk}
                           </span>
                         </div>
                         <p className="text-white font-medium mt-1 truncate">{risk.title}</p>
-                        <p className="text-surface-400 text-sm truncate">{risk.description}</p>
-                        
+                        <p className="text-surface-600 text-sm truncate">{risk.description}</p>
+
                         {/* Meta Info */}
                         <div className="flex items-center gap-4 mt-2 text-xs text-surface-500">
                           <span>Category: {risk.category}</span>
                           <span>Created: {new Date(risk.createdAt).toLocaleDateString()}</span>
                           {risk.treatmentDueDate && (
-                            <span className="text-amber-400">
+                            <span className="text-amber-600">
                               Due: {new Date(risk.treatmentDueDate).toLocaleDateString()}
                             </span>
                           )}
@@ -418,34 +442,38 @@ export default function RiskQueue() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div className="flex gap-3">
             <div className="w-6 h-6 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0">
-              <span className="text-amber-400 font-bold">1</span>
+              <span className="text-amber-600 font-bold">1</span>
             </div>
-            <p className="text-surface-400">
-              <strong className="text-surface-200">Assessments:</strong> Complete risk analysis including likelihood, impact, and recommended treatment.
+            <p className="text-surface-600">
+              <strong className="text-surface-200">Assessments:</strong> Complete risk analysis
+              including likelihood, impact, and recommended treatment.
             </p>
           </div>
           <div className="flex gap-3">
             <div className="w-6 h-6 rounded-full bg-orange-500/20 flex items-center justify-center shrink-0">
-              <span className="text-orange-400 font-bold">2</span>
+              <span className="text-orange-600 font-bold">2</span>
             </div>
-            <p className="text-surface-400">
-              <strong className="text-surface-200">Treatments:</strong> Decide how to handle the risk - mitigate, accept, transfer, or avoid.
+            <p className="text-surface-600">
+              <strong className="text-surface-200">Treatments:</strong> Decide how to handle the
+              risk - mitigate, accept, transfer, or avoid.
             </p>
           </div>
           <div className="flex gap-3">
             <div className="w-6 h-6 rounded-full bg-purple-500/20 flex items-center justify-center shrink-0">
-              <span className="text-purple-400 font-bold">3</span>
+              <span className="text-purple-600 font-bold">3</span>
             </div>
-            <p className="text-surface-400">
-              <strong className="text-surface-200">Approvals:</strong> Executive review required for high-risk accept/transfer/avoid decisions.
+            <p className="text-surface-600">
+              <strong className="text-surface-200">Approvals:</strong> Executive review required for
+              high-risk accept/transfer/avoid decisions.
             </p>
           </div>
           <div className="flex gap-3">
             <div className="w-6 h-6 rounded-full bg-cyan-500/20 flex items-center justify-center shrink-0">
-              <span className="text-cyan-400 font-bold">4</span>
+              <span className="text-cyan-600 font-bold">4</span>
             </div>
-            <p className="text-surface-400">
-              <strong className="text-surface-200">Reviews:</strong> GRC team validates assessments before treatment decisions.
+            <p className="text-surface-600">
+              <strong className="text-surface-200">Reviews:</strong> GRC team validates assessments
+              before treatment decisions.
             </p>
           </div>
         </div>
@@ -453,6 +481,3 @@ export default function RiskQueue() {
     </div>
   );
 }
-
-
-

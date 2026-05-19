@@ -2,12 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { frameworksApi } from '@/lib/api';
-import {
-  CubeIcon,
-  PlusIcon,
-  XMarkIcon,
-  TrashIcon,
-} from '@heroicons/react/24/outline';
+import { CubeIcon, PlusIcon, XMarkIcon, TrashIcon } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import { Button } from '@/components/Button';
@@ -68,7 +63,7 @@ export default function Frameworks() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-surface-100">Frameworks</h1>
-            <p className="text-surface-400 mt-1">
+            <p className="text-surface-600 mt-1">
               Track your compliance readiness across regulatory frameworks
             </p>
           </div>
@@ -84,11 +79,14 @@ export default function Frameworks() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-surface-100">Frameworks</h1>
-          <p className="text-surface-400 mt-1">
+          <p className="text-surface-600 mt-1">
             Track your compliance readiness across regulatory frameworks
           </p>
         </div>
-        <Button onClick={() => setIsCreateModalOpen(true)} leftIcon={<PlusIcon className="w-5 h-5" />}>
+        <Button
+          onClick={() => setIsCreateModalOpen(true)}
+          leftIcon={<PlusIcon className="w-5 h-5" />}
+        >
           Create Framework
         </Button>
       </div>
@@ -97,9 +95,9 @@ export default function Frameworks() {
       {frameworks && frameworks.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {frameworks.map((framework: any) => (
-            <FrameworkCard 
-              key={framework.id} 
-              framework={framework} 
+            <FrameworkCard
+              key={framework.id}
+              framework={framework}
               onDelete={(id, name) => setDeleteConfirm({ id, name })}
             />
           ))}
@@ -108,10 +106,14 @@ export default function Frameworks() {
         <div className="card flex flex-col items-center justify-center py-16">
           <CubeIcon className="w-16 h-16 mb-4 text-surface-500" />
           <h3 className="text-lg font-medium text-surface-200 mb-2">No frameworks yet</h3>
-          <p className="text-surface-400 text-center mb-6 max-w-md">
+          <p className="text-surface-600 text-center mb-6 max-w-md">
             Get started by creating your first compliance framework.
           </p>
-          <Button onClick={() => setIsCreateModalOpen(true)} leftIcon={<PlusIcon className="w-5 h-5" />} className="text-base px-6 py-3">
+          <Button
+            onClick={() => setIsCreateModalOpen(true)}
+            leftIcon={<PlusIcon className="w-5 h-5" />}
+            className="text-base px-6 py-3"
+          >
             Create Your First Framework
           </Button>
         </div>
@@ -125,7 +127,7 @@ export default function Frameworks() {
               <h2 className="text-xl font-bold text-surface-100">Create Framework</h2>
               <button
                 onClick={() => setIsCreateModalOpen(false)}
-                className="text-surface-400 hover:text-surface-200"
+                className="text-surface-600 hover:text-surface-200"
               >
                 <XMarkIcon className="w-6 h-6" />
               </button>
@@ -133,7 +135,7 @@ export default function Frameworks() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-1">
+                <label className="block text-sm font-medium text-surface-700 mb-1">
                   Framework Name *
                 </label>
                 <input
@@ -147,9 +149,7 @@ export default function Frameworks() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-1">
-                  Type *
-                </label>
+                <label className="block text-sm font-medium text-surface-700 mb-1">Type *</label>
                 <input
                   type="text"
                   required
@@ -161,9 +161,7 @@ export default function Frameworks() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-1">
-                  Version
-                </label>
+                <label className="block text-sm font-medium text-surface-700 mb-1">Version</label>
                 <input
                   type="text"
                   value={formData.version}
@@ -174,7 +172,7 @@ export default function Frameworks() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-1">
+                <label className="block text-sm font-medium text-surface-700 mb-1">
                   Description
                 </label>
                 <textarea
@@ -195,11 +193,7 @@ export default function Frameworks() {
                 >
                   Cancel
                 </Button>
-                <Button
-                  type="submit"
-                  isLoading={createMutation.isPending}
-                  className="flex-1"
-                >
+                <Button type="submit" isLoading={createMutation.isPending} className="flex-1">
                   Create Framework
                 </Button>
               </div>
@@ -213,8 +207,10 @@ export default function Frameworks() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-surface-900 border border-surface-800 rounded-lg p-6 max-w-md w-full mx-4">
             <h3 className="text-lg font-semibold text-surface-100 mb-2">Delete Framework</h3>
-            <p className="text-surface-400 mb-6">
-              Are you sure you want to delete "{deleteConfirm.name}"? This will also delete all requirements and mappings associated with this framework. This action cannot be undone.
+            <p className="text-surface-600 mb-6">
+              Are you sure you want to delete "{deleteConfirm.name}"? This will also delete all
+              requirements and mappings associated with this framework. This action cannot be
+              undone.
             </p>
             <div className="flex justify-end gap-2">
               <Button variant="secondary" onClick={() => setDeleteConfirm(null)}>
@@ -235,18 +231,17 @@ export default function Frameworks() {
   );
 }
 
-function FrameworkCard({ 
-  framework, 
-  onDelete 
-}: { 
-  framework: any; 
+function FrameworkCard({
+  framework,
+  onDelete,
+}: {
+  framework: any;
   onDelete: (id: string, name: string) => void;
 }) {
   const score = framework.readiness?.score || 0;
   const scoreColor =
-    score >= 80 ? 'text-green-400' : score >= 50 ? 'text-yellow-400' : 'text-red-400';
-  const progressColor =
-    score >= 80 ? 'bg-green-500' : score >= 50 ? 'bg-yellow-500' : 'bg-red-500';
+    score >= 80 ? 'text-green-600' : score >= 50 ? 'text-yellow-600' : 'text-red-600';
+  const progressColor = score >= 80 ? 'bg-green-500' : score >= 50 ? 'bg-yellow-500' : 'bg-red-500';
 
   const handleDelete = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -262,7 +257,7 @@ function FrameworkCard({
       {/* Delete Button */}
       <button
         onClick={handleDelete}
-        className="absolute top-4 right-4 z-10 p-2 bg-red-600/10 text-surface-500 rounded-lg hover:bg-red-600/20 hover:text-red-400 transition-colors"
+        className="absolute top-4 right-4 z-10 p-2 bg-red-600/10 text-surface-500 rounded-lg hover:bg-red-600/20 hover:text-red-600 transition-colors"
         title="Delete framework"
         aria-label="Delete framework"
       >
@@ -284,21 +279,16 @@ function FrameworkCard({
         <span className="badge badge-info text-xs uppercase">{framework.type}</span>
       </div>
 
-      <p className="text-sm text-surface-400 line-clamp-2 mb-4">
-        {framework.description}
-      </p>
+      <p className="text-sm text-surface-600 line-clamp-2 mb-4">{framework.description}</p>
 
       {/* Readiness Score */}
       <div className="mb-4">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm text-surface-400">Readiness Score</span>
+          <span className="text-sm text-surface-600">Readiness Score</span>
           <span className={clsx('text-lg font-bold', scoreColor)}>{score}%</span>
         </div>
         <div className="progress-bar">
-          <div
-            className={clsx('progress-fill', progressColor)}
-            style={{ width: `${score}%` }}
-          />
+          <div className={clsx('progress-fill', progressColor)} style={{ width: `${score}%` }} />
         </div>
       </div>
 
@@ -306,9 +296,7 @@ function FrameworkCard({
       <div className="grid grid-cols-2 gap-4 pt-4 border-t border-surface-800">
         <div>
           <p className="text-xs text-surface-500">Requirements</p>
-          <p className="text-sm font-medium text-surface-200">
-            {framework.requirementCount || 0}
-          </p>
+          <p className="text-sm font-medium text-surface-200">{framework.requirementCount || 0}</p>
         </div>
         <div>
           <p className="text-xs text-surface-500">Mapped Controls</p>
@@ -322,12 +310,10 @@ function FrameworkCard({
       {framework.lastAssessment && (
         <div className="mt-4 pt-4 border-t border-surface-800">
           <p className="text-xs text-surface-500">
-            Last assessed:{' '}
-            {new Date(framework.lastAssessment.createdAt).toLocaleDateString()}
+            Last assessed: {new Date(framework.lastAssessment.createdAt).toLocaleDateString()}
           </p>
         </div>
       )}
     </Link>
   );
 }
-

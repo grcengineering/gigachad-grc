@@ -113,21 +113,21 @@ export default function ControlNew() {
       <div>
         <Link
           to="/controls"
-          className="inline-flex items-center text-sm text-surface-400 hover:text-surface-100 mb-4"
+          className="inline-flex items-center text-sm text-surface-600 hover:text-surface-100 mb-4"
         >
           <ArrowLeftIcon className="w-4 h-4 mr-1" />
           Back to Controls
         </Link>
         <h1 className="text-2xl font-bold text-surface-100">Create New Control</h1>
-        <p className="text-surface-400 mt-1">Add a new control to your compliance program</p>
+        <p className="text-surface-600 mt-1">Add a new control to your compliance program</p>
       </div>
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="card p-6 space-y-6">
         {/* Control ID */}
         <div>
-          <label htmlFor="controlId" className="block text-sm font-medium text-surface-300 mb-1">
-            Control ID <span className="text-red-400">*</span>
+          <label htmlFor="controlId" className="block text-sm font-medium text-surface-700 mb-1">
+            Control ID <span className="text-red-600">*</span>
           </label>
           <input
             id="controlId"
@@ -137,7 +137,7 @@ export default function ControlNew() {
             placeholder="e.g., AC-001, SOC2-CC6.1"
             className={`input ${errors.controlId ? 'border-red-500' : ''}`}
           />
-          {errors.controlId && <p className="mt-1 text-sm text-red-400">{errors.controlId}</p>}
+          {errors.controlId && <p className="mt-1 text-sm text-red-600">{errors.controlId}</p>}
           <p className="mt-1 text-xs text-surface-500">
             A unique identifier for this control (e.g., AC-001, SOC2-CC6.1)
           </p>
@@ -145,8 +145,8 @@ export default function ControlNew() {
 
         {/* Title */}
         <div>
-          <label htmlFor="title" className="block text-sm font-medium text-surface-300 mb-1">
-            Title <span className="text-red-400">*</span>
+          <label htmlFor="title" className="block text-sm font-medium text-surface-700 mb-1">
+            Title <span className="text-red-600">*</span>
           </label>
           <input
             id="title"
@@ -156,13 +156,13 @@ export default function ControlNew() {
             placeholder="Enter control title"
             className={`input ${errors.title ? 'border-red-500' : ''}`}
           />
-          {errors.title && <p className="mt-1 text-sm text-red-400">{errors.title}</p>}
+          {errors.title && <p className="mt-1 text-sm text-red-600">{errors.title}</p>}
         </div>
 
         {/* Category */}
         <div>
-          <label htmlFor="category" className="block text-sm font-medium text-surface-300 mb-1">
-            Category <span className="text-red-400">*</span>
+          <label htmlFor="category" className="block text-sm font-medium text-surface-700 mb-1">
+            Category <span className="text-red-600">*</span>
           </label>
           <select
             id="category"
@@ -180,8 +180,8 @@ export default function ControlNew() {
 
         {/* Description */}
         <div>
-          <label htmlFor="description" className="block text-sm font-medium text-surface-300 mb-1">
-            Description <span className="text-red-400">*</span>
+          <label htmlFor="description" className="block text-sm font-medium text-surface-700 mb-1">
+            Description <span className="text-red-600">*</span>
           </label>
           <textarea
             id="description"
@@ -191,12 +191,12 @@ export default function ControlNew() {
             rows={4}
             className={`input ${errors.description ? 'border-red-500' : ''}`}
           />
-          {errors.description && <p className="mt-1 text-sm text-red-400">{errors.description}</p>}
+          {errors.description && <p className="mt-1 text-sm text-red-600">{errors.description}</p>}
         </div>
 
         {/* Tags */}
         <div>
-          <label htmlFor="tags" className="block text-sm font-medium text-surface-300 mb-1">
+          <label htmlFor="tags" className="block text-sm font-medium text-surface-700 mb-1">
             Tags
           </label>
           <input

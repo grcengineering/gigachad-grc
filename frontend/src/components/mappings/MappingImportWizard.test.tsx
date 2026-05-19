@@ -181,11 +181,11 @@ describe('MappingImportWizard', () => {
     expect(screen.getByTestId('preview-row-4')).toHaveAttribute('data-status', 'error');
 
     const willCreatePill = within(screen.getByTestId('preview-row-2')).getByText(/will create/i);
-    expect(willCreatePill.className).toMatch(/text-green-300/);
+    expect(willCreatePill.className).toMatch(/text-green-700/);
     const duplicatePill = within(screen.getByTestId('preview-row-3')).getByText(/duplicate/i);
-    expect(duplicatePill.className).toMatch(/text-yellow-300/);
+    expect(duplicatePill.className).toMatch(/text-yellow-700/);
     const errorPill = within(screen.getByTestId('preview-row-4')).getByText(/^error$/i);
-    expect(errorPill.className).toMatch(/text-red-300/);
+    expect(errorPill.className).toMatch(/text-red-700/);
   });
 
   it('calls bulkImport in commit mode (dryRun=false) when Confirm import is clicked', async () => {

@@ -65,10 +65,7 @@ function VirtualTableInner<T>({
         <div className="animate-pulse">
           <div className="h-12 bg-surface-800 border-b border-surface-700" />
           {Array.from({ length: 10 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-13 border-b border-surface-800 flex items-center px-4 gap-4"
-            >
+            <div key={i} className="h-13 border-b border-surface-800 flex items-center px-4 gap-4">
               <div className="h-4 bg-surface-700 rounded w-1/4" />
               <div className="h-4 bg-surface-700 rounded w-1/3" />
               <div className="h-4 bg-surface-700 rounded w-1/6" />
@@ -104,7 +101,7 @@ function VirtualTableInner<T>({
           <div
             key={column.key}
             className={clsx(
-              'px-4 py-3 text-xs font-medium text-surface-400 uppercase tracking-wider',
+              'px-4 py-3 text-xs font-medium text-surface-600 uppercase tracking-wider',
               column.className
             )}
             style={{ width: column.width, flexGrow: column.width ? 0 : 1 }}
@@ -115,11 +112,7 @@ function VirtualTableInner<T>({
       </div>
 
       {/* Virtual scrolling container */}
-      <div
-        ref={parentRef}
-        className="overflow-auto"
-        style={{ maxHeight: 'calc(100vh - 300px)' }}
-      >
+      <div ref={parentRef} className="overflow-auto" style={{ maxHeight: 'calc(100vh - 300px)' }}>
         <div
           style={{
             height: `${rowVirtualizer.getTotalSize()}px`,
@@ -178,7 +171,7 @@ export const VirtualTable = memo(VirtualTableInner) as typeof VirtualTableInner;
  */
 export function useVirtualTable<T>(items: T[], pageSize: number = 25) {
   const hasMore = items.length >= pageSize;
-  
+
   return {
     items,
     hasMore,
@@ -187,4 +180,3 @@ export function useVirtualTable<T>(items: T[], pageSize: number = 25) {
 }
 
 export default VirtualTable;
-

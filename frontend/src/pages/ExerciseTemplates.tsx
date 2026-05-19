@@ -137,7 +137,7 @@ export default function ExerciseTemplates() {
       const response = await api.get('/bcdr/exercise-templates/categories');
       const data = response.data;
       // Handle both array response and { data: [] } response format
-      setCategories(Array.isArray(data) ? data : (data?.data || []));
+      setCategories(Array.isArray(data) ? data : data?.data || []);
     } catch (error) {
       console.error('Failed to load categories:', error);
       setCategories([]);
@@ -178,7 +178,9 @@ export default function ExerciseTemplates() {
 
         <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Template Title *</label>
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              Template Title *
+            </label>
             <input
               type="text"
               value={createForm.title}
@@ -196,17 +198,26 @@ export default function ExerciseTemplates() {
                 onChange={(e) => setCreateForm({ ...createForm, category: e.target.value })}
                 className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
               >
-                {CATEGORY_OPTIONS.filter(opt => opt.value).map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                {CATEGORY_OPTIONS.filter((opt) => opt.value).map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Estimated Duration (minutes)</label>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Estimated Duration (minutes)
+              </label>
               <input
                 type="number"
                 value={createForm.estimatedDuration}
-                onChange={(e) => setCreateForm({ ...createForm, estimatedDuration: parseInt(e.target.value) || 60 })}
+                onChange={(e) =>
+                  setCreateForm({
+                    ...createForm,
+                    estimatedDuration: parseInt(e.target.value) || 60,
+                  })
+                }
                 className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
               />
             </div>
@@ -224,7 +235,9 @@ export default function ExerciseTemplates() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Scenario Narrative</label>
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              Scenario Narrative
+            </label>
             <textarea
               value={createForm.scenarioNarrative}
               onChange={(e) => setCreateForm({ ...createForm, scenarioNarrative: e.target.value })}
@@ -235,7 +248,9 @@ export default function ExerciseTemplates() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Facilitator Notes</label>
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              Facilitator Notes
+            </label>
             <textarea
               value={createForm.facilitatorNotes}
               onChange={(e) => setCreateForm({ ...createForm, facilitatorNotes: e.target.value })}
@@ -364,18 +379,16 @@ export default function ExerciseTemplates() {
                   </span>
                 </div>
                 {template.isGlobal && (
-                  <span className="px-2 py-0.5 bg-cyan-500/20 text-cyan-400 rounded text-xs">
+                  <span className="px-2 py-0.5 bg-cyan-500/20 text-cyan-600 rounded text-xs">
                     Global
                   </span>
                 )}
               </div>
 
-              <h3 className="text-lg font-medium text-white mb-2 group-hover:text-cyan-400 transition-colors">
+              <h3 className="text-lg font-medium text-white mb-2 group-hover:text-cyan-600 transition-colors">
                 {template.title}
               </h3>
-              <p className="text-sm text-slate-400 line-clamp-2 mb-4">
-                {template.description}
-              </p>
+              <p className="text-sm text-slate-400 line-clamp-2 mb-4">{template.description}</p>
 
               <div className="flex items-center gap-4 text-sm text-slate-400">
                 {template.estimatedDuration && (

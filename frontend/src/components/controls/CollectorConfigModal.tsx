@@ -1,6 +1,11 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { XMarkIcon, ArrowPathIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
+import {
+  XMarkIcon,
+  ArrowPathIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+} from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import { collectorsApi, integrationsApi } from '@/lib/api';
@@ -19,7 +24,12 @@ const SCHEDULE_FREQUENCIES = [
   { value: 'monthly', label: 'Monthly' },
 ];
 
-export default function CollectorConfigModal({ controlId, implementationId, collector, onClose }: Props) {
+export default function CollectorConfigModal({
+  controlId,
+  implementationId,
+  collector,
+  onClose,
+}: Props) {
   const queryClient = useQueryClient();
   const isEditing = !!collector;
 
@@ -32,10 +42,18 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
   const [endpoint, setEndpoint] = useState(collector?.endpoint || '');
   const [method, setMethod] = useState(collector?.method || 'GET');
   const [headers, setHeaders] = useState(
-    collector?.headers ? Object.entries(collector.headers).map(([k, v]) => `${k}: ${v}`).join('\n') : ''
+    collector?.headers
+      ? Object.entries(collector.headers)
+          .map(([k, v]) => `${k}: ${v}`)
+          .join('\n')
+      : ''
   );
   const [queryParams, setQueryParams] = useState(
-    collector?.queryParams ? Object.entries(collector.queryParams).map(([k, v]) => `${k}=${v}`).join('\n') : ''
+    collector?.queryParams
+      ? Object.entries(collector.queryParams)
+          .map(([k, v]) => `${k}=${v}`)
+          .join('\n')
+      : ''
   );
   const [body, setBody] = useState(collector?.body ? JSON.stringify(collector.body, null, 2) : '');
   const [authType, setAuthType] = useState(collector?.authType || '');
@@ -59,9 +77,15 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
     dataField: collector?.responseMapping?.dataField || '',
   });
   const [scheduleEnabled, setScheduleEnabled] = useState(collector?.scheduleEnabled || false);
-  const [scheduleFrequency, setScheduleFrequency] = useState(collector?.scheduleFrequency || 'daily');
+  const [scheduleFrequency, setScheduleFrequency] = useState(
+    collector?.scheduleFrequency || 'daily'
+  );
 
-  const [testResult, setTestResult] = useState<{ success: boolean; message: string; data?: any } | null>(null);
+  const [testResult, setTestResult] = useState<{
+    success: boolean;
+    message: string;
+    data?: any;
+  } | null>(null);
 
   // Fetch integrations for the dropdown
   const { data: integrationsData } = useQuery({
@@ -110,9 +134,10 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
       evidenceType,
       scheduleEnabled,
       scheduleFrequency: scheduleEnabled ? scheduleFrequency : undefined,
-      responseMapping: responseMapping.titleField || responseMapping.descriptionField || responseMapping.dataField
-        ? responseMapping
-        : undefined,
+      responseMapping:
+        responseMapping.titleField || responseMapping.descriptionField || responseMapping.dataField
+          ? responseMapping
+          : undefined,
     };
 
     if (mode === 'integration') {
@@ -206,11 +231,11 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
             <h2 className="text-lg font-semibold text-surface-100">
               {isEditing ? 'Edit Evidence Collector' : 'Create Evidence Collector'}
             </h2>
-            <p className="text-sm text-surface-400">
+            <p className="text-sm text-surface-600">
               Configure an API endpoint to automatically collect evidence
             </p>
           </div>
-          <button onClick={onClose} className="p-2 text-surface-400 hover:text-surface-200">
+          <button onClick={onClose} className="p-2 text-surface-600 hover:text-surface-200">
             <XMarkIcon className="w-5 h-5" />
           </button>
         </div>
@@ -268,8 +293,10 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
                   className="text-brand-500"
                 />
                 <div>
-                  <span className="text-sm text-surface-300">Use Existing Integration</span>
-                  <p className="text-xs text-surface-500">Leverage auth from a configured integration</p>
+                  <span className="text-sm text-surface-700">Use Existing Integration</span>
+                  <p className="text-xs text-surface-500">
+                    Leverage auth from a configured integration
+                  </p>
                 </div>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
@@ -281,8 +308,10 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
                   className="text-brand-500"
                 />
                 <div>
-                  <span className="text-sm text-surface-300">Standalone API</span>
-                  <p className="text-xs text-surface-500">Configure a completely separate API endpoint</p>
+                  <span className="text-sm text-surface-700">Standalone API</span>
+                  <p className="text-xs text-surface-500">
+                    Configure a completely separate API endpoint
+                  </p>
                 </div>
               </label>
             </div>
@@ -332,7 +361,9 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
                   className="input mt-1"
                 >
                   {HTTP_METHODS.map((m) => (
-                    <option key={m} value={m}>{m}</option>
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -467,7 +498,9 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
                       <input
                         type="password"
                         value={authConfig.clientSecret}
-                        onChange={(e) => setAuthConfig({ ...authConfig, clientSecret: e.target.value })}
+                        onChange={(e) =>
+                          setAuthConfig({ ...authConfig, clientSecret: e.target.value })
+                        }
                         className="input mt-1"
                       />
                     </div>
@@ -547,7 +580,9 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
                 <input
                   type="text"
                   value={responseMapping.titleField}
-                  onChange={(e) => setResponseMapping({ ...responseMapping, titleField: e.target.value })}
+                  onChange={(e) =>
+                    setResponseMapping({ ...responseMapping, titleField: e.target.value })
+                  }
                   placeholder="$.data.name"
                   className="input mt-1 font-mono text-sm"
                 />
@@ -557,7 +592,9 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
                 <input
                   type="text"
                   value={responseMapping.descriptionField}
-                  onChange={(e) => setResponseMapping({ ...responseMapping, descriptionField: e.target.value })}
+                  onChange={(e) =>
+                    setResponseMapping({ ...responseMapping, descriptionField: e.target.value })
+                  }
                   placeholder="$.data.summary"
                   className="input mt-1 font-mono text-sm"
                 />
@@ -567,7 +604,9 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
                 <input
                   type="text"
                   value={responseMapping.dataField}
-                  onChange={(e) => setResponseMapping({ ...responseMapping, dataField: e.target.value })}
+                  onChange={(e) =>
+                    setResponseMapping({ ...responseMapping, dataField: e.target.value })
+                  }
                   placeholder="$.data"
                   className="input mt-1 font-mono text-sm"
                 />
@@ -586,7 +625,7 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
                   onChange={(e) => setScheduleEnabled(e.target.checked)}
                   className="rounded border-surface-600 text-brand-500 focus:ring-brand-500"
                 />
-                <span className="text-sm text-surface-300">Enable scheduled collection</span>
+                <span className="text-sm text-surface-700">Enable scheduled collection</span>
               </label>
             </div>
 
@@ -599,7 +638,9 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
                   className="input mt-1"
                 >
                   {SCHEDULE_FREQUENCIES.map((freq) => (
-                    <option key={freq.value} value={freq.value}>{freq.label}</option>
+                    <option key={freq.value} value={freq.value}>
+                      {freq.label}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -608,24 +649,31 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
 
           {/* Test Result */}
           {testResult && (
-            <div className={clsx(
-              'p-4 rounded-lg border',
-              testResult.success
-                ? 'bg-green-500/10 border-green-500/20'
-                : 'bg-red-500/10 border-red-500/20'
-            )}>
+            <div
+              className={clsx(
+                'p-4 rounded-lg border',
+                testResult.success
+                  ? 'bg-green-500/10 border-green-500/20'
+                  : 'bg-red-500/10 border-red-500/20'
+              )}
+            >
               <div className="flex items-start gap-2">
                 {testResult.success ? (
-                  <CheckCircleIcon className="w-5 h-5 text-green-400 flex-shrink-0" />
+                  <CheckCircleIcon className="w-5 h-5 text-green-600 flex-shrink-0" />
                 ) : (
-                  <XCircleIcon className="w-5 h-5 text-red-400 flex-shrink-0" />
+                  <XCircleIcon className="w-5 h-5 text-red-600 flex-shrink-0" />
                 )}
                 <div className="flex-1">
-                  <p className={clsx('text-sm', testResult.success ? 'text-green-400' : 'text-red-400')}>
+                  <p
+                    className={clsx(
+                      'text-sm',
+                      testResult.success ? 'text-green-600' : 'text-red-600'
+                    )}
+                  >
                     {testResult.message}
                   </p>
                   {testResult.data && (
-                    <pre className="mt-2 p-2 bg-surface-900/50 rounded text-xs text-surface-400 overflow-auto max-h-32">
+                    <pre className="mt-2 p-2 bg-surface-900/50 rounded text-xs text-surface-600 overflow-auto max-h-32">
                       {JSON.stringify(testResult.data, null, 2)}
                     </pre>
                   )}
@@ -662,7 +710,11 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
               disabled={saveMutation.isPending || !name.trim()}
               className="btn-primary"
             >
-              {saveMutation.isPending ? 'Saving...' : isEditing ? 'Save Changes' : 'Create Collector'}
+              {saveMutation.isPending
+                ? 'Saving...'
+                : isEditing
+                  ? 'Save Changes'
+                  : 'Create Collector'}
             </button>
           </div>
         </div>
@@ -670,6 +722,3 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
     </div>
   );
 }
-
-
-

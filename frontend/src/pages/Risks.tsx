@@ -358,28 +358,28 @@ export default function Risks() {
     switch (status) {
       // Risk Intake stages
       case 'risk_identified':
-        return 'bg-purple-500/20 text-purple-400';
+        return 'bg-purple-500/20 text-purple-600';
       case 'not_a_risk':
-        return 'bg-surface-500/20 text-surface-400';
+        return 'bg-surface-500/20 text-surface-600';
       case 'actual_risk':
-        return 'bg-blue-500/20 text-blue-400';
+        return 'bg-blue-500/20 text-blue-600';
       case 'risk_analysis_in_progress':
-        return 'bg-cyan-500/20 text-cyan-400';
+        return 'bg-cyan-500/20 text-cyan-600';
       case 'risk_analyzed':
-        return 'bg-indigo-500/20 text-indigo-400';
+        return 'bg-indigo-500/20 text-indigo-600';
       // Legacy / Treatment stages
       case 'open':
-        return 'bg-red-500/20 text-red-400';
+        return 'bg-red-500/20 text-red-600';
       case 'in_treatment':
-        return 'bg-amber-500/20 text-amber-400';
+        return 'bg-amber-500/20 text-amber-600';
       case 'accepted':
-        return 'bg-blue-500/20 text-blue-400';
+        return 'bg-blue-500/20 text-blue-600';
       case 'mitigated':
-        return 'bg-emerald-500/20 text-emerald-400';
+        return 'bg-emerald-500/20 text-emerald-600';
       case 'closed':
-        return 'bg-surface-500/20 text-surface-400';
+        return 'bg-surface-500/20 text-surface-600';
       default:
-        return 'bg-surface-500/20 text-surface-400';
+        return 'bg-surface-500/20 text-surface-600';
     }
   };
 
@@ -400,7 +400,7 @@ export default function Risks() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-white">Risk Register</h1>
-          <p className="text-surface-400 mt-1">Identify, assess, and manage organizational risks</p>
+          <p className="text-surface-600 mt-1">Identify, assess, and manage organizational risks</p>
           {aiEnabled && (
             <p className="text-xs text-brand-400 mt-1">
               AI assistance is available for risk analysis and treatment planning.
@@ -478,7 +478,7 @@ export default function Risks() {
                 <AlertTriangle className="w-5 h-5 text-brand-400" />
               </div>
               <div>
-                <p className="text-sm text-surface-400">Total Risks</p>
+                <p className="text-sm text-surface-600">Total Risks</p>
                 <p className="text-2xl font-semibold text-white">{dashboard.totalRisks}</p>
               </div>
             </div>
@@ -497,15 +497,15 @@ export default function Risks() {
           >
             <div className="flex items-center gap-3">
               <div className="p-2 bg-red-500/20 rounded-lg">
-                <Target className="w-5 h-5 text-red-400" />
+                <Target className="w-5 h-5 text-red-600" />
               </div>
               <div>
-                <p className="text-sm text-surface-400">Open Risks</p>
+                <p className="text-sm text-surface-600">Open Risks</p>
                 <p className="text-2xl font-semibold text-white">{dashboard.openRisks}</p>
               </div>
             </div>
             {statFilter === 'open' && (
-              <p className="text-xs text-red-400 mt-2">Click to clear filter</p>
+              <p className="text-xs text-red-600 mt-2">Click to clear filter</p>
             )}
           </button>
           <button
@@ -519,17 +519,17 @@ export default function Risks() {
           >
             <div className="flex items-center gap-3">
               <div className="p-2 bg-amber-500/20 rounded-lg">
-                <Clock className="w-5 h-5 text-amber-400" />
+                <Clock className="w-5 h-5 text-amber-600" />
               </div>
               <div>
-                <p className="text-sm text-surface-400">Reviews Due</p>
+                <p className="text-sm text-surface-600">Reviews Due</p>
                 <p className="text-2xl font-semibold text-white">
                   {dashboard.upcomingReviews?.length || 0}
                 </p>
               </div>
             </div>
             {statFilter === 'reviews_due' && (
-              <p className="text-xs text-amber-400 mt-2">Click to clear filter</p>
+              <p className="text-xs text-amber-600 mt-2">Click to clear filter</p>
             )}
           </button>
           <button
@@ -543,17 +543,17 @@ export default function Risks() {
           >
             <div className="flex items-center gap-3">
               <div className="p-2 bg-emerald-500/20 rounded-lg">
-                <Shield className="w-5 h-5 text-emerald-400" />
+                <Shield className="w-5 h-5 text-emerald-600" />
               </div>
               <div>
-                <p className="text-sm text-surface-400">Mitigated</p>
+                <p className="text-sm text-surface-600">Mitigated</p>
                 <p className="text-2xl font-semibold text-white">
                   {dashboard.byStatus?.find((s: any) => s.status === 'mitigated')?.count || 0}
                 </p>
               </div>
             </div>
             {statFilter === 'mitigated' && (
-              <p className="text-xs text-emerald-400 mt-2">Click to clear filter</p>
+              <p className="text-xs text-emerald-600 mt-2">Click to clear filter</p>
             )}
           </button>
         </div>
@@ -562,13 +562,13 @@ export default function Risks() {
       {/* Active Filter Indicator */}
       {statFilter !== 'all' && (
         <div className="flex items-center gap-2 text-sm">
-          <span className="text-surface-400">Filtering by:</span>
+          <span className="text-surface-600">Filtering by:</span>
           <span
             className={clsx(
               'px-2 py-1 rounded-full text-xs font-medium',
-              statFilter === 'open' && 'bg-red-500/20 text-red-400',
-              statFilter === 'reviews_due' && 'bg-amber-500/20 text-amber-400',
-              statFilter === 'mitigated' && 'bg-emerald-500/20 text-emerald-400'
+              statFilter === 'open' && 'bg-red-500/20 text-red-600',
+              statFilter === 'reviews_due' && 'bg-amber-500/20 text-amber-600',
+              statFilter === 'mitigated' && 'bg-emerald-500/20 text-emerald-600'
             )}
           >
             {statFilter === 'open' && 'Open Risks'}
@@ -578,7 +578,7 @@ export default function Risks() {
           <span className="text-surface-500">({data?.total || 0} results)</span>
           <button
             onClick={() => setStatFilter('all')}
-            className="text-surface-400 hover:text-surface-100 ml-2"
+            className="text-surface-600 hover:text-surface-100 ml-2"
           >
             <X className="w-4 h-4" />
           </button>
@@ -590,7 +590,7 @@ export default function Risks() {
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Search */}
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-600" />
             <input
               type="text"
               placeholder="Search risks..."
@@ -643,7 +643,7 @@ export default function Risks() {
 
             <button
               onClick={() => navigate('/risks/heatmap')}
-              className="px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-surface-300 hover:text-white hover:bg-surface-600 transition-colors flex items-center gap-2"
+              className="px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-surface-700 hover:text-white hover:bg-surface-600 transition-colors flex items-center gap-2"
             >
               <BarChart3 className="w-4 h-4" />
               Heatmap
@@ -659,31 +659,31 @@ export default function Risks() {
         ) : data?.risks.length === 0 ? (
           <div className="p-8 text-center">
             <AlertTriangle className="w-12 h-12 text-surface-500 mx-auto mb-4" />
-            <p className="text-surface-400">No risks found</p>
+            <p className="text-surface-600">No risks found</p>
             <p className="text-surface-500 text-sm mt-2">Create your first risk to get started</p>
           </div>
         ) : (
           <table className="w-full">
             <thead>
               <tr className="border-b border-surface-700">
-                <th className="text-left px-4 py-3 text-sm font-medium text-surface-400">
+                <th className="text-left px-4 py-3 text-sm font-medium text-surface-600">
                   Risk ID
                 </th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-surface-400">Title</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-surface-400">
+                <th className="text-left px-4 py-3 text-sm font-medium text-surface-600">Title</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-surface-600">
                   Category
                 </th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-surface-400">Status</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-surface-400">
+                <th className="text-left px-4 py-3 text-sm font-medium text-surface-600">Status</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-surface-600">
                   Inherent Risk
                 </th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-surface-400">
+                <th className="text-left px-4 py-3 text-sm font-medium text-surface-600">
                   Residual Risk
                 </th>
-                <th className="text-center px-4 py-3 text-sm font-medium text-surface-400">
+                <th className="text-center px-4 py-3 text-sm font-medium text-surface-600">
                   Assets
                 </th>
-                <th className="text-center px-4 py-3 text-sm font-medium text-surface-400">
+                <th className="text-center px-4 py-3 text-sm font-medium text-surface-600">
                   Controls
                 </th>
               </tr>
@@ -702,13 +702,13 @@ export default function Risks() {
                   <td className="px-4 py-3">
                     <div>
                       <p className="text-white font-medium">{risk.title}</p>
-                      <p className="text-surface-400 text-sm truncate max-w-md">
+                      <p className="text-surface-600 text-sm truncate max-w-md">
                         {risk.description}
                       </p>
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <span className="text-surface-300 capitalize">{risk.category}</span>
+                    <span className="text-surface-700 capitalize">{risk.category}</span>
                   </td>
                   <td className="px-4 py-3">
                     <span
@@ -722,7 +722,7 @@ export default function Risks() {
                       <span
                         className={`w-2 h-2 rounded-full ${getRiskLevelColor(risk.inherentRisk || '')}`}
                       />
-                      <span className="text-surface-300 capitalize">{risk.inherentRisk}</span>
+                      <span className="text-surface-700 capitalize">{risk.inherentRisk}</span>
                     </div>
                   </td>
                   <td className="px-4 py-3">
@@ -731,17 +731,17 @@ export default function Risks() {
                         <span
                           className={`w-2 h-2 rounded-full ${getRiskLevelColor(risk.residualRisk)}`}
                         />
-                        <span className="text-surface-300 capitalize">{risk.residualRisk}</span>
+                        <span className="text-surface-700 capitalize">{risk.residualRisk}</span>
                       </div>
                     ) : (
                       <span className="text-surface-500">—</span>
                     )}
                   </td>
                   <td className="px-4 py-3 text-center">
-                    <span className="text-surface-300">{risk.assetCount}</span>
+                    <span className="text-surface-700">{risk.assetCount}</span>
                   </td>
                   <td className="px-4 py-3 text-center">
-                    <span className="text-surface-300">{risk.controlCount}</span>
+                    <span className="text-surface-700">{risk.controlCount}</span>
                   </td>
                 </tr>
               ))}
@@ -752,7 +752,7 @@ export default function Risks() {
         {/* Pagination */}
         {data && data.total > 25 && (
           <div className="px-4 py-3 border-t border-surface-700 flex items-center justify-between">
-            <p className="text-sm text-surface-400">
+            <p className="text-sm text-surface-600">
               Showing {(filters.page - 1) * 25 + 1} to {Math.min(filters.page * 25, data.total)} of{' '}
               {data.total} risks
             </p>
@@ -760,14 +760,14 @@ export default function Risks() {
               <button
                 onClick={() => updateFilter('page', String(filters.page - 1))}
                 disabled={filters.page === 1}
-                className="px-3 py-1 bg-surface-700 rounded text-surface-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-surface-600"
+                className="px-3 py-1 bg-surface-700 rounded text-surface-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-surface-600"
               >
                 Previous
               </button>
               <button
                 onClick={() => updateFilter('page', String(filters.page + 1))}
                 disabled={filters.page * 25 >= data.total}
-                className="px-3 py-1 bg-surface-700 rounded text-surface-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-surface-600"
+                className="px-3 py-1 bg-surface-700 rounded text-surface-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-surface-600"
               >
                 Next
               </button>
@@ -784,7 +784,7 @@ export default function Risks() {
               <h2 className="text-xl font-semibold text-white">Create New Risk</h2>
               <button
                 onClick={() => setShowCreateModal(false)}
-                className="p-2 hover:bg-surface-700 rounded-lg text-surface-400"
+                className="p-2 hover:bg-surface-700 rounded-lg text-surface-600"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -869,7 +869,7 @@ export default function Risks() {
 
               {/* Tags */}
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-2">Tags</label>
+                <label className="block text-sm font-medium text-surface-700 mb-2">Tags</label>
                 <div className="flex gap-2 mb-2 flex-wrap">
                   {tags.map((tag) => (
                     <span

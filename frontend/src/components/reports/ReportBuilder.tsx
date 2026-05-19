@@ -20,7 +20,14 @@ import clsx from 'clsx';
 // ===========================================
 
 export type ReportSectionType = 'heading' | 'text' | 'table' | 'chart' | 'summary' | 'divider';
-export type DataSource = 'controls' | 'risks' | 'policies' | 'vendors' | 'evidence' | 'audits' | 'employees';
+export type DataSource =
+  | 'controls'
+  | 'risks'
+  | 'policies'
+  | 'vendors'
+  | 'evidence'
+  | 'audits'
+  | 'employees';
 export type ChartType = 'bar' | 'pie' | 'line' | 'donut';
 
 export interface ReportFilter {
@@ -64,15 +71,42 @@ export interface ReportConfig {
 const DATA_SOURCES: Record<DataSource, { label: string; fields: string[] }> = {
   controls: {
     label: 'Controls',
-    fields: ['title', 'description', 'status', 'category', 'owner', 'lastReviewDate', 'nextReviewDate'],
+    fields: [
+      'title',
+      'description',
+      'status',
+      'category',
+      'owner',
+      'lastReviewDate',
+      'nextReviewDate',
+    ],
   },
   risks: {
     label: 'Risks',
-    fields: ['title', 'description', 'status', 'category', 'likelihood', 'impact', 'riskLevel', 'owner', 'treatmentPlan'],
+    fields: [
+      'title',
+      'description',
+      'status',
+      'category',
+      'likelihood',
+      'impact',
+      'riskLevel',
+      'owner',
+      'treatmentPlan',
+    ],
   },
   policies: {
     label: 'Policies',
-    fields: ['title', 'description', 'status', 'category', 'version', 'owner', 'effectiveDate', 'reviewDate'],
+    fields: [
+      'title',
+      'description',
+      'status',
+      'category',
+      'version',
+      'owner',
+      'effectiveDate',
+      'reviewDate',
+    ],
   },
   vendors: {
     label: 'Vendors',
@@ -88,7 +122,14 @@ const DATA_SOURCES: Record<DataSource, { label: string; fields: string[] }> = {
   },
   employees: {
     label: 'Employees',
-    fields: ['name', 'email', 'department', 'complianceScore', 'trainingStatus', 'backgroundCheckStatus'],
+    fields: [
+      'name',
+      'email',
+      'department',
+      'complianceScore',
+      'trainingStatus',
+      'backgroundCheckStatus',
+    ],
   },
 };
 
@@ -137,7 +178,7 @@ export default function ReportBuilder({ initialConfig, onSave, className }: Repo
       filters: [],
     };
 
-    setConfig(prev => ({
+    setConfig((prev) => ({
       ...prev,
       sections: [...prev.sections, newSection],
     }));
@@ -146,27 +187,30 @@ export default function ReportBuilder({ initialConfig, onSave, className }: Repo
 
   // Update section
   const updateSection = useCallback((id: string, updates: Partial<ReportSection>) => {
-    setConfig(prev => ({
+    setConfig((prev) => ({
       ...prev,
-      sections: prev.sections.map(s => (s.id === id ? { ...s, ...updates } : s)),
+      sections: prev.sections.map((s) => (s.id === id ? { ...s, ...updates } : s)),
     }));
   }, []);
 
   // Remove section
-  const removeSection = useCallback((id: string) => {
-    setConfig(prev => ({
-      ...prev,
-      sections: prev.sections.filter(s => s.id !== id),
-    }));
-    if (selectedSection === id) {
-      setSelectedSection(null);
-    }
-  }, [selectedSection]);
+  const removeSection = useCallback(
+    (id: string) => {
+      setConfig((prev) => ({
+        ...prev,
+        sections: prev.sections.filter((s) => s.id !== id),
+      }));
+      if (selectedSection === id) {
+        setSelectedSection(null);
+      }
+    },
+    [selectedSection]
+  );
 
   // Move section
   const moveSection = useCallback((id: string, direction: 'up' | 'down') => {
-    setConfig(prev => {
-      const index = prev.sections.findIndex(s => s.id === id);
+    setConfig((prev) => {
+      const index = prev.sections.findIndex((s) => s.id === id);
       if (
         (direction === 'up' && index === 0) ||
         (direction === 'down' && index === prev.sections.length - 1)
@@ -204,8 +248,10 @@ export default function ReportBuilder({ initialConfig, onSave, className }: Repo
       // in other environments. This is a safe first step toward full
       // server-side PDF/Excel generation.
       const filename =
-        config.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') ||
-        'custom-report';
+        config.name
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-|-$/g, '') || 'custom-report';
 
       const payload = {
         meta: {
@@ -240,13 +286,13 @@ export default function ReportBuilder({ initialConfig, onSave, className }: Repo
       {/* Sidebar - Section Types */}
       <div className="w-64 bg-surface-900 border-r border-surface-800 p-4 space-y-4">
         <div>
-          <h3 className="text-sm font-medium text-surface-400 mb-2">Add Section</h3>
+          <h3 className="text-sm font-medium text-surface-600 mb-2">Add Section</h3>
           <div className="space-y-1">
             {SECTION_TYPES.map(({ type, label, icon: Icon }) => (
               <button
                 key={type}
                 onClick={() => addSection(type)}
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-surface-300 hover:text-white hover:bg-surface-800 rounded-lg transition-colors"
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-surface-700 hover:text-white hover:bg-surface-800 rounded-lg transition-colors"
               >
                 <Icon className="w-4 h-4" />
                 {label}
@@ -256,17 +302,17 @@ export default function ReportBuilder({ initialConfig, onSave, className }: Repo
         </div>
 
         <div className="border-t border-surface-800 pt-4">
-          <h3 className="text-sm font-medium text-surface-400 mb-2">Report Settings</h3>
+          <h3 className="text-sm font-medium text-surface-600 mb-2">Report Settings</h3>
           <input
             type="text"
             value={config.name}
-            onChange={e => setConfig(prev => ({ ...prev, name: e.target.value }))}
+            onChange={(e) => setConfig((prev) => ({ ...prev, name: e.target.value }))}
             placeholder="Report Name"
             className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-white text-sm focus:outline-none focus:border-brand-500"
           />
           <textarea
             value={config.description || ''}
-            onChange={e => setConfig(prev => ({ ...prev, description: e.target.value }))}
+            onChange={(e) => setConfig((prev) => ({ ...prev, description: e.target.value }))}
             placeholder="Description (optional)"
             rows={2}
             className="w-full mt-2 px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-white text-sm focus:outline-none focus:border-brand-500 resize-none"
@@ -297,9 +343,7 @@ export default function ReportBuilder({ initialConfig, onSave, className }: Repo
           <div className="mb-6 flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-white">{config.name}</h1>
-              {config.description && (
-                <p className="text-surface-400 mt-1">{config.description}</p>
-              )}
+              {config.description && <p className="text-surface-600 mt-1">{config.description}</p>}
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -323,7 +367,9 @@ export default function ReportBuilder({ initialConfig, onSave, className }: Repo
           {config.sections.length === 0 ? (
             <div className="text-center py-16 border-2 border-dashed border-surface-700 rounded-xl">
               <SparklesIcon className="w-12 h-12 text-surface-600 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-surface-400 mb-2">Start Building Your Report</h3>
+              <h3 className="text-lg font-medium text-surface-600 mb-2">
+                Start Building Your Report
+              </h3>
               <p className="text-sm text-surface-500 mb-4">
                 Add sections from the sidebar to create your custom report
               </p>
@@ -346,7 +392,7 @@ export default function ReportBuilder({ initialConfig, onSave, className }: Repo
                   isLast={index === config.sections.length - 1}
                   isPreview={isPreviewMode}
                   onSelect={() => setSelectedSection(section.id)}
-                  onUpdate={updates => updateSection(section.id, updates)}
+                  onUpdate={(updates) => updateSection(section.id, updates)}
                   onRemove={() => removeSection(section.id)}
                   onMoveUp={() => moveSection(section.id, 'up')}
                   onMoveDown={() => moveSection(section.id, 'down')}
@@ -360,8 +406,8 @@ export default function ReportBuilder({ initialConfig, onSave, className }: Repo
       {/* Right Sidebar - Section Config */}
       {selectedSection && !isPreviewMode && (
         <SectionConfigPanel
-          section={config.sections.find(s => s.id === selectedSection)!}
-          onUpdate={updates => updateSection(selectedSection, updates)}
+          section={config.sections.find((s) => s.id === selectedSection)!}
+          onUpdate={(updates) => updateSection(selectedSection, updates)}
           onClose={() => setSelectedSection(null)}
         />
       )}
@@ -415,22 +461,31 @@ function SectionEditor({
       {/* Controls */}
       <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
         <button
-          onClick={e => { e.stopPropagation(); onMoveUp(); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onMoveUp();
+          }}
           disabled={isFirst}
-          className="p-1 text-surface-400 hover:text-white disabled:opacity-30"
+          className="p-1 text-surface-600 hover:text-white disabled:opacity-30"
         >
           <ChevronUpIcon className="w-4 h-4" />
         </button>
         <button
-          onClick={e => { e.stopPropagation(); onMoveDown(); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onMoveDown();
+          }}
           disabled={isLast}
-          className="p-1 text-surface-400 hover:text-white disabled:opacity-30"
+          className="p-1 text-surface-600 hover:text-white disabled:opacity-30"
         >
           <ChevronDownIcon className="w-4 h-4" />
         </button>
         <button
-          onClick={e => { e.stopPropagation(); onRemove(); }}
-          className="p-1 text-red-400 hover:text-red-300"
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove();
+          }}
+          className="p-1 text-red-600 hover:text-red-700"
         >
           <TrashIcon className="w-4 h-4" />
         </button>
@@ -441,7 +496,7 @@ function SectionEditor({
         <input
           type="text"
           value={section.title || ''}
-          onChange={e => onUpdate({ title: e.target.value })}
+          onChange={(e) => onUpdate({ title: e.target.value })}
           className="text-xl font-semibold text-white bg-transparent border-none focus:outline-none w-full"
           placeholder="Section Title"
         />
@@ -450,21 +505,21 @@ function SectionEditor({
       {section.type === 'text' && (
         <textarea
           value={section.content || ''}
-          onChange={e => onUpdate({ content: e.target.value })}
+          onChange={(e) => onUpdate({ content: e.target.value })}
           rows={3}
-          className="w-full text-surface-300 bg-transparent border-none focus:outline-none resize-none"
+          className="w-full text-surface-700 bg-transparent border-none focus:outline-none resize-none"
           placeholder="Enter text content..."
         />
       )}
 
       {section.type === 'table' && (
-        <div className="text-sm text-surface-400">
+        <div className="text-sm text-surface-600">
           <div className="flex items-center gap-2 mb-2">
             <TableCellsIcon className="w-4 h-4" />
             <span>Data Table: {DATA_SOURCES[section.dataSource || 'controls'].label}</span>
           </div>
           <div className="flex flex-wrap gap-1">
-            {(section.fields || []).map(field => (
+            {(section.fields || []).map((field) => (
               <span key={field} className="px-2 py-0.5 bg-surface-700 rounded text-xs">
                 {field}
               </span>
@@ -474,7 +529,7 @@ function SectionEditor({
       )}
 
       {section.type === 'chart' && (
-        <div className="text-sm text-surface-400">
+        <div className="text-sm text-surface-600">
           <div className="flex items-center gap-2">
             <ChartBarIcon className="w-4 h-4" />
             <span>
@@ -486,7 +541,7 @@ function SectionEditor({
       )}
 
       {section.type === 'summary' && (
-        <div className="text-sm text-surface-400">
+        <div className="text-sm text-surface-600">
           <div className="flex items-center gap-2">
             <Squares2X2Icon className="w-4 h-4" />
             <span>Summary Stats: {DATA_SOURCES[section.dataSource || 'controls'].label}</span>
@@ -494,9 +549,7 @@ function SectionEditor({
         </div>
       )}
 
-      {section.type === 'divider' && (
-        <div className="border-t border-surface-600 my-2" />
-      )}
+      {section.type === 'divider' && <div className="border-t border-surface-600 my-2" />}
     </div>
   );
 }
@@ -511,7 +564,7 @@ function SectionPreview({ section }: { section: ReportSection }) {
   }
 
   if (section.type === 'text') {
-    return <p className="text-surface-300">{section.content}</p>;
+    return <p className="text-surface-700">{section.content}</p>;
   }
 
   if (section.type === 'divider') {
@@ -521,7 +574,7 @@ function SectionPreview({ section }: { section: ReportSection }) {
   // Placeholder for dynamic content
   return (
     <div className="p-4 bg-surface-800/50 rounded-lg border border-surface-700">
-      <p className="text-sm text-surface-400">
+      <p className="text-sm text-surface-600">
         [Preview: {section.type} from {section.dataSource}]
       </p>
     </div>
@@ -545,7 +598,7 @@ function SectionConfigPanel({ section, onUpdate, onClose }: SectionConfigPanelPr
     <div className="w-80 bg-surface-900 border-l border-surface-800 p-4 overflow-y-auto">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-medium text-white">Section Settings</h3>
-        <button onClick={onClose} className="text-surface-400 hover:text-white">
+        <button onClick={onClose} className="text-surface-600 hover:text-white">
           ×
         </button>
       </div>
@@ -553,11 +606,11 @@ function SectionConfigPanel({ section, onUpdate, onClose }: SectionConfigPanelPr
       <div className="space-y-4">
         {section.type === 'heading' && (
           <div>
-            <label className="block text-sm text-surface-400 mb-1">Title</label>
+            <label className="block text-sm text-surface-600 mb-1">Title</label>
             <input
               type="text"
               value={section.title || ''}
-              onChange={e => onUpdate({ title: e.target.value })}
+              onChange={(e) => onUpdate({ title: e.target.value })}
               className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-white text-sm"
             />
           </div>
@@ -565,10 +618,10 @@ function SectionConfigPanel({ section, onUpdate, onClose }: SectionConfigPanelPr
 
         {section.type === 'text' && (
           <div>
-            <label className="block text-sm text-surface-400 mb-1">Content</label>
+            <label className="block text-sm text-surface-600 mb-1">Content</label>
             <textarea
               value={section.content || ''}
-              onChange={e => onUpdate({ content: e.target.value })}
+              onChange={(e) => onUpdate({ content: e.target.value })}
               rows={5}
               className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-white text-sm resize-none"
             />
@@ -578,10 +631,10 @@ function SectionConfigPanel({ section, onUpdate, onClose }: SectionConfigPanelPr
         {showDataConfig && (
           <>
             <div>
-              <label className="block text-sm text-surface-400 mb-1">Data Source</label>
+              <label className="block text-sm text-surface-600 mb-1">Data Source</label>
               <select
                 value={section.dataSource || 'controls'}
-                onChange={e => onUpdate({ dataSource: e.target.value as DataSource })}
+                onChange={(e) => onUpdate({ dataSource: e.target.value as DataSource })}
                 className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-white text-sm"
               >
                 {Object.entries(DATA_SOURCES).map(([key, { label }]) => (
@@ -593,24 +646,24 @@ function SectionConfigPanel({ section, onUpdate, onClose }: SectionConfigPanelPr
             </div>
 
             <div>
-              <label className="block text-sm text-surface-400 mb-1">Fields</label>
+              <label className="block text-sm text-surface-600 mb-1">Fields</label>
               <div className="space-y-1 max-h-40 overflow-y-auto">
-                {DATA_SOURCES[section.dataSource || 'controls'].fields.map(field => (
+                {DATA_SOURCES[section.dataSource || 'controls'].fields.map((field) => (
                   <label key={field} className="flex items-center gap-2 text-sm">
                     <input
                       type="checkbox"
                       checked={(section.fields || []).includes(field)}
-                      onChange={e => {
+                      onChange={(e) => {
                         const fields = section.fields || [];
                         onUpdate({
                           fields: e.target.checked
                             ? [...fields, field]
-                            : fields.filter(f => f !== field),
+                            : fields.filter((f) => f !== field),
                         });
                       }}
                       className="rounded border-surface-600 bg-surface-800 text-brand-500"
                     />
-                    <span className="text-surface-300">{field}</span>
+                    <span className="text-surface-700">{field}</span>
                   </label>
                 ))}
               </div>
@@ -618,10 +671,10 @@ function SectionConfigPanel({ section, onUpdate, onClose }: SectionConfigPanelPr
 
             {section.type === 'chart' && (
               <div>
-                <label className="block text-sm text-surface-400 mb-1">Chart Type</label>
+                <label className="block text-sm text-surface-600 mb-1">Chart Type</label>
                 <select
                   value={section.chartType || 'bar'}
-                  onChange={e => onUpdate({ chartType: e.target.value as ChartType })}
+                  onChange={(e) => onUpdate({ chartType: e.target.value as ChartType })}
                   className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-white text-sm"
                 >
                   <option value="bar">Bar Chart</option>
@@ -633,14 +686,14 @@ function SectionConfigPanel({ section, onUpdate, onClose }: SectionConfigPanelPr
             )}
 
             <div>
-              <label className="block text-sm text-surface-400 mb-1">Group By</label>
+              <label className="block text-sm text-surface-600 mb-1">Group By</label>
               <select
                 value={section.groupBy || ''}
-                onChange={e => onUpdate({ groupBy: e.target.value || undefined })}
+                onChange={(e) => onUpdate({ groupBy: e.target.value || undefined })}
                 className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-white text-sm"
               >
                 <option value="">No grouping</option>
-                {DATA_SOURCES[section.dataSource || 'controls'].fields.map(field => (
+                {DATA_SOURCES[section.dataSource || 'controls'].fields.map((field) => (
                   <option key={field} value={field}>
                     {field}
                   </option>
@@ -649,15 +702,15 @@ function SectionConfigPanel({ section, onUpdate, onClose }: SectionConfigPanelPr
             </div>
 
             <div>
-              <label className="block text-sm text-surface-400 mb-1">Sort By</label>
+              <label className="block text-sm text-surface-600 mb-1">Sort By</label>
               <div className="flex gap-2">
                 <select
                   value={section.sortBy || ''}
-                  onChange={e => onUpdate({ sortBy: e.target.value || undefined })}
+                  onChange={(e) => onUpdate({ sortBy: e.target.value || undefined })}
                   className="flex-1 px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-white text-sm"
                 >
                   <option value="">Default</option>
-                  {DATA_SOURCES[section.dataSource || 'controls'].fields.map(field => (
+                  {DATA_SOURCES[section.dataSource || 'controls'].fields.map((field) => (
                     <option key={field} value={field}>
                       {field}
                     </option>
@@ -665,7 +718,7 @@ function SectionConfigPanel({ section, onUpdate, onClose }: SectionConfigPanelPr
                 </select>
                 <select
                   value={section.sortOrder || 'asc'}
-                  onChange={e => onUpdate({ sortOrder: e.target.value as 'asc' | 'desc' })}
+                  onChange={(e) => onUpdate({ sortOrder: e.target.value as 'asc' | 'desc' })}
                   className="w-20 px-2 py-2 bg-surface-800 border border-surface-700 rounded-lg text-white text-sm"
                 >
                   <option value="asc">↑</option>
@@ -679,4 +732,3 @@ function SectionConfigPanel({ section, onUpdate, onClose }: SectionConfigPanelPr
     </div>
   );
 }
-

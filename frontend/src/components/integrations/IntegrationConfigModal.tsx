@@ -127,7 +127,7 @@ export default function IntegrationConfigModal({
         <div className="flex items-center justify-between p-6 border-b border-surface-800">
           <div>
             <h2 className="text-lg font-semibold text-surface-100">Configure {typeMeta.name}</h2>
-            <p className="text-sm text-surface-400 mt-1">
+            <p className="text-sm text-surface-600 mt-1">
               {existingIntegration
                 ? 'Update your integration settings'
                 : 'Set up your integration connection'}
@@ -137,7 +137,7 @@ export default function IntegrationConfigModal({
             onClick={onClose}
             className="p-2 hover:bg-surface-800 rounded-lg transition-colors"
           >
-            <XMarkIcon className="w-5 h-5 text-surface-400" />
+            <XMarkIcon className="w-5 h-5 text-surface-600" />
           </button>
         </div>
 
@@ -147,7 +147,7 @@ export default function IntegrationConfigModal({
             onClick={() => setActiveTab('quick')}
             className={clsx(
               'flex-1 px-4 py-3 text-sm font-medium transition-colors relative',
-              activeTab === 'quick' ? 'text-brand-400' : 'text-surface-400 hover:text-surface-200'
+              activeTab === 'quick' ? 'text-brand-400' : 'text-surface-600 hover:text-surface-200'
             )}
           >
             Quick Setup
@@ -162,7 +162,7 @@ export default function IntegrationConfigModal({
               'flex-1 px-4 py-3 text-sm font-medium transition-colors relative',
               activeTab === 'advanced'
                 ? 'text-brand-400'
-                : 'text-surface-400 hover:text-surface-200'
+                : 'text-surface-600 hover:text-surface-200'
             )}
           >
             Advanced Builder
@@ -177,7 +177,7 @@ export default function IntegrationConfigModal({
             onClick={() => setActiveTab('raw')}
             className={clsx(
               'flex-1 px-4 py-3 text-sm font-medium transition-colors relative',
-              activeTab === 'raw' ? 'text-brand-400' : 'text-surface-400 hover:text-surface-200'
+              activeTab === 'raw' ? 'text-brand-400' : 'text-surface-600 hover:text-surface-200'
             )}
           >
             Raw API

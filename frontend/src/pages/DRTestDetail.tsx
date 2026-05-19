@@ -65,19 +65,29 @@ interface DRTest {
 }
 
 const STATUS_OPTIONS = [
-  { value: 'planned', label: 'Planned', color: 'bg-surface-600 text-surface-300' },
-  { value: 'scheduled', label: 'Scheduled', color: 'bg-blue-500/20 text-blue-400' },
-  { value: 'in_progress', label: 'In Progress', color: 'bg-yellow-500/20 text-yellow-400' },
-  { value: 'completed', label: 'Completed', color: 'bg-green-500/20 text-green-400' },
-  { value: 'cancelled', label: 'Cancelled', color: 'bg-red-500/20 text-red-400' },
-  { value: 'postponed', label: 'Postponed', color: 'bg-orange-500/20 text-orange-400' },
+  { value: 'planned', label: 'Planned', color: 'bg-surface-600 text-surface-700' },
+  { value: 'scheduled', label: 'Scheduled', color: 'bg-blue-500/20 text-blue-600' },
+  { value: 'in_progress', label: 'In Progress', color: 'bg-yellow-500/20 text-yellow-600' },
+  { value: 'completed', label: 'Completed', color: 'bg-green-500/20 text-green-600' },
+  { value: 'cancelled', label: 'Cancelled', color: 'bg-red-500/20 text-red-600' },
+  { value: 'postponed', label: 'Postponed', color: 'bg-orange-500/20 text-orange-600' },
 ];
 
 const RESULT_OPTIONS = [
-  { value: 'passed', label: 'Passed', color: 'text-green-400', icon: CheckCircleIcon },
-  { value: 'passed_with_issues', label: 'Passed with Issues', color: 'text-yellow-400', icon: ExclamationTriangleIcon },
-  { value: 'failed', label: 'Failed', color: 'text-red-400', icon: XCircleIcon },
-  { value: 'incomplete', label: 'Incomplete', color: 'text-surface-400', icon: ExclamationTriangleIcon },
+  { value: 'passed', label: 'Passed', color: 'text-green-600', icon: CheckCircleIcon },
+  {
+    value: 'passed_with_issues',
+    label: 'Passed with Issues',
+    color: 'text-yellow-600',
+    icon: ExclamationTriangleIcon,
+  },
+  { value: 'failed', label: 'Failed', color: 'text-red-600', icon: XCircleIcon },
+  {
+    value: 'incomplete',
+    label: 'Incomplete',
+    color: 'text-surface-600',
+    icon: ExclamationTriangleIcon,
+  },
 ];
 
 const TEST_TYPES = [
@@ -89,10 +99,10 @@ const TEST_TYPES = [
 ];
 
 const SEVERITY_COLORS: Record<string, string> = {
-  critical: 'bg-red-500/20 text-red-400',
-  high: 'bg-orange-500/20 text-orange-400',
-  medium: 'bg-yellow-500/20 text-yellow-400',
-  low: 'bg-blue-500/20 text-blue-400',
+  critical: 'bg-red-500/20 text-red-600',
+  high: 'bg-orange-500/20 text-orange-600',
+  medium: 'bg-yellow-500/20 text-yellow-600',
+  low: 'bg-blue-500/20 text-blue-600',
 };
 
 export default function DRTestDetail() {
@@ -105,7 +115,7 @@ export default function DRTestDetail() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'findings' | 'participants'>('overview');
-  
+
   const [editForm, setEditForm] = useState({
     name: '',
     description: '',
@@ -122,7 +132,11 @@ export default function DRTestDetail() {
     lessons_learned: '',
   });
 
-  const { data: test, isLoading, error } = useQuery<DRTest>({
+  const {
+    data: test,
+    isLoading,
+    error,
+  } = useQuery<DRTest>({
     queryKey: ['dr-test', id],
     queryFn: async () => {
       const res = await api.get(`/api/bcdr/tests/${id}`);
@@ -213,15 +227,15 @@ export default function DRTestDetail() {
   });
 
   const getStatusConfig = (status: string) => {
-    return STATUS_OPTIONS.find(s => s.value === status) || STATUS_OPTIONS[0];
+    return STATUS_OPTIONS.find((s) => s.value === status) || STATUS_OPTIONS[0];
   };
 
   const getResultConfig = (result: string) => {
-    return RESULT_OPTIONS.find(r => r.value === result);
+    return RESULT_OPTIONS.find((r) => r.value === result);
   };
 
   const getTestTypeLabel = (type: string) => {
-    return TEST_TYPES.find(t => t.value === type)?.label || type;
+    return TEST_TYPES.find((t) => t.value === type)?.label || type;
   };
 
   if (isLoading && !isNewTest) {
@@ -229,8 +243,12 @@ export default function DRTestDetail() {
       <div className="p-6 space-y-6">
         <SkeletonDetailHeader />
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2"><SkeletonDetailSection /></div>
-          <div><SkeletonDetailSection /></div>
+          <div className="lg:col-span-2">
+            <SkeletonDetailSection />
+          </div>
+          <div>
+            <SkeletonDetailSection />
+          </div>
         </div>
       </div>
     );
@@ -240,9 +258,9 @@ export default function DRTestDetail() {
     return (
       <div className="p-6">
         <div className="card p-8 text-center">
-          <ExclamationCircleIcon className="w-12 h-12 mx-auto mb-4 text-red-400" />
+          <ExclamationCircleIcon className="w-12 h-12 mx-auto mb-4 text-red-600" />
           <h2 className="text-lg font-semibold text-surface-100 mb-2">DR Test Not Found</h2>
-          <p className="text-surface-400 mb-4">The requested test could not be loaded.</p>
+          <p className="text-surface-600 mb-4">The requested test could not be loaded.</p>
           <Button onClick={() => navigate('/bcdr/tests')}>Back to Tests</Button>
         </div>
       </div>
@@ -256,13 +274,13 @@ export default function DRTestDetail() {
         <div className="flex items-start gap-4">
           <button
             onClick={() => navigate('/bcdr/tests')}
-            className="p-2 hover:bg-surface-700 rounded-lg text-surface-400 mt-1"
+            className="p-2 hover:bg-surface-700 rounded-lg text-surface-600 mt-1"
           >
             <ArrowLeftIcon className="w-5 h-5" />
           </button>
           <div>
             <h1 className="text-2xl font-bold text-surface-100">Schedule New DR Test</h1>
-            <p className="text-surface-400 mt-1">Create a new disaster recovery test</p>
+            <p className="text-surface-600 mt-1">Create a new disaster recovery test</p>
           </div>
         </div>
 
@@ -275,7 +293,7 @@ export default function DRTestDetail() {
             className="space-y-4"
           >
             <div>
-              <label className="block text-sm font-medium text-surface-300 mb-2">Test Name *</label>
+              <label className="block text-sm font-medium text-surface-700 mb-2">Test Name *</label>
               <input
                 type="text"
                 value={editForm.name}
@@ -288,19 +306,23 @@ export default function DRTestDetail() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-2">Test Type</label>
+                <label className="block text-sm font-medium text-surface-700 mb-2">Test Type</label>
                 <select
                   value={editForm.test_type}
                   onChange={(e) => setEditForm({ ...editForm, test_type: e.target.value })}
                   className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-surface-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
                 >
                   {TEST_TYPES.map((type) => (
-                    <option key={type.value} value={type.value}>{type.label}</option>
+                    <option key={type.value} value={type.value}>
+                      {type.label}
+                    </option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-2">Scheduled Date</label>
+                <label className="block text-sm font-medium text-surface-700 mb-2">
+                  Scheduled Date
+                </label>
                 <input
                   type="date"
                   value={editForm.scheduled_date}
@@ -311,7 +333,7 @@ export default function DRTestDetail() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-surface-300 mb-2">Description</label>
+              <label className="block text-sm font-medium text-surface-700 mb-2">Description</label>
               <textarea
                 value={editForm.description}
                 onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
@@ -322,7 +344,7 @@ export default function DRTestDetail() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-surface-300 mb-2">Objectives</label>
+              <label className="block text-sm font-medium text-surface-700 mb-2">Objectives</label>
               <textarea
                 value={editForm.objectives}
                 onChange={(e) => setEditForm({ ...editForm, objectives: e.target.value })}
@@ -333,7 +355,7 @@ export default function DRTestDetail() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-surface-300 mb-2">Scope</label>
+              <label className="block text-sm font-medium text-surface-700 mb-2">Scope</label>
               <textarea
                 value={editForm.scope}
                 onChange={(e) => setEditForm({ ...editForm, scope: e.target.value })}
@@ -344,17 +366,10 @@ export default function DRTestDetail() {
             </div>
 
             <div className="flex justify-end gap-3 pt-4">
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => navigate('/bcdr/tests')}
-              >
+              <Button type="button" variant="secondary" onClick={() => navigate('/bcdr/tests')}>
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                disabled={createMutation.isPending || !editForm.name}
-              >
+              <Button type="submit" disabled={createMutation.isPending || !editForm.name}>
                 {createMutation.isPending ? 'Creating...' : 'Schedule Test'}
               </Button>
             </div>
@@ -370,9 +385,10 @@ export default function DRTestDetail() {
   const statusConfig = getStatusConfig(test.status);
   const resultConfig = test.result ? getResultConfig(test.result) : null;
   const ResultIcon = resultConfig?.icon;
-  const rtoMet = test.target_rto_minutes && test.actual_recovery_time_minutes 
-    ? test.actual_recovery_time_minutes <= test.target_rto_minutes 
-    : null;
+  const rtoMet =
+    test.target_rto_minutes && test.actual_recovery_time_minutes
+      ? test.actual_recovery_time_minutes <= test.target_rto_minutes
+      : null;
 
   return (
     <div className="p-6 space-y-6">
@@ -381,32 +397,31 @@ export default function DRTestDetail() {
         <div className="flex items-start gap-4">
           <button
             onClick={() => navigate('/bcdr/tests')}
-            className="p-2 hover:bg-surface-700 rounded-lg text-surface-400 mt-1"
+            className="p-2 hover:bg-surface-700 rounded-lg text-surface-600 mt-1"
           >
             <ArrowLeftIcon className="w-5 h-5" />
           </button>
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <BeakerIcon className="w-8 h-8 text-purple-400" />
+              <BeakerIcon className="w-8 h-8 text-purple-600" />
               <div>
                 <h1 className="text-2xl font-bold text-surface-100">{test.name}</h1>
-                <p className="text-surface-400 text-sm">{test.test_id}</p>
+                <p className="text-surface-600 text-sm">{test.test_id}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <span className={clsx(
-                "px-3 py-1 rounded-full text-sm font-medium",
-                statusConfig.color
-              )}>
+              <span
+                className={clsx('px-3 py-1 rounded-full text-sm font-medium', statusConfig.color)}
+              >
                 {statusConfig.label}
               </span>
               {resultConfig && ResultIcon && (
-                <span className={clsx("flex items-center gap-1", resultConfig.color)}>
+                <span className={clsx('flex items-center gap-1', resultConfig.color)}>
                   <ResultIcon className="w-5 h-5" />
                   {resultConfig.label}
                 </span>
               )}
-              <span className="px-3 py-1 rounded-full text-sm font-medium bg-surface-700 text-surface-300">
+              <span className="px-3 py-1 rounded-full text-sm font-medium bg-surface-700 text-surface-700">
                 {getTestTypeLabel(test.test_type)}
               </span>
             </div>
@@ -438,15 +453,15 @@ export default function DRTestDetail() {
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={clsx(
-                "pb-3 px-1 text-sm font-medium border-b-2 transition-colors capitalize",
+                'pb-3 px-1 text-sm font-medium border-b-2 transition-colors capitalize',
                 activeTab === tab
-                  ? "border-brand-500 text-brand-400"
-                  : "border-transparent text-surface-400 hover:text-surface-200"
+                  ? 'border-brand-500 text-brand-400'
+                  : 'border-transparent text-surface-600 hover:text-surface-200'
               )}
             >
               {tab}
               {tab === 'findings' && test.findings?.length > 0 && (
-                <span className="ml-2 px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 text-xs">
+                <span className="ml-2 px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-600 text-xs">
                   {test.findings.length}
                 </span>
               )}
@@ -461,7 +476,7 @@ export default function DRTestDetail() {
           <div className="lg:col-span-2 space-y-6">
             <div className="card p-6">
               <h3 className="text-lg font-semibold text-surface-100 mb-4">Description</h3>
-              <p className="text-surface-300">{test.description || 'No description provided.'}</p>
+              <p className="text-surface-700">{test.description || 'No description provided.'}</p>
             </div>
 
             {/* Recovery Metrics */}
@@ -469,30 +484,40 @@ export default function DRTestDetail() {
               <h3 className="text-lg font-semibold text-surface-100 mb-4">Recovery Metrics</h3>
               <div className="grid grid-cols-3 gap-4">
                 <div className="p-4 rounded-lg bg-surface-800/50">
-                  <p className="text-surface-400 text-sm">Target RTO</p>
+                  <p className="text-surface-600 text-sm">Target RTO</p>
                   <p className="text-2xl font-bold text-surface-100">
                     {test.target_rto_minutes ? `${test.target_rto_minutes}m` : 'N/A'}
                   </p>
                 </div>
                 <div className="p-4 rounded-lg bg-surface-800/50">
-                  <p className="text-surface-400 text-sm">Actual Recovery Time</p>
-                  <p className={clsx(
-                    "text-2xl font-bold",
-                    rtoMet === true ? "text-green-400" : 
-                    rtoMet === false ? "text-red-400" : 
-                    "text-surface-100"
-                  )}>
-                    {test.actual_recovery_time_minutes ? `${test.actual_recovery_time_minutes}m` : 'N/A'}
+                  <p className="text-surface-600 text-sm">Actual Recovery Time</p>
+                  <p
+                    className={clsx(
+                      'text-2xl font-bold',
+                      rtoMet === true
+                        ? 'text-green-600'
+                        : rtoMet === false
+                          ? 'text-red-600'
+                          : 'text-surface-100'
+                    )}
+                  >
+                    {test.actual_recovery_time_minutes
+                      ? `${test.actual_recovery_time_minutes}m`
+                      : 'N/A'}
                   </p>
                 </div>
                 <div className="p-4 rounded-lg bg-surface-800/50">
-                  <p className="text-surface-400 text-sm">RTO Met</p>
-                  <p className={clsx(
-                    "text-2xl font-bold",
-                    rtoMet === true ? "text-green-400" : 
-                    rtoMet === false ? "text-red-400" : 
-                    "text-surface-100"
-                  )}>
+                  <p className="text-surface-600 text-sm">RTO Met</p>
+                  <p
+                    className={clsx(
+                      'text-2xl font-bold',
+                      rtoMet === true
+                        ? 'text-green-600'
+                        : rtoMet === false
+                          ? 'text-red-600'
+                          : 'text-surface-100'
+                    )}
+                  >
                     {rtoMet === null ? 'N/A' : rtoMet ? 'Yes' : 'No'}
                   </p>
                 </div>
@@ -502,14 +527,14 @@ export default function DRTestDetail() {
             {test.objectives && (
               <div className="card p-6">
                 <h3 className="text-lg font-semibold text-surface-100 mb-4">Objectives</h3>
-                <p className="text-surface-300 whitespace-pre-wrap">{test.objectives}</p>
+                <p className="text-surface-700 whitespace-pre-wrap">{test.objectives}</p>
               </div>
             )}
 
             {test.lessons_learned && (
               <div className="card p-6">
                 <h3 className="text-lg font-semibold text-surface-100 mb-4">Lessons Learned</h3>
-                <p className="text-surface-300 whitespace-pre-wrap">{test.lessons_learned}</p>
+                <p className="text-surface-700 whitespace-pre-wrap">{test.lessons_learned}</p>
               </div>
             )}
           </div>
@@ -519,13 +544,13 @@ export default function DRTestDetail() {
               <h3 className="text-lg font-semibold text-surface-100 mb-4">Details</h3>
               <div className="space-y-4">
                 <div>
-                  <p className="text-surface-400 text-sm">Coordinator</p>
+                  <p className="text-surface-600 text-sm">Coordinator</p>
                   <p className="text-surface-100">{test.coordinator_name || '-'}</p>
                 </div>
                 {test.plan_title && (
                   <div>
-                    <p className="text-surface-400 text-sm">BC/DR Plan</p>
-                    <Link 
+                    <p className="text-surface-600 text-sm">BC/DR Plan</p>
+                    <Link
                       to={`/bcdr/plans/${test.bcdr_plan_id}`}
                       className="text-brand-400 hover:text-brand-300"
                     >
@@ -534,16 +559,14 @@ export default function DRTestDetail() {
                   </div>
                 )}
                 <div>
-                  <p className="text-surface-400 text-sm">Scheduled Date</p>
+                  <p className="text-surface-600 text-sm">Scheduled Date</p>
                   <p className="text-surface-100">
-                    {test.scheduled_date 
-                      ? new Date(test.scheduled_date).toLocaleString() 
-                      : '-'}
+                    {test.scheduled_date ? new Date(test.scheduled_date).toLocaleString() : '-'}
                   </p>
                 </div>
                 {test.actual_start_at && (
                   <div>
-                    <p className="text-surface-400 text-sm">Actual Start</p>
+                    <p className="text-surface-600 text-sm">Actual Start</p>
                     <p className="text-surface-100">
                       {new Date(test.actual_start_at).toLocaleString()}
                     </p>
@@ -551,7 +574,7 @@ export default function DRTestDetail() {
                 )}
                 {test.actual_end_at && (
                   <div>
-                    <p className="text-surface-400 text-sm">Actual End</p>
+                    <p className="text-surface-600 text-sm">Actual End</p>
                     <p className="text-surface-100">
                       {new Date(test.actual_end_at).toLocaleString()}
                     </p>
@@ -564,15 +587,17 @@ export default function DRTestDetail() {
               <h3 className="text-lg font-semibold text-surface-100 mb-4">Statistics</h3>
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-surface-400">Findings</span>
-                  <span className={clsx(
-                    test.findings?.length > 0 ? "text-yellow-400" : "text-surface-100"
-                  )}>
+                  <span className="text-surface-600">Findings</span>
+                  <span
+                    className={clsx(
+                      test.findings?.length > 0 ? 'text-yellow-600' : 'text-surface-100'
+                    )}
+                  >
                     {test.findings?.length || 0}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-surface-400">Participants</span>
+                  <span className="text-surface-600">Participants</span>
                   <span className="text-surface-100">{test.participants?.length || 0}</span>
                 </div>
               </div>
@@ -600,23 +625,29 @@ export default function DRTestDetail() {
                   <div className="flex items-start justify-between mb-2">
                     <h4 className="text-surface-100 font-medium">{finding.title}</h4>
                     <div className="flex items-center gap-2">
-                      <span className={clsx(
-                        "px-2 py-0.5 rounded text-xs font-medium capitalize",
-                        SEVERITY_COLORS[finding.severity] || 'bg-surface-700 text-surface-300'
-                      )}>
+                      <span
+                        className={clsx(
+                          'px-2 py-0.5 rounded text-xs font-medium capitalize',
+                          SEVERITY_COLORS[finding.severity] || 'bg-surface-700 text-surface-700'
+                        )}
+                      >
                         {finding.severity}
                       </span>
-                      <span className={clsx(
-                        "px-2 py-0.5 rounded text-xs font-medium capitalize",
-                        finding.remediation_status === 'resolved' ? 'bg-green-500/20 text-green-400' :
-                        finding.remediation_status === 'in_progress' ? 'bg-yellow-500/20 text-yellow-400' :
-                        'bg-surface-700 text-surface-300'
-                      )}>
+                      <span
+                        className={clsx(
+                          'px-2 py-0.5 rounded text-xs font-medium capitalize',
+                          finding.remediation_status === 'resolved'
+                            ? 'bg-green-500/20 text-green-600'
+                            : finding.remediation_status === 'in_progress'
+                              ? 'bg-yellow-500/20 text-yellow-600'
+                              : 'bg-surface-700 text-surface-700'
+                        )}
+                      >
                         {finding.remediation_status?.replace('_', ' ')}
                       </span>
                     </div>
                   </div>
-                  <p className="text-surface-400 text-sm mb-3">{finding.description}</p>
+                  <p className="text-surface-600 text-sm mb-3">{finding.description}</p>
                   <div className="flex items-center gap-4 text-sm text-surface-500">
                     {finding.assigned_to_name && (
                       <span className="flex items-center gap-1">
@@ -635,7 +666,7 @@ export default function DRTestDetail() {
               ))}
             </div>
           ) : (
-            <p className="text-surface-400 text-center py-8">No findings recorded</p>
+            <p className="text-surface-600 text-center py-8">No findings recorded</p>
           )}
         </div>
       )}
@@ -658,26 +689,28 @@ export default function DRTestDetail() {
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-surface-700 flex items-center justify-center">
-                      <UserIcon className="w-5 h-5 text-surface-400" />
+                      <UserIcon className="w-5 h-5 text-surface-600" />
                     </div>
                     <div>
                       <p className="text-surface-100 font-medium">{participant.user_name}</p>
-                      <p className="text-surface-400 text-sm">{participant.role}</p>
+                      <p className="text-surface-600 text-sm">{participant.role}</p>
                     </div>
                   </div>
-                  <span className={clsx(
-                    "px-2 py-1 rounded text-xs font-medium",
-                    participant.attended 
-                      ? "bg-green-500/20 text-green-400" 
-                      : "bg-surface-700 text-surface-400"
-                  )}>
+                  <span
+                    className={clsx(
+                      'px-2 py-1 rounded text-xs font-medium',
+                      participant.attended
+                        ? 'bg-green-500/20 text-green-600'
+                        : 'bg-surface-700 text-surface-600'
+                    )}
+                  >
                     {participant.attended ? 'Attended' : 'Not Attended'}
                   </span>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-surface-400 text-center py-8">No participants added</p>
+            <p className="text-surface-600 text-center py-8">No participants added</p>
           )}
         </div>
       )}
@@ -690,7 +723,7 @@ export default function DRTestDetail() {
               <h2 className="text-xl font-semibold text-white">Edit DR Test</h2>
               <button
                 onClick={() => setShowEditModal(false)}
-                className="p-2 hover:bg-surface-700 rounded-lg text-surface-400"
+                className="p-2 hover:bg-surface-700 rounded-lg text-surface-600"
               >
                 <XMarkIcon className="w-5 h-5" />
               </button>
@@ -704,11 +737,11 @@ export default function DRTestDetail() {
               className="p-6 space-y-4"
             >
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-2">Name *</label>
+                <label className="block text-sm font-medium text-surface-700 mb-2">Name *</label>
                 <input
                   type="text"
                   value={editForm.name}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
                   required
                   className="input w-full"
                 />
@@ -716,56 +749,70 @@ export default function DRTestDetail() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-surface-300 mb-2">Test Type</label>
+                  <label className="block text-sm font-medium text-surface-700 mb-2">
+                    Test Type
+                  </label>
                   <select
                     value={editForm.test_type}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, test_type: e.target.value }))}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({ ...prev, test_type: e.target.value }))
+                    }
                     className="input w-full"
                   >
-                    {TEST_TYPES.map(type => (
-                      <option key={type.value} value={type.value}>{type.label}</option>
+                    {TEST_TYPES.map((type) => (
+                      <option key={type.value} value={type.value}>
+                        {type.label}
+                      </option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-surface-300 mb-2">Status</label>
+                  <label className="block text-sm font-medium text-surface-700 mb-2">Status</label>
                   <select
                     value={editForm.status}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, status: e.target.value }))}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, status: e.target.value }))}
                     className="input w-full"
                   >
-                    {STATUS_OPTIONS.map(status => (
-                      <option key={status.value} value={status.value}>{status.label}</option>
+                    {STATUS_OPTIONS.map((status) => (
+                      <option key={status.value} value={status.value}>
+                        {status.label}
+                      </option>
                     ))}
                   </select>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-2">Description</label>
+                <label className="block text-sm font-medium text-surface-700 mb-2">
+                  Description
+                </label>
                 <textarea
                   value={editForm.description}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
+                  onChange={(e) =>
+                    setEditForm((prev) => ({ ...prev, description: e.target.value }))
+                  }
                   rows={3}
                   className="input w-full"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-2">Objectives</label>
+                <label className="block text-sm font-medium text-surface-700 mb-2">
+                  Objectives
+                </label>
                 <textarea
                   value={editForm.objectives}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, objectives: e.target.value }))}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, objectives: e.target.value }))}
                   rows={3}
                   className="input w-full"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-2">Scope</label>
+                <label className="block text-sm font-medium text-surface-700 mb-2">Scope</label>
                 <textarea
                   value={editForm.scope}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, scope: e.target.value }))}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, scope: e.target.value }))}
                   rows={2}
                   className="input w-full"
                 />
@@ -792,7 +839,7 @@ export default function DRTestDetail() {
               <h2 className="text-xl font-semibold text-white">Complete DR Test</h2>
               <button
                 onClick={() => setShowCompleteModal(false)}
-                className="p-2 hover:bg-surface-700 rounded-lg text-surface-400"
+                className="p-2 hover:bg-surface-700 rounded-lg text-surface-600"
               >
                 <XMarkIcon className="w-5 h-5" />
               </button>
@@ -806,39 +853,47 @@ export default function DRTestDetail() {
               className="p-6 space-y-4"
             >
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-2">Result *</label>
+                <label className="block text-sm font-medium text-surface-700 mb-2">Result *</label>
                 <select
                   value={completeForm.result}
-                  onChange={(e) => setCompleteForm(prev => ({ ...prev, result: e.target.value }))}
+                  onChange={(e) => setCompleteForm((prev) => ({ ...prev, result: e.target.value }))}
                   className="input w-full"
                 >
-                  {RESULT_OPTIONS.map(result => (
-                    <option key={result.value} value={result.value}>{result.label}</option>
+                  {RESULT_OPTIONS.map((result) => (
+                    <option key={result.value} value={result.value}>
+                      {result.label}
+                    </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-2">
+                <label className="block text-sm font-medium text-surface-700 mb-2">
                   Actual Recovery Time (minutes)
                 </label>
                 <input
                   type="number"
                   value={completeForm.actual_recovery_time_minutes}
-                  onChange={(e) => setCompleteForm(prev => ({ 
-                    ...prev, 
-                    actual_recovery_time_minutes: parseInt(e.target.value) || 0 
-                  }))}
+                  onChange={(e) =>
+                    setCompleteForm((prev) => ({
+                      ...prev,
+                      actual_recovery_time_minutes: parseInt(e.target.value) || 0,
+                    }))
+                  }
                   min="0"
                   className="input w-full"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-2">Lessons Learned</label>
+                <label className="block text-sm font-medium text-surface-700 mb-2">
+                  Lessons Learned
+                </label>
                 <textarea
                   value={completeForm.lessons_learned}
-                  onChange={(e) => setCompleteForm(prev => ({ ...prev, lessons_learned: e.target.value }))}
+                  onChange={(e) =>
+                    setCompleteForm((prev) => ({ ...prev, lessons_learned: e.target.value }))
+                  }
                   rows={4}
                   className="input w-full"
                   placeholder="Document key takeaways from this test..."
@@ -846,7 +901,11 @@ export default function DRTestDetail() {
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-surface-700">
-                <Button variant="secondary" type="button" onClick={() => setShowCompleteModal(false)}>
+                <Button
+                  variant="secondary"
+                  type="button"
+                  onClick={() => setShowCompleteModal(false)}
+                >
                   Cancel
                 </Button>
                 <Button type="submit" disabled={completeMutation.isPending}>
@@ -863,7 +922,7 @@ export default function DRTestDetail() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-surface-800 rounded-xl border border-surface-700 p-6 max-w-md w-full">
             <h3 className="text-lg font-semibold text-white mb-2">Delete DR Test</h3>
-            <p className="text-surface-400 mb-6">
+            <p className="text-surface-600 mb-6">
               Are you sure you want to delete "{test.name}"? This action cannot be undone.
             </p>
             <div className="flex justify-end gap-3">
@@ -884,4 +943,3 @@ export default function DRTestDetail() {
     </div>
   );
 }
-

@@ -271,12 +271,12 @@ export default function BCDRIncidentDetail() {
             className={clsx(
               'px-3 py-1 rounded text-sm font-medium capitalize',
               incident.status === 'active'
-                ? 'bg-red-500/20 text-red-400'
+                ? 'bg-red-500/20 text-red-600'
                 : incident.status === 'recovering'
-                ? 'bg-orange-500/20 text-orange-400'
-                : incident.status === 'resolved'
-                ? 'bg-green-500/20 text-green-400'
-                : 'bg-slate-600 text-slate-400'
+                  ? 'bg-orange-500/20 text-orange-600'
+                  : incident.status === 'resolved'
+                    ? 'bg-green-500/20 text-green-600'
+                    : 'bg-slate-600 text-slate-400'
             )}
           >
             {incident.status}
@@ -434,12 +434,13 @@ export default function BCDRIncidentDetail() {
                   </dd>
                 </div>
               )}
-              {incident.actualDowntimeMinutes !== null && incident.actualDowntimeMinutes !== undefined && (
-                <div>
-                  <dt className="text-slate-400">Actual Downtime</dt>
-                  <dd className="text-white">{incident.actualDowntimeMinutes} minutes</dd>
-                </div>
-              )}
+              {incident.actualDowntimeMinutes !== null &&
+                incident.actualDowntimeMinutes !== undefined && (
+                  <div>
+                    <dt className="text-slate-400">Actual Downtime</dt>
+                    <dd className="text-white">{incident.actualDowntimeMinutes} minutes</dd>
+                  </div>
+                )}
               {incident.financialImpact !== null && incident.financialImpact !== undefined && (
                 <div>
                   <dt className="text-slate-400">Financial Impact</dt>

@@ -1,4 +1,10 @@
-import { ReactNode, forwardRef, InputHTMLAttributes, TextareaHTMLAttributes, SelectHTMLAttributes } from 'react';
+import {
+  ReactNode,
+  forwardRef,
+  InputHTMLAttributes,
+  TextareaHTMLAttributes,
+  SelectHTMLAttributes,
+} from 'react';
 import { clsx } from 'clsx';
 import { FieldError, UseFormRegisterReturn } from 'react-hook-form';
 
@@ -19,17 +25,15 @@ export function FormField({ label, error, required, hint, className, children }:
   return (
     <div className={clsx('space-y-1', className)}>
       {label && (
-        <label className="block text-sm font-medium text-surface-300">
+        <label className="block text-sm font-medium text-surface-700">
           {label}
           {required && <span className="text-red-500 ml-1">*</span>}
         </label>
       )}
       {children}
-      {hint && !error && (
-        <p className="text-sm text-surface-500">{hint}</p>
-      )}
+      {hint && !error && <p className="text-sm text-surface-500">{hint}</p>}
       {error && (
-        <p className="text-sm text-red-400" role="alert">
+        <p className="text-sm text-red-600" role="alert">
           {error.message}
         </p>
       )}
@@ -138,11 +142,13 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             {placeholder}
           </option>
         )}
-        {options ? options.map((option) => (
-          <option key={option.value} value={option.value} disabled={option.disabled}>
-            {option.label}
-          </option>
-        )) : children}
+        {options
+          ? options.map((option) => (
+              <option key={option.value} value={option.value} disabled={option.disabled}>
+                {option.label}
+              </option>
+            ))
+          : children}
       </select>
     );
   }
@@ -182,11 +188,11 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
           />
         </div>
         <div className="ml-3 text-sm">
-          <label className={clsx('font-medium', error ? 'text-red-400' : 'text-surface-300')}>
+          <label className={clsx('font-medium', error ? 'text-red-600' : 'text-surface-700')}>
             {label}
           </label>
           {description && (
-            <p className={clsx(error ? 'text-red-400/70' : 'text-surface-500')}>{description}</p>
+            <p className={clsx(error ? 'text-red-600/70' : 'text-surface-500')}>{description}</p>
           )}
         </div>
       </div>
@@ -255,13 +261,13 @@ export function RadioGroup({
               htmlFor={`${name}-${option.value}`}
               className={clsx(
                 'font-medium',
-                option.disabled ? 'text-surface-500' : error ? 'text-red-400' : 'text-surface-300'
+                option.disabled ? 'text-surface-500' : error ? 'text-red-600' : 'text-surface-700'
               )}
             >
               {option.label}
             </label>
             {option.description && (
-              <p className={clsx(error ? 'text-red-400/70' : 'text-surface-500')}>
+              <p className={clsx(error ? 'text-red-600/70' : 'text-surface-500')}>
                 {option.description}
               </p>
             )}
@@ -291,7 +297,13 @@ export function FormActions({ children, className, align = 'right' }: FormAction
   };
 
   return (
-    <div className={clsx('flex items-center gap-3 pt-4 border-t border-surface-700', alignClasses[align], className)}>
+    <div
+      className={clsx(
+        'flex items-center gap-3 pt-4 border-t border-surface-700',
+        alignClasses[align],
+        className
+      )}
+    >
       {children}
     </div>
   );
@@ -314,7 +326,7 @@ export function FormSection({ title, description, children, className }: FormSec
       {(title || description) && (
         <div>
           {title && <h3 className="text-lg font-medium text-surface-100">{title}</h3>}
-          {description && <p className="mt-1 text-sm text-surface-400">{description}</p>}
+          {description && <p className="mt-1 text-sm text-surface-600">{description}</p>}
         </div>
       )}
       <div className="space-y-4">{children}</div>
@@ -342,7 +354,13 @@ interface TagInputProps {
   className?: string;
 }
 
-export function TagInput({ value, onChange, placeholder = 'Add tag...', error, className }: TagInputProps) {
+export function TagInput({
+  value,
+  onChange,
+  placeholder = 'Add tag...',
+  error,
+  className,
+}: TagInputProps) {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' || e.key === ',') {
       e.preventDefault();

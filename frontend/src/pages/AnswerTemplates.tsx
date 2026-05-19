@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { 
-  PlusIcon, 
+import {
+  PlusIcon,
   MagnifyingGlassIcon,
   PencilIcon,
   TrashIcon,
@@ -10,7 +10,7 @@ import {
   TagIcon,
   ClockIcon,
   XMarkIcon,
-  CodeBracketIcon
+  CodeBracketIcon,
 } from '@heroicons/react/24/outline';
 import { answerTemplatesApi, AnswerTemplate, CreateAnswerTemplateData } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -20,12 +20,12 @@ import toast from 'react-hot-toast';
 import clsx from 'clsx';
 
 const CATEGORIES = [
-  { value: 'security', label: 'Security', color: 'bg-red-500/20 text-red-400' },
-  { value: 'privacy', label: 'Privacy', color: 'bg-purple-500/20 text-purple-400' },
-  { value: 'compliance', label: 'Compliance', color: 'bg-blue-500/20 text-blue-400' },
-  { value: 'legal', label: 'Legal', color: 'bg-amber-500/20 text-amber-400' },
-  { value: 'technical', label: 'Technical', color: 'bg-green-500/20 text-green-400' },
-  { value: 'general', label: 'General', color: 'bg-surface-500/20 text-surface-400' },
+  { value: 'security', label: 'Security', color: 'bg-red-500/20 text-red-600' },
+  { value: 'privacy', label: 'Privacy', color: 'bg-purple-500/20 text-purple-600' },
+  { value: 'compliance', label: 'Compliance', color: 'bg-blue-500/20 text-blue-600' },
+  { value: 'legal', label: 'Legal', color: 'bg-amber-500/20 text-amber-600' },
+  { value: 'technical', label: 'Technical', color: 'bg-green-500/20 text-green-600' },
+  { value: 'general', label: 'General', color: 'bg-surface-500/20 text-surface-600' },
 ];
 
 export default function AnswerTemplates() {
@@ -112,8 +112,8 @@ export default function AnswerTemplates() {
   });
 
   const getCategoryStyle = (category?: string) => {
-    const cat = CATEGORIES.find(c => c.value === category);
-    return cat?.color || 'bg-surface-700 text-surface-300';
+    const cat = CATEGORIES.find((c) => c.value === category);
+    return cat?.color || 'bg-surface-700 text-surface-700';
   };
 
   if (!organizationId) {
@@ -132,7 +132,7 @@ export default function AnswerTemplates() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-surface-100">Answer Templates</h1>
-          <p className="mt-1 text-surface-400">
+          <p className="mt-1 text-surface-600">
             Create and manage reusable answer templates for questionnaires
           </p>
         </div>
@@ -150,7 +150,7 @@ export default function AnswerTemplates() {
       {/* Filters */}
       <div className="flex items-center gap-4">
         <div className="relative flex-1 max-w-md">
-          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-400" />
+          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-600" />
           <input
             type="text"
             value={searchQuery}
@@ -159,19 +159,21 @@ export default function AnswerTemplates() {
             className="w-full pl-10 pr-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
           />
         </div>
-        
+
         <select
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
           className="px-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
         >
           <option value="">All Categories</option>
-          {CATEGORIES.map(cat => (
-            <option key={cat.value} value={cat.value}>{cat.label}</option>
+          {CATEGORIES.map((cat) => (
+            <option key={cat.value} value={cat.value}>
+              {cat.label}
+            </option>
           ))}
         </select>
 
-        <label className="flex items-center gap-2 text-sm text-surface-400 cursor-pointer">
+        <label className="flex items-center gap-2 text-sm text-surface-600 cursor-pointer">
           <input
             type="checkbox"
             checked={showArchived}
@@ -186,7 +188,10 @@ export default function AnswerTemplates() {
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
         {isLoading ? (
           Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="bg-surface-900 border border-surface-800 rounded-xl p-5 animate-pulse">
+            <div
+              key={i}
+              className="bg-surface-900 border border-surface-800 rounded-xl p-5 animate-pulse"
+            >
               <div className="h-5 bg-surface-700 rounded w-3/4 mb-3" />
               <div className="h-16 bg-surface-800 rounded mb-3" />
               <div className="h-4 bg-surface-700 rounded w-1/2" />
@@ -195,38 +200,36 @@ export default function AnswerTemplates() {
         ) : templates?.length === 0 ? (
           <div className="col-span-full text-center py-12">
             <DocumentDuplicateIcon className="w-12 h-12 text-surface-600 mx-auto mb-3" />
-            <p className="text-surface-400">No templates found</p>
+            <p className="text-surface-600">No templates found</p>
             <p className="text-sm text-surface-500 mt-1">
               Create your first template to get started
             </p>
           </div>
         ) : (
-          templates?.map(template => (
+          templates?.map((template) => (
             <div
               key={template.id}
               className={clsx(
                 'bg-surface-900 border rounded-xl p-5 cursor-pointer transition-all hover:border-surface-600',
-                selectedTemplate?.id === template.id 
-                  ? 'border-brand-500 ring-2 ring-brand-500/20' 
+                selectedTemplate?.id === template.id
+                  ? 'border-brand-500 ring-2 ring-brand-500/20'
                   : 'border-surface-800'
               )}
               onClick={() => setSelectedTemplate(template)}
             >
               <div className="flex items-start justify-between mb-3">
-                <h3 className="font-semibold text-surface-100 truncate flex-1">
-                  {template.title}
-                </h3>
-                <span className={clsx(
-                  'px-2 py-0.5 text-xs rounded-full ml-2',
-                  getCategoryStyle(template.category)
-                )}>
+                <h3 className="font-semibold text-surface-100 truncate flex-1">{template.title}</h3>
+                <span
+                  className={clsx(
+                    'px-2 py-0.5 text-xs rounded-full ml-2',
+                    getCategoryStyle(template.category)
+                  )}
+                >
                   {template.category || 'General'}
                 </span>
               </div>
 
-              <p className="text-sm text-surface-400 line-clamp-3 mb-4">
-                {template.content}
-              </p>
+              <p className="text-sm text-surface-600 line-clamp-3 mb-4">{template.content}</p>
 
               <div className="flex items-center justify-between text-xs text-surface-500">
                 <div className="flex items-center gap-3">
@@ -262,27 +265,29 @@ export default function AnswerTemplates() {
             <h2 className="text-lg font-semibold text-surface-100">Template Details</h2>
             <button
               onClick={() => setSelectedTemplate(null)}
-              className="p-2 text-surface-400 hover:text-surface-200 rounded-lg hover:bg-surface-800"
+              className="p-2 text-surface-600 hover:text-surface-200 rounded-lg hover:bg-surface-800"
             >
               <XMarkIcon className="w-5 h-5" />
             </button>
           </div>
-          
+
           <div className="p-6 space-y-6">
             <div>
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-xl font-semibold text-surface-100">{selectedTemplate.title}</h3>
-                <span className={clsx(
-                  'px-2 py-1 text-xs rounded-full',
-                  getCategoryStyle(selectedTemplate.category)
-                )}>
+                <span
+                  className={clsx(
+                    'px-2 py-1 text-xs rounded-full',
+                    getCategoryStyle(selectedTemplate.category)
+                  )}
+                >
                   {selectedTemplate.category || 'General'}
                 </span>
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-surface-400 mb-2">Content</label>
+              <label className="block text-sm font-medium text-surface-600 mb-2">Content</label>
               <div className="bg-surface-800 rounded-lg p-4 text-sm text-surface-200 whitespace-pre-wrap font-mono">
                 {selectedTemplate.content}
               </div>
@@ -290,12 +295,15 @@ export default function AnswerTemplates() {
 
             {selectedTemplate.variables.length > 0 && (
               <div>
-                <label className="block text-sm font-medium text-surface-400 mb-2">
+                <label className="block text-sm font-medium text-surface-600 mb-2">
                   Variables ({selectedTemplate.variables.length})
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {selectedTemplate.variables.map((v, i) => (
-                    <span key={i} className="px-2 py-1 bg-brand-500/20 text-brand-400 text-xs rounded font-mono">
+                    <span
+                      key={i}
+                      className="px-2 py-1 bg-brand-500/20 text-brand-400 text-xs rounded font-mono"
+                    >
                       {`{{${v}}}`}
                     </span>
                   ))}
@@ -305,10 +313,13 @@ export default function AnswerTemplates() {
 
             {selectedTemplate.tags.length > 0 && (
               <div>
-                <label className="block text-sm font-medium text-surface-400 mb-2">Tags</label>
+                <label className="block text-sm font-medium text-surface-600 mb-2">Tags</label>
                 <div className="flex flex-wrap gap-2">
                   {selectedTemplate.tags.map((tag, i) => (
-                    <span key={i} className="px-2 py-1 bg-surface-700 text-surface-300 text-xs rounded">
+                    <span
+                      key={i}
+                      className="px-2 py-1 bg-surface-700 text-surface-700 text-xs rounded"
+                    >
                       {tag}
                     </span>
                   ))}
@@ -324,8 +335,8 @@ export default function AnswerTemplates() {
               <div>
                 <label className="text-surface-500">Last Used</label>
                 <p className="text-surface-200">
-                  {selectedTemplate.lastUsedAt 
-                    ? new Date(selectedTemplate.lastUsedAt).toLocaleDateString() 
+                  {selectedTemplate.lastUsedAt
+                    ? new Date(selectedTemplate.lastUsedAt).toLocaleDateString()
                     : 'Never'}
                 </p>
               </div>
@@ -431,7 +442,10 @@ function TemplateModal({
       title: formData.title,
       content: formData.content,
       category: formData.category || undefined,
-      tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean),
+      tags: formData.tags
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean),
       variables: detectedVariables,
     });
   };
@@ -445,7 +459,7 @@ function TemplateModal({
           </h2>
           <button
             onClick={onClose}
-            className="p-2 text-surface-400 hover:text-surface-200 rounded-lg hover:bg-surface-800"
+            className="p-2 text-surface-600 hover:text-surface-200 rounded-lg hover:bg-surface-800"
           >
             <XMarkIcon className="w-5 h-5" />
           </button>
@@ -453,46 +467,47 @@ function TemplateModal({
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           <div>
-            <label className="block text-sm font-medium text-surface-400 mb-1">
-              Title <span className="text-red-400">*</span>
+            <label className="block text-sm font-medium text-surface-600 mb-1">
+              Title <span className="text-red-600">*</span>
             </label>
             <input
               type="text"
               required
               value={formData.title}
-              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+              onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
               className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
               placeholder="e.g., SOC 2 Compliance Response"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-surface-400 mb-1">
-              Category
-            </label>
+            <label className="block text-sm font-medium text-surface-600 mb-1">Category</label>
             <select
               value={formData.category}
-              onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+              onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value }))}
               className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
             >
               <option value="">Select category...</option>
-              {CATEGORIES.map(cat => (
-                <option key={cat.value} value={cat.value}>{cat.label}</option>
+              {CATEGORIES.map((cat) => (
+                <option key={cat.value} value={cat.value}>
+                  {cat.label}
+                </option>
               ))}
             </select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-surface-400 mb-1">
-              Content <span className="text-red-400">*</span>
+            <label className="block text-sm font-medium text-surface-600 mb-1">
+              Content <span className="text-red-600">*</span>
             </label>
             <p className="text-xs text-surface-500 mb-2">
-              Use {'{{variable_name}}'} for placeholders that will be replaced when using the template.
+              Use {'{{variable_name}}'} for placeholders that will be replaced when using the
+              template.
             </p>
             <textarea
               required
               value={formData.content}
-              onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
+              onChange={(e) => setFormData((prev) => ({ ...prev, content: e.target.value }))}
               rows={8}
               className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500 font-mono text-sm"
               placeholder="Enter template content...
@@ -509,7 +524,10 @@ Example:
               </label>
               <div className="flex flex-wrap gap-2">
                 {detectedVariables.map((v, i) => (
-                  <span key={i} className="px-2 py-1 bg-brand-500/20 text-brand-300 text-xs rounded font-mono">
+                  <span
+                    key={i}
+                    className="px-2 py-1 bg-brand-500/20 text-brand-300 text-xs rounded font-mono"
+                  >
                     {`{{${v}}}`}
                   </span>
                 ))}
@@ -518,13 +536,11 @@ Example:
           )}
 
           <div>
-            <label className="block text-sm font-medium text-surface-400 mb-1">
-              Tags
-            </label>
+            <label className="block text-sm font-medium text-surface-600 mb-1">Tags</label>
             <input
               type="text"
               value={formData.tags}
-              onChange={(e) => setFormData(prev => ({ ...prev, tags: e.target.value }))}
+              onChange={(e) => setFormData((prev) => ({ ...prev, tags: e.target.value }))}
               className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
               placeholder="encryption, data-protection, audit (comma-separated)"
             />
@@ -543,4 +559,3 @@ Example:
     </div>
   );
 }
-

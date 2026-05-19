@@ -32,19 +32,19 @@ interface DRTest {
 }
 
 const statusColors: Record<string, string> = {
-  planned: 'bg-surface-600 text-surface-300',
-  scheduled: 'bg-blue-500/20 text-blue-400',
-  in_progress: 'bg-yellow-500/20 text-yellow-400',
-  completed: 'bg-green-500/20 text-green-400',
-  cancelled: 'bg-red-500/20 text-red-400',
-  postponed: 'bg-orange-500/20 text-orange-400',
+  planned: 'bg-surface-600 text-surface-700',
+  scheduled: 'bg-blue-500/20 text-blue-600',
+  in_progress: 'bg-yellow-500/20 text-yellow-600',
+  completed: 'bg-green-500/20 text-green-600',
+  cancelled: 'bg-red-500/20 text-red-600',
+  postponed: 'bg-orange-500/20 text-orange-600',
 };
 
 const resultColors: Record<string, { bg: string; icon: React.ElementType }> = {
-  passed: { bg: 'text-green-400', icon: CheckCircleIcon },
-  passed_with_issues: { bg: 'text-yellow-400', icon: ExclamationTriangleIcon },
-  failed: { bg: 'text-red-400', icon: XCircleIcon },
-  incomplete: { bg: 'text-surface-400', icon: ExclamationTriangleIcon },
+  passed: { bg: 'text-green-600', icon: CheckCircleIcon },
+  passed_with_issues: { bg: 'text-yellow-600', icon: ExclamationTriangleIcon },
+  failed: { bg: 'text-red-600', icon: XCircleIcon },
+  incomplete: { bg: 'text-surface-600', icon: ExclamationTriangleIcon },
 };
 
 const testTypeLabels: Record<string, string> = {
@@ -76,7 +76,7 @@ export default function DRTests() {
       if (statusFilter) params.append('status', statusFilter);
       params.append('page', page.toString());
       params.append('limit', '25');
-      
+
       const res = await api.get(`/api/bcdr/tests?${params}`);
       return res.data;
     },
@@ -105,9 +105,9 @@ export default function DRTests() {
     return (
       <div className="p-6">
         <div className="card p-8 text-center">
-          <ExclamationCircleIcon className="w-12 h-12 mx-auto mb-4 text-red-400" />
+          <ExclamationCircleIcon className="w-12 h-12 mx-auto mb-4 text-red-600" />
           <h2 className="text-lg font-semibold text-surface-100 mb-2">Failed to load DR Tests</h2>
-          <p className="text-surface-400 mb-4">
+          <p className="text-surface-600 mb-4">
             {(error as Error).message || 'An unexpected error occurred'}
           </p>
           <button onClick={() => refetch()} className="btn btn-primary">
@@ -124,9 +124,7 @@ export default function DRTests() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-surface-100">DR Tests</h1>
-          <p className="text-surface-400 mt-1">
-            Schedule and track disaster recovery tests
-          </p>
+          <p className="text-surface-600 mt-1">Schedule and track disaster recovery tests</p>
         </div>
         <Link to="/bcdr/tests/new" className="btn btn-primary">
           <PlusIcon className="w-5 h-5 mr-2" />
@@ -137,7 +135,7 @@ export default function DRTests() {
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="card p-4">
-          <p className="text-surface-400 text-sm">Total Tests</p>
+          <p className="text-surface-600 text-sm">Total Tests</p>
           {statsLoading ? (
             <div className="h-8 w-16 bg-surface-700 rounded animate-pulse mt-1"></div>
           ) : (
@@ -145,23 +143,23 @@ export default function DRTests() {
           )}
         </div>
         <div className="card p-4">
-          <p className="text-surface-400 text-sm">Pass Rate</p>
+          <p className="text-surface-600 text-sm">Pass Rate</p>
           {statsLoading ? (
             <div className="h-8 w-16 bg-surface-700 rounded animate-pulse mt-1"></div>
           ) : (
-            <p className="text-2xl font-bold text-green-400">{passRate}%</p>
+            <p className="text-2xl font-bold text-green-600">{passRate}%</p>
           )}
         </div>
         <div className="card p-4">
-          <p className="text-surface-400 text-sm">Open Findings</p>
+          <p className="text-surface-600 text-sm">Open Findings</p>
           {statsLoading ? (
             <div className="h-8 w-16 bg-surface-700 rounded animate-pulse mt-1"></div>
           ) : (
-            <p className="text-2xl font-bold text-yellow-400">{stats?.openFindingsCount || 0}</p>
+            <p className="text-2xl font-bold text-yellow-600">{stats?.openFindingsCount || 0}</p>
           )}
         </div>
         <div className="card p-4">
-          <p className="text-surface-400 text-sm">Avg Recovery Time</p>
+          <p className="text-surface-600 text-sm">Avg Recovery Time</p>
           {statsLoading ? (
             <div className="h-8 w-16 bg-surface-700 rounded animate-pulse mt-1"></div>
           ) : (
@@ -177,7 +175,7 @@ export default function DRTests() {
         <div className="flex flex-wrap gap-4">
           <div className="flex-1 min-w-64">
             <div className="relative">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-400" />
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-600" />
               <input
                 type="text"
                 placeholder="Search tests..."
@@ -195,7 +193,9 @@ export default function DRTests() {
             >
               <option value="">All Types</option>
               {Object.entries(testTypeLabels).map(([key, label]) => (
-                <option key={key} value={key}>{label}</option>
+                <option key={key} value={key}>
+                  {label}
+                </option>
               ))}
             </select>
           </div>
@@ -222,12 +222,15 @@ export default function DRTests() {
       {/* Table */}
       <div className="card overflow-hidden">
         {isLoading ? (
-          <div className="p-8 text-center text-surface-400">Loading...</div>
+          <div className="p-8 text-center text-surface-600">Loading...</div>
         ) : tests.length === 0 ? (
-          <div className="p-8 text-center text-surface-400">
+          <div className="p-8 text-center text-surface-600">
             <BeakerIcon className="w-12 h-12 mx-auto mb-4 opacity-50" />
             <p>No DR tests found</p>
-            <Link to="/bcdr/tests/new" className="text-brand-400 hover:text-brand-300 mt-2 inline-block">
+            <Link
+              to="/bcdr/tests/new"
+              className="text-brand-400 hover:text-brand-300 mt-2 inline-block"
+            >
               Schedule your first test →
             </Link>
           </div>
@@ -236,19 +239,19 @@ export default function DRTests() {
             <table className="w-full">
               <thead className="bg-surface-800/50">
                 <tr>
-                  <th className="text-left p-4 text-surface-300 font-medium">Test</th>
-                  <th className="text-left p-4 text-surface-300 font-medium">Type</th>
-                  <th className="text-left p-4 text-surface-300 font-medium">Status</th>
-                  <th className="text-left p-4 text-surface-300 font-medium">Result</th>
-                  <th className="text-left p-4 text-surface-300 font-medium">Date</th>
-                  <th className="text-left p-4 text-surface-300 font-medium">Findings</th>
-                  <th className="text-left p-4 text-surface-300 font-medium">Coordinator</th>
+                  <th className="text-left p-4 text-surface-700 font-medium">Test</th>
+                  <th className="text-left p-4 text-surface-700 font-medium">Type</th>
+                  <th className="text-left p-4 text-surface-700 font-medium">Status</th>
+                  <th className="text-left p-4 text-surface-700 font-medium">Result</th>
+                  <th className="text-left p-4 text-surface-700 font-medium">Date</th>
+                  <th className="text-left p-4 text-surface-700 font-medium">Findings</th>
+                  <th className="text-left p-4 text-surface-700 font-medium">Coordinator</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-700">
                 {tests.map((test: DRTest) => {
                   const ResultIcon = test.result ? resultColors[test.result]?.icon : null;
-                  
+
                   return (
                     <tr key={test.id} className="hover:bg-surface-800/30 transition-colors">
                       <td className="p-4">
@@ -258,52 +261,60 @@ export default function DRTests() {
                         >
                           {test.name}
                         </Link>
-                        <div className="text-surface-400 text-sm">{test.test_id}</div>
+                        <div className="text-surface-600 text-sm">{test.test_id}</div>
                         {test.plan_title && (
                           <div className="text-surface-500 text-xs mt-1">
                             Plan: {test.plan_title}
                           </div>
                         )}
                       </td>
-                      <td className="p-4 text-surface-300 text-sm">
+                      <td className="p-4 text-surface-700 text-sm">
                         {testTypeLabels[test.test_type] || test.test_type}
                       </td>
                       <td className="p-4">
-                        <span className={clsx(
-                          "px-2 py-1 rounded-full text-xs font-medium",
-                          statusColors[test.status]
-                        )}>
+                        <span
+                          className={clsx(
+                            'px-2 py-1 rounded-full text-xs font-medium',
+                            statusColors[test.status]
+                          )}
+                        >
                           {test.status.replace('_', ' ')}
                         </span>
                       </td>
                       <td className="p-4">
                         {test.result ? (
-                          <div className={clsx("flex items-center gap-1", resultColors[test.result]?.bg)}>
+                          <div
+                            className={clsx(
+                              'flex items-center gap-1',
+                              resultColors[test.result]?.bg
+                            )}
+                          >
                             {ResultIcon && <ResultIcon className="w-4 h-4" />}
-                            <span className="text-sm capitalize">{test.result.replace('_', ' ')}</span>
+                            <span className="text-sm capitalize">
+                              {test.result.replace('_', ' ')}
+                            </span>
                           </div>
                         ) : (
                           <span className="text-surface-500 text-sm">-</span>
                         )}
                       </td>
-                      <td className="p-4 text-surface-300 text-sm">
-                        {test.actual_end_at 
+                      <td className="p-4 text-surface-700 text-sm">
+                        {test.actual_end_at
                           ? new Date(test.actual_end_at).toLocaleDateString()
                           : test.scheduled_date
                             ? new Date(test.scheduled_date).toLocaleDateString()
-                            : '-'
-                        }
+                            : '-'}
                       </td>
                       <td className="p-4">
                         {test.finding_count > 0 ? (
-                          <span className="px-2 py-1 rounded-full bg-yellow-500/20 text-yellow-400 text-xs font-medium">
+                          <span className="px-2 py-1 rounded-full bg-yellow-500/20 text-yellow-600 text-xs font-medium">
                             {test.finding_count} findings
                           </span>
                         ) : (
                           <span className="text-surface-500 text-sm">-</span>
                         )}
                       </td>
-                      <td className="p-4 text-surface-300 text-sm">
+                      <td className="p-4 text-surface-700 text-sm">
                         {test.coordinator_name || '-'}
                       </td>
                     </tr>
@@ -324,7 +335,7 @@ export default function DRTests() {
             >
               Previous
             </button>
-            <span className="text-surface-400 text-sm">
+            <span className="text-surface-600 text-sm">
               Page {page} of {totalPages}
             </span>
             <button
@@ -340,4 +351,3 @@ export default function DRTests() {
     </div>
   );
 }
-

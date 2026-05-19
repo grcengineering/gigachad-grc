@@ -1,9 +1,5 @@
 import { useState } from 'react';
-import {
-  PlusIcon,
-  ChevronDownIcon,
-  ChevronRightIcon,
-} from '@heroicons/react/24/outline';
+import { PlusIcon, ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 import EndpointBuilder from './EndpointBuilder';
 import AuthConfigPanel from './AuthConfigPanel';
@@ -77,7 +73,9 @@ interface AdvancedBuilderTabProps {
 type Section = 'endpoints' | 'auth' | 'mapping' | 'testing';
 
 export default function AdvancedBuilderTab({ config, onChange }: AdvancedBuilderTabProps) {
-  const [expandedSections, setExpandedSections] = useState<Set<Section>>(new Set(['endpoints', 'auth']));
+  const [expandedSections, setExpandedSections] = useState<Set<Section>>(
+    new Set(['endpoints', 'auth'])
+  );
   const [selectedEndpointId, setSelectedEndpointId] = useState<string | null>(null);
   const [testResults, setTestResults] = useState<any>(null);
 
@@ -111,16 +109,14 @@ export default function AdvancedBuilderTab({ config, onChange }: AdvancedBuilder
   const updateEndpoint = (id: string, updates: Partial<ApiEndpoint>) => {
     onChange({
       ...config,
-      endpoints: config.endpoints.map(ep => 
-        ep.id === id ? { ...ep, ...updates } : ep
-      ),
+      endpoints: config.endpoints.map((ep) => (ep.id === id ? { ...ep, ...updates } : ep)),
     });
   };
 
   const deleteEndpoint = (id: string) => {
     onChange({
       ...config,
-      endpoints: config.endpoints.filter(ep => ep.id !== id),
+      endpoints: config.endpoints.filter((ep) => ep.id !== id),
     });
     if (selectedEndpointId === id) {
       setSelectedEndpointId(null);
@@ -134,15 +130,15 @@ export default function AdvancedBuilderTab({ config, onChange }: AdvancedBuilder
     });
   };
 
-  const selectedEndpoint = config.endpoints.find(ep => ep.id === selectedEndpointId);
+  const selectedEndpoint = config.endpoints.find((ep) => ep.id === selectedEndpointId);
 
-  const SectionHeader = ({ 
-    section, 
-    title, 
-    count 
-  }: { 
-    section: Section; 
-    title: string; 
+  const SectionHeader = ({
+    section,
+    title,
+    count,
+  }: {
+    section: Section;
+    title: string;
     count?: number;
   }) => {
     const isExpanded = expandedSections.has(section);
@@ -153,9 +149,9 @@ export default function AdvancedBuilderTab({ config, onChange }: AdvancedBuilder
       >
         <div className="flex items-center gap-2">
           {isExpanded ? (
-            <ChevronDownIcon className="w-4 h-4 text-surface-400" />
+            <ChevronDownIcon className="w-4 h-4 text-surface-600" />
           ) : (
-            <ChevronRightIcon className="w-4 h-4 text-surface-400" />
+            <ChevronRightIcon className="w-4 h-4 text-surface-600" />
           )}
           <span className="font-medium text-surface-200">{title}</span>
           {count !== undefined && (
@@ -175,7 +171,7 @@ export default function AdvancedBuilderTab({ config, onChange }: AdvancedBuilder
         <h3 className="text-sm font-semibold text-surface-200 mb-4">Basic Information</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm text-surface-400 mb-1.5">Integration Name</label>
+            <label className="block text-sm text-surface-600 mb-1.5">Integration Name</label>
             <input
               type="text"
               value={config.name}
@@ -184,7 +180,7 @@ export default function AdvancedBuilderTab({ config, onChange }: AdvancedBuilder
             />
           </div>
           <div>
-            <label className="block text-sm text-surface-400 mb-1.5">Description</label>
+            <label className="block text-sm text-surface-600 mb-1.5">Description</label>
             <input
               type="text"
               value={config.description}
@@ -201,10 +197,7 @@ export default function AdvancedBuilderTab({ config, onChange }: AdvancedBuilder
         <SectionHeader section="auth" title="Authentication" />
         {expandedSections.has('auth') && (
           <div className="p-6 bg-surface-900/50">
-            <AuthConfigPanel
-              config={config.authConfig}
-              onChange={updateAuthConfig}
-            />
+            <AuthConfigPanel config={config.authConfig} onChange={updateAuthConfig} />
           </div>
         )}
       </div>
@@ -217,7 +210,7 @@ export default function AdvancedBuilderTab({ config, onChange }: AdvancedBuilder
             <div className="flex flex-col lg:flex-row gap-6">
               {/* Endpoint List */}
               <div className="w-full lg:w-64 space-y-2">
-                {config.endpoints.map(endpoint => (
+                {config.endpoints.map((endpoint) => (
                   <button
                     key={endpoint.id}
                     onClick={() => setSelectedEndpointId(endpoint.id)}
@@ -229,14 +222,16 @@ export default function AdvancedBuilderTab({ config, onChange }: AdvancedBuilder
                     )}
                   >
                     <div className="flex items-center gap-2">
-                      <span className={clsx(
-                        'px-1.5 py-0.5 text-xs font-mono rounded',
-                        endpoint.method === 'GET' && 'bg-green-500/20 text-green-400',
-                        endpoint.method === 'POST' && 'bg-blue-500/20 text-blue-400',
-                        endpoint.method === 'PUT' && 'bg-yellow-500/20 text-yellow-400',
-                        endpoint.method === 'DELETE' && 'bg-red-500/20 text-red-400',
-                        endpoint.method === 'PATCH' && 'bg-purple-500/20 text-purple-400',
-                      )}>
+                      <span
+                        className={clsx(
+                          'px-1.5 py-0.5 text-xs font-mono rounded',
+                          endpoint.method === 'GET' && 'bg-green-500/20 text-green-600',
+                          endpoint.method === 'POST' && 'bg-blue-500/20 text-blue-600',
+                          endpoint.method === 'PUT' && 'bg-yellow-500/20 text-yellow-600',
+                          endpoint.method === 'DELETE' && 'bg-red-500/20 text-red-600',
+                          endpoint.method === 'PATCH' && 'bg-purple-500/20 text-purple-600'
+                        )}
+                      >
                         {endpoint.method}
                       </span>
                       <span className="text-sm text-surface-200 truncate">{endpoint.name}</span>
@@ -248,7 +243,7 @@ export default function AdvancedBuilderTab({ config, onChange }: AdvancedBuilder
                 ))}
                 <button
                   onClick={addEndpoint}
-                  className="w-full p-3 rounded-lg border border-dashed border-surface-700 hover:border-surface-500 text-surface-400 hover:text-surface-200 transition-colors flex items-center justify-center gap-2"
+                  className="w-full p-3 rounded-lg border border-dashed border-surface-700 hover:border-surface-500 text-surface-600 hover:text-surface-200 transition-colors flex items-center justify-center gap-2"
                 >
                   <PlusIcon className="w-4 h-4" />
                   Add Endpoint
@@ -276,7 +271,11 @@ export default function AdvancedBuilderTab({ config, onChange }: AdvancedBuilder
 
       {/* Response Mapping Section */}
       <div>
-        <SectionHeader section="mapping" title="Response Mapping" count={config.responseMappings.length} />
+        <SectionHeader
+          section="mapping"
+          title="Response Mapping"
+          count={config.responseMappings.length}
+        />
         {expandedSections.has('mapping') && (
           <div className="p-6 bg-surface-900/50">
             <ResponseMapper
@@ -304,4 +303,3 @@ export default function AdvancedBuilderTab({ config, onChange }: AdvancedBuilder
     </div>
   );
 }
-

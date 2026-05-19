@@ -245,7 +245,7 @@ export default function ControlDetail() {
   if (!control) {
     return (
       <div className="text-center py-12">
-        <p className="text-surface-400">Control not found</p>
+        <p className="text-surface-600">Control not found</p>
       </div>
     );
   }
@@ -259,7 +259,7 @@ export default function ControlDetail() {
         <div>
           <Link
             to={backUrl}
-            className="inline-flex items-center text-sm text-surface-400 hover:text-surface-100 mb-4"
+            className="inline-flex items-center text-sm text-surface-600 hover:text-surface-100 mb-4"
           >
             <ArrowLeftIcon className="w-4 h-4 mr-1" />
             Back to Controls
@@ -269,7 +269,7 @@ export default function ControlDetail() {
             <h1 className="text-2xl font-bold text-surface-100">{control.title}</h1>
             <RealTimePresence entityType="control" entityId={control.id} />
           </div>
-          <p className="text-surface-400 mt-2 max-w-2xl">{control.description}</p>
+          <p className="text-surface-600 mt-2 max-w-2xl">{control.description}</p>
         </div>
         <div className="flex items-center gap-2">
           {hasPermission('controls:update') && (
@@ -303,13 +303,13 @@ export default function ControlDetail() {
                 onClick={() => setIsEditing(false)}
                 className="p-1 hover:bg-surface-700 rounded"
               >
-                <XMarkIcon className="w-5 h-5 text-surface-400" />
+                <XMarkIcon className="w-5 h-5 text-surface-600" />
               </button>
             </div>
             <div className="p-4 space-y-6">
               {/* Control Details Section */}
               <div>
-                <h3 className="text-sm font-semibold text-surface-300 mb-3 uppercase tracking-wide">
+                <h3 className="text-sm font-semibold text-surface-700 mb-3 uppercase tracking-wide">
                   Control Details
                 </h3>
                 <div className="space-y-4">
@@ -356,7 +356,7 @@ export default function ControlDetail() {
               {/* Implementation Details Section */}
               {control.implementation && (
                 <div className="border-t border-surface-800 pt-6">
-                  <h3 className="text-sm font-semibold text-surface-300 mb-3 uppercase tracking-wide">
+                  <h3 className="text-sm font-semibold text-surface-700 mb-3 uppercase tracking-wide">
                     Implementation Details
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -499,7 +499,7 @@ export default function ControlDetail() {
                 {implementation.implementationNotes && (
                   <div className="pt-4 border-t border-surface-800">
                     <p className="text-sm text-surface-500 mb-2">Implementation Notes</p>
-                    <p className="text-surface-300 text-sm">{implementation.implementationNotes}</p>
+                    <p className="text-surface-700 text-sm">{implementation.implementationNotes}</p>
                   </div>
                 )}
               </div>
@@ -528,7 +528,7 @@ export default function ControlDetail() {
                       to={`/evidence/${link.evidence.id}`}
                       className="flex items-center gap-3 flex-1 min-w-0"
                     >
-                      <DocumentTextIcon className="w-5 h-5 text-surface-400" />
+                      <DocumentTextIcon className="w-5 h-5 text-surface-600" />
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-surface-200 hover:text-brand-400 truncate">
                           {link.evidence.title}
@@ -555,7 +555,7 @@ export default function ControlDetail() {
                         <button
                           onClick={() => unlinkEvidenceMutation.mutate(link.evidence.id)}
                           disabled={unlinkEvidenceMutation.isPending}
-                          className="p-1 text-surface-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="p-1 text-surface-500 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
                           title="Unlink evidence"
                         >
                           <XMarkIcon className="w-4 h-4" />
@@ -622,7 +622,7 @@ export default function ControlDetail() {
                         <button
                           onClick={() => unlinkPolicyMutation.mutate(link.policy?.id)}
                           disabled={unlinkPolicyMutation.isPending}
-                          className="p-1 text-surface-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="p-1 text-surface-500 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
                           title="Unlink policy"
                         >
                           <XMarkIcon className="w-4 h-4" />
@@ -674,7 +674,7 @@ export default function ControlDetail() {
                         <span className="text-xs text-surface-500">{test.testType} test</span>
                       </div>
                       {test.findings && (
-                        <p className="text-sm text-surface-400 mt-2">{test.findings}</p>
+                        <p className="text-sm text-surface-600 mt-2">{test.findings}</p>
                       )}
                     </div>
                     <span className="text-xs text-surface-500">
@@ -760,13 +760,13 @@ export default function ControlDetail() {
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
                           <p className="text-sm text-brand-400">{mapping.framework.name}</p>
-                          <p className="text-xs text-surface-400 mt-1">
+                          <p className="text-xs text-surface-600 mt-1">
                             {mapping.requirement.reference} - {mapping.requirement.title}
                           </p>
                           <span
                             className={
                               mapping.mappingType === 'supporting'
-                                ? 'inline-block mt-1 text-xs text-surface-400 uppercase tracking-wide'
+                                ? 'inline-block mt-1 text-xs text-surface-600 uppercase tracking-wide'
                                 : 'inline-block mt-1 text-xs text-brand-400 uppercase tracking-wide'
                             }
                           >
@@ -783,7 +783,7 @@ export default function ControlDetail() {
                               onClick={() => setMappingMenuOpenId(isMenuOpen ? null : mapping.id)}
                               className="opacity-60 group-hover:opacity-100 focus:opacity-100 p-1 rounded hover:bg-surface-700 transition-opacity"
                             >
-                              <EllipsisVerticalIcon className="w-4 h-4 text-surface-400" />
+                              <EllipsisVerticalIcon className="w-4 h-4 text-surface-600" />
                             </button>
                             {isMenuOpen && (
                               <div
@@ -849,7 +849,7 @@ export default function ControlDetail() {
                                       setMappingMenuOpenId(null);
                                       setMappingDeleteConfirmId(mapping.id);
                                     }}
-                                    className="w-full text-left px-3 py-2 text-xs text-red-400 hover:bg-surface-800 last:rounded-b-md"
+                                    className="w-full text-left px-3 py-2 text-xs text-red-600 hover:bg-surface-800 last:rounded-b-md"
                                   >
                                     Delete
                                   </button>
@@ -861,12 +861,12 @@ export default function ControlDetail() {
                       </div>
                       {isConfirmingDelete && (
                         <div className="mt-2 p-2 bg-surface-900 border border-surface-700 rounded">
-                          <p className="text-xs text-surface-300 mb-2">Delete this mapping?</p>
+                          <p className="text-xs text-surface-700 mb-2">Delete this mapping?</p>
                           <div className="flex justify-end gap-2">
                             <button
                               type="button"
                               onClick={() => setMappingDeleteConfirmId(null)}
-                              className="text-xs px-2 py-1 text-surface-300 hover:text-surface-100"
+                              className="text-xs px-2 py-1 text-surface-700 hover:text-surface-100"
                             >
                               Cancel
                             </button>
@@ -979,7 +979,7 @@ export default function ControlDetail() {
               <h3 className="text-sm font-semibold text-surface-100 mb-4">
                 Implementation Guidance
               </h3>
-              <p className="text-sm text-surface-400">{control.guidance}</p>
+              <p className="text-sm text-surface-600">{control.guidance}</p>
             </div>
           )}
         </div>
@@ -996,7 +996,7 @@ export default function ControlDetail() {
                 'py-3 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2',
                 activeTab === 'comments'
                   ? 'border-brand-500 text-brand-400'
-                  : 'border-transparent text-surface-400 hover:text-surface-200 hover:border-surface-600'
+                  : 'border-transparent text-surface-600 hover:text-surface-200 hover:border-surface-600'
               )}
             >
               <ChatBubbleLeftRightIcon className="w-4 h-4" />
@@ -1008,7 +1008,7 @@ export default function ControlDetail() {
                 'py-3 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2',
                 activeTab === 'tasks'
                   ? 'border-brand-500 text-brand-400'
-                  : 'border-transparent text-surface-400 hover:text-surface-200 hover:border-surface-600'
+                  : 'border-transparent text-surface-600 hover:text-surface-200 hover:border-surface-600'
               )}
             >
               <ClipboardDocumentCheckIcon className="w-4 h-4" />
@@ -1020,7 +1020,7 @@ export default function ControlDetail() {
                 'py-3 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2',
                 activeTab === 'history'
                   ? 'border-brand-500 text-brand-400'
-                  : 'border-transparent text-surface-400 hover:text-surface-200 hover:border-surface-600'
+                  : 'border-transparent text-surface-600 hover:text-surface-200 hover:border-surface-600'
               )}
             >
               <ClockIcon className="w-4 h-4" />
@@ -1055,7 +1055,7 @@ export default function ControlDetail() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-surface-900 border border-surface-800 rounded-lg p-6 max-w-md w-full mx-4">
             <h3 className="text-lg font-semibold text-surface-100 mb-2">Delete Control</h3>
-            <p className="text-surface-400 mb-6">
+            <p className="text-surface-600 mb-6">
               Are you sure you want to delete "{control?.title}"? This action cannot be undone.
             </p>
             <div className="flex justify-end gap-2">
@@ -1146,12 +1146,12 @@ function LinkPolicyModal({
       <div className="relative bg-surface-900 border border-surface-800 rounded-xl w-full max-w-lg mx-4 p-6 max-h-[80vh] flex flex-col">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-surface-100">Link Policies to Control</h2>
-          <button onClick={onClose} className="text-surface-400 hover:text-surface-100">
+          <button onClick={onClose} className="text-surface-600 hover:text-surface-100">
             <XMarkIcon className="w-5 h-5" />
           </button>
         </div>
 
-        <p className="text-sm text-surface-400 mb-4">
+        <p className="text-sm text-surface-600 mb-4">
           Select policies to link as evidence for this control:
         </p>
 
@@ -1170,7 +1170,7 @@ function LinkPolicyModal({
           {isLoadingPolicies ? (
             <div className="flex items-center justify-center py-8">
               <div className="animate-spin w-6 h-6 border-2 border-surface-700 rounded-full border-t-brand-500"></div>
-              <span className="ml-2 text-surface-400">Searching...</span>
+              <span className="ml-2 text-surface-600">Searching...</span>
             </div>
           ) : availablePolicies.length === 0 ? (
             <p className="text-surface-500 text-center py-8">
@@ -1205,7 +1205,7 @@ function LinkPolicyModal({
         </div>
 
         {selectedPolicyIds.length > 0 && (
-          <p className="text-sm text-surface-400 mt-3">
+          <p className="text-sm text-surface-600 mt-3">
             {selectedPolicyIds.length} policy(ies) selected
           </p>
         )}

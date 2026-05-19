@@ -1,8 +1,8 @@
 import { Fragment, useState } from 'react';
 import { Menu, Transition } from '@headlessui/react';
-import { 
-  ChevronDownIcon, 
-  BuildingOfficeIcon, 
+import {
+  ChevronDownIcon,
+  BuildingOfficeIcon,
   PlusIcon,
   Cog6ToothIcon,
   ChartBarIcon,
@@ -96,10 +96,10 @@ function CreateWorkspaceModal({ isOpen, onClose, onCreate }: CreateWorkspaceModa
 }
 
 export function WorkspaceSwitcher() {
-  const { 
-    isMultiWorkspaceEnabled, 
-    workspaces, 
-    currentWorkspace, 
+  const {
+    isMultiWorkspaceEnabled,
+    workspaces,
+    currentWorkspace,
     setCurrentWorkspace,
     createWorkspace,
     canManageWorkspaces,
@@ -122,17 +122,17 @@ export function WorkspaceSwitcher() {
     setCurrentWorkspace(newWorkspace);
   };
 
-  const activeWorkspaces = workspaces.filter(w => w.status === 'active');
+  const activeWorkspaces = workspaces.filter((w) => w.status === 'active');
 
   return (
     <>
       <Menu as="div" className="relative">
         <Menu.Button className="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-800 hover:bg-surface-700 border border-surface-600 transition-colors text-sm text-foreground">
-          <BuildingOfficeIcon className="w-4 h-4 text-surface-300" />
+          <BuildingOfficeIcon className="w-4 h-4 text-surface-700" />
           <span className="font-medium max-w-[160px] truncate">
             {currentWorkspace?.name || 'Select Workspace'}
           </span>
-          <ChevronDownIcon className="w-4 h-4 text-surface-300" />
+          <ChevronDownIcon className="w-4 h-4 text-surface-700" />
         </Menu.Button>
 
         <Transition
@@ -151,7 +151,7 @@ export function WorkspaceSwitcher() {
                 Workspaces
               </p>
             </div>
-            
+
             <div className="max-h-60 overflow-y-auto">
               {activeWorkspaces.map((workspace) => (
                 <Menu.Item key={workspace.id}>
@@ -161,9 +161,7 @@ export function WorkspaceSwitcher() {
                       className={`w-full text-left px-4 py-2 text-sm flex items-center gap-2 ${
                         active ? 'bg-surface-700' : ''
                       } ${
-                        currentWorkspace?.id === workspace.id 
-                          ? 'text-brand-400' 
-                          : 'text-foreground'
+                        currentWorkspace?.id === workspace.id ? 'text-brand-400' : 'text-foreground'
                       }`}
                     >
                       <BuildingOfficeIcon className="w-4 h-4 flex-shrink-0" />
@@ -253,6 +251,3 @@ export function WorkspaceSwitcher() {
 }
 
 export default WorkspaceSwitcher;
-
-
-

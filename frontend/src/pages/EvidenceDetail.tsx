@@ -83,12 +83,12 @@ const TYPE_ICONS: Record<string, any> = {
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
   pending_review: {
     label: 'Pending Review',
-    color: 'text-yellow-400 bg-yellow-400/10',
+    color: 'text-yellow-600 bg-yellow-400/10',
     icon: ClockIcon,
   },
-  approved: { label: 'Approved', color: 'text-green-400 bg-green-400/10', icon: CheckCircleIcon },
-  rejected: { label: 'Rejected', color: 'text-red-400 bg-red-400/10', icon: XCircleIcon },
-  expired: { label: 'Expired', color: 'text-surface-400 bg-surface-400/10', icon: CalendarIcon },
+  approved: { label: 'Approved', color: 'text-green-600 bg-green-400/10', icon: CheckCircleIcon },
+  rejected: { label: 'Rejected', color: 'text-red-600 bg-red-400/10', icon: XCircleIcon },
+  expired: { label: 'Expired', color: 'text-surface-600 bg-surface-400/10', icon: CalendarIcon },
 };
 
 export default function EvidenceDetail() {
@@ -184,7 +184,7 @@ export default function EvidenceDetail() {
   if (!evidence) {
     return (
       <div className="text-center py-12">
-        <p className="text-surface-400">Evidence not found</p>
+        <p className="text-surface-600">Evidence not found</p>
       </div>
     );
   }
@@ -215,7 +215,7 @@ export default function EvidenceDetail() {
       <div>
         <Link
           to="/evidence"
-          className="inline-flex items-center text-sm text-surface-400 hover:text-surface-100 mb-4"
+          className="inline-flex items-center text-sm text-surface-600 hover:text-surface-100 mb-4"
         >
           <ArrowLeftIcon className="w-4 h-4 mr-1" />
           Back to Evidence
@@ -223,11 +223,11 @@ export default function EvidenceDetail() {
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-4">
             <div className="p-3 bg-surface-800 rounded-lg">
-              <Icon className="w-8 h-8 text-surface-400" />
+              <Icon className="w-8 h-8 text-surface-600" />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-surface-100">{evidence.title}</h1>
-              <p className="text-surface-400 mt-1">{evidence.filename}</p>
+              <p className="text-surface-600 mt-1">{evidence.filename}</p>
               <div className="flex items-center gap-3 mt-2">
                 <span className={clsx('badge', statusConfig.color)}>
                   <StatusIcon className="w-3 h-3 mr-1" />
@@ -305,7 +305,7 @@ export default function EvidenceDetail() {
           {evidence.description && (
             <div className="card p-6">
               <h2 className="text-lg font-semibold text-surface-100 mb-4">Description</h2>
-              <p className="text-surface-300">{evidence.description}</p>
+              <p className="text-surface-700">{evidence.description}</p>
             </div>
           )}
 
@@ -333,14 +333,14 @@ export default function EvidenceDetail() {
                         <p className="text-sm font-mono text-brand-400">
                           {link.control?.controlId}
                         </p>
-                        <p className="text-sm text-surface-300">{link.control?.title}</p>
+                        <p className="text-sm text-surface-700">{link.control?.title}</p>
                       </div>
                     </Link>
                     {hasPermission('evidence:write') && (
                       <button
                         onClick={() => unlinkMutation.mutate(link.control?.id)}
                         disabled={unlinkMutation.isPending}
-                        className="p-1 text-surface-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="p-1 text-surface-500 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
                         title="Unlink control"
                       >
                         <XMarkIcon className="w-4 h-4" />
@@ -363,12 +363,12 @@ export default function EvidenceDetail() {
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm">
                   <UserIcon className="w-4 h-4 text-surface-500" />
-                  <span className="text-surface-400">Reviewed by:</span>
+                  <span className="text-surface-600">Reviewed by:</span>
                   <span className="text-surface-200">{evidence.reviewedBy || 'Unknown'}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <CalendarIcon className="w-4 h-4 text-surface-500" />
-                  <span className="text-surface-400">Reviewed on:</span>
+                  <span className="text-surface-600">Reviewed on:</span>
                   <span className="text-surface-200">
                     {new Date(evidence.reviewedAt).toLocaleDateString()}
                   </span>
@@ -376,7 +376,7 @@ export default function EvidenceDetail() {
                 {evidence.reviewNotes && (
                   <div className="mt-3 p-3 bg-surface-800 rounded-lg">
                     <p className="text-sm text-surface-500 mb-1">Notes:</p>
-                    <p className="text-sm text-surface-300">{evidence.reviewNotes}</p>
+                    <p className="text-sm text-surface-700">{evidence.reviewNotes}</p>
                   </div>
                 )}
               </div>
@@ -448,7 +448,7 @@ export default function EvidenceDetail() {
             <div className="card p-6">
               <h3 className="text-sm font-semibold text-surface-100 mb-4">Folder</h3>
               <div className="flex items-center gap-2">
-                <FolderIcon className="w-4 h-4 text-surface-400" />
+                <FolderIcon className="w-4 h-4 text-surface-600" />
                 <span className="text-sm text-surface-200">{evidence.folder.name}</span>
               </div>
             </div>
@@ -486,7 +486,7 @@ export default function EvidenceDetail() {
                 'py-3 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2',
                 activeTab === 'details'
                   ? 'border-brand-500 text-brand-400'
-                  : 'border-transparent text-surface-400 hover:text-surface-200 hover:border-surface-600'
+                  : 'border-transparent text-surface-600 hover:text-surface-200 hover:border-surface-600'
               )}
             >
               <DocumentTextIcon className="w-4 h-4" />
@@ -498,7 +498,7 @@ export default function EvidenceDetail() {
                 'py-3 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2',
                 activeTab === 'history'
                   ? 'border-brand-500 text-brand-400'
-                  : 'border-transparent text-surface-400 hover:text-surface-200 hover:border-surface-600'
+                  : 'border-transparent text-surface-600 hover:text-surface-200 hover:border-surface-600'
               )}
             >
               <ClockIcon className="w-4 h-4" />
@@ -667,14 +667,14 @@ function TextPreview({ evidenceId }: { evidenceId: string }) {
 
   if (error) {
     return (
-      <div className="text-center py-8 text-red-400">
+      <div className="text-center py-8 text-red-600">
         <p>Failed to load preview</p>
       </div>
     );
   }
 
   return (
-    <pre className="p-4 text-sm text-surface-300 overflow-auto max-h-[500px] font-mono whitespace-pre-wrap break-words">
+    <pre className="p-4 text-sm text-surface-700 overflow-auto max-h-[500px] font-mono whitespace-pre-wrap break-words">
       {content}
     </pre>
   );
@@ -727,14 +727,14 @@ function ExcelPreview({ evidenceId }: { evidenceId: string }) {
     return (
       <div className="flex items-center justify-center py-8">
         <div className="animate-spin w-6 h-6 border-2 border-surface-700 rounded-full border-t-brand-500"></div>
-        <span className="ml-2 text-surface-400">Loading spreadsheet...</span>
+        <span className="ml-2 text-surface-600">Loading spreadsheet...</span>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="text-center py-8 text-red-400">
+      <div className="text-center py-8 text-red-600">
         <p>Failed to load spreadsheet: {error}</p>
       </div>
     );
@@ -755,7 +755,7 @@ function ExcelPreview({ evidenceId }: { evidenceId: string }) {
                 'px-3 py-1 text-sm rounded transition-colors whitespace-nowrap',
                 activeSheet === index
                   ? 'bg-brand-500 text-white'
-                  : 'text-surface-400 hover:text-surface-200 hover:bg-surface-700'
+                  : 'text-surface-600 hover:text-surface-200 hover:bg-surface-700'
               )}
             >
               {sheet.name}
@@ -773,7 +773,7 @@ function ExcelPreview({ evidenceId }: { evidenceId: string }) {
                 {row.map((cell, cellIndex) => (
                   <td
                     key={cellIndex}
-                    className="px-3 py-2 border border-surface-700 text-surface-300 whitespace-nowrap"
+                    className="px-3 py-2 border border-surface-700 text-surface-700 whitespace-nowrap"
                   >
                     {cell?.toString() || ''}
                   </td>
@@ -854,14 +854,14 @@ function WordPreview({ evidenceId }: { evidenceId: string }) {
     return (
       <div className="flex items-center justify-center py-8">
         <div className="animate-spin w-6 h-6 border-2 border-surface-700 rounded-full border-t-brand-500"></div>
-        <span className="ml-2 text-surface-400">Loading document...</span>
+        <span className="ml-2 text-surface-600">Loading document...</span>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="text-center py-8 text-red-400">
+      <div className="text-center py-8 text-red-600">
         <p>Failed to load document: {error}</p>
       </div>
     );
@@ -870,9 +870,9 @@ function WordPreview({ evidenceId }: { evidenceId: string }) {
   return (
     <div
       className="p-6 prose prose-invert max-w-none overflow-auto max-h-[600px]
-        prose-headings:text-surface-100 prose-p:text-surface-300 
+        prose-headings:text-surface-100 prose-p:text-surface-700 
         prose-strong:text-surface-200 prose-a:text-brand-400
-        prose-ul:text-surface-300 prose-ol:text-surface-300
+        prose-ul:text-surface-700 prose-ol:text-surface-700
         prose-table:border-surface-700 prose-td:border-surface-700 prose-th:border-surface-700"
       dangerouslySetInnerHTML={{ __html: html || '' }}
     />

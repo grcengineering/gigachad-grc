@@ -42,8 +42,8 @@ export default function RiskTreatmentModal({
     treatmentPlan: risk.treatmentPlan || 'mitigate',
     treatmentNotes: risk.treatmentNotes || '',
     targetResidualRisk: (risk.residualRisk as string) || 'low',
-    treatmentDueDate: risk.treatmentDueDate 
-      ? new Date(risk.treatmentDueDate).toISOString().split('T')[0] 
+    treatmentDueDate: risk.treatmentDueDate
+      ? new Date(risk.treatmentDueDate).toISOString().split('T')[0]
       : '',
   });
 
@@ -53,8 +53,8 @@ export default function RiskTreatmentModal({
         treatmentPlan: risk.treatmentPlan || 'mitigate',
         treatmentNotes: risk.treatmentNotes || '',
         targetResidualRisk: (risk.residualRisk as string) || 'low',
-        treatmentDueDate: risk.treatmentDueDate 
-          ? new Date(risk.treatmentDueDate).toISOString().split('T')[0] 
+        treatmentDueDate: risk.treatmentDueDate
+          ? new Date(risk.treatmentDueDate).toISOString().split('T')[0]
           : '',
       });
     }
@@ -72,13 +72,13 @@ export default function RiskTreatmentModal({
       <div className="bg-surface-800 rounded-xl border border-surface-700 p-6 w-full max-w-lg">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-semibold text-white">Treatment Plan</h2>
-          <button onClick={onClose} className="text-surface-400 hover:text-white">
+          <button onClick={onClose} className="text-surface-600 hover:text-white">
             <X className="w-5 h-5" />
           </button>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm text-surface-400 mb-2">Treatment Strategy</label>
+            <label className="block text-sm text-surface-600 mb-2">Treatment Strategy</label>
             <div className="grid grid-cols-2 gap-3">
               {TREATMENT_PLANS.map((plan) => (
                 <button
@@ -92,13 +92,13 @@ export default function RiskTreatmentModal({
                   }`}
                 >
                   <div className="text-white font-medium">{plan.label}</div>
-                  <div className="text-xs text-surface-400">{plan.description}</div>
+                  <div className="text-xs text-surface-600">{plan.description}</div>
                 </button>
               ))}
             </div>
           </div>
           <div>
-            <label className="block text-sm text-surface-400 mb-1">Target Residual Risk</label>
+            <label className="block text-sm text-surface-600 mb-1">Target Residual Risk</label>
             <select
               value={formData.targetResidualRisk}
               onChange={(e) => setFormData({ ...formData, targetResidualRisk: e.target.value })}
@@ -112,7 +112,7 @@ export default function RiskTreatmentModal({
             </select>
           </div>
           <div>
-            <label className="block text-sm text-surface-400 mb-1">Treatment Due Date</label>
+            <label className="block text-sm text-surface-600 mb-1">Treatment Due Date</label>
             <input
               type="date"
               value={formData.treatmentDueDate}
@@ -121,7 +121,7 @@ export default function RiskTreatmentModal({
             />
           </div>
           <div>
-            <label className="block text-sm text-surface-400 mb-1">Treatment Notes</label>
+            <label className="block text-sm text-surface-600 mb-1">Treatment Notes</label>
             <textarea
               value={formData.treatmentNotes}
               onChange={(e) => setFormData({ ...formData, treatmentNotes: e.target.value })}
@@ -134,7 +134,7 @@ export default function RiskTreatmentModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-surface-400 hover:text-white"
+              className="px-4 py-2 text-surface-600 hover:text-white"
             >
               Cancel
             </button>

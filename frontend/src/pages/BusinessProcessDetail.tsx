@@ -69,10 +69,26 @@ interface BusinessProcess {
 }
 
 const CRITICALITY_TIERS = [
-  { value: 'tier_1_critical', label: 'Tier 1 - Critical', color: 'bg-red-500/20 text-red-400 border-red-500/30' },
-  { value: 'tier_2_essential', label: 'Tier 2 - Essential', color: 'bg-orange-500/20 text-orange-400 border-orange-500/30' },
-  { value: 'tier_3_important', label: 'Tier 3 - Important', color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' },
-  { value: 'tier_4_standard', label: 'Tier 4 - Standard', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
+  {
+    value: 'tier_1_critical',
+    label: 'Tier 1 - Critical',
+    color: 'bg-red-500/20 text-red-600 border-red-500/30',
+  },
+  {
+    value: 'tier_2_essential',
+    label: 'Tier 2 - Essential',
+    color: 'bg-orange-500/20 text-orange-600 border-orange-500/30',
+  },
+  {
+    value: 'tier_3_important',
+    label: 'Tier 3 - Important',
+    color: 'bg-yellow-500/20 text-yellow-600 border-yellow-500/30',
+  },
+  {
+    value: 'tier_4_standard',
+    label: 'Tier 4 - Standard',
+    color: 'bg-blue-500/20 text-blue-600 border-blue-500/30',
+  },
 ];
 
 export default function BusinessProcessDetail() {
@@ -82,7 +98,9 @@ export default function BusinessProcessDetail() {
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'dependencies' | 'assets' | 'plans'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'dependencies' | 'assets' | 'plans'>(
+    'overview'
+  );
   const [editForm, setEditForm] = useState({
     name: '',
     description: '',
@@ -99,7 +117,11 @@ export default function BusinessProcessDetail() {
     workaround_description: '',
   });
 
-  const { data: process, isLoading, error } = useQuery<BusinessProcess>({
+  const {
+    data: process,
+    isLoading,
+    error,
+  } = useQuery<BusinessProcess>({
     queryKey: ['business-process', id],
     queryFn: async () => {
       const res = await api.get(`/api/bcdr/processes/${id}`);
@@ -159,7 +181,7 @@ export default function BusinessProcessDetail() {
   });
 
   const getCriticalityConfig = (tier: string) => {
-    return CRITICALITY_TIERS.find(t => t.value === tier) || CRITICALITY_TIERS[2];
+    return CRITICALITY_TIERS.find((t) => t.value === tier) || CRITICALITY_TIERS[2];
   };
 
   const isOverdue = (date: string) => {
@@ -172,8 +194,12 @@ export default function BusinessProcessDetail() {
       <div className="p-6 space-y-6">
         <SkeletonDetailHeader />
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2"><SkeletonDetailSection /></div>
-          <div><SkeletonDetailSection /></div>
+          <div className="lg:col-span-2">
+            <SkeletonDetailSection />
+          </div>
+          <div>
+            <SkeletonDetailSection />
+          </div>
         </div>
       </div>
     );
@@ -183,9 +209,13 @@ export default function BusinessProcessDetail() {
     return (
       <div className="p-6">
         <div className="card p-8 text-center">
-          <ExclamationCircleIcon className="w-12 h-12 mx-auto mb-4 text-red-400" />
-          <h2 className="text-lg font-semibold text-surface-100 mb-2">Business Process Not Found</h2>
-          <p className="text-surface-400 mb-4">The requested business process could not be loaded.</p>
+          <ExclamationCircleIcon className="w-12 h-12 mx-auto mb-4 text-red-600" />
+          <h2 className="text-lg font-semibold text-surface-100 mb-2">
+            Business Process Not Found
+          </h2>
+          <p className="text-surface-600 mb-4">
+            The requested business process could not be loaded.
+          </p>
           <Button onClick={() => navigate('/bcdr/processes')}>Back to Processes</Button>
         </div>
       </div>
@@ -201,7 +231,7 @@ export default function BusinessProcessDetail() {
         <div className="flex items-start gap-4">
           <button
             onClick={() => navigate('/bcdr/processes')}
-            className="p-2 hover:bg-surface-700 rounded-lg text-surface-400 mt-1"
+            className="p-2 hover:bg-surface-700 rounded-lg text-surface-600 mt-1"
           >
             <ArrowLeftIcon className="w-5 h-5" />
           </button>
@@ -210,26 +240,30 @@ export default function BusinessProcessDetail() {
               <ShieldExclamationIcon className="w-8 h-8 text-brand-400" />
               <div>
                 <h1 className="text-2xl font-bold text-surface-100">{process.name}</h1>
-                <p className="text-surface-400 text-sm">{process.process_id}</p>
+                <p className="text-surface-600 text-sm">{process.process_id}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <span className={clsx(
-                "px-3 py-1 rounded-full text-sm font-medium border",
-                criticalityConfig.color
-              )}>
+              <span
+                className={clsx(
+                  'px-3 py-1 rounded-full text-sm font-medium border',
+                  criticalityConfig.color
+                )}
+              >
                 {criticalityConfig.label}
               </span>
-              <span className={clsx(
-                "px-3 py-1 rounded-full text-sm font-medium",
-                process.is_active 
-                  ? "bg-green-500/20 text-green-400" 
-                  : "bg-surface-600 text-surface-400"
-              )}>
+              <span
+                className={clsx(
+                  'px-3 py-1 rounded-full text-sm font-medium',
+                  process.is_active
+                    ? 'bg-green-500/20 text-green-600'
+                    : 'bg-surface-600 text-surface-600'
+                )}
+              >
                 {process.is_active ? 'Active' : 'Inactive'}
               </span>
               {process.next_review_due && isOverdue(process.next_review_due) && (
-                <span className="px-3 py-1 rounded-full text-sm font-medium bg-red-500/20 text-red-400">
+                <span className="px-3 py-1 rounded-full text-sm font-medium bg-red-500/20 text-red-600">
                   Review Overdue
                 </span>
               )}
@@ -256,10 +290,10 @@ export default function BusinessProcessDetail() {
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={clsx(
-                "pb-3 px-1 text-sm font-medium border-b-2 transition-colors capitalize",
+                'pb-3 px-1 text-sm font-medium border-b-2 transition-colors capitalize',
                 activeTab === tab
-                  ? "border-brand-500 text-brand-400"
-                  : "border-transparent text-surface-400 hover:text-surface-200"
+                  ? 'border-brand-500 text-brand-400'
+                  : 'border-transparent text-surface-600 hover:text-surface-200'
               )}
             >
               {tab}
@@ -275,25 +309,33 @@ export default function BusinessProcessDetail() {
           <div className="lg:col-span-2 space-y-6">
             <div className="card p-6">
               <h3 className="text-lg font-semibold text-surface-100 mb-4">Description</h3>
-              <p className="text-surface-300">{process.description || 'No description provided.'}</p>
+              <p className="text-surface-700">
+                {process.description || 'No description provided.'}
+              </p>
             </div>
 
             <div className="card p-6">
               <h3 className="text-lg font-semibold text-surface-100 mb-4">Recovery Objectives</h3>
               <div className="grid grid-cols-3 gap-4">
                 <div className="p-4 rounded-lg bg-surface-800/50">
-                  <p className="text-surface-400 text-sm">RTO</p>
-                  <p className="text-2xl font-bold text-surface-100">{process.rto_hours || 'N/A'}h</p>
+                  <p className="text-surface-600 text-sm">RTO</p>
+                  <p className="text-2xl font-bold text-surface-100">
+                    {process.rto_hours || 'N/A'}h
+                  </p>
                   <p className="text-surface-500 text-xs">Recovery Time Objective</p>
                 </div>
                 <div className="p-4 rounded-lg bg-surface-800/50">
-                  <p className="text-surface-400 text-sm">RPO</p>
-                  <p className="text-2xl font-bold text-surface-100">{process.rpo_hours || 'N/A'}h</p>
+                  <p className="text-surface-600 text-sm">RPO</p>
+                  <p className="text-2xl font-bold text-surface-100">
+                    {process.rpo_hours || 'N/A'}h
+                  </p>
                   <p className="text-surface-500 text-xs">Recovery Point Objective</p>
                 </div>
                 <div className="p-4 rounded-lg bg-surface-800/50">
-                  <p className="text-surface-400 text-sm">MTPD</p>
-                  <p className="text-2xl font-bold text-surface-100">{process.mtpd_hours || 'N/A'}h</p>
+                  <p className="text-surface-600 text-sm">MTPD</p>
+                  <p className="text-2xl font-bold text-surface-100">
+                    {process.mtpd_hours || 'N/A'}h
+                  </p>
                   <p className="text-surface-500 text-xs">Max Tolerable Downtime</p>
                 </div>
               </div>
@@ -302,7 +344,7 @@ export default function BusinessProcessDetail() {
             {process.impact_description && (
               <div className="card p-6">
                 <h3 className="text-lg font-semibold text-surface-100 mb-4">Business Impact</h3>
-                <p className="text-surface-300">{process.impact_description}</p>
+                <p className="text-surface-700">{process.impact_description}</p>
               </div>
             )}
 
@@ -310,26 +352,30 @@ export default function BusinessProcessDetail() {
               <h3 className="text-lg font-semibold text-surface-100 mb-4">Continuity Details</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-surface-400 text-sm">Recovery Priority</p>
+                  <p className="text-surface-600 text-sm">Recovery Priority</p>
                   <p className="text-surface-100">{process.recovery_priority || 'Not set'}</p>
                 </div>
                 <div>
-                  <p className="text-surface-400 text-sm">Minimum Staff Required</p>
+                  <p className="text-surface-600 text-sm">Minimum Staff Required</p>
                   <p className="text-surface-100">{process.minimum_staff_required || 'Not set'}</p>
                 </div>
                 <div>
-                  <p className="text-surface-400 text-sm">Alternate Site Required</p>
-                  <p className="text-surface-100">{process.alternate_site_required ? 'Yes' : 'No'}</p>
+                  <p className="text-surface-600 text-sm">Alternate Site Required</p>
+                  <p className="text-surface-100">
+                    {process.alternate_site_required ? 'Yes' : 'No'}
+                  </p>
                 </div>
                 <div>
-                  <p className="text-surface-400 text-sm">Manual Workaround Available</p>
-                  <p className="text-surface-100">{process.manual_workaround_available ? 'Yes' : 'No'}</p>
+                  <p className="text-surface-600 text-sm">Manual Workaround Available</p>
+                  <p className="text-surface-100">
+                    {process.manual_workaround_available ? 'Yes' : 'No'}
+                  </p>
                 </div>
               </div>
               {process.workaround_description && (
                 <div className="mt-4 pt-4 border-t border-surface-700">
-                  <p className="text-surface-400 text-sm mb-2">Workaround Description</p>
-                  <p className="text-surface-300">{process.workaround_description}</p>
+                  <p className="text-surface-600 text-sm mb-2">Workaround Description</p>
+                  <p className="text-surface-700">{process.workaround_description}</p>
                 </div>
               )}
             </div>
@@ -341,32 +387,36 @@ export default function BusinessProcessDetail() {
               <h3 className="text-lg font-semibold text-surface-100 mb-4">Details</h3>
               <div className="space-y-4">
                 <div>
-                  <p className="text-surface-400 text-sm">Department</p>
+                  <p className="text-surface-600 text-sm">Department</p>
                   <p className="text-surface-100">{process.department || '-'}</p>
                 </div>
                 <div>
-                  <p className="text-surface-400 text-sm">Owner</p>
+                  <p className="text-surface-600 text-sm">Owner</p>
                   <p className="text-surface-100">{process.owner_name || '-'}</p>
                   {process.owner_email && (
                     <p className="text-surface-500 text-sm">{process.owner_email}</p>
                   )}
                 </div>
                 <div>
-                  <p className="text-surface-400 text-sm">Next Review Due</p>
-                  <p className={clsx(
-                    "text-surface-100",
-                    process.next_review_due && isOverdue(process.next_review_due) && "text-red-400"
-                  )}>
-                    {process.next_review_due 
-                      ? new Date(process.next_review_due).toLocaleDateString() 
+                  <p className="text-surface-600 text-sm">Next Review Due</p>
+                  <p
+                    className={clsx(
+                      'text-surface-100',
+                      process.next_review_due &&
+                        isOverdue(process.next_review_due) &&
+                        'text-red-600'
+                    )}
+                  >
+                    {process.next_review_due
+                      ? new Date(process.next_review_due).toLocaleDateString()
                       : '-'}
                   </p>
                 </div>
                 <div>
-                  <p className="text-surface-400 text-sm">Last Reviewed</p>
+                  <p className="text-surface-600 text-sm">Last Reviewed</p>
                   <p className="text-surface-100">
-                    {process.last_reviewed_at 
-                      ? new Date(process.last_reviewed_at).toLocaleDateString() 
+                    {process.last_reviewed_at
+                      ? new Date(process.last_reviewed_at).toLocaleDateString()
                       : 'Never'}
                   </p>
                 </div>
@@ -377,20 +427,22 @@ export default function BusinessProcessDetail() {
               <h3 className="text-lg font-semibold text-surface-100 mb-4">Statistics</h3>
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-surface-400">Dependencies</span>
+                  <span className="text-surface-600">Dependencies</span>
                   <span className="text-surface-100">{process.dependencies?.length || 0}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-surface-400">Assets</span>
+                  <span className="text-surface-600">Assets</span>
                   <span className="text-surface-100">{process.assets?.length || 0}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-surface-400">BC/DR Plans</span>
+                  <span className="text-surface-600">BC/DR Plans</span>
                   <span className="text-surface-100">{process.bcdr_plans?.length || 0}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-surface-400">Recovery Strategies</span>
-                  <span className="text-surface-100">{process.recovery_strategies?.length || 0}</span>
+                  <span className="text-surface-600">Recovery Strategies</span>
+                  <span className="text-surface-100">
+                    {process.recovery_strategies?.length || 0}
+                  </span>
                 </div>
               </div>
             </div>
@@ -410,17 +462,17 @@ export default function BusinessProcessDetail() {
                   className="flex items-center justify-between p-4 rounded-lg bg-surface-800/50 hover:bg-surface-700/50 transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <LinkIcon className="w-5 h-5 text-surface-400" />
+                    <LinkIcon className="w-5 h-5 text-surface-600" />
                     <div>
                       <p className="text-surface-100 font-medium">{dep.dependent_process_name}</p>
-                      <p className="text-surface-400 text-sm capitalize">{dep.dependency_type}</p>
+                      <p className="text-surface-600 text-sm capitalize">{dep.dependency_type}</p>
                     </div>
                   </div>
                 </Link>
               ))}
             </div>
           ) : (
-            <p className="text-surface-400 text-center py-8">No dependencies configured</p>
+            <p className="text-surface-600 text-center py-8">No dependencies configured</p>
           )}
         </div>
       )}
@@ -437,17 +489,17 @@ export default function BusinessProcessDetail() {
                   className="flex items-center justify-between p-4 rounded-lg bg-surface-800/50 hover:bg-surface-700/50 transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <CubeIcon className="w-5 h-5 text-surface-400" />
+                    <CubeIcon className="w-5 h-5 text-surface-600" />
                     <div>
                       <p className="text-surface-100 font-medium">{asset.asset_name}</p>
-                      <p className="text-surface-400 text-sm capitalize">{asset.asset_type}</p>
+                      <p className="text-surface-600 text-sm capitalize">{asset.asset_type}</p>
                     </div>
                   </div>
                 </Link>
               ))}
             </div>
           ) : (
-            <p className="text-surface-400 text-center py-8">No assets linked</p>
+            <p className="text-surface-600 text-center py-8">No assets linked</p>
           )}
         </div>
       )}
@@ -464,20 +516,20 @@ export default function BusinessProcessDetail() {
                   className="flex items-center justify-between p-4 rounded-lg bg-surface-800/50 hover:bg-surface-700/50 transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <DocumentTextIcon className="w-5 h-5 text-surface-400" />
+                    <DocumentTextIcon className="w-5 h-5 text-surface-600" />
                     <div>
                       <p className="text-surface-100 font-medium">{plan.title}</p>
-                      <p className="text-surface-400 text-sm">{plan.plan_id}</p>
+                      <p className="text-surface-600 text-sm">{plan.plan_id}</p>
                     </div>
                   </div>
-                  <span className="px-2 py-1 rounded text-xs font-medium bg-surface-700 text-surface-300 capitalize">
+                  <span className="px-2 py-1 rounded text-xs font-medium bg-surface-700 text-surface-700 capitalize">
                     {plan.status}
                   </span>
                 </Link>
               ))}
             </div>
           ) : (
-            <p className="text-surface-400 text-center py-8">No BC/DR plans linked</p>
+            <p className="text-surface-600 text-center py-8">No BC/DR plans linked</p>
           )}
         </div>
       )}
@@ -490,7 +542,7 @@ export default function BusinessProcessDetail() {
               <h2 className="text-xl font-semibold text-white">Edit Business Process</h2>
               <button
                 onClick={() => setShowEditModal(false)}
-                className="p-2 hover:bg-surface-700 rounded-lg text-surface-400"
+                className="p-2 hover:bg-surface-700 rounded-lg text-surface-600"
               >
                 <XMarkIcon className="w-5 h-5" />
               </button>
@@ -504,21 +556,25 @@ export default function BusinessProcessDetail() {
               className="p-6 space-y-4"
             >
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-2">Name *</label>
+                <label className="block text-sm font-medium text-surface-700 mb-2">Name *</label>
                 <input
                   type="text"
                   value={editForm.name}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
                   required
                   className="input w-full"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-2">Description</label>
+                <label className="block text-sm font-medium text-surface-700 mb-2">
+                  Description
+                </label>
                 <textarea
                   value={editForm.description}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
+                  onChange={(e) =>
+                    setEditForm((prev) => ({ ...prev, description: e.target.value }))
+                  }
                   rows={3}
                   className="input w-full"
                 />
@@ -526,23 +582,33 @@ export default function BusinessProcessDetail() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-surface-300 mb-2">Department</label>
+                  <label className="block text-sm font-medium text-surface-700 mb-2">
+                    Department
+                  </label>
                   <input
                     type="text"
                     value={editForm.department}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, department: e.target.value }))}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({ ...prev, department: e.target.value }))
+                    }
                     className="input w-full"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-surface-300 mb-2">Criticality Tier</label>
+                  <label className="block text-sm font-medium text-surface-700 mb-2">
+                    Criticality Tier
+                  </label>
                   <select
                     value={editForm.criticality_tier}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, criticality_tier: e.target.value }))}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({ ...prev, criticality_tier: e.target.value }))
+                    }
                     className="input w-full"
                   >
-                    {CRITICALITY_TIERS.map(tier => (
-                      <option key={tier.value} value={tier.value}>{tier.label}</option>
+                    {CRITICALITY_TIERS.map((tier) => (
+                      <option key={tier.value} value={tier.value}>
+                        {tier.label}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -550,31 +616,46 @@ export default function BusinessProcessDetail() {
 
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-surface-300 mb-2">RTO (hours)</label>
+                  <label className="block text-sm font-medium text-surface-700 mb-2">
+                    RTO (hours)
+                  </label>
                   <input
                     type="number"
                     value={editForm.rto_hours}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, rto_hours: parseInt(e.target.value) || 0 }))}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({ ...prev, rto_hours: parseInt(e.target.value) || 0 }))
+                    }
                     min="0"
                     className="input w-full"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-surface-300 mb-2">RPO (hours)</label>
+                  <label className="block text-sm font-medium text-surface-700 mb-2">
+                    RPO (hours)
+                  </label>
                   <input
                     type="number"
                     value={editForm.rpo_hours}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, rpo_hours: parseInt(e.target.value) || 0 }))}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({ ...prev, rpo_hours: parseInt(e.target.value) || 0 }))
+                    }
                     min="0"
                     className="input w-full"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-surface-300 mb-2">MTPD (hours)</label>
+                  <label className="block text-sm font-medium text-surface-700 mb-2">
+                    MTPD (hours)
+                  </label>
                   <input
                     type="number"
                     value={editForm.mtpd_hours}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, mtpd_hours: parseInt(e.target.value) || 0 }))}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        mtpd_hours: parseInt(e.target.value) || 0,
+                      }))
+                    }
                     min="0"
                     className="input w-full"
                   />
@@ -582,10 +663,14 @@ export default function BusinessProcessDetail() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-2">Business Impact Description</label>
+                <label className="block text-sm font-medium text-surface-700 mb-2">
+                  Business Impact Description
+                </label>
                 <textarea
                   value={editForm.impact_description}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, impact_description: e.target.value }))}
+                  onChange={(e) =>
+                    setEditForm((prev) => ({ ...prev, impact_description: e.target.value }))
+                  }
                   rows={2}
                   className="input w-full"
                   placeholder="Describe the impact if this process is unavailable..."
@@ -594,21 +679,35 @@ export default function BusinessProcessDetail() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-surface-300 mb-2">Recovery Priority</label>
+                  <label className="block text-sm font-medium text-surface-700 mb-2">
+                    Recovery Priority
+                  </label>
                   <input
                     type="number"
                     value={editForm.recovery_priority}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, recovery_priority: parseInt(e.target.value) || 1 }))}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        recovery_priority: parseInt(e.target.value) || 1,
+                      }))
+                    }
                     min="1"
                     className="input w-full"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-surface-300 mb-2">Minimum Staff Required</label>
+                  <label className="block text-sm font-medium text-surface-700 mb-2">
+                    Minimum Staff Required
+                  </label>
                   <input
                     type="number"
                     value={editForm.minimum_staff_required}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, minimum_staff_required: parseInt(e.target.value) || 0 }))}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        minimum_staff_required: parseInt(e.target.value) || 0,
+                      }))
+                    }
                     min="0"
                     className="input w-full"
                   />
@@ -620,28 +719,42 @@ export default function BusinessProcessDetail() {
                   <input
                     type="checkbox"
                     checked={editForm.alternate_site_required}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, alternate_site_required: e.target.checked }))}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        alternate_site_required: e.target.checked,
+                      }))
+                    }
                     className="rounded border-surface-600 bg-surface-700 text-brand-600"
                   />
-                  <span className="text-surface-300 text-sm">Alternate Site Required</span>
+                  <span className="text-surface-700 text-sm">Alternate Site Required</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={editForm.manual_workaround_available}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, manual_workaround_available: e.target.checked }))}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        manual_workaround_available: e.target.checked,
+                      }))
+                    }
                     className="rounded border-surface-600 bg-surface-700 text-brand-600"
                   />
-                  <span className="text-surface-300 text-sm">Manual Workaround Available</span>
+                  <span className="text-surface-700 text-sm">Manual Workaround Available</span>
                 </label>
               </div>
 
               {editForm.manual_workaround_available && (
                 <div>
-                  <label className="block text-sm font-medium text-surface-300 mb-2">Workaround Description</label>
+                  <label className="block text-sm font-medium text-surface-700 mb-2">
+                    Workaround Description
+                  </label>
                   <textarea
                     value={editForm.workaround_description}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, workaround_description: e.target.value }))}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({ ...prev, workaround_description: e.target.value }))
+                    }
                     rows={2}
                     className="input w-full"
                   />
@@ -666,8 +779,9 @@ export default function BusinessProcessDetail() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-surface-800 rounded-xl border border-surface-700 p-6 max-w-md w-full">
             <h3 className="text-lg font-semibold text-white mb-2">Delete Business Process</h3>
-            <p className="text-surface-400 mb-6">
-              Are you sure you want to delete "{process.name}"? This action cannot be undone and will remove all associated data.
+            <p className="text-surface-600 mb-6">
+              Are you sure you want to delete "{process.name}"? This action cannot be undone and
+              will remove all associated data.
             </p>
             <div className="flex justify-end gap-3">
               <Button variant="secondary" onClick={() => setShowDeleteConfirm(false)}>
@@ -687,4 +801,3 @@ export default function BusinessProcessDetail() {
     </div>
   );
 }
-

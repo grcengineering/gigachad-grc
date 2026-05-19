@@ -34,7 +34,7 @@ export default function AuditorLogin() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!accessCode.trim()) {
       setLocalError('Please enter your access code');
       return;
@@ -95,17 +95,20 @@ export default function AuditorLogin() {
             {/* Error Message */}
             {displayError && (
               <div className="flex items-start gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
-                <ExclamationCircleIcon className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                <ExclamationCircleIcon className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-red-300 text-sm font-medium">Authentication Failed</p>
-                  <p className="text-red-300/70 text-sm mt-1">{displayError}</p>
+                  <p className="text-red-700 text-sm font-medium">Authentication Failed</p>
+                  <p className="text-red-700/70 text-sm mt-1">{displayError}</p>
                 </div>
               </div>
             )}
 
             {/* Access Code Input */}
             <div>
-              <label htmlFor="accessCode" className="block text-sm font-medium text-purple-200 mb-2">
+              <label
+                htmlFor="accessCode"
+                className="block text-sm font-medium text-purple-200 mb-2"
+              >
                 Access Code
               </label>
               <div className="relative">
@@ -123,7 +126,7 @@ export default function AuditorLogin() {
                   <button
                     type="button"
                     onClick={handlePaste}
-                    className="p-2 text-purple-300 hover:text-white transition-colors"
+                    className="p-2 text-purple-700 hover:text-white transition-colors"
                     title="Paste from clipboard"
                   >
                     <ClipboardDocumentIcon className="w-5 h-5" />
@@ -131,7 +134,7 @@ export default function AuditorLogin() {
                   <button
                     type="button"
                     onClick={() => setShowCode(!showCode)}
-                    className="p-2 text-purple-300 hover:text-white transition-colors"
+                    className="p-2 text-purple-700 hover:text-white transition-colors"
                     title={showCode ? 'Hide code' : 'Show code'}
                   >
                     {showCode ? (
@@ -142,7 +145,7 @@ export default function AuditorLogin() {
                   </button>
                 </div>
               </div>
-              <p className="mt-2 text-xs text-purple-300/50">
+              <p className="mt-2 text-xs text-purple-700/50">
                 Your access code was provided by the audit team
               </p>
             </div>
@@ -171,7 +174,10 @@ export default function AuditorLogin() {
           <div className="mt-6 pt-6 border-t border-white/10">
             <p className="text-center text-sm text-purple-200/50">
               Having trouble accessing the portal?{' '}
-              <a href="mailto:support@example.com" className="text-purple-400 hover:text-purple-300 transition-colors">
+              <a
+                href="mailto:support@example.com"
+                className="text-purple-600 hover:text-purple-700 transition-colors"
+              >
                 Contact support
               </a>
             </p>
@@ -180,12 +186,12 @@ export default function AuditorLogin() {
 
         {/* Security Notice */}
         <div className="mt-6 text-center">
-          <p className="text-xs text-purple-300/40">
-            🔒 This portal uses secure, encrypted connections. Your access code provides temporary, limited access to audit materials.
+          <p className="text-xs text-purple-700/40">
+            🔒 This portal uses secure, encrypted connections. Your access code provides temporary,
+            limited access to audit materials.
           </p>
         </div>
       </div>
     </div>
   );
 }
-

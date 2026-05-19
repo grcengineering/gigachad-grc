@@ -1,13 +1,13 @@
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { 
-  ClockIcon, 
+import {
+  ClockIcon,
   ExclamationTriangleIcon,
   CalendarIcon,
   FireIcon,
   ArrowRightIcon,
   DocumentTextIcon,
-  ChevronRightIcon
+  ChevronRightIcon,
 } from '@heroicons/react/24/outline';
 import { questionnairesApi, QuestionnaireQueueItem } from '../../lib/api';
 import { useAuth } from '../../contexts/AuthContext';
@@ -21,7 +21,11 @@ export function TrustAnalystQueueWidget({ className }: TrustAnalystQueueWidgetPr
   const { user } = useAuth();
   const organizationId = user?.organizationId;
 
-  const { data: queue, isLoading, error } = useQuery({
+  const {
+    data: queue,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['questionnaire-dashboard-queue', organizationId],
     queryFn: async () => {
       const response = await questionnairesApi.getDashboardQueue(organizationId!);
@@ -35,7 +39,7 @@ export function TrustAnalystQueueWidget({ className }: TrustAnalystQueueWidgetPr
   if (!organizationId) {
     return (
       <div className={clsx('bg-surface-900 border border-surface-800 rounded-xl p-6', className)}>
-        <p className="text-surface-400 text-sm">Sign in to view your questionnaire queue.</p>
+        <p className="text-surface-600 text-sm">Sign in to view your questionnaire queue.</p>
       </div>
     );
   }
@@ -58,17 +62,23 @@ export function TrustAnalystQueueWidget({ className }: TrustAnalystQueueWidgetPr
   if (error) {
     return (
       <div className={clsx('bg-surface-900 border border-surface-800 rounded-xl p-6', className)}>
-        <p className="text-red-400 text-sm">Failed to load queue</p>
+        <p className="text-red-600 text-sm">Failed to load queue</p>
       </div>
     );
   }
 
-  const totalActionable = (queue?.summary.overdueCount || 0) + 
-                          (queue?.summary.dueThisWeekCount || 0) + 
-                          (queue?.summary.highPriorityCount || 0);
+  const totalActionable =
+    (queue?.summary.overdueCount || 0) +
+    (queue?.summary.dueThisWeekCount || 0) +
+    (queue?.summary.highPriorityCount || 0);
 
   return (
-    <div className={clsx('bg-surface-900 border border-surface-800 rounded-xl overflow-hidden', className)}>
+    <div
+      className={clsx(
+        'bg-surface-900 border border-surface-800 rounded-xl overflow-hidden',
+        className
+      )}
+    >
       {/* Header */}
       <div className="px-5 py-4 border-b border-surface-800 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -77,11 +87,11 @@ export function TrustAnalystQueueWidget({ className }: TrustAnalystQueueWidgetPr
           </div>
           <div>
             <h3 className="font-semibold text-surface-100">Trust Queue</h3>
-            <p className="text-xs text-surface-400">Questionnaires requiring attention</p>
+            <p className="text-xs text-surface-600">Questionnaires requiring attention</p>
           </div>
         </div>
         {totalActionable > 0 && (
-          <span className="flex items-center justify-center min-w-[24px] h-6 px-2 bg-red-500/20 text-red-400 text-xs font-bold rounded-full">
+          <span className="flex items-center justify-center min-w-[24px] h-6 px-2 bg-red-500/20 text-red-600 text-xs font-bold rounded-full">
             {totalActionable}
           </span>
         )}
@@ -151,7 +161,7 @@ export function TrustAnalystQueueWidget({ className }: TrustAnalystQueueWidgetPr
         {totalActionable === 0 && (
           <div className="p-8 text-center">
             <DocumentTextIcon className="w-12 h-12 text-surface-600 mx-auto mb-3" />
-            <p className="text-surface-400 text-sm">All caught up!</p>
+            <p className="text-surface-600 text-sm">All caught up!</p>
             <p className="text-surface-500 text-xs mt-1">No urgent questionnaires</p>
           </div>
         )}
@@ -159,7 +169,7 @@ export function TrustAnalystQueueWidget({ className }: TrustAnalystQueueWidgetPr
 
       {/* Footer */}
       <div className="px-5 py-3 border-t border-surface-800 bg-surface-800/50">
-        <Link 
+        <Link
           to="/questionnaires"
           className="flex items-center justify-center gap-2 text-sm text-brand-400 hover:text-brand-300 transition-colors"
         >
@@ -172,30 +182,32 @@ export function TrustAnalystQueueWidget({ className }: TrustAnalystQueueWidgetPr
 }
 
 // Stat Box Component
-function StatBox({ 
-  icon: Icon, 
-  label, 
-  value, 
-  color 
-}: { 
+function StatBox({
+  icon: Icon,
+  label,
+  value,
+  color,
+}: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   value: number;
   color: 'red' | 'amber' | 'blue' | 'orange';
 }) {
   const colorClasses = {
-    red: 'text-red-400',
-    amber: 'text-amber-400',
-    blue: 'text-blue-400',
-    orange: 'text-orange-400',
+    red: 'text-red-600',
+    amber: 'text-amber-600',
+    blue: 'text-blue-600',
+    orange: 'text-orange-600',
   };
 
   return (
     <div className="bg-surface-900 p-3 text-center">
-      <div className={clsx('text-2xl font-bold', value > 0 ? colorClasses[color] : 'text-surface-500')}>
+      <div
+        className={clsx('text-2xl font-bold', value > 0 ? colorClasses[color] : 'text-surface-500')}
+      >
         {value}
       </div>
-      <div className="flex items-center justify-center gap-1 text-xs text-surface-400 mt-1">
+      <div className="flex items-center justify-center gap-1 text-xs text-surface-600 mt-1">
         <Icon className="w-3 h-3" />
         {label}
       </div>
@@ -204,37 +216,39 @@ function StatBox({
 }
 
 // Queue Section Component
-function QueueSection({ 
-  title, 
-  items, 
+function QueueSection({
+  title,
+  items,
   color,
   icon: Icon,
-}: { 
+}: {
   title: string;
   items: QuestionnaireQueueItem[];
   color: 'red' | 'amber' | 'blue' | 'orange';
   icon: React.ComponentType<{ className?: string }>;
 }) {
   const colorClasses = {
-    red: 'text-red-400 bg-red-500/10 border-red-500/30',
-    amber: 'text-amber-400 bg-amber-500/10 border-amber-500/30',
-    blue: 'text-blue-400 bg-blue-500/10 border-blue-500/30',
-    orange: 'text-orange-400 bg-orange-500/10 border-orange-500/30',
+    red: 'text-red-600 bg-red-500/10 border-red-500/30',
+    amber: 'text-amber-600 bg-amber-500/10 border-amber-500/30',
+    blue: 'text-blue-600 bg-blue-500/10 border-blue-500/30',
+    orange: 'text-orange-600 bg-orange-500/10 border-orange-500/30',
   };
 
   const priorityColors: Record<string, string> = {
-    urgent: 'bg-red-500/20 text-red-400',
-    high: 'bg-orange-500/20 text-orange-400',
-    medium: 'bg-yellow-500/20 text-yellow-400',
-    low: 'bg-surface-700 text-surface-400',
+    urgent: 'bg-red-500/20 text-red-600',
+    high: 'bg-orange-500/20 text-orange-600',
+    medium: 'bg-yellow-500/20 text-yellow-600',
+    low: 'bg-surface-700 text-surface-600',
   };
 
   return (
     <div className="border-b border-surface-800 last:border-b-0">
-      <div className={clsx(
-        'px-4 py-2 flex items-center gap-2 text-xs font-medium border-l-2',
-        colorClasses[color]
-      )}>
+      <div
+        className={clsx(
+          'px-4 py-2 flex items-center gap-2 text-xs font-medium border-l-2',
+          colorClasses[color]
+        )}
+      >
         <Icon className="w-3.5 h-3.5" />
         {title} ({items.length})
       </div>
@@ -251,14 +265,16 @@ function QueueSection({
                   <span className="text-sm font-medium text-surface-100 truncate">
                     {item.title}
                   </span>
-                  <span className={clsx(
-                    'px-1.5 py-0.5 text-xs rounded capitalize',
-                    priorityColors[item.priority] || priorityColors.medium
-                  )}>
+                  <span
+                    className={clsx(
+                      'px-1.5 py-0.5 text-xs rounded capitalize',
+                      priorityColors[item.priority] || priorityColors.medium
+                    )}
+                  >
                     {item.priority}
                   </span>
                 </div>
-                <div className="flex items-center gap-3 text-xs text-surface-400">
+                <div className="flex items-center gap-3 text-xs text-surface-600">
                   <span>{item.requesterName}</span>
                   {item.company && (
                     <>
@@ -270,12 +286,14 @@ function QueueSection({
                 {/* Progress Bar */}
                 <div className="mt-2 flex items-center gap-2">
                   <div className="flex-1 h-1.5 bg-surface-700 rounded-full overflow-hidden">
-                    <div 
+                    <div
                       className={clsx(
                         'h-full transition-all',
-                        item.progress >= 100 ? 'bg-green-500' :
-                        item.progress >= 50 ? 'bg-blue-500' :
-                        'bg-amber-500'
+                        item.progress >= 100
+                          ? 'bg-green-500'
+                          : item.progress >= 50
+                            ? 'bg-blue-500'
+                            : 'bg-amber-500'
                       )}
                       style={{ width: `${item.progress}%` }}
                     />
@@ -285,14 +303,16 @@ function QueueSection({
                   </span>
                 </div>
               </div>
-              <ChevronRightIcon className="w-4 h-4 text-surface-500 group-hover:text-surface-300 flex-shrink-0 mt-1" />
+              <ChevronRightIcon className="w-4 h-4 text-surface-500 group-hover:text-surface-700 flex-shrink-0 mt-1" />
             </div>
             {item.dueDate && (
               <div className="flex items-center gap-1 mt-2 text-xs">
                 <CalendarIcon className="w-3 h-3" />
-                <span className={clsx(
-                  new Date(item.dueDate) < new Date() ? 'text-red-400' : 'text-surface-400'
-                )}>
+                <span
+                  className={clsx(
+                    new Date(item.dueDate) < new Date() ? 'text-red-600' : 'text-surface-600'
+                  )}
+                >
                   Due {new Date(item.dueDate).toLocaleDateString()}
                 </span>
               </div>
@@ -308,4 +328,3 @@ function QueueSection({
     </div>
   );
 }
-

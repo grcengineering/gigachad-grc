@@ -60,7 +60,7 @@ export default function Policies() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-surface-100">Policy Center</h1>
-          <p className="text-surface-400 mt-1">
+          <p className="text-surface-600 mt-1">
             Manage your organization's policies and track review cycles
           </p>
         </div>
@@ -81,20 +81,20 @@ export default function Policies() {
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="card p-4">
-          <p className="text-sm text-surface-400">Total Policies</p>
+          <p className="text-sm text-surface-600">Total Policies</p>
           <p className="text-2xl font-bold text-surface-100 mt-1">{stats?.total || 0}</p>
         </div>
         <div className="card p-4">
-          <p className="text-sm text-surface-400">Approved</p>
-          <p className="text-2xl font-bold text-green-400 mt-1">{stats?.approved || 0}</p>
+          <p className="text-sm text-surface-600">Approved</p>
+          <p className="text-2xl font-bold text-green-600 mt-1">{stats?.approved || 0}</p>
         </div>
         <div className="card p-4">
-          <p className="text-sm text-surface-400">Pending Review</p>
-          <p className="text-2xl font-bold text-yellow-400 mt-1">{stats?.inReview || 0}</p>
+          <p className="text-sm text-surface-600">Pending Review</p>
+          <p className="text-2xl font-bold text-yellow-600 mt-1">{stats?.inReview || 0}</p>
         </div>
         <div className="card p-4">
-          <p className="text-sm text-surface-400">Overdue Review</p>
-          <p className="text-2xl font-bold text-red-400 mt-1">{stats?.overdueReview || 0}</p>
+          <p className="text-sm text-surface-600">Overdue Review</p>
+          <p className="text-2xl font-bold text-red-600 mt-1">{stats?.overdueReview || 0}</p>
         </div>
       </div>
 
@@ -147,18 +147,18 @@ export default function Policies() {
                           className="flex items-center gap-3 hover:text-brand-400"
                         >
                           <div className="p-2 bg-surface-800 rounded-lg">
-                            <DocumentTextIcon className="w-5 h-5 text-surface-400" />
+                            <DocumentTextIcon className="w-5 h-5 text-surface-600" />
                           </div>
                           <span className="font-medium text-surface-100">{policy.title}</span>
                         </Link>
                       </td>
                       <td>
-                        <span className="capitalize text-surface-300">
+                        <span className="capitalize text-surface-700">
                           {policy.category?.replace(/_/g, ' ')}
                         </span>
                       </td>
                       <td>
-                        <span className="font-mono text-surface-400">v{policy.version}</span>
+                        <span className="font-mono text-surface-600">v{policy.version}</span>
                       </td>
                       <td>
                         <span className={clsx('badge', statusConfig.color)}>
@@ -166,7 +166,7 @@ export default function Policies() {
                         </span>
                       </td>
                       <td>
-                        <span className="text-surface-300">
+                        <span className="text-surface-700">
                           {policy.owner?.displayName || 'Unassigned'}
                         </span>
                       </td>
@@ -174,8 +174,8 @@ export default function Policies() {
                         {policy.nextReviewDue ? (
                           <span
                             className={clsx(
-                              'text-surface-400',
-                              new Date(policy.nextReviewDue) < new Date() && 'text-red-400'
+                              'text-surface-600',
+                              new Date(policy.nextReviewDue) < new Date() && 'text-red-600'
                             )}
                           >
                             {new Date(policy.nextReviewDue).toLocaleDateString()}
@@ -208,13 +208,7 @@ export default function Policies() {
   );
 }
 
-function UploadPolicyModal({
-  onClose,
-  onSuccess,
-}: {
-  onClose: () => void;
-  onSuccess: () => void;
-}) {
+function UploadPolicyModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -269,7 +263,7 @@ function UploadPolicyModal({
       <div className="relative bg-surface-900 border border-surface-800 rounded-xl w-full max-w-lg mx-4 p-6 animate-slide-up">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-semibold text-surface-100">Upload Policy</h2>
-          <button onClick={onClose} className="text-surface-400 hover:text-surface-100">
+          <button onClick={onClose} className="text-surface-600 hover:text-surface-100">
             <XMarkIcon className="w-5 h-5" />
           </button>
         </div>
@@ -291,7 +285,7 @@ function UploadPolicyModal({
           >
             {file ? (
               <div className="flex items-center justify-center gap-3">
-                <DocumentTextIcon className="w-8 h-8 text-green-400" />
+                <DocumentTextIcon className="w-8 h-8 text-green-600" />
                 <div className="text-left">
                   <p className="text-surface-100 font-medium">{file.name}</p>
                   <p className="text-surface-500 text-sm">
@@ -300,7 +294,7 @@ function UploadPolicyModal({
                 </div>
                 <button
                   onClick={() => setFile(null)}
-                  className="ml-2 text-surface-400 hover:text-red-400"
+                  className="ml-2 text-surface-600 hover:text-red-600"
                 >
                   <XMarkIcon className="w-5 h-5" />
                 </button>
@@ -308,7 +302,7 @@ function UploadPolicyModal({
             ) : (
               <>
                 <ArrowUpTrayIcon className="w-10 h-10 text-surface-500 mx-auto mb-3" />
-                <p className="text-surface-300 mb-2">
+                <p className="text-surface-700 mb-2">
                   Drag and drop a file here, or click to browse
                 </p>
                 <input

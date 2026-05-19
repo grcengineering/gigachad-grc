@@ -62,14 +62,20 @@ export default function ApiSettings() {
   };
 
   const keys = keysResponse?.keys || [];
-  const availableScopes = scopesResponse?.scopes || ['all', 'controls:read', 'controls:write', 'evidence:read', 'evidence:write'];
+  const availableScopes = scopesResponse?.scopes || [
+    'all',
+    'controls:read',
+    'controls:write',
+    'evidence:read',
+    'evidence:write',
+  ];
 
   return (
     <div className="card p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold text-surface-100">API Keys</h2>
-          <p className="text-surface-400 text-sm mt-1">Manage API keys for programmatic access</p>
+          <p className="text-surface-600 text-sm mt-1">Manage API keys for programmatic access</p>
         </div>
         <button className="btn-primary" onClick={() => setShowCreateModal(true)}>
           <PlusIcon className="w-4 h-4 mr-2" />
@@ -82,18 +88,23 @@ export default function ApiSettings() {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
         </div>
       ) : keys.length === 0 ? (
-        <div className="text-center py-8 text-surface-400">
+        <div className="text-center py-8 text-surface-600">
           <p>No API keys yet. Create one to get started.</p>
         </div>
       ) : (
         <div className="space-y-3">
           {keys.map((key: ApiKey) => (
-            <div key={key.id} className="flex items-center justify-between p-4 bg-surface-800/50 rounded-lg">
+            <div
+              key={key.id}
+              className="flex items-center justify-between p-4 bg-surface-800/50 rounded-lg"
+            >
               <div>
                 <div className="flex items-center gap-2">
                   <p className="text-surface-100 font-medium">{key.name}</p>
                   {!key.isActive && (
-                    <span className="px-2 py-0.5 text-xs bg-red-500/20 text-red-400 rounded">Revoked</span>
+                    <span className="px-2 py-0.5 text-xs bg-red-500/20 text-red-600 rounded">
+                      Revoked
+                    </span>
                   )}
                 </div>
                 <p className="text-surface-500 text-sm font-mono">grc_{key.keyPrefix}••••••••</p>
@@ -101,9 +112,7 @@ export default function ApiSettings() {
                   Created {formatDate(key.createdAt)} • Last used {formatDate(key.lastUsedAt)}
                 </p>
                 {key.scopes.length > 0 && (
-                  <p className="text-surface-500 text-xs mt-1">
-                    Scopes: {key.scopes.join(', ')}
-                  </p>
+                  <p className="text-surface-500 text-xs mt-1">Scopes: {key.scopes.join(', ')}</p>
                 )}
               </div>
               <div className="flex items-center gap-2">
@@ -111,7 +120,7 @@ export default function ApiSettings() {
                   <>
                     {confirmingRegenerate === key.id ? (
                       <div className="flex items-center gap-2">
-                        <span className="text-surface-400 text-sm">Regenerate?</span>
+                        <span className="text-surface-600 text-sm">Regenerate?</span>
                         <button
                           className="btn-primary text-sm"
                           onClick={() => regenerateMutation.mutate(key.id)}
@@ -128,7 +137,7 @@ export default function ApiSettings() {
                       </div>
                     ) : confirmingRevoke === key.id ? (
                       <div className="flex items-center gap-2">
-                        <span className="text-surface-400 text-sm">Revoke?</span>
+                        <span className="text-surface-600 text-sm">Revoke?</span>
                         <button
                           className="btn-danger text-sm"
                           onClick={() => revokeMutation.mutate(key.id)}
@@ -171,11 +180,12 @@ export default function ApiSettings() {
 
       <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
         <div className="flex items-start gap-3">
-          <ExclamationCircleIcon className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+          <ExclamationCircleIcon className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="text-amber-400 font-medium">API Key Security</p>
-            <p className="text-surface-400 text-sm mt-1">
-              API keys grant access to your organization's data based on their scopes. Keep them secure and rotate them regularly.
+            <p className="text-amber-600 font-medium">API Key Security</p>
+            <p className="text-surface-600 text-sm mt-1">
+              API keys grant access to your organization's data based on their scopes. Keep them
+              secure and rotate them regularly.
             </p>
           </div>
         </div>

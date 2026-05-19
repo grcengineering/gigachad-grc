@@ -19,17 +19,17 @@ interface TasksPanelProps {
 }
 
 const STATUS_OPTIONS = [
-  { value: 'open', label: 'Open', color: 'text-blue-400 bg-blue-400/10' },
-  { value: 'in_progress', label: 'In Progress', color: 'text-yellow-400 bg-yellow-400/10' },
-  { value: 'completed', label: 'Completed', color: 'text-green-400 bg-green-400/10' },
-  { value: 'cancelled', label: 'Cancelled', color: 'text-surface-400 bg-surface-400/10' },
+  { value: 'open', label: 'Open', color: 'text-blue-600 bg-blue-400/10' },
+  { value: 'in_progress', label: 'In Progress', color: 'text-yellow-600 bg-yellow-400/10' },
+  { value: 'completed', label: 'Completed', color: 'text-green-600 bg-green-400/10' },
+  { value: 'cancelled', label: 'Cancelled', color: 'text-surface-600 bg-surface-400/10' },
 ];
 
 const PRIORITY_OPTIONS = [
-  { value: 'low', label: 'Low', color: 'text-green-400' },
-  { value: 'medium', label: 'Medium', color: 'text-yellow-400' },
-  { value: 'high', label: 'High', color: 'text-orange-400' },
-  { value: 'critical', label: 'Critical', color: 'text-red-400' },
+  { value: 'low', label: 'Low', color: 'text-green-600' },
+  { value: 'medium', label: 'Medium', color: 'text-yellow-600' },
+  { value: 'high', label: 'High', color: 'text-orange-600' },
+  { value: 'critical', label: 'Critical', color: 'text-red-600' },
 ];
 
 export default function TasksPanel({ entityType, entityId }: TasksPanelProps) {
@@ -103,22 +103,21 @@ export default function TasksPanel({ entityType, entityId }: TasksPanelProps) {
   };
 
   const openTasks = tasks.filter((t: any) => t.status === 'open' || t.status === 'in_progress');
-  const completedTasks = tasks.filter((t: any) => t.status === 'completed' || t.status === 'cancelled');
+  const completedTasks = tasks.filter(
+    (t: any) => t.status === 'completed' || t.status === 'cancelled'
+  );
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <ClipboardDocumentListIcon className="w-5 h-5 text-surface-400" />
+          <ClipboardDocumentListIcon className="w-5 h-5 text-surface-600" />
           <h3 className="text-sm font-semibold text-surface-100">
             Tasks ({openTasks.length} open)
           </h3>
         </div>
         {!isCreating && (
-          <button
-            onClick={() => setIsCreating(true)}
-            className="btn-outline text-xs px-2 py-1"
-          >
+          <button onClick={() => setIsCreating(true)} className="btn-outline text-xs px-2 py-1">
             <PlusIcon className="w-3 h-3 mr-1" />
             Add Task
           </button>
@@ -219,7 +218,7 @@ export default function TasksPanel({ entityType, entityId }: TasksPanelProps) {
           {/* Completed Tasks (collapsed) */}
           {completedTasks.length > 0 && (
             <details className="mt-4">
-              <summary className="text-sm text-surface-500 cursor-pointer hover:text-surface-300">
+              <summary className="text-sm text-surface-500 cursor-pointer hover:text-surface-700">
                 {completedTasks.length} completed task(s)
               </summary>
               <div className="mt-2 space-y-2 opacity-60">
@@ -274,9 +273,11 @@ function TaskCard({
   });
 
   const statusConfig = STATUS_OPTIONS.find((s) => s.value === task.status) || STATUS_OPTIONS[0];
-  const priorityConfig = PRIORITY_OPTIONS.find((p) => p.value === task.priority) || PRIORITY_OPTIONS[1];
+  const priorityConfig =
+    PRIORITY_OPTIONS.find((p) => p.value === task.priority) || PRIORITY_OPTIONS[1];
 
-  const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'completed';
+  const isOverdue =
+    task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'completed';
 
   if (isEditing) {
     return (
@@ -340,11 +341,13 @@ function TaskCard({
             Cancel
           </button>
           <button
-            onClick={() => onUpdate({
-              ...editData,
-              assigneeId: editData.assigneeId || null,
-              dueDate: editData.dueDate || null,
-            })}
+            onClick={() =>
+              onUpdate({
+                ...editData,
+                assigneeId: editData.assigneeId || null,
+                dueDate: editData.dueDate || null,
+              })
+            }
             disabled={isUpdating}
             className="btn-primary text-xs"
           >
@@ -366,23 +369,21 @@ function TaskCard({
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className={clsx('badge text-xs', statusConfig.color)}>
-              {statusConfig.label}
-            </span>
+            <span className={clsx('badge text-xs', statusConfig.color)}>{statusConfig.label}</span>
             <span className={clsx('text-xs', priorityConfig.color)}>
               <FlagIcon className="w-3 h-3 inline" /> {priorityConfig.label}
             </span>
           </div>
-          <p className={clsx(
-            'text-sm font-medium text-surface-200',
-            task.status === 'completed' && 'line-through'
-          )}>
+          <p
+            className={clsx(
+              'text-sm font-medium text-surface-200',
+              task.status === 'completed' && 'line-through'
+            )}
+          >
             {task.title}
           </p>
           {task.description && (
-            <p className="text-xs text-surface-500 mt-1 line-clamp-2">
-              {task.description}
-            </p>
+            <p className="text-xs text-surface-500 mt-1 line-clamp-2">{task.description}</p>
           )}
           <div className="flex items-center gap-3 mt-2 text-xs text-surface-500">
             {task.assignee && (
@@ -392,10 +393,7 @@ function TaskCard({
               </span>
             )}
             {task.dueDate && (
-              <span className={clsx(
-                'flex items-center gap-1',
-                isOverdue && 'text-red-400'
-              )}>
+              <span className={clsx('flex items-center gap-1', isOverdue && 'text-red-600')}>
                 <CalendarIcon className="w-3 h-3" />
                 {new Date(task.dueDate).toLocaleDateString()}
                 {isOverdue && ' (Overdue)'}
@@ -410,7 +408,7 @@ function TaskCard({
                 e.stopPropagation();
                 onUpdate({ status: 'completed' });
               }}
-              className="p-1 rounded text-surface-500 hover:text-green-400 hover:bg-surface-700 transition-colors"
+              className="p-1 rounded text-surface-500 hover:text-green-600 hover:bg-surface-700 transition-colors"
               title="Mark complete"
             >
               <CheckIcon className="w-4 h-4" />
@@ -421,7 +419,7 @@ function TaskCard({
               e.stopPropagation();
               onDelete();
             }}
-            className="p-1 rounded text-surface-500 hover:text-red-400 hover:bg-surface-700 transition-colors"
+            className="p-1 rounded text-surface-500 hover:text-red-600 hover:bg-surface-700 transition-colors"
             title="Delete"
           >
             <TrashIcon className="w-4 h-4" />
@@ -431,6 +429,3 @@ function TaskCard({
     </div>
   );
 }
-
-
-

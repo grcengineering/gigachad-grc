@@ -76,16 +76,14 @@ export default function LanguageSelector({
                       'w-full flex items-center justify-between px-4 py-2 text-sm',
                       active
                         ? 'bg-surface-100 dark:bg-surface-700 text-surface-900 dark:text-surface-100'
-                        : 'text-surface-700 dark:text-surface-300',
+                        : 'text-surface-700 dark:text-surface-700',
                       currentLanguage === language.code && 'font-medium'
                     )}
                   >
                     <span>
                       {language.name}
                       {showNativeName && language.name !== language.nativeName && (
-                        <span className="text-surface-500 ml-1">
-                          ({language.nativeName})
-                        </span>
+                        <span className="text-surface-500 ml-1">({language.nativeName})</span>
                       )}
                     </span>
                     {currentLanguage === language.code && (
@@ -101,7 +99,3 @@ export default function LanguageSelector({
     </Menu>
   );
 }
-
-
-
-

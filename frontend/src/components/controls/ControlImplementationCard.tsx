@@ -79,7 +79,9 @@ export default function ControlImplementationCard({
     onSave({
       ownerId: form.ownerId || undefined,
       testingFrequency: form.testingFrequency || undefined,
-      effectivenessScore: form.effectivenessScore ? parseInt(form.effectivenessScore, 10) : undefined,
+      effectivenessScore: form.effectivenessScore
+        ? parseInt(form.effectivenessScore, 10)
+        : undefined,
       implementationNotes: form.implementationNotes || undefined,
     });
     setIsEditing(false);
@@ -92,7 +94,12 @@ export default function ControlImplementationCard({
 
   const getUserName = (user?: User) => {
     if (!user) return 'Unassigned';
-    return user.displayName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || 'Unknown';
+    return (
+      user.displayName ||
+      `${user.firstName || ''} ${user.lastName || ''}`.trim() ||
+      user.email ||
+      'Unknown'
+    );
   };
 
   return (
@@ -100,10 +107,7 @@ export default function ControlImplementationCard({
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-medium text-white">Implementation Status</h3>
         {!isEditing && (
-          <button
-            onClick={() => setIsEditing(true)}
-            className="text-surface-400 hover:text-white"
-          >
+          <button onClick={() => setIsEditing(true)} className="text-surface-600 hover:text-white">
             <PencilIcon className="w-4 h-4" />
           </button>
         )}
@@ -111,7 +115,7 @@ export default function ControlImplementationCard({
 
       {/* Status Selector */}
       <div className="mb-6">
-        <label className="block text-sm text-surface-400 mb-2">Status</label>
+        <label className="block text-sm text-surface-600 mb-2">Status</label>
         <div className="flex gap-2 flex-wrap">
           {STATUS_OPTIONS.map((option) => (
             <button
@@ -121,7 +125,7 @@ export default function ControlImplementationCard({
               className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
                 implementation?.status === option.value
                   ? `${option.color} text-white`
-                  : 'bg-surface-700 text-surface-300 hover:bg-surface-600'
+                  : 'bg-surface-700 text-surface-700 hover:bg-surface-600'
               }`}
             >
               {option.label}
@@ -133,7 +137,7 @@ export default function ControlImplementationCard({
       {isEditing ? (
         <div className="space-y-4">
           <div>
-            <label className="block text-sm text-surface-400 mb-1">Owner</label>
+            <label className="block text-sm text-surface-600 mb-1">Owner</label>
             <select
               value={form.ownerId}
               onChange={(e) => setForm({ ...form, ownerId: e.target.value })}
@@ -149,7 +153,7 @@ export default function ControlImplementationCard({
           </div>
 
           <div>
-            <label className="block text-sm text-surface-400 mb-1">Testing Frequency</label>
+            <label className="block text-sm text-surface-600 mb-1">Testing Frequency</label>
             <select
               value={form.testingFrequency}
               onChange={(e) => setForm({ ...form, testingFrequency: e.target.value })}
@@ -165,7 +169,9 @@ export default function ControlImplementationCard({
           </div>
 
           <div>
-            <label className="block text-sm text-surface-400 mb-1">Effectiveness Score (0-100)</label>
+            <label className="block text-sm text-surface-600 mb-1">
+              Effectiveness Score (0-100)
+            </label>
             <input
               type="number"
               min="0"
@@ -177,7 +183,7 @@ export default function ControlImplementationCard({
           </div>
 
           <div>
-            <label className="block text-sm text-surface-400 mb-1">Implementation Notes</label>
+            <label className="block text-sm text-surface-600 mb-1">Implementation Notes</label>
             <textarea
               value={form.implementationNotes}
               onChange={(e) => setForm({ ...form, implementationNotes: e.target.value })}
@@ -199,17 +205,17 @@ export default function ControlImplementationCard({
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-xs text-surface-400">Owner</p>
+              <p className="text-xs text-surface-600">Owner</p>
               <p className="text-surface-100">{getUserName(implementation?.owner)}</p>
             </div>
             <div>
-              <p className="text-xs text-surface-400">Testing Frequency</p>
+              <p className="text-xs text-surface-600">Testing Frequency</p>
               <p className="text-surface-100 capitalize">
                 {implementation?.testingFrequency?.replace('_', ' ') || 'Not set'}
               </p>
             </div>
             <div>
-              <p className="text-xs text-surface-400">Effectiveness</p>
+              <p className="text-xs text-surface-600">Effectiveness</p>
               <p className="text-surface-100">
                 {implementation?.effectivenessScore !== undefined
                   ? `${implementation.effectivenessScore}%`
@@ -217,13 +223,13 @@ export default function ControlImplementationCard({
               </p>
             </div>
             <div>
-              <p className="text-xs text-surface-400">Last Tested</p>
+              <p className="text-xs text-surface-600">Last Tested</p>
               <p className="text-surface-100">{formatDate(implementation?.lastTestedAt)}</p>
             </div>
           </div>
 
           {implementation?.nextTestDue && (
-            <div className="flex items-center gap-2 text-sm text-surface-400">
+            <div className="flex items-center gap-2 text-sm text-surface-600">
               <ClockIcon className="w-4 h-4" />
               <span>Next test due: {formatDate(implementation.nextTestDue)}</span>
             </div>
@@ -231,7 +237,7 @@ export default function ControlImplementationCard({
 
           {implementation?.implementationNotes && (
             <div>
-              <p className="text-xs text-surface-400 mb-1">Notes</p>
+              <p className="text-xs text-surface-600 mb-1">Notes</p>
               <p className="text-surface-200 text-sm">{implementation.implementationNotes}</p>
             </div>
           )}

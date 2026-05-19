@@ -32,21 +32,21 @@ interface WizardState {
   description: string;
   department: string;
   ownerId: string;
-  
+
   // Step 2: Impact Assessment
   financialImpact: string;
   operationalImpact: string;
   reputationalImpact: string;
   legalImpact: string;
-  
+
   // Step 3: Recovery Requirements
   maxDowntimeHours: number | null;
   maxDataLossHours: number | null;
-  
+
   // Step 4: Dependencies
   upstreamProcessIds: string[];
   assetIds: string[];
-  
+
   // Step 5: Additional Info
   peakPeriods: string[];
   keyStakeholders: string;
@@ -58,18 +58,38 @@ interface WizardState {
 
 const IMPACT_OPTIONS = [
   { value: 'none', label: 'None', description: 'No measurable impact', color: 'bg-gray-500' },
-  { value: 'minor', label: 'Minor', description: 'Minimal disruption, easily absorbed', color: 'bg-green-500' },
-  { value: 'moderate', label: 'Moderate', description: 'Noticeable impact, manageable', color: 'bg-yellow-500' },
-  { value: 'major', label: 'Major', description: 'Significant impact, requires attention', color: 'bg-orange-500' },
-  { value: 'severe', label: 'Severe', description: 'Critical impact, immediate action needed', color: 'bg-red-500' },
+  {
+    value: 'minor',
+    label: 'Minor',
+    description: 'Minimal disruption, easily absorbed',
+    color: 'bg-green-500',
+  },
+  {
+    value: 'moderate',
+    label: 'Moderate',
+    description: 'Noticeable impact, manageable',
+    color: 'bg-yellow-500',
+  },
+  {
+    value: 'major',
+    label: 'Major',
+    description: 'Significant impact, requires attention',
+    color: 'bg-orange-500',
+  },
+  {
+    value: 'severe',
+    label: 'Severe',
+    description: 'Critical impact, immediate action needed',
+    color: 'bg-red-500',
+  },
 ];
 
 const FINANCIAL_IMPACT_DESCRIPTIONS: Record<string, string> = {
-  'none': 'No financial impact expected',
-  'minor': 'Less than $10,000 impact',
-  'moderate': '$10,000 - $100,000 impact',
-  'major': '$100,000 - $1,000,000 impact',
-  'severe': 'Over $1,000,000 impact',
+  none: 'No financial impact expected',
+  minor: 'Less than $10,000 impact',
+  moderate: '$10,000 - $100,000 impact',
+  major: '$100,000 - $1,000,000 impact',
+  severe: 'Over $1,000,000 impact',
 };
 
 const RTO_OPTIONS = [
@@ -153,13 +173,17 @@ export function BIAWizard({
         break;
       case 2:
         if (!state.financialImpact) newErrors.financialImpact = 'Financial impact is required';
-        if (!state.operationalImpact) newErrors.operationalImpact = 'Operational impact is required';
-        if (!state.reputationalImpact) newErrors.reputationalImpact = 'Reputational impact is required';
+        if (!state.operationalImpact)
+          newErrors.operationalImpact = 'Operational impact is required';
+        if (!state.reputationalImpact)
+          newErrors.reputationalImpact = 'Reputational impact is required';
         if (!state.legalImpact) newErrors.legalImpact = 'Legal/regulatory impact is required';
         break;
       case 3:
-        if (!state.maxDowntimeHours) newErrors.maxDowntimeHours = 'Recovery time objective is required';
-        if (state.maxDataLossHours === null) newErrors.maxDataLossHours = 'Recovery point objective is required';
+        if (!state.maxDowntimeHours)
+          newErrors.maxDowntimeHours = 'Recovery time objective is required';
+        if (state.maxDataLossHours === null)
+          newErrors.maxDataLossHours = 'Recovery point objective is required';
         break;
     }
 
@@ -206,18 +230,23 @@ export function BIAWizard({
   };
 
   const getCriticalityPreview = (): { tier: string; color: string } => {
-    const impacts = [state.financialImpact, state.operationalImpact, state.reputationalImpact, state.legalImpact];
+    const impacts = [
+      state.financialImpact,
+      state.operationalImpact,
+      state.reputationalImpact,
+      state.legalImpact,
+    ];
     const hasSevere = impacts.includes('severe');
     const hasMajor = impacts.includes('major');
 
     if (hasSevere || (state.maxDowntimeHours && state.maxDowntimeHours <= 4)) {
-      return { tier: 'Tier 1 - Critical', color: 'text-red-400' };
+      return { tier: 'Tier 1 - Critical', color: 'text-red-600' };
     } else if (hasMajor || (state.maxDowntimeHours && state.maxDowntimeHours <= 24)) {
-      return { tier: 'Tier 2 - Essential', color: 'text-orange-400' };
+      return { tier: 'Tier 2 - Essential', color: 'text-orange-600' };
     } else if (state.maxDowntimeHours && state.maxDowntimeHours <= 72) {
-      return { tier: 'Tier 3 - Important', color: 'text-yellow-400' };
+      return { tier: 'Tier 3 - Important', color: 'text-yellow-600' };
     }
-    return { tier: 'Tier 4 - Standard', color: 'text-green-400' };
+    return { tier: 'Tier 4 - Standard', color: 'text-green-600' };
   };
 
   // ============================================
@@ -228,7 +257,7 @@ export function BIAWizard({
     <div className="space-y-6">
       <div>
         <label className="block text-sm font-medium text-slate-300 mb-2">
-          Process Name <span className="text-red-400">*</span>
+          Process Name <span className="text-red-600">*</span>
         </label>
         <input
           type="text"
@@ -240,7 +269,7 @@ export function BIAWizard({
           )}
           placeholder="e.g., Customer Order Processing"
         />
-        {errors.name && <p className="mt-1 text-sm text-red-400">{errors.name}</p>}
+        {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
       </div>
 
       <div>
@@ -256,7 +285,7 @@ export function BIAWizard({
 
       <div>
         <label className="block text-sm font-medium text-slate-300 mb-2">
-          Department <span className="text-red-400">*</span>
+          Department <span className="text-red-600">*</span>
         </label>
         <input
           type="text"
@@ -268,7 +297,7 @@ export function BIAWizard({
           )}
           placeholder="e.g., Sales, IT, Finance"
         />
-        {errors.department && <p className="mt-1 text-sm text-red-400">{errors.department}</p>}
+        {errors.department && <p className="mt-1 text-sm text-red-600">{errors.department}</p>}
       </div>
 
       <div>
@@ -296,7 +325,7 @@ export function BIAWizard({
   ) => (
     <div>
       <label className="block text-sm font-medium text-slate-300 mb-2">
-        {label} <span className="text-red-400">*</span>
+        {label} <span className="text-red-600">*</span>
       </label>
       <div className="grid grid-cols-5 gap-2">
         {IMPACT_OPTIONS.map((option) => (
@@ -318,14 +347,15 @@ export function BIAWizard({
       {state[field] && descriptions && (
         <p className="mt-2 text-sm text-slate-400">{descriptions[state[field] as string]}</p>
       )}
-      {errors[field] && <p className="mt-1 text-sm text-red-400">{errors[field]}</p>}
+      {errors[field] && <p className="mt-1 text-sm text-red-600">{errors[field]}</p>}
     </div>
   );
 
   const renderStep2 = () => (
     <div className="space-y-6">
       <p className="text-slate-400 text-sm">
-        Assess the impact if this process was unavailable. Select the highest expected impact for each category.
+        Assess the impact if this process was unavailable. Select the highest expected impact for
+        each category.
       </p>
 
       {renderImpactSelector('Financial Impact', 'financialImpact', FINANCIAL_IMPACT_DESCRIPTIONS)}
@@ -339,7 +369,7 @@ export function BIAWizard({
     <div className="space-y-6">
       <div>
         <label className="block text-sm font-medium text-slate-300 mb-2">
-          Recovery Time Objective (RTO) <span className="text-red-400">*</span>
+          Recovery Time Objective (RTO) <span className="text-red-600">*</span>
         </label>
         <p className="text-sm text-slate-400 mb-4">
           How long can this process be unavailable before it causes unacceptable impact?
@@ -361,19 +391,19 @@ export function BIAWizard({
                 <p className="text-sm text-slate-400">{option.description}</p>
               </div>
               {state.maxDowntimeHours === option.value && (
-                <CheckCircleIcon className="h-5 w-5 text-cyan-400" />
+                <CheckCircleIcon className="h-5 w-5 text-cyan-600" />
               )}
             </button>
           ))}
         </div>
         {errors.maxDowntimeHours && (
-          <p className="mt-1 text-sm text-red-400">{errors.maxDowntimeHours}</p>
+          <p className="mt-1 text-sm text-red-600">{errors.maxDowntimeHours}</p>
         )}
       </div>
 
       <div>
         <label className="block text-sm font-medium text-slate-300 mb-2">
-          Recovery Point Objective (RPO) <span className="text-red-400">*</span>
+          Recovery Point Objective (RPO) <span className="text-red-600">*</span>
         </label>
         <p className="text-sm text-slate-400 mb-4">
           How much data loss is acceptable? This determines backup frequency.
@@ -395,13 +425,13 @@ export function BIAWizard({
                 <p className="text-sm text-slate-400">{option.description}</p>
               </div>
               {state.maxDataLossHours === option.value && (
-                <CheckCircleIcon className="h-5 w-5 text-cyan-400" />
+                <CheckCircleIcon className="h-5 w-5 text-cyan-600" />
               )}
             </button>
           ))}
         </div>
         {errors.maxDataLossHours && (
-          <p className="mt-1 text-sm text-red-400">{errors.maxDataLossHours}</p>
+          <p className="mt-1 text-sm text-red-600">{errors.maxDataLossHours}</p>
         )}
       </div>
     </div>
@@ -447,9 +477,7 @@ export function BIAWizard({
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-300 mb-2">
-          Critical Assets
-        </label>
+        <label className="block text-sm font-medium text-slate-300 mb-2">Critical Assets</label>
         <p className="text-sm text-slate-400 mb-4">
           Which IT assets/systems are required for this process?
         </p>
@@ -485,9 +513,7 @@ export function BIAWizard({
 
       <div>
         <label className="block text-sm font-medium text-slate-300 mb-2">Peak Periods</label>
-        <p className="text-sm text-slate-400 mb-4">
-          When is this process most critical?
-        </p>
+        <p className="text-sm text-slate-400 mb-4">When is this process most critical?</p>
         <div className="flex flex-wrap gap-2">
           {PEAK_PERIOD_OPTIONS.map((period) => (
             <button
@@ -516,9 +542,7 @@ export function BIAWizard({
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-300 mb-2">
-          Key Stakeholders
-        </label>
+        <label className="block text-sm font-medium text-slate-300 mb-2">Key Stakeholders</label>
         <textarea
           value={state.keyStakeholders}
           onChange={(e) => updateState('keyStakeholders', e.target.value)}
@@ -591,9 +615,7 @@ export function BIAWizard({
               {state.upstreamProcessIds.length > 0 && (
                 <div className="mb-2">
                   <span className="text-slate-400">Processes:</span>
-                  <span className="text-white ml-2">
-                    {state.upstreamProcessIds.length} linked
-                  </span>
+                  <span className="text-white ml-2">{state.upstreamProcessIds.length} linked</span>
                 </div>
               )}
               {state.assetIds.length > 0 && (
@@ -608,7 +630,7 @@ export function BIAWizard({
 
         {errors.submit && (
           <div className="bg-red-500/20 border border-red-500 rounded-lg p-4">
-            <p className="text-red-400">{errors.submit}</p>
+            <p className="text-red-600">{errors.submit}</p>
           </div>
         )}
       </div>
@@ -643,17 +665,14 @@ export function BIAWizard({
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-cyan-500/20 rounded-lg">
-              <ClipboardDocumentListIcon className="h-6 w-6 text-cyan-400" />
+              <ClipboardDocumentListIcon className="h-6 w-6 text-cyan-600" />
             </div>
             <div>
               <h2 className="text-xl font-semibold text-white">Business Impact Analysis Wizard</h2>
               <p className="text-sm text-slate-400">Step {currentStep} of 5</p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
-          >
+          <button onClick={onClose} className="p-2 hover:bg-slate-700 rounded-lg transition-colors">
             <XMarkIcon className="h-5 w-5 text-slate-400" />
           </button>
         </div>
@@ -674,18 +693,15 @@ export function BIAWizard({
                       isCompleted
                         ? 'bg-cyan-500 border-cyan-500'
                         : isCurrent
-                        ? 'border-cyan-500 bg-cyan-500/20'
-                        : 'border-slate-600 bg-slate-700'
+                          ? 'border-cyan-500 bg-cyan-500/20'
+                          : 'border-slate-600 bg-slate-700'
                     )}
                   >
                     {isCompleted ? (
                       <CheckCircleIcon className="h-5 w-5 text-white" />
                     ) : (
                       <StepIcon
-                        className={clsx(
-                          'h-5 w-5',
-                          isCurrent ? 'text-cyan-400' : 'text-slate-400'
-                        )}
+                        className={clsx('h-5 w-5', isCurrent ? 'text-cyan-600' : 'text-slate-400')}
                       />
                     )}
                   </div>
@@ -702,9 +718,7 @@ export function BIAWizard({
             })}
           </div>
           <div className="mt-2 text-center">
-            <span className="text-sm font-medium text-white">
-              {STEPS[currentStep - 1].name}
-            </span>
+            <span className="text-sm font-medium text-white">{STEPS[currentStep - 1].name}</span>
           </div>
         </div>
 

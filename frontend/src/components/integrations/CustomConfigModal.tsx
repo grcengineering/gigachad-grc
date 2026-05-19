@@ -284,7 +284,7 @@ export default function CustomConfigModal({
         <div className="flex items-center justify-between px-6 py-4 border-b border-surface-700">
           <div>
             <h2 className="text-lg font-semibold text-surface-100">Configure Custom Integration</h2>
-            <p className="text-sm text-surface-400">{integrationName}</p>
+            <p className="text-sm text-surface-600">{integrationName}</p>
           </div>
           <div className="flex items-center gap-3">
             {config.lastTestAt && (
@@ -294,15 +294,15 @@ export default function CustomConfigModal({
                   className={clsx(
                     'ml-2 px-1.5 py-0.5 rounded',
                     config.lastTestStatus === 'success'
-                      ? 'bg-green-500/20 text-green-400'
-                      : 'bg-red-500/20 text-red-400'
+                      ? 'bg-green-500/20 text-green-600'
+                      : 'bg-red-500/20 text-red-600'
                   )}
                 >
                   {config.lastTestStatus}
                 </span>
               </div>
             )}
-            <button onClick={onClose} className="p-2 text-surface-400 hover:text-surface-200">
+            <button onClick={onClose} className="p-2 text-surface-600 hover:text-surface-200">
               <XMarkIcon className="w-5 h-5" />
             </button>
           </div>
@@ -316,7 +316,7 @@ export default function CustomConfigModal({
               'flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 transition-colors',
               activeTab === 'visual'
                 ? 'border-brand-500 text-brand-400'
-                : 'border-transparent text-surface-400 hover:text-surface-200'
+                : 'border-transparent text-surface-600 hover:text-surface-200'
             )}
           >
             <Cog6ToothIcon className="w-4 h-4" />
@@ -328,7 +328,7 @@ export default function CustomConfigModal({
               'flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 transition-colors',
               activeTab === 'code'
                 ? 'border-brand-500 text-brand-400'
-                : 'border-transparent text-surface-400 hover:text-surface-200'
+                : 'border-transparent text-surface-600 hover:text-surface-200'
             )}
           >
             <CodeBracketIcon className="w-4 h-4" />
@@ -378,7 +378,7 @@ export default function CustomConfigModal({
         {/* Footer */}
         <div className="flex items-center justify-between px-6 py-4 border-t border-surface-700 bg-surface-800/50">
           <div className="flex items-center gap-2">
-            {hasChanges && <span className="text-xs text-yellow-400">• Unsaved changes</span>}
+            {hasChanges && <span className="text-xs text-yellow-600">• Unsaved changes</span>}
           </div>
           <div className="flex items-center gap-3">
             <button onClick={onClose} className="btn-secondary">

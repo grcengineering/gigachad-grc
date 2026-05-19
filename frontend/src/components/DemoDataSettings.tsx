@@ -110,7 +110,7 @@ export default function DemoDataSettings() {
     <>
       <div className="card p-6 space-y-6">
         <div className="flex items-center gap-3">
-          <BeakerIcon className="h-6 w-6 text-purple-400" />
+          <BeakerIcon className="h-6 w-6 text-purple-600" />
           <div>
             <h2 className="text-lg font-semibold text-foreground">Demo Data</h2>
             <p className="text-sm text-muted-foreground">
@@ -122,11 +122,12 @@ export default function DemoDataSettings() {
         {/* Status Banner */}
         {status?.demoDataLoaded && (
           <div className="flex items-center gap-3 p-4 bg-purple-500/10 border border-purple-500/30 rounded-lg">
-            <BeakerIcon className="h-5 w-5 text-purple-400" />
+            <BeakerIcon className="h-5 w-5 text-purple-600" />
             <div className="flex-1">
-              <p className="text-sm font-medium text-purple-400">Demo Mode Active</p>
-              <p className="text-xs text-purple-400/70">
-                This organization contains demonstration data. Clear it when ready for production use.
+              <p className="text-sm font-medium text-purple-600">Demo Mode Active</p>
+              <p className="text-xs text-purple-600/70">
+                This organization contains demonstration data. Clear it when ready for production
+                use.
               </p>
             </div>
           </div>
@@ -134,10 +135,10 @@ export default function DemoDataSettings() {
 
         {!status?.hasExistingData && !status?.demoDataLoaded && (
           <div className="flex items-center gap-3 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-            <InformationCircleIcon className="h-5 w-5 text-blue-400" />
+            <InformationCircleIcon className="h-5 w-5 text-blue-600" />
             <div className="flex-1">
-              <p className="text-sm font-medium text-blue-400">Ready for Demo Data</p>
-              <p className="text-xs text-blue-400/70">
+              <p className="text-sm font-medium text-blue-600">Ready for Demo Data</p>
+              <p className="text-xs text-blue-600/70">
                 Your organization is empty. Load demo data to see the platform in action.
               </p>
             </div>
@@ -171,35 +172,35 @@ export default function DemoDataSettings() {
             <h3 className="text-sm font-medium text-foreground">Demo Data Includes</h3>
             <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
-                <CheckCircleIcon className="h-4 w-4 text-green-400" />
+                <CheckCircleIcon className="h-4 w-4 text-green-600" />
                 <span>50 security controls</span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircleIcon className="h-4 w-4 text-green-400" />
+                <CheckCircleIcon className="h-4 w-4 text-green-600" />
                 <span>3 compliance frameworks</span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircleIcon className="h-4 w-4 text-green-400" />
+                <CheckCircleIcon className="h-4 w-4 text-green-600" />
                 <span>15 security policies</span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircleIcon className="h-4 w-4 text-green-400" />
+                <CheckCircleIcon className="h-4 w-4 text-green-600" />
                 <span>25 risk items</span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircleIcon className="h-4 w-4 text-green-400" />
+                <CheckCircleIcon className="h-4 w-4 text-green-600" />
                 <span>20 vendor profiles</span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircleIcon className="h-4 w-4 text-green-400" />
+                <CheckCircleIcon className="h-4 w-4 text-green-600" />
                 <span>50 employee records</span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircleIcon className="h-4 w-4 text-green-400" />
+                <CheckCircleIcon className="h-4 w-4 text-green-600" />
                 <span>30+ assets</span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircleIcon className="h-4 w-4 text-green-400" />
+                <CheckCircleIcon className="h-4 w-4 text-green-600" />
                 <span>5 audit records</span>
               </div>
             </div>
@@ -226,7 +227,7 @@ export default function DemoDataSettings() {
           {status?.hasExistingData && (
             <button
               onClick={handleOpenResetModal}
-              className="btn btn-secondary flex items-center gap-2 text-red-400 hover:text-red-300 hover:border-red-400/50"
+              className="btn btn-secondary flex items-center gap-2 text-red-600 hover:text-red-700 hover:border-red-400/50"
             >
               <TrashIcon className="h-4 w-4" />
               Reset All Data
@@ -242,7 +243,7 @@ export default function DemoDataSettings() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-red-500/20 rounded-lg">
-                  <ExclamationTriangleIcon className="h-6 w-6 text-red-400" />
+                  <ExclamationTriangleIcon className="h-6 w-6 text-red-600" />
                 </div>
                 <h3 className="text-lg font-semibold text-foreground">Reset All Data</h3>
               </div>
@@ -258,9 +259,9 @@ export default function DemoDataSettings() {
               <p className="text-sm text-muted-foreground">
                 This will permanently delete all data in your organization:
               </p>
-              
+
               <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
-                <ul className="text-sm text-red-400 space-y-1">
+                <ul className="text-sm text-red-600 space-y-1">
                   <li>• {status?.dataSummary.controls || 0} controls</li>
                   <li>• {status?.dataSummary.evidence || 0} evidence records</li>
                   <li>• {status?.dataSummary.policies || 0} policies</li>
@@ -273,13 +274,14 @@ export default function DemoDataSettings() {
               </div>
 
               <p className="text-sm text-muted-foreground">
-                <strong className="text-foreground">This cannot be undone.</strong> Users and organization settings will be preserved.
+                <strong className="text-foreground">This cannot be undone.</strong> Users and
+                organization settings will be preserved.
               </p>
             </div>
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">
-                Type <span className="font-mono text-red-400">DELETE ALL DATA</span> to confirm:
+                Type <span className="font-mono text-red-600">DELETE ALL DATA</span> to confirm:
               </label>
               <input
                 type="text"
@@ -291,10 +293,7 @@ export default function DemoDataSettings() {
             </div>
 
             <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">
-              <button
-                onClick={() => setShowResetModal(false)}
-                className="btn btn-secondary"
-              >
+              <button onClick={() => setShowResetModal(false)} className="btn btn-secondary">
                 Cancel
               </button>
               <button
@@ -309,7 +308,11 @@ export default function DemoDataSettings() {
                 ) : (
                   <TrashIcon className="h-4 w-4" />
                 )}
-                {resetMutation.isPending ? 'Deleting...' : countdown > 0 ? `Wait ${countdown}s` : 'Delete All Data'}
+                {resetMutation.isPending
+                  ? 'Deleting...'
+                  : countdown > 0
+                    ? `Wait ${countdown}s`
+                    : 'Delete All Data'}
               </button>
             </div>
           </div>
@@ -327,7 +330,3 @@ function DataCard({ label, count }: { label: string; count: number }) {
     </div>
   );
 }
-
-
-
-

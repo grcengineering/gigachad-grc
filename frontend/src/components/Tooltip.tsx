@@ -28,9 +28,11 @@ export function Tooltip({
 
   const arrowClasses = {
     top: 'top-full left-1/2 -translate-x-1/2 border-t-surface-800 border-x-transparent border-b-transparent',
-    bottom: 'bottom-full left-1/2 -translate-x-1/2 border-b-surface-800 border-x-transparent border-t-transparent',
+    bottom:
+      'bottom-full left-1/2 -translate-x-1/2 border-b-surface-800 border-x-transparent border-t-transparent',
     left: 'left-full top-1/2 -translate-y-1/2 border-l-surface-800 border-y-transparent border-r-transparent',
-    right: 'right-full top-1/2 -translate-y-1/2 border-r-surface-800 border-y-transparent border-l-transparent',
+    right:
+      'right-full top-1/2 -translate-y-1/2 border-r-surface-800 border-y-transparent border-l-transparent',
   };
 
   const widthClasses = {
@@ -46,11 +48,10 @@ export function Tooltip({
         onMouseLeave={() => setIsVisible(false)}
         className="cursor-help"
       >
-        {children || (
-          showIcon && (
-            <InformationCircleIcon className="w-4 h-4 text-surface-500 hover:text-surface-400 transition-colors" />
-          )
-        )}
+        {children ||
+          (showIcon && (
+            <InformationCircleIcon className="w-4 h-4 text-surface-500 hover:text-surface-600 transition-colors" />
+          ))}
       </div>
       {isVisible && (
         <div
@@ -63,12 +64,7 @@ export function Tooltip({
           )}
         >
           {content}
-          <div
-            className={clsx(
-              'absolute w-0 h-0 border-[6px]',
-              arrowClasses[position]
-            )}
-          />
+          <div className={clsx('absolute w-0 h-0 border-[6px]', arrowClasses[position])} />
         </div>
       )}
     </div>

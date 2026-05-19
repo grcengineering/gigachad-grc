@@ -167,13 +167,14 @@ export default function DashboardEditor({ dashboardId, onBack }: DashboardEditor
 
   const handleAddWidget = async (widgetType: WidgetType) => {
     const widgetDef = WIDGET_TYPES[widgetType];
-    
+
     // Calculate y position based on existing widgets (place at bottom)
-    const maxY = dashboard?.widgets?.reduce((max: number, w: any) => {
-      const widgetBottom = (w.position?.y || 0) + (w.position?.h || 2);
-      return Math.max(max, widgetBottom);
-    }, 0) || 0;
-    
+    const maxY =
+      dashboard?.widgets?.reduce((max: number, w: any) => {
+        const widgetBottom = (w.position?.y || 0) + (w.position?.h || 2);
+        return Math.max(max, widgetBottom);
+      }, 0) || 0;
+
     const newWidget: any = {
       widgetType,
       title: widgetDef.name,
@@ -211,7 +212,7 @@ export default function DashboardEditor({ dashboardId, onBack }: DashboardEditor
   if (!dashboard) {
     return (
       <div className="text-center py-12">
-        <p className="text-surface-400">Dashboard not found</p>
+        <p className="text-surface-600">Dashboard not found</p>
         <button onClick={onBack} className="btn btn-primary mt-4">
           Go Back
         </button>
@@ -226,7 +227,7 @@ export default function DashboardEditor({ dashboardId, onBack }: DashboardEditor
         <div className="flex items-center gap-4">
           <button
             onClick={onBack}
-            className="text-surface-400 hover:text-surface-200 transition-colors"
+            className="text-surface-600 hover:text-surface-200 transition-colors"
           >
             ← Back to dashboards
           </button>
@@ -234,14 +235,12 @@ export default function DashboardEditor({ dashboardId, onBack }: DashboardEditor
             <div className="flex items-center gap-2">
               <h1 className="text-2xl font-bold text-surface-100">{dashboard.name}</h1>
               {dashboard.isDefault && (
-                <StarIconSolid className="w-5 h-5 text-yellow-400" title="Default dashboard" />
+                <StarIconSolid className="w-5 h-5 text-yellow-600" title="Default dashboard" />
               )}
-              {dashboard.isTemplate && (
-                <span className="badge badge-sm badge-info">Template</span>
-              )}
+              {dashboard.isTemplate && <span className="badge badge-sm badge-info">Template</span>}
             </div>
             {dashboard.description && (
-              <p className="text-surface-400 mt-1">{dashboard.description}</p>
+              <p className="text-surface-600 mt-1">{dashboard.description}</p>
             )}
           </div>
         </div>
@@ -249,10 +248,7 @@ export default function DashboardEditor({ dashboardId, onBack }: DashboardEditor
         <div className="flex items-center gap-2">
           {isEditing ? (
             <>
-              <button
-                onClick={() => setShowPalette(true)}
-                className="btn btn-ghost btn-sm"
-              >
+              <button onClick={() => setShowPalette(true)} className="btn btn-ghost btn-sm">
                 <PlusIcon className="w-4 h-4 mr-1" /> Add Widget
               </button>
               <button onClick={handleCancel} className="btn btn-ghost btn-sm">
@@ -269,10 +265,7 @@ export default function DashboardEditor({ dashboardId, onBack }: DashboardEditor
             </>
           ) : (
             <>
-              <button
-                onClick={() => setIsEditing(true)}
-                className="btn btn-ghost btn-sm"
-              >
+              <button onClick={() => setIsEditing(true)} className="btn btn-ghost btn-sm">
                 <PencilIcon className="w-4 h-4 mr-1" /> Edit
               </button>
               {!dashboard.isDefault && (
@@ -297,7 +290,7 @@ export default function DashboardEditor({ dashboardId, onBack }: DashboardEditor
                     deleteMutation.mutate();
                   }
                 }}
-                className="btn btn-ghost btn-sm text-red-400 hover:text-red-300"
+                className="btn btn-ghost btn-sm text-red-600 hover:text-red-700"
                 disabled={deleteMutation.isPending}
               >
                 <TrashIcon className="w-4 h-4 mr-1" /> Delete
@@ -314,8 +307,9 @@ export default function DashboardEditor({ dashboardId, onBack }: DashboardEditor
             <Cog6ToothIcon className="w-5 h-5" />
             <span className="font-medium">Edit Mode</span>
           </div>
-          <p className="text-surface-400 text-sm mt-1">
-            Drag widgets to reposition, resize by dragging edges, or click the edit button to configure.
+          <p className="text-surface-600 text-sm mt-1">
+            Drag widgets to reposition, resize by dragging edges, or click the edit button to
+            configure.
           </p>
         </div>
       )}
@@ -327,9 +321,7 @@ export default function DashboardEditor({ dashboardId, onBack }: DashboardEditor
             <Cog6ToothIcon className="w-12 h-12 mx-auto" />
           </div>
           <h3 className="text-lg font-medium text-surface-200 mb-2">No widgets yet</h3>
-          <p className="text-surface-400 mb-4">
-            Add widgets to customize your dashboard
-          </p>
+          <p className="text-surface-600 mb-4">Add widgets to customize your dashboard</p>
           <button onClick={() => setShowPalette(true)} className="btn btn-primary">
             <PlusIcon className="w-4 h-4 mr-1" /> Add Widget
           </button>
@@ -348,10 +340,7 @@ export default function DashboardEditor({ dashboardId, onBack }: DashboardEditor
 
       {/* Widget Palette Modal */}
       {showPalette && (
-        <WidgetPalette
-          onSelect={handleAddWidget}
-          onClose={() => setShowPalette(false)}
-        />
+        <WidgetPalette onSelect={handleAddWidget} onClose={() => setShowPalette(false)} />
       )}
 
       {/* Widget Config Modal */}
@@ -368,4 +357,3 @@ export default function DashboardEditor({ dashboardId, onBack }: DashboardEditor
     </div>
   );
 }
-

@@ -31,8 +31,7 @@ export default function CustomDashboards() {
 
   // Create dashboard mutation
   const createMutation = useMutation({
-    mutationFn: (data: { name: string; description?: string }) =>
-      customDashboardsApi.create(data),
+    mutationFn: (data: { name: string; description?: string }) => customDashboardsApi.create(data),
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['dashboards'] });
       toast.success('Dashboard created');
@@ -93,15 +92,10 @@ export default function CustomDashboards() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-surface-100">Custom Dashboards</h1>
-          <p className="text-surface-400 mt-1">
-            Create and customize your own dashboard views
-          </p>
+          <p className="text-surface-600 mt-1">Create and customize your own dashboard views</p>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowTemplateGallery(true)}
-            className="btn btn-ghost"
-          >
+          <button onClick={() => setShowTemplateGallery(true)} className="btn btn-ghost">
             <Squares2X2Icon className="w-4 h-4 mr-1" /> Browse Templates
           </button>
           <button onClick={() => setShowCreateModal(true)} className="btn btn-primary">
@@ -120,17 +114,14 @@ export default function CustomDashboards() {
         <div className="card p-12 text-center">
           <Squares2X2Icon className="w-12 h-12 mx-auto text-surface-500 mb-4" />
           <h3 className="text-lg font-medium text-surface-200 mb-2">No dashboards yet</h3>
-          <p className="text-surface-400 mb-6">
+          <p className="text-surface-600 mb-6">
             Create a custom dashboard or start from a template
           </p>
           <div className="flex items-center justify-center gap-4">
             <button onClick={() => setShowCreateModal(true)} className="btn btn-primary">
               <PlusIcon className="w-4 h-4 mr-1" /> Create Dashboard
             </button>
-            <button
-              onClick={() => setShowTemplateGallery(true)}
-              className="btn btn-ghost"
-            >
+            <button onClick={() => setShowTemplateGallery(true)} className="btn btn-ghost">
               <Squares2X2Icon className="w-4 h-4 mr-1" /> Browse Templates
             </button>
           </div>
@@ -151,17 +142,14 @@ export default function CustomDashboards() {
                 <div className="flex items-center gap-2">
                   <h3 className="font-medium text-surface-200">{dashboard.name}</h3>
                   {dashboard.isDefault && (
-                    <StarIconSolid className="w-4 h-4 text-yellow-400" title="Default" />
+                    <StarIconSolid className="w-4 h-4 text-yellow-600" title="Default" />
                   )}
                 </div>
-                <div
-                  className="flex items-center gap-1"
-                  onClick={(e) => e.stopPropagation()}
-                >
+                <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                   {!dashboard.isDefault && (
                     <button
                       onClick={() => setDefaultMutation.mutate(dashboard.id)}
-                      className="p-1 hover:bg-surface-700 rounded text-surface-400 hover:text-yellow-400"
+                      className="p-1 hover:bg-surface-700 rounded text-surface-600 hover:text-yellow-600"
                       title="Set as default"
                     >
                       <StarIcon className="w-4 h-4" />
@@ -173,7 +161,7 @@ export default function CustomDashboards() {
                         deleteMutation.mutate(dashboard.id);
                       }
                     }}
-                    className="p-1 hover:bg-red-500/20 rounded text-surface-400 hover:text-red-400"
+                    className="p-1 hover:bg-red-500/20 rounded text-surface-600 hover:text-red-600"
                     title="Delete"
                   >
                     <TrashIcon className="w-4 h-4" />
@@ -182,16 +170,14 @@ export default function CustomDashboards() {
               </div>
 
               {dashboard.description && (
-                <p className="text-sm text-surface-400 mb-3 line-clamp-2">
+                <p className="text-sm text-surface-600 mb-3 line-clamp-2">
                   {dashboard.description}
                 </p>
               )}
 
               <div className="flex items-center justify-between text-sm text-surface-500">
                 <span>{dashboard.widgets?.length || 0} widgets</span>
-                <span>
-                  Updated {new Date(dashboard.updatedAt).toLocaleDateString()}
-                </span>
+                <span>Updated {new Date(dashboard.updatedAt).toLocaleDateString()}</span>
               </div>
 
               {/* Mini preview */}
@@ -216,9 +202,7 @@ export default function CustomDashboards() {
       {/* Templates section */}
       {templates.length > 0 && (
         <div className="mt-8">
-          <h2 className="text-lg font-semibold text-surface-200 mb-4">
-            Organization Templates
-          </h2>
+          <h2 className="text-lg font-semibold text-surface-200 mb-4">Organization Templates</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {templates.slice(0, 3).map((template: Dashboard) => (
               <div
@@ -230,7 +214,7 @@ export default function CustomDashboards() {
                   <span className="badge badge-sm badge-info">Template</span>
                   <h3 className="font-medium text-surface-200">{template.name}</h3>
                 </div>
-                <p className="text-sm text-surface-400 mb-2">
+                <p className="text-sm text-surface-600 mb-2">
                   {template.widgets?.length || 0} widgets
                 </p>
                 <button
@@ -255,13 +239,11 @@ export default function CustomDashboards() {
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-surface-900 rounded-lg shadow-xl w-full max-w-md p-6">
-            <h2 className="text-lg font-semibold text-surface-100 mb-4">
-              Create New Dashboard
-            </h2>
+            <h2 className="text-lg font-semibold text-surface-100 mb-4">Create New Dashboard</h2>
             <form onSubmit={handleCreate}>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-surface-300 mb-2">
+                  <label className="block text-sm font-medium text-surface-700 mb-2">
                     Dashboard Name
                   </label>
                   <input
@@ -274,7 +256,7 @@ export default function CustomDashboards() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-surface-300 mb-2">
+                  <label className="block text-sm font-medium text-surface-700 mb-2">
                     Description (optional)
                   </label>
                   <textarea
@@ -319,7 +301,3 @@ export default function CustomDashboards() {
     </div>
   );
 }
-
-
-
-
