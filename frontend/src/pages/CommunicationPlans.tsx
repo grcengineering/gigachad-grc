@@ -19,6 +19,8 @@ import { Input } from '@/components/ui/Input';
 
 import { SelectNative } from '@/components/ui/SelectNative';
 
+import { Button } from '@/components/ui/Button';
+
 interface CommunicationPlan {
   id: string;
   name: string;
@@ -108,9 +110,9 @@ export default function CommunicationPlans() {
           <p className="text-surface-600 mb-4">
             {(error as Error).message || 'An unexpected error occurred'}
           </p>
-          <button onClick={() => refetch()} className="btn btn-primary">
+          <Button onClick={() => refetch()} variant="primary">
             Try Again
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -170,9 +172,9 @@ export default function CommunicationPlans() {
                 ))}
               </SelectNative>
             </div>
-            <button onClick={() => refetch()} className="btn btn-secondary">
+            <Button onClick={() => refetch()} variant="secondary">
               <ArrowPathIcon className="w-5 h-5" />
-            </button>
+            </Button>
           </div>
         </div>
       )}

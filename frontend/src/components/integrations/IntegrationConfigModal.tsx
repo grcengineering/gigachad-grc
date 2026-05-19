@@ -9,6 +9,8 @@ import AdvancedBuilderTab from './AdvancedBuilderTab';
 import RawApiTab from './RawApiTab';
 import type { IntegrationType } from '@/lib/integrationTypes';
 
+import { Button } from '@/components/ui/Button';
+
 interface IntegrationConfigModalProps {
   integrationType: string;
   typeMeta: IntegrationType;
@@ -215,20 +217,16 @@ export default function IntegrationConfigModal({
             {activeTab === 'raw' && `${rawApiConfig.rawRequests.length} API requests defined`}
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={onClose} className="btn-secondary">
+            <Button onClick={onClose} variant="secondary">
               Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={createMutation.isPending}
-              className="btn-primary"
-            >
+            </Button>
+            <Button onClick={handleSave} disabled={createMutation.isPending} variant="primary">
               {createMutation.isPending
                 ? 'Saving...'
                 : existingIntegration
                   ? 'Update Integration'
                   : 'Create Integration'}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

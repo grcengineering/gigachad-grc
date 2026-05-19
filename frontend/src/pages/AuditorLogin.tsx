@@ -8,6 +8,7 @@ import {
   ExclamationCircleIcon,
   ClipboardDocumentIcon,
 } from '@heroicons/react/24/outline';
+import { Input } from '@/components/ui/Input';
 
 export default function AuditorLogin() {
   const navigate = useNavigate();
@@ -112,7 +113,7 @@ export default function AuditorLogin() {
                 Access Code
               </label>
               <div className="relative">
-                <input
+                <Input
                   id="accessCode"
                   type={showCode ? 'text' : 'password'}
                   value={accessCode}

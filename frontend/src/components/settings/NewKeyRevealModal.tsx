@@ -2,6 +2,8 @@ import toast from 'react-hot-toast';
 import { ClipboardIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import { type ApiKeyWithSecret } from '@/lib/api';
 
+import { Button } from '@/components/ui/Button';
+
 interface NewKeyRevealModalProps {
   keyData: ApiKeyWithSecret;
   onClose: () => void;
@@ -38,21 +40,22 @@ export default function NewKeyRevealModal({ keyData, onClose }: NewKeyRevealModa
               <code className="flex-1 bg-surface-800 px-3 py-2 rounded text-green-600 font-mono text-sm overflow-x-auto">
                 {keyData.key}
               </code>
-              <button
+              <Button
                 onClick={() => copyToClipboard(keyData.key)}
-                className="btn-secondary p-2"
+                className="p-2"
                 title="Copy to clipboard"
+                variant="secondary"
               >
                 <ClipboardIcon className="w-5 h-5" />
-              </button>
+              </Button>
             </div>
           </div>
         </div>
 
         <div className="flex justify-end mt-6">
-          <button onClick={onClose} className="btn-primary">
+          <Button onClick={onClose} variant="primary">
             I've Saved This Key
-          </button>
+          </Button>
         </div>
       </div>
     </div>

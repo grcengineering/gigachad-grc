@@ -14,6 +14,8 @@ import clsx from 'clsx';
 
 import { Input } from '@/components/ui/Input';
 
+import { Button } from '@/components/ui/Button';
+
 interface CommentsPanelProps {
   entityType: string;
   entityId: string;
@@ -100,13 +102,14 @@ export default function CommentsPanel({ entityType, entityId }: CommentsPanelPro
           placeholder="Add a comment..."
           className="input flex-1"
         />
-        <button
+        <Button
           type="submit"
           disabled={!newComment.trim() || createMutation.isPending}
-          className="btn-primary px-3"
+          className="px-3"
+          variant="primary"
         >
           <PaperAirplaneIcon className="w-4 h-4" />
-        </button>
+        </Button>
       </form>
       {/* Comments List */}
       {isLoading ? (
@@ -198,13 +201,14 @@ export default function CommentsPanel({ entityType, entityId }: CommentsPanelPro
                     className="input flex-1 text-sm"
                     autoFocus
                   />
-                  <button
+                  <Button
                     onClick={() => handleReply(comment.id)}
                     disabled={!replyContent.trim()}
-                    className="btn-primary px-2 py-1 text-sm"
+                    className="px-2 py-1 text-sm"
+                    variant="primary"
                   >
                     Reply
-                  </button>
+                  </Button>
                   <button
                     onClick={() => {
                       setReplyingTo(null);

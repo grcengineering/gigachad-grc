@@ -579,10 +579,14 @@ export default function ControlDetail() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-surface-100">Linked Policies</h2>
               {hasPermission('policies:write') && (
-                <button onClick={() => setIsLinkPolicyOpen(true)} className="btn-outline text-sm">
+                <Button
+                  onClick={() => setIsLinkPolicyOpen(true)}
+                  className="text-sm"
+                  variant="outline"
+                >
                   <LinkIcon className="w-4 h-4 mr-2" />
                   Link Policy
-                </button>
+                </Button>
               )}
             </div>
             <p className="text-xs text-surface-500 mb-3">

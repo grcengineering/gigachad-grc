@@ -7,6 +7,9 @@ import {
 } from 'react';
 import { clsx } from 'clsx';
 import { FieldError, UseFormRegisterReturn } from 'react-hook-form';
+import { Input as DSInput } from '@/components/ui/Input';
+import { Textarea as DSTextarea } from '@/components/ui/Textarea';
+import { SelectNative } from '@/components/ui/SelectNative';
 
 // ===========================================
 // Form Field Wrapper
@@ -51,25 +54,9 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ className, error, registration, ...props }, ref) => {
-    return (
-      <input
-        ref={ref}
-        className={clsx(
-          'block w-full px-4 py-2 rounded-lg sm:text-sm',
-          'bg-surface-700 border text-white placeholder-surface-400',
-          'focus:outline-none focus:ring-2 focus:ring-offset-0',
-          'disabled:bg-surface-800 disabled:text-surface-500 disabled:cursor-not-allowed',
-          error
-            ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
-            : 'border-surface-600 focus:border-brand-500 focus:ring-brand-500/20',
-          className
-        )}
-        {...registration}
-        {...props}
-      />
-    );
-  }
+  ({ className, error, registration, ...props }, ref) => (
+    <DSInput ref={ref} invalid={error} className={className} {...registration} {...props} />
+  )
 );
 
 Input.displayName = 'Input';
@@ -84,26 +71,16 @@ interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
 }
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ className, error, registration, rows = 4, ...props }, ref) => {
-    return (
-      <Textarea
-        ref={ref}
-        rows={rows}
-        className={clsx(
-          'block w-full px-4 py-2 rounded-lg sm:text-sm',
-          'bg-surface-700 border text-white placeholder-surface-400',
-          'focus:outline-none focus:ring-2 focus:ring-offset-0',
-          'disabled:bg-surface-800 disabled:text-surface-500 disabled:cursor-not-allowed',
-          error
-            ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
-            : 'border-surface-600 focus:border-brand-500 focus:ring-brand-500/20',
-          className
-        )}
-        {...registration}
-        {...props}
-      />
-    );
-  }
+  ({ className, error, registration, rows = 4, ...props }, ref) => (
+    <DSTextarea
+      ref={ref}
+      rows={rows}
+      invalid={error}
+      className={className}
+      {...registration}
+      {...props}
+    />
+  )
 );
 
 Textarea.displayName = 'Textarea';
@@ -120,38 +97,22 @@ interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
 }
 
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(
-  ({ className, error, registration, options, placeholder, children, ...props }, ref) => {
-    return (
-      <select
-        ref={ref}
-        className={clsx(
-          'block w-full px-4 py-2 rounded-lg sm:text-sm',
-          'bg-surface-700 border text-white',
-          'focus:outline-none focus:ring-2 focus:ring-offset-0',
-          'disabled:bg-surface-800 disabled:text-surface-500 disabled:cursor-not-allowed',
-          error
-            ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
-            : 'border-surface-600 focus:border-brand-500 focus:ring-brand-500/20',
-          className
-        )}
-        {...registration}
-        {...props}
-      >
-        {placeholder && (
-          <option value="" disabled>
-            {placeholder}
-          </option>
-        )}
-        {options
-          ? options.map((option) => (
-              <option key={option.value} value={option.value} disabled={option.disabled}>
-                {option.label}
-              </option>
-            ))
-          : children}
-      </select>
-    );
-  }
+  ({ className, error, registration, options, placeholder, children, ...props }, ref) => (
+    <SelectNative ref={ref} invalid={error} className={className} {...registration} {...props}>
+      {placeholder && (
+        <option value="" disabled>
+          {placeholder}
+        </option>
+      )}
+      {options
+        ? options.map((option) => (
+            <option key={option.value} value={option.value} disabled={option.disabled}>
+              {option.label}
+            </option>
+          ))
+        : children}
+    </SelectNative>
+  )
 );
 
 Select.displayName = 'Select';
@@ -396,19 +357,7 @@ export function TagInput({
           </span>
         ))}
       </div>
-      <input
-        type="text"
-        placeholder={placeholder}
-        onKeyDown={handleKeyDown}
-        className={clsx(
-          'block w-full px-4 py-2 rounded-lg sm:text-sm',
-          'bg-surface-700 border text-white placeholder-surface-400',
-          'focus:outline-none focus:ring-2 focus:ring-offset-0',
-          error
-            ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
-            : 'border-surface-600 focus:border-brand-500 focus:ring-brand-500/20'
-        )}
-      />
+      <DSInput type="text" placeholder={placeholder} onKeyDown={handleKeyDown} invalid={error} />
     </div>
   );
 }

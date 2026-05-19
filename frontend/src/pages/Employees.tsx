@@ -22,6 +22,8 @@ import { Input } from '@/components/ui/Input';
 
 import { SelectNative } from '@/components/ui/SelectNative';
 
+import { Button } from '@/components/ui/Button';
+
 interface Employee {
   id: string;
   email: string;
@@ -436,23 +438,25 @@ export default function Employees() {
               Showing {(page - 1) * 25 + 1} to {Math.min(page * 25, total)} of {total}
             </span>
             <div className="flex items-center gap-2">
-              <button
+              <Button
                 onClick={() => setPage(page - 1)}
                 disabled={page === 1}
-                className="btn btn-secondary disabled:opacity-50"
+                className="disabled:opacity-50"
+                variant="secondary"
               >
                 <ChevronLeftIcon className="h-4 w-4" />
-              </button>
+              </Button>
               <span className="text-sm">
                 Page {page} of {totalPages}
               </span>
-              <button
+              <Button
                 onClick={() => setPage(page + 1)}
                 disabled={page === totalPages}
-                className="btn btn-secondary disabled:opacity-50"
+                className="disabled:opacity-50"
+                variant="secondary"
               >
                 <ChevronRightIcon className="h-4 w-4" />
-              </button>
+              </Button>
             </div>
           </div>
         )}

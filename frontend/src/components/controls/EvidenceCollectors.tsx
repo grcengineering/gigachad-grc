@@ -20,6 +20,8 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { collectorsApi } from '@/lib/api';
 import CollectorConfigModal from './CollectorConfigModal';
 
+import { Button } from '@/components/ui/Button';
+
 interface Props {
   controlId: string;
   implementationId: string;
@@ -107,21 +109,20 @@ export default function EvidenceCollectors({ controlId, implementationId }: Prop
             Configure API endpoints to automatically collect evidence for this control
           </p>
         </div>
-        <button onClick={handleCreateNew} className="btn-primary text-sm">
+        <Button onClick={handleCreateNew} className="text-sm" variant="primary">
           <PlusIcon className="w-4 h-4 mr-1" />
           Add Collector
-        </button>
+        </Button>
       </div>
-
       {/* Collectors List */}
       {collectors?.length === 0 ? (
         <div className="text-center py-8 border border-dashed border-surface-700 rounded-lg">
           <Cog6ToothIcon className="w-10 h-10 mx-auto text-surface-600 mb-3" />
           <p className="text-surface-600 mb-3">No evidence collectors configured</p>
-          <button onClick={handleCreateNew} className="btn-secondary text-sm">
+          <Button onClick={handleCreateNew} className="text-sm" variant="secondary">
             <PlusIcon className="w-4 h-4 mr-1" />
             Create your first collector
-          </button>
+          </Button>
         </div>
       ) : (
         <div className="space-y-3">
@@ -143,7 +144,6 @@ export default function EvidenceCollectors({ controlId, implementationId }: Prop
           ))}
         </div>
       )}
-
       {/* Config Modal */}
       {showConfigModal && (
         <CollectorConfigModal

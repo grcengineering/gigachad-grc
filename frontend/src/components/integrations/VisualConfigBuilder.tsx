@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/Input';
 
 import { SelectNative } from '@/components/ui/SelectNative';
 
+import { Button } from '@/components/ui/Button';
+
 interface EndpointConfig {
   name: string;
   description: string;
@@ -257,10 +259,14 @@ export default function VisualConfigBuilder({ config, onChange, onTest, isTestLo
       <div>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-medium text-surface-200">Endpoints</h3>
-          <button onClick={addEndpoint} className="btn-secondary text-sm flex items-center gap-1">
+          <Button
+            onClick={addEndpoint}
+            className="text-sm flex items-center gap-1"
+            variant="secondary"
+          >
             <PlusIcon className="w-4 h-4" />
             Add Endpoint
-          </button>
+          </Button>
         </div>
 
         {config.endpoints.length === 0 ? (

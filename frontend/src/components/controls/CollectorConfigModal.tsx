@@ -16,6 +16,8 @@ import { Input } from '@/components/ui/Input';
 
 import { SelectNative } from '@/components/ui/SelectNative';
 
+import { Button } from '@/components/ui/Button';
+
 interface Props {
   controlId: string;
   implementationId: string;
@@ -692,10 +694,11 @@ export default function CollectorConfigModal({
         <div className="flex items-center justify-between px-6 py-4 border-t border-surface-700 bg-surface-800/50">
           <div>
             {isEditing && (
-              <button
+              <Button
                 onClick={() => testMutation.mutate()}
                 disabled={testMutation.isPending}
-                className="btn-secondary text-sm"
+                className="text-sm"
+                variant="secondary"
               >
                 {testMutation.isPending ? (
                   <ArrowPathIcon className="w-4 h-4 mr-1 animate-spin" />
@@ -703,24 +706,24 @@ export default function CollectorConfigModal({
                   <ArrowPathIcon className="w-4 h-4 mr-1" />
                 )}
                 Test Connection
-              </button>
+              </Button>
             )}
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={onClose} className="btn-secondary">
+            <Button onClick={onClose} variant="secondary">
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={handleSave}
               disabled={saveMutation.isPending || !name.trim()}
-              className="btn-primary"
+              variant="primary"
             >
               {saveMutation.isPending
                 ? 'Saving...'
                 : isEditing
                   ? 'Save Changes'
                   : 'Create Collector'}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

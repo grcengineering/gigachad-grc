@@ -16,6 +16,8 @@ import { vendorsApi, SOC2AnalysisResult, SOC2Exception, CUEC, ControlGap } from 
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
 
+import { Button } from '@/components/ui/Button';
+
 interface SOC2AnalysisPanelProps {
   vendorId: string;
   documentId: string;
@@ -88,7 +90,6 @@ export function SOC2AnalysisPanel({
             </p>
           </div>
         </div>
-
         <div className="bg-surface-900/50 rounded-lg p-4 mb-4">
           <p className="text-sm text-surface-700 mb-3">AI analysis will extract:</p>
           <ul className="text-sm text-surface-600 space-y-2">
@@ -110,11 +111,11 @@ export function SOC2AnalysisPanel({
             </li>
           </ul>
         </div>
-
-        <button
+        <Button
           onClick={() => analyzeMutation.mutate()}
           disabled={analyzeMutation.isPending}
-          className="btn btn-primary w-full flex items-center justify-center gap-2"
+          className="w-full flex items-center justify-center gap-2"
+          variant="primary"
         >
           {analyzeMutation.isPending ? (
             <>
@@ -127,7 +128,7 @@ export function SOC2AnalysisPanel({
               Analyze with AI
             </>
           )}
-        </button>
+        </Button>
       </div>
     );
   }
@@ -150,16 +151,17 @@ export function SOC2AnalysisPanel({
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xs text-surface-600">Confidence: {analysis.confidence}%</span>
-            <button
+            <Button
               onClick={() => analyzeMutation.mutate()}
               disabled={analyzeMutation.isPending}
-              className="btn btn-ghost btn-sm"
+              className="btn-sm"
               title="Re-analyze"
+              variant="ghost"
             >
               <ArrowPathIcon
                 className={clsx('w-4 h-4', analyzeMutation.isPending && 'animate-spin')}
               />
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -235,7 +237,6 @@ export function SOC2AnalysisPanel({
           </div>
         )}
       </div>
-
       {/* Exceptions Section */}
       <CollapsibleSection
         title="Exceptions"
@@ -258,7 +259,6 @@ export function SOC2AnalysisPanel({
           </div>
         )}
       </CollapsibleSection>
-
       {/* CUECs Section */}
       <CollapsibleSection
         title="Complementary User Entity Controls"
@@ -278,7 +278,6 @@ export function SOC2AnalysisPanel({
           </div>
         )}
       </CollapsibleSection>
-
       {/* Control Gaps Section */}
       <CollapsibleSection
         title="Control Gaps"
@@ -298,7 +297,6 @@ export function SOC2AnalysisPanel({
           </div>
         )}
       </CollapsibleSection>
-
       {/* Subservice Organizations Section */}
       {analysis.subserviceOrganizations.length > 0 && (
         <CollapsibleSection
@@ -322,16 +320,16 @@ export function SOC2AnalysisPanel({
           </div>
         </CollapsibleSection>
       )}
-
       {/* Actions */}
       <div className="flex gap-3">
-        <button
+        <Button
           onClick={() => onCreateAssessment?.(analysis)}
-          className="btn btn-primary flex items-center gap-2"
+          className="flex items-center gap-2"
+          variant="primary"
         >
           <PlusIcon className="w-5 h-5" />
           Create Assessment from Analysis
-        </button>
+        </Button>
       </div>
     </div>
   );

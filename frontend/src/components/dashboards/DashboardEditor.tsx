@@ -19,6 +19,8 @@ import {
 } from '@heroicons/react/24/outline';
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 
+import { Button } from '@/components/ui/Button';
+
 interface DashboardEditorProps {
   dashboardId: string;
   onBack: () => void;
@@ -213,9 +215,9 @@ export default function DashboardEditor({ dashboardId, onBack }: DashboardEditor
     return (
       <div className="text-center py-12">
         <p className="text-surface-600">Dashboard not found</p>
-        <button onClick={onBack} className="btn btn-primary mt-4">
+        <Button onClick={onBack} className="mt-4" variant="primary">
           Go Back
-        </button>
+        </Button>
       </div>
     );
   }
@@ -248,58 +250,61 @@ export default function DashboardEditor({ dashboardId, onBack }: DashboardEditor
         <div className="flex items-center gap-2">
           {isEditing ? (
             <>
-              <button onClick={() => setShowPalette(true)} className="btn btn-ghost btn-sm">
+              <Button onClick={() => setShowPalette(true)} className="btn-sm" variant="ghost">
                 <PlusIcon className="w-4 h-4 mr-1" /> Add Widget
-              </button>
-              <button onClick={handleCancel} className="btn btn-ghost btn-sm">
+              </Button>
+              <Button onClick={handleCancel} className="btn-sm" variant="ghost">
                 <XMarkIcon className="w-4 h-4 mr-1" /> Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={handleSave}
-                className="btn btn-primary btn-sm"
+                className="btn-sm"
                 disabled={updateMutation.isPending}
+                variant="primary"
               >
                 <CheckIcon className="w-4 h-4 mr-1" />
                 {updateMutation.isPending ? 'Saving...' : 'Save'}
-              </button>
+              </Button>
             </>
           ) : (
             <>
-              <button onClick={() => setIsEditing(true)} className="btn btn-ghost btn-sm">
+              <Button onClick={() => setIsEditing(true)} className="btn-sm" variant="ghost">
                 <PencilIcon className="w-4 h-4 mr-1" /> Edit
-              </button>
+              </Button>
               {!dashboard.isDefault && (
-                <button
+                <Button
                   onClick={() => setDefaultMutation.mutate()}
-                  className="btn btn-ghost btn-sm"
+                  className="btn-sm"
                   disabled={setDefaultMutation.isPending}
+                  variant="ghost"
                 >
                   <StarIcon className="w-4 h-4 mr-1" /> Set Default
-                </button>
+                </Button>
               )}
-              <button
+              <Button
                 onClick={() => duplicateMutation.mutate()}
-                className="btn btn-ghost btn-sm"
+                className="btn-sm"
                 disabled={duplicateMutation.isPending}
+                variant="ghost"
               >
                 <DocumentDuplicateIcon className="w-4 h-4 mr-1" /> Duplicate
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => {
                   if (confirm('Delete this dashboard?')) {
                     deleteMutation.mutate();
                   }
                 }}
-                className="btn btn-ghost btn-sm text-red-600 hover:text-red-700"
+                className="btn-sm text-red-600 hover:text-red-700"
                 disabled={deleteMutation.isPending}
+                variant="ghost"
               >
                 <TrashIcon className="w-4 h-4 mr-1" /> Delete
-              </button>
+              </Button>
             </>
           )}
         </div>
       </div>
-
       {/* Info banner when editing */}
       {isEditing && (
         <div className="bg-brand-500/10 border border-brand-500/30 rounded-lg p-4">
@@ -313,7 +318,6 @@ export default function DashboardEditor({ dashboardId, onBack }: DashboardEditor
           </p>
         </div>
       )}
-
       {/* Dashboard Grid */}
       {dashboard.widgets.length === 0 ? (
         <div className="card p-12 text-center">
@@ -322,9 +326,9 @@ export default function DashboardEditor({ dashboardId, onBack }: DashboardEditor
           </div>
           <h3 className="text-lg font-medium text-surface-200 mb-2">No widgets yet</h3>
           <p className="text-surface-600 mb-4">Add widgets to customize your dashboard</p>
-          <button onClick={() => setShowPalette(true)} className="btn btn-primary">
+          <Button onClick={() => setShowPalette(true)} variant="primary">
             <PlusIcon className="w-4 h-4 mr-1" /> Add Widget
-          </button>
+          </Button>
         </div>
       ) : (
         <DashboardGrid
@@ -337,12 +341,10 @@ export default function DashboardEditor({ dashboardId, onBack }: DashboardEditor
           dashboardId={dashboardId}
         />
       )}
-
       {/* Widget Palette Modal */}
       {showPalette && (
         <WidgetPalette onSelect={handleAddWidget} onClose={() => setShowPalette(false)} />
       )}
-
       {/* Widget Config Modal */}
       {showWidgetConfig && editingWidget && (
         <WidgetConfigModal

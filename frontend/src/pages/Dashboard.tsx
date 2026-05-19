@@ -105,6 +105,8 @@ function saveDashboardConfig(config: DashboardConfig) {
 
 import { CONTROL_STATUS_COLORS, POLICY_STATUS_COLORS } from '@/lib/constants';
 
+import { Button } from '@/components/ui/Button';
+
 // Default empty summary to prevent crashes
 const DEFAULT_SUMMARY = {
   complianceScore: { overall: 0, byFramework: {} },
@@ -283,7 +285,6 @@ export default function Dashboard() {
           </div>
         </div>
       )}
-
       {/* Header with Dashboard Selector and Configuration */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -293,14 +294,15 @@ export default function Dashboard() {
           </div>
           {/* Dashboard Selector Dropdown */}
           <div className="relative">
-            <button
+            <Button
               onClick={() => setShowDashboardSelector(!showDashboardSelector)}
-              className="btn btn-ghost btn-sm flex items-center gap-1 text-surface-600 hover:text-surface-200"
+              className="btn-sm flex items-center gap-1 text-surface-600 hover:text-surface-200"
+              variant="ghost"
             >
               <Squares2X2Icon className="w-4 h-4" />
               <span className="hidden sm:inline">Switch Dashboard</span>
               <ChevronDownIcon className="w-4 h-4" />
-            </button>
+            </Button>
             {showDashboardSelector && (
               <>
                 <div
@@ -350,17 +352,17 @@ export default function Dashboard() {
         </div>
         <div className="flex items-center gap-2">
           <ReportDownloadButton />
-          <button
+          <Button
             onClick={() => setShowConfigModal(true)}
-            className="btn btn-secondary flex items-center gap-2"
+            className="flex items-center gap-2"
             title="Customize Dashboard"
+            variant="secondary"
           >
             <Cog6ToothIcon className="w-5 h-5" />
             <span className="hidden sm:inline">Customize</span>
-          </button>
+          </Button>
         </div>
       </div>
-
       {/* Dashboard Configuration Modal */}
       {showConfigModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -408,23 +410,19 @@ export default function Dashboard() {
               >
                 Reset to Default
               </button>
-              <button onClick={() => setShowConfigModal(false)} className="btn btn-primary">
+              <Button onClick={() => setShowConfigModal(false)} variant="primary">
                 Done
-              </button>
+              </Button>
             </div>
           </div>
         </div>
       )}
-
       {/* Onboarding Banner - Shows when organization is empty */}
       <OnboardingBanner />
-
       {/* Demo Mode Banner - Shows when demo data is active */}
       <DemoModeBanner />
-
       {/* First-run Onboarding Wizard */}
       <OnboardingWizard />
-
       {/* Top Stats Row - 4 distinct KPIs */}
       {config.widgets.statsRow && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -457,7 +455,6 @@ export default function Dashboard() {
           />
         </div>
       )}
-
       {/* Alert Banner - Only show if there are action items and widget is enabled */}
       {config.widgets.alertBanner && actionItems > 0 && (
         <div className="bg-amber-50 dark:bg-yellow-500/10 border border-amber-300 dark:border-yellow-500/30 rounded-lg p-4">
@@ -479,7 +476,6 @@ export default function Dashboard() {
           </div>
         </div>
       )}
-
       {/* Main Charts Row */}
       {(config.widgets.frameworkReadiness || config.widgets.controlStatus) && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -614,7 +610,6 @@ export default function Dashboard() {
           )}
         </div>
       )}
-
       {/* Risk Summary Row - Vendor Risk + Heat Map */}
       {config.widgets.riskHeatMap && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -692,7 +687,6 @@ export default function Dashboard() {
           </div>
         </div>
       )}
-
       {/* Bottom Row */}
       {(config.widgets.policyLifecycle || config.widgets.controlsByCategory) && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -788,17 +782,14 @@ export default function Dashboard() {
           )}
         </div>
       )}
-
       {/* Workspace Comparison (admin only, when multi-workspace is enabled) */}
       <WorkspaceComparisonWidget />
-
       {/* Vendor Reviews & Trust Queue Widgets */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {config.widgets.vendorReviewsDue && <VendorReviewsDueWidget />}
         {config.widgets.trustQueue && <TrustAnalystQueueWidget />}
         {config.widgets.mappingCoverage && <MappingCoverageWidget frameworkId={undefined} />}
       </div>
-
       {/* Action Items Widget */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ActionItemsWidget limit={5} />
@@ -806,7 +797,6 @@ export default function Dashboard() {
         {/* Quick Actions */}
         {config.widgets.quickActions && <QuickActions />}
       </div>
-
       {/* Recent Activity */}
       {config.widgets.recentActivity && <ActivityFeed limit={8} />}
     </div>

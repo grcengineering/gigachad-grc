@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/Input';
 
 import { SelectNative } from '@/components/ui/SelectNative';
 
+import { Button } from '@/components/ui/Button';
+
 interface User {
   id: string;
   displayName?: string;
@@ -197,12 +199,17 @@ export default function ControlImplementationCard({
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
-            <button onClick={() => setIsEditing(false)} className="btn-secondary text-sm">
+            <Button onClick={() => setIsEditing(false)} className="text-sm" variant="secondary">
               Cancel
-            </button>
-            <button onClick={handleSave} disabled={isUpdating} className="btn-primary text-sm">
+            </Button>
+            <Button
+              onClick={handleSave}
+              disabled={isUpdating}
+              className="text-sm"
+              variant="primary"
+            >
               {isUpdating ? 'Saving...' : 'Save'}
-            </button>
+            </Button>
           </div>
         </div>
       ) : (

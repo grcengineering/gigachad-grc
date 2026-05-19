@@ -222,12 +222,12 @@ export default function QuickSetupTab({ typeMeta, config, onChange }: QuickSetup
         );
       default:
         return (
-          <input
+          <Input
             type={field.type === 'url' ? 'url' : 'text'}
             value={value}
             onChange={(e) => updateCredential(field.key, e.target.value)}
             placeholder={field.placeholder}
-            className="input w-full"
+            className="w-full"
           />
         );
     }

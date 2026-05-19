@@ -7,6 +7,8 @@ import { integrationsApi } from '../../lib/api';
 import VisualConfigBuilder from './VisualConfigBuilder';
 import CodeEditor from './CodeEditor';
 
+import { Button } from '@/components/ui/Button';
+
 interface Props {
   integrationId: string;
   integrationName: string;
@@ -277,7 +279,6 @@ export default function CustomConfigModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/70" onClick={onClose} />
-
       {/* Modal */}
       <div className="relative bg-surface-900 rounded-xl w-full max-w-5xl h-[85vh] flex flex-col shadow-2xl">
         {/* Header */}
@@ -381,19 +382,19 @@ export default function CustomConfigModal({
             {hasChanges && <span className="text-xs text-yellow-600">• Unsaved changes</span>}
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={onClose} className="btn-secondary">
+            <Button onClick={onClose} variant="secondary">
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={handleSave}
               disabled={saveMutation.isPending || !hasChanges}
-              className="btn-secondary"
+              variant="secondary"
             >
               {saveMutation.isPending ? 'Saving...' : 'Save'}
-            </button>
-            <button onClick={handleSync} disabled={syncMutation.isPending} className="btn-primary">
+            </Button>
+            <Button onClick={handleSync} disabled={syncMutation.isPending} variant="primary">
               {syncMutation.isPending ? 'Syncing...' : 'Save & Sync'}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

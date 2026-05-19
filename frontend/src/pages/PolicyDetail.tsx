@@ -227,10 +227,10 @@ export default function PolicyDetail() {
                   <p className="text-sm text-surface-600 mt-2">
                     The policy file may not have been uploaded yet.
                   </p>
-                  <button onClick={handleDownload} className="btn-outline mt-4">
+                  <Button onClick={handleDownload} className="mt-4" variant="outline">
                     <ArrowDownTrayIcon className="w-4 h-4 mr-2" />
                     Try Download
-                  </button>
+                  </Button>
                 </div>
               ) : policy.mimeType === 'application/pdf' ? (
                 <iframe
@@ -251,10 +251,10 @@ export default function PolicyDetail() {
                 <div className="flex flex-col items-center justify-center py-16 text-surface-500">
                   <DocumentTextIcon className="w-16 h-16 mb-4" />
                   <p>Preview not available for this file type</p>
-                  <button onClick={handleDownload} className="btn-outline mt-4">
+                  <Button onClick={handleDownload} className="mt-4" variant="outline">
                     <ArrowDownTrayIcon className="w-4 h-4 mr-2" />
                     Download to View
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
@@ -406,10 +406,14 @@ export default function PolicyDetail() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-surface-100">Linked Controls</h2>
               {canEdit && (
-                <button onClick={() => setIsLinkControlOpen(true)} className="btn-outline text-sm">
+                <Button
+                  onClick={() => setIsLinkControlOpen(true)}
+                  className="text-sm"
+                  variant="outline"
+                >
                   <LinkIcon className="w-4 h-4 mr-2" />
                   Link to Control
-                </button>
+                </Button>
               )}
             </div>
             <p className="text-xs text-surface-500 mb-3">
@@ -462,16 +466,17 @@ export default function PolicyDetail() {
                 {statusConfig.next.map((nextStatus) => {
                   const nextConfig = STATUS_CONFIG[nextStatus];
                   return (
-                    <button
+                    <Button
                       key={nextStatus}
                       onClick={() =>
                         setStatusChangeModal({ isOpen: true, targetStatus: nextStatus })
                       }
                       disabled={updateStatusMutation.isPending}
-                      className="btn-outline w-full justify-center"
+                      className="w-full justify-center"
+                      variant="outline"
                     >
                       Move to {nextConfig.label}
-                    </button>
+                    </Button>
                   );
                 })}
               </div>
@@ -567,18 +572,19 @@ export default function PolicyDetail() {
           {canEdit && (
             <div className="card p-6 border-red-500/30">
               <h3 className="text-sm font-semibold text-red-600 mb-4">Danger Zone</h3>
-              <button
+              <Button
                 onClick={() => {
                   if (confirm('Are you sure you want to delete this policy?')) {
                     deleteMutation.mutate();
                   }
                 }}
                 disabled={deleteMutation.isPending}
-                className="btn-outline w-full text-red-600 border-red-400/50 hover:bg-red-400/10"
+                className="w-full text-red-600 border-red-400/50 hover:bg-red-400/10"
+                variant="outline"
               >
                 <TrashIcon className="w-4 h-4 mr-2" />
                 Delete Policy
-              </button>
+              </Button>
             </div>
           )}
         </div>

@@ -16,6 +16,8 @@ import clsx from 'clsx';
 
 import { Input } from '@/components/ui/Input';
 
+import { Button } from '@/components/ui/Button';
+
 interface ConfigFile {
   id: string;
   path: string;
@@ -463,7 +465,7 @@ export default function ConfigIDE({ workspaceId }: Props) {
               Generate Terraform files from your current controls, frameworks, policies, and other
               GRC resources.
             </p>
-            <button
+            <Button
               onClick={async () => {
                 try {
                   toast.loading(
@@ -496,11 +498,12 @@ export default function ConfigIDE({ workspaceId }: Props) {
                   // Don't disable the module on error - just show the error
                 }
               }}
-              className="btn btn-primary btn-sm flex items-center gap-2"
+              className="btn-sm flex items-center gap-2"
+              variant="primary"
             >
               <ArrowPathIcon className="w-4 h-4" />
               Generate Terraform Files
-            </button>
+            </Button>
           </div>
         ) : (
           <div className="p-2">
@@ -567,7 +570,7 @@ export default function ConfigIDE({ workspaceId }: Props) {
                 {isEditing && <span className="text-xs text-yellow-600">● Modified</span>}
               </div>
               <div className="flex items-center gap-2">
-                <button
+                <Button
                   onClick={() => {
                     if (
                       confirm(
@@ -578,14 +581,15 @@ export default function ConfigIDE({ workspaceId }: Props) {
                     }
                   }}
                   disabled={refreshMutation.isPending}
-                  className="btn btn-secondary btn-sm flex items-center gap-1"
+                  className="btn-sm flex items-center gap-1"
                   title="Regenerate Terraform files from your current GRC data (controls, frameworks, policies, etc.)"
+                  variant="secondary"
                 >
                   <ArrowPathIcon
                     className={clsx('w-4 h-4', refreshMutation.isPending && 'animate-spin')}
                   />
                   {refreshMutation.isPending ? 'Syncing...' : 'Sync from DB'}
-                </button>
+                </Button>
                 <div className="w-px h-6 bg-surface-600" />
                 <Input
                   type="text"
@@ -595,30 +599,33 @@ export default function ConfigIDE({ workspaceId }: Props) {
                   className="px-2 py-1 text-xs bg-surface-700 border border-surface-600 rounded text-surface-200 placeholder-surface-500"
                   style={{ width: '200px' }}
                 />
-                <button
+                <Button
                   onClick={handlePreview}
                   disabled={previewMutation.isPending || !isEditing}
-                  className="btn btn-secondary btn-sm flex items-center gap-1"
+                  className="btn-sm flex items-center gap-1"
+                  variant="secondary"
                 >
                   <EyeIcon className="w-4 h-4" />
                   Preview
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={handleSave}
                   disabled={saveMutation.isPending || !isEditing}
-                  className="btn btn-secondary btn-sm flex items-center gap-1"
+                  className="btn-sm flex items-center gap-1"
+                  variant="secondary"
                 >
                   <CheckCircleIcon className="w-4 h-4" />
                   Save
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={handleApply}
                   disabled={applyMutation.isPending || !isEditing}
-                  className="btn btn-primary btn-sm flex items-center gap-1"
+                  className="btn-sm flex items-center gap-1"
+                  variant="primary"
                 >
                   <PlayIcon className="w-4 h-4" />
                   Apply
-                </button>
+                </Button>
               </div>
             </div>
 

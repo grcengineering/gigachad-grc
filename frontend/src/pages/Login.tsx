@@ -4,6 +4,8 @@ import DOMPurify from 'dompurify';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBrandingConfig } from '@/contexts/BrandingContext';
 
+import { Button } from '@/components/ui/Button';
+
 /**
  * SECURITY: Sanitize URL parameters to prevent XSS attacks
  * Only allows alphanumeric characters, spaces, and basic punctuation
@@ -55,7 +57,6 @@ export default function Login() {
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-brand-600/20 rounded-full blur-3xl"></div>
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-brand-600/10 rounded-full blur-3xl"></div>
       </div>
-
       <div className="relative z-10 w-full max-w-md">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
@@ -78,9 +79,9 @@ export default function Login() {
             Sign in to access your compliance dashboard
           </p>
 
-          <button onClick={login} className="btn-primary w-full py-3 text-base">
+          <Button onClick={login} className="w-full py-3 text-base" variant="primary">
             Sign in with SSO
-          </button>
+          </Button>
 
           {/* Dev login option */}
           {isDev && devLogin && (

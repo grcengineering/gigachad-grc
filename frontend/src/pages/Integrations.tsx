@@ -22,6 +22,8 @@ import { IntegrationIcon } from '@/components/IntegrationIcon';
 
 import { Input } from '@/components/ui/Input';
 
+import { Button } from '@/components/ui/Button';
+
 const STATUS_CONFIG: Record<string, { label: string; icon: any; color: string; badge: string }> = {
   active: {
     label: 'Active',
@@ -400,18 +402,15 @@ export default function Integrations() {
                           </div>
                           <StatusIcon className={clsx('w-5 h-5', statusConfig.color)} />
                         </div>
-
                         <p className="text-sm text-surface-600 mb-4 line-clamp-2">
                           {meta.description}
                         </p>
-
                         {type === 'slack' && (
                           <p className="text-xs text-blue-600 mb-4">
                             💡 For Slack <em>notifications</em>, configure in Settings →
                             Communications
                           </p>
                         )}
-
                         {integration?.lastSyncError && (
                           <div className="p-2 bg-red-500/10 border border-red-500/20 rounded-lg mb-4">
                             <p className="text-xs text-red-600 truncate">
@@ -419,7 +418,6 @@ export default function Integrations() {
                             </p>
                           </div>
                         )}
-
                         {meta.apiDocs && (
                           <a
                             href={meta.apiDocs}
@@ -431,7 +429,6 @@ export default function Integrations() {
                             API Documentation →
                           </a>
                         )}
-
                         {isConfigured ? (
                           <>
                             <div className="flex items-center justify-between text-xs text-surface-500 pt-4 border-t border-surface-800">
@@ -445,16 +442,17 @@ export default function Integrations() {
 
                             {/* Action buttons */}
                             <div className="flex items-center gap-2 mt-4 pt-4 border-t border-surface-800">
-                              <button
+                              <Button
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleConfigureIntegration(type, integration);
                                 }}
-                                className="flex-1 btn-secondary text-sm py-1.5"
+                                className="flex-1 text-sm py-1.5"
+                                variant="secondary"
                               >
                                 <CogIcon className="w-4 h-4 mr-1" />
                                 Configure
-                              </button>
+                              </Button>
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();

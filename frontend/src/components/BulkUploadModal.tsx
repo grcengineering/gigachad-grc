@@ -11,6 +11,8 @@ import {
 import { controlsApi } from '@/lib/api';
 import clsx from 'clsx';
 
+import { Button } from '@/components/ui/Button';
+
 interface BulkUploadModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -233,9 +235,9 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
                   </div>
                 )}
 
-                <button onClick={handleClose} className="btn-primary w-full">
+                <Button onClick={handleClose} className="w-full" variant="primary">
                   Done
-                </button>
+                </Button>
               </div>
             ) : (
               <>
@@ -359,10 +361,14 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
                         Download our CSV template with example data
                       </p>
                     </div>
-                    <button onClick={handleDownloadTemplate} className="btn-secondary text-sm">
+                    <Button
+                      onClick={handleDownloadTemplate}
+                      className="text-sm"
+                      variant="secondary"
+                    >
                       <ArrowDownTrayIcon className="w-4 h-4 mr-2" />
                       Download
-                    </button>
+                    </Button>
                   </div>
                 </div>
 
@@ -383,13 +389,14 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
           {/* Footer */}
           {!result && (
             <div className="flex items-center justify-end gap-3 p-6 border-t border-surface-700">
-              <button onClick={handleClose} className="btn-secondary">
+              <Button onClick={handleClose} variant="secondary">
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={handleUpload}
                 disabled={!fileContent || uploadMutation.isPending}
-                className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                className="disabled:opacity-50 disabled:cursor-not-allowed"
+                variant="primary"
               >
                 {uploadMutation.isPending ? (
                   <>
@@ -402,7 +409,7 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
                     Upload Controls
                   </>
                 )}
-              </button>
+              </Button>
             </div>
           )}
         </div>

@@ -19,6 +19,8 @@ import { Input } from '@/components/ui/Input';
 
 import { SelectNative } from '@/components/ui/SelectNative';
 
+import { Button } from '@/components/ui/Button';
+
 interface TasksPanelProps {
   entityType: string;
   entityId: string;
@@ -123,10 +125,14 @@ export default function TasksPanel({ entityType, entityId }: TasksPanelProps) {
           </h3>
         </div>
         {!isCreating && (
-          <button onClick={() => setIsCreating(true)} className="btn-outline text-xs px-2 py-1">
+          <Button
+            onClick={() => setIsCreating(true)}
+            className="text-xs px-2 py-1"
+            variant="outline"
+          >
             <PlusIcon className="w-3 h-3 mr-1" />
             Add Task
-          </button>
+          </Button>
         )}
       </div>
       {/* Create Task Form */}
@@ -178,20 +184,22 @@ export default function TasksPanel({ entityType, entityId }: TasksPanelProps) {
             />
           </div>
           <div className="flex justify-end gap-2">
-            <button
+            <Button
               type="button"
               onClick={() => setIsCreating(false)}
-              className="btn-secondary text-sm"
+              className="text-sm"
+              variant="secondary"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
               disabled={!newTask.title.trim() || createMutation.isPending}
-              className="btn-primary text-sm"
+              className="text-sm"
+              variant="primary"
             >
               {createMutation.isPending ? 'Creating...' : 'Create Task'}
-            </button>
+            </Button>
           </div>
         </form>
       )}
@@ -341,10 +349,10 @@ function TaskCard({
           />
         </div>
         <div className="flex justify-end gap-2">
-          <button onClick={onCancelEdit} className="btn-secondary text-xs">
+          <Button onClick={onCancelEdit} className="text-xs" variant="secondary">
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() =>
               onUpdate({
                 ...editData,
@@ -353,10 +361,11 @@ function TaskCard({
               })
             }
             disabled={isUpdating}
-            className="btn-primary text-xs"
+            className="text-xs"
+            variant="primary"
           >
             {isUpdating ? 'Saving...' : 'Save'}
-          </button>
+          </Button>
         </div>
       </div>
     );

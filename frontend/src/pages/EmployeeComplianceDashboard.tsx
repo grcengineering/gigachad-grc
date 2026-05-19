@@ -18,6 +18,8 @@ import { employeeComplianceApi } from '@/lib/api';
 import { SkeletonCard, SkeletonTable } from '@/components/Skeleton';
 import { useToast } from '@/hooks/useToast';
 
+import { Button } from '@/components/ui/Button';
+
 interface DashboardMetrics {
   totalEmployees: number;
   averageScore: number;
@@ -322,14 +324,14 @@ export default function EmployeeComplianceDashboard() {
           <p className="text-muted-foreground mb-4">
             There was an error loading the employee compliance dashboard. Please try again later.
           </p>
-          <button
+          <Button
             onClick={() =>
               queryClient.invalidateQueries({ queryKey: ['employee-compliance-dashboard'] })
             }
-            className="btn btn-primary"
+            variant="primary"
           >
             Retry
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -350,20 +352,19 @@ export default function EmployeeComplianceDashboard() {
             <Cog6ToothIcon className="h-5 w-5" />
             Settings
           </Link>
-          <button
+          <Button
             onClick={() => syncMutation.mutate()}
             disabled={syncMutation.isPending}
-            className="btn btn-secondary"
+            variant="secondary"
           >
             <ArrowPathIcon className={`h-5 w-5 ${syncMutation.isPending ? 'animate-spin' : ''}`} />
             {syncMutation.isPending ? 'Syncing...' : 'Sync All'}
-          </button>
+          </Button>
           <Link to="/people" className="btn btn-primary">
             View All Employees
           </Link>
         </div>
       </div>
-
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <StatCard
@@ -405,7 +406,6 @@ export default function EmployeeComplianceDashboard() {
           isLoading={isLoading}
         />
       </div>
-
       {!isLoading && !hasData && (
         <div className="card p-8 text-center">
           <UsersIcon className="h-16 w-16 text-surface-500 mx-auto mb-4" />
@@ -420,7 +420,6 @@ export default function EmployeeComplianceDashboard() {
           </Link>
         </div>
       )}
-
       {(isLoading || hasData) && (
         <>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

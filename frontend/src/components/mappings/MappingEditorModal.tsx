@@ -20,6 +20,8 @@ import { Input } from '@/components/ui/Input';
 
 import { SelectNative } from '@/components/ui/SelectNative';
 
+import { Button } from '@/components/ui/Button';
+
 export type MappingEditorMode = 'requirement-to-controls' | 'control-to-requirements';
 
 /**
@@ -463,40 +465,42 @@ export function MappingEditorModal({
           </div>
         )}
       </div>
-
       <ModalFooter>
-        <button type="button" onClick={onClose} className="btn-secondary">
+        <Button type="button" onClick={onClose} variant="secondary">
           Cancel
-        </button>
+        </Button>
 
         {stage === 'search' && (
-          <button
+          <Button
             type="button"
             onClick={handleAdvanceFromSearch}
             disabled={!canProceedFromSearch}
-            className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+            className="disabled:opacity-50 disabled:cursor-not-allowed"
+            variant="primary"
           >
             Next
-          </button>
+          </Button>
         )}
 
         {stage === 'multi-select' && (
-          <button
+          <Button
             type="button"
             onClick={handleAdvanceFromMultiSelect}
             disabled={!canProceedFromMultiSelect}
-            className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+            className="disabled:opacity-50 disabled:cursor-not-allowed"
+            variant="primary"
           >
             Next
-          </button>
+          </Button>
         )}
 
         {(stage === 'per-row-form' || stage === 'submit') && (
-          <button
+          <Button
             type="button"
             onClick={handleSave}
             disabled={!allRowsValid || stage === 'submit'}
-            className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+            className="disabled:opacity-50 disabled:cursor-not-allowed"
+            variant="primary"
           >
             {stage === 'submit' ? (
               <span className="inline-flex items-center gap-2">
@@ -509,7 +513,7 @@ export function MappingEditorModal({
             ) : (
               'Save'
             )}
-          </button>
+          </Button>
         )}
       </ModalFooter>
     </Modal>

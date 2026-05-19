@@ -19,6 +19,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { Button } from '@/components/ui/Button';
+
 export default function CustomDashboards() {
   const queryClient = useQueryClient();
   const [selectedDashboardId, setSelectedDashboardId] = useState<string | null>(null);
@@ -99,12 +101,12 @@ export default function CustomDashboards() {
           <p className="text-surface-600 mt-1">Create and customize your own dashboard views</p>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => setShowTemplateGallery(true)} className="btn btn-ghost">
+          <Button onClick={() => setShowTemplateGallery(true)} variant="ghost">
             <Squares2X2Icon className="w-4 h-4 mr-1" /> Browse Templates
-          </button>
-          <button onClick={() => setShowCreateModal(true)} className="btn btn-primary">
+          </Button>
+          <Button onClick={() => setShowCreateModal(true)} variant="primary">
             <PlusIcon className="w-4 h-4 mr-1" /> New Dashboard
-          </button>
+          </Button>
         </div>
       </div>
       {/* Loading state */}
@@ -121,12 +123,12 @@ export default function CustomDashboards() {
             Create a custom dashboard or start from a template
           </p>
           <div className="flex items-center justify-center gap-4">
-            <button onClick={() => setShowCreateModal(true)} className="btn btn-primary">
+            <Button onClick={() => setShowCreateModal(true)} variant="primary">
               <PlusIcon className="w-4 h-4 mr-1" /> Create Dashboard
-            </button>
-            <button onClick={() => setShowTemplateGallery(true)} className="btn btn-ghost">
+            </Button>
+            <Button onClick={() => setShowTemplateGallery(true)} variant="ghost">
               <Squares2X2Icon className="w-4 h-4 mr-1" /> Browse Templates
-            </button>
+            </Button>
           </div>
         </div>
       ) : (
@@ -219,7 +221,7 @@ export default function CustomDashboards() {
                 <p className="text-sm text-surface-600 mb-2">
                   {template.widgets?.length || 0} widgets
                 </p>
-                <button
+                <Button
                   onClick={(e) => {
                     e.stopPropagation();
                     customDashboardsApi.duplicate(template.id).then(() => {
@@ -227,10 +229,11 @@ export default function CustomDashboards() {
                       toast.success('Template copied to your dashboards');
                     });
                   }}
-                  className="btn btn-ghost btn-sm w-full"
+                  className="btn-sm w-full"
+                  variant="ghost"
                 >
                   <DocumentDuplicateIcon className="w-4 h-4 mr-1" /> Use Template
-                </button>
+                </Button>
               </div>
             ))}
           </div>
@@ -269,20 +272,16 @@ export default function CustomDashboards() {
                 </div>
               </div>
               <div className="flex items-center justify-end gap-3 mt-6">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="btn btn-ghost"
-                >
+                <Button type="button" onClick={() => setShowCreateModal(false)} variant="ghost">
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
                   disabled={!newDashboardName.trim() || createMutation.isPending}
-                  className="btn btn-primary"
+                  variant="primary"
                 >
                   {createMutation.isPending ? 'Creating...' : 'Create'}
-                </button>
+                </Button>
               </div>
             </form>
           </div>

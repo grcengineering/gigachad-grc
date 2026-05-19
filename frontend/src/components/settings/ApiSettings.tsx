@@ -6,6 +6,8 @@ import { PlusIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline';
 import CreateApiKeyModal from './CreateApiKeyModal';
 import NewKeyRevealModal from './NewKeyRevealModal';
 
+import { Button } from '@/components/ui/Button';
+
 export default function ApiSettings() {
   const queryClient = useQueryClient();
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -77,12 +79,11 @@ export default function ApiSettings() {
           <h2 className="text-lg font-semibold text-surface-100">API Keys</h2>
           <p className="text-surface-600 text-sm mt-1">Manage API keys for programmatic access</p>
         </div>
-        <button className="btn-primary" onClick={() => setShowCreateModal(true)}>
+        <Button onClick={() => setShowCreateModal(true)} variant="primary">
           <PlusIcon className="w-4 h-4 mr-2" />
           Generate New Key
-        </button>
+        </Button>
       </div>
-
       {isLoading ? (
         <div className="flex justify-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
@@ -121,51 +122,57 @@ export default function ApiSettings() {
                     {confirmingRegenerate === key.id ? (
                       <div className="flex items-center gap-2">
                         <span className="text-surface-600 text-sm">Regenerate?</span>
-                        <button
-                          className="btn-primary text-sm"
+                        <Button
+                          className="text-sm"
                           onClick={() => regenerateMutation.mutate(key.id)}
                           disabled={regenerateMutation.isPending}
+                          variant="primary"
                         >
                           Yes
-                        </button>
-                        <button
-                          className="btn-secondary text-sm"
+                        </Button>
+                        <Button
+                          className="text-sm"
                           onClick={() => setConfirmingRegenerate(null)}
+                          variant="secondary"
                         >
                           No
-                        </button>
+                        </Button>
                       </div>
                     ) : confirmingRevoke === key.id ? (
                       <div className="flex items-center gap-2">
                         <span className="text-surface-600 text-sm">Revoke?</span>
-                        <button
-                          className="btn-danger text-sm"
+                        <Button
+                          className="text-sm"
                           onClick={() => revokeMutation.mutate(key.id)}
                           disabled={revokeMutation.isPending}
+                          variant="danger"
                         >
                           Yes
-                        </button>
-                        <button
-                          className="btn-secondary text-sm"
+                        </Button>
+                        <Button
+                          className="text-sm"
                           onClick={() => setConfirmingRevoke(null)}
+                          variant="secondary"
                         >
                           No
-                        </button>
+                        </Button>
                       </div>
                     ) : (
                       <>
-                        <button
-                          className="btn-secondary text-sm"
+                        <Button
+                          className="text-sm"
                           onClick={() => setConfirmingRegenerate(key.id)}
+                          variant="secondary"
                         >
                           Regenerate
-                        </button>
-                        <button
-                          className="btn-danger text-sm"
+                        </Button>
+                        <Button
+                          className="text-sm"
                           onClick={() => setConfirmingRevoke(key.id)}
+                          variant="danger"
                         >
                           Revoke
-                        </button>
+                        </Button>
                       </>
                     )}
                   </>
@@ -177,7 +184,6 @@ export default function ApiSettings() {
           ))}
         </div>
       )}
-
       <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
         <div className="flex items-start gap-3">
           <ExclamationCircleIcon className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
@@ -190,7 +196,6 @@ export default function ApiSettings() {
           </div>
         </div>
       </div>
-
       {/* Create Key Modal */}
       {showCreateModal && (
         <CreateApiKeyModal
@@ -199,7 +204,6 @@ export default function ApiSettings() {
           onCreated={handleKeyCreated}
         />
       )}
-
       {/* New Key Reveal Modal */}
       {showNewKeyModal && newKey && (
         <NewKeyRevealModal

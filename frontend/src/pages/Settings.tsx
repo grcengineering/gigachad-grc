@@ -38,6 +38,8 @@ import { Input } from '@/components/ui/Input';
 
 import { SelectNative } from '@/components/ui/SelectNative';
 
+import { Button } from '@/components/ui/Button';
+
 interface SettingsProps {
   section:
     | 'organization'
@@ -412,22 +414,24 @@ function OrganizationSettings() {
                   id="logo-upload"
                 />
                 <div className="flex items-center gap-2">
-                  <button
+                  <Button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="btn-secondary text-sm"
+                    className="text-sm"
+                    variant="secondary"
                   >
                     <PhotoIcon className="w-4 h-4 mr-1" />
                     Upload Image
-                  </button>
+                  </Button>
                   {logoUrl !== '/logo.png' && (
-                    <button
+                    <Button
                       type="button"
                       onClick={handleResetLogo}
-                      className="btn-ghost text-sm text-surface-600 hover:text-surface-200"
+                      className="text-sm text-surface-600 hover:text-surface-200"
+                      variant="ghost"
                     >
                       Reset to Default
-                    </button>
+                    </Button>
                   )}
                 </div>
                 <p className="text-surface-500 text-xs">
@@ -457,9 +461,9 @@ function OrganizationSettings() {
         </div>
 
         <div className="flex justify-end pt-4 border-t border-surface-800">
-          <button className="btn-primary" onClick={handleSaveBranding} disabled={isSaving}>
+          <Button onClick={handleSaveBranding} disabled={isSaving} variant="primary">
             {isSaving ? 'Saving...' : 'Save Branding'}
-          </button>
+          </Button>
         </div>
       </div>
       {/* Organization Settings */}
@@ -530,9 +534,9 @@ function OrganizationSettings() {
         </div>
 
         <div className="flex justify-end pt-4 border-t border-surface-800">
-          <button className="btn-primary" onClick={handleSaveOrganization} disabled={isSavingOrg}>
+          <Button onClick={handleSaveOrganization} disabled={isSavingOrg} variant="primary">
             {isSavingOrg ? 'Saving...' : 'Save Organization'}
-          </button>
+          </Button>
         </div>
       </div>
       {/* Multi-Workspace Mode */}
@@ -573,14 +577,14 @@ function OrganizationSettings() {
         </div>
 
         <div className="flex justify-end pt-4 border-t border-surface-800">
-          <button
+          <Button
             type="button"
             onClick={handleExportOrganizationData}
-            className="btn-primary"
             disabled={isExporting}
+            variant="primary"
           >
             {isExporting ? 'Preparing Export…' : 'Export Organization Data (JSON)'}
-          </button>
+          </Button>
         </div>
       </div>
       {/* Demo Data Settings */}
@@ -1045,25 +1049,25 @@ function CommunicationsSettings() {
                   onChange={(e) => setTestEmail(e.target.value)}
                 />
               </div>
-              <button
-                className="btn-secondary"
+              <Button
                 onClick={() => testEmailMutation.mutate(testEmail)}
                 disabled={!testEmail || testEmailMutation.isPending}
+                variant="secondary"
               >
                 {testEmailMutation.isPending ? 'Sending...' : 'Send Test'}
-              </button>
+              </Button>
             </div>
           </>
         )}
 
         <div className="flex justify-end pt-4 border-t border-surface-800">
-          <button
-            className="btn-primary"
+          <Button
             onClick={handleSaveEmail}
             disabled={updateEmailMutation.isPending}
+            variant="primary"
           >
             {updateEmailMutation.isPending ? 'Saving...' : 'Save Email Settings'}
-          </button>
+          </Button>
         </div>
       </div>
       {/* Slack Configuration */}
@@ -1127,25 +1131,25 @@ function CommunicationsSettings() {
             </div>
 
             <div className="flex items-center gap-4 pt-4 border-t border-surface-700">
-              <button
-                className="btn-secondary"
+              <Button
                 onClick={() => testSlackMutation.mutate(slackForm.defaultChannel)}
                 disabled={testSlackMutation.isPending}
+                variant="secondary"
               >
                 {testSlackMutation.isPending ? 'Sending...' : 'Send Test Message'}
-              </button>
+              </Button>
             </div>
           </>
         )}
 
         <div className="flex justify-end pt-4 border-t border-surface-800">
-          <button
-            className="btn-primary"
+          <Button
             onClick={handleSaveSlack}
             disabled={updateSlackMutation.isPending}
+            variant="primary"
           >
             {updateSlackMutation.isPending ? 'Saving...' : 'Save Slack Settings'}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -1247,10 +1251,10 @@ function ApiSettings() {
           <h2 className="text-lg font-semibold text-surface-100">API Keys</h2>
           <p className="text-surface-600 text-sm mt-1">Manage API keys for programmatic access</p>
         </div>
-        <button className="btn-primary" onClick={() => setShowCreateModal(true)}>
+        <Button onClick={() => setShowCreateModal(true)} variant="primary">
           <PlusIcon className="w-4 h-4 mr-2" />
           Generate New Key
-        </button>
+        </Button>
       </div>
       {isLoading ? (
         <div className="flex justify-center py-8">
@@ -1290,51 +1294,57 @@ function ApiSettings() {
                     {confirmingRegenerate === key.id ? (
                       <div className="flex items-center gap-2">
                         <span className="text-surface-600 text-sm">Regenerate?</span>
-                        <button
-                          className="btn-primary text-sm"
+                        <Button
+                          className="text-sm"
                           onClick={() => regenerateMutation.mutate(key.id)}
                           disabled={regenerateMutation.isPending}
+                          variant="primary"
                         >
                           Yes
-                        </button>
-                        <button
-                          className="btn-secondary text-sm"
+                        </Button>
+                        <Button
+                          className="text-sm"
                           onClick={() => setConfirmingRegenerate(null)}
+                          variant="secondary"
                         >
                           No
-                        </button>
+                        </Button>
                       </div>
                     ) : confirmingRevoke === key.id ? (
                       <div className="flex items-center gap-2">
                         <span className="text-surface-600 text-sm">Revoke?</span>
-                        <button
-                          className="btn-danger text-sm"
+                        <Button
+                          className="text-sm"
                           onClick={() => revokeMutation.mutate(key.id)}
                           disabled={revokeMutation.isPending}
+                          variant="danger"
                         >
                           Yes
-                        </button>
-                        <button
-                          className="btn-secondary text-sm"
+                        </Button>
+                        <Button
+                          className="text-sm"
                           onClick={() => setConfirmingRevoke(null)}
+                          variant="secondary"
                         >
                           No
-                        </button>
+                        </Button>
                       </div>
                     ) : (
                       <>
-                        <button
-                          className="btn-secondary text-sm"
+                        <Button
+                          className="text-sm"
                           onClick={() => setConfirmingRegenerate(key.id)}
+                          variant="secondary"
                         >
                           Regenerate
-                        </button>
-                        <button
-                          className="btn-danger text-sm"
+                        </Button>
+                        <Button
+                          className="text-sm"
                           onClick={() => setConfirmingRevoke(key.id)}
+                          variant="danger"
                         >
                           Revoke
-                        </button>
+                        </Button>
                       </>
                     )}
                   </>
@@ -1410,20 +1420,16 @@ function ApiSettings() {
                 </div>
               </div>
               <div className="flex justify-end gap-2 pt-4">
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  onClick={() => setShowCreateModal(false)}
-                >
+                <Button type="button" onClick={() => setShowCreateModal(false)} variant="secondary">
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
-                  className="btn-primary"
                   disabled={createMutation.isPending || !newKeyName.trim()}
+                  variant="primary"
                 >
                   {createMutation.isPending ? 'Creating...' : 'Create Key'}
-                </button>
+                </Button>
               </div>
             </form>
           </div>
@@ -1445,24 +1451,25 @@ function ApiSettings() {
             <div className="bg-surface-800 rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <code className="text-green-600 text-sm break-all">{newKey.key}</code>
-                <button
-                  className="btn-secondary text-sm ml-2 flex-shrink-0"
+                <Button
+                  className="text-sm ml-2 flex-shrink-0"
                   onClick={() => copyToClipboard(newKey.key)}
+                  variant="secondary"
                 >
                   Copy
-                </button>
+                </Button>
               </div>
             </div>
             <div className="flex justify-end mt-4">
-              <button
-                className="btn-primary"
+              <Button
                 onClick={() => {
                   setShowNewKeyModal(false);
                   setNewKey(null);
                 }}
+                variant="primary"
               >
                 Done
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -1530,9 +1537,9 @@ function DashboardTemplatesSettings() {
               Templates are shared with all users in your organization
             </p>
           </div>
-          <button onClick={() => setShowCreateModal(true)} className="btn btn-primary">
+          <Button onClick={() => setShowCreateModal(true)} variant="primary">
             <PlusIcon className="w-4 h-4 mr-1" /> Create Template
-          </button>
+          </Button>
         </div>
 
         {isLoading ? (
@@ -1546,9 +1553,9 @@ function DashboardTemplatesSettings() {
             <p className="text-surface-500 text-sm mb-4">
               Create a template that all users can use as a starting point
             </p>
-            <button onClick={() => setShowCreateModal(true)} className="btn btn-ghost">
+            <Button onClick={() => setShowCreateModal(true)} variant="ghost">
               <PlusIcon className="w-4 h-4 mr-1" /> Create First Template
-            </button>
+            </Button>
           </div>
         ) : (
           <div className="space-y-3">
@@ -1580,17 +1587,18 @@ function DashboardTemplatesSettings() {
                   >
                     <PencilIcon className="w-4 h-4 mr-1" /> Edit
                   </Link>
-                  <button
+                  <Button
                     onClick={() => {
                       if (confirm('Delete this template?')) {
                         deleteMutation.mutate(template.id);
                       }
                     }}
-                    className="btn btn-ghost btn-sm text-red-600 hover:text-red-700"
+                    className="btn-sm text-red-600 hover:text-red-700"
                     disabled={deleteMutation.isPending}
+                    variant="ghost"
                   >
                     <TrashIcon className="w-4 h-4" />
-                  </button>
+                  </Button>
                 </div>
               </div>
             ))}
@@ -1649,20 +1657,16 @@ function DashboardTemplatesSettings() {
                 </div>
               </div>
               <div className="flex items-center justify-end gap-3 mt-6">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="btn btn-ghost"
-                >
+                <Button type="button" onClick={() => setShowCreateModal(false)} variant="ghost">
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
                   disabled={!newTemplateName.trim() || createMutation.isPending}
-                  className="btn btn-primary"
+                  variant="primary"
                 >
                   {createMutation.isPending ? 'Creating...' : 'Create Template'}
-                </button>
+                </Button>
               </div>
             </form>
           </div>
@@ -2176,16 +2180,16 @@ function EmployeeComplianceSettings() {
       </div>
       {/* Save Actions */}
       <div className="flex items-center justify-between">
-        <button onClick={handleReset} className="btn btn-ghost" disabled={!hasChanges}>
+        <Button onClick={handleReset} disabled={!hasChanges} variant="ghost">
           Reset to Defaults
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={handleSave}
-          className="btn btn-primary"
           disabled={!hasChanges || !isValidWeights || isSaving}
+          variant="primary"
         >
           {isSaving ? 'Saving...' : 'Save Settings'}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -2390,9 +2394,9 @@ function AISettings() {
       </div>
       {/* Save */}
       <div className="flex justify-end">
-        <button onClick={handleSave} className="btn btn-primary" disabled={isSaving}>
+        <Button onClick={handleSave} disabled={isSaving} variant="primary">
           {isSaving ? 'Saving...' : 'Save AI Configuration'}
-        </button>
+        </Button>
       </div>
     </div>
   );

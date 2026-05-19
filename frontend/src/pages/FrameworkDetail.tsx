@@ -39,6 +39,8 @@ import { Input } from '@/components/ui/Input';
 
 import { SelectNative } from '@/components/ui/SelectNative';
 
+import { Button } from '@/components/ui/Button';
+
 const STATUS_CONFIG = {
   compliant: { icon: CheckCircleIcon, color: 'text-green-600', bg: 'bg-green-400/10' },
   partial: { icon: ExclamationTriangleIcon, color: 'text-yellow-600', bg: 'bg-yellow-400/10' },
@@ -323,20 +325,26 @@ export default function FrameworkDetail() {
       {(canManageMappings || canExportMappings) && (
         <div className="flex items-center justify-end gap-2 mb-4">
           {canManageMappings && (
-            <button
+            <Button
               type="button"
               onClick={() => setIsMappingImportOpen(true)}
-              className="btn-secondary text-sm"
+              className="text-sm"
+              variant="secondary"
             >
               <ArrowUpTrayIcon className="w-4 h-4 mr-1" />
               Import mappings
-            </button>
+            </Button>
           )}
           {canExportMappings && (
-            <button type="button" onClick={handleExportMappings} className="btn-secondary text-sm">
+            <Button
+              type="button"
+              onClick={handleExportMappings}
+              className="text-sm"
+              variant="secondary"
+            >
               <ArrowDownTrayIcon className="w-4 h-4 mr-1" />
               Export mappings
-            </button>
+            </Button>
           )}
         </div>
       )}
@@ -353,14 +361,22 @@ export default function FrameworkDetail() {
               </p>
             </div>
             <div className="flex gap-2">
-              <button onClick={() => setIsUploadModalOpen(true)} className="btn-secondary text-sm">
+              <Button
+                onClick={() => setIsUploadModalOpen(true)}
+                className="text-sm"
+                variant="secondary"
+              >
                 <ArrowUpTrayIcon className="w-4 h-4 mr-1" />
                 Bulk Upload
-              </button>
-              <button onClick={() => setIsCreateModalOpen(true)} className="btn-primary text-sm">
+              </Button>
+              <Button
+                onClick={() => setIsCreateModalOpen(true)}
+                className="text-sm"
+                variant="primary"
+              >
                 <PlusIcon className="w-4 h-4 mr-1" />
                 Add Requirement
-              </button>
+              </Button>
             </div>
           </div>
           <div className="divide-y divide-surface-800 max-h-[600px] overflow-y-auto">
@@ -380,13 +396,14 @@ export default function FrameworkDetail() {
             ) : (
               <div className="p-12 text-center">
                 <p className="text-surface-600 mb-4">No requirements yet</p>
-                <button
+                <Button
                   onClick={() => setIsCreateModalOpen(true)}
-                  className="btn-secondary text-sm"
+                  className="text-sm"
+                  variant="secondary"
                 >
                   <PlusIcon className="w-4 h-4 mr-1" />
                   Add Your First Requirement
-                </button>
+                </Button>
               </div>
             )}
           </div>
@@ -487,20 +504,22 @@ export default function FrameworkDetail() {
               </div>
 
               <div className="flex gap-3 pt-4">
-                <button
+                <Button
                   type="button"
                   onClick={() => setIsCreateModalOpen(false)}
-                  className="btn-secondary flex-1"
+                  className="flex-1"
+                  variant="secondary"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
                   disabled={createMutation.isPending}
-                  className="btn-primary flex-1"
+                  className="flex-1"
+                  variant="primary"
                 >
                   {createMutation.isPending ? 'Creating...' : 'Create Requirement'}
-                </button>
+                </Button>
               </div>
             </form>
           </div>
@@ -611,23 +630,25 @@ export default function FrameworkDetail() {
 
               {/* Action Buttons */}
               <div className="flex gap-3 pt-4">
-                <button
+                <Button
                   type="button"
                   onClick={() => {
                     setIsUploadModalOpen(false);
                     setSelectedFile(null);
                   }}
-                  className="btn-secondary flex-1"
+                  className="flex-1"
+                  variant="secondary"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={handleFileUpload}
                   disabled={!selectedFile || uploadMutation.isPending}
-                  className="btn-primary flex-1"
+                  className="flex-1"
+                  variant="primary"
                 >
                   {uploadMutation.isPending ? 'Uploading...' : 'Upload'}
-                </button>
+                </Button>
               </div>
             </div>
           </div>

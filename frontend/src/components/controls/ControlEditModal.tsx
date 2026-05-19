@@ -5,6 +5,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { Button } from '@/components/ui/Button';
+
 interface ControlEditModalProps {
   control: {
     title: string;
@@ -116,12 +118,12 @@ export default function ControlEditModal({
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
-            <button type="button" onClick={onClose} className="btn-secondary">
+            <Button type="button" onClick={onClose} variant="secondary">
               Cancel
-            </button>
-            <button type="submit" disabled={isPending} className="btn-primary">
+            </Button>
+            <Button type="submit" disabled={isPending} variant="primary">
               {isPending ? 'Saving...' : 'Save Changes'}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

@@ -18,6 +18,8 @@ import {
 import api from '@/lib/api';
 import clsx from 'clsx';
 
+import { Button } from '@/components/ui/Button';
+
 interface DashboardSummary {
   processes: {
     total: number;
@@ -190,15 +192,15 @@ export default function BCDRDashboard() {
           <p className="text-surface-600 mb-4">
             {((summaryError || metricsError) as Error)?.message || 'An unexpected error occurred'}
           </p>
-          <button
+          <Button
             onClick={() => {
               refetchSummary();
               refetchMetrics();
             }}
-            className="btn btn-primary"
+            variant="primary"
           >
             Try Again
-          </button>
+          </Button>
         </div>
       </div>
     );

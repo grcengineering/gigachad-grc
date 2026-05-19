@@ -16,6 +16,8 @@ import { mcpApi } from '../lib/api';
 
 import { Input } from '@/components/ui/Input';
 
+import { Button } from '@/components/ui/Button';
+
 interface MCPServer {
   id: string;
   name: string;
@@ -152,13 +154,14 @@ export default function MCPSettings() {
             Manage Model Context Protocol servers for automated GRC workflows
           </p>
         </div>
-        <button
+        <Button
           onClick={() => setShowAddModal(true)}
-          className="btn-primary flex items-center gap-2"
+          className="flex items-center gap-2"
+          variant="primary"
         >
           <PlusIcon className="w-5 h-5" />
           Add Server
-        </button>
+        </Button>
       </div>
       {/* Server Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -230,9 +233,9 @@ export default function MCPSettings() {
           <div className="p-8 text-center">
             <CpuChipIcon className="w-12 h-12 mx-auto text-gray-400" />
             <p className="mt-2 text-gray-600 dark:text-gray-400">No servers configured</p>
-            <button onClick={() => setShowAddModal(true)} className="mt-4 btn-secondary">
+            <Button onClick={() => setShowAddModal(true)} className="mt-4" variant="secondary">
               Add your first server
-            </button>
+            </Button>
           </div>
         ) : (
           <div className="divide-y divide-gray-200 dark:divide-surface-700">
@@ -423,7 +426,7 @@ export default function MCPSettings() {
                                           ({envDef.description})
                                         </span>
                                       </label>
-                                      <input
+                                      <Input
                                         type={
                                           key.toLowerCase().includes('secret') ||
                                           key.toLowerCase().includes('password') ||
@@ -457,7 +460,7 @@ export default function MCPSettings() {
                                   {envDef.description}
                                 </span>
                               </label>
-                              <input
+                              <Input
                                 type={
                                   envDef.key.toLowerCase().includes('secret') ||
                                   envDef.key.toLowerCase().includes('password') ||
@@ -481,10 +484,10 @@ export default function MCPSettings() {
                   )}
 
                   <div className="flex justify-end gap-2 pt-4 border-t border-gray-200 dark:border-surface-700">
-                    <button onClick={() => setSelectedTemplate(null)} className="btn-secondary">
+                    <Button onClick={() => setSelectedTemplate(null)} variant="secondary">
                       Back
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       onClick={() =>
                         deployTemplateMutation.mutate({
                           templateId: selectedTemplate.id,
@@ -497,10 +500,10 @@ export default function MCPSettings() {
                         deployTemplateMutation.isPending ||
                         (selectedTemplate.requiredEnv?.some((v) => !envVars[v]) ?? false)
                       }
-                      className="btn-primary"
+                      variant="primary"
                     >
                       {deployTemplateMutation.isPending ? 'Deploying...' : 'Deploy Server'}
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )}

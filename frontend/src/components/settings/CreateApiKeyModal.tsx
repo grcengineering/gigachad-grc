@@ -4,6 +4,8 @@ import { apiKeysApi, type ApiKeyWithSecret } from '@/lib/api';
 
 import { Input } from '@/components/ui/Input';
 
+import { Button } from '@/components/ui/Button';
+
 interface CreateApiKeyModalProps {
   availableScopes: string[];
   onClose: () => void;
@@ -92,12 +94,12 @@ export default function CreateApiKeyModal({
             </div>
           </div>
           <div className="flex justify-end gap-3 pt-4">
-            <button type="button" onClick={onClose} className="btn-secondary">
+            <Button type="button" onClick={onClose} variant="secondary">
               Cancel
-            </button>
-            <button type="submit" className="btn-primary" disabled={createMutation.isPending}>
+            </Button>
+            <Button type="submit" disabled={createMutation.isPending} variant="primary">
               {createMutation.isPending ? 'Creating...' : 'Create Key'}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

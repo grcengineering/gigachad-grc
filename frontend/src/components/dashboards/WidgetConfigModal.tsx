@@ -18,6 +18,8 @@ import { Input } from '@/components/ui/Input';
 
 import { SelectNative } from '@/components/ui/SelectNative';
 
+import { Button } from '@/components/ui/Button';
+
 interface WidgetConfigModalProps {
   widget: DashboardWidget;
   onSave: (data: Partial<DashboardWidget>) => void;
@@ -205,14 +207,15 @@ export default function WidgetConfigModal({ widget, onSave, onClose }: WidgetCon
 
               {/* Preview Button */}
               <div className="flex items-center gap-4">
-                <button
+                <Button
                   onClick={handlePreview}
                   disabled={!dataSource.source || isPreviewLoading}
-                  className="btn btn-ghost btn-sm"
+                  className="btn-sm"
+                  variant="ghost"
                 >
                   <PlayIcon className="w-4 h-4 mr-1" />
                   {isPreviewLoading ? 'Loading...' : 'Preview Data'}
-                </button>
+                </Button>
               </div>
 
               {/* Preview Results */}
@@ -405,12 +408,12 @@ export default function WidgetConfigModal({ widget, onSave, onClose }: WidgetCon
 
         {/* Footer */}
         <div className="flex items-center justify-end gap-3 p-4 border-t border-surface-700">
-          <button onClick={onClose} className="btn btn-ghost">
+          <Button onClick={onClose} variant="ghost">
             Cancel
-          </button>
-          <button onClick={handleSave} className="btn btn-primary">
+          </Button>
+          <Button onClick={handleSave} variant="primary">
             Save Changes
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -486,9 +489,9 @@ function FilterBuilder({
           </button>
         </div>
       ))}
-      <button onClick={addFilter} className="btn btn-ghost btn-sm">
+      <Button onClick={addFilter} className="btn-sm" variant="ghost">
         + Add Filter
-      </button>
+      </Button>
     </div>
   );
 }

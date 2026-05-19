@@ -14,6 +14,8 @@ import {
 
 import { Input } from '@/components/ui/Input';
 
+import { Button } from '@/components/ui/Button';
+
 interface DataSummary {
   controls: number;
   evidence: number;
@@ -212,10 +214,11 @@ export default function DemoDataSettings() {
         {/* Actions */}
         <div className="flex items-center gap-3 pt-4 border-t border-border">
           {!status?.hasExistingData && (
-            <button
+            <Button
               onClick={handleLoadDemo}
               disabled={loadDemoMutation.isPending}
-              className="btn btn-primary flex items-center gap-2"
+              className="flex items-center gap-2"
+              variant="primary"
             >
               {loadDemoMutation.isPending ? (
                 <ArrowPathIcon className="h-4 w-4 animate-spin" />
@@ -223,17 +226,18 @@ export default function DemoDataSettings() {
                 <BeakerIcon className="h-4 w-4" />
               )}
               {loadDemoMutation.isPending ? 'Loading...' : 'Load Demo Data'}
-            </button>
+            </Button>
           )}
 
           {status?.hasExistingData && (
-            <button
+            <Button
               onClick={handleOpenResetModal}
-              className="btn btn-secondary flex items-center gap-2 text-red-600 hover:text-red-700 hover:border-red-400/50"
+              className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:border-red-400/50"
+              variant="secondary"
             >
               <TrashIcon className="h-4 w-4" />
               Reset All Data
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -294,9 +298,9 @@ export default function DemoDataSettings() {
             </div>
 
             <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">
-              <button onClick={() => setShowResetModal(false)} className="btn btn-secondary">
+              <Button onClick={() => setShowResetModal(false)} variant="secondary">
                 Cancel
-              </button>
+              </Button>
               <button
                 onClick={handleReset}
                 disabled={!canReset || resetMutation.isPending}

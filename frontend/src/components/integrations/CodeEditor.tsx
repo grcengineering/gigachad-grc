@@ -10,6 +10,8 @@ import {
 } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 
+import { Button } from '@/components/ui/Button';
+
 interface ValidationResult {
   valid: boolean;
   errors?: string[];
@@ -175,10 +177,11 @@ export default function CodeEditor({
       {/* Toolbar */}
       <div className="flex items-center justify-between px-4 py-2 bg-surface-800/50 border-b border-surface-700">
         <div className="flex items-center gap-2">
-          <button
+          <Button
             onClick={handleValidate}
             disabled={isValidating}
-            className="btn-secondary text-sm flex items-center gap-1"
+            className="text-sm flex items-center gap-1"
+            variant="secondary"
           >
             {isValidating ? (
               <ArrowPathIcon className="w-4 h-4 animate-spin" />
@@ -186,11 +189,12 @@ export default function CodeEditor({
               <CheckCircleIcon className="w-4 h-4" />
             )}
             Validate
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={onTest}
             disabled={isTestLoading}
-            className="btn-primary text-sm flex items-center gap-1"
+            className="text-sm flex items-center gap-1"
+            variant="primary"
           >
             {isTestLoading ? (
               <ArrowPathIcon className="w-4 h-4 animate-spin" />
@@ -198,7 +202,7 @@ export default function CodeEditor({
               <PlayIcon className="w-4 h-4" />
             )}
             Test Run
-          </button>
+          </Button>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -217,7 +221,6 @@ export default function CodeEditor({
           </button>
         </div>
       </div>
-
       {/* Validation/Test Results */}
       {(validation || testResult) && (
         <div className="px-4 py-2 bg-surface-800/30 border-b border-surface-700">
@@ -281,7 +284,6 @@ export default function CodeEditor({
           )}
         </div>
       )}
-
       {/* Editor */}
       <div className="flex-1 min-h-0">
         <Editor
@@ -302,7 +304,6 @@ export default function CodeEditor({
           }}
         />
       </div>
-
       {/* Help Text */}
       <div className="px-4 py-2 bg-surface-800/30 border-t border-surface-700 text-xs text-surface-500">
         <strong>Tip:</strong> The <code className="bg-surface-700 px-1 rounded">sync(context)</code>{' '}

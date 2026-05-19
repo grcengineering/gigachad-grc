@@ -23,6 +23,8 @@ import { Input } from '@/components/ui/Input';
 
 import { SelectNative } from '@/components/ui/SelectNative';
 
+import { Button } from '@/components/ui/Button';
+
 // Action icons and colors
 const ACTION_CONFIG: Record<string, { color: string; bg: string }> = {
   created: { color: 'text-green-600', bg: 'bg-green-500/10' },
@@ -180,14 +182,15 @@ export default function AuditLog() {
             Track all actions and changes across your GRC platform
           </p>
         </div>
-        <button
+        <Button
           onClick={handleExport}
-          className="btn-secondary flex items-center gap-2"
+          className="flex items-center gap-2"
           disabled={logs.length === 0}
+          variant="secondary"
         >
           <ArrowDownTrayIcon className="w-4 h-4" />
           Export CSV
-        </button>
+        </Button>
       </div>
       {/* Stats Cards */}
       {stats && (
@@ -261,9 +264,9 @@ export default function AuditLog() {
           </button>
 
           {/* Refresh */}
-          <button onClick={() => refetch()} className="btn-secondary p-2" title="Refresh">
+          <Button onClick={() => refetch()} className="p-2" title="Refresh" variant="secondary">
             <ArrowPathIcon className="w-5 h-5" />
-          </button>
+          </Button>
         </div>
 
         {/* Expanded Filters */}
@@ -394,13 +397,14 @@ export default function AuditLog() {
                       <p className="text-sm">
                         {error instanceof Error ? error.message : 'An unexpected error occurred.'}
                       </p>
-                      <button
+                      <Button
                         onClick={() => refetch()}
-                        className="btn-secondary text-sm flex items-center gap-2"
+                        className="text-sm flex items-center gap-2"
+                        variant="secondary"
                       >
                         <ArrowPathIcon className="w-4 h-4" />
                         Try Again
-                      </button>
+                      </Button>
                     </div>
                   </td>
                 </tr>
@@ -584,23 +588,25 @@ export default function AuditLog() {
               {pagination.total.toLocaleString()} results
             </div>
             <div className="flex items-center gap-2">
-              <button
+              <Button
                 onClick={() => updateFilter('page', pagination.page - 1)}
                 disabled={pagination.page <= 1}
-                className="btn-secondary p-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                variant="secondary"
               >
                 <ChevronLeftIcon className="w-4 h-4" />
-              </button>
+              </Button>
               <span className="text-sm text-surface-600">
                 Page {pagination.page} of {pagination.pages}
               </span>
-              <button
+              <Button
                 onClick={() => updateFilter('page', pagination.page + 1)}
                 disabled={pagination.page >= pagination.pages}
-                className="btn-secondary p-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                variant="secondary"
               >
                 <ChevronRightIcon className="w-4 h-4" />
-              </button>
+              </Button>
             </div>
           </div>
         )}

@@ -17,6 +17,8 @@ import { Input } from '@/components/ui/Input';
 
 import { SelectNative } from '@/components/ui/SelectNative';
 
+import { Button } from '@/components/ui/Button';
+
 interface Runbook {
   id: string;
   runbook_id: string;
@@ -108,9 +110,9 @@ export default function Runbooks() {
           <p className="text-surface-600 mb-4">
             {(error as Error).message || 'An unexpected error occurred'}
           </p>
-          <button onClick={() => refetch()} className="btn btn-primary">
+          <Button onClick={() => refetch()} variant="primary">
             Try Again
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -209,9 +211,9 @@ export default function Runbooks() {
               <option value="needs_review">Needs Review</option>
             </SelectNative>
           </div>
-          <button onClick={() => refetch()} className="btn btn-secondary">
+          <Button onClick={() => refetch()} variant="secondary">
             <ArrowPathIcon className="w-5 h-5" />
-          </button>
+          </Button>
         </div>
       </div>
       {/* Grid */}
@@ -302,23 +304,25 @@ export default function Runbooks() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-4">
-          <button
+          <Button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
-            className="btn btn-secondary btn-sm"
+            className="btn-sm"
+            variant="secondary"
           >
             Previous
-          </button>
+          </Button>
           <span className="text-surface-600 text-sm">
             Page {page} of {totalPages}
           </span>
-          <button
+          <Button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page === totalPages}
-            className="btn btn-secondary btn-sm"
+            className="btn-sm"
+            variant="secondary"
           >
             Next
-          </button>
+          </Button>
         </div>
       )}
     </div>

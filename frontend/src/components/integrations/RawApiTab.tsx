@@ -19,6 +19,8 @@ import { Input } from '@/components/ui/Input';
 
 import { SelectNative } from '@/components/ui/SelectNative';
 
+import { Button } from '@/components/ui/Button';
+
 interface RawRequest {
   id: string;
   name: string;
@@ -312,17 +314,18 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
           <div className="w-64 border-r border-surface-800 flex flex-col">
             <div className="p-3 border-b border-surface-800">
               <div className="flex gap-2">
-                <button onClick={addRequest} className="flex-1 btn-secondary text-xs py-1.5">
+                <Button onClick={addRequest} className="flex-1 text-xs py-1.5" variant="secondary">
                   <PlusIcon className="w-3.5 h-3.5 mr-1" />
                   New
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={() => setShowParseModal(true)}
-                  className="flex-1 btn-secondary text-xs py-1.5"
+                  className="flex-1 text-xs py-1.5"
+                  variant="secondary"
                 >
                   <ClipboardDocumentIcon className="w-3.5 h-3.5 mr-1" />
                   Paste
-                </button>
+                </Button>
               </div>
             </div>
             <div className="flex-1 overflow-y-auto p-2 space-y-1">
@@ -481,10 +484,11 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
 
                   {/* Test Button & Results */}
                   <div className="pt-4 border-t border-surface-800">
-                    <button
+                    <Button
                       onClick={testRequest}
                       disabled={isTesting || !selectedRequest.url}
-                      className="btn-primary w-full"
+                      className="w-full"
+                      variant="primary"
                     >
                       {isTesting ? (
                         <>
@@ -497,7 +501,7 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
                           Test Request
                         </>
                       )}
-                    </button>
+                    </Button>
 
                     {testResult && (
                       <div
@@ -596,16 +600,12 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
               className="input w-full font-mono text-sm mb-4"
             />
             <div className="flex justify-end gap-3">
-              <button onClick={() => setShowParseModal(false)} className="btn-secondary">
+              <Button onClick={() => setShowParseModal(false)} variant="secondary">
                 Cancel
-              </button>
-              <button
-                onClick={parseCurlOrHttp}
-                className="btn-primary"
-                disabled={!parseInput.trim()}
-              >
+              </Button>
+              <Button onClick={parseCurlOrHttp} disabled={!parseInput.trim()} variant="primary">
                 Parse & Add
-              </button>
+              </Button>
             </div>
           </div>
         </div>

@@ -22,6 +22,8 @@ import type {
 
 import { SelectNative } from '@/components/ui/SelectNative';
 
+import { Button } from '@/components/ui/Button';
+
 export interface MappingImportWizardProps {
   open: boolean;
   onClose: () => void;
@@ -240,45 +242,48 @@ export function MappingImportWizard({
           <div className="flex items-center justify-between gap-3 p-6 border-t border-surface-700">
             {stage === 'upload' && (
               <>
-                <button type="button" onClick={handleClose} className="btn-secondary">
+                <Button type="button" onClick={handleClose} variant="secondary">
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   onClick={handleValidate}
                   disabled={!canValidate || validateMutation.isPending}
-                  className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="disabled:opacity-50 disabled:cursor-not-allowed"
+                  variant="primary"
                 >
                   {validateMutation.isPending ? 'Validating…' : 'Validate'}
-                </button>
+                </Button>
               </>
             )}
 
             {stage === 'preview' && (
               <>
-                <button
+                <Button
                   type="button"
                   onClick={handleBackToUpload}
-                  className="btn-secondary inline-flex items-center"
+                  className="inline-flex items-center"
+                  variant="secondary"
                 >
                   <ArrowLeftIcon className="w-4 h-4 mr-1" />
                   Back
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   onClick={handleConfirm}
                   disabled={commitMutation.isPending}
-                  className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="disabled:opacity-50 disabled:cursor-not-allowed"
+                  variant="primary"
                 >
                   {commitMutation.isPending ? 'Importing…' : 'Confirm import'}
-                </button>
+                </Button>
               </>
             )}
 
             {stage === 'result' && (
-              <button type="button" onClick={handleDone} className="btn-primary ml-auto">
+              <Button type="button" onClick={handleDone} className="ml-auto" variant="primary">
                 Done
-              </button>
+              </Button>
             )}
           </div>
         </div>

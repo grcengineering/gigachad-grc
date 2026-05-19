@@ -16,6 +16,8 @@ import { mcpApi } from '../../lib/api';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Button } from '@/components/ui/Button';
+
 interface Workflow {
   id: string;
   name: string;
@@ -206,13 +208,14 @@ export default function MCPWorkflowBuilder() {
                   </p>
                 </div>
                 {selectedWorkflowData.trigger.type === 'manual' && (
-                  <button
+                  <Button
                     onClick={() => setShowExecutionModal(true)}
-                    className="btn-primary flex items-center gap-2"
+                    className="flex items-center gap-2"
+                    variant="primary"
                   >
                     <PlayIcon className="w-5 h-5" />
                     Run Workflow
-                  </button>
+                  </Button>
                 )}
               </div>
 
@@ -378,10 +381,10 @@ export default function MCPWorkflowBuilder() {
               </div>
 
               <div className="flex justify-end gap-2 pt-4">
-                <button onClick={() => setShowExecutionModal(false)} className="btn-secondary">
+                <Button onClick={() => setShowExecutionModal(false)} variant="secondary">
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={() =>
                     executeMutation.mutate({
                       workflowId: selectedWorkflowData.id,
@@ -389,7 +392,8 @@ export default function MCPWorkflowBuilder() {
                     })
                   }
                   disabled={executeMutation.isPending}
-                  className="btn-primary flex items-center gap-2"
+                  className="flex items-center gap-2"
+                  variant="primary"
                 >
                   {executeMutation.isPending ? (
                     <ArrowPathIcon className="w-5 h-5 animate-spin" />
@@ -397,7 +401,7 @@ export default function MCPWorkflowBuilder() {
                     <PlayIcon className="w-5 h-5" />
                   )}
                   {executeMutation.isPending ? 'Starting...' : 'Start Execution'}
-                </button>
+                </Button>
               </div>
             </div>
           </div>

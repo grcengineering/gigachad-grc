@@ -4,6 +4,8 @@ import { Dashboard } from '@/lib/dashboardWidgets';
 import { XMarkIcon, DocumentDuplicateIcon, EyeIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
+import { Button } from '@/components/ui/Button';
+
 interface TemplateGalleryProps {
   onClose: () => void;
   onSelectTemplate: (dashboardId: string) => void;
@@ -97,20 +99,22 @@ export default function TemplateGallery({ onClose, onSelectTemplate }: TemplateG
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <button
+                    <Button
                       onClick={() => onSelectTemplate(template.id)}
-                      className="btn btn-ghost btn-sm flex-1"
+                      className="btn-sm flex-1"
+                      variant="ghost"
                     >
                       <EyeIcon className="w-4 h-4 mr-1" /> Preview
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       onClick={() => duplicateMutation.mutate(template.id)}
                       disabled={duplicateMutation.isPending}
-                      className="btn btn-primary btn-sm flex-1"
+                      className="btn-sm flex-1"
+                      variant="primary"
                     >
                       <DocumentDuplicateIcon className="w-4 h-4 mr-1" />
                       {duplicateMutation.isPending ? 'Applying...' : 'Use Template'}
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ))}

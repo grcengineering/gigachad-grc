@@ -17,6 +17,8 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Button } from '@/components/ui/Button';
+
 export default function ConfigAsCode() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
@@ -313,14 +315,15 @@ function ExportImportContent({
             </div>
           </div>
 
-          <button
+          <Button
             onClick={handleExport}
             disabled={exportMutation.isPending}
-            className="btn btn-primary flex items-center gap-2"
+            className="flex items-center gap-2"
+            variant="primary"
           >
             <ArrowDownTrayIcon className="w-5 h-5" />
             {exportMutation.isPending ? 'Exporting...' : 'Export Configuration'}
-          </button>
+          </Button>
         </div>
       </div>
       {/* Import Section */}
@@ -385,22 +388,24 @@ function ExportImportContent({
           </div>
 
           <div className="flex gap-3">
-            <button
+            <Button
               onClick={() => handleImport(true)}
               disabled={importMutation.isPending || !importConfig.trim()}
-              className="btn btn-secondary flex items-center gap-2"
+              className="flex items-center gap-2"
+              variant="secondary"
             >
               <DocumentTextIcon className="w-5 h-5" />
               Preview Changes
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => handleImport(false)}
               disabled={importMutation.isPending || !importConfig.trim()}
-              className="btn btn-primary flex items-center gap-2"
+              className="flex items-center gap-2"
+              variant="primary"
             >
               <ArrowUpTrayIcon className="w-5 h-5" />
               {importMutation.isPending ? 'Importing...' : 'Import Configuration'}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

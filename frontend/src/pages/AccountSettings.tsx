@@ -13,6 +13,8 @@ import { Input } from '@/components/ui/Input';
 
 import { SelectNative } from '@/components/ui/SelectNative';
 
+import { Button } from '@/components/ui/Button';
+
 const TABS = [
   { id: 'profile', label: 'Profile', icon: UserIcon },
   { id: 'notifications', label: 'Notifications', icon: BellIcon },
@@ -76,7 +78,7 @@ function ProfileSettings({ user }: { user: any }) {
             {user?.name?.charAt(0)?.toUpperCase() || 'U'}
           </span>
         </div>
-        <button className="btn-secondary">Change Avatar</button>
+        <Button variant="secondary">Change Avatar</Button>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
@@ -112,7 +114,7 @@ function ProfileSettings({ user }: { user: any }) {
         </div>
       </div>
       <div className="flex justify-end pt-4 border-t border-surface-800">
-        <button className="btn-primary">Save Changes</button>
+        <Button variant="primary">Save Changes</Button>
       </div>
     </div>
   );
@@ -289,7 +291,7 @@ function NotificationPreferences() {
         </div>
 
         <div className="flex justify-end pt-4 border-t border-surface-800">
-          <button className="btn-primary">Save Task Preferences</button>
+          <Button variant="primary">Save Task Preferences</Button>
         </div>
       </div>
       {/* General Notifications */}
@@ -392,7 +394,7 @@ function NotificationPreferences() {
         </div>
 
         <div className="flex justify-end pt-4 border-t border-surface-800">
-          <button className="btn-primary">Save Preferences</button>
+          <Button variant="primary">Save Preferences</Button>
         </div>
       </div>
     </div>
@@ -445,7 +447,7 @@ function SecuritySettings() {
         </div>
 
         <div className="flex justify-end pt-4 border-t border-surface-800">
-          <button className="btn-primary">Update Password</button>
+          <Button variant="primary">Update Password</Button>
         </div>
       </div>
       <div className="card p-6 space-y-6">
@@ -461,10 +463,10 @@ function SecuritySettings() {
           </span>
         </div>
 
-        <button className="btn-secondary">
+        <Button variant="secondary">
           <ShieldCheckIcon className="w-5 h-5 mr-2" />
           Enable 2FA
-        </button>
+        </Button>
       </div>
       <div className="card p-6 space-y-6">
         <h2 className="text-lg font-semibold text-surface-100">Active Sessions</h2>
