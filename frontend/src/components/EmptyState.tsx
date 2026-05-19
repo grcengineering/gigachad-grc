@@ -1,5 +1,11 @@
+/**
+ * Legacy EmptyState API + named presets (NoResultsEmptyState etc).
+ * Internally renders @/components/ui/EmptyState so styling matches the
+ * design system. The variant→icon mapping is preserved for callers.
+ */
 import { ReactNode } from 'react';
 import { Button } from '@/components/ui/Button';
+import { EmptyState as UIEmptyState } from '@/components/ui/EmptyState';
 import {
   DocumentTextIcon,
   FolderOpenIcon,
@@ -74,36 +80,36 @@ export function EmptyState({
   icon,
   action,
   secondaryAction,
-  className = '',
+  className,
 }: EmptyStateProps) {
   const Icon = variantIcons[variant];
+  const iconElement = icon ?? <Icon className="h-12 w-12 text-surface-500" />;
+
+  const actionsElement =
+    action || secondaryAction ? (
+      <div className="flex items-center justify-center gap-3">
+        {action && (
+          <Button onClick={action.onClick} leftIcon={action.icon}>
+            {action.label}
+          </Button>
+        )}
+        {secondaryAction && (
+          <Button variant="ghost" onClick={secondaryAction.onClick}>
+            {secondaryAction.label}
+          </Button>
+        )}
+      </div>
+    ) : undefined;
 
   return (
-    <div
-      className={`bg-surface-800 border border-surface-700 rounded-xl p-12 text-center ${className}`}
-    >
-      <div className="flex justify-center mb-4">
-        {icon || <Icon className="w-12 h-12 text-surface-500" />}
-      </div>
-      <h3 className="text-lg font-medium text-white mb-2">{title}</h3>
-      {description && <p className="text-surface-600 max-w-md mx-auto mb-6">{description}</p>}
-      {(action || secondaryAction) && (
-        <div className="flex items-center justify-center gap-3">
-          {action && (
-            <Button onClick={action.onClick} leftIcon={action.icon}>
-              {action.label}
-            </Button>
-          )}
-          {secondaryAction && (
-            <button
-              onClick={secondaryAction.onClick}
-              className="px-4 py-2 text-surface-600 hover:text-white transition-colors"
-            >
-              {secondaryAction.label}
-            </button>
-          )}
-        </div>
-      )}
+    <div className={`bg-white border border-surface-200 rounded-lg ${className ?? ''}`}>
+      <UIEmptyState
+        icon={iconElement}
+        title={title}
+        description={description}
+        action={actionsElement}
+        size="lg"
+      />
     </div>
   );
 }
@@ -182,5 +188,3 @@ export function ErrorEmptyState({
     />
   );
 }
-
-export default EmptyState;
