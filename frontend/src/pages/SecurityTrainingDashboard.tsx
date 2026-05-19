@@ -199,7 +199,7 @@ export default function SecurityTrainingDashboard() {
             Organization-wide security awareness training metrics and compliance
           </p>
         </div>
-        <Link to="/tools/awareness" className="btn-primary">
+        <Link to="/tools/awareness" className="">
           Manage Training
         </Link>
       </div>

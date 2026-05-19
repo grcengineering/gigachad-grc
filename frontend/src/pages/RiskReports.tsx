@@ -392,7 +392,7 @@ function generatePDFContent(
         <td>${risk.riskId}</td>
         <td>${risk.title}</td>
         ${reportType !== 'heat-map' ? `<td>${risk.category}</td>` : ''}
-        <td><span class="badge ${badgeClass}">${risk.inherentRisk}</span></td>
+        <td><span class="${badgeClass}">${risk.inherentRisk}</span></td>
         <td>${risk.status?.replace(/_/g, ' ')}</td>
         ${reportType === 'treatment-status' ? `<td>${risk.treatmentPlan || 'None'}</td>` : ''}
       </tr>

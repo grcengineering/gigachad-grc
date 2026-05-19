@@ -348,7 +348,7 @@ export default function EmployeeComplianceDashboard() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Link to="/settings/employee-compliance" className="btn btn-secondary">
+          <Link to="/settings/employee-compliance" className="">
             <Cog6ToothIcon className="h-5 w-5" />
             Settings
           </Link>
@@ -360,7 +360,7 @@ export default function EmployeeComplianceDashboard() {
             <ArrowPathIcon className={`h-5 w-5 ${syncMutation.isPending ? 'animate-spin' : ''}`} />
             {syncMutation.isPending ? 'Syncing...' : 'Sync All'}
           </Button>
-          <Link to="/people" className="btn btn-primary">
+          <Link to="/people" className="">
             View All Employees
           </Link>
         </div>
@@ -414,7 +414,7 @@ export default function EmployeeComplianceDashboard() {
             Connect your HRIS, background check, training, and MDM integrations to start tracking
             employee compliance.
           </p>
-          <Link to="/settings/employee-compliance" className="btn btn-primary">
+          <Link to="/settings/employee-compliance" className="">
             <Cog6ToothIcon className="h-5 w-5 mr-2" />
             Configure Data Sources
           </Link>

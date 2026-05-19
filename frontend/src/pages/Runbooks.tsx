@@ -128,7 +128,7 @@ export default function Runbooks() {
             Step-by-step recovery procedures for systems and processes
           </p>
         </div>
-        <Link to="/bcdr/runbooks/new" className="btn btn-primary">
+        <Link to="/bcdr/runbooks/new" className="">
           <PlusIcon className="w-5 h-5 mr-2" />
           Create Runbook
         </Link>
@@ -307,7 +307,7 @@ export default function Runbooks() {
           <Button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
-            className="btn-sm"
+            className=""
             variant="secondary"
           >
             Previous
@@ -318,7 +318,7 @@ export default function Runbooks() {
           <Button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page === totalPages}
-            className="btn-sm"
+            className=""
             variant="secondary"
           >
             Next

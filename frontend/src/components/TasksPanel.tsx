@@ -382,7 +382,7 @@ function TaskCard({
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className={clsx('badge text-xs', statusConfig.color)}>{statusConfig.label}</span>
+            <span className={clsx('text-xs', statusConfig.color)}>{statusConfig.label}</span>
             <span className={clsx('text-xs', priorityConfig.color)}>
               <FlagIcon className="w-3 h-3 inline" /> {priorityConfig.label}
             </span>

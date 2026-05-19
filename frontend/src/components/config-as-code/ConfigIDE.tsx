@@ -498,7 +498,7 @@ export default function ConfigIDE({ workspaceId }: Props) {
                   // Don't disable the module on error - just show the error
                 }
               }}
-              className="btn-sm flex items-center gap-2"
+              className="flex items-center gap-2"
               variant="primary"
             >
               <ArrowPathIcon className="w-4 h-4" />
@@ -581,7 +581,7 @@ export default function ConfigIDE({ workspaceId }: Props) {
                     }
                   }}
                   disabled={refreshMutation.isPending}
-                  className="btn-sm flex items-center gap-1"
+                  className="flex items-center gap-1"
                   title="Regenerate Terraform files from your current GRC data (controls, frameworks, policies, etc.)"
                   variant="secondary"
                 >
@@ -602,7 +602,7 @@ export default function ConfigIDE({ workspaceId }: Props) {
                 <Button
                   onClick={handlePreview}
                   disabled={previewMutation.isPending || !isEditing}
-                  className="btn-sm flex items-center gap-1"
+                  className="flex items-center gap-1"
                   variant="secondary"
                 >
                   <EyeIcon className="w-4 h-4" />
@@ -611,7 +611,7 @@ export default function ConfigIDE({ workspaceId }: Props) {
                 <Button
                   onClick={handleSave}
                   disabled={saveMutation.isPending || !isEditing}
-                  className="btn-sm flex items-center gap-1"
+                  className="flex items-center gap-1"
                   variant="secondary"
                 >
                   <CheckCircleIcon className="w-4 h-4" />
@@ -620,7 +620,7 @@ export default function ConfigIDE({ workspaceId }: Props) {
                 <Button
                   onClick={handleApply}
                   disabled={applyMutation.isPending || !isEditing}
-                  className="btn-sm flex items-center gap-1"
+                  className="flex items-center gap-1"
                   variant="primary"
                 >
                   <PlayIcon className="w-4 h-4" />

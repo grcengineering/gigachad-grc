@@ -30,14 +30,16 @@ import { Input } from '@/components/ui/Input';
 
 import { SelectNative } from '@/components/ui/SelectNative';
 
+import { Badge } from '@/components/ui/Badge';
+
 type TabType = 'status' | 'history';
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; next?: string[] }> = {
-  draft: { label: 'Draft', color: 'badge-neutral', next: ['in_review'] },
-  in_review: { label: 'In Review', color: 'badge-warning', next: ['approved', 'draft'] },
-  approved: { label: 'Approved', color: 'badge-success', next: ['published', 'in_review'] },
-  published: { label: 'Published', color: 'badge-info', next: ['retired'] },
-  retired: { label: 'Retired', color: 'badge-danger', next: [] },
+  draft: { label: 'Draft', color: '', next: ['in_review'] },
+  in_review: { label: 'In Review', color: '', next: ['approved', 'draft'] },
+  approved: { label: 'Approved', color: '', next: ['published', 'in_review'] },
+  published: { label: 'Published', color: '', next: ['retired'] },
+  retired: { label: 'Retired', color: '', next: [] },
 };
 
 const CATEGORY_OPTIONS = [
@@ -174,7 +176,7 @@ export default function PolicyDetail() {
               <h1 className="text-2xl font-bold text-surface-100">{policy.title}</h1>
               <p className="text-surface-600 mt-1">{policy.description || 'No description'}</p>
               <div className="flex items-center gap-3 mt-3">
-                <span className={clsx('badge', statusConfig.color)}>{statusConfig.label}</span>
+                <span className={clsx('', statusConfig.color)}>{statusConfig.label}</span>
                 <span className="text-surface-500">•</span>
                 <span className="font-mono text-surface-600">v{policy.version}</span>
                 <span className="text-surface-500">•</span>
@@ -276,7 +278,11 @@ export default function PolicyDetail() {
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="font-mono text-surface-200">v{version.version}</span>
-                        {index === 0 && <span className="badge badge-info text-xs">Current</span>}
+                        {index === 0 && (
+                          <Badge className="text-xs" variant="info">
+                            Current
+                          </Badge>
+                        )}
                       </div>
                       {version.changeNotes && (
                         <p className="text-sm text-surface-600 mt-1">{version.changeNotes}</p>
@@ -354,8 +360,8 @@ export default function PolicyDetail() {
                                   <>
                                     <span
                                       className={clsx(
-                                        'badge text-xs',
-                                        STATUS_CONFIG[entry.fromStatus]?.color || 'badge-neutral'
+                                        'text-xs',
+                                        STATUS_CONFIG[entry.fromStatus]?.color || ''
                                       )}
                                     >
                                       {STATUS_CONFIG[entry.fromStatus]?.label || entry.fromStatus}
@@ -365,8 +371,8 @@ export default function PolicyDetail() {
                                 ) : null}
                                 <span
                                   className={clsx(
-                                    'badge text-xs',
-                                    STATUS_CONFIG[entry.toStatus]?.color || 'badge-neutral'
+                                    'text-xs',
+                                    STATUS_CONFIG[entry.toStatus]?.color || ''
                                   )}
                                 >
                                   {STATUS_CONFIG[entry.toStatus]?.label || entry.toStatus}
@@ -532,9 +538,9 @@ export default function PolicyDetail() {
                     <dt className="text-xs text-surface-500">Tags</dt>
                     <dd className="flex flex-wrap gap-1 mt-1">
                       {policy?.tags?.map((tag: string) => (
-                        <span key={tag} className="badge badge-neutral text-xs">
+                        <Badge key={tag} className="text-xs" variant="neutral">
                           {tag}
-                        </span>
+                        </Badge>
                       ))}
                     </dd>
                   </div>
@@ -650,10 +656,8 @@ export default function PolicyDetail() {
             <div className="mb-4">
               <p className="text-surface-700">
                 Move this policy from{' '}
-                <span className={clsx('badge', statusConfig.color)}>{statusConfig.label}</span> to{' '}
-                <span
-                  className={clsx('badge', STATUS_CONFIG[statusChangeModal.targetStatus]?.color)}
-                >
+                <span className={clsx('', statusConfig.color)}>{statusConfig.label}</span> to{' '}
+                <span className={clsx('', STATUS_CONFIG[statusChangeModal.targetStatus]?.color)}>
                   {STATUS_CONFIG[statusChangeModal.targetStatus]?.label}
                 </span>
               </p>

@@ -111,7 +111,7 @@ export default function BusinessProcesses() {
             Manage critical business processes and their impact analysis
           </p>
         </div>
-        <Link to="/bcdr/processes/new" className="btn btn-primary">
+        <Link to="/bcdr/processes/new" className="">
           <PlusIcon className="w-5 h-5 mr-2" />
           Add Process
         </Link>
@@ -257,7 +257,7 @@ export default function BusinessProcesses() {
             <Button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="btn-sm"
+              className=""
               variant="secondary"
             >
               Previous
@@ -268,7 +268,7 @@ export default function BusinessProcesses() {
             <Button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="btn-sm"
+              className=""
               variant="secondary"
             >
               Next

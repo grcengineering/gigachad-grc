@@ -304,7 +304,7 @@ export default function DemoDataSettings() {
               <button
                 onClick={handleReset}
                 disabled={!canReset || resetMutation.isPending}
-                className="btn bg-red-500 hover:bg-red-600 text-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="bg-red-500 hover:bg-red-600 text-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {resetMutation.isPending ? (
                   <ArrowPathIcon className="h-4 w-4 animate-spin" />

@@ -245,10 +245,7 @@ export default function AuditLog() {
           {/* Filter toggle */}
           <button
             onClick={() => setIsFiltersOpen(!isFiltersOpen)}
-            className={clsx(
-              'btn-secondary flex items-center gap-2',
-              hasActiveFilters && 'ring-2 ring-brand-500'
-            )}
+            className={clsx('flex items-center gap-2', hasActiveFilters && 'ring-2 ring-brand-500')}
           >
             <FunnelIcon className="w-4 h-4" />
             Filters

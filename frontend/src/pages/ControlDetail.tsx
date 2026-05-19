@@ -41,6 +41,8 @@ import { Input } from '@/components/ui/Input';
 
 import { SelectNative } from '@/components/ui/SelectNative';
 
+import { Badge } from '@/components/ui/Badge';
+
 type TabType = 'details' | 'comments' | 'tasks' | 'history';
 
 const STATUS_OPTIONS = [
@@ -516,7 +518,7 @@ export default function ControlDetail() {
           <div className="card p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-surface-100">Evidence</h2>
-              <Link to={`/evidence?controlId=${id}`} className="btn-outline text-sm">
+              <Link to={`/evidence?controlId=${id}`} className="text-sm">
                 <LinkIcon className="w-4 h-4 mr-2" />
                 Link Evidence
               </Link>
@@ -545,12 +547,12 @@ export default function ControlDetail() {
                     <div className="flex items-center gap-2">
                       <span
                         className={clsx(
-                          'badge text-xs',
+                          'text-xs',
                           link.evidence.status === 'approved'
-                            ? 'badge-success'
+                            ? ''
                             : link.evidence.status === 'expired'
-                              ? 'badge-danger'
-                              : 'badge-warning'
+                              ? ''
+                              : ''
                         )}
                       >
                         {link.evidence.status}
@@ -616,12 +618,12 @@ export default function ControlDetail() {
                     <div className="flex items-center gap-2">
                       <span
                         className={clsx(
-                          'badge text-xs',
+                          'text-xs',
                           link.policy?.status === 'published' || link.policy?.status === 'approved'
-                            ? 'badge-success'
+                            ? ''
                             : link.policy?.status === 'retired'
-                              ? 'badge-danger'
-                              : 'badge-warning'
+                              ? ''
+                              : ''
                         )}
                       >
                         {link.policy?.status}
@@ -669,12 +671,8 @@ export default function ControlDetail() {
                       <div className="flex items-center gap-2">
                         <span
                           className={clsx(
-                            'badge',
-                            test.result === 'pass'
-                              ? 'badge-success'
-                              : test.result === 'fail'
-                                ? 'badge-danger'
-                                : 'badge-warning'
+                            '',
+                            test.result === 'pass' ? '' : test.result === 'fail' ? '' : ''
                           )}
                         >
                           {test.result}
@@ -726,9 +724,9 @@ export default function ControlDetail() {
                 <dd className="flex flex-wrap gap-1 mt-1">
                   {(control?.tags?.length ?? 0) > 0 ? (
                     control?.tags?.map((tag: string) => (
-                      <span key={tag} className="badge badge-neutral text-xs">
+                      <Badge key={tag} className="text-xs" variant="neutral">
                         {tag}
-                      </span>
+                      </Badge>
                     ))
                   ) : (
                     <span className="text-sm text-surface-500">No tags</span>

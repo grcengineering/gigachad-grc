@@ -120,7 +120,7 @@ function NotFound() {
         <p className="text-muted-foreground mb-4">
           The employee you're looking for doesn't exist or has been removed.
         </p>
-        <Link to="/people" className="btn btn-primary">
+        <Link to="/people" className="">
           Back to Employees
         </Link>
       </div>

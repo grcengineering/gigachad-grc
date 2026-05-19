@@ -129,14 +129,15 @@ export default function CommunicationPlans() {
           </p>
         </div>
         <div className="flex gap-3">
-          <button
+          <Button
+            variant="secondary"
             onClick={() => setShowEscalation(!showEscalation)}
-            className={clsx('btn btn-secondary', showEscalation && 'bg-brand-600 border-brand-600')}
+            className={clsx(showEscalation && 'bg-brand-600 border-brand-600 !text-white')}
+            leftIcon={<UserGroupIcon className="w-5 h-5" />}
           >
-            <UserGroupIcon className="w-5 h-5 mr-2" />
             Escalation View
-          </button>
-          <Link to="/bcdr/communication/new" className="btn btn-primary">
+          </Button>
+          <Link to="/bcdr/communication/new" className="">
             <PlusIcon className="w-5 h-5 mr-2" />
             Create Plan
           </Link>

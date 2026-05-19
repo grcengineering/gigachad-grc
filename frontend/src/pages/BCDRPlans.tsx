@@ -113,7 +113,7 @@ export default function BCDRPlans() {
             Manage business continuity and disaster recovery plans
           </p>
         </div>
-        <Link to="/bcdr/plans/new" className="btn btn-primary">
+        <Link to="/bcdr/plans/new" className="">
           <PlusIcon className="w-5 h-5 mr-2" />
           Create Plan
         </Link>
@@ -248,7 +248,7 @@ export default function BCDRPlans() {
           <Button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
-            className="btn-sm"
+            className=""
             variant="secondary"
           >
             Previous
@@ -259,7 +259,7 @@ export default function BCDRPlans() {
           <Button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page === totalPages}
-            className="btn-sm"
+            className=""
             variant="secondary"
           >
             Next

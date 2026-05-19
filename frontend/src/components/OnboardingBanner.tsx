@@ -134,10 +134,7 @@ export default function OnboardingBanner({ onDismiss }: OnboardingBannerProps) {
             </button>
           </div>
 
-          <Link
-            to="/integrations"
-            className="btn btn-secondary flex items-center justify-center gap-2 py-3"
-          >
+          <Link to="/integrations" className="flex items-center justify-center gap-2 py-3">
             <ArrowRightIcon className="h-5 w-5" />
             Start from Scratch
           </Link>

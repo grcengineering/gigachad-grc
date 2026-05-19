@@ -29,25 +29,25 @@ const STATUS_CONFIG: Record<string, { label: string; icon: any; color: string; b
     label: 'Active',
     icon: CheckCircleIcon,
     color: 'text-green-600',
-    badge: 'badge-success',
+    badge: '',
   },
   inactive: {
     label: 'Inactive',
     icon: XCircleIcon,
     color: 'text-surface-600',
-    badge: 'badge-neutral',
+    badge: '',
   },
   error: {
     label: 'Error',
     icon: ExclamationTriangleIcon,
     color: 'text-red-600',
-    badge: 'badge-danger',
+    badge: '',
   },
   pending_setup: {
     label: 'Setup Required',
     icon: CogIcon,
     color: 'text-yellow-600',
-    badge: 'badge-warning',
+    badge: '',
   },
 };
 
@@ -369,7 +369,7 @@ export default function Integrations() {
                       label: 'Not Configured',
                       icon: CogIcon,
                       color: 'text-surface-500',
-                      badge: 'badge-neutral',
+                      badge: '',
                     };
                     const StatusIcon = statusConfig.icon;
 
@@ -395,7 +395,7 @@ export default function Integrations() {
                             </div>
                             <div>
                               <h3 className="font-semibold text-surface-100">{meta.name}</h3>
-                              <span className={clsx('badge text-xs', statusConfig.badge)}>
+                              <span className={clsx('text-xs', statusConfig.badge)}>
                                 {statusConfig.label}
                               </span>
                             </div>

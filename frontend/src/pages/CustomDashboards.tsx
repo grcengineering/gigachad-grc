@@ -21,6 +21,8 @@ import { Input } from '@/components/ui/Input';
 
 import { Button } from '@/components/ui/Button';
 
+import { Badge } from '@/components/ui/Badge';
+
 export default function CustomDashboards() {
   const queryClient = useQueryClient();
   const [selectedDashboardId, setSelectedDashboardId] = useState<string | null>(null);
@@ -215,7 +217,7 @@ export default function CustomDashboards() {
                 onClick={() => setSelectedDashboardId(template.id)}
               >
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="badge badge-sm badge-info">Template</span>
+                  <Badge variant="info">Template</Badge>
                   <h3 className="font-medium text-surface-200">{template.name}</h3>
                 </div>
                 <p className="text-sm text-surface-600 mb-2">
@@ -229,7 +231,7 @@ export default function CustomDashboards() {
                       toast.success('Template copied to your dashboards');
                     });
                   }}
-                  className="btn-sm w-full"
+                  className="w-full"
                   variant="ghost"
                 >
                   <DocumentDuplicateIcon className="w-4 h-4 mr-1" /> Use Template

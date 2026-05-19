@@ -36,10 +36,10 @@ const TYPE_ICONS: Record<string, any> = {
 };
 
 const STATUS_STYLES: Record<string, string> = {
-  pending_review: 'badge-warning',
-  approved: 'badge-success',
-  rejected: 'badge-danger',
-  expired: 'badge-neutral',
+  pending_review: '',
+  approved: '',
+  rejected: '',
+  expired: '',
 };
 
 export default function Evidence() {
@@ -133,7 +133,7 @@ export default function Evidence() {
                 </p>
               </div>
             </div>
-            <Link to={`/controls/${linkToControlId}`} className="btn-outline text-sm">
+            <Link to={`/controls/${linkToControlId}`} className="text-sm">
               <ArrowLeftIcon className="w-4 h-4 mr-1" />
               Back to Control
             </Link>
@@ -226,7 +226,7 @@ export default function Evidence() {
                     <h3 className="text-sm font-medium text-surface-100 truncate">{item.title}</h3>
                     <p className="text-xs text-surface-500 mt-1">{item.filename}</p>
                     <div className="flex items-center gap-2 mt-2">
-                      <span className={clsx('badge text-xs', STATUS_STYLES[item.status])}>
+                      <span className={clsx('text-xs', STATUS_STYLES[item.status])}>
                         {item.status.replace('_', ' ')}
                       </span>
                       <span className="text-xs text-surface-500 capitalize">{item.type}</span>

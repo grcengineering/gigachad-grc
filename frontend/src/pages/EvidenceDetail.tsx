@@ -74,6 +74,8 @@ import { SkeletonDetailHeader, SkeletonDetailSection } from '@/components/Skelet
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Badge } from '@/components/ui/Badge';
+
 type TabType = 'details' | 'history';
 
 const TYPE_ICONS: Record<string, any> = {
@@ -231,11 +233,13 @@ export default function EvidenceDetail() {
               <h1 className="text-2xl font-bold text-surface-100">{evidence.title}</h1>
               <p className="text-surface-600 mt-1">{evidence.filename}</p>
               <div className="flex items-center gap-3 mt-2">
-                <span className={clsx('badge', statusConfig.color)}>
+                <span className={clsx('', statusConfig.color)}>
                   <StatusIcon className="w-3 h-3 mr-1" />
                   {statusConfig.label}
                 </span>
-                <span className="badge badge-neutral capitalize">{evidence.type}</span>
+                <Badge className="capitalize" variant="neutral">
+                  {evidence.type}
+                </Badge>
               </div>
             </div>
           </div>
@@ -314,9 +318,7 @@ export default function EvidenceDetail() {
           <div className="card p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-surface-100">Linked Controls</h2>
-              <span className="badge badge-neutral">
-                {evidence.controlLinks?.length || 0} control(s)
-              </span>
+              <Badge variant="neutral">{evidence.controlLinks?.length || 0} control(s)</Badge>
             </div>
             {(evidence?.controlLinks?.length ?? 0) > 0 ? (
               <div className="space-y-2">
@@ -436,9 +438,9 @@ export default function EvidenceDetail() {
               <h3 className="text-sm font-semibold text-surface-100 mb-4">Tags</h3>
               <div className="flex flex-wrap gap-2">
                 {evidence?.tags?.map((tag: string) => (
-                  <span key={tag} className="badge badge-neutral text-xs">
+                  <Badge key={tag} className="text-xs" variant="neutral">
                     {tag}
-                  </span>
+                  </Badge>
                 ))}
               </div>
             </div>

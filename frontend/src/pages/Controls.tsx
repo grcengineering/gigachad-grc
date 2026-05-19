@@ -34,6 +34,8 @@ import { Input } from '@/components/ui/Input';
 
 import { SelectNative } from '@/components/ui/SelectNative';
 
+import { Badge } from '@/components/ui/Badge';
+
 // Define filter fields for controls
 const CONTROL_FILTER_FIELDS = [
   { key: 'title', label: 'Title', type: 'string' as const },
@@ -425,12 +427,12 @@ export default function Controls() {
                         </Link>
                       </td>
                       <td>
-                        <span className="badge badge-neutral capitalize">
+                        <Badge className="capitalize" variant="neutral">
                           {control.category.replace('_', ' ')}
-                        </span>
+                        </Badge>
                       </td>
                       <td>
-                        <div className={clsx('badge', statusConfig.color)}>
+                        <div className={clsx('', statusConfig.color)}>
                           <StatusIcon className="w-3 h-3 mr-1" />
                           {statusConfig.label}
                         </div>
@@ -441,14 +443,14 @@ export default function Controls() {
                       <td>
                         <div className="flex flex-wrap gap-1">
                           {control.frameworkMappings?.slice(0, 2).map((mapping: any) => (
-                            <span key={mapping.frameworkId} className="badge badge-info text-xs">
+                            <Badge key={mapping.frameworkId} className="text-xs" variant="info">
                               {mapping.frameworkName}
-                            </span>
+                            </Badge>
                           ))}
                           {control.frameworkMappings?.length > 2 && (
-                            <span className="badge badge-neutral text-xs">
+                            <Badge className="text-xs" variant="neutral">
                               +{control.frameworkMappings.length - 2}
-                            </span>
+                            </Badge>
                           )}
                         </div>
                       </td>

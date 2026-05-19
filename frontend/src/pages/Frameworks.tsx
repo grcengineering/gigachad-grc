@@ -12,6 +12,8 @@ import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
 
+import { Badge } from '@/components/ui/Badge';
+
 export default function Frameworks() {
   const queryClient = useQueryClient();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -264,7 +266,6 @@ function FrameworkCard({
       >
         <TrashIcon className="w-4 h-4" />
       </button>
-
       <div className="flex items-start justify-between mb-4 pr-8">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-brand-600/20 rounded-lg">
@@ -277,11 +278,11 @@ function FrameworkCard({
             <p className="text-xs text-surface-500">Version {framework.version}</p>
           </div>
         </div>
-        <span className="badge badge-info text-xs uppercase">{framework.type}</span>
+        <Badge className="text-xs uppercase" variant="info">
+          {framework.type}
+        </Badge>
       </div>
-
       <p className="text-sm text-surface-600 line-clamp-2 mb-4">{framework.description}</p>
-
       {/* Readiness Score */}
       <div className="mb-4">
         <div className="flex items-center justify-between mb-2">
@@ -292,7 +293,6 @@ function FrameworkCard({
           <div className={clsx('progress-fill', progressColor)} style={{ width: `${score}%` }} />
         </div>
       </div>
-
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 pt-4 border-t border-surface-800">
         <div>
@@ -306,7 +306,6 @@ function FrameworkCard({
           </p>
         </div>
       </div>
-
       {/* Last Assessment */}
       {framework.lastAssessment && (
         <div className="mt-4 pt-4 border-t border-surface-800">

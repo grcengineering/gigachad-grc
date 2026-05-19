@@ -21,6 +21,8 @@ import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 
 import { Button } from '@/components/ui/Button';
 
+import { Badge } from '@/components/ui/Badge';
+
 interface DashboardEditorProps {
   dashboardId: string;
   onBack: () => void;
@@ -239,7 +241,7 @@ export default function DashboardEditor({ dashboardId, onBack }: DashboardEditor
               {dashboard.isDefault && (
                 <StarIconSolid className="w-5 h-5 text-yellow-600" title="Default dashboard" />
               )}
-              {dashboard.isTemplate && <span className="badge badge-sm badge-info">Template</span>}
+              {dashboard.isTemplate && <Badge variant="info">Template</Badge>}
             </div>
             {dashboard.description && (
               <p className="text-surface-600 mt-1">{dashboard.description}</p>
@@ -250,15 +252,15 @@ export default function DashboardEditor({ dashboardId, onBack }: DashboardEditor
         <div className="flex items-center gap-2">
           {isEditing ? (
             <>
-              <Button onClick={() => setShowPalette(true)} className="btn-sm" variant="ghost">
+              <Button onClick={() => setShowPalette(true)} className="" variant="ghost">
                 <PlusIcon className="w-4 h-4 mr-1" /> Add Widget
               </Button>
-              <Button onClick={handleCancel} className="btn-sm" variant="ghost">
+              <Button onClick={handleCancel} className="" variant="ghost">
                 <XMarkIcon className="w-4 h-4 mr-1" /> Cancel
               </Button>
               <Button
                 onClick={handleSave}
-                className="btn-sm"
+                className=""
                 disabled={updateMutation.isPending}
                 variant="primary"
               >
@@ -268,13 +270,13 @@ export default function DashboardEditor({ dashboardId, onBack }: DashboardEditor
             </>
           ) : (
             <>
-              <Button onClick={() => setIsEditing(true)} className="btn-sm" variant="ghost">
+              <Button onClick={() => setIsEditing(true)} className="" variant="ghost">
                 <PencilIcon className="w-4 h-4 mr-1" /> Edit
               </Button>
               {!dashboard.isDefault && (
                 <Button
                   onClick={() => setDefaultMutation.mutate()}
-                  className="btn-sm"
+                  className=""
                   disabled={setDefaultMutation.isPending}
                   variant="ghost"
                 >
@@ -283,7 +285,7 @@ export default function DashboardEditor({ dashboardId, onBack }: DashboardEditor
               )}
               <Button
                 onClick={() => duplicateMutation.mutate()}
-                className="btn-sm"
+                className=""
                 disabled={duplicateMutation.isPending}
                 variant="ghost"
               >
@@ -295,7 +297,7 @@ export default function DashboardEditor({ dashboardId, onBack }: DashboardEditor
                     deleteMutation.mutate();
                   }
                 }}
-                className="btn-sm text-red-600 hover:text-red-700"
+                className="text-red-600 hover:text-red-700"
                 disabled={deleteMutation.isPending}
                 variant="ghost"
               >

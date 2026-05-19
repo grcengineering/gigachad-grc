@@ -154,7 +154,7 @@ export function SOC2AnalysisPanel({
             <Button
               onClick={() => analyzeMutation.mutate()}
               disabled={analyzeMutation.isPending}
-              className="btn-sm"
+              className=""
               title="Re-analyze"
               variant="ghost"
             >

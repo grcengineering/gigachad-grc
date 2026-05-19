@@ -101,7 +101,7 @@ export default function TemplateGallery({ onClose, onSelectTemplate }: TemplateG
                   <div className="flex items-center gap-2">
                     <Button
                       onClick={() => onSelectTemplate(template.id)}
-                      className="btn-sm flex-1"
+                      className="flex-1"
                       variant="ghost"
                     >
                       <EyeIcon className="w-4 h-4 mr-1" /> Preview
@@ -109,7 +109,7 @@ export default function TemplateGallery({ onClose, onSelectTemplate }: TemplateG
                     <Button
                       onClick={() => duplicateMutation.mutate(template.id)}
                       disabled={duplicateMutation.isPending}
-                      className="btn-sm flex-1"
+                      className="flex-1"
                       variant="primary"
                     >
                       <DocumentDuplicateIcon className="w-4 h-4 mr-1" />

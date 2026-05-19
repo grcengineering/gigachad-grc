@@ -537,7 +537,10 @@ export default function BCDRPlanDetail() {
         <div className="card p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-surface-100">DR Tests</h3>
-            <Link to="/bcdr/tests/new" className="btn btn-secondary btn-sm">
+            <Link
+              to="/bcdr/tests/new"
+              className="inline-flex items-center rounded-md border border-surface-300 bg-white px-3 h-8 text-small font-medium !text-surface-900 hover:bg-surface-100 transition-colors"
+            >
               Schedule Test
             </Link>
           </div>

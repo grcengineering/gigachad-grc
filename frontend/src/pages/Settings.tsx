@@ -1580,11 +1580,7 @@ function DashboardTemplatesSettings() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Link
-                    to={`/dashboards`}
-                    state={{ editTemplate: template.id }}
-                    className="btn btn-ghost btn-sm"
-                  >
+                  <Link to={`/dashboards`} state={{ editTemplate: template.id }} className="btn-sm">
                     <PencilIcon className="w-4 h-4 mr-1" /> Edit
                   </Link>
                   <Button
@@ -1593,7 +1589,7 @@ function DashboardTemplatesSettings() {
                         deleteMutation.mutate(template.id);
                       }
                     }}
-                    className="btn-sm text-red-600 hover:text-red-700"
+                    className="text-red-600 hover:text-red-700"
                     disabled={deleteMutation.isPending}
                     variant="ghost"
                   >
@@ -2387,7 +2383,7 @@ function AISettings() {
               Configure Model Context Protocol (MCP) servers for advanced AI workflows.
             </p>
           </div>
-          <Link to="/settings/mcp" className="btn btn-secondary">
+          <Link to="/settings/mcp" className="">
             Configure MCP →
           </Link>
         </div>

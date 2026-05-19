@@ -32,7 +32,7 @@ export default function ControlEvidencePanel({
         <h3 className="text-lg font-medium text-white">Evidence</h3>
         <Link
           to={`/evidence/upload?controlId=${controlId}`}
-          className="btn-secondary text-sm flex items-center gap-1"
+          className="text-sm flex items-center gap-1"
         >
           <PlusIcon className="w-4 h-4" />
           Upload

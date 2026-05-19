@@ -258,13 +258,13 @@ export default function BCDRDashboard() {
           <p className="text-surface-600 mt-1">Business Continuity & Disaster Recovery Overview</p>
         </div>
         <div className="flex gap-3">
-          <Link to="/bcdr/incidents" className="btn btn-secondary">
+          <Link to="/bcdr/incidents" className="">
             Incidents
           </Link>
-          <Link to="/bcdr/processes/new" className="btn btn-primary">
+          <Link to="/bcdr/processes/new" className="">
             Add Process
           </Link>
-          <Link to="/bcdr/plans/new" className="btn btn-secondary">
+          <Link to="/bcdr/plans/new" className="">
             Create Plan
           </Link>
         </div>

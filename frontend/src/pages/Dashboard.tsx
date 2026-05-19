@@ -296,7 +296,7 @@ export default function Dashboard() {
           <div className="relative">
             <Button
               onClick={() => setShowDashboardSelector(!showDashboardSelector)}
-              className="btn-sm flex items-center gap-1 text-surface-600 hover:text-surface-200"
+              className="flex items-center gap-1 text-surface-600 hover:text-surface-200"
               variant="ghost"
             >
               <Squares2X2Icon className="w-4 h-4" />
@@ -340,7 +340,7 @@ export default function Dashboard() {
                     <Link
                       to="/dashboards"
                       onClick={() => setShowDashboardSelector(false)}
-                      className="w-full btn btn-ghost btn-sm justify-start text-brand-400 hover:text-brand-300"
+                      className="w-full inline-flex items-center px-3 h-8 text-small font-medium justify-start !text-brand-700 hover:!text-brand-800 rounded-md hover:bg-surface-100 transition-colors"
                     >
                       <PlusIcon className="w-4 h-4 mr-1" /> Create Custom Dashboard
                     </Link>

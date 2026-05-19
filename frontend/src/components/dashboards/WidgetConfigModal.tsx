@@ -210,7 +210,7 @@ export default function WidgetConfigModal({ widget, onSave, onClose }: WidgetCon
                 <Button
                   onClick={handlePreview}
                   disabled={!dataSource.source || isPreviewLoading}
-                  className="btn-sm"
+                  className=""
                   variant="ghost"
                 >
                   <PlayIcon className="w-4 h-4 mr-1" />
@@ -489,7 +489,7 @@ function FilterBuilder({
           </button>
         </div>
       ))}
-      <Button onClick={addFilter} className="btn-sm" variant="ghost">
+      <Button onClick={addFilter} className="" variant="ghost">
         + Add Filter
       </Button>
     </div>

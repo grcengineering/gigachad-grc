@@ -16,6 +16,8 @@ import { Input } from '@/components/ui/Input';
 
 import { Button } from '@/components/ui/Button';
 
+import { Badge } from '@/components/ui/Badge';
+
 interface CommentsPanelProps {
   entityType: string;
   entityId: string;
@@ -138,7 +140,9 @@ export default function CommentsPanel({ entityType, entityId }: CommentsPanelPro
                       {formatDate(comment.createdAt)}
                     </span>
                     {comment.isResolved && (
-                      <span className="badge badge-success text-xs">Resolved</span>
+                      <Badge className="text-xs" variant="success">
+                        Resolved
+                      </Badge>
                     )}
                   </div>
                   <p className="text-sm text-surface-700">{comment.content}</p>

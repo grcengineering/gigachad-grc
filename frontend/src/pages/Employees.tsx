@@ -241,7 +241,7 @@ export default function Employees() {
             Track employee compliance with training, background checks, and attestations
           </p>
         </div>
-        <Link to="/people/dashboard" className="btn btn-primary">
+        <Link to="/people/dashboard" className="">
           View Dashboard
         </Link>
       </div>
@@ -259,7 +259,7 @@ export default function Employees() {
           </div>
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`btn btn-secondary ${showFilters ? 'bg-primary/20' : ''}`}
+            className={`btn-secondary ${showFilters ? 'bg-primary/20' : ''}`}
           >
             <FunnelIcon className="h-5 w-5" />
             Filters

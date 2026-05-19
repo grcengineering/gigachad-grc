@@ -23,11 +23,11 @@ import { Input } from '@/components/ui/Input';
 import { SelectNative } from '@/components/ui/SelectNative';
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  draft: { label: 'Draft', color: 'badge-neutral' },
-  in_review: { label: 'In Review', color: 'badge-warning' },
-  approved: { label: 'Approved', color: 'badge-success' },
-  published: { label: 'Published', color: 'badge-info' },
-  retired: { label: 'Retired', color: 'badge-danger' },
+  draft: { label: 'Draft', color: '' },
+  in_review: { label: 'In Review', color: '' },
+  approved: { label: 'Approved', color: '' },
+  published: { label: 'Published', color: '' },
+  retired: { label: 'Retired', color: '' },
 };
 
 const CATEGORY_OPTIONS = [
@@ -164,9 +164,7 @@ export default function Policies() {
                         <span className="font-mono text-surface-600">v{policy.version}</span>
                       </td>
                       <td>
-                        <span className={clsx('badge', statusConfig.color)}>
-                          {statusConfig.label}
-                        </span>
+                        <span className={clsx('', statusConfig.color)}>{statusConfig.label}</span>
                       </td>
                       <td>
                         <span className="text-surface-700">
@@ -314,7 +312,7 @@ function UploadPolicyModal({ onClose, onSuccess }: { onClose: () => void; onSucc
                   id="policy-file"
                   accept=".pdf,.doc,.docx,.txt"
                 />
-                <label htmlFor="policy-file" className="btn-outline cursor-pointer">
+                <label htmlFor="policy-file" className="cursor-pointer">
                   Choose File
                 </label>
               </>

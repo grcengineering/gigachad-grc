@@ -41,6 +41,8 @@ import { SelectNative } from '@/components/ui/SelectNative';
 
 import { Button } from '@/components/ui/Button';
 
+import { Badge } from '@/components/ui/Badge';
+
 const STATUS_CONFIG = {
   compliant: { icon: CheckCircleIcon, color: 'text-green-600', bg: 'bg-green-400/10' },
   partial: { icon: ExclamationTriangleIcon, color: 'text-yellow-600', bg: 'bg-yellow-400/10' },
@@ -218,7 +220,9 @@ export default function FrameworkDetail() {
             <h1 className="text-2xl font-bold text-surface-100">{framework.name}</h1>
             <p className="text-surface-600 mt-1">{framework.description}</p>
           </div>
-          <span className="badge badge-info text-sm uppercase">{framework.type}</span>
+          <Badge className="text-sm uppercase" variant="info">
+            {framework.type}
+          </Badge>
         </div>
       </div>
       {/* Readiness Overview */}
@@ -811,14 +815,15 @@ function RequirementRow({
         </div>
 
         {requirement.isCategory ? (
-          <span className="badge badge-neutral text-xs">Category</span>
+          <Badge className="text-xs" variant="neutral">
+            Category
+          </Badge>
         ) : (
-          <span className="badge badge-neutral text-xs">
+          <Badge className="text-xs" variant="neutral">
             {requirement.mappings?.length || 0} controls
-          </span>
+          </Badge>
         )}
       </div>
-
       {hasChildren && isExpanded && (
         <>
           {requirement.children.map((child: any) => (
