@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/Button';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 const AUDIT_TYPE_OPTIONS = [
   { value: 'internal', label: 'Internal' },
   { value: 'external', label: 'External' },
@@ -151,7 +153,7 @@ export default function AuditNew() {
           <label htmlFor="name" className="block text-sm font-medium text-surface-700 mb-1">
             Audit Name <span className="text-red-600">*</span>
           </label>
-          <input
+          <Input
             id="name"
             type="text"
             value={formData.name}
@@ -235,7 +237,7 @@ export default function AuditNew() {
             >
               Planned Start Date
             </label>
-            <input
+            <Input
               id="plannedStartDate"
               type="date"
               value={formData.plannedStartDate}
@@ -250,7 +252,7 @@ export default function AuditNew() {
             >
               Planned End Date
             </label>
-            <input
+            <Input
               id="plannedEndDate"
               type="date"
               value={formData.plannedEndDate}

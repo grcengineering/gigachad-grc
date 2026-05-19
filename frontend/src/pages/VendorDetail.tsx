@@ -27,6 +27,8 @@ import clsx from 'clsx';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 // Review frequency labels
 const FREQUENCY_LABELS: Record<string, string> = {
   monthly: 'Monthly',
@@ -285,7 +287,7 @@ function VendorForm({
               <label className="block text-sm font-medium text-surface-700 mb-1">
                 Vendor Name *
               </label>
-              <input
+              <Input
                 type="text"
                 required
                 value={formData.name}
@@ -296,7 +298,7 @@ function VendorForm({
 
             <div>
               <label className="block text-sm font-medium text-surface-700 mb-1">Legal Name</label>
-              <input
+              <Input
                 type="text"
                 value={formData.legalName}
                 onChange={(e) => setFormData({ ...formData, legalName: e.target.value })}
@@ -353,7 +355,7 @@ function VendorForm({
 
             <div>
               <label className="block text-sm font-medium text-surface-700 mb-1">Website</label>
-              <input
+              <Input
                 type="url"
                 value={formData.website}
                 onChange={(e) => setFormData({ ...formData, website: e.target.value })}
@@ -371,7 +373,7 @@ function VendorForm({
               <label className="block text-sm font-medium text-surface-700 mb-1">
                 Contact Name
               </label>
-              <input
+              <Input
                 type="text"
                 value={formData.primaryContact}
                 onChange={(e) => setFormData({ ...formData, primaryContact: e.target.value })}
@@ -381,7 +383,7 @@ function VendorForm({
 
             <div>
               <label className="block text-sm font-medium text-surface-700 mb-1">Email</label>
-              <input
+              <Input
                 type="email"
                 value={formData.primaryContactEmail}
                 onChange={(e) => setFormData({ ...formData, primaryContactEmail: e.target.value })}
@@ -391,7 +393,7 @@ function VendorForm({
 
             <div>
               <label className="block text-sm font-medium text-surface-700 mb-1">Phone</label>
-              <input
+              <Input
                 type="tel"
                 value={formData.primaryContactPhone}
                 onChange={(e) => setFormData({ ...formData, primaryContactPhone: e.target.value })}

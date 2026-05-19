@@ -12,6 +12,8 @@ import clsx from 'clsx';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 // ============================================
 // Types
 // ============================================
@@ -396,7 +398,7 @@ export function VendorRiskAssessmentWizard({
               <label className="block text-sm font-medium text-surface-700 mb-1">
                 Risk Title *
               </label>
-              <input
+              <Input
                 type="text"
                 value={state.title}
                 onChange={(e) => setState({ ...state, title: e.target.value })}
@@ -417,7 +419,7 @@ export function VendorRiskAssessmentWizard({
               <label className="block text-sm font-medium text-surface-700 mb-1">
                 Assessor Name *
               </label>
-              <input
+              <Input
                 type="text"
                 value={state.assessor}
                 onChange={(e) => setState({ ...state, assessor: e.target.value })}

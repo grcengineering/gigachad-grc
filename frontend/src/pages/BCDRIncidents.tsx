@@ -13,6 +13,8 @@ import { api } from '@/lib/api';
 import clsx from 'clsx';
 import { formatDistanceToNow } from 'date-fns';
 
+import { Input } from '@/components/ui/Input';
+
 // ============================================
 // Types
 // ============================================
@@ -154,7 +156,6 @@ export default function BCDRIncidents() {
           </div>
         </div>
       )}
-
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -168,7 +169,6 @@ export default function BCDRIncidents() {
           Declare Incident
         </Button>
       </div>
-
       {/* Stats */}
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -198,12 +198,11 @@ export default function BCDRIncidents() {
           </div>
         </div>
       )}
-
       {/* Filters */}
       <div className="flex items-center gap-4">
         <div className="flex-1 relative">
           <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-          <input
+          <Input
             type="text"
             placeholder="Search incidents..."
             value={search}
@@ -226,7 +225,6 @@ export default function BCDRIncidents() {
           </select>
         </div>
       </div>
-
       {/* Incidents List */}
       {isLoading ? (
         <div className="text-center py-12">
@@ -302,7 +300,6 @@ export default function BCDRIncidents() {
           ))}
         </div>
       )}
-
       {/* Declare Incident Modal */}
       {showDeclareModal && (
         <DeclareIncidentModal

@@ -17,6 +17,8 @@ import { SkeletonDetailHeader, SkeletonDetailSection } from '@/components/Skelet
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 interface RunbookStep {
   id: string;
   step_number: number;
@@ -247,7 +249,7 @@ export default function RunbookDetail() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-surface-700 mb-2">Title *</label>
-                <input
+                <Input
                   type="text"
                   className="form-input w-full"
                   value={editForm.title}
@@ -260,7 +262,7 @@ export default function RunbookDetail() {
                 <label className="block text-sm font-medium text-surface-700 mb-2">
                   System Name
                 </label>
-                <input
+                <Input
                   type="text"
                   className="form-input w-full"
                   value={editForm.system_name}
@@ -314,7 +316,7 @@ export default function RunbookDetail() {
                 <label className="block text-sm font-medium text-surface-700 mb-2">
                   Estimated Duration (minutes)
                 </label>
-                <input
+                <Input
                   type="number"
                   className="form-input w-full"
                   value={editForm.estimated_duration_minutes}
@@ -561,7 +563,7 @@ export default function RunbookDetail() {
             >
               <div>
                 <label className="block text-sm font-medium text-surface-700 mb-2">Title</label>
-                <input
+                <Input
                   type="text"
                   className="form-input w-full"
                   value={editForm.title}

@@ -7,6 +7,8 @@ import {
 } from '@heroicons/react/24/outline';
 import type { ResponseMapping } from './AdvancedBuilderTab';
 
+import { Input } from '@/components/ui/Input';
+
 interface ResponseMapperProps {
   mappings: ResponseMapping[];
   onChange: (mappings: ResponseMapping[]) => void;
@@ -125,7 +127,6 @@ export default function ResponseMapper({
           </div>
         </div>
       </div>
-
       {/* Quick Add Suggestions */}
       <div>
         <button
@@ -149,7 +150,6 @@ export default function ResponseMapper({
           </div>
         )}
       </div>
-
       {/* Sample Response Paths */}
       {availablePaths.length > 0 && (
         <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
@@ -174,7 +174,6 @@ export default function ResponseMapper({
           </div>
         </div>
       )}
-
       {/* Mapping List */}
       <div className="space-y-3">
         {mappings.map((mapping) => (
@@ -187,7 +186,7 @@ export default function ResponseMapper({
                 {/* Source Path */}
                 <div>
                   <label className="text-xs text-surface-500 block mb-1">Source Path (JSON)</label>
-                  <input
+                  <Input
                     type="text"
                     value={mapping.sourcePath}
                     onChange={(e) => updateMapping(mapping.id, { sourcePath: e.target.value })}
@@ -209,7 +208,7 @@ export default function ResponseMapper({
                   <label className="text-xs text-surface-500 block mb-1">Target Field</label>
                   <div className="flex items-center gap-2">
                     <ArrowRightIcon className="w-4 h-4 text-surface-500 flex-shrink-0 hidden md:block" />
-                    <input
+                    <Input
                       type="text"
                       value={mapping.targetField}
                       onChange={(e) => updateMapping(mapping.id, { targetField: e.target.value })}
@@ -287,7 +286,6 @@ export default function ResponseMapper({
           </div>
         )}
       </div>
-
       {/* Add Button */}
       <button
         onClick={addMapping}

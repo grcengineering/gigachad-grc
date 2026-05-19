@@ -16,6 +16,8 @@ import clsx from 'clsx';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 // ============================================
 // Types
 // ============================================
@@ -484,7 +486,7 @@ export default function RecoveryTeamDetail() {
                 <>
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-2">Name</label>
-                    <input
+                    <Input
                       type="text"
                       value={memberExternalName}
                       onChange={(e) => setMemberExternalName(e.target.value)}
@@ -493,7 +495,7 @@ export default function RecoveryTeamDetail() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-2">Email</label>
-                    <input
+                    <Input
                       type="email"
                       value={memberExternalEmail}
                       onChange={(e) => setMemberExternalEmail(e.target.value)}
@@ -502,7 +504,7 @@ export default function RecoveryTeamDetail() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-2">Phone</label>
-                    <input
+                    <Input
                       type="tel"
                       value={memberExternalPhone}
                       onChange={(e) => setMemberExternalPhone(e.target.value)}
@@ -563,7 +565,7 @@ export default function RecoveryTeamDetail() {
                 <label className="block text-sm font-medium text-slate-300 mb-2">
                   Role in Plan (Optional)
                 </label>
-                <input
+                <Input
                   type="text"
                   value={roleInPlan}
                   onChange={(e) => setRoleInPlan(e.target.value)}

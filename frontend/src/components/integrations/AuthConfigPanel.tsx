@@ -1,6 +1,8 @@
 import { InformationCircleIcon } from '@heroicons/react/24/outline';
 import type { AuthConfiguration } from './AdvancedBuilderTab';
 
+import { Input } from '@/components/ui/Input';
+
 interface AuthConfigPanelProps {
   config: AuthConfiguration;
   onChange: (updates: Partial<AuthConfiguration>) => void;
@@ -93,13 +95,12 @@ export default function AuthConfigPanel({ config, onChange }: AuthConfigPanelPro
           ))}
         </div>
       </div>
-
       {/* API Key Configuration */}
       {config.type === 'api_key' && (
         <div className="space-y-4 p-4 bg-surface-800/50 rounded-lg border border-surface-700">
           <div>
             <label className="text-sm text-surface-600 block mb-1.5">API Key</label>
-            <input
+            <Input
               type="password"
               value={config.credentials.apiKey || ''}
               onChange={(e) => updateCredential('apiKey', e.target.value)}
@@ -110,7 +111,7 @@ export default function AuthConfigPanel({ config, onChange }: AuthConfigPanelPro
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-sm text-surface-600 block mb-1.5">Header/Parameter Name</label>
-              <input
+              <Input
                 type="text"
                 value={config.headerName || ''}
                 onChange={(e) => onChange({ headerName: e.target.value })}
@@ -139,13 +140,12 @@ export default function AuthConfigPanel({ config, onChange }: AuthConfigPanelPro
           </p>
         </div>
       )}
-
       {/* Bearer Token Configuration */}
       {config.type === 'bearer' && (
         <div className="space-y-4 p-4 bg-surface-800/50 rounded-lg border border-surface-700">
           <div>
             <label className="text-sm text-surface-600 block mb-1.5">Bearer Token</label>
-            <input
+            <Input
               type="password"
               value={config.credentials.token || ''}
               onChange={(e) => updateCredential('token', e.target.value)}
@@ -155,7 +155,7 @@ export default function AuthConfigPanel({ config, onChange }: AuthConfigPanelPro
           </div>
           <div>
             <label className="text-sm text-surface-600 block mb-1.5">Token Prefix</label>
-            <input
+            <Input
               type="text"
               value={config.headerPrefix || 'Bearer'}
               onChange={(e) => onChange({ headerPrefix: e.target.value })}
@@ -169,13 +169,12 @@ export default function AuthConfigPanel({ config, onChange }: AuthConfigPanelPro
           </p>
         </div>
       )}
-
       {/* Basic Auth Configuration */}
       {config.type === 'basic' && (
         <div className="space-y-4 p-4 bg-surface-800/50 rounded-lg border border-surface-700">
           <div>
             <label className="text-sm text-surface-600 block mb-1.5">Username</label>
-            <input
+            <Input
               type="text"
               value={config.credentials.username || ''}
               onChange={(e) => updateCredential('username', e.target.value)}
@@ -185,7 +184,7 @@ export default function AuthConfigPanel({ config, onChange }: AuthConfigPanelPro
           </div>
           <div>
             <label className="text-sm text-surface-600 block mb-1.5">Password</label>
-            <input
+            <Input
               type="password"
               value={config.credentials.password || ''}
               onChange={(e) => updateCredential('password', e.target.value)}
@@ -199,7 +198,6 @@ export default function AuthConfigPanel({ config, onChange }: AuthConfigPanelPro
           </p>
         </div>
       )}
-
       {/* OAuth 2.0 Configuration */}
       {config.type === 'oauth2' && (
         <div className="space-y-4 p-4 bg-surface-800/50 rounded-lg border border-surface-700">
@@ -226,7 +224,7 @@ export default function AuthConfigPanel({ config, onChange }: AuthConfigPanelPro
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
               <label className="text-sm text-surface-600 block mb-1.5">Token URL</label>
-              <input
+              <Input
                 type="url"
                 value={config.oauth2Config?.tokenUrl || ''}
                 onChange={(e) => updateOAuth2Config({ tokenUrl: e.target.value })}
@@ -236,7 +234,7 @@ export default function AuthConfigPanel({ config, onChange }: AuthConfigPanelPro
             </div>
             <div>
               <label className="text-sm text-surface-600 block mb-1.5">Client ID</label>
-              <input
+              <Input
                 type="text"
                 value={config.oauth2Config?.clientId || ''}
                 onChange={(e) => updateOAuth2Config({ clientId: e.target.value })}
@@ -246,7 +244,7 @@ export default function AuthConfigPanel({ config, onChange }: AuthConfigPanelPro
             </div>
             <div>
               <label className="text-sm text-surface-600 block mb-1.5">Client Secret</label>
-              <input
+              <Input
                 type="password"
                 value={config.oauth2Config?.clientSecret || ''}
                 onChange={(e) => updateOAuth2Config({ clientSecret: e.target.value })}
@@ -256,7 +254,7 @@ export default function AuthConfigPanel({ config, onChange }: AuthConfigPanelPro
             </div>
             <div className="col-span-2">
               <label className="text-sm text-surface-600 block mb-1.5">Scope (optional)</label>
-              <input
+              <Input
                 type="text"
                 value={config.oauth2Config?.scope || ''}
                 onChange={(e) => updateOAuth2Config({ scope: e.target.value })}
@@ -267,13 +265,12 @@ export default function AuthConfigPanel({ config, onChange }: AuthConfigPanelPro
           </div>
         </div>
       )}
-
       {/* Custom Authentication */}
       {config.type === 'custom' && (
         <div className="space-y-4 p-4 bg-surface-800/50 rounded-lg border border-surface-700">
           <div>
             <label className="text-sm text-surface-600 block mb-1.5">Header Name</label>
-            <input
+            <Input
               type="text"
               value={config.headerName || ''}
               onChange={(e) => onChange({ headerName: e.target.value })}
@@ -283,7 +280,7 @@ export default function AuthConfigPanel({ config, onChange }: AuthConfigPanelPro
           </div>
           <div>
             <label className="text-sm text-surface-600 block mb-1.5">Header Value</label>
-            <input
+            <Input
               type="password"
               value={config.credentials.customValue || ''}
               onChange={(e) => updateCredential('customValue', e.target.value)}
@@ -293,7 +290,7 @@ export default function AuthConfigPanel({ config, onChange }: AuthConfigPanelPro
           </div>
           <div>
             <label className="text-sm text-surface-600 block mb-1.5">Value Prefix (optional)</label>
-            <input
+            <Input
               type="text"
               value={config.headerPrefix || ''}
               onChange={(e) => onChange({ headerPrefix: e.target.value })}

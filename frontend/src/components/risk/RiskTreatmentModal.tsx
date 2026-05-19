@@ -4,6 +4,8 @@ import { RiskDetail } from '../../lib/apiTypes';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 interface TreatmentFormData {
   treatmentPlan: string;
   treatmentNotes: string;
@@ -115,7 +117,7 @@ export default function RiskTreatmentModal({
           </div>
           <div>
             <label className="block text-sm text-surface-600 mb-1">Treatment Due Date</label>
-            <input
+            <Input
               type="date"
               value={formData.treatmentDueDate}
               onChange={(e) => setFormData({ ...formData, treatmentDueDate: e.target.value })}

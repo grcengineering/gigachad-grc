@@ -7,6 +7,8 @@ import { XMarkIcon, MagnifyingGlassIcon, UserIcon, CheckIcon } from '@heroicons/
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 interface CreateTaskModalProps {
   riskId: string;
   onClose: () => void;
@@ -168,7 +170,7 @@ export default function CreateTaskModal({ riskId, onClose, onSuccess }: CreateTa
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Title <span className="text-red-500">*</span>
               </label>
-              <input
+              <Input
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
@@ -219,7 +221,7 @@ export default function CreateTaskModal({ riskId, onClose, onSuccess }: CreateTa
                 <div className="relative">
                   <div className="relative">
                     <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <input
+                    <Input
                       type="text"
                       value={userSearch}
                       onChange={(e) => {
@@ -304,7 +306,7 @@ export default function CreateTaskModal({ riskId, onClose, onSuccess }: CreateTa
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Due Date
               </label>
-              <input
+              <Input
                 type="date"
                 value={formData.dueDate || ''}
                 onChange={(e) => setFormData((prev) => ({ ...prev, dueDate: e.target.value }))}

@@ -20,6 +20,8 @@ import clsx from 'clsx';
 import IntegrationConfigModal from '@/components/integrations/IntegrationConfigModal';
 import { IntegrationIcon } from '@/components/IntegrationIcon';
 
+import { Input } from '@/components/ui/Input';
+
 const STATUS_CONFIG: Record<string, { label: string; icon: any; color: string; badge: string }> = {
   active: {
     label: 'Active',
@@ -232,12 +234,11 @@ export default function Integrations() {
           Connect external services for automated evidence collection
         </p>
       </div>
-
       {/* Search Bar */}
       <div className="card p-4">
         <div className="relative">
           <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-600" />
-          <input
+          <Input
             type="text"
             placeholder="Search integrations by name, description, or category..."
             value={searchQuery}
@@ -254,7 +255,6 @@ export default function Integrations() {
           )}
         </div>
       </div>
-
       {/* Stats - Clickable Filters */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <button
@@ -319,7 +319,6 @@ export default function Integrations() {
           )}
         </button>
       </div>
-
       {/* Active Filter Indicator */}
       {statusFilter !== 'all' && (
         <div className="flex items-center gap-2 text-sm">
@@ -345,7 +344,6 @@ export default function Integrations() {
           </button>
         </div>
       )}
-
       {/* Integrations by Category */}
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
@@ -525,7 +523,6 @@ export default function Integrations() {
             ))}
         </div>
       )}
-
       {/* Integration Config Modal */}
       {showConfigModal && selectedType && integrationTypes[selectedType] && (
         <IntegrationConfigModal

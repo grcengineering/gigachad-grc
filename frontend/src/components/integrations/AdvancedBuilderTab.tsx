@@ -6,6 +6,8 @@ import AuthConfigPanel from './AuthConfigPanel';
 import ResponseMapper from './ResponseMapper';
 import RequestTester from './RequestTester';
 
+import { Input } from '@/components/ui/Input';
+
 export interface ApiEndpoint {
   id: string;
   name: string;
@@ -172,7 +174,7 @@ export default function AdvancedBuilderTab({ config, onChange }: AdvancedBuilder
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm text-surface-600 mb-1.5">Integration Name</label>
-            <input
+            <Input
               type="text"
               value={config.name}
               onChange={(e) => onChange({ ...config, name: e.target.value })}
@@ -181,7 +183,7 @@ export default function AdvancedBuilderTab({ config, onChange }: AdvancedBuilder
           </div>
           <div>
             <label className="block text-sm text-surface-600 mb-1.5">Description</label>
-            <input
+            <Input
               type="text"
               value={config.description}
               onChange={(e) => onChange({ ...config, description: e.target.value })}
@@ -191,7 +193,6 @@ export default function AdvancedBuilderTab({ config, onChange }: AdvancedBuilder
           </div>
         </div>
       </div>
-
       {/* Authentication Section */}
       <div>
         <SectionHeader section="auth" title="Authentication" />
@@ -201,7 +202,6 @@ export default function AdvancedBuilderTab({ config, onChange }: AdvancedBuilder
           </div>
         )}
       </div>
-
       {/* Endpoints Section */}
       <div>
         <SectionHeader section="endpoints" title="API Endpoints" count={config.endpoints.length} />
@@ -268,7 +268,6 @@ export default function AdvancedBuilderTab({ config, onChange }: AdvancedBuilder
           </div>
         )}
       </div>
-
       {/* Response Mapping Section */}
       <div>
         <SectionHeader
@@ -286,7 +285,6 @@ export default function AdvancedBuilderTab({ config, onChange }: AdvancedBuilder
           </div>
         )}
       </div>
-
       {/* Testing Section */}
       <div>
         <SectionHeader section="testing" title="Test & Preview" />

@@ -17,6 +17,8 @@ import clsx from 'clsx';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 export default function CustomDashboards() {
   const queryClient = useQueryClient();
   const [selectedDashboardId, setSelectedDashboardId] = useState<string | null>(null);
@@ -245,7 +247,7 @@ export default function CustomDashboards() {
                   <label className="block text-sm font-medium text-surface-700 mb-2">
                     Dashboard Name
                   </label>
-                  <input
+                  <Input
                     type="text"
                     value={newDashboardName}
                     onChange={(e) => setNewDashboardName(e.target.value)}

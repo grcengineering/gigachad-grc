@@ -16,6 +16,8 @@ import toast from 'react-hot-toast';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 // ============================================
 // Types
 // ============================================
@@ -182,7 +184,7 @@ export default function ExerciseTemplates() {
             <label className="block text-sm font-medium text-slate-300 mb-2">
               Template Title *
             </label>
-            <input
+            <Input
               type="text"
               value={createForm.title}
               onChange={(e) => setCreateForm({ ...createForm, title: e.target.value })}
@@ -210,7 +212,7 @@ export default function ExerciseTemplates() {
               <label className="block text-sm font-medium text-slate-300 mb-2">
                 Estimated Duration (minutes)
               </label>
-              <input
+              <Input
                 type="number"
                 value={createForm.estimatedDuration}
                 onChange={(e) =>
@@ -292,12 +294,11 @@ export default function ExerciseTemplates() {
           Create Custom Template
         </Button>
       </div>
-
       {/* Filters */}
       <div className="flex items-center gap-4">
         <div className="flex-1 relative">
           <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-          <input
+          <Input
             type="text"
             placeholder="Search templates..."
             value={search}
@@ -320,7 +321,6 @@ export default function ExerciseTemplates() {
           </select>
         </div>
       </div>
-
       {/* Category Stats */}
       {safeCategories.length > 0 && (
         <div className="flex flex-wrap gap-3">
@@ -347,7 +347,6 @@ export default function ExerciseTemplates() {
           ))}
         </div>
       )}
-
       {/* Templates Grid */}
       {isLoading ? (
         <div className="text-center py-12">
@@ -424,7 +423,6 @@ export default function ExerciseTemplates() {
           ))}
         </div>
       )}
-
       {/* Template Preview Modal */}
       {selectedTemplate && (
         <ExerciseTemplatePreview

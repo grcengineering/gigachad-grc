@@ -17,6 +17,8 @@ import clsx from 'clsx';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 
+import { Input } from '@/components/ui/Input';
+
 interface SearchResult {
   type:
     | 'control'
@@ -154,7 +156,7 @@ export default function GlobalSearch() {
     <div ref={searchRef} className="relative flex-1 max-w-xl">
       <div className="relative">
         <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-600" />
-        <input
+        <Input
           ref={inputRef}
           type="text"
           placeholder="Search everything... (⌘K)"
@@ -178,7 +180,6 @@ export default function GlobalSearch() {
           </button>
         )}
       </div>
-
       {/* Results dropdown */}
       {isOpen && query.length >= 2 && (
         <div className="absolute top-full left-0 right-0 mt-2 bg-surface-900 border border-surface-800 rounded-lg shadow-xl max-h-96 overflow-y-auto z-50">

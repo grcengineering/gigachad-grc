@@ -15,6 +15,8 @@ import toast from 'react-hot-toast';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 interface AuditRequest {
   id: string;
   requestNumber: string;
@@ -180,7 +182,7 @@ export default function AuditRequests() {
               <label className="block text-sm font-medium text-surface-700 mb-1">
                 Request Title *
               </label>
-              <input
+              <Input
                 type="text"
                 value={createForm.title}
                 onChange={(e) => setCreateForm({ ...createForm, title: e.target.value })}
@@ -244,7 +246,7 @@ export default function AuditRequests() {
 
               <div>
                 <label className="block text-sm font-medium text-surface-700 mb-1">Due Date</label>
-                <input
+                <Input
                   type="date"
                   value={createForm.dueDate}
                   onChange={(e) => setCreateForm({ ...createForm, dueDate: e.target.value })}
@@ -298,12 +300,11 @@ export default function AuditRequests() {
           New Request
         </Button>
       </div>
-
       {/* Filters */}
       <div className="flex items-center gap-4">
         <div className="flex-1 relative">
           <MagnifyingGlassIcon className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-surface-500" />
-          <input
+          <Input
             type="text"
             placeholder="Search requests..."
             value={searchTerm}
@@ -339,7 +340,6 @@ export default function AuditRequests() {
           <option value="critical">Critical</option>
         </select>
       </div>
-
       {/* Requests List */}
       {loading ? (
         <SkeletonGrid count={6} />

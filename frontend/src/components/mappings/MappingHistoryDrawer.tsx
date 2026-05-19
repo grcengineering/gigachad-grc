@@ -18,6 +18,8 @@ import { frameworksApi } from '@/lib/api/frameworks.api';
 import { useAuth } from '@/contexts/AuthContext';
 import type { MappingHistoryEntry, MappingHistorySnapshot } from '@/lib/apiTypes';
 
+import { Input } from '@/components/ui/Input';
+
 export type MappingHistoryDrawerMode = 'requirement-to-controls' | 'control-to-requirements';
 
 export interface MappingHistoryDrawerProps {
@@ -227,7 +229,6 @@ function HistoryEntryItem({
       >
         <Icon className={clsx('w-3.5 h-3.5', meta.text)} />
       </div>
-
       <div className="bg-surface-800 rounded-lg border border-surface-700 p-3">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
@@ -303,7 +304,7 @@ function HistoryEntryItem({
           <div className="mt-3 space-y-2 rounded-md border border-purple-500/30 bg-purple-500/5 p-2">
             <label className="block text-xs text-surface-700">
               <span className="block mb-1 font-medium">Restore reason (optional)</span>
-              <input
+              <Input
                 type="text"
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}

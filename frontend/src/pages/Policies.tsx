@@ -18,6 +18,8 @@ import { exportConfigs } from '@/lib/export';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   draft: { label: 'Draft', color: 'badge-neutral' },
   in_review: { label: 'In Review', color: 'badge-warning' },
@@ -102,7 +104,7 @@ export default function Policies() {
       <div className="card p-4">
         <div className="relative">
           <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-500" />
-          <input
+          <Input
             type="text"
             placeholder="Search policies..."
             value={search}
@@ -319,7 +321,7 @@ function UploadPolicyModal({ onClose, onSuccess }: { onClose: () => void; onSucc
 
           <div>
             <label className="label">Title *</label>
-            <input
+            <Input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -357,7 +359,7 @@ function UploadPolicyModal({ onClose, onSuccess }: { onClose: () => void; onSucc
             </div>
             <div>
               <label className="label">Version</label>
-              <input
+              <Input
                 type="text"
                 value={version}
                 onChange={(e) => setVersion(e.target.value)}

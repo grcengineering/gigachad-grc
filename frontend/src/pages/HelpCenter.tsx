@@ -16,6 +16,8 @@ import {
   LockClosedIcon,
 } from '@heroicons/react/24/outline';
 
+import { Input } from '@/components/ui/Input';
+
 interface HelpArticle {
   id: string;
   title: string;
@@ -167,12 +169,11 @@ export default function HelpCenter() {
           Find guides, tutorials, and answers to common questions
         </p>
       </div>
-
       {/* Search */}
       <div className="max-w-2xl mx-auto">
         <div className="relative">
           <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-500" />
-          <input
+          <Input
             type="text"
             placeholder="Search help articles..."
             value={searchQuery}
@@ -181,7 +182,6 @@ export default function HelpCenter() {
           />
         </div>
       </div>
-
       {/* Categories */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
         {categories.map((category) => {
@@ -203,7 +203,6 @@ export default function HelpCenter() {
           );
         })}
       </div>
-
       {/* Featured Article - Custom Domain */}
       <div className="bg-gradient-to-r from-brand-600/20 to-purple-600/20 border border-brand-500/30 rounded-xl p-6">
         <div className="flex items-start gap-4">
@@ -234,7 +233,6 @@ export default function HelpCenter() {
           </div>
         </div>
       </div>
-
       {/* Articles Grid */}
       <div>
         <h2 className="text-xl font-semibold text-surface-100 mb-4">
@@ -283,7 +281,6 @@ export default function HelpCenter() {
           </div>
         )}
       </div>
-
       {/* Quick Links */}
       <div className="border-t border-surface-800 pt-8">
         <h2 className="text-lg font-semibold text-surface-100 mb-4">Developer Resources</h2>
@@ -314,7 +311,6 @@ export default function HelpCenter() {
           </Link>
         </div>
       </div>
-
       {/* Contact Support */}
       <div className="bg-surface-800/30 border border-surface-700 rounded-xl p-6 text-center">
         <h3 className="text-lg font-semibold text-surface-100 mb-2">Still need help?</h3>

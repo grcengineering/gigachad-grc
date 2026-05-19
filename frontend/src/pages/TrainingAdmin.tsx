@@ -22,6 +22,8 @@ import { SkeletonCard } from '@/components/Skeleton';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 // Types
 interface CustomModule {
   id: string;
@@ -960,7 +962,7 @@ function CampaignModal({
             <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
               Campaign Name
             </label>
-            <input
+            <Input
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -1044,7 +1046,7 @@ function CampaignModal({
               <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
                 Start Date
               </label>
-              <input
+              <Input
                 type="date"
                 value={formData.startDate}
                 onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
@@ -1056,7 +1058,7 @@ function CampaignModal({
               <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
                 End Date (Due Date)
               </label>
-              <input
+              <Input
                 type="date"
                 value={formData.endDate}
                 onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
@@ -1159,7 +1161,7 @@ function ModuleModal({ module, onClose }: { module: CustomModule | null; onClose
             <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
               Module Name
             </label>
-            <input
+            <Input
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -1222,7 +1224,7 @@ function ModuleModal({ module, onClose }: { module: CustomModule | null; onClose
             <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
               Duration (minutes)
             </label>
-            <input
+            <Input
               type="number"
               value={formData.duration}
               onChange={(e) =>
@@ -1643,7 +1645,7 @@ function UploadNewScormModal({ onClose }: { onClose: () => void }) {
               <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
                 Module Name *
               </label>
-              <input
+              <Input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -1707,7 +1709,7 @@ function UploadNewScormModal({ onClose }: { onClose: () => void }) {
               <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
                 Duration (minutes)
               </label>
-              <input
+              <Input
                 type="number"
                 value={formData.duration}
                 onChange={(e) =>

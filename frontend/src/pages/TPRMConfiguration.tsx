@@ -18,6 +18,8 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
+import { Input } from '@/components/ui/Input';
+
 type ConfigTab = 'tiers' | 'categories' | 'assessments' | 'contracts' | 'features';
 
 export default function TPRMConfiguration() {
@@ -356,7 +358,6 @@ function TierFrequencyTab({
           schedule will automatically update based on these settings.
         </p>
       </div>
-
       <div className="space-y-4">
         {tiers.map((tier) => (
           <div key={tier.key} className={`p-4 rounded-lg border ${getColorClasses(tier.color)}`}>
@@ -387,7 +388,7 @@ function TierFrequencyTab({
 
                 {showCustomInput[tier.key] && (
                   <div className="flex items-center gap-2">
-                    <input
+                    <Input
                       type="number"
                       min="1"
                       max="60"
@@ -405,7 +406,6 @@ function TierFrequencyTab({
           </div>
         ))}
       </div>
-
       {/* Preview */}
       <div className="p-4 bg-surface-700/50 rounded-lg">
         <h4 className="text-white font-medium mb-3">Review Schedule Summary</h4>
@@ -470,7 +470,6 @@ function VendorCategoriesTab({
           Define categories to classify your vendors. Categories help organize and filter vendors.
         </p>
       </div>
-
       <div className="space-y-3">
         {categories.map((cat) => (
           <div key={cat.id} className="flex items-center gap-4 p-4 bg-surface-700/50 rounded-lg">
@@ -488,18 +487,17 @@ function VendorCategoriesTab({
           </div>
         ))}
       </div>
-
       <div className="pt-4 border-t border-surface-700">
         <h4 className="text-white font-medium mb-3">Add Category</h4>
         <div className="flex gap-4">
-          <input
+          <Input
             type="text"
             placeholder="Category name"
             value={newCategory.name}
             onChange={(e) => setNewCategory((prev) => ({ ...prev, name: e.target.value }))}
             className="flex-1 px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white placeholder:text-surface-500"
           />
-          <input
+          <Input
             type="text"
             placeholder="Description"
             value={newCategory.description}
@@ -555,7 +553,6 @@ function AssessmentSettingsTab({
           Configure vendor assessment workflow and automation settings.
         </p>
       </div>
-
       <div className="space-y-4">
         <label className="flex items-center justify-between p-4 bg-surface-700/50 rounded-lg">
           <div>
@@ -626,7 +623,7 @@ function AssessmentSettingsTab({
               </p>
             </div>
           </div>
-          <input
+          <Input
             type="number"
             value={settings.overdueReminderDays ?? 7}
             onChange={(e) => handleChange('overdueReminderDays', parseInt(e.target.value))}
@@ -713,7 +710,6 @@ function ContractSettingsTab({
           Configure contract management and expiration notification settings.
         </p>
       </div>
-
       <div className="space-y-4">
         <div className="p-4 bg-surface-700/50 rounded-lg">
           <div className="mb-2">
@@ -722,7 +718,7 @@ function ContractSettingsTab({
               Days before contract expiration to send warnings (comma-separated)
             </p>
           </div>
-          <input
+          <Input
             type="text"
             value={warningDays}
             onChange={(e) => handleWarningDaysChange(e.target.value)}

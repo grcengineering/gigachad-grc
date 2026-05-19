@@ -10,6 +10,8 @@ import { ExportDropdown } from '@/components/ExportDropdown';
 import { exportConfigs } from '@/lib/export';
 import { useDebounce } from '@/hooks/useDebounce';
 
+import { Input } from '@/components/ui/Input';
+
 export default function Vendors() {
   const navigate = useNavigate();
   const [searchInput, setSearchInput] = useState('');
@@ -69,7 +71,7 @@ export default function Vendors() {
         <div className="flex gap-3">
           <div className="relative">
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-500" />
-            <input
+            <Input
               type="text"
               placeholder="Search vendors..."
               value={searchInput}
@@ -92,7 +94,6 @@ export default function Vendors() {
           </Button>
         </div>
       </div>
-
       {/* Vendors List */}
       {vendors.length === 0 ? (
         <div className="bg-surface-900 border border-surface-800 rounded-lg p-12 text-center">

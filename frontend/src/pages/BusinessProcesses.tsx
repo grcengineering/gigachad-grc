@@ -11,6 +11,8 @@ import api from '@/lib/api';
 import { useDebounce } from '@/hooks/useDebounce';
 import clsx from 'clsx';
 
+import { Input } from '@/components/ui/Input';
+
 interface BusinessProcess {
   id: string;
   process_id: string;
@@ -110,14 +112,13 @@ export default function BusinessProcesses() {
           Add Process
         </Link>
       </div>
-
       {/* Filters */}
       <div className="card p-4">
         <div className="flex flex-wrap gap-4">
           <div className="flex-1 min-w-64">
             <div className="relative">
               <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-600" />
-              <input
+              <Input
                 type="text"
                 placeholder="Search processes..."
                 className="form-input pl-10 w-full"
@@ -144,7 +145,6 @@ export default function BusinessProcesses() {
           </button>
         </div>
       </div>
-
       {/* Table */}
       <div className="card overflow-hidden">
         {isLoading ? (

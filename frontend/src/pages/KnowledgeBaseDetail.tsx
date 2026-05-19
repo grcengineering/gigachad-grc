@@ -10,6 +10,8 @@ import toast from 'react-hot-toast';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 interface KnowledgeEntry {
   id: string;
   title: string;
@@ -194,7 +196,7 @@ export default function KnowledgeBaseDetail() {
             <label className="block text-sm font-medium text-surface-600 mb-1">
               Title <span className="text-red-600">*</span>
             </label>
-            <input
+            <Input
               type="text"
               value={formData.title}
               onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
@@ -221,7 +223,7 @@ export default function KnowledgeBaseDetail() {
             </div>
             <div>
               <label className="block text-sm font-medium text-surface-600 mb-1">Framework</label>
-              <input
+              <Input
                 type="text"
                 value={formData.framework || ''}
                 onChange={(e) => setFormData((prev) => ({ ...prev, framework: e.target.value }))}
@@ -232,7 +234,7 @@ export default function KnowledgeBaseDetail() {
           </div>
           <div>
             <label className="block text-sm font-medium text-surface-600 mb-1">Question</label>
-            <input
+            <Input
               type="text"
               value={formData.question || ''}
               onChange={(e) => setFormData((prev) => ({ ...prev, question: e.target.value }))}
@@ -255,7 +257,7 @@ export default function KnowledgeBaseDetail() {
           <div>
             <label className="block text-sm font-medium text-surface-600 mb-1">Tags</label>
             <div className="flex gap-2 mb-2">
-              <input
+              <Input
                 type="text"
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}

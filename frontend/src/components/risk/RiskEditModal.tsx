@@ -4,6 +4,8 @@ import { RiskDetail } from '../../lib/apiTypes';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 interface RiskEditModalProps {
   risk: RiskDetail;
   isOpen: boolean;
@@ -76,7 +78,7 @@ export default function RiskEditModal({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm text-surface-600 mb-1">Title</label>
-            <input
+            <Input
               type="text"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}

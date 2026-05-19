@@ -14,6 +14,8 @@ import {
 } from '@heroicons/react/24/outline';
 import CreateTaskModal from './CreateTaskModal';
 
+import { Input } from '@/components/ui/Input';
+
 interface RiskTasksPanelProps {
   riskId: string;
   onTaskAction?: () => void;
@@ -298,14 +300,13 @@ function TaskCard({ task, onStart, onComplete, onCancel, isLoading }: TaskCardPr
           </div>
         )}
       </div>
-
       {/* Cancel Dialog */}
       {showCancelDialog && (
         <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Cancellation reason
           </label>
-          <input
+          <Input
             type="text"
             value={cancelReason}
             onChange={(e) => setCancelReason(e.target.value)}

@@ -25,6 +25,8 @@ import { SkeletonGrid } from '@/components/Skeleton';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 const TYPE_ICONS: Record<string, any> = {
   screenshot: PhotoIcon,
   document: DocumentTextIcon,
@@ -136,7 +138,6 @@ export default function Evidence() {
           </div>
         </div>
       )}
-
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -156,7 +157,6 @@ export default function Evidence() {
           </Button>
         )}
       </div>
-
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label="Total" value={stats?.total || 0} />
@@ -164,13 +164,12 @@ export default function Evidence() {
         <StatCard label="Expiring Soon" value={stats?.expiringSoon || 0} color="orange" />
         <StatCard label="Expired" value={stats?.expired || 0} color="red" />
       </div>
-
       {/* Filters */}
       <div className="card p-4">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 relative">
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-500" />
-            <input
+            <Input
               type="text"
               placeholder="Search evidence..."
               value={searchInput}
@@ -193,7 +192,6 @@ export default function Evidence() {
           </select>
         </div>
       </div>
-
       {/* Evidence Grid */}
       {isLoading ? (
         <SkeletonGrid count={9} />
@@ -309,7 +307,6 @@ export default function Evidence() {
           })}
         </div>
       )}
-
       {/* Upload Modal */}
       {showUploadModal && (
         <UploadModal onClose={() => setShowUploadModal(false)} linkToControlId={linkToControlId} />
@@ -495,7 +492,7 @@ function UploadModal({
             {/* Form fields */}
             <div>
               <label className="label">Title</label>
-              <input
+              <Input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}

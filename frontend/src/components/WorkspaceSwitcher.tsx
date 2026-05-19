@@ -13,6 +13,8 @@ import { useAuth } from '@/contexts/AuthContext';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 interface CreateWorkspaceModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -53,7 +55,7 @@ function CreateWorkspaceModal({ isOpen, onClose, onCreate }: CreateWorkspaceModa
               <label className="block text-sm font-medium text-foreground mb-1">
                 Workspace Name *
               </label>
-              <input
+              <Input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}

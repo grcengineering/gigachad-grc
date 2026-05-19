@@ -19,6 +19,8 @@ import clsx from 'clsx';
 import { auditApi } from '../lib/api';
 import toast from 'react-hot-toast';
 
+import { Input } from '@/components/ui/Input';
+
 // Action icons and colors
 const ACTION_CONFIG: Record<string, { color: string; bg: string }> = {
   created: { color: 'text-green-600', bg: 'bg-green-500/10' },
@@ -185,7 +187,6 @@ export default function AuditLog() {
           Export CSV
         </button>
       </div>
-
       {/* Stats Cards */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -221,14 +222,13 @@ export default function AuditLog() {
           </div>
         </div>
       )}
-
       {/* Search and Filters */}
       <div className="card p-4 space-y-4">
         <div className="flex items-center gap-4">
           {/* Search */}
           <div className="relative flex-1">
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-500" />
-            <input
+            <Input
               type="text"
               placeholder="Search by description or entity name..."
               value={filters.search}
@@ -322,7 +322,7 @@ export default function AuditLog() {
             {/* Start Date */}
             <div>
               <label className="block text-sm text-surface-600 mb-1">Start Date</label>
-              <input
+              <Input
                 type="date"
                 value={filters.startDate}
                 onChange={(e) => updateFilter('startDate', e.target.value)}
@@ -333,7 +333,7 @@ export default function AuditLog() {
             {/* End Date */}
             <div>
               <label className="block text-sm text-surface-600 mb-1">End Date</label>
-              <input
+              <Input
                 type="date"
                 value={filters.endDate}
                 onChange={(e) => updateFilter('endDate', e.target.value)}
@@ -356,7 +356,6 @@ export default function AuditLog() {
           </div>
         )}
       </div>
-
       {/* Audit Log Table */}
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">

@@ -19,6 +19,8 @@ import clsx from 'clsx';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 interface Questionnaire {
   id: string;
   title: string;
@@ -322,7 +324,7 @@ export default function QuestionnaireDetail() {
                 <label className="block text-sm font-medium text-surface-600 mb-1">
                   Requester Name <span className="text-red-600">*</span>
                 </label>
-                <input
+                <Input
                   type="text"
                   required
                   value={formData.requesterName}
@@ -336,7 +338,7 @@ export default function QuestionnaireDetail() {
                 <label className="block text-sm font-medium text-surface-600 mb-1">
                   Requester Email <span className="text-red-600">*</span>
                 </label>
-                <input
+                <Input
                   type="email"
                   required
                   value={formData.requesterEmail}
@@ -348,7 +350,7 @@ export default function QuestionnaireDetail() {
 
               <div>
                 <label className="block text-sm font-medium text-surface-600 mb-1">Company</label>
-                <input
+                <Input
                   type="text"
                   value={formData.company}
                   onChange={(e) => setFormData({ ...formData, company: e.target.value })}
@@ -361,7 +363,7 @@ export default function QuestionnaireDetail() {
                 <label className="block text-sm font-medium text-surface-600 mb-1">
                   Title <span className="text-red-600">*</span>
                 </label>
-                <input
+                <Input
                   type="text"
                   required
                   value={formData.title}
@@ -387,7 +389,7 @@ export default function QuestionnaireDetail() {
 
               <div>
                 <label className="block text-sm font-medium text-surface-600 mb-1">Due Date</label>
-                <input
+                <Input
                   type="date"
                   value={formData.dueDate}
                   onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
@@ -527,7 +529,7 @@ export default function QuestionnaireDetail() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-surface-600 mb-1">Title</label>
-                <input
+                <Input
                   type="text"
                   value={editForm.title}
                   onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
@@ -539,7 +541,7 @@ export default function QuestionnaireDetail() {
                   <label className="block text-sm font-medium text-surface-600 mb-1">
                     Requester Name
                   </label>
-                  <input
+                  <Input
                     type="text"
                     value={editForm.requesterName}
                     onChange={(e) => setEditForm({ ...editForm, requesterName: e.target.value })}
@@ -550,7 +552,7 @@ export default function QuestionnaireDetail() {
                   <label className="block text-sm font-medium text-surface-600 mb-1">
                     Requester Email
                   </label>
-                  <input
+                  <Input
                     type="email"
                     value={editForm.requesterEmail}
                     onChange={(e) => setEditForm({ ...editForm, requesterEmail: e.target.value })}
@@ -561,7 +563,7 @@ export default function QuestionnaireDetail() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-surface-600 mb-1">Company</label>
-                  <input
+                  <Input
                     type="text"
                     value={editForm.company}
                     onChange={(e) => setEditForm({ ...editForm, company: e.target.value })}
@@ -585,7 +587,7 @@ export default function QuestionnaireDetail() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-surface-600 mb-1">Due Date</label>
-                <input
+                <Input
                   type="date"
                   value={editForm.dueDate}
                   onChange={(e) => setEditForm({ ...editForm, dueDate: e.target.value })}

@@ -5,6 +5,8 @@ import { api } from '@/lib/api';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 // ============================================
 // Types
 // ============================================
@@ -122,7 +124,7 @@ export function PostIncidentReviewForm({
           <label className="block text-sm font-medium text-slate-300 mb-2">
             Actual Downtime (minutes)
           </label>
-          <input
+          <Input
             type="number"
             value={actualDowntimeMinutes}
             onChange={(e) =>
@@ -137,7 +139,7 @@ export function PostIncidentReviewForm({
           <label className="block text-sm font-medium text-slate-300 mb-2">
             Data Loss (minutes)
           </label>
-          <input
+          <Input
             type="number"
             value={dataLossMinutes}
             onChange={(e) => setDataLossMinutes(e.target.value ? parseInt(e.target.value) : '')}
@@ -150,7 +152,7 @@ export function PostIncidentReviewForm({
           <label className="block text-sm font-medium text-slate-300 mb-2">
             Financial Impact ($)
           </label>
-          <input
+          <Input
             type="number"
             value={financialImpact}
             onChange={(e) => setFinancialImpact(e.target.value ? parseInt(e.target.value) : '')}
@@ -176,7 +178,7 @@ export function PostIncidentReviewForm({
             <div key={action.id} className="bg-slate-700 rounded-lg p-3">
               <div className="flex items-start gap-3">
                 <div className="flex-1 space-y-2">
-                  <input
+                  <Input
                     type="text"
                     value={action.description}
                     onChange={(e) =>
@@ -186,14 +188,14 @@ export function PostIncidentReviewForm({
                     placeholder="Action description..."
                   />
                   <div className="grid grid-cols-2 gap-2">
-                    <input
+                    <Input
                       type="text"
                       value={action.owner}
                       onChange={(e) => updateImprovementAction(action.id, 'owner', e.target.value)}
                       className="px-3 py-2 bg-slate-600 border border-slate-500 rounded text-white text-sm"
                       placeholder="Owner"
                     />
-                    <input
+                    <Input
                       type="date"
                       value={action.dueDate}
                       onChange={(e) =>

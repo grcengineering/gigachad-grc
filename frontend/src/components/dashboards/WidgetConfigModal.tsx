@@ -14,6 +14,8 @@ import clsx from 'clsx';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 interface WidgetConfigModalProps {
   widget: DashboardWidget;
   onSave: (data: Partial<DashboardWidget>) => void;
@@ -111,7 +113,7 @@ export default function WidgetConfigModal({ widget, onSave, onClose }: WidgetCon
           {/* Title field (always visible) */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-surface-700 mb-2">Widget Title</label>
-            <input
+            <Input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -183,7 +185,7 @@ export default function WidgetConfigModal({ widget, onSave, onClose }: WidgetCon
                 <label className="block text-sm font-medium text-surface-700 mb-2">
                   Limit Results
                 </label>
-                <input
+                <Input
                   type="number"
                   value={dataSource.limit || ''}
                   onChange={(e) =>
@@ -282,7 +284,7 @@ export default function WidgetConfigModal({ widget, onSave, onClose }: WidgetCon
                   <label className="block text-sm font-medium text-surface-700 mb-2">
                     Value Format
                   </label>
-                  <input
+                  <Input
                     type="text"
                     value={config.valueFormat || ''}
                     onChange={(e) => setConfig({ ...config, valueFormat: e.target.value })}
@@ -301,7 +303,7 @@ export default function WidgetConfigModal({ widget, onSave, onClose }: WidgetCon
                   <label className="block text-sm font-medium text-surface-700 mb-2">
                     Target Value
                   </label>
-                  <input
+                  <Input
                     type="number"
                     value={config.targetValue || ''}
                     onChange={(e) =>
@@ -322,7 +324,7 @@ export default function WidgetConfigModal({ widget, onSave, onClose }: WidgetCon
                   <label className="block text-sm font-medium text-surface-700 mb-2">
                     Max Value
                   </label>
-                  <input
+                  <Input
                     type="number"
                     value={config.maxValue || ''}
                     onChange={(e) =>
@@ -358,7 +360,7 @@ export default function WidgetConfigModal({ widget, onSave, onClose }: WidgetCon
                   <label className="block text-sm font-medium text-surface-700 mb-2">
                     Embed URL
                   </label>
-                  <input
+                  <Input
                     type="url"
                     value={config.iframeUrl || ''}
                     onChange={(e) => setConfig({ ...config, iframeUrl: e.target.value })}
@@ -374,7 +376,7 @@ export default function WidgetConfigModal({ widget, onSave, onClose }: WidgetCon
                   <label className="block text-sm font-medium text-surface-700 mb-2">
                     Rows per Page
                   </label>
-                  <input
+                  <Input
                     type="number"
                     value={config.pageSize || 10}
                     onChange={(e) =>
@@ -467,7 +469,7 @@ function FilterBuilder({
             <option value={FilterOperator.CONTAINS}>contains</option>
             <option value={FilterOperator.IN}>in list</option>
           </select>
-          <input
+          <Input
             type="text"
             value={filter.value}
             onChange={(e) => updateFilter(index, { value: e.target.value })}

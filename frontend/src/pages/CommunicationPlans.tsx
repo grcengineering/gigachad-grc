@@ -15,6 +15,8 @@ import api from '@/lib/api';
 import { useDebounce } from '@/hooks/useDebounce';
 import clsx from 'clsx';
 
+import { Input } from '@/components/ui/Input';
+
 interface CommunicationPlan {
   id: string;
   name: string;
@@ -136,7 +138,6 @@ export default function CommunicationPlans() {
           </Link>
         </div>
       </div>
-
       {/* Filters */}
       {!showEscalation && (
         <div className="card p-4">
@@ -144,7 +145,7 @@ export default function CommunicationPlans() {
             <div className="flex-1 min-w-64">
               <div className="relative">
                 <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-600" />
-                <input
+                <Input
                   type="text"
                   placeholder="Search plans..."
                   className="form-input pl-10 w-full"
@@ -173,7 +174,6 @@ export default function CommunicationPlans() {
           </div>
         </div>
       )}
-
       {showEscalation ? (
         /* Escalation View */
         <div className="space-y-6">
@@ -268,7 +268,6 @@ export default function CommunicationPlans() {
                   </div>
                 </div>
               ))}
-
           {(!escalationData || Object.keys(escalationData).length === 0) && (
             <div className="card p-8 text-center text-surface-600">
               <UserGroupIcon className="w-12 h-12 mx-auto mb-4 opacity-50" />

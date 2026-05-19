@@ -15,6 +15,8 @@ import clsx from 'clsx';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 interface RawRequest {
   id: string;
   name: string;
@@ -370,7 +372,7 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
             {selectedRequest ? (
               <>
                 <div className="p-4 border-b border-surface-800 flex items-center justify-between">
-                  <input
+                  <Input
                     type="text"
                     value={selectedRequest.name}
                     onChange={(e) => updateRequest(selectedRequest.id, { name: e.target.value })}
@@ -411,7 +413,7 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
                       <option value="DELETE">DELETE</option>
                       <option value="PATCH">PATCH</option>
                     </select>
-                    <input
+                    <Input
                       type="text"
                       value={selectedRequest.url}
                       onChange={(e) => updateRequest(selectedRequest.id, { url: e.target.value })}

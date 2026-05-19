@@ -20,6 +20,8 @@ import { SkeletonDetailHeader, SkeletonDetailSection } from '@/components/Skelet
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 interface BCDRPlan {
   id: string;
   plan_id: string;
@@ -263,7 +265,7 @@ export default function BCDRPlanDetail() {
           >
             <div>
               <label className="label">Title *</label>
-              <input
+              <Input
                 type="text"
                 value={editForm.title}
                 onChange={(e) => setEditForm((prev) => ({ ...prev, title: e.target.value }))}
@@ -632,7 +634,7 @@ export default function BCDRPlanDetail() {
             >
               <div>
                 <label className="block text-sm font-medium text-surface-700 mb-2">Title *</label>
-                <input
+                <Input
                   type="text"
                   value={editForm.title}
                   onChange={(e) => setEditForm((prev) => ({ ...prev, title: e.target.value }))}

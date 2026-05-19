@@ -28,6 +28,8 @@ import toast from 'react-hot-toast';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 // View mode types
 type ViewMode = 'month' | 'week' | 'list';
 
@@ -689,7 +691,7 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
             <form onSubmit={handleCreateEvent} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-surface-700 mb-1">Title</label>
-                <input
+                <Input
                   type="text"
                   value={newEventTitle}
                   onChange={(e) => setNewEventTitle(e.target.value)}
@@ -712,7 +714,7 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
               </div>
               <div>
                 <label className="block text-sm font-medium text-surface-700 mb-1">Date</label>
-                <input
+                <Input
                   type="date"
                   value={newEventDate}
                   onChange={(e) => setNewEventDate(e.target.value)}

@@ -21,6 +21,8 @@ import { useToast } from '@/hooks/useToast';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 interface SimulationResult {
   inherentRisk: { score: number; level: string };
   residualRisk: { score: number; level: string };
@@ -256,7 +258,6 @@ export default function RiskScenarios() {
           New Scenario
         </Button>
       </div>
-
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="card p-4">
@@ -280,14 +281,13 @@ export default function RiskScenarios() {
           <p className="text-2xl font-bold text-foreground">{stats.byCategory?.length || 0}</p>
         </div>
       </div>
-
       {/* Filters */}
       <div className="card p-4">
         <div className="flex flex-wrap gap-4">
           <div className="flex-1 min-w-[200px]">
             <div className="relative">
               <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <input
+              <Input
                 type="text"
                 placeholder="Search scenarios..."
                 value={searchTerm}
@@ -331,7 +331,6 @@ export default function RiskScenarios() {
           </label>
         </div>
       </div>
-
       {/* Scenarios List */}
       {isLoading ? (
         <SkeletonTable rows={8} columns={6} />
@@ -432,7 +431,6 @@ export default function RiskScenarios() {
           ))}
         </div>
       )}
-
       {/* Scenario Library Section */}
       {libraryCategories.length > 0 && !showTemplatesOnly && (
         <div className="card p-6">
@@ -505,7 +503,6 @@ export default function RiskScenarios() {
           </div>
         </div>
       )}
-
       {/* Create/Edit Modal */}
       <Modal
         isOpen={isCreateModalOpen || !!editingScenario}
@@ -528,7 +525,6 @@ export default function RiskScenarios() {
           isLoading={createMutation.isPending || updateMutation.isPending}
         />
       </Modal>
-
       {/* Simulation Modal */}
       <Modal
         isOpen={!!simulatingScenario}
@@ -584,7 +580,7 @@ export default function RiskScenarios() {
                 <label className="block text-sm font-medium text-foreground mb-2">
                   Mitigations (comma-separated)
                 </label>
-                <input
+                <Input
                   type="text"
                   placeholder="e.g., MFA, Employee Training, Network Segmentation"
                   value={simulationParams.mitigations.join(', ')}
@@ -719,7 +715,7 @@ function ScenarioForm({ scenario, onSubmit, isLoading }: ScenarioFormProps) {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-foreground mb-1">Title *</label>
-        <input
+        <Input
           type="text"
           required
           value={formData.title}
@@ -791,7 +787,7 @@ function ScenarioForm({ scenario, onSubmit, isLoading }: ScenarioFormProps) {
 
         <div>
           <label className="block text-sm font-medium text-foreground mb-1">Target Assets</label>
-          <input
+          <Input
             type="text"
             value={formData.targetAssets}
             onChange={(e) => setFormData({ ...formData, targetAssets: e.target.value })}
@@ -835,7 +831,7 @@ function ScenarioForm({ scenario, onSubmit, isLoading }: ScenarioFormProps) {
       </div>
       <div>
         <label className="block text-sm font-medium text-foreground mb-1">Tags</label>
-        <input
+        <Input
           type="text"
           value={formData.tags}
           onChange={(e) => setFormData({ ...formData, tags: e.target.value })}

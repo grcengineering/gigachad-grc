@@ -17,6 +17,8 @@ import api from '@/lib/api';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 function CreateWorkspaceModal({
   isOpen,
   onClose,
@@ -59,7 +61,7 @@ function CreateWorkspaceModal({
               <label className="block text-sm font-medium text-foreground mb-1">
                 Workspace Name *
               </label>
-              <input
+              <Input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -234,7 +236,6 @@ export default function WorkspaceList() {
           </button>
         )}
       </div>
-
       {/* Org-level Stats */}
       {orgDashboard && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -264,11 +265,10 @@ export default function WorkspaceList() {
           </div>
         </div>
       )}
-
       {/* Search */}
       <div className="relative mb-6">
         <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-        <input
+        <Input
           type="text"
           placeholder="Search workspaces..."
           value={search}
@@ -276,7 +276,6 @@ export default function WorkspaceList() {
           className="w-full pl-10 pr-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand-500"
         />
       </div>
-
       {/* Workspaces Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredWorkspaces.map((workspace: Workspace) => {
@@ -356,7 +355,6 @@ export default function WorkspaceList() {
           );
         })}
       </div>
-
       {filteredWorkspaces.length === 0 && (
         <div className="text-center py-12">
           <BuildingOfficeIcon className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
@@ -365,7 +363,6 @@ export default function WorkspaceList() {
           </p>
         </div>
       )}
-
       <CreateWorkspaceModal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}

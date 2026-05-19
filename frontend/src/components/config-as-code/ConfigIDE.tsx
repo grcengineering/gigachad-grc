@@ -14,6 +14,8 @@ import {
 } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 
+import { Input } from '@/components/ui/Input';
+
 interface ConfigFile {
   id: string;
   path: string;
@@ -552,7 +554,6 @@ export default function ConfigIDE({ workspaceId }: Props) {
           </div>
         )}
       </div>
-
       {/* Editor Area */}
       <div className="flex-1 flex flex-col">
         {selectedFile ? (
@@ -586,7 +587,7 @@ export default function ConfigIDE({ workspaceId }: Props) {
                   {refreshMutation.isPending ? 'Syncing...' : 'Sync from DB'}
                 </button>
                 <div className="w-px h-6 bg-surface-600" />
-                <input
+                <Input
                   type="text"
                   placeholder="Commit message (optional)"
                   value={commitMessage}

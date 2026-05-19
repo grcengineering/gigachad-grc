@@ -26,6 +26,8 @@ import { SkeletonDetailHeader, SkeletonDetailSection } from '@/components/Skelet
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 type TabType = 'status' | 'history';
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; next?: string[] }> = {
@@ -746,7 +748,7 @@ function NewVersionModal({
 
           <div>
             <label className="label">Version Number *</label>
-            <input
+            <Input
               type="text"
               value={versionNumber}
               onChange={(e) => setVersionNumber(e.target.value)}
@@ -842,7 +844,7 @@ function LinkControlModal({
         </p>
 
         <div className="relative mb-4">
-          <input
+          <Input
             type="text"
             placeholder="Search controls..."
             value={search}
@@ -964,7 +966,7 @@ function EditPolicyModal({
         <div className="space-y-4">
           <div>
             <label className="label">Title *</label>
-            <input
+            <Input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -1001,7 +1003,7 @@ function EditPolicyModal({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="label">Effective Date</label>
-              <input
+              <Input
                 type="date"
                 value={effectiveDate}
                 onChange={(e) => setEffectiveDate(e.target.value)}
@@ -1010,7 +1012,7 @@ function EditPolicyModal({
             </div>
             <div>
               <label className="label">Next Review Due</label>
-              <input
+              <Input
                 type="date"
                 value={nextReviewDue}
                 onChange={(e) => setNextReviewDue(e.target.value)}
@@ -1021,7 +1023,7 @@ function EditPolicyModal({
 
           <div>
             <label className="label">Tags (comma-separated)</label>
-            <input
+            <Input
               type="text"
               value={tags}
               onChange={(e) => setTags(e.target.value)}

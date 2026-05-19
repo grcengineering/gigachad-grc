@@ -22,6 +22,8 @@ import { Button } from '@/components/ui/Button';
 import { SkeletonGrid } from '@/components/Skeleton';
 import api from '@/lib/api';
 
+import { Input } from '@/components/ui/Input';
+
 interface CatalogFramework {
   id: string;
   name: string;
@@ -460,12 +462,11 @@ export default function FrameworkLibrary() {
           </Link>
         </div>
       </div>
-
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-4">
         <div className="relative flex-1 min-w-[250px] max-w-md">
           <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-600" />
-          <input
+          <Input
             type="text"
             placeholder="Search frameworks..."
             value={searchQuery}
@@ -500,7 +501,6 @@ export default function FrameworkLibrary() {
           <span className="text-sm text-surface-700">Show activated only</span>
         </label>
       </div>
-
       {/* Framework Grid */}
       {filteredFrameworks && filteredFrameworks.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -528,7 +528,6 @@ export default function FrameworkLibrary() {
           </p>
         </div>
       )}
-
       {/* Preview Modal */}
       {previewFramework && (
         <FrameworkPreviewModal

@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/Button';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 // Categories must match backend ControlCategory enum exactly
 const CATEGORY_OPTIONS: { value: ControlCategory; label: string }[] = [
   { value: 'access_control', label: 'Access Control' },
@@ -130,7 +132,7 @@ export default function ControlNew() {
           <label htmlFor="controlId" className="block text-sm font-medium text-surface-700 mb-1">
             Control ID <span className="text-red-600">*</span>
           </label>
-          <input
+          <Input
             id="controlId"
             type="text"
             value={formData.controlId}
@@ -149,7 +151,7 @@ export default function ControlNew() {
           <label htmlFor="title" className="block text-sm font-medium text-surface-700 mb-1">
             Title <span className="text-red-600">*</span>
           </label>
-          <input
+          <Input
             id="title"
             type="text"
             value={formData.title}
@@ -200,7 +202,7 @@ export default function ControlNew() {
           <label htmlFor="tags" className="block text-sm font-medium text-surface-700 mb-1">
             Tags
           </label>
-          <input
+          <Input
             id="tags"
             type="text"
             value={tagsInput}

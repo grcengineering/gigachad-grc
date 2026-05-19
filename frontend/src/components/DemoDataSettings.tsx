@@ -12,6 +12,8 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 
+import { Input } from '@/components/ui/Input';
+
 interface DataSummary {
   controls: number;
   evidence: number;
@@ -235,7 +237,6 @@ export default function DemoDataSettings() {
           )}
         </div>
       </div>
-
       {/* Reset Confirmation Modal */}
       {showResetModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
@@ -283,7 +284,7 @@ export default function DemoDataSettings() {
               <label className="text-sm font-medium text-foreground">
                 Type <span className="font-mono text-red-600">DELETE ALL DATA</span> to confirm:
               </label>
-              <input
+              <Input
                 type="text"
                 value={confirmationText}
                 onChange={(e) => setConfirmationText(e.target.value)}

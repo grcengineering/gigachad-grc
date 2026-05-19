@@ -26,6 +26,8 @@ import { Link } from 'react-router-dom';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 const ASSET_TYPES = [
   { value: 'server', label: 'Server', icon: HardDrive },
   { value: 'workstation', label: 'Workstation', icon: Monitor },
@@ -496,7 +498,7 @@ export default function AssetDetail() {
             >
               <div>
                 <label className="block text-sm font-medium text-surface-700 mb-2">Name *</label>
-                <input
+                <Input
                   type="text"
                   value={editForm.name}
                   onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
@@ -559,7 +561,7 @@ export default function AssetDetail() {
                   <label className="block text-sm font-medium text-surface-700 mb-2">
                     Category
                   </label>
-                  <input
+                  <Input
                     type="text"
                     value={editForm.category}
                     onChange={(e) => setEditForm((prev) => ({ ...prev, category: e.target.value }))}
@@ -572,7 +574,7 @@ export default function AssetDetail() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-surface-700 mb-2">Owner</label>
-                  <input
+                  <Input
                     type="text"
                     value={editForm.owner}
                     onChange={(e) => setEditForm((prev) => ({ ...prev, owner: e.target.value }))}
@@ -583,7 +585,7 @@ export default function AssetDetail() {
                   <label className="block text-sm font-medium text-surface-700 mb-2">
                     Department
                   </label>
-                  <input
+                  <Input
                     type="text"
                     value={editForm.department}
                     onChange={(e) =>
@@ -596,7 +598,7 @@ export default function AssetDetail() {
 
               <div>
                 <label className="block text-sm font-medium text-surface-700 mb-2">Location</label>
-                <input
+                <Input
                   type="text"
                   value={editForm.location}
                   onChange={(e) => setEditForm((prev) => ({ ...prev, location: e.target.value }))}
@@ -632,7 +634,7 @@ export default function AssetDetail() {
                     <label className="block text-sm font-medium text-surface-700 mb-2">
                       RTO (Hours)
                     </label>
-                    <input
+                    <Input
                       type="number"
                       min="0"
                       value={editForm.rtoHours ?? ''}
@@ -651,7 +653,7 @@ export default function AssetDetail() {
                     <label className="block text-sm font-medium text-surface-700 mb-2">
                       RPO (Hours)
                     </label>
-                    <input
+                    <Input
                       type="number"
                       min="0"
                       value={editForm.rpoHours ?? ''}

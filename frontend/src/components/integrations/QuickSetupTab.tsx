@@ -11,6 +11,8 @@ import type { IntegrationType, ConfigField, EvidenceType } from '@/lib/integrati
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 interface QuickSetupConfig {
   name: string;
   description: string;
@@ -208,7 +210,7 @@ export default function QuickSetupTab({ typeMeta, config, onChange }: QuickSetup
         );
       case 'password':
         return (
-          <input
+          <Input
             type="password"
             value={value}
             onChange={(e) => updateCredential(field.key, e.target.value)}
@@ -237,7 +239,7 @@ export default function QuickSetupTab({ typeMeta, config, onChange }: QuickSetup
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm text-surface-600 mb-1.5">Name</label>
-            <input
+            <Input
               type="text"
               value={config.name}
               onChange={(e) => onChange({ ...config, name: e.target.value })}
@@ -318,7 +320,7 @@ export default function QuickSetupTab({ typeMeta, config, onChange }: QuickSetup
           {/* Search */}
           <div className="relative mb-4">
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-500" />
-            <input
+            <Input
               type="text"
               placeholder="Search data types..."
               value={searchQuery}

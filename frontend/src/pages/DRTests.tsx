@@ -15,6 +15,8 @@ import api from '@/lib/api';
 import { useDebounce } from '@/hooks/useDebounce';
 import clsx from 'clsx';
 
+import { Input } from '@/components/ui/Input';
+
 interface DRTest {
   id: string;
   test_id: string;
@@ -131,7 +133,6 @@ export default function DRTests() {
           Schedule Test
         </Link>
       </div>
-
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="card p-4">
@@ -169,14 +170,13 @@ export default function DRTests() {
           )}
         </div>
       </div>
-
       {/* Filters */}
       <div className="card p-4">
         <div className="flex flex-wrap gap-4">
           <div className="flex-1 min-w-64">
             <div className="relative">
               <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-600" />
-              <input
+              <Input
                 type="text"
                 placeholder="Search tests..."
                 className="form-input pl-10 w-full"
@@ -218,7 +218,6 @@ export default function DRTests() {
           </button>
         </div>
       </div>
-
       {/* Table */}
       <div className="card overflow-hidden">
         {isLoading ? (

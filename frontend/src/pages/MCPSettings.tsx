@@ -14,6 +14,8 @@ import {
 } from '@heroicons/react/24/outline';
 import { mcpApi } from '../lib/api';
 
+import { Input } from '@/components/ui/Input';
+
 interface MCPServer {
   id: string;
   name: string;
@@ -158,7 +160,6 @@ export default function MCPSettings() {
           Add Server
         </button>
       </div>
-
       {/* Server Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-surface-800 rounded-lg p-4 border border-gray-200 dark:border-surface-700">
@@ -212,7 +213,6 @@ export default function MCPSettings() {
           </div>
         </div>
       </div>
-
       {/* Server List */}
       <div className="bg-white dark:bg-surface-800 rounded-lg border border-gray-200 dark:border-surface-700">
         <div className="p-4 border-b border-gray-200 dark:border-surface-700">
@@ -301,7 +301,6 @@ export default function MCPSettings() {
           </div>
         )}
       </div>
-
       {/* Add Server Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -371,7 +370,7 @@ export default function MCPSettings() {
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                             {envVar}
                           </label>
-                          <input
+                          <Input
                             type="password"
                             value={envVars[envVar] || ''}
                             onChange={(e) => setEnvVars({ ...envVars, [envVar]: e.target.value })}
@@ -509,7 +508,6 @@ export default function MCPSettings() {
           </div>
         </div>
       )}
-
       {/* Server Details Modal */}
       {selectedServer && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">

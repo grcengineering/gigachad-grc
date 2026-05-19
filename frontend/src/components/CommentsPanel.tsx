@@ -12,6 +12,8 @@ import {
 } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 
+import { Input } from '@/components/ui/Input';
+
 interface CommentsPanelProps {
   entityType: string;
   entityId: string;
@@ -89,10 +91,9 @@ export default function CommentsPanel({ entityType, entityId }: CommentsPanelPro
         <ChatBubbleLeftRightIcon className="w-5 h-5 text-surface-600" />
         <h3 className="text-sm font-semibold text-surface-100">Comments ({comments.length})</h3>
       </div>
-
       {/* New Comment Form */}
       <form onSubmit={handleSubmit} className="flex gap-2">
-        <input
+        <Input
           type="text"
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
@@ -107,7 +108,6 @@ export default function CommentsPanel({ entityType, entityId }: CommentsPanelPro
           <PaperAirplaneIcon className="w-4 h-4" />
         </button>
       </form>
-
       {/* Comments List */}
       {isLoading ? (
         <div className="text-center py-4 text-surface-500">Loading comments...</div>
@@ -190,7 +190,7 @@ export default function CommentsPanel({ entityType, entityId }: CommentsPanelPro
               {/* Reply Input */}
               {replyingTo === comment.id ? (
                 <div className="mt-3 flex gap-2">
-                  <input
+                  <Input
                     type="text"
                     value={replyContent}
                     onChange={(e) => setReplyContent(e.target.value)}

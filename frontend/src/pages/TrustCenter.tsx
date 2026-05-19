@@ -20,6 +20,8 @@ import {
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 type SectionType = 'overview' | 'certifications' | 'controls' | 'policies' | 'updates' | 'contact';
 
 export default function TrustCenter() {
@@ -454,7 +456,7 @@ function ContentModal({ section, content, onSave, onClose }: ContentModalProps) 
             <label className="block text-sm font-medium text-gray-500 dark:text-surface-600 mb-1">
               Title
             </label>
-            <input
+            <Input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -483,7 +485,7 @@ function ContentModal({ section, content, onSave, onClose }: ContentModalProps) 
               <label className="block text-sm font-medium text-gray-500 dark:text-surface-600 mb-1">
                 Display Order
               </label>
-              <input
+              <Input
                 type="number"
                 value={order}
                 onChange={(e) => setOrder(parseInt(e.target.value))}

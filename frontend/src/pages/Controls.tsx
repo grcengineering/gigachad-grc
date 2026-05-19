@@ -30,6 +30,8 @@ import {
 } from '@/components/BulkActions';
 import { AdvancedFilters, conditionsToQueryParams } from '@/components/AdvancedFilters';
 
+import { Input } from '@/components/ui/Input';
+
 // Define filter fields for controls
 const CONTROL_FILTER_FIELDS = [
   { key: 'title', label: 'Title', type: 'string' as const },
@@ -242,7 +244,6 @@ export default function Controls() {
         isProcessing={isProcessing}
         processingLabel={bulkDeleteMutation.isPending ? 'Deleting...' : 'Processing...'}
       />
-
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -302,16 +303,14 @@ export default function Controls() {
           </Button>
         </div>
       </div>
-
       {/* Bulk Upload Modal */}
       <BulkUploadModal isOpen={isBulkUploadOpen} onClose={() => setIsBulkUploadOpen(false)} />
-
       {/* Filters */}
       <div className="card p-4">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 relative">
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-500" />
-            <input
+            <Input
               type="text"
               placeholder="Search controls..."
               value={searchInput}
@@ -356,7 +355,6 @@ export default function Controls() {
           </select>
         </div>
       </div>
-
       {/* Controls Table */}
       <div className="card overflow-hidden">
         {isLoading ? (
@@ -460,7 +458,6 @@ export default function Controls() {
           </div>
         )}
       </div>
-
       {/* Pagination info */}
       {controlsData?.meta && (
         <div className="flex items-center justify-between text-sm text-surface-500">

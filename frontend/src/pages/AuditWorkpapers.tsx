@@ -16,6 +16,8 @@ import clsx from 'clsx';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 interface Workpaper {
   id: string;
   workpaperNumber: string;
@@ -315,7 +317,7 @@ export default function AuditWorkpapers() {
             <form onSubmit={handleCreateSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-surface-700 mb-1">Title *</label>
-                <input
+                <Input
                   type="text"
                   value={createForm.title}
                   onChange={(e) => setCreateForm((prev) => ({ ...prev, title: e.target.value }))}

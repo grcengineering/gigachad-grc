@@ -22,6 +22,8 @@ import { useSelection, BulkActionsBar, SelectCheckbox } from '@/components/BulkA
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 interface Finding {
   id: string;
   findingNumber: string;
@@ -624,7 +626,7 @@ function FindingForm({ finding, audits, users, onSubmit, onDelete, isLoading }: 
           <label className="block text-sm font-medium text-surface-700 mb-1">
             Title <span className="text-red-600">*</span>
           </label>
-          <input
+          <Input
             type="text"
             value={formData.title}
             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
@@ -697,7 +699,7 @@ function FindingForm({ finding, audits, users, onSubmit, onDelete, isLoading }: 
 
         <div>
           <label className="block text-sm font-medium text-surface-700 mb-1">Target Date</label>
-          <input
+          <Input
             type="date"
             value={formData.targetDate}
             onChange={(e) => setFormData({ ...formData, targetDate: e.target.value })}

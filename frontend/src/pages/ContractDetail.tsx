@@ -11,6 +11,8 @@ import toast from 'react-hot-toast';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 interface Contract {
   id: string;
   vendorId: string;
@@ -83,7 +85,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
               <label className="block text-sm font-medium text-surface-600 mb-1">
                 Contract Title *
               </label>
-              <input
+              <Input
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
@@ -125,7 +127,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
             </div>
             <div>
               <label className="block text-sm font-medium text-surface-600 mb-1">Vendor ID *</label>
-              <input
+              <Input
                 type="text"
                 value={formData.vendorId}
                 onChange={(e) => setFormData({ ...formData, vendorId: e.target.value })}
@@ -155,7 +157,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
               <label className="block text-sm font-medium text-surface-600 mb-1">
                 Contract Value
               </label>
-              <input
+              <Input
                 type="number"
                 value={formData.contractValue || ''}
                 onChange={(e) =>
@@ -190,7 +192,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
               <label className="block text-sm font-medium text-surface-600 mb-1">
                 Start Date *
               </label>
-              <input
+              <Input
                 type="date"
                 value={formData.startDate}
                 onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
@@ -200,7 +202,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
             </div>
             <div>
               <label className="block text-sm font-medium text-surface-600 mb-1">End Date *</label>
-              <input
+              <Input
                 type="date"
                 value={formData.endDate}
                 onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
@@ -212,7 +214,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
               <label className="block text-sm font-medium text-surface-600 mb-1">
                 Renewal Date
               </label>
-              <input
+              <Input
                 type="date"
                 value={formData.renewalDate || ''}
                 onChange={(e) => setFormData({ ...formData, renewalDate: e.target.value })}

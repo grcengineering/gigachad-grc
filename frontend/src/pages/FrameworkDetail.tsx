@@ -35,6 +35,8 @@ import clsx from 'clsx';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 const STATUS_CONFIG = {
   compliant: { icon: CheckCircleIcon, color: 'text-green-600', bg: 'bg-green-400/10' },
   partial: { icon: ExclamationTriangleIcon, color: 'text-yellow-600', bg: 'bg-yellow-400/10' },
@@ -417,7 +419,7 @@ export default function FrameworkDetail() {
                   <label className="block text-sm font-medium text-surface-700 mb-1">
                     Reference *
                   </label>
-                  <input
+                  <Input
                     type="text"
                     required
                     value={formData.reference}
@@ -445,7 +447,7 @@ export default function FrameworkDetail() {
 
               <div>
                 <label className="block text-sm font-medium text-surface-700 mb-1">Title *</label>
-                <input
+                <Input
                   type="text"
                   required
                   value={formData.title}
@@ -1082,7 +1084,7 @@ function RequirementDetailPanel({
                 {/* Due Date */}
                 <div>
                   <label className="block text-xs text-surface-600 mb-1">Due Date</label>
-                  <input
+                  <Input
                     type="date"
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}

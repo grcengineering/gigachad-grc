@@ -15,6 +15,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 
+import { Input } from '@/components/ui/Input';
+
 interface KnowledgeBaseSearchPanelProps {
   questionText: string;
   onSelectAnswer: (answer: string, kbEntryId?: string) => void;
@@ -174,12 +176,11 @@ export function KnowledgeBaseSearchPanel({
           </button>
         )}
       </div>
-
       {/* Search Input */}
       <div className="p-3 border-b border-surface-700">
         <div className="relative">
           <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-500" />
-          <input
+          <Input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -198,7 +199,6 @@ export function KnowledgeBaseSearchPanel({
               : 'Search by keywords, tags, or categories'}
         </p>
       </div>
-
       {/* Results List */}
       <div className="max-h-80 overflow-y-auto">
         {results.length === 0 && !loading && searchQuery.length >= 3 && (
@@ -299,7 +299,6 @@ export function KnowledgeBaseSearchPanel({
           </div>
         ))}
       </div>
-
       {/* Footer hint */}
       <div className="px-4 py-2 bg-surface-800 border-t border-surface-700">
         <p className="text-xs text-surface-500 text-center">

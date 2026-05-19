@@ -14,6 +14,8 @@ import { useToast } from '@/hooks/useToast';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 interface AuditTemplate {
   id: string;
   name: string;
@@ -270,7 +272,7 @@ export default function AuditTemplates() {
                 <label className="block text-sm font-medium text-surface-700 mb-1">
                   Template Name *
                 </label>
-                <input
+                <Input
                   type="text"
                   value={createForm.name}
                   onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
@@ -314,7 +316,7 @@ export default function AuditTemplates() {
                   <label className="block text-sm font-medium text-surface-700 mb-1">
                     Framework
                   </label>
-                  <input
+                  <Input
                     type="text"
                     value={createForm.framework}
                     onChange={(e) => setCreateForm({ ...createForm, framework: e.target.value })}

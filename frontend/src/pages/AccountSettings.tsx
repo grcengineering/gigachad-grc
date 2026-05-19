@@ -9,6 +9,8 @@ import {
 } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 
+import { Input } from '@/components/ui/Input';
+
 const TABS = [
   { id: 'profile', label: 'Profile', icon: UserIcon },
   { id: 'notifications', label: 'Notifications', icon: BellIcon },
@@ -66,7 +68,6 @@ function ProfileSettings({ user }: { user: any }) {
   return (
     <div className="card p-6 space-y-6">
       <h2 className="text-lg font-semibold text-surface-100">Profile</h2>
-
       <div className="flex items-center gap-4">
         <div className="w-16 h-16 rounded-full bg-surface-700 flex items-center justify-center">
           <span className="text-2xl font-medium text-surface-700">
@@ -75,15 +76,14 @@ function ProfileSettings({ user }: { user: any }) {
         </div>
         <button className="btn-secondary">Change Avatar</button>
       </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="label">Full Name</label>
-          <input type="text" defaultValue={user?.name || ''} className="input mt-1" />
+          <Input type="text" defaultValue={user?.name || ''} className="input mt-1" />
         </div>
         <div>
           <label className="label">Email</label>
-          <input
+          <Input
             type="email"
             defaultValue={user?.email || ''}
             disabled
@@ -92,7 +92,7 @@ function ProfileSettings({ user }: { user: any }) {
         </div>
         <div>
           <label className="label">Role</label>
-          <input
+          <Input
             type="text"
             value={user?.role?.replace('_', ' ') || 'Viewer'}
             disabled
@@ -101,7 +101,7 @@ function ProfileSettings({ user }: { user: any }) {
         </div>
         <div>
           <label className="label">Organization</label>
-          <input
+          <Input
             type="text"
             value="Default Organization"
             disabled
@@ -109,7 +109,6 @@ function ProfileSettings({ user }: { user: any }) {
           />
         </div>
       </div>
-
       <div className="flex justify-end pt-4 border-t border-surface-800">
         <button className="btn-primary">Save Changes</button>
       </div>
@@ -232,7 +231,7 @@ function NotificationPreferences() {
           {riskTaskPrefs.slack && (
             <div className="p-4 bg-surface-800/30 rounded-lg border border-surface-700">
               <label className="label">Slack User ID</label>
-              <input
+              <Input
                 type="text"
                 value={riskTaskPrefs.slackUserId}
                 onChange={(e) =>
@@ -291,7 +290,6 @@ function NotificationPreferences() {
           <button className="btn-primary">Save Task Preferences</button>
         </div>
       </div>
-
       {/* General Notifications */}
       <div className="card p-6 space-y-6">
         <h2 className="text-lg font-semibold text-surface-100">General Notifications</h2>
@@ -433,15 +431,15 @@ function SecuritySettings() {
         <div className="space-y-4">
           <div>
             <label className="label">Current Password</label>
-            <input type="password" className="input mt-1" placeholder="Enter current password" />
+            <Input type="password" className="input mt-1" placeholder="Enter current password" />
           </div>
           <div>
             <label className="label">New Password</label>
-            <input type="password" className="input mt-1" placeholder="Enter new password" />
+            <Input type="password" className="input mt-1" placeholder="Enter new password" />
           </div>
           <div>
             <label className="label">Confirm New Password</label>
-            <input type="password" className="input mt-1" placeholder="Confirm new password" />
+            <Input type="password" className="input mt-1" placeholder="Confirm new password" />
           </div>
         </div>
 
@@ -449,7 +447,6 @@ function SecuritySettings() {
           <button className="btn-primary">Update Password</button>
         </div>
       </div>
-
       <div className="card p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
@@ -468,7 +465,6 @@ function SecuritySettings() {
           Enable 2FA
         </button>
       </div>
-
       <div className="card p-6 space-y-6">
         <h2 className="text-lg font-semibold text-surface-100">Active Sessions</h2>
         <p className="text-surface-600 text-sm">Manage your active sessions across devices</p>

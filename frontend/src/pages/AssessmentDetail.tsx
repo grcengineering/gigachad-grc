@@ -7,6 +7,8 @@ import { useAuth } from '@/contexts/AuthContext';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 interface AssessmentFormProps {
   assessment: VendorAssessment | null;
   onSave: (data: Partial<VendorAssessment>) => Promise<void>;
@@ -134,7 +136,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-surface-600 mb-1">Due Date</label>
-              <input
+              <Input
                 type="date"
                 value={formData.dueDate || ''}
                 onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
@@ -145,7 +147,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
               <label className="block text-sm font-medium text-surface-600 mb-1">
                 Completed Date
               </label>
-              <input
+              <Input
                 type="date"
                 value={formData.completedAt || ''}
                 onChange={(e) => setFormData({ ...formData, completedAt: e.target.value })}
@@ -163,7 +165,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
               <label className="block text-sm font-medium text-surface-600 mb-1">
                 Overall Score (0-100)
               </label>
-              <input
+              <Input
                 type="number"
                 min="0"
                 max="100"
@@ -284,7 +286,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
               <label className="block text-sm font-medium text-surface-600 mb-1">
                 Outcome Notes
               </label>
-              <input
+              <Input
                 type="text"
                 value={formData.outcomeNotes || ''}
                 onChange={(e) => setFormData({ ...formData, outcomeNotes: e.target.value })}

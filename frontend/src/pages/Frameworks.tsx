@@ -10,6 +10,8 @@ import { SkeletonGrid } from '@/components/Skeleton';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 export default function Frameworks() {
   const queryClient = useQueryClient();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -138,7 +140,7 @@ export default function Frameworks() {
                 <label className="block text-sm font-medium text-surface-700 mb-1">
                   Framework Name *
                 </label>
-                <input
+                <Input
                   type="text"
                   required
                   value={formData.name}
@@ -150,7 +152,7 @@ export default function Frameworks() {
 
               <div>
                 <label className="block text-sm font-medium text-surface-700 mb-1">Type *</label>
-                <input
+                <Input
                   type="text"
                   required
                   value={formData.type}
@@ -162,7 +164,7 @@ export default function Frameworks() {
 
               <div>
                 <label className="block text-sm font-medium text-surface-700 mb-1">Version</label>
-                <input
+                <Input
                   type="text"
                   value={formData.version}
                   onChange={(e) => setFormData({ ...formData, version: e.target.value })}

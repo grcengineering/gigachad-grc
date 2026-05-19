@@ -3,6 +3,8 @@ import { PencilIcon, ClockIcon } from '@heroicons/react/24/outline';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 interface User {
   id: string;
   displayName?: string;
@@ -172,7 +174,7 @@ export default function ControlImplementationCard({
             <label className="block text-sm text-surface-600 mb-1">
               Effectiveness Score (0-100)
             </label>
-            <input
+            <Input
               type="number"
               min="0"
               max="100"

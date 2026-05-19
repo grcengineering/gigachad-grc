@@ -3,6 +3,8 @@ import { XMarkIcon } from '@heroicons/react/24/outline';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 interface ControlEditModalProps {
   control: {
     title: string;
@@ -69,7 +71,7 @@ export default function ControlEditModal({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-surface-700 mb-1">Title</label>
-            <input
+            <Input
               type="text"
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
@@ -103,7 +105,7 @@ export default function ControlEditModal({
 
           <div>
             <label className="block text-sm font-medium text-surface-700 mb-1">Tags</label>
-            <input
+            <Input
               type="text"
               value={form.tags}
               onChange={(e) => setForm({ ...form, tags: e.target.value })}

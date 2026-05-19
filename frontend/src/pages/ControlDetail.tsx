@@ -37,6 +37,8 @@ import { SkeletonDetailHeader, SkeletonDetailSection } from '@/components/Skelet
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 type TabType = 'details' | 'comments' | 'tasks' | 'history';
 
 const STATUS_OPTIONS = [
@@ -316,7 +318,7 @@ export default function ControlDetail() {
                 <div className="space-y-4">
                   <div>
                     <label className="label mb-1">Title</label>
-                    <input
+                    <Input
                       type="text"
                       value={editForm.title}
                       onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
@@ -334,7 +336,7 @@ export default function ControlDetail() {
                   </div>
                   <div>
                     <label className="label mb-1">Tags (comma-separated)</label>
-                    <input
+                    <Input
                       type="text"
                       value={editForm.tags}
                       onChange={(e) => setEditForm({ ...editForm, tags: e.target.value })}
@@ -394,7 +396,7 @@ export default function ControlDetail() {
                     </div>
                     <div>
                       <label className="label mb-1">Effectiveness Score (0-100)</label>
-                      <input
+                      <Input
                         type="number"
                         min="0"
                         max="100"
@@ -1153,7 +1155,7 @@ function LinkPolicyModal({
         </p>
 
         <div className="relative mb-4">
-          <input
+          <Input
             type="text"
             placeholder="Search policies..."
             value={search}

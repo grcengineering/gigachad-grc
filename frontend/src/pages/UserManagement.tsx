@@ -12,6 +12,8 @@ import { usersApi, permissionsApi } from '../lib/api';
 import { UserStatus, UserRole, PermissionGroup } from '../lib/apiTypes';
 import toast from 'react-hot-toast';
 
+import { Input } from '@/components/ui/Input';
+
 interface User {
   id: string;
   keycloakId?: string;
@@ -140,7 +142,6 @@ export default function UserManagement() {
           <p className="text-surface-600 mt-1">Manage users, roles, and permissions</p>
         </div>
       </div>
-
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-surface-800 rounded-lg p-4 border border-surface-700">
@@ -160,14 +161,13 @@ export default function UserManagement() {
           <div className="text-2xl font-bold text-brand-400 mt-1">{groups.length}</div>
         </div>
       </div>
-
       {/* Filters */}
       <div className="bg-surface-800 rounded-lg p-4 border border-surface-700">
         <div className="flex flex-wrap gap-4">
           <div className="flex-1 min-w-64">
             <div className="relative">
               <MagnifyingGlassIcon className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-surface-600" />
-              <input
+              <Input
                 type="text"
                 placeholder="Search users by name or email..."
                 value={search}
@@ -198,7 +198,6 @@ export default function UserManagement() {
           </select>
         </div>
       </div>
-
       {/* Users Table */}
       <div className="bg-surface-800 rounded-lg border border-surface-700 overflow-hidden">
         <table className="w-full">
@@ -324,7 +323,6 @@ export default function UserManagement() {
           </tbody>
         </table>
       </div>
-
       {/* Groups Modal */}
       {showGroupsModal && selectedUser && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -406,7 +404,6 @@ export default function UserManagement() {
           </div>
         </div>
       )}
-
       {/* Permissions Modal */}
       {showPermissionsModal && selectedUser && (
         <PermissionsModal

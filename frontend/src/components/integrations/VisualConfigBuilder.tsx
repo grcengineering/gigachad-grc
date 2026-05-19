@@ -4,6 +4,8 @@ import clsx from 'clsx';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 interface EndpointConfig {
   name: string;
   description: string;
@@ -103,7 +105,7 @@ export default function VisualConfigBuilder({ config, onChange, onTest, isTestLo
       {/* Base URL */}
       <div>
         <label className="block text-sm font-medium text-surface-700 mb-2">Base URL</label>
-        <input
+        <Input
           type="text"
           value={config.baseUrl}
           onChange={(e) => updateBaseUrl(e.target.value)}
@@ -112,7 +114,6 @@ export default function VisualConfigBuilder({ config, onChange, onTest, isTestLo
         />
         <p className="text-xs text-surface-500 mt-1">The base URL for all API requests</p>
       </div>
-
       {/* Authentication */}
       <div className="border border-surface-700 rounded-lg p-4">
         <h3 className="text-sm font-medium text-surface-200 mb-4">Authentication</h3>
@@ -155,7 +156,7 @@ export default function VisualConfigBuilder({ config, onChange, onTest, isTestLo
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs text-surface-600 mb-1">Key Name</label>
-                <input
+                <Input
                   type="text"
                   value={config.authConfig?.keyName || ''}
                   onChange={(e) =>
@@ -167,7 +168,7 @@ export default function VisualConfigBuilder({ config, onChange, onTest, isTestLo
               </div>
               <div>
                 <label className="block text-xs text-surface-600 mb-1">Key Value</label>
-                <input
+                <Input
                   type="password"
                   value={config.authConfig?.keyValue || ''}
                   onChange={(e) =>
@@ -201,7 +202,7 @@ export default function VisualConfigBuilder({ config, onChange, onTest, isTestLo
           <div className="space-y-3">
             <div>
               <label className="block text-xs text-surface-600 mb-1">Token URL</label>
-              <input
+              <Input
                 type="text"
                 value={config.authConfig?.tokenUrl || ''}
                 onChange={(e) =>
@@ -214,7 +215,7 @@ export default function VisualConfigBuilder({ config, onChange, onTest, isTestLo
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs text-surface-600 mb-1">Client ID</label>
-                <input
+                <Input
                   type="text"
                   value={config.authConfig?.clientId || ''}
                   onChange={(e) =>
@@ -226,7 +227,7 @@ export default function VisualConfigBuilder({ config, onChange, onTest, isTestLo
               </div>
               <div>
                 <label className="block text-xs text-surface-600 mb-1">Client Secret</label>
-                <input
+                <Input
                   type="password"
                   value={config.authConfig?.clientSecret || ''}
                   onChange={(e) =>
@@ -239,7 +240,7 @@ export default function VisualConfigBuilder({ config, onChange, onTest, isTestLo
             </div>
             <div>
               <label className="block text-xs text-surface-600 mb-1">Scope (optional)</label>
-              <input
+              <Input
                 type="text"
                 value={config.authConfig?.scope || ''}
                 onChange={(e) => updateAuthConfig({ ...config.authConfig, scope: e.target.value })}
@@ -250,7 +251,6 @@ export default function VisualConfigBuilder({ config, onChange, onTest, isTestLo
           </div>
         )}
       </div>
-
       {/* Endpoints */}
       <div>
         <div className="flex items-center justify-between mb-4">
@@ -389,7 +389,7 @@ function EndpointCard({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs text-surface-600 mb-1">Name</label>
-              <input
+              <Input
                 type="text"
                 value={endpoint.name}
                 onChange={(e) => onChange({ name: e.target.value })}
@@ -399,7 +399,7 @@ function EndpointCard({
             </div>
             <div>
               <label className="block text-xs text-surface-600 mb-1">Description</label>
-              <input
+              <Input
                 type="text"
                 value={endpoint.description}
                 onChange={(e) => onChange({ description: e.target.value })}
@@ -427,7 +427,7 @@ function EndpointCard({
             </div>
             <div className="flex-1">
               <label className="block text-xs text-surface-600 mb-1">Path</label>
-              <input
+              <Input
                 type="text"
                 value={endpoint.path}
                 onChange={(e) => onChange({ path: e.target.value })}
@@ -501,7 +501,7 @@ function EndpointCard({
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs text-surface-500 mb-1">Title Field</label>
-                <input
+                <Input
                   type="text"
                   value={endpoint.responseMapping?.title || ''}
                   onChange={(e) =>
@@ -515,7 +515,7 @@ function EndpointCard({
               </div>
               <div>
                 <label className="block text-xs text-surface-500 mb-1">Description Field</label>
-                <input
+                <Input
                   type="text"
                   value={endpoint.responseMapping?.description || ''}
                   onChange={(e) =>
@@ -529,7 +529,7 @@ function EndpointCard({
               </div>
               <div>
                 <label className="block text-xs text-surface-500 mb-1">Data Field</label>
-                <input
+                <Input
                   type="text"
                   value={endpoint.responseMapping?.data || ''}
                   onChange={(e) =>

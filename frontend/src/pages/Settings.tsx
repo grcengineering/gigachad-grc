@@ -34,6 +34,8 @@ import ProductionReadiness from '@/components/ProductionReadiness';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 interface SettingsProps {
   section:
     | 'organization'
@@ -366,7 +368,7 @@ function OrganizationSettings() {
           {/* Platform Name */}
           <div>
             <label className="label">Platform Name</label>
-            <input
+            <Input
               type="text"
               value={platformName}
               onChange={(e) => setPlatformName(e.target.value)}
@@ -434,7 +436,7 @@ function OrganizationSettings() {
                 {/* URL Input (optional) */}
                 <div className="pt-2">
                   <label className="text-surface-600 text-xs">Or enter image URL:</label>
-                  <input
+                  <Input
                     type="url"
                     value={logoUrl.startsWith('data:') ? '' : logoUrl}
                     onChange={(e) => {
@@ -465,7 +467,7 @@ function OrganizationSettings() {
         <div className="space-y-4">
           <div>
             <label className="label">Organization Name</label>
-            <input
+            <Input
               type="text"
               value={orgSettings.organizationName}
               onChange={(e) => updateOrgSetting('organizationName', e.target.value)}
@@ -484,7 +486,7 @@ function OrganizationSettings() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="label">Primary Contact Email</label>
-              <input
+              <Input
                 type="email"
                 value={orgSettings.primaryEmail}
                 onChange={(e) => updateOrgSetting('primaryEmail', e.target.value)}
@@ -910,7 +912,7 @@ function CommunicationsSettings() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="label">From Address</label>
-                <input
+                <Input
                   type="email"
                   className="input mt-1"
                   placeholder="noreply@company.com"
@@ -922,7 +924,7 @@ function CommunicationsSettings() {
               </div>
               <div>
                 <label className="label">From Name</label>
-                <input
+                <Input
                   type="text"
                   className="input mt-1"
                   placeholder="GigaChad GRC"
@@ -936,7 +938,7 @@ function CommunicationsSettings() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-surface-800/50 rounded-lg">
                 <div>
                   <label className="label">SMTP Host</label>
-                  <input
+                  <Input
                     type="text"
                     className="input mt-1"
                     placeholder="smtp.company.com"
@@ -946,7 +948,7 @@ function CommunicationsSettings() {
                 </div>
                 <div>
                   <label className="label">Port</label>
-                  <input
+                  <Input
                     type="number"
                     className="input mt-1"
                     value={emailForm.smtpPort}
@@ -957,7 +959,7 @@ function CommunicationsSettings() {
                 </div>
                 <div>
                   <label className="label">Username</label>
-                  <input
+                  <Input
                     type="text"
                     className="input mt-1"
                     value={emailForm.smtpUser}
@@ -966,7 +968,7 @@ function CommunicationsSettings() {
                 </div>
                 <div>
                   <label className="label">Password</label>
-                  <input
+                  <Input
                     type="password"
                     className="input mt-1"
                     placeholder="••••••••"
@@ -980,7 +982,7 @@ function CommunicationsSettings() {
             {emailProvider === 'sendgrid' && (
               <div className="p-4 bg-surface-800/50 rounded-lg">
                 <label className="label">SendGrid API Key</label>
-                <input
+                <Input
                   type="password"
                   className="input mt-1"
                   placeholder="SG.xxxxxxxxxx"
@@ -1006,7 +1008,7 @@ function CommunicationsSettings() {
                 </div>
                 <div>
                   <label className="label">Access Key ID</label>
-                  <input
+                  <Input
                     type="text"
                     className="input mt-1"
                     placeholder="AKIA..."
@@ -1018,7 +1020,7 @@ function CommunicationsSettings() {
                 </div>
                 <div>
                   <label className="label">Secret Access Key</label>
-                  <input
+                  <Input
                     type="password"
                     className="input mt-1"
                     placeholder="••••••••"
@@ -1033,7 +1035,7 @@ function CommunicationsSettings() {
 
             <div className="flex items-center gap-4 pt-4 border-t border-surface-700">
               <div className="flex-1">
-                <input
+                <Input
                   type="email"
                   className="input"
                   placeholder="Enter email to send test"
@@ -1062,7 +1064,6 @@ function CommunicationsSettings() {
           </button>
         </div>
       </div>
-
       {/* Slack Configuration */}
       <div className="card p-6 space-y-6">
         <div className="flex items-center justify-between">
@@ -1086,7 +1087,7 @@ function CommunicationsSettings() {
             <div className="space-y-4">
               <div>
                 <label className="label">Webhook URL</label>
-                <input
+                <Input
                   type="password"
                   className="input mt-1"
                   placeholder="https://hooks.slack.com/services/..."
@@ -1100,7 +1101,7 @@ function CommunicationsSettings() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="label">Default Channel</label>
-                  <input
+                  <Input
                     type="text"
                     className="input mt-1"
                     placeholder="#grc-alerts"
@@ -1112,7 +1113,7 @@ function CommunicationsSettings() {
                 </div>
                 <div>
                   <label className="label">Workspace Name</label>
-                  <input
+                  <Input
                     type="text"
                     className="input mt-1"
                     placeholder="Company Workspace"
@@ -1249,7 +1250,6 @@ function ApiSettings() {
           Generate New Key
         </button>
       </div>
-
       {isLoading ? (
         <div className="flex justify-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
@@ -1344,7 +1344,6 @@ function ApiSettings() {
           ))}
         </div>
       )}
-
       <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
         <div className="flex items-start gap-3">
           <ExclamationCircleIcon className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
@@ -1357,7 +1356,6 @@ function ApiSettings() {
           </div>
         </div>
       </div>
-
       {/* Create Key Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -1366,7 +1364,7 @@ function ApiSettings() {
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-surface-700 mb-1">Name</label>
-                <input
+                <Input
                   type="text"
                   value={newKeyName}
                   onChange={(e) => setNewKeyName(e.target.value)}
@@ -1379,7 +1377,7 @@ function ApiSettings() {
                 <label className="block text-sm font-medium text-surface-700 mb-1">
                   Description (optional)
                 </label>
-                <input
+                <Input
                   type="text"
                   value={newKeyDescription}
                   onChange={(e) => setNewKeyDescription(e.target.value)}
@@ -1429,7 +1427,6 @@ function ApiSettings() {
           </div>
         </div>
       )}
-
       {/* New Key Display Modal */}
       {showNewKeyModal && newKey && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -1628,7 +1625,7 @@ function DashboardTemplatesSettings() {
                   <label className="block text-sm font-medium text-surface-700 mb-2">
                     Template Name
                   </label>
-                  <input
+                  <Input
                     type="text"
                     value={newTemplateName}
                     onChange={(e) => setNewTemplateName(e.target.value)}
@@ -1906,7 +1903,6 @@ function EmployeeComplianceSettings() {
           </p>
         </div>
       </div>
-
       {/* Compliance Thresholds */}
       <div className="card p-6 space-y-4">
         <div>
@@ -1920,7 +1916,7 @@ function EmployeeComplianceSettings() {
           <div>
             <label className="label">Compliant Threshold (≥)</label>
             <div className="flex items-center gap-2">
-              <input
+              <Input
                 type="number"
                 min="0"
                 max="100"
@@ -1937,7 +1933,7 @@ function EmployeeComplianceSettings() {
           <div>
             <label className="label">At Risk Threshold (≥)</label>
             <div className="flex items-center gap-2">
-              <input
+              <Input
                 type="number"
                 min="0"
                 max="100"
@@ -1970,7 +1966,6 @@ function EmployeeComplianceSettings() {
           </div>
         </div>
       </div>
-
       {/* Compliance Requirements */}
       <div className="card p-6 space-y-4">
         <div>
@@ -1998,7 +1993,7 @@ function EmployeeComplianceSettings() {
             {config.requirements.backgroundCheckRequired && (
               <div className="flex items-center gap-2">
                 <label className="text-surface-600 text-sm">Valid for</label>
-                <input
+                <Input
                   type="number"
                   min="30"
                   max="1095"
@@ -2035,7 +2030,7 @@ function EmployeeComplianceSettings() {
             {config.requirements.trainingCompletionRequired && (
               <div className="flex items-center gap-2">
                 <label className="text-surface-600 text-sm">Mark overdue after</label>
-                <input
+                <Input
                   type="number"
                   min="1"
                   max="365"
@@ -2067,7 +2062,7 @@ function EmployeeComplianceSettings() {
             {config.requirements.attestationRequired && (
               <div className="flex items-center gap-2">
                 <label className="text-surface-600 text-sm">Attestations valid for</label>
-                <input
+                <Input
                   type="number"
                   min="30"
                   max="1095"
@@ -2104,7 +2099,6 @@ function EmployeeComplianceSettings() {
           </div>
         </div>
       </div>
-
       {/* Data Sources Info */}
       <div className="card p-6 space-y-4">
         <div>
@@ -2178,7 +2172,6 @@ function EmployeeComplianceSettings() {
           </Link>
         </div>
       </div>
-
       {/* Save Actions */}
       <div className="flex items-center justify-between">
         <button onClick={handleReset} className="btn btn-ghost" disabled={!hasChanges}>
@@ -2292,7 +2285,7 @@ function AISettings() {
           <div className="space-y-4 pt-4 border-t border-surface-700">
             <div>
               <label className="label">API Key</label>
-              <input
+              <Input
                 type="password"
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
@@ -2320,7 +2313,6 @@ function AISettings() {
           </div>
         )}
       </div>
-
       {/* AI Features */}
       <div className="card p-6 space-y-4">
         <div>
@@ -2380,7 +2372,6 @@ function AISettings() {
           ))}
         </div>
       </div>
-
       {/* MCP Integration Link */}
       <div className="card p-6">
         <div className="flex items-center justify-between">
@@ -2395,7 +2386,6 @@ function AISettings() {
           </Link>
         </div>
       </div>
-
       {/* Save */}
       <div className="flex justify-end">
         <button onClick={handleSave} className="btn btn-primary" disabled={isSaving}>

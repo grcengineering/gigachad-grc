@@ -13,6 +13,8 @@ import toast from 'react-hot-toast';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 const WORKSPACE_ROLES = [
   { value: 'owner', label: 'Owner', description: 'Full control of workspace' },
   { value: 'manager', label: 'Manager', description: 'Can manage controls, evidence, risks' },
@@ -269,7 +271,7 @@ export default function WorkspaceSettings() {
             <label className="block text-sm font-medium text-foreground mb-1">
               Workspace Name *
             </label>
-            <input
+            <Input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -287,7 +289,7 @@ export default function WorkspaceSettings() {
           </div>
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">Slug</label>
-            <input
+            <Input
               type="text"
               value={workspace.slug}
               disabled

@@ -16,6 +16,8 @@ import clsx from 'clsx';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 // ============================================
 // Types
 // ============================================
@@ -261,7 +263,7 @@ export function BIAWizard({
         <label className="block text-sm font-medium text-slate-300 mb-2">
           Process Name <span className="text-red-600">*</span>
         </label>
-        <input
+        <Input
           type="text"
           value={state.name}
           onChange={(e) => updateState('name', e.target.value)}
@@ -289,7 +291,7 @@ export function BIAWizard({
         <label className="block text-sm font-medium text-slate-300 mb-2">
           Department <span className="text-red-600">*</span>
         </label>
-        <input
+        <Input
           type="text"
           value={state.department}
           onChange={(e) => updateState('department', e.target.value)}

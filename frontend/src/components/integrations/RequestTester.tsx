@@ -11,6 +11,8 @@ import {
 import clsx from 'clsx';
 import type { ApiEndpoint, AuthConfiguration } from './AdvancedBuilderTab';
 
+import { Input } from '@/components/ui/Input';
+
 interface RequestTesterProps {
   endpoints: ApiEndpoint[];
   authConfig: AuthConfiguration;
@@ -168,7 +170,7 @@ export default function RequestTester({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="text-sm text-surface-600 block mb-1.5">Base URL</label>
-          <input
+          <Input
             type="url"
             value={baseUrl}
             onChange={(e) => setBaseUrl(e.target.value)}
@@ -196,7 +198,6 @@ export default function RequestTester({
           </select>
         </div>
       </div>
-
       {/* Request Preview */}
       {selectedEndpoint && baseUrl && (
         <div className="p-4 bg-surface-800/50 rounded-lg border border-surface-700">
@@ -231,7 +232,6 @@ export default function RequestTester({
           </div>
         </div>
       )}
-
       {/* Test Button */}
       <button
         onClick={handleTest}
@@ -255,7 +255,6 @@ export default function RequestTester({
           </>
         )}
       </button>
-
       {/* Test Result */}
       {testResult && (
         <div
@@ -368,7 +367,6 @@ export default function RequestTester({
           )}
         </div>
       )}
-
       {/* Help Text */}
       <p className="text-xs text-surface-500 text-center">
         Note: Test requests are currently simulated. In production, requests will be made through a

@@ -5,6 +5,8 @@ import type { ApiEndpoint } from './AdvancedBuilderTab';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 interface EndpointBuilderProps {
   endpoint: ApiEndpoint;
   onChange: (updates: Partial<ApiEndpoint>) => void;
@@ -72,7 +74,7 @@ export default function EndpointBuilder({ endpoint, onChange, onDelete }: Endpoi
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <input
+        <Input
           type="text"
           value={endpoint.name}
           onChange={(e) => onChange({ name: e.target.value })}
@@ -107,7 +109,7 @@ export default function EndpointBuilder({ endpoint, onChange, onDelete }: Endpoi
             </option>
           ))}
         </select>
-        <input
+        <Input
           type="text"
           value={endpoint.path}
           onChange={(e) => onChange({ path: e.target.value })}
@@ -134,14 +136,14 @@ export default function EndpointBuilder({ endpoint, onChange, onDelete }: Endpoi
         <div className="space-y-2">
           {Object.entries(endpoint.headers).map(([key, value], index) => (
             <div key={index} className="flex gap-2">
-              <input
+              <Input
                 type="text"
                 value={key}
                 onChange={(e) => updateHeader(key, e.target.value, value)}
                 placeholder="Header name"
                 className="input flex-1 text-sm font-mono"
               />
-              <input
+              <Input
                 type="text"
                 value={value}
                 onChange={(e) => updateHeader(key, key, e.target.value)}
@@ -176,14 +178,14 @@ export default function EndpointBuilder({ endpoint, onChange, onDelete }: Endpoi
         <div className="space-y-2">
           {Object.entries(endpoint.queryParams).map(([key, value], index) => (
             <div key={index} className="flex gap-2">
-              <input
+              <Input
                 type="text"
                 value={key}
                 onChange={(e) => updateQueryParam(key, e.target.value, value)}
                 placeholder="Parameter name"
                 className="input flex-1 text-sm font-mono"
               />
-              <input
+              <Input
                 type="text"
                 value={value}
                 onChange={(e) => updateQueryParam(key, key, e.target.value)}
@@ -258,7 +260,7 @@ export default function EndpointBuilder({ endpoint, onChange, onDelete }: Endpoi
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs text-surface-600 block mb-1">Limit Parameter</label>
-              <input
+              <Input
                 type="text"
                 value={endpoint.pagination.limitParam || ''}
                 onChange={(e) =>
@@ -272,7 +274,7 @@ export default function EndpointBuilder({ endpoint, onChange, onDelete }: Endpoi
             </div>
             <div>
               <label className="text-xs text-surface-600 block mb-1">Offset Parameter</label>
-              <input
+              <Input
                 type="text"
                 value={endpoint.pagination.offsetParam || ''}
                 onChange={(e) =>
@@ -286,7 +288,7 @@ export default function EndpointBuilder({ endpoint, onChange, onDelete }: Endpoi
             </div>
             <div>
               <label className="text-xs text-surface-600 block mb-1">Max Per Page</label>
-              <input
+              <Input
                 type="number"
                 value={endpoint.pagination.maxPerPage || ''}
                 onChange={(e) =>
@@ -308,7 +310,7 @@ export default function EndpointBuilder({ endpoint, onChange, onDelete }: Endpoi
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs text-surface-600 block mb-1">Page Parameter</label>
-              <input
+              <Input
                 type="text"
                 value={endpoint.pagination.pageParam || ''}
                 onChange={(e) =>
@@ -322,7 +324,7 @@ export default function EndpointBuilder({ endpoint, onChange, onDelete }: Endpoi
             </div>
             <div>
               <label className="text-xs text-surface-600 block mb-1">Page Size Parameter</label>
-              <input
+              <Input
                 type="text"
                 value={endpoint.pagination.limitParam || ''}
                 onChange={(e) =>
@@ -341,7 +343,7 @@ export default function EndpointBuilder({ endpoint, onChange, onDelete }: Endpoi
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs text-surface-600 block mb-1">Cursor Parameter</label>
-              <input
+              <Input
                 type="text"
                 value={endpoint.pagination.cursorParam || ''}
                 onChange={(e) =>
@@ -355,7 +357,7 @@ export default function EndpointBuilder({ endpoint, onChange, onDelete }: Endpoi
             </div>
             <div>
               <label className="text-xs text-surface-600 block mb-1">Limit Parameter</label>
-              <input
+              <Input
                 type="text"
                 value={endpoint.pagination.limitParam || ''}
                 onChange={(e) =>

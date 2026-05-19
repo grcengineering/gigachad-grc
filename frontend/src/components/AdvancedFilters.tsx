@@ -11,6 +11,8 @@ import {
 import { Button } from '@/components/ui/Button';
 import clsx from 'clsx';
 
+import { Input } from '@/components/ui/Input';
+
 // ===========================================
 // Types
 // ===========================================
@@ -226,7 +228,6 @@ export function AdvancedFilters({ fields, onApply, storageKey, className }: Adva
       >
         Filters
       </Button>
-
       {/* Dropdown Panel */}
       {isOpen && (
         <>
@@ -321,7 +322,7 @@ export function AdvancedFilters({ fields, onApply, storageKey, className }: Adva
             <div className="p-4 border-t border-surface-700 flex items-center justify-between">
               {showSavePreset ? (
                 <div className="flex items-center gap-2 flex-1">
-                  <input
+                  <Input
                     type="text"
                     value={presetName}
                     onChange={(e) => setPresetName(e.target.value)}
@@ -549,7 +550,7 @@ function ValueInput({ field, operator, value, onChange }: ValueInputProps) {
   // Date field
   if (field.type === 'date') {
     return (
-      <input
+      <Input
         type="date"
         value={String(value || '')}
         onChange={(e) => onChange(e.target.value)}
@@ -561,7 +562,7 @@ function ValueInput({ field, operator, value, onChange }: ValueInputProps) {
   // Number field
   if (field.type === 'number') {
     return (
-      <input
+      <Input
         type="number"
         value={String(value || '')}
         onChange={(e) => onChange(e.target.value ? Number(e.target.value) : null)}
@@ -573,7 +574,7 @@ function ValueInput({ field, operator, value, onChange }: ValueInputProps) {
 
   // Default: text input
   return (
-    <input
+    <Input
       type="text"
       value={String(value || '')}
       onChange={(e) => onChange(e.target.value)}

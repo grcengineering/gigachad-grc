@@ -11,6 +11,8 @@ import {
 import clsx from 'clsx';
 import { useDebounce } from '@/hooks/useDebounce';
 
+import { Input } from '@/components/ui/Input';
+
 interface AISmartSearchProps {
   onSearch?: (terms: string[], filters: Record<string, string>, entityTypes: string[]) => void;
   placeholder?: string;
@@ -100,7 +102,7 @@ export default function AISmartSearch({
           )}
         </div>
 
-        <input
+        <Input
           type="text"
           value={query}
           onChange={(e) => handleInputChange(e.target.value)}
@@ -129,7 +131,6 @@ export default function AISmartSearch({
           </button>
         </div>
       </div>
-
       {/* Entity Filters */}
       {showFilters && (
         <div className="flex flex-wrap gap-2 p-3 bg-surface-800/50 rounded-lg border border-surface-700">
@@ -159,7 +160,6 @@ export default function AISmartSearch({
           )}
         </div>
       )}
-
       {/* AI Interpretation */}
       {interpretation && (
         <div className="p-3 bg-gradient-to-r from-purple-900/20 to-blue-900/20 rounded-lg border border-purple-500/30">

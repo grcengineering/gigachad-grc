@@ -17,6 +17,8 @@ import { EmptyState } from '@/components/EmptyState';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 
+import { Input } from '@/components/ui/Input';
+
 type TabId = 'sla' | 'assignment' | 'kb' | 'trust-center' | 'ai';
 
 const TABS: { id: TabId; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
@@ -229,7 +231,6 @@ function SlaSettingsTab({
           threshold triggers "At Risk" status.
         </p>
       </div>
-
       <div className="space-y-4">
         {priorities.map((priority) => (
           <div key={priority} className="bg-surface-800 rounded-lg p-4">
@@ -259,7 +260,7 @@ function SlaSettingsTab({
                 <label className="block text-sm font-medium text-surface-600 mb-1">
                   Target Time (hours)
                 </label>
-                <input
+                <Input
                   type="number"
                   min="1"
                   value={settings[priority].targetHours}
@@ -273,7 +274,7 @@ function SlaSettingsTab({
                 <label className="block text-sm font-medium text-surface-600 mb-1">
                   Warning Threshold (hours)
                 </label>
-                <input
+                <Input
                   type="number"
                   min="1"
                   max={settings[priority].targetHours - 1}
@@ -327,7 +328,6 @@ function SlaSettingsTab({
           </div>
         ))}
       </div>
-
       <div className="flex justify-end">
         <Button
           onClick={() => onUpdate(settings)}
@@ -501,7 +501,6 @@ function TrustCenterSettingsTab({
           Configure your public-facing trust center portal.
         </p>
       </div>
-
       <div className="space-y-4">
         <label className="flex items-center gap-3 p-4 bg-surface-800 rounded-lg cursor-pointer">
           <input
@@ -537,7 +536,7 @@ function TrustCenterSettingsTab({
           <label className="block text-sm font-medium text-surface-600 mb-2">
             Custom Domain (optional)
           </label>
-          <input
+          <Input
             type="text"
             value={settings.customDomain || ''}
             onChange={(e) =>
@@ -551,7 +550,6 @@ function TrustCenterSettingsTab({
           </p>
         </div>
       </div>
-
       <div className="flex justify-end">
         <Button
           onClick={() => onUpdate(settings)}

@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/Button';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 const CATEGORY_OPTIONS = [
   { value: 'software_vendor', label: 'Software Vendor' },
   { value: 'cloud_provider', label: 'Cloud Provider' },
@@ -129,7 +131,7 @@ export default function VendorNew() {
           <label htmlFor="name" className="block text-sm font-medium text-surface-700 mb-1">
             Vendor Name <span className="text-red-600">*</span>
           </label>
-          <input
+          <Input
             id="name"
             type="text"
             value={formData.name}
@@ -202,7 +204,7 @@ export default function VendorNew() {
           <label htmlFor="website" className="block text-sm font-medium text-surface-700 mb-1">
             Website
           </label>
-          <input
+          <Input
             id="website"
             type="url"
             value={formData.website}
@@ -221,7 +223,7 @@ export default function VendorNew() {
             >
               Primary Contact
             </label>
-            <input
+            <Input
               id="primaryContact"
               type="text"
               value={formData.primaryContact}
@@ -237,7 +239,7 @@ export default function VendorNew() {
             >
               Primary Email
             </label>
-            <input
+            <Input
               id="primaryContactEmail"
               type="email"
               value={formData.primaryContactEmail}

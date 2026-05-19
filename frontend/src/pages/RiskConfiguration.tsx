@@ -10,6 +10,8 @@ import {
   BellAlertIcon,
 } from '@heroicons/react/24/outline';
 
+import { Input } from '@/components/ui/Input';
+
 type ConfigTab = 'scoring' | 'categories' | 'workflow' | 'slas' | 'appetite';
 
 interface LikelihoodScaleItem {
@@ -819,7 +821,6 @@ function RiskCategories({
           Define the categories used to classify risks in your organization.
         </p>
       </div>
-
       <div className="space-y-3">
         {categories.map((cat) => (
           <div
@@ -844,18 +845,17 @@ function RiskCategories({
           </div>
         ))}
       </div>
-
       <div className="pt-4 border-t border-surface-700">
         <h4 className="text-gray-900 dark:text-white font-medium mb-3">Add Category</h4>
         <div className="flex gap-4">
-          <input
+          <Input
             type="text"
             placeholder="Category name"
             value={newCategory.name ?? ''}
             onChange={(e) => setNewCategory((prev) => ({ ...prev, name: e.target.value }))}
             className="flex-1 px-4 py-2 bg-gray-50 dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white"
           />
-          <input
+          <Input
             type="text"
             placeholder="Description"
             value={newCategory.description ?? ''}
@@ -909,7 +909,6 @@ function WorkflowSettingsTab({
           Configure how risks flow through the assessment and treatment process.
         </p>
       </div>
-
       <div className="space-y-4">
         <h4 className="text-gray-900 dark:text-white font-medium">Assessment Workflow</h4>
 
@@ -962,7 +961,6 @@ function WorkflowSettingsTab({
           </select>
         </div>
       </div>
-
       <div className="space-y-4 pt-4 border-t border-surface-700">
         <h4 className="text-gray-900 dark:text-white font-medium">Review Settings</h4>
 
@@ -980,7 +978,6 @@ function WorkflowSettingsTab({
           </select>
         </div>
       </div>
-
       <div className="space-y-4 pt-4 border-t border-surface-700">
         <h4 className="text-gray-900 dark:text-white font-medium">Notifications</h4>
 
@@ -1006,7 +1003,7 @@ function WorkflowSettingsTab({
           <p className="text-gray-500 dark:text-surface-600 text-sm mb-3">
             Days before due date to send reminder
           </p>
-          <input
+          <Input
             type="number"
             value={settings.dueDateReminderDays ?? 7}
             onChange={(e) => handleChange('dueDateReminderDays', parseInt(e.target.value))}
@@ -1100,7 +1097,6 @@ function SLASettingsTab({
           breaches can trigger escalations and notifications.
         </p>
       </div>
-
       {/* Workflow Stage SLAs */}
       <div className="space-y-4">
         <h4 className="text-gray-900 dark:text-white font-medium flex items-center gap-2">
@@ -1120,7 +1116,7 @@ function SLASettingsTab({
               Time from risk identification to beginning assessment
             </p>
             <div className="flex items-center gap-3">
-              <input
+              <Input
                 type="number"
                 value={settings.intakeToAssessment}
                 onChange={(e) => handleChange('intakeToAssessment', parseInt(e.target.value) || 0)}
@@ -1142,7 +1138,7 @@ function SLASettingsTab({
               Maximum time for risk assessor to complete analysis
             </p>
             <div className="flex items-center gap-3">
-              <input
+              <Input
                 type="number"
                 value={settings.assessmentDuration}
                 onChange={(e) => handleChange('assessmentDuration', parseInt(e.target.value) || 0)}
@@ -1164,7 +1160,7 @@ function SLASettingsTab({
               Maximum time for GRC team to review and approve assessment
             </p>
             <div className="flex items-center gap-3">
-              <input
+              <Input
                 type="number"
                 value={settings.grcReviewDuration}
                 onChange={(e) => handleChange('grcReviewDuration', parseInt(e.target.value) || 0)}
@@ -1186,7 +1182,7 @@ function SLASettingsTab({
               Maximum time to select treatment option (mitigate, accept, transfer, avoid)
             </p>
             <div className="flex items-center gap-3">
-              <input
+              <Input
                 type="number"
                 value={settings.treatmentDecisionDuration}
                 onChange={(e) =>
@@ -1210,7 +1206,7 @@ function SLASettingsTab({
               Maximum time for executive to approve high-risk decisions
             </p>
             <div className="flex items-center gap-3">
-              <input
+              <Input
                 type="number"
                 value={settings.executiveApprovalDuration}
                 onChange={(e) =>
@@ -1227,7 +1223,6 @@ function SLASettingsTab({
           </div>
         </div>
       </div>
-
       {/* Mitigation SLAs by Risk Level */}
       <div className="space-y-4 pt-6 border-t border-gray-200 dark:border-surface-700">
         <h4 className="text-gray-900 dark:text-white font-medium flex items-center gap-2">
@@ -1242,7 +1237,7 @@ function SLASettingsTab({
           <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
             <label className="block text-red-600 text-sm font-medium mb-2">Critical</label>
             <div className="flex items-center gap-2">
-              <input
+              <Input
                 type="number"
                 value={settings.mitigationSLA.critical}
                 onChange={(e) =>
@@ -1258,7 +1253,7 @@ function SLASettingsTab({
           <div className="p-4 bg-orange-500/10 border border-orange-500/30 rounded-lg">
             <label className="block text-orange-600 text-sm font-medium mb-2">High</label>
             <div className="flex items-center gap-2">
-              <input
+              <Input
                 type="number"
                 value={settings.mitigationSLA.high}
                 onChange={(e) => handleMitigationSLAChange('high', parseInt(e.target.value) || 0)}
@@ -1272,7 +1267,7 @@ function SLASettingsTab({
           <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
             <label className="block text-amber-600 text-sm font-medium mb-2">Medium</label>
             <div className="flex items-center gap-2">
-              <input
+              <Input
                 type="number"
                 value={settings.mitigationSLA.medium}
                 onChange={(e) => handleMitigationSLAChange('medium', parseInt(e.target.value) || 0)}
@@ -1286,7 +1281,7 @@ function SLASettingsTab({
           <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
             <label className="block text-emerald-600 text-sm font-medium mb-2">Low</label>
             <div className="flex items-center gap-2">
-              <input
+              <Input
                 type="number"
                 value={settings.mitigationSLA.low}
                 onChange={(e) => handleMitigationSLAChange('low', parseInt(e.target.value) || 0)}
@@ -1298,7 +1293,6 @@ function SLASettingsTab({
           </div>
         </div>
       </div>
-
       {/* Review Cycle SLAs by Risk Level */}
       <div className="space-y-4 pt-6 border-t border-gray-200 dark:border-surface-700">
         <h4 className="text-gray-900 dark:text-white font-medium flex items-center gap-2">
@@ -1313,7 +1307,7 @@ function SLASettingsTab({
           <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
             <label className="block text-red-600 text-sm font-medium mb-2">Critical</label>
             <div className="flex items-center gap-2">
-              <input
+              <Input
                 type="number"
                 value={settings.reviewCycleSLA.critical}
                 onChange={(e) =>
@@ -1329,7 +1323,7 @@ function SLASettingsTab({
           <div className="p-4 bg-orange-500/10 border border-orange-500/30 rounded-lg">
             <label className="block text-orange-600 text-sm font-medium mb-2">High</label>
             <div className="flex items-center gap-2">
-              <input
+              <Input
                 type="number"
                 value={settings.reviewCycleSLA.high}
                 onChange={(e) => handleReviewCycleSLAChange('high', parseInt(e.target.value) || 0)}
@@ -1343,7 +1337,7 @@ function SLASettingsTab({
           <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
             <label className="block text-amber-600 text-sm font-medium mb-2">Medium</label>
             <div className="flex items-center gap-2">
-              <input
+              <Input
                 type="number"
                 value={settings.reviewCycleSLA.medium}
                 onChange={(e) =>
@@ -1359,7 +1353,7 @@ function SLASettingsTab({
           <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
             <label className="block text-emerald-600 text-sm font-medium mb-2">Low</label>
             <div className="flex items-center gap-2">
-              <input
+              <Input
                 type="number"
                 value={settings.reviewCycleSLA.low}
                 onChange={(e) => handleReviewCycleSLAChange('low', parseInt(e.target.value) || 0)}
@@ -1371,7 +1365,6 @@ function SLASettingsTab({
           </div>
         </div>
       </div>
-
       {/* Escalation Settings */}
       <div className="space-y-4 pt-6 border-t border-gray-200 dark:border-surface-700">
         <h4 className="text-gray-900 dark:text-white font-medium flex items-center gap-2">
@@ -1407,7 +1400,7 @@ function SLASettingsTab({
                 Percentage of SLA time elapsed before warning is triggered
               </p>
               <div className="flex items-center gap-3">
-                <input
+                <Input
                   type="number"
                   value={settings.escalationThresholdPercent}
                   onChange={(e) =>
@@ -1464,7 +1457,7 @@ function SLASettingsTab({
               Additional time before a breach is marked as critical
             </p>
             <div className="flex items-center gap-3">
-              <input
+              <Input
                 type="number"
                 value={settings.breachGracePeriodHours}
                 onChange={(e) =>
@@ -1478,7 +1471,6 @@ function SLASettingsTab({
           </div>
         </div>
       </div>
-
       {/* Summary Card */}
       <div className="p-4 bg-brand-500/10 border border-brand-500/30 rounded-lg">
         <h4 className="text-brand-400 font-medium mb-3">SLA Summary</h4>

@@ -12,6 +12,8 @@ import api from '@/lib/api';
 import { useDebounce } from '@/hooks/useDebounce';
 import clsx from 'clsx';
 
+import { Input } from '@/components/ui/Input';
+
 interface BCDRPlan {
   id: string;
   plan_id: string;
@@ -112,14 +114,13 @@ export default function BCDRPlans() {
           Create Plan
         </Link>
       </div>
-
       {/* Filters */}
       <div className="card p-4">
         <div className="flex flex-wrap gap-4">
           <div className="flex-1 min-w-64">
             <div className="relative">
               <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-600" />
-              <input
+              <Input
                 type="text"
                 placeholder="Search plans..."
                 className="form-input pl-10 w-full"
@@ -161,7 +162,6 @@ export default function BCDRPlans() {
           </button>
         </div>
       </div>
-
       {/* Grid */}
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -238,7 +238,6 @@ export default function BCDRPlans() {
           ))}
         </div>
       )}
-
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-4">

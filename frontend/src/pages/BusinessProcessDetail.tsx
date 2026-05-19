@@ -20,6 +20,8 @@ import { SkeletonDetailHeader, SkeletonDetailSection } from '@/components/Skelet
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 interface BusinessProcess {
   id: string;
   process_id: string;
@@ -553,7 +555,7 @@ export default function BusinessProcessDetail() {
             >
               <div>
                 <label className="block text-sm font-medium text-surface-700 mb-2">Name *</label>
-                <input
+                <Input
                   type="text"
                   value={editForm.name}
                   onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
@@ -581,7 +583,7 @@ export default function BusinessProcessDetail() {
                   <label className="block text-sm font-medium text-surface-700 mb-2">
                     Department
                   </label>
-                  <input
+                  <Input
                     type="text"
                     value={editForm.department}
                     onChange={(e) =>
@@ -615,7 +617,7 @@ export default function BusinessProcessDetail() {
                   <label className="block text-sm font-medium text-surface-700 mb-2">
                     RTO (hours)
                   </label>
-                  <input
+                  <Input
                     type="number"
                     value={editForm.rto_hours}
                     onChange={(e) =>
@@ -629,7 +631,7 @@ export default function BusinessProcessDetail() {
                   <label className="block text-sm font-medium text-surface-700 mb-2">
                     RPO (hours)
                   </label>
-                  <input
+                  <Input
                     type="number"
                     value={editForm.rpo_hours}
                     onChange={(e) =>
@@ -643,7 +645,7 @@ export default function BusinessProcessDetail() {
                   <label className="block text-sm font-medium text-surface-700 mb-2">
                     MTPD (hours)
                   </label>
-                  <input
+                  <Input
                     type="number"
                     value={editForm.mtpd_hours}
                     onChange={(e) =>
@@ -678,7 +680,7 @@ export default function BusinessProcessDetail() {
                   <label className="block text-sm font-medium text-surface-700 mb-2">
                     Recovery Priority
                   </label>
-                  <input
+                  <Input
                     type="number"
                     value={editForm.recovery_priority}
                     onChange={(e) =>
@@ -695,7 +697,7 @@ export default function BusinessProcessDetail() {
                   <label className="block text-sm font-medium text-surface-700 mb-2">
                     Minimum Staff Required
                   </label>
-                  <input
+                  <Input
                     type="number"
                     value={editForm.minimum_staff_required}
                     onChange={(e) =>

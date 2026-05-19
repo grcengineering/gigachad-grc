@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { apiKeysApi, type ApiKeyWithSecret } from '@/lib/api';
 
+import { Input } from '@/components/ui/Input';
+
 interface CreateApiKeyModalProps {
   availableScopes: string[];
   onClose: () => void;
@@ -52,7 +54,7 @@ export default function CreateApiKeyModal({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-surface-700 mb-1">Name</label>
-            <input
+            <Input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -65,7 +67,7 @@ export default function CreateApiKeyModal({
             <label className="block text-sm font-medium text-surface-700 mb-1">
               Description (optional)
             </label>
-            <input
+            <Input
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}

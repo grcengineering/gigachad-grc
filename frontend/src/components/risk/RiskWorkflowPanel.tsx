@@ -24,6 +24,8 @@ import {
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 // Workflow Status Constants (used for validation/reference)
 const _INTAKE_STATUSES = [
   'risk_identified',
@@ -729,7 +731,6 @@ function UserPicker({
       <label className="block text-sm text-surface-600 mb-2">
         {label} {required && '*'}
       </label>
-
       {/* Selected user display / toggle button */}
       <button
         type="button"
@@ -754,15 +755,13 @@ function UserPicker({
           className={`w-4 h-4 text-surface-600 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
         />
       </button>
-
       {description && <p className="text-xs text-surface-500 mt-1">{description}</p>}
-
       {/* Expandable user list */}
       {isExpanded && (
         <div className="mt-2 border border-surface-600 rounded-lg bg-surface-750 overflow-hidden">
           {/* Search */}
           <div className="p-2 border-b border-surface-600">
-            <input
+            <Input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -824,7 +823,7 @@ function UserPicker({
             {/* Fallback manual input if no users loaded */}
             {users.length === 0 && (
               <div className="p-2">
-                <input
+                <Input
                   type="text"
                   value={selectedUserId}
                   onChange={(e) => onSelect(e.target.value)}
@@ -1054,7 +1053,7 @@ function SubmitAssessmentModal({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm text-surface-600 mb-2">Affected Assets</label>
-              <input
+              <Input
                 type="text"
                 value={formData.affectedAssets}
                 onChange={(e) =>
@@ -1066,7 +1065,7 @@ function SubmitAssessmentModal({
             </div>
             <div>
               <label className="block text-sm text-surface-600 mb-2">Existing Controls</label>
-              <input
+              <Input
                 type="text"
                 value={formData.existingControls}
                 onChange={(e) =>
@@ -1540,7 +1539,7 @@ function TreatmentDecisionModal({
               </div>
               <div>
                 <label className="block text-sm text-surface-600 mb-2">Target Date</label>
-                <input
+                <Input
                   type="date"
                   value={formData.mitigationTargetDate}
                   onChange={(e) =>
@@ -1557,7 +1556,7 @@ function TreatmentDecisionModal({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm text-surface-600 mb-2">Transfer To</label>
-                <input
+                <Input
                   type="text"
                   value={formData.transferTo}
                   onChange={(e) => setFormData((prev) => ({ ...prev, transferTo: e.target.value }))}
@@ -1567,7 +1566,7 @@ function TreatmentDecisionModal({
               </div>
               <div>
                 <label className="block text-sm text-surface-600 mb-2">Cost ($)</label>
-                <input
+                <Input
                   type="number"
                   value={formData.transferCost}
                   onChange={(e) =>
@@ -1613,7 +1612,7 @@ function TreatmentDecisionModal({
               </div>
               <div>
                 <label className="block text-sm text-surface-600 mb-2">Acceptance Expires</label>
-                <input
+                <Input
                   type="date"
                   value={formData.acceptanceExpiresAt}
                   onChange={(e) =>
@@ -1890,7 +1889,7 @@ function MitigationUpdateModal({
             <>
               <div>
                 <label className="block text-sm text-surface-600 mb-2">New Target Date</label>
-                <input
+                <Input
                   type="date"
                   value={formData.newTargetDate}
                   onChange={(e) =>
@@ -2061,7 +2060,7 @@ function AssignRoleModal({
           {/* Search Input */}
           <div>
             <label className="block text-sm text-surface-600 mb-2">Search Users</label>
-            <input
+            <Input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -2138,7 +2137,7 @@ function AssignRoleModal({
                 <label className="block text-sm text-surface-600 mb-2">
                   Or enter User ID directly:
                 </label>
-                <input
+                <Input
                   type="text"
                   value={userId}
                   onChange={(e) => setUserId(e.target.value)}

@@ -27,6 +27,8 @@ import {
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 // Using RiskDetail from apiTypes as RiskDetailData
 
 const RISK_LEVELS = [
@@ -828,7 +830,7 @@ function LinkControlModal({
           </button>
         </div>
         <div className="p-4 space-y-4">
-          <input
+          <Input
             type="text"
             placeholder="Search controls..."
             value={search}
@@ -931,7 +933,7 @@ function LinkAssetModal({
           </button>
         </div>
         <div className="p-4 space-y-4">
-          <input
+          <Input
             type="text"
             placeholder="Search assets..."
             value={search}
@@ -1039,7 +1041,7 @@ function TreatmentModal({
           </div>
           <div>
             <label className="block text-sm text-surface-600 mb-2">Due Date</label>
-            <input
+            <Input
               type="date"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
@@ -1120,7 +1122,7 @@ function ScenarioModal({
         >
           <div>
             <label className="block text-sm text-surface-600 mb-2">Title *</label>
-            <input
+            <Input
               type="text"
               value={scenario.title}
               onChange={(e) => setScenario((prev) => ({ ...prev, title: e.target.value }))}
@@ -1155,7 +1157,7 @@ function ScenarioModal({
             </div>
             <div>
               <label className="block text-sm text-surface-600 mb-2">Attack Vector</label>
-              <input
+              <Input
                 type="text"
                 value={scenario.attackVector}
                 onChange={(e) => setScenario((prev) => ({ ...prev, attackVector: e.target.value }))}
@@ -1305,7 +1307,7 @@ function EditRiskModal({
           {/* Title */}
           <div>
             <label className="block text-sm font-medium text-surface-700 mb-2">Title *</label>
-            <input
+            <Input
               type="text"
               value={formData.title}
               onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
@@ -1399,7 +1401,7 @@ function EditRiskModal({
               ))}
             </div>
             <div className="flex gap-2">
-              <input
+              <Input
                 type="text"
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}

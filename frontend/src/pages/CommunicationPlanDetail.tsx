@@ -21,6 +21,8 @@ import { SkeletonDetailHeader, SkeletonDetailSection } from '@/components/Skelet
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 interface CommunicationPlan {
   id: string;
   name: string;
@@ -202,7 +204,7 @@ export default function CommunicationPlanDetail() {
           >
             <div>
               <label className="block text-sm font-medium text-surface-700 mb-2">Plan Name *</label>
-              <input
+              <Input
                 type="text"
                 value={editForm.name}
                 onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
@@ -417,7 +419,7 @@ export default function CommunicationPlanDetail() {
                 <label className="block text-sm font-medium text-surface-700 mb-2">
                   Plan Name *
                 </label>
-                <input
+                <Input
                   type="text"
                   value={editForm.name}
                   onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}

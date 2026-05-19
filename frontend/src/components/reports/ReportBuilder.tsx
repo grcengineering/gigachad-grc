@@ -17,6 +17,8 @@ import clsx from 'clsx';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 // ===========================================
 // Types
 // ===========================================
@@ -305,7 +307,7 @@ export default function ReportBuilder({ initialConfig, onSave, className }: Repo
 
         <div className="border-t border-surface-800 pt-4">
           <h3 className="text-sm font-medium text-surface-600 mb-2">Report Settings</h3>
-          <input
+          <Input
             type="text"
             value={config.name}
             onChange={(e) => setConfig((prev) => ({ ...prev, name: e.target.value }))}
@@ -492,7 +494,7 @@ function SectionEditor({
       </div>
       {/* Section Content */}
       {section.type === 'heading' && (
-        <input
+        <Input
           type="text"
           value={section.title || ''}
           onChange={(e) => onUpdate({ title: e.target.value })}
@@ -600,7 +602,7 @@ function SectionConfigPanel({ section, onUpdate, onClose }: SectionConfigPanelPr
         {section.type === 'heading' && (
           <div>
             <label className="block text-sm text-surface-600 mb-1">Title</label>
-            <input
+            <Input
               type="text"
               value={section.title || ''}
               onChange={(e) => onUpdate({ title: e.target.value })}

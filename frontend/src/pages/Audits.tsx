@@ -12,6 +12,8 @@ import {
   ClipboardDocumentListIcon,
 } from '@heroicons/react/24/outline';
 
+import { Input } from '@/components/ui/Input';
+
 interface Audit {
   id: string;
   auditId: string;
@@ -98,12 +100,11 @@ export default function Audits() {
           </Button>
         </div>
       </div>
-
       {/* Filters */}
       <div className="flex items-center gap-4">
         <div className="flex-1 relative">
           <MagnifyingGlassIcon className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-surface-500" />
-          <input
+          <Input
             type="text"
             placeholder="Search audits..."
             value={searchTerm}
@@ -138,7 +139,6 @@ export default function Audits() {
           <option value="certification">Certification</option>
         </select>
       </div>
-
       {/* Audits List */}
       {isLoading ? (
         <SkeletonTable rows={5} columns={4} />

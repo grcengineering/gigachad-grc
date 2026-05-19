@@ -6,6 +6,8 @@ import clsx from 'clsx';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 // ============================================
 // Types
 // ============================================
@@ -128,7 +130,7 @@ export function DeclareIncidentModal({ onClose, onComplete }: DeclareIncidentMod
             <label className="block text-sm font-medium text-slate-300 mb-2">
               Incident Title <span className="text-red-600">*</span>
             </label>
-            <input
+            <Input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}

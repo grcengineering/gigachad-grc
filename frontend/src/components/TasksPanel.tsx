@@ -15,6 +15,8 @@ import clsx from 'clsx';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 interface TasksPanelProps {
   entityType: string;
   entityId: string;
@@ -128,7 +130,7 @@ export default function TasksPanel({ entityType, entityId }: TasksPanelProps) {
       {/* Create Task Form */}
       {isCreating && (
         <form onSubmit={handleCreate} className="card p-4 space-y-3">
-          <input
+          <Input
             type="text"
             value={newTask.title}
             onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
@@ -166,7 +168,7 @@ export default function TasksPanel({ entityType, entityId }: TasksPanelProps) {
                 </option>
               ))}
             </select>
-            <input
+            <Input
               type="date"
               value={newTask.dueDate}
               onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
@@ -282,7 +284,7 @@ function TaskCard({
   if (isEditing) {
     return (
       <div className="card p-3 space-y-2">
-        <input
+        <Input
           type="text"
           value={editData.title}
           onChange={(e) => setEditData({ ...editData, title: e.target.value })}
@@ -329,7 +331,7 @@ function TaskCard({
               </option>
             ))}
           </select>
-          <input
+          <Input
             type="date"
             value={editData.dueDate}
             onChange={(e) => setEditData({ ...editData, dueDate: e.target.value })}

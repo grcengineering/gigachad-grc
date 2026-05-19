@@ -19,6 +19,8 @@ import {
 } from '@heroicons/react/24/outline';
 import { RiskHeatMap } from '../components/risk/RiskHeatMap';
 
+import { Input } from '@/components/ui/Input';
+
 type ReportType =
   | 'risk-register'
   | 'risk-summary'
@@ -544,7 +546,6 @@ export default function RiskReports() {
           </p>
         </div>
       </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Report Templates - Left Panel */}
         <div className="lg:col-span-4">
@@ -627,7 +628,7 @@ export default function RiskReports() {
                       <CalendarIcon className="w-3 h-3 inline mr-1" />
                       Start Date
                     </label>
-                    <input
+                    <Input
                       type="date"
                       value={dateRange.start}
                       onChange={(e) => setDateRange((prev) => ({ ...prev, start: e.target.value }))}
@@ -639,7 +640,7 @@ export default function RiskReports() {
                       <CalendarIcon className="w-3 h-3 inline mr-1" />
                       End Date
                     </label>
-                    <input
+                    <Input
                       type="date"
                       value={dateRange.end}
                       onChange={(e) => setDateRange((prev) => ({ ...prev, end: e.target.value }))}
@@ -844,7 +845,6 @@ function ExecutiveSummaryPreview({ data, risks }: { data: any; risks: Risk[] }) 
           <p className="text-gray-500 dark:text-surface-600 text-xs mt-1">Mitigated</p>
         </div>
       </div>
-
       {topRisks.length > 0 && (
         <div>
           <h4 className="text-gray-900 dark:text-white font-medium text-sm mb-3">

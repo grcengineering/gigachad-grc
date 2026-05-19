@@ -454,7 +454,6 @@ export default function Risks() {
           </Button>
         </div>
       </div>
-
       {/* Stats Cards */}
       {!dashboard ? (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -558,7 +557,6 @@ export default function Risks() {
           </button>
         </div>
       )}
-
       {/* Active Filter Indicator */}
       {statFilter !== 'all' && (
         <div className="flex items-center gap-2 text-sm">
@@ -584,14 +582,13 @@ export default function Risks() {
           </button>
         </div>
       )}
-
       {/* Search and Filters */}
       <div className="bg-surface-800 rounded-xl border border-surface-700 p-4">
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Search */}
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-600" />
-            <input
+            <Input
               type="text"
               placeholder="Search risks..."
               value={searchInput}
@@ -651,7 +648,6 @@ export default function Risks() {
           </div>
         </div>
       </div>
-
       {/* Risks Table */}
       <div className="bg-surface-800 rounded-xl border border-surface-700 overflow-hidden">
         {isLoading ? (
@@ -775,7 +771,6 @@ export default function Risks() {
           </div>
         )}
       </div>
-
       {/* Create Risk Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">

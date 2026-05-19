@@ -16,6 +16,8 @@ import type {
   MappingSuggestion,
 } from '@/lib/apiTypes';
 
+import { Input } from '@/components/ui/Input';
+
 export type MappingEditorMode = 'requirement-to-controls' | 'control-to-requirements';
 
 /**
@@ -540,7 +542,6 @@ function SearchStage({
           ? 'Search for controls to map to this requirement.'
           : 'Pick a framework and search for requirements to map to this control.'}
       </p>
-
       {mode === 'control-to-requirements' && !initialFrameworkLocked && (
         <label className="block">
           <span className="block text-sm font-medium text-surface-700 mb-1">Framework</span>
@@ -560,7 +561,6 @@ function SearchStage({
           </select>
         </label>
       )}
-
       <label className="block">
         <span className="block text-sm font-medium text-surface-700 mb-1">Search</span>
         <div className="relative">
@@ -568,7 +568,7 @@ function SearchStage({
             className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-surface-500"
             aria-hidden="true"
           />
-          <input
+          <Input
             type="text"
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
@@ -613,7 +613,7 @@ function MultiSelectStage({
             className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-surface-500"
             aria-hidden="true"
           />
-          <input
+          <Input
             type="text"
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
@@ -622,7 +622,6 @@ function MultiSelectStage({
           />
         </div>
       </label>
-
       {isLoading ? (
         <p className="text-sm text-surface-600">Loading…</p>
       ) : candidates.length === 0 ? (
@@ -726,7 +725,7 @@ function PerRowFormStage({ rows, getLabel, onChange, disabled, isEditMode }: Per
               </label>
               <label className="block sm:col-span-2">
                 <span className="block text-xs font-medium text-surface-600 mb-1">Notes</span>
-                <input
+                <Input
                   type="text"
                   value={row.notes}
                   onChange={(e) => onChange(row.candidateId, { notes: e.target.value })}

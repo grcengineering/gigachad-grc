@@ -24,6 +24,8 @@ import { ExportDropdown } from '@/components/ExportDropdown';
 import { exportConfigs } from '@/lib/export';
 import toast from 'react-hot-toast';
 
+import { Input } from '@/components/ui/Input';
+
 interface AssetListResponse {
   assets: Asset[];
   total: number;
@@ -198,7 +200,6 @@ export default function Assets() {
           </Button>
         </div>
       </div>
-
       {/* Stats Cards */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -252,14 +253,13 @@ export default function Assets() {
           </div>
         </div>
       )}
-
       {/* Search and Filters */}
       <div className="bg-surface-800 rounded-xl border border-surface-700 p-4">
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Search */}
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-600" />
-            <input
+            <Input
               type="text"
               placeholder="Search assets..."
               value={filters.search}
@@ -324,7 +324,6 @@ export default function Assets() {
           </div>
         </div>
       </div>
-
       {/* Assets Table */}
       <div className="bg-surface-800 rounded-xl border border-surface-700 overflow-hidden">
         {isLoading ? (
@@ -443,7 +442,6 @@ export default function Assets() {
           </div>
         )}
       </div>
-
       {/* Create Asset Modal */}
       {showCreateModal && (
         <CreateAssetModal
@@ -454,7 +452,6 @@ export default function Assets() {
           isPending={createMutation.isPending}
         />
       )}
-
       {/* Sync Modal */}
       {showSyncModal && (
         <SyncAssetModal
@@ -501,7 +498,7 @@ function CreateAssetModal({
         >
           <div>
             <label className="block text-sm text-surface-600 mb-2">Name *</label>
-            <input
+            <Input
               type="text"
               value={asset.name}
               onChange={(e) => onChange({ ...asset, name: e.target.value })}
@@ -542,7 +539,7 @@ function CreateAssetModal({
           </div>
           <div>
             <label className="block text-sm text-surface-600 mb-2">Category</label>
-            <input
+            <Input
               type="text"
               value={asset.category}
               onChange={(e) => onChange({ ...asset, category: e.target.value })}
@@ -553,7 +550,7 @@ function CreateAssetModal({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm text-surface-600 mb-2">Owner</label>
-              <input
+              <Input
                 type="text"
                 value={asset.owner}
                 onChange={(e) => onChange({ ...asset, owner: e.target.value })}
@@ -562,7 +559,7 @@ function CreateAssetModal({
             </div>
             <div>
               <label className="block text-sm text-surface-600 mb-2">Department</label>
-              <input
+              <Input
                 type="text"
                 value={asset.department}
                 onChange={(e) => onChange({ ...asset, department: e.target.value })}
@@ -572,7 +569,7 @@ function CreateAssetModal({
           </div>
           <div>
             <label className="block text-sm text-surface-600 mb-2">Location</label>
-            <input
+            <Input
               type="text"
               value={asset.location}
               onChange={(e) => onChange({ ...asset, location: e.target.value })}

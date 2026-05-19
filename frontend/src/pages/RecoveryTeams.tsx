@@ -13,6 +13,8 @@ import clsx from 'clsx';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 // ============================================
 // Types
 // ============================================
@@ -152,7 +154,7 @@ export default function RecoveryTeams() {
       <div className="flex items-center gap-4">
         <div className="flex-1 relative">
           <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-          <input
+          <Input
             type="text"
             placeholder="Search teams..."
             value={search}
@@ -255,7 +257,7 @@ export default function RecoveryTeams() {
                 <label className="block text-sm font-medium text-slate-300 mb-2">
                   Team Name <span className="text-red-600">*</span>
                 </label>
-                <input
+                <Input
                   type="text"
                   value={newTeamName ?? ''}
                   onChange={(e) => setNewTeamName(e.target.value)}

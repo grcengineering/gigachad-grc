@@ -14,6 +14,8 @@ import { SkeletonGrid } from '@/components/Skeleton';
 import { EmptyState } from '@/components/EmptyState';
 import toast from 'react-hot-toast';
 
+import { Input } from '@/components/ui/Input';
+
 export default function KnowledgeBase() {
   const { user } = useAuth();
   const [search, setSearch] = useState('');
@@ -185,12 +187,11 @@ privacy,GDPR Compliance,Are you GDPR compliant?,"We are fully GDPR compliant and
           </Button>
         </div>
       </div>
-
       {/* Search and Filters */}
       <div className="flex gap-4">
         <div className="flex-1 relative">
           <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-surface-600" />
-          <input
+          <Input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -210,7 +211,6 @@ privacy,GDPR Compliance,Are you GDPR compliant?,"We are fully GDPR compliant and
           ))}
         </select>
       </div>
-
       {/* Entries Grid */}
       {entries.length === 0 ? (
         <EmptyState
@@ -270,7 +270,6 @@ privacy,GDPR Compliance,Are you GDPR compliant?,"We are fully GDPR compliant and
           ))}
         </div>
       )}
-
       {/* Bulk Upload Modal */}
       {showBulkUpload && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

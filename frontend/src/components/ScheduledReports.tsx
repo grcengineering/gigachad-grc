@@ -16,6 +16,8 @@ import toast from 'react-hot-toast';
 import clsx from 'clsx';
 import { scheduledReportsApi, ScheduledReport } from '@/lib/api';
 
+import { Input } from '@/components/ui/Input';
+
 interface ScheduledReportsProps {
   className?: string;
 }
@@ -412,7 +414,7 @@ function ReportScheduleModal({ isOpen, onClose, report, onSave }: ReportSchedule
         {/* Name */}
         <div>
           <label className="block text-sm font-medium text-surface-700 mb-1">Report Name *</label>
-          <input
+          <Input
             type="text"
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -517,7 +519,7 @@ function ReportScheduleModal({ isOpen, onClose, report, onSave }: ReportSchedule
         {/* Time */}
         <div>
           <label className="block text-sm font-medium text-surface-700 mb-1">Time</label>
-          <input
+          <Input
             type="time"
             value={formData.time}
             onChange={(e) => setFormData({ ...formData, time: e.target.value })}
@@ -530,7 +532,7 @@ function ReportScheduleModal({ isOpen, onClose, report, onSave }: ReportSchedule
           <label className="block text-sm font-medium text-surface-700 mb-1">
             Recipients * (comma-separated emails)
           </label>
-          <input
+          <Input
             type="text"
             value={formData.recipients}
             onChange={(e) => setFormData({ ...formData, recipients: e.target.value })}

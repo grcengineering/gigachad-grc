@@ -12,6 +12,8 @@ import { permissionsApi } from '../lib/api';
 import { SkeletonGrid } from '@/components/Skeleton';
 import { EmptyState } from '@/components/EmptyState';
 
+import { Input } from '@/components/ui/Input';
+
 const RESOURCES = [
   { id: 'controls', label: 'Controls', description: 'Security and compliance controls' },
   { id: 'evidence', label: 'Evidence', description: 'Evidence artifacts and documents' },
@@ -299,7 +301,7 @@ function PermissionGroupModal({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm text-surface-600 mb-1">Group Name</label>
-              <input
+              <Input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -309,7 +311,7 @@ function PermissionGroupModal({
             </div>
             <div>
               <label className="block text-sm text-surface-600 mb-1">Description</label>
-              <input
+              <Input
                 type="text"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}

@@ -21,6 +21,8 @@ import clsx from 'clsx';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 const CATEGORIES = [
   { value: 'security', label: 'Security', color: 'bg-red-500/20 text-red-600' },
   { value: 'privacy', label: 'Privacy', color: 'bg-purple-500/20 text-purple-600' },
@@ -148,12 +150,11 @@ export default function AnswerTemplates() {
           New Template
         </Button>
       </div>
-
       {/* Filters */}
       <div className="flex items-center gap-4">
         <div className="relative flex-1 max-w-md">
           <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-600" />
-          <input
+          <Input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -185,7 +186,6 @@ export default function AnswerTemplates() {
           Show Archived
         </label>
       </div>
-
       {/* Templates Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
         {isLoading ? (
@@ -259,7 +259,6 @@ export default function AnswerTemplates() {
           ))
         )}
       </div>
-
       {/* Template Detail Panel */}
       {selectedTemplate && (
         <div className="fixed inset-y-0 right-0 w-full max-w-lg bg-surface-900 border-l border-surface-700 shadow-xl z-40 overflow-y-auto">
@@ -378,7 +377,6 @@ export default function AnswerTemplates() {
           </div>
         </div>
       )}
-
       {/* Create/Edit Modal */}
       {showModal && (
         <TemplateModal
@@ -472,7 +470,7 @@ function TemplateModal({
             <label className="block text-sm font-medium text-surface-600 mb-1">
               Title <span className="text-red-600">*</span>
             </label>
-            <input
+            <Input
               type="text"
               required
               value={formData.title}
@@ -539,7 +537,7 @@ Example:
 
           <div>
             <label className="block text-sm font-medium text-surface-600 mb-1">Tags</label>
-            <input
+            <Input
               type="text"
               value={formData.tags}
               onChange={(e) => setFormData((prev) => ({ ...prev, tags: e.target.value }))}

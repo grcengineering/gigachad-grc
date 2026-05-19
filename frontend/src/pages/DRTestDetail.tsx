@@ -23,6 +23,8 @@ import { SkeletonDetailHeader, SkeletonDetailSection } from '@/components/Skelet
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 interface DRTest {
   id: string;
   test_id: string;
@@ -295,7 +297,7 @@ export default function DRTestDetail() {
           >
             <div>
               <label className="block text-sm font-medium text-surface-700 mb-2">Test Name *</label>
-              <input
+              <Input
                 type="text"
                 value={editForm.name}
                 onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
@@ -324,7 +326,7 @@ export default function DRTestDetail() {
                 <label className="block text-sm font-medium text-surface-700 mb-2">
                   Scheduled Date
                 </label>
-                <input
+                <Input
                   type="date"
                   value={editForm.scheduled_date}
                   onChange={(e) => setEditForm({ ...editForm, scheduled_date: e.target.value })}
@@ -734,7 +736,7 @@ export default function DRTestDetail() {
             >
               <div>
                 <label className="block text-sm font-medium text-surface-700 mb-2">Name *</label>
-                <input
+                <Input
                   type="text"
                   value={editForm.name}
                   onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
@@ -866,7 +868,7 @@ export default function DRTestDetail() {
                 <label className="block text-sm font-medium text-surface-700 mb-2">
                   Actual Recovery Time (minutes)
                 </label>
-                <input
+                <Input
                   type="number"
                   value={completeForm.actual_recovery_time_minutes}
                   onChange={(e) =>

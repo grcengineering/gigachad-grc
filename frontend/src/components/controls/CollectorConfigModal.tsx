@@ -12,6 +12,8 @@ import { collectorsApi, integrationsApi } from '@/lib/api';
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 interface Props {
   controlId: string;
   implementationId: string;
@@ -247,7 +249,7 @@ export default function CollectorConfigModal({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="label">Name *</label>
-              <input
+              <Input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -338,7 +340,7 @@ export default function CollectorConfigModal({
             {mode === 'standalone' && (
               <div className="mt-4">
                 <label className="label">Base URL</label>
-                <input
+                <Input
                   type="text"
                   value={baseUrl}
                   onChange={(e) => setBaseUrl(e.target.value)}
@@ -370,7 +372,7 @@ export default function CollectorConfigModal({
               </div>
               <div className="flex-1">
                 <label className="label">Endpoint Path</label>
-                <input
+                <Input
                   type="text"
                   value={endpoint}
                   onChange={(e) => setEndpoint(e.target.value)}
@@ -440,7 +442,7 @@ export default function CollectorConfigModal({
                 <div className="grid grid-cols-3 gap-4">
                   <div>
                     <label className="label">Key Name</label>
-                    <input
+                    <Input
                       type="text"
                       value={authConfig.keyName}
                       onChange={(e) => setAuthConfig({ ...authConfig, keyName: e.target.value })}
@@ -450,7 +452,7 @@ export default function CollectorConfigModal({
                   </div>
                   <div>
                     <label className="label">Key Value</label>
-                    <input
+                    <Input
                       type="password"
                       value={authConfig.keyValue}
                       onChange={(e) => setAuthConfig({ ...authConfig, keyValue: e.target.value })}
@@ -476,7 +478,7 @@ export default function CollectorConfigModal({
                 <div className="space-y-3">
                   <div>
                     <label className="label">Token URL</label>
-                    <input
+                    <Input
                       type="text"
                       value={authConfig.tokenUrl}
                       onChange={(e) => setAuthConfig({ ...authConfig, tokenUrl: e.target.value })}
@@ -487,7 +489,7 @@ export default function CollectorConfigModal({
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="label">Client ID</label>
-                      <input
+                      <Input
                         type="text"
                         value={authConfig.clientId}
                         onChange={(e) => setAuthConfig({ ...authConfig, clientId: e.target.value })}
@@ -496,7 +498,7 @@ export default function CollectorConfigModal({
                     </div>
                     <div>
                       <label className="label">Client Secret</label>
-                      <input
+                      <Input
                         type="password"
                         value={authConfig.clientSecret}
                         onChange={(e) =>
@@ -508,7 +510,7 @@ export default function CollectorConfigModal({
                   </div>
                   <div>
                     <label className="label">Scope (optional)</label>
-                    <input
+                    <Input
                       type="text"
                       value={authConfig.scope}
                       onChange={(e) => setAuthConfig({ ...authConfig, scope: e.target.value })}
@@ -522,7 +524,7 @@ export default function CollectorConfigModal({
               {authType === 'bearer' && (
                 <div>
                   <label className="label">Bearer Token</label>
-                  <input
+                  <Input
                     type="password"
                     value={authConfig.token}
                     onChange={(e) => setAuthConfig({ ...authConfig, token: e.target.value })}
@@ -536,7 +538,7 @@ export default function CollectorConfigModal({
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="label">Username</label>
-                    <input
+                    <Input
                       type="text"
                       value={authConfig.username}
                       onChange={(e) => setAuthConfig({ ...authConfig, username: e.target.value })}
@@ -545,7 +547,7 @@ export default function CollectorConfigModal({
                   </div>
                   <div>
                     <label className="label">Password</label>
-                    <input
+                    <Input
                       type="password"
                       value={authConfig.password}
                       onChange={(e) => setAuthConfig({ ...authConfig, password: e.target.value })}
@@ -563,7 +565,7 @@ export default function CollectorConfigModal({
 
             <div>
               <label className="label">Evidence Title Template</label>
-              <input
+              <Input
                 type="text"
                 value={evidenceTitle}
                 onChange={(e) => setEvidenceTitle(e.target.value)}
@@ -578,7 +580,7 @@ export default function CollectorConfigModal({
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <label className="label">Title Field (JSONPath)</label>
-                <input
+                <Input
                   type="text"
                   value={responseMapping.titleField}
                   onChange={(e) =>
@@ -590,7 +592,7 @@ export default function CollectorConfigModal({
               </div>
               <div>
                 <label className="label">Description Field</label>
-                <input
+                <Input
                   type="text"
                   value={responseMapping.descriptionField}
                   onChange={(e) =>
@@ -602,7 +604,7 @@ export default function CollectorConfigModal({
               </div>
               <div>
                 <label className="label">Data Field</label>
-                <input
+                <Input
                   type="text"
                   value={responseMapping.dataField}
                   onChange={(e) =>

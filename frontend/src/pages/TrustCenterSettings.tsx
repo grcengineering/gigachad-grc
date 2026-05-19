@@ -15,6 +15,8 @@ import {
 
 import { Textarea } from '@/components/ui/Textarea';
 
+import { Input } from '@/components/ui/Input';
+
 type TabType = 'general' | 'branding' | 'domain' | 'embed';
 
 export default function TrustCenterSettings() {
@@ -184,7 +186,7 @@ function GeneralSettings({
             <label className="block text-sm font-medium text-surface-600 mb-1">
               Security Email
             </label>
-            <input
+            <Input
               type="email"
               value={config.securityEmail || ''}
               onChange={(e) => onUpdate({ securityEmail: e.target.value })}
@@ -195,7 +197,7 @@ function GeneralSettings({
           </div>
           <div>
             <label className="block text-sm font-medium text-surface-600 mb-1">Support URL</label>
-            <input
+            <Input
               type="url"
               value={config.supportUrl || ''}
               onChange={(e) => onUpdate({ supportUrl: e.target.value })}
@@ -206,7 +208,6 @@ function GeneralSettings({
           </div>
         </div>
       </div>
-
       <div className="pt-6 border-t border-surface-800">
         <h3 className="text-lg font-medium text-surface-100 mb-4">Section Visibility</h3>
         <p className="text-sm text-surface-600 mb-4">
@@ -250,7 +251,6 @@ function GeneralSettings({
           ))}
         </div>
       </div>
-
       <div className="pt-6 border-t border-surface-800">
         <h3 className="text-lg font-medium text-surface-100 mb-4">Quick Links</h3>
         <div className="flex flex-wrap gap-3">
@@ -290,7 +290,7 @@ function BrandingSettings({
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-surface-600 mb-1">Company Name</label>
-            <input
+            <Input
               type="text"
               value={config.companyName}
               onChange={(e) => onUpdate({ companyName: e.target.value })}
@@ -320,7 +320,7 @@ function BrandingSettings({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-surface-600 mb-1">Logo URL</label>
-            <input
+            <Input
               type="url"
               value={config.logoUrl || ''}
               onChange={(e) => onUpdate({ logoUrl: e.target.value })}
@@ -338,7 +338,7 @@ function BrandingSettings({
                 onChange={(e) => onUpdate({ primaryColor: e.target.value })}
                 className="w-12 h-10 bg-surface-800 border border-surface-700 rounded-lg cursor-pointer"
               />
-              <input
+              <Input
                 type="text"
                 value={config.primaryColor || '#6366f1'}
                 onChange={(e) => onUpdate({ primaryColor: e.target.value })}
@@ -400,7 +400,7 @@ function DomainSettings({
               Your Custom Domain
             </label>
             <div className="flex gap-2">
-              <input
+              <Input
                 type="text"
                 value={domainInput}
                 onChange={(e) => setDomainInput(e.target.value)}
@@ -420,7 +420,6 @@ function DomainSettings({
           </div>
         </div>
       </div>
-
       {config.customDomain && (
         <div className="bg-surface-800/50 rounded-lg p-6 border border-surface-700">
           <h4 className="text-md font-medium text-surface-200 mb-4 flex items-center gap-2">
@@ -506,7 +505,6 @@ function DomainSettings({
           </div>
         </div>
       )}
-
       {!config.customDomain && (
         <div className="bg-surface-800/30 rounded-lg p-6 border border-dashed border-surface-700 text-center">
           <LinkIcon className="w-12 h-12 text-surface-600 mx-auto mb-3" />
@@ -641,7 +639,7 @@ function EmbedSettings({ config }: { config: TrustCenterConfig }) {
           Share this URL directly with customers or partners
         </p>
         <div className="flex gap-2">
-          <input
+          <Input
             type="text"
             readOnly
             value={trustCenterUrl}
