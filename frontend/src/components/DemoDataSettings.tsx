@@ -9,12 +9,10 @@ import {
   CheckCircleIcon,
   ArrowPathIcon,
   InformationCircleIcon,
-  XMarkIcon,
 } from '@heroicons/react/24/outline';
-
 import { Input } from '@/components/ui/Input';
-
 import { Button } from '@/components/ui/Button';
+import { Dialog } from '@/components/ui/Dialog';
 
 interface DataSummary {
   controls: number;
@@ -242,87 +240,84 @@ export default function DemoDataSettings() {
         </div>
       </div>
       {/* Reset Confirmation Modal */}
-      {showResetModal && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 backdrop-blur-sm">
-          <div className="card p-6 w-full max-w-md mx-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-red-500/20 rounded-lg">
-                  <ExclamationTriangleIcon className="h-6 w-6 text-red-600" />
-                </div>
-                <h3 className="text-lg font-semibold text-foreground">Reset All Data</h3>
-              </div>
-              <button
-                onClick={() => setShowResetModal(false)}
-                className="p-2 hover:bg-surface-700 rounded-lg"
-              >
-                <XMarkIcon className="h-5 w-5 text-muted-foreground" />
-              </button>
+      <Dialog
+        open={showResetModal}
+        onClose={() => setShowResetModal(false)}
+        size="md"
+        title={
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-red-100 rounded-lg">
+              <ExclamationTriangleIcon className="h-6 w-6 text-red-600" />
             </div>
-
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                This will permanently delete all data in your organization:
-              </p>
-
-              <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
-                <ul className="text-sm text-red-600 space-y-1">
-                  <li>• {status?.dataSummary.controls || 0} controls</li>
-                  <li>• {status?.dataSummary.evidence || 0} evidence records</li>
-                  <li>• {status?.dataSummary.policies || 0} policies</li>
-                  <li>• {status?.dataSummary.risks || 0} risks</li>
-                  <li>• {status?.dataSummary.vendors || 0} vendors</li>
-                  <li>• {status?.dataSummary.employees || 0} employees</li>
-                  <li>• {status?.dataSummary.assets || 0} assets</li>
-                  <li>• And all related records...</li>
-                </ul>
-              </div>
-
-              <p className="text-sm text-muted-foreground">
-                <strong className="text-foreground">This cannot be undone.</strong> Users and
-                organization settings will be preserved.
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">
-                Type <span className="font-mono text-red-600">DELETE ALL DATA</span> to confirm:
-              </label>
-              <Input
-                type="text"
-                value={confirmationText}
-                onChange={(e) => setConfirmationText(e.target.value)}
-                placeholder="DELETE ALL DATA"
-                className="input w-full font-mono"
-              />
-            </div>
-
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">
-              <Button onClick={() => setShowResetModal(false)} variant="secondary">
-                Cancel
-              </Button>
-              <button
-                onClick={handleReset}
-                disabled={!canReset || resetMutation.isPending}
-                className="bg-red-500 hover:bg-red-600 text-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                {resetMutation.isPending ? (
+            <span>Reset All Data</span>
+          </div>
+        }
+        footer={
+          <div className="flex items-center justify-end gap-3">
+            <Button onClick={() => setShowResetModal(false)} variant="secondary">
+              Cancel
+            </Button>
+            <Button
+              onClick={handleReset}
+              disabled={!canReset || resetMutation.isPending}
+              variant="danger"
+              isLoading={resetMutation.isPending}
+              leftIcon={
+                resetMutation.isPending ? (
                   <ArrowPathIcon className="h-4 w-4 animate-spin" />
                 ) : countdown > 0 ? (
                   <span className="w-4 text-center">{countdown}</span>
                 ) : (
                   <TrashIcon className="h-4 w-4" />
-                )}
-                {resetMutation.isPending
-                  ? 'Deleting...'
-                  : countdown > 0
-                    ? `Wait ${countdown}s`
-                    : 'Delete All Data'}
-              </button>
-            </div>
+                )
+              }
+            >
+              {resetMutation.isPending
+                ? 'Deleting...'
+                : countdown > 0
+                  ? `Wait ${countdown}s`
+                  : 'Delete All Data'}
+            </Button>
           </div>
+        }
+      >
+        <div className="space-y-3">
+          <p className="text-sm text-surface-600">
+            This will permanently delete all data in your organization:
+          </p>
+
+          <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+            <ul className="text-sm text-red-700 space-y-1">
+              <li>• {status?.dataSummary.controls || 0} controls</li>
+              <li>• {status?.dataSummary.evidence || 0} evidence records</li>
+              <li>• {status?.dataSummary.policies || 0} policies</li>
+              <li>• {status?.dataSummary.risks || 0} risks</li>
+              <li>• {status?.dataSummary.vendors || 0} vendors</li>
+              <li>• {status?.dataSummary.employees || 0} employees</li>
+              <li>• {status?.dataSummary.assets || 0} assets</li>
+              <li>• And all related records...</li>
+            </ul>
+          </div>
+
+          <p className="text-sm text-surface-600">
+            <strong className="text-surface-900">This cannot be undone.</strong> Users and
+            organization settings will be preserved.
+          </p>
         </div>
-      )}
+
+        <div className="space-y-2 mt-4">
+          <label className="text-sm font-medium text-surface-900">
+            Type <span className="font-mono text-red-700">DELETE ALL DATA</span> to confirm:
+          </label>
+          <Input
+            type="text"
+            value={confirmationText}
+            onChange={(e) => setConfirmationText(e.target.value)}
+            placeholder="DELETE ALL DATA"
+            className="font-mono"
+          />
+        </div>
+      </Dialog>
     </>
   );
 }

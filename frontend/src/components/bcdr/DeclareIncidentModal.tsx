@@ -1,12 +1,11 @@
 import { useState } from 'react';
-import { XMarkIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/Button';
 import { api } from '@/lib/api';
 import clsx from 'clsx';
-
 import { Textarea } from '@/components/ui/Textarea';
-
 import { Input } from '@/components/ui/Input';
+import { Dialog } from '@/components/ui/Dialog';
 
 // ============================================
 // Types
@@ -109,113 +108,114 @@ export function DeclareIncidentModal({ onClose, onComplete }: DeclareIncidentMod
   };
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
-      <div className="bg-slate-800 rounded-xl shadow-2xl w-full max-w-lg">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-red-500/20 rounded-lg">
-              <ExclamationTriangleIcon className="h-6 w-6 text-red-600" />
-            </div>
-            <h2 className="text-xl font-semibold text-white">Declare BC/DR Incident</h2>
+    <Dialog
+      open
+      onClose={onClose}
+      size="lg"
+      title={
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-red-100 rounded-lg">
+            <ExclamationTriangleIcon className="h-6 w-6 text-red-600" />
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-slate-700 rounded-lg transition-colors">
-            <XMarkIcon className="h-5 w-5 text-slate-400" />
-          </button>
+          <span>Declare BC/DR Incident</span>
         </div>
-
-        {/* Content */}
-        <div className="px-6 py-6 space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              Incident Title <span className="text-red-600">*</span>
-            </label>
-            <Input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
-              placeholder="Brief title describing the incident..."
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Description</label>
-            <Textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
-              placeholder="Describe the incident situation..."
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              Incident Type <span className="text-red-600">*</span>
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              {INCIDENT_TYPES.map((type) => (
-                <button
-                  key={type.value}
-                  onClick={() => setIncidentType(type.value)}
-                  className={clsx(
-                    'p-3 rounded-lg border-2 text-left transition-all',
-                    incidentType === type.value
-                      ? 'border-cyan-500 bg-cyan-500/20'
-                      : 'border-slate-600 bg-slate-700 hover:border-slate-500'
-                  )}
-                >
-                  <span className="text-sm font-medium text-white">{type.label}</span>
-                  <p className="text-xs text-slate-400 mt-1">{type.description}</p>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              Severity Level <span className="text-red-600">*</span>
-            </label>
-            <div className="space-y-2">
-              {SEVERITY_LEVELS.map((level) => (
-                <button
-                  key={level.value}
-                  onClick={() => setSeverity(level.value)}
-                  className={clsx(
-                    'w-full p-3 rounded-lg border-2 text-left transition-all flex items-center gap-3',
-                    severity === level.value
-                      ? 'border-cyan-500 bg-cyan-500/20'
-                      : 'border-slate-600 bg-slate-700 hover:border-slate-500'
-                  )}
-                >
-                  <div className={clsx('w-3 h-3 rounded-full', level.color)} />
-                  <div>
-                    <span className="text-sm font-medium text-white">{level.label}</span>
-                    <p className="text-xs text-slate-400">{level.description}</p>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {error && (
-            <div className="bg-red-500/20 border border-red-500 rounded-lg p-3">
-              <p className="text-red-600 text-sm">{error}</p>
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-700">
+      }
+      footer={
+        <div className="flex items-center justify-end gap-3">
           <Button variant="secondary" onClick={onClose} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={handleSubmit} disabled={isSubmitting}>
-            {isSubmitting ? 'Declaring...' : 'Declare Incident'}
+          <Button
+            variant="primary"
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            isLoading={isSubmitting}
+          >
+            Declare Incident
           </Button>
         </div>
+      }
+    >
+      <div className="space-y-6">
+        <div>
+          <label className="block text-sm font-medium text-surface-800 mb-2">
+            Incident Title <span className="text-red-700">*</span>
+          </label>
+          <Input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Brief title describing the incident..."
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-surface-800 mb-2">Description</label>
+          <Textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={3}
+            placeholder="Describe the incident situation..."
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-surface-800 mb-2">
+            Incident Type <span className="text-red-700">*</span>
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            {INCIDENT_TYPES.map((type) => (
+              <button
+                key={type.value}
+                type="button"
+                onClick={() => setIncidentType(type.value)}
+                className={clsx(
+                  'p-3 rounded-md border-2 text-left transition-all',
+                  incidentType === type.value
+                    ? 'border-brand-500 bg-brand-50'
+                    : 'border-surface-300 bg-white hover:border-surface-400'
+                )}
+              >
+                <span className="text-sm font-medium text-surface-900">{type.label}</span>
+                <p className="text-xs text-surface-600 mt-1">{type.description}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-surface-800 mb-2">
+            Severity Level <span className="text-red-700">*</span>
+          </label>
+          <div className="space-y-2">
+            {SEVERITY_LEVELS.map((level) => (
+              <button
+                key={level.value}
+                type="button"
+                onClick={() => setSeverity(level.value)}
+                className={clsx(
+                  'w-full p-3 rounded-md border-2 text-left transition-all flex items-center gap-3',
+                  severity === level.value
+                    ? 'border-brand-500 bg-brand-50'
+                    : 'border-surface-300 bg-white hover:border-surface-400'
+                )}
+              >
+                <div className={clsx('w-3 h-3 rounded-full', level.color)} />
+                <div>
+                  <span className="text-sm font-medium text-surface-900">{level.label}</span>
+                  <p className="text-xs text-surface-600">{level.description}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-md p-3">
+            <p className="text-red-700 text-sm">{error}</p>
+          </div>
+        )}
       </div>
-    </div>
+    </Dialog>
   );
 }
