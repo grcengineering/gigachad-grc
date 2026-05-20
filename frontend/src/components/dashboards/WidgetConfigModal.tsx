@@ -12,6 +12,14 @@ import {
 import { XMarkIcon, PlayIcon } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 
+import { Textarea } from '@/components/ui/Textarea';
+
+import { Input } from '@/components/ui/Input';
+
+import { SelectNative } from '@/components/ui/SelectNative';
+
+import { Button } from '@/components/ui/Button';
+
 interface WidgetConfigModalProps {
   widget: DashboardWidget;
   onSave: (data: Partial<DashboardWidget>) => void;
@@ -20,7 +28,9 @@ interface WidgetConfigModalProps {
 
 export default function WidgetConfigModal({ widget, onSave, onClose }: WidgetConfigModalProps) {
   const [title, setTitle] = useState(widget.title);
-  const [dataSource, setDataSource] = useState<DataQuery>(widget.dataSource || { source: DataSourceType.CONTROLS });
+  const [dataSource, setDataSource] = useState<DataQuery>(
+    widget.dataSource || { source: DataSourceType.CONTROLS }
+  );
   const [config, setConfig] = useState<WidgetConfig>(widget.config || {});
   const [activeTab, setActiveTab] = useState<'data' | 'appearance'>('data');
   const [previewData, setPreviewData] = useState<any[] | null>(null);
@@ -60,17 +70,17 @@ export default function WidgetConfigModal({ widget, onSave, onClose }: WidgetCon
   const availableFields = selectedSourceDef?.fields || [];
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
       <div className="bg-surface-900 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-surface-700">
           <div>
             <h2 className="text-lg font-semibold text-surface-100">Configure Widget</h2>
-            <p className="text-sm text-surface-400">{widgetDef?.name}</p>
+            <p className="text-sm text-surface-600">{widgetDef?.name}</p>
           </div>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-surface-700 rounded text-surface-400 hover:text-surface-200"
+            className="p-1 hover:bg-surface-700 rounded text-surface-600 hover:text-surface-200"
           >
             <XMarkIcon className="w-5 h-5" />
           </button>
@@ -84,7 +94,7 @@ export default function WidgetConfigModal({ widget, onSave, onClose }: WidgetCon
               'px-4 py-2 text-sm font-medium transition-colors',
               activeTab === 'data'
                 ? 'text-brand-400 border-b-2 border-brand-400'
-                : 'text-surface-400 hover:text-surface-200'
+                : 'text-surface-600 hover:text-surface-200'
             )}
           >
             Data Source
@@ -95,7 +105,7 @@ export default function WidgetConfigModal({ widget, onSave, onClose }: WidgetCon
               'px-4 py-2 text-sm font-medium transition-colors',
               activeTab === 'appearance'
                 ? 'text-brand-400 border-b-2 border-brand-400'
-                : 'text-surface-400 hover:text-surface-200'
+                : 'text-surface-600 hover:text-surface-200'
             )}
           >
             Appearance
@@ -106,10 +116,8 @@ export default function WidgetConfigModal({ widget, onSave, onClose }: WidgetCon
         <div className="flex-1 overflow-y-auto p-4">
           {/* Title field (always visible) */}
           <div className="mb-6">
-            <label className="block text-sm font-medium text-surface-300 mb-2">
-              Widget Title
-            </label>
-            <input
+            <label className="block text-sm font-medium text-surface-700 mb-2">Widget Title</label>
+            <Input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -122,10 +130,10 @@ export default function WidgetConfigModal({ widget, onSave, onClose }: WidgetCon
             <div className="space-y-6">
               {/* Data Source Selection */}
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-2">
+                <label className="block text-sm font-medium text-surface-700 mb-2">
                   Data Source
                 </label>
-                <select
+                <SelectNative
                   value={dataSource.source || ''}
                   onChange={(e) =>
                     setDataSource({ ...dataSource, source: e.target.value as DataSourceType })
@@ -138,16 +146,16 @@ export default function WidgetConfigModal({ widget, onSave, onClose }: WidgetCon
                       {ds.name}
                     </option>
                   ))}
-                </select>
+                </SelectNative>
               </div>
 
               {/* Group By */}
               {availableFields.length > 0 && (
                 <div>
-                  <label className="block text-sm font-medium text-surface-300 mb-2">
+                  <label className="block text-sm font-medium text-surface-700 mb-2">
                     Group By (for charts)
                   </label>
-                  <select
+                  <SelectNative
                     value={dataSource.groupBy || ''}
                     onChange={(e) =>
                       setDataSource({ ...dataSource, groupBy: e.target.value || undefined })
@@ -162,15 +170,13 @@ export default function WidgetConfigModal({ widget, onSave, onClose }: WidgetCon
                           {field.label}
                         </option>
                       ))}
-                  </select>
+                  </SelectNative>
                 </div>
               )}
 
               {/* Filters */}
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-2">
-                  Filters
-                </label>
+                <label className="block text-sm font-medium text-surface-700 mb-2">Filters</label>
                 <FilterBuilder
                   filters={dataSource.filters || []}
                   onChange={(filters) => setDataSource({ ...dataSource, filters })}
@@ -180,10 +186,10 @@ export default function WidgetConfigModal({ widget, onSave, onClose }: WidgetCon
 
               {/* Limit */}
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-2">
+                <label className="block text-sm font-medium text-surface-700 mb-2">
                   Limit Results
                 </label>
-                <input
+                <Input
                   type="number"
                   value={dataSource.limit || ''}
                   onChange={(e) =>
@@ -201,23 +207,24 @@ export default function WidgetConfigModal({ widget, onSave, onClose }: WidgetCon
 
               {/* Preview Button */}
               <div className="flex items-center gap-4">
-                <button
+                <Button
                   onClick={handlePreview}
                   disabled={!dataSource.source || isPreviewLoading}
-                  className="btn btn-ghost btn-sm"
+                  className=""
+                  variant="ghost"
                 >
                   <PlayIcon className="w-4 h-4 mr-1" />
                   {isPreviewLoading ? 'Loading...' : 'Preview Data'}
-                </button>
+                </Button>
               </div>
 
               {/* Preview Results */}
               {previewData && (
                 <div className="bg-surface-800 rounded-lg p-4">
-                  <h4 className="text-sm font-medium text-surface-300 mb-2">
+                  <h4 className="text-sm font-medium text-surface-700 mb-2">
                     Preview ({previewData.length} results)
                   </h4>
-                  <pre className="text-xs text-surface-400 overflow-auto max-h-48">
+                  <pre className="text-xs text-surface-600 overflow-auto max-h-48">
                     {JSON.stringify(previewData.slice(0, 5), null, 2)}
                   </pre>
                 </div>
@@ -237,7 +244,7 @@ export default function WidgetConfigModal({ widget, onSave, onClose }: WidgetCon
                     onChange={(e) => setConfig({ ...config, showLegend: e.target.checked })}
                     className="w-4 h-4 rounded border-surface-600 bg-surface-800 text-brand-500 focus:ring-brand-500"
                   />
-                  <label htmlFor="showLegend" className="text-sm text-surface-300">
+                  <label htmlFor="showLegend" className="text-sm text-surface-700">
                     Show Legend
                   </label>
                 </div>
@@ -253,7 +260,7 @@ export default function WidgetConfigModal({ widget, onSave, onClose }: WidgetCon
                     onChange={(e) => setConfig({ ...config, showValues: e.target.checked })}
                     className="w-4 h-4 rounded border-surface-600 bg-surface-800 text-brand-500 focus:ring-brand-500"
                   />
-                  <label htmlFor="showValues" className="text-sm text-surface-300">
+                  <label htmlFor="showValues" className="text-sm text-surface-700">
                     Show Values on Chart
                   </label>
                 </div>
@@ -262,29 +269,27 @@ export default function WidgetConfigModal({ widget, onSave, onClose }: WidgetCon
               {/* Orientation */}
               {widgetDef?.configOptions.includes('orientation') && (
                 <div>
-                  <label className="block text-sm font-medium text-surface-300 mb-2">
+                  <label className="block text-sm font-medium text-surface-700 mb-2">
                     Chart Orientation
                   </label>
-                  <select
+                  <SelectNative
                     value={config.orientation || 'vertical'}
-                    onChange={(e) =>
-                      setConfig({ ...config, orientation: e.target.value as any })
-                    }
+                    onChange={(e) => setConfig({ ...config, orientation: e.target.value as any })}
                     className="input w-48"
                   >
                     <option value="vertical">Vertical</option>
                     <option value="horizontal">Horizontal</option>
-                  </select>
+                  </SelectNative>
                 </div>
               )}
 
               {/* Value Format */}
               {widgetDef?.configOptions.includes('valueFormat') && (
                 <div>
-                  <label className="block text-sm font-medium text-surface-300 mb-2">
+                  <label className="block text-sm font-medium text-surface-700 mb-2">
                     Value Format
                   </label>
-                  <input
+                  <Input
                     type="text"
                     value={config.valueFormat || ''}
                     onChange={(e) => setConfig({ ...config, valueFormat: e.target.value })}
@@ -300,10 +305,10 @@ export default function WidgetConfigModal({ widget, onSave, onClose }: WidgetCon
               {/* Target Value */}
               {widgetDef?.configOptions.includes('targetValue') && (
                 <div>
-                  <label className="block text-sm font-medium text-surface-300 mb-2">
+                  <label className="block text-sm font-medium text-surface-700 mb-2">
                     Target Value
                   </label>
-                  <input
+                  <Input
                     type="number"
                     value={config.targetValue || ''}
                     onChange={(e) =>
@@ -321,10 +326,10 @@ export default function WidgetConfigModal({ widget, onSave, onClose }: WidgetCon
               {/* Max Value */}
               {widgetDef?.configOptions.includes('maxValue') && (
                 <div>
-                  <label className="block text-sm font-medium text-surface-300 mb-2">
+                  <label className="block text-sm font-medium text-surface-700 mb-2">
                     Max Value
                   </label>
-                  <input
+                  <Input
                     type="number"
                     value={config.maxValue || ''}
                     onChange={(e) =>
@@ -342,10 +347,10 @@ export default function WidgetConfigModal({ widget, onSave, onClose }: WidgetCon
               {/* Markdown Content */}
               {widgetDef?.configOptions.includes('markdownContent') && (
                 <div>
-                  <label className="block text-sm font-medium text-surface-300 mb-2">
+                  <label className="block text-sm font-medium text-surface-700 mb-2">
                     Content (Markdown)
                   </label>
-                  <textarea
+                  <Textarea
                     value={config.markdownContent || ''}
                     onChange={(e) => setConfig({ ...config, markdownContent: e.target.value })}
                     className="input w-full h-32 font-mono text-sm"
@@ -357,10 +362,10 @@ export default function WidgetConfigModal({ widget, onSave, onClose }: WidgetCon
               {/* IFrame URL */}
               {widgetDef?.configOptions.includes('iframeUrl') && (
                 <div>
-                  <label className="block text-sm font-medium text-surface-300 mb-2">
+                  <label className="block text-sm font-medium text-surface-700 mb-2">
                     Embed URL
                   </label>
-                  <input
+                  <Input
                     type="url"
                     value={config.iframeUrl || ''}
                     onChange={(e) => setConfig({ ...config, iframeUrl: e.target.value })}
@@ -373,10 +378,10 @@ export default function WidgetConfigModal({ widget, onSave, onClose }: WidgetCon
               {/* Page Size for tables */}
               {widgetDef?.configOptions.includes('pageSize') && (
                 <div>
-                  <label className="block text-sm font-medium text-surface-300 mb-2">
+                  <label className="block text-sm font-medium text-surface-700 mb-2">
                     Rows per Page
                   </label>
-                  <input
+                  <Input
                     type="number"
                     value={config.pageSize || 10}
                     onChange={(e) =>
@@ -403,12 +408,12 @@ export default function WidgetConfigModal({ widget, onSave, onClose }: WidgetCon
 
         {/* Footer */}
         <div className="flex items-center justify-end gap-3 p-4 border-t border-surface-700">
-          <button onClick={onClose} className="btn btn-ghost">
+          <Button onClick={onClose} variant="ghost">
             Cancel
-          </button>
-          <button onClick={handleSave} className="btn btn-primary">
+          </Button>
+          <Button onClick={handleSave} variant="primary">
             Save Changes
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -443,7 +448,7 @@ function FilterBuilder({
     <div className="space-y-2">
       {filters.map((filter, index) => (
         <div key={index} className="flex items-center gap-2">
-          <select
+          <SelectNative
             value={filter.field}
             onChange={(e) => updateFilter(index, { field: e.target.value })}
             className="input flex-1"
@@ -456,8 +461,8 @@ function FilterBuilder({
                   {field.label}
                 </option>
               ))}
-          </select>
-          <select
+          </SelectNative>
+          <SelectNative
             value={filter.operator}
             onChange={(e) => updateFilter(index, { operator: e.target.value })}
             className="input w-32"
@@ -468,8 +473,8 @@ function FilterBuilder({
             <option value={FilterOperator.LT}>less than</option>
             <option value={FilterOperator.CONTAINS}>contains</option>
             <option value={FilterOperator.IN}>in list</option>
-          </select>
-          <input
+          </SelectNative>
+          <Input
             type="text"
             value={filter.value}
             onChange={(e) => updateFilter(index, { value: e.target.value })}
@@ -478,16 +483,15 @@ function FilterBuilder({
           />
           <button
             onClick={() => removeFilter(index)}
-            className="p-2 text-red-400 hover:text-red-300"
+            className="p-2 text-red-600 hover:text-red-700"
           >
             <XMarkIcon className="w-4 h-4" />
           </button>
         </div>
       ))}
-      <button onClick={addFilter} className="btn btn-ghost btn-sm">
+      <Button onClick={addFilter} className="" variant="ghost">
         + Add Filter
-      </button>
+      </Button>
     </div>
   );
 }
-

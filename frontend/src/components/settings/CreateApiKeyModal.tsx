@@ -2,6 +2,10 @@ import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { apiKeysApi, type ApiKeyWithSecret } from '@/lib/api';
 
+import { Input } from '@/components/ui/Input';
+
+import { Button } from '@/components/ui/Button';
+
 interface CreateApiKeyModalProps {
   availableScopes: string[];
   onClose: () => void;
@@ -46,13 +50,13 @@ export default function CreateApiKeyModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
       <div className="bg-surface-900 rounded-lg p-6 w-full max-w-md">
         <h3 className="text-lg font-semibold text-surface-100 mb-4">Create API Key</h3>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-surface-300 mb-1">Name</label>
-            <input
+            <label className="block text-sm font-medium text-surface-700 mb-1">Name</label>
+            <Input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -62,10 +66,10 @@ export default function CreateApiKeyModal({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-surface-300 mb-1">
+            <label className="block text-sm font-medium text-surface-700 mb-1">
               Description (optional)
             </label>
-            <input
+            <Input
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -74,7 +78,7 @@ export default function CreateApiKeyModal({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-surface-300 mb-2">Scopes</label>
+            <label className="block text-sm font-medium text-surface-700 mb-2">Scopes</label>
             <div className="space-y-2">
               {availableScopes.map((scope) => (
                 <label key={scope} className="flex items-center gap-2">
@@ -84,22 +88,18 @@ export default function CreateApiKeyModal({
                     onChange={() => toggleScope(scope)}
                     className="rounded border-surface-600 bg-surface-800 text-primary-500 focus:ring-primary-500"
                   />
-                  <span className="text-surface-300 text-sm">{scope}</span>
+                  <span className="text-surface-700 text-sm">{scope}</span>
                 </label>
               ))}
             </div>
           </div>
           <div className="flex justify-end gap-3 pt-4">
-            <button type="button" onClick={onClose} className="btn-secondary">
+            <Button type="button" onClick={onClose} variant="secondary">
               Cancel
-            </button>
-            <button
-              type="submit"
-              className="btn-primary"
-              disabled={createMutation.isPending}
-            >
+            </Button>
+            <Button type="submit" disabled={createMutation.isPending} variant="primary">
               {createMutation.isPending ? 'Creating...' : 'Create Key'}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

@@ -9,8 +9,14 @@ import {
   CheckCircleIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import { useToast } from '@/hooks/useToast';
+
+import { Textarea } from '@/components/ui/Textarea';
+
+import { Input } from '@/components/ui/Input';
+
+import { SelectNative } from '@/components/ui/SelectNative';
 
 interface AuditTemplate {
   id: string;
@@ -131,7 +137,7 @@ export default function AuditTemplates() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-white">Audit Templates</h1>
-          <p className="text-surface-400 mt-1">
+          <p className="text-surface-600 mt-1">
             Reusable templates with checklists and request templates
           </p>
         </div>
@@ -140,21 +146,21 @@ export default function AuditTemplates() {
           New Template
         </Button>
       </div>
-
       {/* Filters */}
       <div className="flex gap-4">
-        <select
+        <SelectNative
           value={selectedType}
           onChange={(e) => setSelectedType(e.target.value)}
           className="bg-surface-800 border border-surface-600 rounded-lg px-3 py-2 text-white"
         >
           <option value="">All Types</option>
           {Object.entries(auditTypeLabels).map(([value, label]) => (
-            <option key={value} value={value}>{label}</option>
+            <option key={value} value={value}>
+              {label}
+            </option>
           ))}
-        </select>
+        </SelectNative>
       </div>
-
       {/* Templates Grid */}
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -177,7 +183,7 @@ export default function AuditTemplates() {
                   <div>
                     <h3 className="font-semibold text-white">{template.name}</h3>
                     {template.isSystem && (
-                      <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded">
+                      <span className="text-xs bg-blue-500/20 text-blue-600 px-2 py-0.5 rounded">
                         System Template
                       </span>
                     )}
@@ -185,22 +191,22 @@ export default function AuditTemplates() {
                 </div>
               </div>
 
-              <p className="text-surface-400 text-sm mt-3 line-clamp-2">
+              <p className="text-surface-600 text-sm mt-3 line-clamp-2">
                 {template.description || 'No description'}
               </p>
 
               <div className="mt-4 flex flex-wrap gap-2 text-xs">
-                <span className="bg-surface-700 text-surface-300 px-2 py-1 rounded">
+                <span className="bg-surface-700 text-surface-700 px-2 py-1 rounded">
                   {auditTypeLabels[template.auditType] || template.auditType}
                 </span>
                 {template.framework && (
-                  <span className="bg-surface-700 text-surface-300 px-2 py-1 rounded">
+                  <span className="bg-surface-700 text-surface-700 px-2 py-1 rounded">
                     {template.framework}
                   </span>
                 )}
               </div>
 
-              <div className="mt-4 flex items-center justify-between text-sm text-surface-400">
+              <div className="mt-4 flex items-center justify-between text-sm text-surface-600">
                 <div className="flex items-center gap-4">
                   <span className="flex items-center gap-1">
                     <CheckCircleIcon className="h-4 w-4" />
@@ -211,10 +217,7 @@ export default function AuditTemplates() {
               </div>
 
               <div className="mt-4 pt-4 border-t border-surface-700 flex gap-2">
-                <Link
-                  to={`/audits/new?templateId=${template.id}`}
-                  className="flex-1"
-                >
+                <Link to={`/audits/new?templateId=${template.id}`} className="flex-1">
                   <Button variant="primary" size="sm" className="w-full">
                     Use Template
                   </Button>
@@ -234,7 +237,7 @@ export default function AuditTemplates() {
                     onClick={() => deleteMutation.mutate(template.id)}
                     title="Archive Template"
                   >
-                    <TrashIcon className="h-4 w-4 text-red-400" />
+                    <TrashIcon className="h-4 w-4 text-red-600" />
                   </Button>
                 )}
               </div>
@@ -242,21 +245,19 @@ export default function AuditTemplates() {
           ))}
         </div>
       )}
-
       {/* Empty State */}
       {!isLoading && templates.length === 0 && (
         <div className="text-center py-12">
           <ClipboardDocumentListIcon className="h-12 w-12 text-surface-500 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-white">No templates found</h3>
-          <p className="text-surface-400 mt-2">
+          <p className="text-surface-600 mt-2">
             Create a new template or check back later for system templates.
           </p>
         </div>
       )}
-
       {/* Create Template Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
           <div className="bg-surface-800 rounded-lg p-6 w-full max-w-lg border border-surface-700">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-white">Create Audit Template</h2>
@@ -264,16 +265,16 @@ export default function AuditTemplates() {
                 onClick={() => setShowCreateModal(false)}
                 className="p-1 hover:bg-surface-700 rounded"
               >
-                <XMarkIcon className="h-5 w-5 text-surface-400" />
+                <XMarkIcon className="h-5 w-5 text-surface-600" />
               </button>
             </div>
 
             <form onSubmit={handleCreateSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-1">
+                <label className="block text-sm font-medium text-surface-700 mb-1">
                   Template Name *
                 </label>
-                <input
+                <Input
                   type="text"
                   value={createForm.name}
                   onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
@@ -283,10 +284,10 @@ export default function AuditTemplates() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-1">
+                <label className="block text-sm font-medium text-surface-700 mb-1">
                   Description
                 </label>
-                <textarea
+                <Textarea
                   value={createForm.description}
                   onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
                   rows={3}
@@ -297,25 +298,27 @@ export default function AuditTemplates() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-surface-300 mb-1">
+                  <label className="block text-sm font-medium text-surface-700 mb-1">
                     Audit Type
                   </label>
-                  <select
+                  <SelectNative
                     value={createForm.auditType}
                     onChange={(e) => setCreateForm({ ...createForm, auditType: e.target.value })}
                     className="w-full bg-surface-700 border border-surface-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
                   >
                     {Object.entries(auditTypeLabels).map(([value, label]) => (
-                      <option key={value} value={value}>{label}</option>
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
                     ))}
-                  </select>
+                  </SelectNative>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-surface-300 mb-1">
+                  <label className="block text-sm font-medium text-surface-700 mb-1">
                     Framework
                   </label>
-                  <input
+                  <Input
                     type="text"
                     value={createForm.framework}
                     onChange={(e) => setCreateForm({ ...createForm, framework: e.target.value })}
@@ -326,11 +329,7 @@ export default function AuditTemplates() {
               </div>
 
               <div className="flex justify-end gap-3 pt-4">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => setShowCreateModal(false)}
-                >
+                <Button type="button" variant="secondary" onClick={() => setShowCreateModal(false)}>
                   Cancel
                 </Button>
                 <Button
@@ -347,4 +346,3 @@ export default function AuditTemplates() {
     </div>
   );
 }
-

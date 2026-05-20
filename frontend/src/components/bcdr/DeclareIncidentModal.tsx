@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import {
-  XMarkIcon,
-  ExclamationTriangleIcon,
-} from '@heroicons/react/24/outline';
-import { Button } from '@/components/Button';
+import { XMarkIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { Button } from '@/components/ui/Button';
 import { api } from '@/lib/api';
 import clsx from 'clsx';
+
+import { Textarea } from '@/components/ui/Textarea';
+
+import { Input } from '@/components/ui/Input';
 
 // ============================================
 // Types
@@ -17,27 +18,56 @@ interface DeclareIncidentModalProps {
 }
 
 const INCIDENT_TYPES = [
-  { value: 'disaster', label: 'Disaster', description: 'Major event requiring full BC/DR activation' },
-  { value: 'major_incident', label: 'Major Incident', description: 'Significant disruption requiring response' },
+  {
+    value: 'disaster',
+    label: 'Disaster',
+    description: 'Major event requiring full BC/DR activation',
+  },
+  {
+    value: 'major_incident',
+    label: 'Major Incident',
+    description: 'Significant disruption requiring response',
+  },
   { value: 'drill', label: 'Drill/Exercise', description: 'Planned exercise or test' },
-  { value: 'near_miss', label: 'Near Miss', description: 'Event that could have caused disruption' },
+  {
+    value: 'near_miss',
+    label: 'Near Miss',
+    description: 'Event that could have caused disruption',
+  },
 ];
 
 const SEVERITY_LEVELS = [
-  { value: 'critical', label: 'Critical', description: 'Severe impact, immediate action required', color: 'bg-red-500' },
-  { value: 'major', label: 'Major', description: 'Significant impact, urgent response needed', color: 'bg-orange-500' },
-  { value: 'moderate', label: 'Moderate', description: 'Notable impact, prompt response needed', color: 'bg-yellow-500' },
-  { value: 'minor', label: 'Minor', description: 'Limited impact, standard response', color: 'bg-green-500' },
+  {
+    value: 'critical',
+    label: 'Critical',
+    description: 'Severe impact, immediate action required',
+    color: 'bg-red-500',
+  },
+  {
+    value: 'major',
+    label: 'Major',
+    description: 'Significant impact, urgent response needed',
+    color: 'bg-orange-500',
+  },
+  {
+    value: 'moderate',
+    label: 'Moderate',
+    description: 'Notable impact, prompt response needed',
+    color: 'bg-yellow-500',
+  },
+  {
+    value: 'minor',
+    label: 'Minor',
+    description: 'Limited impact, standard response',
+    color: 'bg-green-500',
+  },
 ];
 
 // ============================================
 // Declare Incident Modal Component
 // ============================================
 
-export function DeclareIncidentModal({
-  onClose,
-  onComplete,
-}: DeclareIncidentModalProps) {
+export function DeclareIncidentModal({ onClose, onComplete }: DeclareIncidentModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -79,20 +109,17 @@ export function DeclareIncidentModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
       <div className="bg-slate-800 rounded-xl shadow-2xl w-full max-w-lg">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-red-500/20 rounded-lg">
-              <ExclamationTriangleIcon className="h-6 w-6 text-red-400" />
+              <ExclamationTriangleIcon className="h-6 w-6 text-red-600" />
             </div>
             <h2 className="text-xl font-semibold text-white">Declare BC/DR Incident</h2>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
-          >
+          <button onClick={onClose} className="p-2 hover:bg-slate-700 rounded-lg transition-colors">
             <XMarkIcon className="h-5 w-5 text-slate-400" />
           </button>
         </div>
@@ -101,9 +128,9 @@ export function DeclareIncidentModal({
         <div className="px-6 py-6 space-y-6">
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">
-              Incident Title <span className="text-red-400">*</span>
+              Incident Title <span className="text-red-600">*</span>
             </label>
-            <input
+            <Input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -113,10 +140,8 @@ export function DeclareIncidentModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              Description
-            </label>
-            <textarea
+            <label className="block text-sm font-medium text-slate-300 mb-2">Description</label>
+            <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
@@ -127,7 +152,7 @@ export function DeclareIncidentModal({
 
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">
-              Incident Type <span className="text-red-400">*</span>
+              Incident Type <span className="text-red-600">*</span>
             </label>
             <div className="grid grid-cols-2 gap-2">
               {INCIDENT_TYPES.map((type) => (
@@ -150,7 +175,7 @@ export function DeclareIncidentModal({
 
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">
-              Severity Level <span className="text-red-400">*</span>
+              Severity Level <span className="text-red-600">*</span>
             </label>
             <div className="space-y-2">
               {SEVERITY_LEVELS.map((level) => (
@@ -176,7 +201,7 @@ export function DeclareIncidentModal({
 
           {error && (
             <div className="bg-red-500/20 border border-red-500 rounded-lg p-3">
-              <p className="text-red-400 text-sm">{error}</p>
+              <p className="text-red-600 text-sm">{error}</p>
             </div>
           )}
         </div>

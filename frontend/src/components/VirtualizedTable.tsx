@@ -62,19 +62,16 @@ export function VirtualizedTable<T>({
   const virtualRows = rowVirtualizer.getVirtualItems();
   const totalSize = rowVirtualizer.getTotalSize();
 
-  const getCellValue = useCallback(
-    (row: T, column: Column<T>): React.ReactNode => {
-      if (typeof column.accessor === 'function') {
-        return column.accessor(row);
-      }
-      const value = row[column.accessor];
-      if (value === null || value === undefined) return '-';
-      if (typeof value === 'boolean') return value ? 'Yes' : 'No';
-      if (value instanceof Date) return value.toLocaleDateString();
-      return String(value);
-    },
-    []
-  );
+  const getCellValue = useCallback((row: T, column: Column<T>): React.ReactNode => {
+    if (typeof column.accessor === 'function') {
+      return column.accessor(row);
+    }
+    const value = row[column.accessor];
+    if (value === null || value === undefined) return '-';
+    if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+    if (value instanceof Date) return value.toLocaleDateString();
+    return String(value);
+  }, []);
 
   const handleRowSelect = useCallback(
     (rowKey: string, isSelected: boolean) => {
@@ -115,7 +112,9 @@ export function VirtualizedTable<T>({
 
   if (data.length === 0) {
     return (
-      <div className={clsx('flex items-center justify-center py-12 text-muted-foreground', className)}>
+      <div
+        className={clsx('flex items-center justify-center py-12 text-muted-foreground', className)}
+      >
         {emptyMessage}
       </div>
     );
@@ -148,7 +147,7 @@ export function VirtualizedTable<T>({
           <div
             key={column.id}
             className={clsx(
-              'flex items-center px-4 py-3 text-sm font-medium text-surface-300',
+              'flex items-center px-4 py-3 text-sm font-medium text-surface-700',
               column.headerClassName
             )}
             style={{
@@ -163,11 +162,7 @@ export function VirtualizedTable<T>({
       </div>
 
       {/* Virtualized Body */}
-      <div
-        ref={parentRef}
-        className="overflow-auto"
-        style={{ maxHeight, contain: 'strict' }}
-      >
+      <div ref={parentRef} className="overflow-auto" style={{ maxHeight, contain: 'strict' }}>
         <div
           style={{
             height: `${totalSize}px`,
@@ -237,11 +232,12 @@ export function VirtualizedTable<T>({
             ? `${selectedIds.size} of ${data.length} selected`
             : `${data.length} items`}
         </span>
-        <span>Showing {virtualRows.length} of {data.length} rows</span>
+        <span>
+          Showing {virtualRows.length} of {data.length} rows
+        </span>
       </div>
     </div>
   );
 }
 
 export default VirtualizedTable;
-

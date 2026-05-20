@@ -27,12 +27,21 @@ const REPORT_TEMPLATES: ReportConfig[] = [
     description: 'Overview of compliance status across all frameworks',
     sections: [
       { id: '1', type: 'heading', title: 'Executive Summary' },
-      { id: '2', type: 'text', content: 'This report provides an overview of the organization\'s compliance posture.' },
+      {
+        id: '2',
+        type: 'text',
+        content: "This report provides an overview of the organization's compliance posture.",
+      },
       { id: '3', type: 'summary', dataSource: 'controls', fields: ['status'] },
       { id: '4', type: 'heading', title: 'Control Status by Category' },
       { id: '5', type: 'chart', dataSource: 'controls', chartType: 'bar', groupBy: 'category' },
       { id: '6', type: 'heading', title: 'Detailed Control List' },
-      { id: '7', type: 'table', dataSource: 'controls', fields: ['title', 'status', 'category', 'owner'] },
+      {
+        id: '7',
+        type: 'table',
+        dataSource: 'controls',
+        fields: ['title', 'status', 'category', 'owner'],
+      },
     ],
   },
   {
@@ -44,7 +53,12 @@ const REPORT_TEMPLATES: ReportConfig[] = [
       { id: '3', type: 'heading', title: 'Risks by Category' },
       { id: '4', type: 'chart', dataSource: 'risks', chartType: 'pie', groupBy: 'category' },
       { id: '5', type: 'heading', title: 'Risk Register' },
-      { id: '6', type: 'table', dataSource: 'risks', fields: ['title', 'riskLevel', 'likelihood', 'impact', 'owner'] },
+      {
+        id: '6',
+        type: 'table',
+        dataSource: 'risks',
+        fields: ['title', 'riskLevel', 'likelihood', 'impact', 'owner'],
+      },
     ],
   },
   {
@@ -55,7 +69,12 @@ const REPORT_TEMPLATES: ReportConfig[] = [
       { id: '2', type: 'summary', dataSource: 'vendors', fields: ['riskTier', 'status'] },
       { id: '3', type: 'chart', dataSource: 'vendors', chartType: 'donut', groupBy: 'riskTier' },
       { id: '4', type: 'heading', title: 'Vendor List' },
-      { id: '5', type: 'table', dataSource: 'vendors', fields: ['name', 'category', 'riskTier', 'status'] },
+      {
+        id: '5',
+        type: 'table',
+        dataSource: 'vendors',
+        fields: ['name', 'category', 'riskTier', 'status'],
+      },
     ],
   },
 ];
@@ -116,7 +135,7 @@ export default function ReportBuilderPage() {
       ...template,
       id: undefined,
       name: `${template.name} (Copy)`,
-      sections: template.sections.map(s => ({
+      sections: template.sections.map((s) => ({
         ...s,
         id: `section-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       })),
@@ -131,7 +150,7 @@ export default function ReportBuilderPage() {
       <div className="h-[calc(100vh-64px)]">
         <ReportBuilder
           initialConfig={editingReport as ReportConfig | undefined}
-          onSave={config => saveMutation.mutate(config)}
+          onSave={(config) => saveMutation.mutate(config)}
         />
       </div>
     );
@@ -144,7 +163,7 @@ export default function ReportBuilderPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-white">Report Builder</h1>
-          <p className="text-surface-400 mt-1">Create custom reports with your data</p>
+          <p className="text-surface-600 mt-1">Create custom reports with your data</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -167,7 +186,7 @@ export default function ReportBuilderPage() {
       {/* Reports Grid */}
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3].map(i => (
+          {[1, 2, 3].map((i) => (
             <div key={i} className="h-40 bg-surface-800 rounded-xl animate-pulse" />
           ))}
         </div>
@@ -175,7 +194,7 @@ export default function ReportBuilderPage() {
         <div className="text-center py-16 bg-surface-800/50 rounded-xl border border-surface-700">
           <DocumentTextIcon className="w-12 h-12 text-surface-600 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-white mb-2">No Custom Reports Yet</h3>
-          <p className="text-surface-400 mb-4">
+          <p className="text-surface-600 mb-4">
             Create your first custom report or start from a template
           </p>
           <div className="flex items-center justify-center gap-3">
@@ -195,7 +214,7 @@ export default function ReportBuilderPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {reports.map(report => (
+          {reports.map((report) => (
             <div
               key={report.id}
               className="p-5 bg-surface-800 rounded-xl border border-surface-700 hover:border-surface-600 transition-colors group"
@@ -207,7 +226,7 @@ export default function ReportBuilderPage() {
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={() => navigate(`/reports/builder/${report.id}`)}
-                    className="p-1.5 text-surface-400 hover:text-white rounded-lg hover:bg-surface-700"
+                    className="p-1.5 text-surface-600 hover:text-white rounded-lg hover:bg-surface-700"
                     title="Edit"
                   >
                     <PencilIcon className="w-4 h-4" />
@@ -218,19 +237,19 @@ export default function ReportBuilderPage() {
                         deleteMutation.mutate(report.id!);
                       }
                     }}
-                    className="p-1.5 text-red-400 hover:text-red-300 rounded-lg hover:bg-surface-700"
+                    className="p-1.5 text-red-600 hover:text-red-700 rounded-lg hover:bg-surface-700"
                     title="Delete"
                   >
                     <TrashIcon className="w-4 h-4" />
                   </button>
                 </div>
               </div>
-              
+
               <h3 className="font-medium text-white mb-1">{report.name}</h3>
               {report.description && (
-                <p className="text-sm text-surface-400 mb-3 line-clamp-2">{report.description}</p>
+                <p className="text-sm text-surface-600 mb-3 line-clamp-2">{report.description}</p>
               )}
-              
+
               <div className="flex items-center justify-between text-xs text-surface-500">
                 <span>{report.sections.length} sections</span>
                 {report.updatedAt && (
@@ -253,7 +272,7 @@ export default function ReportBuilderPage() {
         size="lg"
       >
         <div className="space-y-4">
-          <p className="text-surface-400">
+          <p className="text-surface-600">
             Start with a pre-built template and customize it to your needs.
           </p>
           <div className="grid gap-4">
@@ -264,10 +283,8 @@ export default function ReportBuilderPage() {
                 className="p-4 text-left bg-surface-800 hover:bg-surface-700 rounded-lg border border-surface-700 hover:border-surface-600 transition-colors"
               >
                 <h4 className="font-medium text-white mb-1">{template.name}</h4>
-                <p className="text-sm text-surface-400">{template.description}</p>
-                <p className="text-xs text-surface-500 mt-2">
-                  {template.sections.length} sections
-                </p>
+                <p className="text-sm text-surface-600">{template.description}</p>
+                <p className="text-xs text-surface-500 mt-2">{template.sections.length} sections</p>
               </button>
             ))}
           </div>
@@ -276,4 +293,3 @@ export default function ReportBuilderPage() {
     </div>
   );
 }
-

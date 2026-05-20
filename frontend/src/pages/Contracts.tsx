@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { PlusIcon } from '@heroicons/react/24/outline';
 import { contractsApi } from '@/lib/api';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import { SkeletonTable } from '@/components/Skeleton';
 import { EmptyState } from '@/components/EmptyState';
 
@@ -28,9 +28,7 @@ export default function Contracts() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-semibold text-white">Vendor Contracts</h1>
-            <p className="mt-1 text-surface-400">
-              Manage vendor contracts and agreements
-            </p>
+            <p className="mt-1 text-surface-600">Manage vendor contracts and agreements</p>
           </div>
         </div>
         <SkeletonTable rows={8} columns={6} />
@@ -44,9 +42,7 @@ export default function Contracts() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-white">Vendor Contracts</h1>
-          <p className="mt-1 text-surface-400">
-            Manage vendor contracts and agreements
-          </p>
+          <p className="mt-1 text-surface-600">Manage vendor contracts and agreements</p>
         </div>
         <Button
           onClick={() => navigate('/contracts/new')}
@@ -63,7 +59,7 @@ export default function Contracts() {
           title="No contracts yet"
           description="Get started by adding your first vendor contract to track agreements and renewals."
           action={{
-            label: "New Contract",
+            label: 'New Contract',
             onClick: () => navigate('/contracts/new'),
             icon: <PlusIcon className="w-5 h-5" />,
           }}
@@ -73,22 +69,22 @@ export default function Contracts() {
           <table className="w-full">
             <thead className="bg-surface-700/50 border-b border-surface-700">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-surface-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-surface-600 uppercase tracking-wider">
                   Contract
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-surface-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-surface-600 uppercase tracking-wider">
                   Vendor
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-surface-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-surface-600 uppercase tracking-wider">
                   Type
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-surface-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-surface-600 uppercase tracking-wider">
                   Value
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-surface-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-surface-600 uppercase tracking-wider">
                   End Date
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-surface-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-surface-600 uppercase tracking-wider">
                   Status
                 </th>
               </tr>
@@ -108,26 +104,30 @@ export default function Contracts() {
                       )}
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-surface-300">
-                    {contract.vendor.name}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-surface-300 capitalize">
+                  <td className="px-6 py-4 text-sm text-surface-700">{contract.vendor.name}</td>
+                  <td className="px-6 py-4 text-sm text-surface-700 capitalize">
                     {contract.contractType.replace('_', ' ')}
                   </td>
-                  <td className="px-6 py-4 text-sm text-surface-300">
+                  <td className="px-6 py-4 text-sm text-surface-700">
                     {formatCurrency(contract.contractValue, contract.currency)}
                   </td>
-                  <td className="px-6 py-4 text-sm text-surface-300">
+                  <td className="px-6 py-4 text-sm text-surface-700">
                     {new Date(contract.endDate).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full capitalize ${
-                      contract.status === 'active' ? 'bg-emerald-500/20 text-emerald-400' :
-                      contract.status === 'expired' ? 'bg-red-500/20 text-red-400' :
-                      contract.status === 'expiring_soon' ? 'bg-amber-500/20 text-amber-400' :
-                      contract.status === 'draft' ? 'bg-surface-600 text-surface-300' :
-                      'bg-blue-500/20 text-blue-400'
-                    }`}>
+                    <span
+                      className={`inline-flex px-2 py-1 text-xs font-medium rounded-full capitalize ${
+                        contract.status === 'active'
+                          ? 'bg-emerald-500/20 text-emerald-600'
+                          : contract.status === 'expired'
+                            ? 'bg-red-500/20 text-red-600'
+                            : contract.status === 'expiring_soon'
+                              ? 'bg-amber-500/20 text-amber-600'
+                              : contract.status === 'draft'
+                                ? 'bg-surface-600 text-surface-700'
+                                : 'bg-blue-500/20 text-blue-600'
+                      }`}
+                    >
                       {contract.status.replace('_', ' ')}
                     </span>
                   </td>

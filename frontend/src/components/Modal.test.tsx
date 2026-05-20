@@ -2,6 +2,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@/test/utils';
 import Modal from './Modal';
 
+import { Input } from '@/components/ui/Input';
+
 describe('Modal', () => {
   it('renders when open', () => {
     render(
@@ -9,7 +11,7 @@ describe('Modal', () => {
         <p>Modal content</p>
       </Modal>
     );
-    
+
     expect(screen.getByText('Test Modal')).toBeInTheDocument();
     expect(screen.getByText('Modal content')).toBeInTheDocument();
   });
@@ -20,20 +22,20 @@ describe('Modal', () => {
         <p>Modal content</p>
       </Modal>
     );
-    
+
     expect(screen.queryByText('Test Modal')).not.toBeInTheDocument();
     expect(screen.queryByText('Modal content')).not.toBeInTheDocument();
   });
 
   it('calls onClose when close button is clicked', () => {
     const handleClose = vi.fn();
-    
+
     render(
       <Modal isOpen={true} onClose={handleClose} title="Test Modal">
         <p>Modal content</p>
       </Modal>
     );
-    
+
     // Find and click the close button (usually an X icon)
     const closeButton = screen.getByRole('button', { name: /close/i });
     if (closeButton) {
@@ -48,16 +50,16 @@ describe('Modal', () => {
         <p>Content</p>
       </Modal>
     );
-    
+
     // Verify it renders
     expect(screen.getByText('Small Modal')).toBeInTheDocument();
-    
+
     rerender(
       <Modal isOpen={true} onClose={vi.fn()} title="Large Modal" size="lg">
         <p>Content</p>
       </Modal>
     );
-    
+
     expect(screen.getByText('Large Modal')).toBeInTheDocument();
   });
 
@@ -65,18 +67,14 @@ describe('Modal', () => {
     render(
       <Modal isOpen={true} onClose={vi.fn()} title="Test Modal">
         <form data-testid="test-form">
-          <input type="text" placeholder="Name" />
+          <Input type="text" placeholder="Name" />
           <button type="submit">Submit</button>
         </form>
       </Modal>
     );
-    
+
     expect(screen.getByTestId('test-form')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Name')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Submit/i })).toBeInTheDocument();
   });
 });
-
-
-
-

@@ -14,6 +14,10 @@ import {
 } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 
+import { Input } from '@/components/ui/Input';
+
+import { Button } from '@/components/ui/Button';
+
 interface ConfigFile {
   id: string;
   path: string;
@@ -405,8 +409,8 @@ export default function ConfigIDE({ workspaceId }: Props) {
     return (
       <div className="p-6">
         <div className="bg-red-600/20 border border-red-600/50 rounded-lg p-4">
-          <p className="text-red-400">Error in ConfigIDE component</p>
-          <p className="text-red-300 text-sm mt-2">{componentError.message}</p>
+          <p className="text-red-600">Error in ConfigIDE component</p>
+          <p className="text-red-700 text-sm mt-2">{componentError.message}</p>
           <button
             onClick={() => {
               setComponentError(null);
@@ -437,7 +441,7 @@ export default function ConfigIDE({ workspaceId }: Props) {
                   setIsEditing(true);
                 }
               }}
-              className="p-1 text-surface-400 hover:text-surface-200"
+              className="p-1 text-surface-600 hover:text-surface-200"
               title="New File"
             >
               <PlusIcon className="w-4 h-4" />
@@ -446,22 +450,22 @@ export default function ConfigIDE({ workspaceId }: Props) {
         </div>
 
         {filesLoading ? (
-          <div className="p-4 text-surface-400 text-sm flex items-center gap-2">
+          <div className="p-4 text-surface-600 text-sm flex items-center gap-2">
             <ArrowPathIcon className="w-4 h-4 animate-spin" />
             <span>Loading files...</span>
           </div>
         ) : filesError ? (
-          <div className="p-4 text-red-400 text-sm">
+          <div className="p-4 text-red-600 text-sm">
             Error loading files. Please check the console for details.
           </div>
         ) : fileTree.length === 0 ? (
-          <div className="p-4 text-surface-400 text-sm space-y-3">
-            <div className="text-surface-300">No Terraform files yet.</div>
+          <div className="p-4 text-surface-600 text-sm space-y-3">
+            <div className="text-surface-700">No Terraform files yet.</div>
             <p className="text-xs">
               Generate Terraform files from your current controls, frameworks, policies, and other
               GRC resources.
             </p>
-            <button
+            <Button
               onClick={async () => {
                 try {
                   toast.loading(
@@ -494,11 +498,12 @@ export default function ConfigIDE({ workspaceId }: Props) {
                   // Don't disable the module on error - just show the error
                 }
               }}
-              className="btn btn-primary btn-sm flex items-center gap-2"
+              className="flex items-center gap-2"
+              variant="primary"
             >
               <ArrowPathIcon className="w-4 h-4" />
               Generate Terraform Files
-            </button>
+            </Button>
           </div>
         ) : (
           <div className="p-2">
@@ -508,7 +513,7 @@ export default function ConfigIDE({ workspaceId }: Props) {
                   <div>
                     <button
                       onClick={() => toggleFolder(node.path)}
-                      className="w-full flex items-center gap-2 px-2 py-1 text-sm text-surface-300 hover:bg-surface-700 rounded"
+                      className="w-full flex items-center gap-2 px-2 py-1 text-sm text-surface-700 hover:bg-surface-700 rounded"
                     >
                       <FolderIcon className="w-4 h-4" />
                       <span>{node.name}</span>
@@ -523,7 +528,7 @@ export default function ConfigIDE({ workspaceId }: Props) {
                               'w-full flex items-center gap-2 px-2 py-1 text-sm rounded',
                               selectedFile === child.path
                                 ? 'bg-brand-500/20 text-brand-300'
-                                : 'text-surface-400 hover:bg-surface-700'
+                                : 'text-surface-600 hover:bg-surface-700'
                             )}
                           >
                             <DocumentTextIcon className="w-4 h-4" />
@@ -540,7 +545,7 @@ export default function ConfigIDE({ workspaceId }: Props) {
                       'w-full flex items-center gap-2 px-2 py-1 text-sm rounded',
                       selectedFile === node.path
                         ? 'bg-brand-500/20 text-brand-300'
-                        : 'text-surface-400 hover:bg-surface-700'
+                        : 'text-surface-600 hover:bg-surface-700'
                     )}
                   >
                     <DocumentTextIcon className="w-4 h-4" />
@@ -552,7 +557,6 @@ export default function ConfigIDE({ workspaceId }: Props) {
           </div>
         )}
       </div>
-
       {/* Editor Area */}
       <div className="flex-1 flex flex-col">
         {selectedFile ? (
@@ -560,13 +564,13 @@ export default function ConfigIDE({ workspaceId }: Props) {
             {/* Editor Header */}
             <div className="h-12 border-b border-surface-700 bg-surface-800 flex items-center justify-between px-4">
               <div className="flex items-center gap-2">
-                <DocumentTextIcon className="w-5 h-5 text-surface-400" />
+                <DocumentTextIcon className="w-5 h-5 text-surface-600" />
                 <span className="text-sm font-medium text-surface-200">{selectedFile}</span>
                 {fileData && <span className="text-xs text-surface-500">v{fileData.version}</span>}
-                {isEditing && <span className="text-xs text-yellow-400">● Modified</span>}
+                {isEditing && <span className="text-xs text-yellow-600">● Modified</span>}
               </div>
               <div className="flex items-center gap-2">
-                <button
+                <Button
                   onClick={() => {
                     if (
                       confirm(
@@ -577,16 +581,17 @@ export default function ConfigIDE({ workspaceId }: Props) {
                     }
                   }}
                   disabled={refreshMutation.isPending}
-                  className="btn btn-secondary btn-sm flex items-center gap-1"
+                  className="flex items-center gap-1"
                   title="Regenerate Terraform files from your current GRC data (controls, frameworks, policies, etc.)"
+                  variant="secondary"
                 >
                   <ArrowPathIcon
                     className={clsx('w-4 h-4', refreshMutation.isPending && 'animate-spin')}
                   />
                   {refreshMutation.isPending ? 'Syncing...' : 'Sync from DB'}
-                </button>
+                </Button>
                 <div className="w-px h-6 bg-surface-600" />
-                <input
+                <Input
                   type="text"
                   placeholder="Commit message (optional)"
                   value={commitMessage}
@@ -594,30 +599,33 @@ export default function ConfigIDE({ workspaceId }: Props) {
                   className="px-2 py-1 text-xs bg-surface-700 border border-surface-600 rounded text-surface-200 placeholder-surface-500"
                   style={{ width: '200px' }}
                 />
-                <button
+                <Button
                   onClick={handlePreview}
                   disabled={previewMutation.isPending || !isEditing}
-                  className="btn btn-secondary btn-sm flex items-center gap-1"
+                  className="flex items-center gap-1"
+                  variant="secondary"
                 >
                   <EyeIcon className="w-4 h-4" />
                   Preview
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={handleSave}
                   disabled={saveMutation.isPending || !isEditing}
-                  className="btn btn-secondary btn-sm flex items-center gap-1"
+                  className="flex items-center gap-1"
+                  variant="secondary"
                 >
                   <CheckCircleIcon className="w-4 h-4" />
                   Save
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={handleApply}
                   disabled={applyMutation.isPending || !isEditing}
-                  className="btn btn-primary btn-sm flex items-center gap-1"
+                  className="flex items-center gap-1"
+                  variant="primary"
                 >
                   <PlayIcon className="w-4 h-4" />
                   Apply
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -625,7 +633,7 @@ export default function ConfigIDE({ workspaceId }: Props) {
             <div className="flex-1 relative">
               {fileLoading ? (
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-surface-400">Loading...</div>
+                  <div className="text-surface-600">Loading...</div>
                 </div>
               ) : (
                 <Editor
@@ -655,21 +663,21 @@ export default function ConfigIDE({ workspaceId }: Props) {
                 </div>
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center gap-2">
-                    <span className="text-green-400">+{previewData.toCreate}</span>
-                    <span className="text-surface-400">to create</span>
+                    <span className="text-green-600">+{previewData.toCreate}</span>
+                    <span className="text-surface-600">to create</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-yellow-400">~{previewData.toUpdate}</span>
-                    <span className="text-surface-400">to update</span>
+                    <span className="text-yellow-600">~{previewData.toUpdate}</span>
+                    <span className="text-surface-600">to update</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-red-400">-{previewData.toDelete}</span>
-                    <span className="text-surface-400">to delete</span>
+                    <span className="text-red-600">-{previewData.toDelete}</span>
+                    <span className="text-surface-600">to delete</span>
                   </div>
                   {previewData.warnings && previewData.warnings.length > 0 && (
                     <div className="mt-2">
-                      <div className="text-yellow-400 font-medium">Warnings:</div>
-                      <ul className="list-disc list-inside text-surface-400">
+                      <div className="text-yellow-600 font-medium">Warnings:</div>
+                      <ul className="list-disc list-inside text-surface-600">
                         {previewData.warnings.map((w: string, i: number) => (
                           <li key={i}>{w}</li>
                         ))}
@@ -678,8 +686,8 @@ export default function ConfigIDE({ workspaceId }: Props) {
                   )}
                   {previewData.errors && previewData.errors.length > 0 && (
                     <div className="mt-2">
-                      <div className="text-red-400 font-medium">Errors:</div>
-                      <ul className="list-disc list-inside text-surface-400">
+                      <div className="text-red-600 font-medium">Errors:</div>
+                      <ul className="list-disc list-inside text-surface-600">
                         {previewData.errors.map((e: string, i: number) => (
                           <li key={i}>{e}</li>
                         ))}
@@ -691,7 +699,7 @@ export default function ConfigIDE({ workspaceId }: Props) {
             )}
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center text-surface-400">
+          <div className="flex-1 flex items-center justify-center text-surface-600">
             <div className="text-center">
               <DocumentTextIcon className="w-12 h-12 mx-auto mb-4 opacity-50" />
               <p>Select a file from the explorer to edit</p>

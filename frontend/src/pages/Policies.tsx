@@ -11,17 +11,23 @@ import {
   ArrowUpTrayIcon,
 } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import { SkeletonTable } from '@/components/Skeleton';
 import { ExportDropdown } from '@/components/ExportDropdown';
 import { exportConfigs } from '@/lib/export';
 
+import { Textarea } from '@/components/ui/Textarea';
+
+import { Input } from '@/components/ui/Input';
+
+import { SelectNative } from '@/components/ui/SelectNative';
+
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  draft: { label: 'Draft', color: 'badge-neutral' },
-  in_review: { label: 'In Review', color: 'badge-warning' },
-  approved: { label: 'Approved', color: 'badge-success' },
-  published: { label: 'Published', color: 'badge-info' },
-  retired: { label: 'Retired', color: 'badge-danger' },
+  draft: { label: 'Draft', color: '' },
+  in_review: { label: 'In Review', color: '' },
+  approved: { label: 'Approved', color: '' },
+  published: { label: 'Published', color: '' },
+  retired: { label: 'Retired', color: '' },
 };
 
 const CATEGORY_OPTIONS = [
@@ -60,7 +66,7 @@ export default function Policies() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-surface-100">Policy Center</h1>
-          <p className="text-surface-400 mt-1">
+          <p className="text-surface-600 mt-1">
             Manage your organization's policies and track review cycles
           </p>
         </div>
@@ -77,32 +83,30 @@ export default function Policies() {
           </Button>
         </div>
       </div>
-
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="card p-4">
-          <p className="text-sm text-surface-400">Total Policies</p>
+          <p className="text-sm text-surface-600">Total Policies</p>
           <p className="text-2xl font-bold text-surface-100 mt-1">{stats?.total || 0}</p>
         </div>
         <div className="card p-4">
-          <p className="text-sm text-surface-400">Approved</p>
-          <p className="text-2xl font-bold text-green-400 mt-1">{stats?.approved || 0}</p>
+          <p className="text-sm text-surface-600">Approved</p>
+          <p className="text-2xl font-bold text-green-600 mt-1">{stats?.approved || 0}</p>
         </div>
         <div className="card p-4">
-          <p className="text-sm text-surface-400">Pending Review</p>
-          <p className="text-2xl font-bold text-yellow-400 mt-1">{stats?.inReview || 0}</p>
+          <p className="text-sm text-surface-600">Pending Review</p>
+          <p className="text-2xl font-bold text-yellow-600 mt-1">{stats?.inReview || 0}</p>
         </div>
         <div className="card p-4">
-          <p className="text-sm text-surface-400">Overdue Review</p>
-          <p className="text-2xl font-bold text-red-400 mt-1">{stats?.overdueReview || 0}</p>
+          <p className="text-sm text-surface-600">Overdue Review</p>
+          <p className="text-2xl font-bold text-red-600 mt-1">{stats?.overdueReview || 0}</p>
         </div>
       </div>
-
       {/* Search */}
       <div className="card p-4">
         <div className="relative">
           <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-500" />
-          <input
+          <Input
             type="text"
             placeholder="Search policies..."
             value={search}
@@ -111,7 +115,6 @@ export default function Policies() {
           />
         </div>
       </div>
-
       {/* Policies List */}
       <div className="card overflow-hidden">
         {isLoading ? (
@@ -147,26 +150,24 @@ export default function Policies() {
                           className="flex items-center gap-3 hover:text-brand-400"
                         >
                           <div className="p-2 bg-surface-800 rounded-lg">
-                            <DocumentTextIcon className="w-5 h-5 text-surface-400" />
+                            <DocumentTextIcon className="w-5 h-5 text-surface-600" />
                           </div>
                           <span className="font-medium text-surface-100">{policy.title}</span>
                         </Link>
                       </td>
                       <td>
-                        <span className="capitalize text-surface-300">
+                        <span className="capitalize text-surface-700">
                           {policy.category?.replace(/_/g, ' ')}
                         </span>
                       </td>
                       <td>
-                        <span className="font-mono text-surface-400">v{policy.version}</span>
+                        <span className="font-mono text-surface-600">v{policy.version}</span>
                       </td>
                       <td>
-                        <span className={clsx('badge', statusConfig.color)}>
-                          {statusConfig.label}
-                        </span>
+                        <span className={clsx('', statusConfig.color)}>{statusConfig.label}</span>
                       </td>
                       <td>
-                        <span className="text-surface-300">
+                        <span className="text-surface-700">
                           {policy.owner?.displayName || 'Unassigned'}
                         </span>
                       </td>
@@ -174,8 +175,8 @@ export default function Policies() {
                         {policy.nextReviewDue ? (
                           <span
                             className={clsx(
-                              'text-surface-400',
-                              new Date(policy.nextReviewDue) < new Date() && 'text-red-400'
+                              'text-surface-600',
+                              new Date(policy.nextReviewDue) < new Date() && 'text-red-600'
                             )}
                           >
                             {new Date(policy.nextReviewDue).toLocaleDateString()}
@@ -192,7 +193,6 @@ export default function Policies() {
           </div>
         )}
       </div>
-
       {/* Upload Modal */}
       {isUploadOpen && (
         <UploadPolicyModal
@@ -208,13 +208,7 @@ export default function Policies() {
   );
 }
 
-function UploadPolicyModal({
-  onClose,
-  onSuccess,
-}: {
-  onClose: () => void;
-  onSuccess: () => void;
-}) {
+function UploadPolicyModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -264,12 +258,12 @@ function UploadPolicyModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 grid place-items-center">
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
       <div className="relative bg-surface-900 border border-surface-800 rounded-xl w-full max-w-lg mx-4 p-6 animate-slide-up">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-semibold text-surface-100">Upload Policy</h2>
-          <button onClick={onClose} className="text-surface-400 hover:text-surface-100">
+          <button onClick={onClose} className="text-surface-600 hover:text-surface-100">
             <XMarkIcon className="w-5 h-5" />
           </button>
         </div>
@@ -291,7 +285,7 @@ function UploadPolicyModal({
           >
             {file ? (
               <div className="flex items-center justify-center gap-3">
-                <DocumentTextIcon className="w-8 h-8 text-green-400" />
+                <DocumentTextIcon className="w-8 h-8 text-green-600" />
                 <div className="text-left">
                   <p className="text-surface-100 font-medium">{file.name}</p>
                   <p className="text-surface-500 text-sm">
@@ -300,7 +294,7 @@ function UploadPolicyModal({
                 </div>
                 <button
                   onClick={() => setFile(null)}
-                  className="ml-2 text-surface-400 hover:text-red-400"
+                  className="ml-2 text-surface-600 hover:text-red-600"
                 >
                   <XMarkIcon className="w-5 h-5" />
                 </button>
@@ -308,7 +302,7 @@ function UploadPolicyModal({
             ) : (
               <>
                 <ArrowUpTrayIcon className="w-10 h-10 text-surface-500 mx-auto mb-3" />
-                <p className="text-surface-300 mb-2">
+                <p className="text-surface-700 mb-2">
                   Drag and drop a file here, or click to browse
                 </p>
                 <input
@@ -318,7 +312,7 @@ function UploadPolicyModal({
                   id="policy-file"
                   accept=".pdf,.doc,.docx,.txt"
                 />
-                <label htmlFor="policy-file" className="btn-outline cursor-pointer">
+                <label htmlFor="policy-file" className="cursor-pointer">
                   Choose File
                 </label>
               </>
@@ -327,7 +321,7 @@ function UploadPolicyModal({
 
           <div>
             <label className="label">Title *</label>
-            <input
+            <Input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -339,7 +333,7 @@ function UploadPolicyModal({
 
           <div>
             <label className="label">Description</label>
-            <textarea
+            <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="input mt-1"
@@ -351,7 +345,7 @@ function UploadPolicyModal({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="label">Category *</label>
-              <select
+              <SelectNative
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 className="input mt-1"
@@ -361,11 +355,11 @@ function UploadPolicyModal({
                     {opt.label}
                   </option>
                 ))}
-              </select>
+              </SelectNative>
             </div>
             <div>
               <label className="label">Version</label>
-              <input
+              <Input
                 type="text"
                 value={version}
                 onChange={(e) => setVersion(e.target.value)}

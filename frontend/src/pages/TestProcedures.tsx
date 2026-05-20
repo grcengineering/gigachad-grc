@@ -10,9 +10,15 @@ import {
   ClockIcon,
   PlayIcon,
 } from '@heroicons/react/24/outline';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import { useToast } from '@/hooks/useToast';
 import clsx from 'clsx';
+
+import { Textarea } from '@/components/ui/Textarea';
+
+import { Input } from '@/components/ui/Input';
+
+import { SelectNative } from '@/components/ui/SelectNative';
 
 interface TestProcedure {
   id: string;
@@ -36,11 +42,14 @@ interface Stats {
   byType: { type: string; count: number }[];
 }
 
-const conclusionConfig: Record<string, { icon: typeof CheckCircleIcon; color: string; label: string }> = {
-  effective: { icon: CheckCircleIcon, color: 'text-green-400', label: 'Effective' },
-  partially_effective: { icon: ClockIcon, color: 'text-yellow-400', label: 'Partially Effective' },
-  ineffective: { icon: XCircleIcon, color: 'text-red-400', label: 'Ineffective' },
-  not_applicable: { icon: ClockIcon, color: 'text-surface-400', label: 'N/A' },
+const conclusionConfig: Record<
+  string,
+  { icon: typeof CheckCircleIcon; color: string; label: string }
+> = {
+  effective: { icon: CheckCircleIcon, color: 'text-green-600', label: 'Effective' },
+  partially_effective: { icon: ClockIcon, color: 'text-yellow-600', label: 'Partially Effective' },
+  ineffective: { icon: XCircleIcon, color: 'text-red-600', label: 'Ineffective' },
+  not_applicable: { icon: ClockIcon, color: 'text-surface-600', label: 'N/A' },
 };
 
 const testTypeLabels: Record<string, string> = {
@@ -132,7 +141,13 @@ export default function TestProcedures() {
       queryClient.invalidateQueries({ queryKey: ['test-procedures-stats'] });
       toast.success('Test procedure created');
       setShowCreateModal(false);
-      setCreateForm({ title: '', testType: 'inspection', testMethod: '', sampleSize: 25, controlId: '' });
+      setCreateForm({
+        title: '',
+        testType: 'inspection',
+        testMethod: '',
+        sampleSize: 25,
+        controlId: '',
+      });
     },
     onError: () => {
       toast.error('Failed to create test procedure');
@@ -155,7 +170,7 @@ export default function TestProcedures() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-white">Test Procedures</h1>
-          <p className="text-surface-400 mt-1">
+          <p className="text-surface-600 mt-1">
             Control testing with sampling and effectiveness assessment
           </p>
         </div>
@@ -164,33 +179,31 @@ export default function TestProcedures() {
           New Procedure
         </Button>
       </div>
-
       {/* Stats */}
       {stats && (
         <div className="grid grid-cols-4 gap-4">
           <div className="bg-surface-800 rounded-lg p-4 border border-surface-700">
-            <p className="text-surface-400 text-sm">Total Procedures</p>
+            <p className="text-surface-600 text-sm">Total Procedures</p>
             <p className="text-3xl font-bold text-white">{stats.total}</p>
           </div>
           <div className="bg-surface-800 rounded-lg p-4 border border-surface-700">
-            <p className="text-surface-400 text-sm">Effectiveness Rate</p>
-            <p className="text-3xl font-bold text-green-400">{stats.effectivenessRate}%</p>
+            <p className="text-surface-600 text-sm">Effectiveness Rate</p>
+            <p className="text-3xl font-bold text-green-600">{stats.effectivenessRate}%</p>
           </div>
           <div className="bg-surface-800 rounded-lg p-4 border border-surface-700">
-            <p className="text-surface-400 text-sm">Completed</p>
+            <p className="text-surface-600 text-sm">Completed</p>
             <p className="text-3xl font-bold text-white">
-              {stats.byStatus.find(s => s.status === 'completed')?.count || 0}
+              {stats.byStatus.find((s) => s.status === 'completed')?.count || 0}
             </p>
           </div>
           <div className="bg-surface-800 rounded-lg p-4 border border-surface-700">
-            <p className="text-surface-400 text-sm">Pending</p>
-            <p className="text-3xl font-bold text-yellow-400">
-              {stats.byStatus.find(s => s.status === 'pending')?.count || 0}
+            <p className="text-surface-600 text-sm">Pending</p>
+            <p className="text-3xl font-bold text-yellow-600">
+              {stats.byStatus.find((s) => s.status === 'pending')?.count || 0}
             </p>
           </div>
         </div>
       )}
-
       {/* Procedures List */}
       {isLoading ? (
         <div className="animate-pulse space-y-4">
@@ -221,7 +234,7 @@ export default function TestProcedures() {
                         </span>
                         <h3 className="font-semibold text-white">{proc.title}</h3>
                       </div>
-                      <div className="flex items-center gap-4 mt-2 text-sm text-surface-400">
+                      <div className="flex items-center gap-4 mt-2 text-sm text-surface-600">
                         <span>{testTypeLabels[proc.testType] || proc.testType}</span>
                         {proc.sampleSize && <span>Sample: {proc.sampleSize}</span>}
                         {proc.testedByUser && (
@@ -239,40 +252,39 @@ export default function TestProcedures() {
                       </span>
                     )}
                     {proc.status === 'pending' && !isRecording && (
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => setRecordingId(proc.id)}
-                      >
+                      <Button variant="secondary" size="sm" onClick={() => setRecordingId(proc.id)}>
                         <PlayIcon className="h-4 w-4 mr-1" />
                         Record Result
                       </Button>
                     )}
                   </div>
                 </div>
-
                 {/* Record Result Form */}
                 {isRecording && (
                   <div className="mt-4 pt-4 border-t border-surface-700">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-surface-400 mb-1">
+                        <label className="block text-sm font-medium text-surface-600 mb-1">
                           Actual Result
                         </label>
-                        <textarea
+                        <Textarea
                           value={resultForm.actualResult}
-                          onChange={(e) => setResultForm({ ...resultForm, actualResult: e.target.value })}
+                          onChange={(e) =>
+                            setResultForm({ ...resultForm, actualResult: e.target.value })
+                          }
                           className="w-full bg-surface-900 border border-surface-600 rounded-lg px-3 py-2 text-white"
                           rows={3}
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-surface-400 mb-1">
+                        <label className="block text-sm font-medium text-surface-600 mb-1">
                           Deviations Noted
                         </label>
-                        <textarea
+                        <Textarea
                           value={resultForm.deviationsNoted}
-                          onChange={(e) => setResultForm({ ...resultForm, deviationsNoted: e.target.value })}
+                          onChange={(e) =>
+                            setResultForm({ ...resultForm, deviationsNoted: e.target.value })
+                          }
                           className="w-full bg-surface-900 border border-surface-600 rounded-lg px-3 py-2 text-white"
                           rows={3}
                         />
@@ -280,28 +292,32 @@ export default function TestProcedures() {
                     </div>
                     <div className="grid grid-cols-2 gap-4 mt-4">
                       <div>
-                        <label className="block text-sm font-medium text-surface-400 mb-1">
+                        <label className="block text-sm font-medium text-surface-600 mb-1">
                           Conclusion
                         </label>
-                        <select
+                        <SelectNative
                           value={resultForm.conclusion}
-                          onChange={(e) => setResultForm({ ...resultForm, conclusion: e.target.value })}
+                          onChange={(e) =>
+                            setResultForm({ ...resultForm, conclusion: e.target.value })
+                          }
                           className="w-full bg-surface-900 border border-surface-600 rounded-lg px-3 py-2 text-white"
                         >
                           <option value="effective">Effective</option>
                           <option value="partially_effective">Partially Effective</option>
                           <option value="ineffective">Ineffective</option>
                           <option value="not_applicable">Not Applicable</option>
-                        </select>
+                        </SelectNative>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-surface-400 mb-1">
+                        <label className="block text-sm font-medium text-surface-600 mb-1">
                           Conclusion Rationale
                         </label>
-                        <input
+                        <Input
                           type="text"
                           value={resultForm.conclusionRationale}
-                          onChange={(e) => setResultForm({ ...resultForm, conclusionRationale: e.target.value })}
+                          onChange={(e) =>
+                            setResultForm({ ...resultForm, conclusionRationale: e.target.value })
+                          }
                           className="w-full bg-surface-900 border border-surface-600 rounded-lg px-3 py-2 text-white"
                         />
                       </div>
@@ -310,9 +326,7 @@ export default function TestProcedures() {
                       <Button variant="ghost" onClick={() => setRecordingId(null)}>
                         Cancel
                       </Button>
-                      <Button onClick={() => handleRecordResult(proc.id)}>
-                        Save Result
-                      </Button>
+                      <Button onClick={() => handleRecordResult(proc.id)}>Save Result</Button>
                     </div>
                   </div>
                 )}
@@ -324,17 +338,16 @@ export default function TestProcedures() {
             <div className="text-center py-12 bg-surface-800 rounded-lg border border-surface-700">
               <BeakerIcon className="h-12 w-12 text-surface-500 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-white">No test procedures yet</h3>
-              <p className="text-surface-400 mt-2">
+              <p className="text-surface-600 mt-2">
                 Create test procedures to document control testing.
               </p>
             </div>
           )}
         </div>
       )}
-
       {/* Create Test Procedure Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
           <div className="bg-surface-800 rounded-lg p-6 w-full max-w-lg border border-surface-700">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-white">Create Test Procedure</h2>
@@ -342,19 +355,17 @@ export default function TestProcedures() {
                 onClick={() => setShowCreateModal(false)}
                 className="p-1 hover:bg-surface-700 rounded"
               >
-                <XMarkIcon className="h-5 w-5 text-surface-400" />
+                <XMarkIcon className="h-5 w-5 text-surface-600" />
               </button>
             </div>
 
             <form onSubmit={handleCreateSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-1">
-                  Title *
-                </label>
-                <input
+                <label className="block text-sm font-medium text-surface-700 mb-1">Title *</label>
+                <Input
                   type="text"
                   value={createForm.title}
-                  onChange={(e) => setCreateForm(prev => ({ ...prev, title: e.target.value }))}
+                  onChange={(e) => setCreateForm((prev) => ({ ...prev, title: e.target.value }))}
                   className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
                   placeholder="Procedure title"
                 />
@@ -362,29 +373,36 @@ export default function TestProcedures() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-surface-300 mb-1">
+                  <label className="block text-sm font-medium text-surface-700 mb-1">
                     Test Type
                   </label>
-                  <select
+                  <SelectNative
                     value={createForm.testType}
-                    onChange={(e) => setCreateForm(prev => ({ ...prev, testType: e.target.value }))}
+                    onChange={(e) =>
+                      setCreateForm((prev) => ({ ...prev, testType: e.target.value }))
+                    }
                     className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
                   >
                     <option value="inquiry">Inquiry</option>
                     <option value="observation">Observation</option>
                     <option value="inspection">Inspection</option>
                     <option value="reperformance">Reperformance</option>
-                  </select>
+                  </SelectNative>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-surface-300 mb-1">
+                  <label className="block text-sm font-medium text-surface-700 mb-1">
                     Sample Size
                   </label>
-                  <input
+                  <Input
                     type="number"
                     value={createForm.sampleSize}
-                    onChange={(e) => setCreateForm(prev => ({ ...prev, sampleSize: parseInt(e.target.value) || 0 }))}
+                    onChange={(e) =>
+                      setCreateForm((prev) => ({
+                        ...prev,
+                        sampleSize: parseInt(e.target.value) || 0,
+                      }))
+                    }
                     className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
                     min="1"
                   />
@@ -392,23 +410,21 @@ export default function TestProcedures() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-1">
+                <label className="block text-sm font-medium text-surface-700 mb-1">
                   Test Method
                 </label>
-                <textarea
+                <Textarea
                   value={createForm.testMethod}
-                  onChange={(e) => setCreateForm(prev => ({ ...prev, testMethod: e.target.value }))}
+                  onChange={(e) =>
+                    setCreateForm((prev) => ({ ...prev, testMethod: e.target.value }))
+                  }
                   className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white h-24"
                   placeholder="Describe the testing methodology..."
                 />
               </div>
 
               <div className="flex justify-end gap-3 pt-4">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => setShowCreateModal(false)}
-                >
+                <Button type="button" variant="secondary" onClick={() => setShowCreateModal(false)}>
                   Cancel
                 </Button>
                 <Button
@@ -425,4 +441,3 @@ export default function TestProcedures() {
     </div>
   );
 }
-

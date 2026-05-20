@@ -20,6 +20,8 @@ import {
 import clsx from 'clsx';
 import { auditApi } from '@/lib/api';
 
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface AuditLogEntry {
   id: string;
   action: string;
@@ -30,10 +32,12 @@ interface AuditLogEntry {
   userId?: string;
   userName?: string;
   userEmail?: string;
-  changes?: {
-    before?: Record<string, any>;
-    after?: Record<string, any>;
-  } | Record<string, any>;
+  changes?:
+    | {
+        before?: Record<string, any>;
+        after?: Record<string, any>;
+      }
+    | Record<string, any>;
   metadata?: Record<string, any>;
   timestamp: string;
   createdAt: string;
@@ -63,18 +67,18 @@ const ACTION_ICONS: Record<string, React.ComponentType<{ className?: string }>> 
 };
 
 const ACTION_COLORS: Record<string, { text: string; bg: string; border: string }> = {
-  created: { text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/30' },
-  uploaded: { text: 'text-cyan-400', bg: 'bg-cyan-500/10', border: 'border-cyan-500/30' },
-  updated: { text: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/30' },
-  deleted: { text: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/30' },
-  linked: { text: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/30' },
-  unlinked: { text: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/30' },
-  reviewed: { text: 'text-teal-400', bg: 'bg-teal-500/10', border: 'border-teal-500/30' },
-  approved: { text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/30' },
-  rejected: { text: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/30' },
-  synced: { text: 'text-indigo-400', bg: 'bg-indigo-500/10', border: 'border-indigo-500/30' },
-  viewed: { text: 'text-surface-400', bg: 'bg-surface-500/10', border: 'border-surface-500/30' },
-  default: { text: 'text-surface-400', bg: 'bg-surface-500/10', border: 'border-surface-500/30' },
+  created: { text: 'text-emerald-600', bg: 'bg-emerald-500/10', border: 'border-emerald-500/30' },
+  uploaded: { text: 'text-cyan-600', bg: 'bg-cyan-500/10', border: 'border-cyan-500/30' },
+  updated: { text: 'text-blue-600', bg: 'bg-blue-500/10', border: 'border-blue-500/30' },
+  deleted: { text: 'text-red-600', bg: 'bg-red-500/10', border: 'border-red-500/30' },
+  linked: { text: 'text-purple-600', bg: 'bg-purple-500/10', border: 'border-purple-500/30' },
+  unlinked: { text: 'text-orange-600', bg: 'bg-orange-500/10', border: 'border-orange-500/30' },
+  reviewed: { text: 'text-teal-600', bg: 'bg-teal-500/10', border: 'border-teal-500/30' },
+  approved: { text: 'text-emerald-600', bg: 'bg-emerald-500/10', border: 'border-emerald-500/30' },
+  rejected: { text: 'text-red-600', bg: 'bg-red-500/10', border: 'border-red-500/30' },
+  synced: { text: 'text-indigo-600', bg: 'bg-indigo-500/10', border: 'border-indigo-500/30' },
+  viewed: { text: 'text-surface-600', bg: 'bg-surface-500/10', border: 'border-surface-500/30' },
+  default: { text: 'text-surface-600', bg: 'bg-surface-500/10', border: 'border-surface-500/30' },
 };
 
 // Fields to exclude from diff display
@@ -185,10 +189,7 @@ function getChangedFields(
   if (!before && !after) return [];
 
   const changes: { field: string; oldValue: any; newValue: any }[] = [];
-  const allKeys = new Set([
-    ...Object.keys(before || {}),
-    ...Object.keys(after || {}),
-  ]);
+  const allKeys = new Set([...Object.keys(before || {}), ...Object.keys(after || {})]);
 
   for (const key of allKeys) {
     if (EXCLUDED_FIELDS.includes(key)) continue;
@@ -234,18 +235,14 @@ function ChangesDiff({
           <div className="space-y-1.5">
             {fields.slice(0, 10).map(([field, value]) => (
               <div key={field} className="flex items-start gap-2 text-sm">
-                <span className="text-surface-400 min-w-[120px]">
+                <span className="text-surface-600 min-w-[120px]">
                   {FIELD_LABELS[field] || field}:
                 </span>
-                <span className="text-emerald-400">
-                  {formatFieldValue(value, field)}
-                </span>
+                <span className="text-emerald-600">{formatFieldValue(value, field)}</span>
               </div>
             ))}
             {fields.length > 10 && (
-              <p className="text-xs text-surface-500 italic">
-                + {fields.length - 10} more fields
-              </p>
+              <p className="text-xs text-surface-500 italic">+ {fields.length - 10} more fields</p>
             )}
           </div>
         </div>
@@ -264,17 +261,15 @@ function ChangesDiff({
             key={field}
             className="flex flex-col gap-1 p-2 rounded-lg bg-surface-800/50 border border-surface-700"
           >
-            <span className="text-xs text-surface-400 font-medium">
+            <span className="text-xs text-surface-600 font-medium">
               {FIELD_LABELS[field] || field}
             </span>
             <div className="flex items-center gap-2 text-sm flex-wrap">
-              <span className="text-red-400 line-through opacity-75">
+              <span className="text-red-600 line-through opacity-75">
                 {formatFieldValue(oldValue, field)}
               </span>
               <span className="text-surface-500">→</span>
-              <span className="text-emerald-400">
-                {formatFieldValue(newValue, field)}
-              </span>
+              <span className="text-emerald-600">{formatFieldValue(newValue, field)}</span>
             </div>
           </div>
         ))}
@@ -291,13 +286,19 @@ function AuditLogItem({ entry }: { entry: AuditLogEntry }) {
   const colors = ACTION_COLORS[action] || ACTION_COLORS.default;
 
   // Check if there are actual changes to show
-  const changesData = entry.changes as { before?: Record<string, any>; after?: Record<string, any> } | undefined;
+  const changesData = entry.changes as
+    | { before?: Record<string, any>; after?: Record<string, any> }
+    | undefined;
   const changedFields = changesData ? getChangedFields(changesData.before, changesData.after) : [];
-  
+
   // Has changes if there are field differences OR if it's a "created" action with initial values
-  const hasInitialValues = changesData?.after && !changesData?.before && 
-    Object.entries(changesData.after).filter(([key]) => !EXCLUDED_FIELDS.includes(key) && changesData.after![key] != null).length > 0;
-  
+  const hasInitialValues =
+    changesData?.after &&
+    !changesData?.before &&
+    Object.entries(changesData.after).filter(
+      ([key]) => !EXCLUDED_FIELDS.includes(key) && changesData.after![key] != null
+    ).length > 0;
+
   const hasChanges = changedFields.length > 0 || hasInitialValues;
 
   const timestamp = entry.timestamp || entry.createdAt;
@@ -306,7 +307,6 @@ function AuditLogItem({ entry }: { entry: AuditLogEntry }) {
     <div className="relative pl-8 pb-6 last:pb-0">
       {/* Timeline line */}
       <div className="absolute left-[11px] top-6 bottom-0 w-px bg-surface-700 last:hidden" />
-
       {/* Timeline dot */}
       <div
         className={clsx(
@@ -318,7 +318,6 @@ function AuditLogItem({ entry }: { entry: AuditLogEntry }) {
       >
         <ActionIcon className={clsx('w-3.5 h-3.5', colors.text)} />
       </div>
-
       {/* Content */}
       <div
         className={clsx(
@@ -336,16 +335,12 @@ function AuditLogItem({ entry }: { entry: AuditLogEntry }) {
                   {action.replace(/_/g, ' ')}
                 </span>
                 {entry.entityName && (
-                  <span className="text-surface-300 truncate">
-                    "{entry.entityName}"
-                  </span>
+                  <span className="text-surface-700 truncate">"{entry.entityName}"</span>
                 )}
               </div>
 
               {entry.description && (
-                <p className="text-sm text-surface-400 mt-1 line-clamp-2">
-                  {entry.description}
-                </p>
+                <p className="text-sm text-surface-600 mt-1 line-clamp-2">{entry.description}</p>
               )}
 
               {/* User and time */}
@@ -354,7 +349,10 @@ function AuditLogItem({ entry }: { entry: AuditLogEntry }) {
                   <UserIcon className="w-3.5 h-3.5" />
                   <span>{entry.userName || entry.userEmail || 'System'}</span>
                 </div>
-                <div className="flex items-center gap-1" title={format(new Date(timestamp), 'PPpp')}>
+                <div
+                  className="flex items-center gap-1"
+                  title={format(new Date(timestamp), 'PPpp')}
+                >
                   <ClockIcon className="w-3.5 h-3.5" />
                   <span>{formatDistanceToNow(new Date(timestamp), { addSuffix: true })}</span>
                 </div>
@@ -364,7 +362,7 @@ function AuditLogItem({ entry }: { entry: AuditLogEntry }) {
             {/* Expand button */}
             {hasChanges && (
               <button
-                className="p-1 rounded hover:bg-surface-700 text-surface-400 hover:text-surface-200 transition-colors"
+                className="p-1 rounded hover:bg-surface-700 text-surface-600 hover:text-surface-200 transition-colors"
                 onClick={(e) => {
                   e.stopPropagation();
                   setIsExpanded(!isExpanded);
@@ -380,20 +378,14 @@ function AuditLogItem({ entry }: { entry: AuditLogEntry }) {
           </div>
 
           {/* Expanded changes */}
-          {isExpanded && hasChanges && (
-            <ChangesDiff changes={entry.changes!} />
-          )}
+          {isExpanded && hasChanges && <ChangesDiff changes={entry.changes!} />}
         </div>
       </div>
     </div>
   );
 }
 
-export function EntityAuditHistory({
-  entityType,
-  entityId,
-  limit = 50,
-}: EntityAuditHistoryProps) {
+export function EntityAuditHistory({ entityType, entityId, limit = 50 }: EntityAuditHistoryProps) {
   const [filterAction, setFilterAction] = useState<string>('all');
 
   const { data, isLoading, error, refetch, isRefetching } = useQuery({
@@ -405,9 +397,10 @@ export function EntityAuditHistory({
   const entries: AuditLogEntry[] = Array.isArray(data) ? data : data?.data || data?.logs || [];
 
   // Filter entries by action
-  const filteredEntries = filterAction === 'all'
-    ? entries
-    : entries.filter((e) => e.action.toLowerCase().includes(filterAction));
+  const filteredEntries =
+    filterAction === 'all'
+      ? entries
+      : entries.filter((e) => e.action.toLowerCase().includes(filterAction));
 
   // Get unique actions for filter dropdown
   const uniqueActions = [...new Set(entries.map((e) => e.action.toLowerCase()))];
@@ -415,7 +408,7 @@ export function EntityAuditHistory({
   if (error) {
     return (
       <div className="p-6 text-center">
-        <p className="text-red-400">Failed to load history</p>
+        <p className="text-red-600">Failed to load history</p>
         <button
           onClick={() => refetch()}
           className="mt-2 text-sm text-brand-400 hover:text-brand-300"
@@ -442,10 +435,10 @@ export function EntityAuditHistory({
         <div className="flex items-center gap-2">
           {/* Filter */}
           {uniqueActions.length > 1 && (
-            <select
+            <SelectNative
               value={filterAction}
               onChange={(e) => setFilterAction(e.target.value)}
-              className="text-xs bg-surface-800 border border-surface-700 rounded-md text-surface-300 py-1.5 px-2"
+              className="text-xs bg-surface-800 border border-surface-700 rounded-md text-surface-700 py-1.5 px-2"
             >
               <option value="all">All Actions</option>
               {uniqueActions.map((action) => (
@@ -453,14 +446,14 @@ export function EntityAuditHistory({
                   {action.replace(/_/g, ' ').replace(/\./g, ' ')}
                 </option>
               ))}
-            </select>
+            </SelectNative>
           )}
 
           {/* Refresh */}
           <button
             onClick={() => refetch()}
             className={clsx(
-              'p-1.5 rounded-md hover:bg-surface-700 text-surface-400 hover:text-white transition-colors',
+              'p-1.5 rounded-md hover:bg-surface-700 text-surface-600 hover:text-white transition-colors',
               isRefetching && 'animate-spin'
             )}
             title="Refresh"
@@ -469,7 +462,6 @@ export function EntityAuditHistory({
           </button>
         </div>
       </div>
-
       {/* Timeline */}
       {isLoading ? (
         <div className="space-y-4">
@@ -486,10 +478,8 @@ export function EntityAuditHistory({
       ) : filteredEntries.length === 0 ? (
         <div className="text-center py-12 bg-surface-800/50 rounded-lg border border-surface-700">
           <ClockIcon className="w-10 h-10 mx-auto text-surface-600 mb-3" />
-          <p className="text-surface-400">No history recorded yet</p>
-          <p className="text-surface-500 text-sm mt-1">
-            Changes will appear here as they are made
-          </p>
+          <p className="text-surface-600">No history recorded yet</p>
+          <p className="text-surface-500 text-sm mt-1">Changes will appear here as they are made</p>
         </div>
       ) : (
         <div className="relative">
@@ -503,4 +493,3 @@ export function EntityAuditHistory({
 }
 
 export default EntityAuditHistory;
-

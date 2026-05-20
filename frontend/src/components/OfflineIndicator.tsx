@@ -14,7 +14,10 @@ interface OfflineIndicatorProps {
   showDetails?: boolean;
 }
 
-export default function OfflineIndicator({ className, showDetails = false }: OfflineIndicatorProps) {
+export default function OfflineIndicator({
+  className,
+  showDetails = false,
+}: OfflineIndicatorProps) {
   const { isOnline, isSyncing, pendingCount, sync, storageStats } = useOffline();
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -32,9 +35,9 @@ export default function OfflineIndicator({ className, showDetails = false }: Off
           'flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all',
           isOnline
             ? pendingCount > 0
-              ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
-              : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-            : 'bg-red-500/20 text-red-400 border border-red-500/30'
+              ? 'bg-yellow-500/20 text-yellow-600 border border-yellow-500/30'
+              : 'bg-emerald-500/20 text-emerald-600 border border-emerald-500/30'
+            : 'bg-red-500/20 text-red-600 border border-red-500/30'
         )}
       >
         {isSyncing ? (
@@ -78,7 +81,7 @@ export default function OfflineIndicator({ className, showDetails = false }: Off
             </div>
             <button
               onClick={() => setIsExpanded(false)}
-              className="text-surface-400 hover:text-white"
+              className="text-surface-600 hover:text-white"
             >
               <XMarkIcon className="w-4 h-4" />
             </button>
@@ -88,8 +91,9 @@ export default function OfflineIndicator({ className, showDetails = false }: Off
             {/* Status Message */}
             {!isOnline && (
               <div className="p-2 bg-red-500/10 border border-red-500/30 rounded-lg">
-                <p className="text-xs text-red-400">
-                  You're working offline. Changes will be saved locally and synced when you reconnect.
+                <p className="text-xs text-red-600">
+                  You're working offline. Changes will be saved locally and synced when you
+                  reconnect.
                 </p>
               </div>
             )}
@@ -98,8 +102,8 @@ export default function OfflineIndicator({ className, showDetails = false }: Off
             {pendingCount > 0 && (
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs text-surface-400">Pending Changes</span>
-                  <span className="text-xs font-medium text-yellow-400">{pendingCount}</span>
+                  <span className="text-xs text-surface-600">Pending Changes</span>
+                  <span className="text-xs font-medium text-yellow-600">{pendingCount}</span>
                 </div>
                 <div className="w-full bg-surface-800 rounded-full h-1">
                   <div
@@ -114,11 +118,11 @@ export default function OfflineIndicator({ className, showDetails = false }: Off
             {storageStats && (
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="p-2 bg-surface-800 rounded-lg">
-                  <span className="text-surface-400">Cached Items</span>
+                  <span className="text-surface-600">Cached Items</span>
                   <div className="font-medium text-white">{storageStats.cachedItems}</div>
                 </div>
                 <div className="p-2 bg-surface-800 rounded-lg">
-                  <span className="text-surface-400">Storage Used</span>
+                  <span className="text-surface-600">Storage Used</span>
                   <div className="font-medium text-white">{storageStats.estimatedSize}</div>
                 </div>
               </div>
@@ -132,7 +136,7 @@ export default function OfflineIndicator({ className, showDetails = false }: Off
                 className={clsx(
                   'w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all',
                   isSyncing
-                    ? 'bg-surface-700 text-surface-400 cursor-wait'
+                    ? 'bg-surface-700 text-surface-600 cursor-wait'
                     : 'bg-brand-500 hover:bg-brand-600 text-white'
                 )}
               >
@@ -155,7 +159,3 @@ export default function OfflineIndicator({ className, showDetails = false }: Off
     </div>
   );
 }
-
-
-
-

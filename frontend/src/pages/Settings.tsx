@@ -32,6 +32,14 @@ import { ModuleSettings } from '@/components/settings/ModuleSettings';
 import SystemHealthBanner from '@/components/SystemHealthBanner';
 import ProductionReadiness from '@/components/ProductionReadiness';
 
+import { Textarea } from '@/components/ui/Textarea';
+
+import { Input } from '@/components/ui/Input';
+
+import { SelectNative } from '@/components/ui/SelectNative';
+
+import { Button } from '@/components/ui/Button';
+
 interface SettingsProps {
   section:
     | 'organization'
@@ -79,7 +87,7 @@ export default function Settings({ section }: SettingsProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-surface-400">Loading...</div>
+        <div className="text-surface-600">Loading...</div>
       </div>
     );
   }
@@ -96,7 +104,7 @@ export default function Settings({ section }: SettingsProps) {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-surface-100">{title}</h1>
-        <p className="text-surface-400 mt-1">{description}</p>
+        <p className="text-surface-600 mt-1">{description}</p>
       </div>
 
       {/* Content */}
@@ -355,7 +363,7 @@ function OrganizationSettings() {
       <div className="card p-6 space-y-6">
         <div>
           <h2 className="text-lg font-semibold text-surface-100">Platform Branding</h2>
-          <p className="text-surface-400 text-sm mt-1">
+          <p className="text-surface-600 text-sm mt-1">
             Customize the look and name of your GRC platform
           </p>
         </div>
@@ -364,7 +372,7 @@ function OrganizationSettings() {
           {/* Platform Name */}
           <div>
             <label className="label">Platform Name</label>
-            <input
+            <Input
               type="text"
               value={platformName}
               onChange={(e) => setPlatformName(e.target.value)}
@@ -406,22 +414,24 @@ function OrganizationSettings() {
                   id="logo-upload"
                 />
                 <div className="flex items-center gap-2">
-                  <button
+                  <Button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="btn-secondary text-sm"
+                    className="text-sm"
+                    variant="secondary"
                   >
                     <PhotoIcon className="w-4 h-4 mr-1" />
                     Upload Image
-                  </button>
+                  </Button>
                   {logoUrl !== '/logo.png' && (
-                    <button
+                    <Button
                       type="button"
                       onClick={handleResetLogo}
-                      className="btn-ghost text-sm text-surface-400 hover:text-surface-200"
+                      className="text-sm text-surface-600 hover:text-surface-200"
+                      variant="ghost"
                     >
                       Reset to Default
-                    </button>
+                    </Button>
                   )}
                 </div>
                 <p className="text-surface-500 text-xs">
@@ -431,8 +441,8 @@ function OrganizationSettings() {
 
                 {/* URL Input (optional) */}
                 <div className="pt-2">
-                  <label className="text-surface-400 text-xs">Or enter image URL:</label>
-                  <input
+                  <label className="text-surface-600 text-xs">Or enter image URL:</label>
+                  <Input
                     type="url"
                     value={logoUrl.startsWith('data:') ? '' : logoUrl}
                     onChange={(e) => {
@@ -451,12 +461,11 @@ function OrganizationSettings() {
         </div>
 
         <div className="flex justify-end pt-4 border-t border-surface-800">
-          <button className="btn-primary" onClick={handleSaveBranding} disabled={isSaving}>
+          <Button onClick={handleSaveBranding} disabled={isSaving} variant="primary">
             {isSaving ? 'Saving...' : 'Save Branding'}
-          </button>
+          </Button>
         </div>
       </div>
-
       {/* Organization Settings */}
       <div className="card p-6 space-y-6">
         <h2 className="text-lg font-semibold text-surface-100">Organization Details</h2>
@@ -464,7 +473,7 @@ function OrganizationSettings() {
         <div className="space-y-4">
           <div>
             <label className="label">Organization Name</label>
-            <input
+            <Input
               type="text"
               value={orgSettings.organizationName}
               onChange={(e) => updateOrgSetting('organizationName', e.target.value)}
@@ -473,7 +482,7 @@ function OrganizationSettings() {
           </div>
           <div>
             <label className="label">Description</label>
-            <textarea
+            <Textarea
               value={orgSettings.description}
               onChange={(e) => updateOrgSetting('description', e.target.value)}
               className="input mt-1"
@@ -483,7 +492,7 @@ function OrganizationSettings() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="label">Primary Contact Email</label>
-              <input
+              <Input
                 type="email"
                 value={orgSettings.primaryEmail}
                 onChange={(e) => updateOrgSetting('primaryEmail', e.target.value)}
@@ -493,7 +502,7 @@ function OrganizationSettings() {
             </div>
             <div>
               <label className="label">Timezone</label>
-              <select
+              <SelectNative
                 value={orgSettings.timezone}
                 onChange={(e) => updateOrgSetting('timezone', e.target.value)}
                 className="input mt-1"
@@ -502,12 +511,12 @@ function OrganizationSettings() {
                 <option value="America/New_York">Eastern Time</option>
                 <option value="America/Los_Angeles">Pacific Time</option>
                 <option value="Europe/London">London</option>
-              </select>
+              </SelectNative>
             </div>
           </div>
           <div>
             <label className="label">Industry</label>
-            <select
+            <SelectNative
               value={orgSettings.industry}
               onChange={(e) => updateOrgSetting('industry', e.target.value)}
               className="input mt-1"
@@ -520,20 +529,18 @@ function OrganizationSettings() {
               <option value="manufacturing">Manufacturing</option>
               <option value="government">Government</option>
               <option value="other">Other</option>
-            </select>
+            </SelectNative>
           </div>
         </div>
 
         <div className="flex justify-end pt-4 border-t border-surface-800">
-          <button className="btn-primary" onClick={handleSaveOrganization} disabled={isSavingOrg}>
+          <Button onClick={handleSaveOrganization} disabled={isSavingOrg} variant="primary">
             {isSavingOrg ? 'Saving...' : 'Save Organization'}
-          </button>
+          </Button>
         </div>
       </div>
-
       {/* Multi-Workspace Mode */}
       <MultiWorkspaceSettings />
-
       {/* Data Portability & Offboarding */}
       <div className="card p-6 space-y-4">
         <div className="flex items-start justify-between gap-4">
@@ -541,20 +548,20 @@ function OrganizationSettings() {
             <h2 className="text-lg font-semibold text-surface-100">
               Data Portability & Offboarding
             </h2>
-            <p className="text-surface-400 text-sm mt-1">
+            <p className="text-surface-600 text-sm mt-1">
               Export a structured JSON snapshot of your organization&apos;s data to support vendor
               offboarding or migration to another system. Includes risks, controls, evidence
               metadata, vendors, audits, and recent activity logs.
             </p>
           </div>
           <ExclamationCircleIcon
-            className="w-5 h-5 text-amber-400 flex-shrink-0 mt-1"
+            className="w-5 h-5 text-amber-600 flex-shrink-0 mt-1"
             title="Export includes JSON metadata only; evidence files remain in your object storage."
             aria-label="Data export warning"
           />
         </div>
 
-        <div className="bg-surface-800/60 rounded-lg p-4 space-y-2 text-sm text-surface-400">
+        <div className="bg-surface-800/60 rounded-lg p-4 space-y-2 text-sm text-surface-600">
           <p className="font-medium text-surface-200">What&apos;s included</p>
           <ul className="list-disc list-inside space-y-1">
             <li>Risk register data (using the full export endpoint)</li>
@@ -570,20 +577,18 @@ function OrganizationSettings() {
         </div>
 
         <div className="flex justify-end pt-4 border-t border-surface-800">
-          <button
+          <Button
             type="button"
             onClick={handleExportOrganizationData}
-            className="btn-primary"
             disabled={isExporting}
+            variant="primary"
           >
             {isExporting ? 'Preparing Export…' : 'Export Organization Data (JSON)'}
-          </button>
+          </Button>
         </div>
       </div>
-
       {/* Demo Data Settings */}
       <DemoDataSettings />
-
       {/* System Health & Production Readiness */}
       <div className="space-y-4 pt-4 border-t border-surface-800">
         <h2 className="text-lg font-semibold text-surface-100">System Health</h2>
@@ -652,7 +657,7 @@ function MultiWorkspaceSettings() {
             <BuildingOfficeIcon className="w-6 h-6 text-brand-400" />
             <div>
               <h2 className="text-lg font-semibold text-surface-100">Multi-Workspace Mode</h2>
-              <p className="text-sm text-surface-400">
+              <p className="text-sm text-surface-600">
                 Enable separate workspaces for different products or teams
               </p>
             </div>
@@ -679,7 +684,7 @@ function MultiWorkspaceSettings() {
                 <p className="text-surface-100 font-medium">
                   {workspaces.length} workspace{workspaces.length !== 1 ? 's' : ''} active
                 </p>
-                <p className="text-sm text-surface-400">
+                <p className="text-sm text-surface-600">
                   Manage workspaces, members, and permissions
                 </p>
               </div>
@@ -695,7 +700,7 @@ function MultiWorkspaceSettings() {
         )}
 
         {!isMultiWorkspaceEnabled && (
-          <div className="bg-surface-800 rounded-lg p-4 text-sm text-surface-400">
+          <div className="bg-surface-800 rounded-lg p-4 text-sm text-surface-600">
             <p className="mb-2">Multi-workspace mode allows you to:</p>
             <ul className="list-disc list-inside space-y-1">
               <li>Track compliance progress separately for each product</li>
@@ -709,19 +714,19 @@ function MultiWorkspaceSettings() {
 
       {/* Disable Warning Modal */}
       {showDisableWarning && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
           <div className="bg-surface-800 rounded-lg shadow-xl w-full max-w-md p-6">
             <h3 className="text-lg font-semibold text-surface-100 mb-4">
               Disable Multi-Workspace Mode?
             </h3>
-            <p className="text-surface-400 mb-6">
+            <p className="text-surface-600 mb-6">
               This will hide all workspace-related features. Your data will be preserved but
               workspace filtering will be disabled across the platform.
             </p>
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setShowDisableWarning(false)}
-                className="px-4 py-2 text-sm text-surface-400 hover:text-surface-100"
+                className="px-4 py-2 text-sm text-surface-600 hover:text-surface-100"
               >
                 Cancel
               </button>
@@ -884,19 +889,19 @@ function CommunicationsSettings() {
               <EnvelopeIcon className="w-5 h-5" />
               Email Configuration
             </h2>
-            <p className="text-surface-400 text-sm mt-1">Configure how the platform sends emails</p>
+            <p className="text-surface-600 text-sm mt-1">Configure how the platform sends emails</p>
           </div>
           {config?.emailProvider !== 'disabled' && (
             <div className="flex items-center gap-2 text-sm">
-              <CheckCircleIcon className="w-4 h-4 text-green-400" />
-              <span className="text-green-400">Configured</span>
+              <CheckCircleIcon className="w-4 h-4 text-green-600" />
+              <span className="text-green-600">Configured</span>
             </div>
           )}
         </div>
 
         <div>
           <label className="label">Email Provider</label>
-          <select
+          <SelectNative
             className="input mt-1"
             value={emailProvider}
             onChange={(e) => setEmailProvider(e.target.value as EmailProvider)}
@@ -905,7 +910,7 @@ function CommunicationsSettings() {
             <option value="smtp">SMTP Server</option>
             <option value="sendgrid">SendGrid</option>
             <option value="ses">AWS SES</option>
-          </select>
+          </SelectNative>
         </div>
 
         {emailProvider !== 'disabled' && (
@@ -913,7 +918,7 @@ function CommunicationsSettings() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="label">From Address</label>
-                <input
+                <Input
                   type="email"
                   className="input mt-1"
                   placeholder="noreply@company.com"
@@ -925,7 +930,7 @@ function CommunicationsSettings() {
               </div>
               <div>
                 <label className="label">From Name</label>
-                <input
+                <Input
                   type="text"
                   className="input mt-1"
                   placeholder="GigaChad GRC"
@@ -939,7 +944,7 @@ function CommunicationsSettings() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-surface-800/50 rounded-lg">
                 <div>
                   <label className="label">SMTP Host</label>
-                  <input
+                  <Input
                     type="text"
                     className="input mt-1"
                     placeholder="smtp.company.com"
@@ -949,7 +954,7 @@ function CommunicationsSettings() {
                 </div>
                 <div>
                   <label className="label">Port</label>
-                  <input
+                  <Input
                     type="number"
                     className="input mt-1"
                     value={emailForm.smtpPort}
@@ -960,7 +965,7 @@ function CommunicationsSettings() {
                 </div>
                 <div>
                   <label className="label">Username</label>
-                  <input
+                  <Input
                     type="text"
                     className="input mt-1"
                     value={emailForm.smtpUser}
@@ -969,7 +974,7 @@ function CommunicationsSettings() {
                 </div>
                 <div>
                   <label className="label">Password</label>
-                  <input
+                  <Input
                     type="password"
                     className="input mt-1"
                     placeholder="••••••••"
@@ -983,7 +988,7 @@ function CommunicationsSettings() {
             {emailProvider === 'sendgrid' && (
               <div className="p-4 bg-surface-800/50 rounded-lg">
                 <label className="label">SendGrid API Key</label>
-                <input
+                <Input
                   type="password"
                   className="input mt-1"
                   placeholder="SG.xxxxxxxxxx"
@@ -997,7 +1002,7 @@ function CommunicationsSettings() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-surface-800/50 rounded-lg">
                 <div>
                   <label className="label">AWS Region</label>
-                  <select
+                  <SelectNative
                     className="input mt-1"
                     value={emailForm.sesRegion}
                     onChange={(e) => setEmailForm((f) => ({ ...f, sesRegion: e.target.value }))}
@@ -1005,11 +1010,11 @@ function CommunicationsSettings() {
                     <option value="us-east-1">US East (N. Virginia)</option>
                     <option value="us-west-2">US West (Oregon)</option>
                     <option value="eu-west-1">EU (Ireland)</option>
-                  </select>
+                  </SelectNative>
                 </div>
                 <div>
                   <label className="label">Access Key ID</label>
-                  <input
+                  <Input
                     type="text"
                     className="input mt-1"
                     placeholder="AKIA..."
@@ -1021,7 +1026,7 @@ function CommunicationsSettings() {
                 </div>
                 <div>
                   <label className="label">Secret Access Key</label>
-                  <input
+                  <Input
                     type="password"
                     className="input mt-1"
                     placeholder="••••••••"
@@ -1036,7 +1041,7 @@ function CommunicationsSettings() {
 
             <div className="flex items-center gap-4 pt-4 border-t border-surface-700">
               <div className="flex-1">
-                <input
+                <Input
                   type="email"
                   className="input"
                   placeholder="Enter email to send test"
@@ -1044,34 +1049,33 @@ function CommunicationsSettings() {
                   onChange={(e) => setTestEmail(e.target.value)}
                 />
               </div>
-              <button
-                className="btn-secondary"
+              <Button
                 onClick={() => testEmailMutation.mutate(testEmail)}
                 disabled={!testEmail || testEmailMutation.isPending}
+                variant="secondary"
               >
                 {testEmailMutation.isPending ? 'Sending...' : 'Send Test'}
-              </button>
+              </Button>
             </div>
           </>
         )}
 
         <div className="flex justify-end pt-4 border-t border-surface-800">
-          <button
-            className="btn-primary"
+          <Button
             onClick={handleSaveEmail}
             disabled={updateEmailMutation.isPending}
+            variant="primary"
           >
             {updateEmailMutation.isPending ? 'Saving...' : 'Save Email Settings'}
-          </button>
+          </Button>
         </div>
       </div>
-
       {/* Slack Configuration */}
       <div className="card p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold text-surface-100">Slack Notifications</h2>
-            <p className="text-surface-400 text-sm mt-1">Send alerts and notifications to Slack</p>
+            <p className="text-surface-600 text-sm mt-1">Send alerts and notifications to Slack</p>
           </div>
           <label className="relative inline-flex items-center cursor-pointer">
             <input
@@ -1089,7 +1093,7 @@ function CommunicationsSettings() {
             <div className="space-y-4">
               <div>
                 <label className="label">Webhook URL</label>
-                <input
+                <Input
                   type="password"
                   className="input mt-1"
                   placeholder="https://hooks.slack.com/services/..."
@@ -1103,7 +1107,7 @@ function CommunicationsSettings() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="label">Default Channel</label>
-                  <input
+                  <Input
                     type="text"
                     className="input mt-1"
                     placeholder="#grc-alerts"
@@ -1115,7 +1119,7 @@ function CommunicationsSettings() {
                 </div>
                 <div>
                   <label className="label">Workspace Name</label>
-                  <input
+                  <Input
                     type="text"
                     className="input mt-1"
                     placeholder="Company Workspace"
@@ -1127,25 +1131,25 @@ function CommunicationsSettings() {
             </div>
 
             <div className="flex items-center gap-4 pt-4 border-t border-surface-700">
-              <button
-                className="btn-secondary"
+              <Button
                 onClick={() => testSlackMutation.mutate(slackForm.defaultChannel)}
                 disabled={testSlackMutation.isPending}
+                variant="secondary"
               >
                 {testSlackMutation.isPending ? 'Sending...' : 'Send Test Message'}
-              </button>
+              </Button>
             </div>
           </>
         )}
 
         <div className="flex justify-end pt-4 border-t border-surface-800">
-          <button
-            className="btn-primary"
+          <Button
             onClick={handleSaveSlack}
             disabled={updateSlackMutation.isPending}
+            variant="primary"
           >
             {updateSlackMutation.isPending ? 'Saving...' : 'Save Slack Settings'}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -1245,20 +1249,19 @@ function ApiSettings() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold text-surface-100">API Keys</h2>
-          <p className="text-surface-400 text-sm mt-1">Manage API keys for programmatic access</p>
+          <p className="text-surface-600 text-sm mt-1">Manage API keys for programmatic access</p>
         </div>
-        <button className="btn-primary" onClick={() => setShowCreateModal(true)}>
+        <Button onClick={() => setShowCreateModal(true)} variant="primary">
           <PlusIcon className="w-4 h-4 mr-2" />
           Generate New Key
-        </button>
+        </Button>
       </div>
-
       {isLoading ? (
         <div className="flex justify-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
         </div>
       ) : keys.length === 0 ? (
-        <div className="text-center py-8 text-surface-400">
+        <div className="text-center py-8 text-surface-600">
           <p>No API keys yet. Create one to get started.</p>
         </div>
       ) : (
@@ -1272,7 +1275,7 @@ function ApiSettings() {
                 <div className="flex items-center gap-2">
                   <p className="text-surface-100 font-medium">{key.name}</p>
                   {!key.isActive && (
-                    <span className="px-2 py-0.5 text-xs bg-red-500/20 text-red-400 rounded">
+                    <span className="px-2 py-0.5 text-xs bg-red-500/20 text-red-600 rounded">
                       Revoked
                     </span>
                   )}
@@ -1290,52 +1293,58 @@ function ApiSettings() {
                   <>
                     {confirmingRegenerate === key.id ? (
                       <div className="flex items-center gap-2">
-                        <span className="text-surface-400 text-sm">Regenerate?</span>
-                        <button
-                          className="btn-primary text-sm"
+                        <span className="text-surface-600 text-sm">Regenerate?</span>
+                        <Button
+                          className="text-sm"
                           onClick={() => regenerateMutation.mutate(key.id)}
                           disabled={regenerateMutation.isPending}
+                          variant="primary"
                         >
                           Yes
-                        </button>
-                        <button
-                          className="btn-secondary text-sm"
+                        </Button>
+                        <Button
+                          className="text-sm"
                           onClick={() => setConfirmingRegenerate(null)}
+                          variant="secondary"
                         >
                           No
-                        </button>
+                        </Button>
                       </div>
                     ) : confirmingRevoke === key.id ? (
                       <div className="flex items-center gap-2">
-                        <span className="text-surface-400 text-sm">Revoke?</span>
-                        <button
-                          className="btn-danger text-sm"
+                        <span className="text-surface-600 text-sm">Revoke?</span>
+                        <Button
+                          className="text-sm"
                           onClick={() => revokeMutation.mutate(key.id)}
                           disabled={revokeMutation.isPending}
+                          variant="danger"
                         >
                           Yes
-                        </button>
-                        <button
-                          className="btn-secondary text-sm"
+                        </Button>
+                        <Button
+                          className="text-sm"
                           onClick={() => setConfirmingRevoke(null)}
+                          variant="secondary"
                         >
                           No
-                        </button>
+                        </Button>
                       </div>
                     ) : (
                       <>
-                        <button
-                          className="btn-secondary text-sm"
+                        <Button
+                          className="text-sm"
                           onClick={() => setConfirmingRegenerate(key.id)}
+                          variant="secondary"
                         >
                           Regenerate
-                        </button>
-                        <button
-                          className="btn-danger text-sm"
+                        </Button>
+                        <Button
+                          className="text-sm"
                           onClick={() => setConfirmingRevoke(key.id)}
+                          variant="danger"
                         >
                           Revoke
-                        </button>
+                        </Button>
                       </>
                     )}
                   </>
@@ -1347,29 +1356,27 @@ function ApiSettings() {
           ))}
         </div>
       )}
-
       <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
         <div className="flex items-start gap-3">
-          <ExclamationCircleIcon className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+          <ExclamationCircleIcon className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="text-amber-400 font-medium">API Key Security</p>
-            <p className="text-surface-400 text-sm mt-1">
+            <p className="text-amber-600 font-medium">API Key Security</p>
+            <p className="text-surface-600 text-sm mt-1">
               API keys grant access to your organization's data based on their scopes. Keep them
               secure and rotate them regularly.
             </p>
           </div>
         </div>
       </div>
-
       {/* Create Key Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
           <div className="bg-surface-900 rounded-lg p-6 w-full max-w-md">
             <h3 className="text-lg font-semibold text-surface-100 mb-4">Create API Key</h3>
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-1">Name</label>
-                <input
+                <label className="block text-sm font-medium text-surface-700 mb-1">Name</label>
+                <Input
                   type="text"
                   value={newKeyName}
                   onChange={(e) => setNewKeyName(e.target.value)}
@@ -1379,10 +1386,10 @@ function ApiSettings() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-1">
+                <label className="block text-sm font-medium text-surface-700 mb-1">
                   Description (optional)
                 </label>
-                <input
+                <Input
                   type="text"
                   value={newKeyDescription}
                   onChange={(e) => setNewKeyDescription(e.target.value)}
@@ -1391,7 +1398,7 @@ function ApiSettings() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-1">Scopes</label>
+                <label className="block text-sm font-medium text-surface-700 mb-1">Scopes</label>
                 <div className="space-y-2 max-h-40 overflow-y-auto">
                   {availableScopes.map((scope) => (
                     <label key={scope} className="flex items-center gap-2">
@@ -1407,66 +1414,62 @@ function ApiSettings() {
                         }}
                         className="rounded border-surface-600 bg-surface-800 text-primary-500"
                       />
-                      <span className="text-surface-300 text-sm">{scope}</span>
+                      <span className="text-surface-700 text-sm">{scope}</span>
                     </label>
                   ))}
                 </div>
               </div>
               <div className="flex justify-end gap-2 pt-4">
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  onClick={() => setShowCreateModal(false)}
-                >
+                <Button type="button" onClick={() => setShowCreateModal(false)} variant="secondary">
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
-                  className="btn-primary"
                   disabled={createMutation.isPending || !newKeyName.trim()}
+                  variant="primary"
                 >
                   {createMutation.isPending ? 'Creating...' : 'Create Key'}
-                </button>
+                </Button>
               </div>
             </form>
           </div>
         </div>
       )}
-
       {/* New Key Display Modal */}
       {showNewKeyModal && newKey && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
           <div className="bg-surface-900 rounded-lg p-6 w-full max-w-lg">
             <div className="flex items-center gap-2 mb-4">
-              <CheckCircleIcon className="w-6 h-6 text-green-400" />
+              <CheckCircleIcon className="w-6 h-6 text-green-600" />
               <h3 className="text-lg font-semibold text-surface-100">API Key Created</h3>
             </div>
             <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg mb-4">
-              <p className="text-amber-400 text-sm">
+              <p className="text-amber-600 text-sm">
                 Copy this key now. You won't be able to see it again!
               </p>
             </div>
             <div className="bg-surface-800 rounded-lg p-4">
               <div className="flex items-center justify-between">
-                <code className="text-green-400 text-sm break-all">{newKey.key}</code>
-                <button
-                  className="btn-secondary text-sm ml-2 flex-shrink-0"
+                <code className="text-green-600 text-sm break-all">{newKey.key}</code>
+                <Button
+                  className="text-sm ml-2 flex-shrink-0"
                   onClick={() => copyToClipboard(newKey.key)}
+                  variant="secondary"
                 >
                   Copy
-                </button>
+                </Button>
               </div>
             </div>
             <div className="flex justify-end mt-4">
-              <button
-                className="btn-primary"
+              <Button
                 onClick={() => {
                   setShowNewKeyModal(false);
                   setNewKey(null);
                 }}
+                variant="primary"
               >
                 Done
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -1530,13 +1533,13 @@ function DashboardTemplatesSettings() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-lg font-semibold text-surface-100">Dashboard Templates</h2>
-            <p className="text-surface-400 text-sm mt-1">
+            <p className="text-surface-600 text-sm mt-1">
               Templates are shared with all users in your organization
             </p>
           </div>
-          <button onClick={() => setShowCreateModal(true)} className="btn btn-primary">
+          <Button onClick={() => setShowCreateModal(true)} variant="primary">
             <PlusIcon className="w-4 h-4 mr-1" /> Create Template
-          </button>
+          </Button>
         </div>
 
         {isLoading ? (
@@ -1546,13 +1549,13 @@ function DashboardTemplatesSettings() {
         ) : templates?.length === 0 ? (
           <div className="text-center py-12 bg-surface-800/50 rounded-lg">
             <Squares2X2Icon className="w-12 h-12 mx-auto text-surface-500 mb-4" />
-            <h3 className="text-surface-300 font-medium mb-2">No templates yet</h3>
+            <h3 className="text-surface-700 font-medium mb-2">No templates yet</h3>
             <p className="text-surface-500 text-sm mb-4">
               Create a template that all users can use as a starting point
             </p>
-            <button onClick={() => setShowCreateModal(true)} className="btn btn-ghost">
+            <Button onClick={() => setShowCreateModal(true)} variant="ghost">
               <PlusIcon className="w-4 h-4 mr-1" /> Create First Template
-            </button>
+            </Button>
           </div>
         ) : (
           <div className="space-y-3">
@@ -1580,49 +1583,48 @@ function DashboardTemplatesSettings() {
                   <Link
                     to={`/dashboards`}
                     state={{ editTemplate: template.id }}
-                    className="btn btn-ghost btn-sm"
+                    className="inline-flex items-center rounded-md border border-surface-300 bg-white px-3 h-8 text-small font-medium !text-surface-900 hover:bg-surface-100 transition-colors"
                   >
                     <PencilIcon className="w-4 h-4 mr-1" /> Edit
                   </Link>
-                  <button
+                  <Button
                     onClick={() => {
                       if (confirm('Delete this template?')) {
                         deleteMutation.mutate(template.id);
                       }
                     }}
-                    className="btn btn-ghost btn-sm text-red-400 hover:text-red-300"
+                    className="text-red-600 hover:text-red-700"
                     disabled={deleteMutation.isPending}
+                    variant="ghost"
                   >
                     <TrashIcon className="w-4 h-4" />
-                  </button>
+                  </Button>
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
-
       <div className="card p-6">
         <h3 className="text-md font-semibold text-surface-100 mb-4">Template Tips</h3>
-        <ul className="space-y-2 text-sm text-surface-400">
+        <ul className="space-y-2 text-sm text-surface-600">
           <li className="flex items-start gap-2">
-            <CheckCircleIcon className="w-5 h-5 text-green-400 flex-shrink-0" />
+            <CheckCircleIcon className="w-5 h-5 text-green-600 flex-shrink-0" />
             <span>Templates appear in the template gallery for all users</span>
           </li>
           <li className="flex items-start gap-2">
-            <CheckCircleIcon className="w-5 h-5 text-green-400 flex-shrink-0" />
+            <CheckCircleIcon className="w-5 h-5 text-green-600 flex-shrink-0" />
             <span>Users create their own copy when they use a template</span>
           </li>
           <li className="flex items-start gap-2">
-            <CheckCircleIcon className="w-5 h-5 text-green-400 flex-shrink-0" />
+            <CheckCircleIcon className="w-5 h-5 text-green-600 flex-shrink-0" />
             <span>Changes to templates don't affect existing user dashboards</span>
           </li>
         </ul>
       </div>
-
       {/* Create Template Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
           <div className="bg-surface-900 rounded-lg shadow-xl w-full max-w-md p-6">
             <h2 className="text-lg font-semibold text-surface-100 mb-4">
               Create Dashboard Template
@@ -1630,10 +1632,10 @@ function DashboardTemplatesSettings() {
             <form onSubmit={handleCreate}>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-surface-300 mb-2">
+                  <label className="block text-sm font-medium text-surface-700 mb-2">
                     Template Name
                   </label>
-                  <input
+                  <Input
                     type="text"
                     value={newTemplateName}
                     onChange={(e) => setNewTemplateName(e.target.value)}
@@ -1643,10 +1645,10 @@ function DashboardTemplatesSettings() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-surface-300 mb-2">
+                  <label className="block text-sm font-medium text-surface-700 mb-2">
                     Description (optional)
                   </label>
-                  <textarea
+                  <Textarea
                     value={newTemplateDescription}
                     onChange={(e) => setNewTemplateDescription(e.target.value)}
                     className="input w-full h-20"
@@ -1655,20 +1657,16 @@ function DashboardTemplatesSettings() {
                 </div>
               </div>
               <div className="flex items-center justify-end gap-3 mt-6">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="btn btn-ghost"
-                >
+                <Button type="button" onClick={() => setShowCreateModal(false)} variant="ghost">
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
                   disabled={!newTemplateName.trim() || createMutation.isPending}
-                  className="btn btn-primary"
+                  variant="primary"
                 >
                   {createMutation.isPending ? 'Creating...' : 'Create Template'}
-                </button>
+                </Button>
               </div>
             </form>
           </div>
@@ -1836,7 +1834,7 @@ function EmployeeComplianceSettings() {
       <div className="card p-6 space-y-4">
         <div>
           <h2 className="text-lg font-semibold text-surface-100">Compliance Score Weights</h2>
-          <p className="text-surface-400 text-sm mt-1">
+          <p className="text-surface-600 text-sm mt-1">
             Configure how much each category contributes to the overall compliance score. Weights
             must total 100%.
           </p>
@@ -1905,18 +1903,17 @@ function EmployeeComplianceSettings() {
           className={`p-3 rounded-lg ${isValidWeights ? 'bg-green-500/10 border border-green-500/30' : 'bg-red-500/10 border border-red-500/30'}`}
         >
           <p
-            className={`text-sm font-medium ${isValidWeights ? 'text-green-400' : 'text-red-400'}`}
+            className={`text-sm font-medium ${isValidWeights ? 'text-green-600' : 'text-red-600'}`}
           >
             Total Weight: {totalWeight}% {isValidWeights ? '✓' : '(must equal 100%)'}
           </p>
         </div>
       </div>
-
       {/* Compliance Thresholds */}
       <div className="card p-6 space-y-4">
         <div>
           <h2 className="text-lg font-semibold text-surface-100">Compliance Thresholds</h2>
-          <p className="text-surface-400 text-sm mt-1">
+          <p className="text-surface-600 text-sm mt-1">
             Define score thresholds for compliance status categories.
           </p>
         </div>
@@ -1925,7 +1922,7 @@ function EmployeeComplianceSettings() {
           <div>
             <label className="label">Compliant Threshold (≥)</label>
             <div className="flex items-center gap-2">
-              <input
+              <Input
                 type="number"
                 min="0"
                 max="100"
@@ -1933,7 +1930,7 @@ function EmployeeComplianceSettings() {
                 onChange={(e) => updateThreshold('compliant', parseInt(e.target.value) || 0)}
                 className="input w-24"
               />
-              <span className="text-surface-400">% score</span>
+              <span className="text-surface-600">% score</span>
             </div>
             <p className="text-surface-500 text-xs mt-1">
               Employees scoring at or above this are considered compliant
@@ -1942,7 +1939,7 @@ function EmployeeComplianceSettings() {
           <div>
             <label className="label">At Risk Threshold (≥)</label>
             <div className="flex items-center gap-2">
-              <input
+              <Input
                 type="number"
                 min="0"
                 max="100"
@@ -1950,7 +1947,7 @@ function EmployeeComplianceSettings() {
                 onChange={(e) => updateThreshold('atRisk', parseInt(e.target.value) || 0)}
                 className="input w-24"
               />
-              <span className="text-surface-400">% score</span>
+              <span className="text-surface-600">% score</span>
             </div>
             <p className="text-surface-500 text-xs mt-1">
               Employees scoring between this and compliant are "at risk"
@@ -1958,7 +1955,7 @@ function EmployeeComplianceSettings() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-sm text-surface-400">
+        <div className="flex items-center gap-2 text-sm text-surface-600">
           <div className="flex items-center gap-2">
             <span className="w-3 h-3 rounded-full bg-green-500"></span>
             <span>Compliant: ≥{config.thresholds.compliant}%</span>
@@ -1975,12 +1972,11 @@ function EmployeeComplianceSettings() {
           </div>
         </div>
       </div>
-
       {/* Compliance Requirements */}
       <div className="card p-6 space-y-4">
         <div>
           <h2 className="text-lg font-semibold text-surface-100">Compliance Requirements</h2>
-          <p className="text-surface-400 text-sm mt-1">
+          <p className="text-surface-600 text-sm mt-1">
             Configure what is required for employee compliance.
           </p>
         </div>
@@ -2002,8 +1998,8 @@ function EmployeeComplianceSettings() {
             </div>
             {config.requirements.backgroundCheckRequired && (
               <div className="flex items-center gap-2">
-                <label className="text-surface-400 text-sm">Valid for</label>
-                <input
+                <label className="text-surface-600 text-sm">Valid for</label>
+                <Input
                   type="number"
                   min="30"
                   max="1095"
@@ -2016,7 +2012,7 @@ function EmployeeComplianceSettings() {
                   }
                   className="input w-20 text-sm"
                 />
-                <span className="text-surface-400 text-sm">days</span>
+                <span className="text-surface-600 text-sm">days</span>
               </div>
             )}
           </div>
@@ -2039,8 +2035,8 @@ function EmployeeComplianceSettings() {
             </div>
             {config.requirements.trainingCompletionRequired && (
               <div className="flex items-center gap-2">
-                <label className="text-surface-400 text-sm">Mark overdue after</label>
-                <input
+                <label className="text-surface-600 text-sm">Mark overdue after</label>
+                <Input
                   type="number"
                   min="1"
                   max="365"
@@ -2050,7 +2046,7 @@ function EmployeeComplianceSettings() {
                   }
                   className="input w-20 text-sm"
                 />
-                <span className="text-surface-400 text-sm">days past due date</span>
+                <span className="text-surface-600 text-sm">days past due date</span>
               </div>
             )}
           </div>
@@ -2071,8 +2067,8 @@ function EmployeeComplianceSettings() {
             </div>
             {config.requirements.attestationRequired && (
               <div className="flex items-center gap-2">
-                <label className="text-surface-400 text-sm">Attestations valid for</label>
-                <input
+                <label className="text-surface-600 text-sm">Attestations valid for</label>
+                <Input
                   type="number"
                   min="30"
                   max="1095"
@@ -2082,7 +2078,7 @@ function EmployeeComplianceSettings() {
                   }
                   className="input w-20 text-sm"
                 />
-                <span className="text-surface-400 text-sm">days</span>
+                <span className="text-surface-600 text-sm">days</span>
               </div>
             )}
           </div>
@@ -2109,12 +2105,11 @@ function EmployeeComplianceSettings() {
           </div>
         </div>
       </div>
-
       {/* Data Sources Info */}
       <div className="card p-6 space-y-4">
         <div>
           <h2 className="text-lg font-semibold text-surface-100">Data Sources</h2>
-          <p className="text-surface-400 text-sm mt-1">
+          <p className="text-surface-600 text-sm mt-1">
             Employee compliance data is gathered from configured integrations. Click a category to
             view or configure integrations.
           </p>
@@ -2125,7 +2120,7 @@ function EmployeeComplianceSettings() {
             to="/integrations?search=HR%20Tools"
             className="p-3 bg-surface-800/50 rounded-lg hover:bg-surface-700/50 hover:border-brand-500/50 border border-transparent transition-all cursor-pointer group"
           >
-            <p className="text-surface-400 text-xs uppercase tracking-wider mb-1 group-hover:text-brand-400">
+            <p className="text-surface-600 text-xs uppercase tracking-wider mb-1 group-hover:text-brand-400">
               HRIS / Employee List
             </p>
             <p className="text-surface-200 text-sm">BambooHR, Workday, ADP, etc.</p>
@@ -2137,7 +2132,7 @@ function EmployeeComplianceSettings() {
             to="/integrations?search=Background%20Check"
             className="p-3 bg-surface-800/50 rounded-lg hover:bg-surface-700/50 hover:border-brand-500/50 border border-transparent transition-all cursor-pointer group"
           >
-            <p className="text-surface-400 text-xs uppercase tracking-wider mb-1 group-hover:text-brand-400">
+            <p className="text-surface-600 text-xs uppercase tracking-wider mb-1 group-hover:text-brand-400">
               Background Check
             </p>
             <p className="text-surface-200 text-sm">Certn, Checkr, Sterling, etc.</p>
@@ -2149,7 +2144,7 @@ function EmployeeComplianceSettings() {
             to="/integrations?search=Security%20Awareness"
             className="p-3 bg-surface-800/50 rounded-lg hover:bg-surface-700/50 hover:border-brand-500/50 border border-transparent transition-all cursor-pointer group"
           >
-            <p className="text-surface-400 text-xs uppercase tracking-wider mb-1 group-hover:text-brand-400">
+            <p className="text-surface-600 text-xs uppercase tracking-wider mb-1 group-hover:text-brand-400">
               Training / LMS
             </p>
             <p className="text-surface-200 text-sm">KnowBe4, Proofpoint, Curricula, etc.</p>
@@ -2161,7 +2156,7 @@ function EmployeeComplianceSettings() {
             to="/integrations?search=MDM"
             className="p-3 bg-surface-800/50 rounded-lg hover:bg-surface-700/50 hover:border-brand-500/50 border border-transparent transition-all cursor-pointer group"
           >
-            <p className="text-surface-400 text-xs uppercase tracking-wider mb-1 group-hover:text-brand-400">
+            <p className="text-surface-600 text-xs uppercase tracking-wider mb-1 group-hover:text-brand-400">
               MDM / Device
             </p>
             <p className="text-surface-200 text-sm">Jamf, Kandji, Intune, etc.</p>
@@ -2173,7 +2168,7 @@ function EmployeeComplianceSettings() {
             to="/integrations?search=Identity%20Provider"
             className="p-3 bg-surface-800/50 rounded-lg hover:bg-surface-700/50 hover:border-brand-500/50 border border-transparent transition-all cursor-pointer group"
           >
-            <p className="text-surface-400 text-xs uppercase tracking-wider mb-1 group-hover:text-brand-400">
+            <p className="text-surface-600 text-xs uppercase tracking-wider mb-1 group-hover:text-brand-400">
               Identity Provider
             </p>
             <p className="text-surface-200 text-sm">Okta, Azure AD, Google Workspace</p>
@@ -2183,19 +2178,18 @@ function EmployeeComplianceSettings() {
           </Link>
         </div>
       </div>
-
       {/* Save Actions */}
       <div className="flex items-center justify-between">
-        <button onClick={handleReset} className="btn btn-ghost" disabled={!hasChanges}>
+        <Button onClick={handleReset} disabled={!hasChanges} variant="ghost">
           Reset to Defaults
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={handleSave}
-          className="btn btn-primary"
           disabled={!hasChanges || !isValidWeights || isSaving}
+          variant="primary"
         >
           {isSaving ? 'Saving...' : 'Save Settings'}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -2246,7 +2240,7 @@ function AISettings() {
       <div className="card p-6 space-y-4">
         <div>
           <h2 className="text-lg font-semibold text-surface-100">AI Provider</h2>
-          <p className="text-surface-400 text-sm mt-1">
+          <p className="text-surface-600 text-sm mt-1">
             Select an AI provider for intelligent automation features.
           </p>
         </div>
@@ -2297,7 +2291,7 @@ function AISettings() {
           <div className="space-y-4 pt-4 border-t border-surface-700">
             <div>
               <label className="label">API Key</label>
-              <input
+              <Input
                 type="password"
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
@@ -2310,7 +2304,7 @@ function AISettings() {
             </div>
             <div>
               <label className="label">Model</label>
-              <select
+              <SelectNative
                 value={model}
                 onChange={(e) => setModel(e.target.value)}
                 className="input mt-1"
@@ -2320,17 +2314,16 @@ function AISettings() {
                     {m.name}
                   </option>
                 ))}
-              </select>
+              </SelectNative>
             </div>
           </div>
         )}
       </div>
-
       {/* AI Features */}
       <div className="card p-6 space-y-4">
         <div>
           <h2 className="text-lg font-semibold text-surface-100">AI Features</h2>
-          <p className="text-surface-400 text-sm mt-1">
+          <p className="text-surface-600 text-sm mt-1">
             Enable or disable specific AI-powered features.
           </p>
         </div>
@@ -2385,27 +2378,25 @@ function AISettings() {
           ))}
         </div>
       </div>
-
       {/* MCP Integration Link */}
       <div className="card p-6">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold text-surface-100">MCP Server Integration</h2>
-            <p className="text-surface-400 text-sm mt-1">
+            <p className="text-surface-600 text-sm mt-1">
               Configure Model Context Protocol (MCP) servers for advanced AI workflows.
             </p>
           </div>
-          <Link to="/settings/mcp" className="btn btn-secondary">
+          <Link to="/settings/mcp" className="">
             Configure MCP →
           </Link>
         </div>
       </div>
-
       {/* Save */}
       <div className="flex justify-end">
-        <button onClick={handleSave} className="btn btn-primary" disabled={isSaving}>
+        <Button onClick={handleSave} disabled={isSaving} variant="primary">
           {isSaving ? 'Saving...' : 'Save AI Configuration'}
-        </button>
+        </Button>
       </div>
     </div>
   );

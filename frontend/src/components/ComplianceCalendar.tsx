@@ -1,7 +1,15 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { policiesApi, auditsApi, controlsApi, contractsApi, calendarApi, type CalendarEvent as ApiCalendarEvent, type CreateCalendarEventData } from '@/lib/api';
+import {
+  policiesApi,
+  auditsApi,
+  controlsApi,
+  contractsApi,
+  calendarApi,
+  type CalendarEvent as ApiCalendarEvent,
+  type CreateCalendarEventData,
+} from '@/lib/api';
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -17,6 +25,12 @@ import {
 } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
+
+import { Textarea } from '@/components/ui/Textarea';
+
+import { Input } from '@/components/ui/Input';
+
+import { SelectNative } from '@/components/ui/SelectNative';
 
 // View mode types
 type ViewMode = 'month' | 'week' | 'list';
@@ -50,35 +64,35 @@ const EVENT_CONFIG = {
     label: 'Policy Review',
     icon: DocumentTextIcon,
     color: 'bg-blue-500',
-    textColor: 'text-blue-400',
+    textColor: 'text-blue-600',
     path: '/policies',
   },
   audit: {
     label: 'Audit',
     icon: ClipboardDocumentListIcon,
     color: 'bg-purple-500',
-    textColor: 'text-purple-400',
+    textColor: 'text-purple-600',
     path: '/audits',
   },
   control_review: {
     label: 'Control Review',
     icon: ShieldCheckIcon,
     color: 'bg-emerald-500',
-    textColor: 'text-emerald-400',
+    textColor: 'text-emerald-600',
     path: '/controls',
   },
   contract_expiration: {
     label: 'Contract Expiration',
     icon: DocumentIcon,
     color: 'bg-orange-500',
-    textColor: 'text-orange-400',
+    textColor: 'text-orange-600',
     path: '/contracts',
   },
   custom: {
     label: 'Custom Event',
     icon: CalendarIcon,
     color: 'bg-cyan-500',
-    textColor: 'text-cyan-400',
+    textColor: 'text-cyan-600',
     path: '#',
   },
 };
@@ -123,9 +137,13 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const today = new Date();
-  const [currentDate, setCurrentDate] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
+  const [currentDate, setCurrentDate] = useState(
+    new Date(today.getFullYear(), today.getMonth(), 1)
+  );
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [visibleTypes, setVisibleTypes] = useState<Set<string>>(new Set(['policy_review', 'audit', 'control_review', 'contract_expiration', 'custom']));
+  const [visibleTypes, setVisibleTypes] = useState<Set<string>>(
+    new Set(['policy_review', 'audit', 'control_review', 'contract_expiration', 'custom'])
+  );
   const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newEventTitle, setNewEventTitle] = useState('');
@@ -155,9 +173,19 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
   const { data: customEventsData } = useQuery({
     queryKey: ['calendar-events', currentDate.getFullYear(), currentDate.getMonth()],
     queryFn: () => {
-      const startDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1).toISOString();
-      const endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 2, 0).toISOString();
-      return calendarApi.list({ startDate, endDate, includeAutomated: false }).then((res) => res.data);
+      const startDate = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth() - 1,
+        1
+      ).toISOString();
+      const endDate = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth() + 2,
+        0
+      ).toISOString();
+      return calendarApi
+        .list({ startDate, endDate, includeAutomated: false })
+        .then((res) => res.data);
     },
   });
   const customEvents = customEventsData?.events || [];
@@ -182,18 +210,21 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
   }, []);
 
   // Handle create event
-  const handleCreateEvent = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newEventTitle.trim() || !newEventDate) return;
-    createEventMutation.mutate({
-      title: newEventTitle.trim(),
-      description: newEventDescription.trim() || undefined,
-      startDate: new Date(newEventDate).toISOString(),
-      eventType: 'custom',
-      priority: newEventPriority,
-      allDay: true,
-    });
-  }, [newEventTitle, newEventDescription, newEventDate, newEventPriority, createEventMutation]);
+  const handleCreateEvent = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!newEventTitle.trim() || !newEventDate) return;
+      createEventMutation.mutate({
+        title: newEventTitle.trim(),
+        description: newEventDescription.trim() || undefined,
+        startDate: new Date(newEventDate).toISOString(),
+        eventType: 'custom',
+        priority: newEventPriority,
+        allDay: true,
+      });
+    },
+    [newEventTitle, newEventDescription, newEventDate, newEventPriority, createEventMutation]
+  );
 
   // Fetch data from various sources
   const { data: policiesData } = useQuery({
@@ -286,7 +317,9 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
     (contracts || []).forEach((contract: any) => {
       if (contract.endDate) {
         const expirationDate = new Date(contract.endDate);
-        const daysUntilExpiration = Math.ceil((expirationDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        const daysUntilExpiration = Math.ceil(
+          (expirationDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+        );
         eventList.push({
           id: `contract-${contract.id}`,
           title: `Expires: ${contract.name || contract.title}`,
@@ -295,7 +328,8 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
           entityId: contract.id,
           entityType: 'contract',
           status: contract.status,
-          priority: daysUntilExpiration <= 0 ? 'critical' : daysUntilExpiration <= 30 ? 'high' : 'medium',
+          priority:
+            daysUntilExpiration <= 0 ? 'critical' : daysUntilExpiration <= 30 ? 'high' : 'medium',
         });
       }
     });
@@ -329,7 +363,7 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
   const upcomingEvents = useMemo(() => {
     const thirtyDaysFromNow = new Date(today);
     thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-    
+
     return events
       .filter((e) => e.date >= today && e.date <= thirtyDaysFromNow)
       .sort((a, b) => a.date.getTime() - b.date.getTime())
@@ -379,7 +413,9 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
             onClick={() => setViewMode('month')}
             className={clsx(
               'px-3 py-1.5 rounded text-sm flex items-center gap-1',
-              viewMode === 'month' ? 'bg-brand-500 text-white' : 'text-surface-400 hover:text-surface-200'
+              viewMode === 'month'
+                ? 'bg-brand-500 text-white'
+                : 'text-surface-600 hover:text-surface-200'
             )}
           >
             <CalendarIcon className="w-4 h-4" />
@@ -389,7 +425,9 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
             onClick={() => setViewMode('week')}
             className={clsx(
               'px-3 py-1.5 rounded text-sm flex items-center gap-1',
-              viewMode === 'week' ? 'bg-brand-500 text-white' : 'text-surface-400 hover:text-surface-200'
+              viewMode === 'week'
+                ? 'bg-brand-500 text-white'
+                : 'text-surface-600 hover:text-surface-200'
             )}
           >
             <CalendarIcon className="w-4 h-4" />
@@ -399,7 +437,9 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
             onClick={() => setViewMode('list')}
             className={clsx(
               'px-3 py-1.5 rounded text-sm flex items-center gap-1',
-              viewMode === 'list' ? 'bg-brand-500 text-white' : 'text-surface-400 hover:text-surface-200'
+              viewMode === 'list'
+                ? 'bg-brand-500 text-white'
+                : 'text-surface-600 hover:text-surface-200'
             )}
           >
             <Bars3Icon className="w-4 h-4" />
@@ -409,7 +449,7 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
         <div className="flex items-center gap-2">
           <button
             onClick={handleExportIcal}
-            className="px-3 py-1.5 text-sm text-surface-400 hover:text-surface-200 flex items-center gap-1"
+            className="px-3 py-1.5 text-sm text-surface-600 hover:text-surface-200 flex items-center gap-1"
           >
             <ArrowDownTrayIcon className="w-4 h-4" />
             Export iCal
@@ -426,7 +466,6 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
           </button>
         </div>
       </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Calendar Grid */}
         <div className="lg:col-span-2 bg-surface-800 rounded-xl border border-surface-700 p-6">
@@ -438,7 +477,7 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
               </h2>
               <button
                 onClick={goToToday}
-                className="px-3 py-1 text-sm bg-surface-700 hover:bg-surface-600 rounded-lg text-surface-300"
+                className="px-3 py-1 text-sm bg-surface-700 hover:bg-surface-600 rounded-lg text-surface-700"
               >
                 Today
               </button>
@@ -446,13 +485,13 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
             <div className="flex items-center gap-2">
               <button
                 onClick={prevMonth}
-                className="p-2 hover:bg-surface-700 rounded-lg text-surface-400"
+                className="p-2 hover:bg-surface-700 rounded-lg text-surface-600"
               >
                 <ChevronLeftIcon className="w-5 h-5" />
               </button>
               <button
                 onClick={nextMonth}
-                className="p-2 hover:bg-surface-700 rounded-lg text-surface-400"
+                className="p-2 hover:bg-surface-700 rounded-lg text-surface-600"
               >
                 <ChevronRightIcon className="w-5 h-5" />
               </button>
@@ -490,9 +529,7 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
                   onClick={() => setSelectedDate(date)}
                   className={clsx(
                     'aspect-square p-1 rounded-lg transition-all relative',
-                    isSelected
-                      ? 'bg-brand-500/20 ring-2 ring-brand-500'
-                      : 'hover:bg-surface-700',
+                    isSelected ? 'bg-brand-500/20 ring-2 ring-brand-500' : 'hover:bg-surface-700',
                     isTodayDate && 'bg-surface-700',
                     isPast && 'opacity-50'
                   )}
@@ -500,23 +537,28 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
                   <span
                     className={clsx(
                       'text-sm',
-                      isTodayDate ? 'text-brand-400 font-bold' : 'text-surface-300'
+                      isTodayDate ? 'text-brand-400 font-bold' : 'text-surface-700'
                     )}
                   >
                     {day}
                   </span>
-                  
+
                   {/* Event indicators */}
                   {dayEvents.length > 0 && (
                     <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5">
                       {dayEvents.slice(0, 3).map((event, idx) => (
                         <div
                           key={idx}
-                          className={clsx('w-1.5 h-1.5 rounded-full', EVENT_CONFIG[event.type].color)}
+                          className={clsx(
+                            'w-1.5 h-1.5 rounded-full',
+                            EVENT_CONFIG[event.type].color
+                          )}
                         />
                       ))}
                       {dayEvents.length > 3 && (
-                        <span className="text-[10px] text-surface-400">+{dayEvents.length - 3}</span>
+                        <span className="text-[10px] text-surface-600">
+                          +{dayEvents.length - 3}
+                        </span>
                       )}
                     </div>
                   )}
@@ -619,7 +661,11 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
                             {event.title}
                           </p>
                           <p className="text-xs text-surface-500">
-                            {daysUntil === 0 ? 'Today' : daysUntil === 1 ? 'Tomorrow' : `In ${daysUntil} days`}
+                            {daysUntil === 0
+                              ? 'Today'
+                              : daysUntil === 1
+                                ? 'Tomorrow'
+                                : `In ${daysUntil} days`}
                           </p>
                         </div>
                       </div>
@@ -631,24 +677,23 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
           </div>
         </div>
       </div>
-
       {/* Create Event Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
           <div className="bg-surface-900 rounded-lg p-6 w-full max-w-md">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-white">Create Event</h3>
               <button
                 onClick={() => setShowCreateModal(false)}
-                className="text-surface-400 hover:text-surface-200"
+                className="text-surface-600 hover:text-surface-200"
               >
                 <XMarkIcon className="w-5 h-5" />
               </button>
             </div>
             <form onSubmit={handleCreateEvent} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-1">Title</label>
-                <input
+                <label className="block text-sm font-medium text-surface-700 mb-1">Title</label>
+                <Input
                   type="text"
                   value={newEventTitle}
                   onChange={(e) => setNewEventTitle(e.target.value)}
@@ -658,8 +703,10 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-1">Description</label>
-                <textarea
+                <label className="block text-sm font-medium text-surface-700 mb-1">
+                  Description
+                </label>
+                <Textarea
                   value={newEventDescription}
                   onChange={(e) => setNewEventDescription(e.target.value)}
                   className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-white placeholder-surface-500 focus:ring-2 focus:ring-brand-500 focus:border-transparent"
@@ -668,8 +715,8 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-1">Date</label>
-                <input
+                <label className="block text-sm font-medium text-surface-700 mb-1">Date</label>
+                <Input
                   type="date"
                   value={newEventDate}
                   onChange={(e) => setNewEventDate(e.target.value)}
@@ -678,8 +725,8 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-1">Priority</label>
-                <select
+                <label className="block text-sm font-medium text-surface-700 mb-1">Priority</label>
+                <SelectNative
                   value={newEventPriority}
                   onChange={(e) => setNewEventPriority(e.target.value)}
                   className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent"
@@ -688,13 +735,13 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
                   <option value="medium">Medium</option>
                   <option value="high">High</option>
                   <option value="critical">Critical</option>
-                </select>
+                </SelectNative>
               </div>
               <div className="flex justify-end gap-2 pt-4">
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 text-surface-400 hover:text-surface-200"
+                  className="px-4 py-2 text-surface-600 hover:text-surface-200"
                 >
                   Cancel
                 </button>
@@ -715,4 +762,3 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
 }
 
 export default ComplianceCalendar;
-

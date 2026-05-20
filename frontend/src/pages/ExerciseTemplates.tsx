@@ -8,11 +8,17 @@ import {
   UserGroupIcon,
   ArrowLeftIcon,
 } from '@heroicons/react/24/outline';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import { ExerciseTemplatePreview } from '@/components/bcdr/ExerciseTemplatePreview';
 import { api } from '@/lib/api';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
+
+import { Textarea } from '@/components/ui/Textarea';
+
+import { Input } from '@/components/ui/Input';
+
+import { SelectNative } from '@/components/ui/SelectNative';
 
 // ============================================
 // Types
@@ -137,7 +143,7 @@ export default function ExerciseTemplates() {
       const response = await api.get('/bcdr/exercise-templates/categories');
       const data = response.data;
       // Handle both array response and { data: [] } response format
-      setCategories(Array.isArray(data) ? data : (data?.data || []));
+      setCategories(Array.isArray(data) ? data : data?.data || []);
     } catch (error) {
       console.error('Failed to load categories:', error);
       setCategories([]);
@@ -175,11 +181,12 @@ export default function ExerciseTemplates() {
             </p>
           </div>
         </div>
-
         <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Template Title *</label>
-            <input
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              Template Title *
+            </label>
+            <Input
               type="text"
               value={createForm.title}
               onChange={(e) => setCreateForm({ ...createForm, title: e.target.value })}
@@ -191,22 +198,31 @@ export default function ExerciseTemplates() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">Category</label>
-              <select
+              <SelectNative
                 value={createForm.category}
                 onChange={(e) => setCreateForm({ ...createForm, category: e.target.value })}
                 className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
               >
-                {CATEGORY_OPTIONS.filter(opt => opt.value).map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                {CATEGORY_OPTIONS.filter((opt) => opt.value).map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
                 ))}
-              </select>
+              </SelectNative>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Estimated Duration (minutes)</label>
-              <input
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Estimated Duration (minutes)
+              </label>
+              <Input
                 type="number"
                 value={createForm.estimatedDuration}
-                onChange={(e) => setCreateForm({ ...createForm, estimatedDuration: parseInt(e.target.value) || 60 })}
+                onChange={(e) =>
+                  setCreateForm({
+                    ...createForm,
+                    estimatedDuration: parseInt(e.target.value) || 60,
+                  })
+                }
                 className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
               />
             </div>
@@ -214,7 +230,7 @@ export default function ExerciseTemplates() {
 
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">Description</label>
-            <textarea
+            <Textarea
               value={createForm.description}
               onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
               rows={2}
@@ -224,8 +240,10 @@ export default function ExerciseTemplates() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Scenario Narrative</label>
-            <textarea
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              Scenario Narrative
+            </label>
+            <Textarea
               value={createForm.scenarioNarrative}
               onChange={(e) => setCreateForm({ ...createForm, scenarioNarrative: e.target.value })}
               rows={4}
@@ -235,8 +253,10 @@ export default function ExerciseTemplates() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Facilitator Notes</label>
-            <textarea
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              Facilitator Notes
+            </label>
+            <Textarea
               value={createForm.facilitatorNotes}
               onChange={(e) => setCreateForm({ ...createForm, facilitatorNotes: e.target.value })}
               rows={2}
@@ -276,12 +296,11 @@ export default function ExerciseTemplates() {
           Create Custom Template
         </Button>
       </div>
-
       {/* Filters */}
       <div className="flex items-center gap-4">
         <div className="flex-1 relative">
           <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-          <input
+          <Input
             type="text"
             placeholder="Search templates..."
             value={search}
@@ -291,7 +310,7 @@ export default function ExerciseTemplates() {
         </div>
         <div className="flex items-center gap-2">
           <FunnelIcon className="h-5 w-5 text-slate-400" />
-          <select
+          <SelectNative
             value={category}
             onChange={(e) => setCategory(e.target.value)}
             className="px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
@@ -301,10 +320,9 @@ export default function ExerciseTemplates() {
                 {opt.label}
               </option>
             ))}
-          </select>
+          </SelectNative>
         </div>
       </div>
-
       {/* Category Stats */}
       {safeCategories.length > 0 && (
         <div className="flex flex-wrap gap-3">
@@ -331,7 +349,6 @@ export default function ExerciseTemplates() {
           ))}
         </div>
       )}
-
       {/* Templates Grid */}
       {isLoading ? (
         <div className="text-center py-12">
@@ -364,18 +381,16 @@ export default function ExerciseTemplates() {
                   </span>
                 </div>
                 {template.isGlobal && (
-                  <span className="px-2 py-0.5 bg-cyan-500/20 text-cyan-400 rounded text-xs">
+                  <span className="px-2 py-0.5 bg-cyan-500/20 text-cyan-600 rounded text-xs">
                     Global
                   </span>
                 )}
               </div>
 
-              <h3 className="text-lg font-medium text-white mb-2 group-hover:text-cyan-400 transition-colors">
+              <h3 className="text-lg font-medium text-white mb-2 group-hover:text-cyan-600 transition-colors">
                 {template.title}
               </h3>
-              <p className="text-sm text-slate-400 line-clamp-2 mb-4">
-                {template.description}
-              </p>
+              <p className="text-sm text-slate-400 line-clamp-2 mb-4">{template.description}</p>
 
               <div className="flex items-center gap-4 text-sm text-slate-400">
                 {template.estimatedDuration && (
@@ -410,7 +425,6 @@ export default function ExerciseTemplates() {
           ))}
         </div>
       )}
-
       {/* Template Preview Modal */}
       {selectedTemplate && (
         <ExerciseTemplatePreview

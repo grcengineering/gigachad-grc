@@ -11,6 +11,8 @@ import {
 import { controlsApi } from '@/lib/api';
 import clsx from 'clsx';
 
+import { Button } from '@/components/ui/Button';
+
 interface BulkUploadModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -166,11 +168,11 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
           <div className="flex items-center justify-between p-6 border-b border-surface-700">
             <div>
               <h2 className="text-xl font-semibold text-surface-100">Bulk Upload Controls</h2>
-              <p className="text-sm text-surface-400 mt-1">Import controls from CSV or JSON file</p>
+              <p className="text-sm text-surface-600 mt-1">Import controls from CSV or JSON file</p>
             </div>
             <button
               onClick={handleClose}
-              className="p-2 text-surface-400 hover:text-surface-200 hover:bg-surface-800 rounded-lg transition-colors"
+              className="p-2 text-surface-600 hover:text-surface-200 hover:bg-surface-800 rounded-lg transition-colors"
             >
               <XMarkIcon className="w-5 h-5" />
             </button>
@@ -183,13 +185,13 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
                   {!result.errors?.length ? (
-                    <CheckCircleIcon className="w-8 h-8 text-green-400" />
+                    <CheckCircleIcon className="w-8 h-8 text-green-600" />
                   ) : (
-                    <ExclamationTriangleIcon className="w-8 h-8 text-yellow-400" />
+                    <ExclamationTriangleIcon className="w-8 h-8 text-yellow-600" />
                   )}
                   <div>
                     <h3 className="text-lg font-medium text-surface-100">Upload Complete</h3>
-                    <p className="text-surface-400">
+                    <p className="text-surface-600">
                       Processed {result.total || result.created + result.updated + result.skipped}{' '}
                       controls
                     </p>
@@ -198,32 +200,32 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
 
                 <div className="grid grid-cols-4 gap-4">
                   <div className="bg-surface-800 rounded-lg p-4 text-center">
-                    <div className="text-2xl font-bold text-green-400">{result.created}</div>
-                    <div className="text-sm text-surface-400">Created</div>
+                    <div className="text-2xl font-bold text-green-600">{result.created}</div>
+                    <div className="text-sm text-surface-600">Created</div>
                   </div>
                   <div className="bg-surface-800 rounded-lg p-4 text-center">
-                    <div className="text-2xl font-bold text-blue-400">{result.updated}</div>
-                    <div className="text-sm text-surface-400">Updated</div>
+                    <div className="text-2xl font-bold text-blue-600">{result.updated}</div>
+                    <div className="text-sm text-surface-600">Updated</div>
                   </div>
                   <div className="bg-surface-800 rounded-lg p-4 text-center">
-                    <div className="text-2xl font-bold text-surface-400">{result.skipped}</div>
-                    <div className="text-sm text-surface-400">Skipped</div>
+                    <div className="text-2xl font-bold text-surface-600">{result.skipped}</div>
+                    <div className="text-sm text-surface-600">Skipped</div>
                   </div>
                   <div className="bg-surface-800 rounded-lg p-4 text-center">
-                    <div className="text-2xl font-bold text-red-400">
+                    <div className="text-2xl font-bold text-red-600">
                       {result.errors?.length || 0}
                     </div>
-                    <div className="text-sm text-surface-400">Errors</div>
+                    <div className="text-sm text-surface-600">Errors</div>
                   </div>
                 </div>
 
                 {(result.errors?.length ?? 0) > 0 && (
                   <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
-                    <h4 className="font-medium text-red-400 mb-2">Errors</h4>
+                    <h4 className="font-medium text-red-600 mb-2">Errors</h4>
                     <div className="max-h-40 overflow-y-auto space-y-1">
                       {result.errors?.map((error, index) => (
-                        <div key={index} className="text-sm text-surface-300">
-                          <span className="font-mono text-red-400">
+                        <div key={index} className="text-sm text-surface-700">
+                          <span className="font-mono text-red-600">
                             Row {error.row || '?'} ({error.controlId}):
                           </span>{' '}
                           {error.error}
@@ -233,9 +235,9 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
                   </div>
                 )}
 
-                <button onClick={handleClose} className="btn-primary w-full">
+                <Button onClick={handleClose} className="w-full" variant="primary">
                   Done
-                </button>
+                </Button>
               </div>
             ) : (
               <>
@@ -247,7 +249,7 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
                       'flex-1 py-2 px-4 rounded-lg border transition-colors',
                       uploadMode === 'csv'
                         ? 'bg-brand-600 border-brand-500 text-white'
-                        : 'bg-surface-800 border-surface-700 text-surface-300 hover:border-surface-600'
+                        : 'bg-surface-800 border-surface-700 text-surface-700 hover:border-surface-600'
                     )}
                   >
                     CSV Format
@@ -258,7 +260,7 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
                       'flex-1 py-2 px-4 rounded-lg border transition-colors',
                       uploadMode === 'json'
                         ? 'bg-brand-600 border-brand-500 text-white'
-                        : 'bg-surface-800 border-surface-700 text-surface-300 hover:border-surface-600'
+                        : 'bg-surface-800 border-surface-700 text-surface-700 hover:border-surface-600'
                     )}
                   >
                     JSON Format
@@ -290,9 +292,9 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
 
                   {fileContent ? (
                     <div className="space-y-2">
-                      <DocumentTextIcon className="w-12 h-12 mx-auto text-green-400" />
+                      <DocumentTextIcon className="w-12 h-12 mx-auto text-green-600" />
                       <p className="text-surface-100 font-medium">{fileName}</p>
-                      <p className="text-surface-400 text-sm">
+                      <p className="text-surface-600 text-sm">
                         {fileContent.split('\n').length} lines loaded
                       </p>
                       <button
@@ -308,7 +310,7 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
                   ) : (
                     <div className="space-y-2">
                       <CloudArrowUpIcon className="w-12 h-12 mx-auto text-surface-500" />
-                      <p className="text-surface-300">
+                      <p className="text-surface-700">
                         Drag and drop your file here, or{' '}
                         <button
                           onClick={() => fileInputRef.current?.click()}
@@ -334,7 +336,7 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
                       }}
                       className="w-4 h-4 rounded border-surface-600 bg-surface-800 text-brand-500 focus:ring-brand-500"
                     />
-                    <span className="text-surface-300">Skip existing controls</span>
+                    <span className="text-surface-700">Skip existing controls</span>
                   </label>
                   <label className="flex items-center gap-3">
                     <input
@@ -346,7 +348,7 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
                       }}
                       className="w-4 h-4 rounded border-surface-600 bg-surface-800 text-brand-500 focus:ring-brand-500"
                     />
-                    <span className="text-surface-300">Update existing controls</span>
+                    <span className="text-surface-700">Update existing controls</span>
                   </label>
                 </div>
 
@@ -355,21 +357,25 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
                   <div className="flex items-center justify-between">
                     <div>
                       <h4 className="font-medium text-surface-200">Need a template?</h4>
-                      <p className="text-sm text-surface-400">
+                      <p className="text-sm text-surface-600">
                         Download our CSV template with example data
                       </p>
                     </div>
-                    <button onClick={handleDownloadTemplate} className="btn-secondary text-sm">
+                    <Button
+                      onClick={handleDownloadTemplate}
+                      className="text-sm"
+                      variant="secondary"
+                    >
                       <ArrowDownTrayIcon className="w-4 h-4 mr-2" />
                       Download
-                    </button>
+                    </Button>
                   </div>
                 </div>
 
                 {/* Error message */}
                 {uploadMutation.isError && (
                   <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
-                    <p className="text-red-400">
+                    <p className="text-red-600">
                       {(uploadMutation.error as any)?.response?.data?.message ||
                         (uploadMutation.error as Error)?.message ||
                         'Upload failed'}
@@ -383,13 +389,14 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
           {/* Footer */}
           {!result && (
             <div className="flex items-center justify-end gap-3 p-6 border-t border-surface-700">
-              <button onClick={handleClose} className="btn-secondary">
+              <Button onClick={handleClose} variant="secondary">
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={handleUpload}
                 disabled={!fileContent || uploadMutation.isPending}
-                className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                className="disabled:opacity-50 disabled:cursor-not-allowed"
+                variant="primary"
               >
                 {uploadMutation.isPending ? (
                   <>
@@ -402,7 +409,7 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
                     Upload Controls
                   </>
                 )}
-              </button>
+              </Button>
             </div>
           )}
         </div>

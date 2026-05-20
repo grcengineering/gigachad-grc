@@ -16,6 +16,8 @@ import {
 } from '@heroicons/react/24/outline';
 import { Link } from 'react-router-dom';
 
+import { Button } from '@/components/ui/Button';
+
 interface OnboardingBannerProps {
   onDismiss?: () => void;
 }
@@ -70,8 +72,12 @@ export default function OnboardingBanner({ onDismiss }: OnboardingBannerProps) {
               <RocketLaunchIcon className="h-6 w-6 text-brand-400" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-foreground">Welcome to {branding.platformName}!</h2>
-              <p className="text-sm text-muted-foreground">Get started with your security and compliance journey</p>
+              <h2 className="text-xl font-bold text-foreground">
+                Welcome to {branding.platformName}!
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Get started with your security and compliance journey
+              </p>
             </div>
           </div>
 
@@ -86,16 +92,8 @@ export default function OnboardingBanner({ onDismiss }: OnboardingBannerProps) {
               label="Policies"
               description="15 policy templates"
             />
-            <FeatureCard
-              icon={UserGroupIcon}
-              label="Vendors"
-              description="20 vendor profiles"
-            />
-            <FeatureCard
-              icon={ChartBarIcon}
-              label="Risks"
-              description="25 risk items"
-            />
+            <FeatureCard icon={UserGroupIcon} label="Vendors" description="20 vendor profiles" />
+            <FeatureCard icon={ChartBarIcon} label="Risks" description="25 risk items" />
           </div>
         </div>
 
@@ -110,12 +108,13 @@ export default function OnboardingBanner({ onDismiss }: OnboardingBannerProps) {
               <XMarkIcon className="h-5 w-5" />
             </button>
           </div>
-          
+
           <div className="flex items-start gap-2">
-            <button
+            <Button
               onClick={handleLoadDemo}
               disabled={loadDemoMutation.isPending}
-              className="btn btn-primary flex-1 flex items-center justify-center gap-2 py-3"
+              className="flex-1 flex items-center justify-center gap-2 py-3"
+              variant="primary"
             >
               {loadDemoMutation.isPending ? (
                 <ArrowPathIcon className="h-5 w-5 animate-spin" />
@@ -123,8 +122,8 @@ export default function OnboardingBanner({ onDismiss }: OnboardingBannerProps) {
                 <BeakerIcon className="h-5 w-5" />
               )}
               {loadDemoMutation.isPending ? 'Loading...' : 'Try with Demo Data'}
-            </button>
-            
+            </Button>
+
             {/* Desktop dismiss button */}
             <button
               onClick={handleDismiss}
@@ -135,10 +134,7 @@ export default function OnboardingBanner({ onDismiss }: OnboardingBannerProps) {
             </button>
           </div>
 
-          <Link
-            to="/integrations"
-            className="btn btn-secondary flex items-center justify-center gap-2 py-3"
-          >
+          <Link to="/integrations" className="flex items-center justify-center gap-2 py-3">
             <ArrowRightIcon className="h-5 w-5" />
             Start from Scratch
           </Link>
@@ -171,4 +167,3 @@ function FeatureCard({
     </div>
   );
 }
-

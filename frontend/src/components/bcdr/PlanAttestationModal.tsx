@@ -5,9 +5,11 @@ import {
   XCircleIcon,
   ClipboardDocumentCheckIcon,
 } from '@heroicons/react/24/outline';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import { api } from '@/lib/api';
 import clsx from 'clsx';
+
+import { Textarea } from '@/components/ui/Textarea';
 
 // ============================================
 // Types
@@ -25,9 +27,21 @@ interface PlanAttestationModalProps {
 }
 
 const ATTESTATION_TYPES = [
-  { value: 'annual_review', label: 'Annual Review', description: 'Scheduled yearly plan review and attestation' },
-  { value: 'post_update', label: 'Post-Update', description: 'Attestation after significant plan changes' },
-  { value: 'post_incident', label: 'Post-Incident', description: 'Attestation after the plan was activated' },
+  {
+    value: 'annual_review',
+    label: 'Annual Review',
+    description: 'Scheduled yearly plan review and attestation',
+  },
+  {
+    value: 'post_update',
+    label: 'Post-Update',
+    description: 'Attestation after significant plan changes',
+  },
+  {
+    value: 'post_incident',
+    label: 'Post-Incident',
+    description: 'Attestation after the plan was activated',
+  },
 ];
 
 // ============================================
@@ -108,9 +122,7 @@ export function PlanAttestationModal({
       </p>
 
       <div>
-        <label className="block text-sm font-medium text-slate-300 mb-2">
-          Attestation Type
-        </label>
+        <label className="block text-sm font-medium text-slate-300 mb-2">Attestation Type</label>
         <div className="space-y-2">
           {ATTESTATION_TYPES.map((type) => (
             <button
@@ -127,9 +139,7 @@ export function PlanAttestationModal({
                 <span className="text-white font-medium">{type.label}</span>
                 <p className="text-sm text-slate-400">{type.description}</p>
               </div>
-              {selectedType === type.value && (
-                <CheckCircleIcon className="h-5 w-5 text-cyan-400" />
-              )}
+              {selectedType === type.value && <CheckCircleIcon className="h-5 w-5 text-cyan-600" />}
             </button>
           ))}
         </div>
@@ -139,7 +149,7 @@ export function PlanAttestationModal({
         <label className="block text-sm font-medium text-slate-300 mb-2">
           Message to Plan Owner (Optional)
         </label>
-        <textarea
+        <Textarea
           value={requestMessage}
           onChange={(e) => setRequestMessage(e.target.value)}
           rows={3}
@@ -158,15 +168,11 @@ export function PlanAttestationModal({
         <p className="text-sm text-slate-400 capitalize mt-1">
           Type: {attestationType?.replace('_', ' ')}
         </p>
-        {message && (
-          <p className="text-sm text-slate-300 mt-2 italic">"{message}"</p>
-        )}
+        {message && <p className="text-sm text-slate-300 mt-2 italic">"{message}"</p>}
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-300 mb-2">
-          Your Response
-        </label>
+        <label className="block text-sm font-medium text-slate-300 mb-2">Your Response</label>
         <div className="grid grid-cols-2 gap-4">
           <button
             onClick={() => setSubmitAction('attested')}
@@ -177,19 +183,21 @@ export function PlanAttestationModal({
                 : 'border-slate-600 bg-slate-700 hover:border-slate-500'
             )}
           >
-            <CheckCircleIcon className={clsx(
-              'h-8 w-8 mx-auto mb-2',
-              submitAction === 'attested' ? 'text-green-400' : 'text-slate-400'
-            )} />
-            <span className={clsx(
-              'font-medium',
-              submitAction === 'attested' ? 'text-green-400' : 'text-white'
-            )}>
+            <CheckCircleIcon
+              className={clsx(
+                'h-8 w-8 mx-auto mb-2',
+                submitAction === 'attested' ? 'text-green-600' : 'text-slate-400'
+              )}
+            />
+            <span
+              className={clsx(
+                'font-medium',
+                submitAction === 'attested' ? 'text-green-600' : 'text-white'
+              )}
+            >
               I Attest
             </span>
-            <p className="text-xs text-slate-400 mt-1">
-              The plan is accurate and current
-            </p>
+            <p className="text-xs text-slate-400 mt-1">The plan is accurate and current</p>
           </button>
 
           <button
@@ -201,28 +209,28 @@ export function PlanAttestationModal({
                 : 'border-slate-600 bg-slate-700 hover:border-slate-500'
             )}
           >
-            <XCircleIcon className={clsx(
-              'h-8 w-8 mx-auto mb-2',
-              submitAction === 'declined' ? 'text-red-400' : 'text-slate-400'
-            )} />
-            <span className={clsx(
-              'font-medium',
-              submitAction === 'declined' ? 'text-red-400' : 'text-white'
-            )}>
+            <XCircleIcon
+              className={clsx(
+                'h-8 w-8 mx-auto mb-2',
+                submitAction === 'declined' ? 'text-red-600' : 'text-slate-400'
+              )}
+            />
+            <span
+              className={clsx(
+                'font-medium',
+                submitAction === 'declined' ? 'text-red-600' : 'text-white'
+              )}
+            >
               Decline
             </span>
-            <p className="text-xs text-slate-400 mt-1">
-              The plan needs updates
-            </p>
+            <p className="text-xs text-slate-400 mt-1">The plan needs updates</p>
           </button>
         </div>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-300 mb-2">
-          Comments
-        </label>
-        <textarea
+        <label className="block text-sm font-medium text-slate-300 mb-2">Comments</label>
+        <Textarea
           value={comments}
           onChange={(e) => setComments(e.target.value)}
           rows={2}
@@ -234,9 +242,9 @@ export function PlanAttestationModal({
       {submitAction === 'declined' && (
         <div>
           <label className="block text-sm font-medium text-slate-300 mb-2">
-            Reason for Declining <span className="text-red-400">*</span>
+            Reason for Declining <span className="text-red-600">*</span>
           </label>
-          <textarea
+          <Textarea
             value={declineReason}
             onChange={(e) => setDeclineReason(e.target.value)}
             rows={2}
@@ -249,22 +257,19 @@ export function PlanAttestationModal({
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
       <div className="bg-slate-800 rounded-xl shadow-2xl w-full max-w-lg">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-cyan-500/20 rounded-lg">
-              <ClipboardDocumentCheckIcon className="h-6 w-6 text-cyan-400" />
+              <ClipboardDocumentCheckIcon className="h-6 w-6 text-cyan-600" />
             </div>
             <h2 className="text-xl font-semibold text-white">
               {mode === 'request' ? 'Request Attestation' : 'Plan Attestation'}
             </h2>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
-          >
+          <button onClick={onClose} className="p-2 hover:bg-slate-700 rounded-lg transition-colors">
             <XMarkIcon className="h-5 w-5 text-slate-400" />
           </button>
         </div>
@@ -275,7 +280,7 @@ export function PlanAttestationModal({
 
           {error && (
             <div className="mt-4 bg-red-500/20 border border-red-500 rounded-lg p-3">
-              <p className="text-red-400 text-sm">{error}</p>
+              <p className="text-red-600 text-sm">{error}</p>
             </div>
           )}
         </div>
@@ -293,10 +298,10 @@ export function PlanAttestationModal({
             {isSubmitting
               ? 'Submitting...'
               : mode === 'request'
-              ? 'Send Request'
-              : submitAction === 'attested'
-              ? 'Submit Attestation'
-              : 'Submit Response'}
+                ? 'Send Request'
+                : submitAction === 'attested'
+                  ? 'Submit Attestation'
+                  : 'Submit Response'}
           </Button>
         </div>
       </div>

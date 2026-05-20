@@ -15,13 +15,17 @@ import {
 import { useWorkspace, Workspace } from '@/contexts/WorkspaceContext';
 import api from '@/lib/api';
 
-function CreateWorkspaceModal({ 
-  isOpen, 
-  onClose, 
-  onCreate 
-}: { 
-  isOpen: boolean; 
-  onClose: () => void; 
+import { Textarea } from '@/components/ui/Textarea';
+
+import { Input } from '@/components/ui/Input';
+
+function CreateWorkspaceModal({
+  isOpen,
+  onClose,
+  onCreate,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
   onCreate: (data: { name: string; description?: string }) => Promise<void>;
 }) {
   const [name, setName] = useState('');
@@ -48,7 +52,7 @@ function CreateWorkspaceModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
       <div className="bg-surface-800 rounded-lg shadow-xl w-full max-w-md p-6">
         <h3 className="text-lg font-semibold text-foreground mb-4">Create New Workspace</h3>
         <form onSubmit={handleSubmit}>
@@ -57,7 +61,7 @@ function CreateWorkspaceModal({
               <label className="block text-sm font-medium text-foreground mb-1">
                 Workspace Name *
               </label>
-              <input
+              <Input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -70,7 +74,7 @@ function CreateWorkspaceModal({
               <label className="block text-sm font-medium text-foreground mb-1">
                 Description (optional)
               </label>
-              <textarea
+              <Textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Brief description of this workspace..."
@@ -103,8 +107,8 @@ function CreateWorkspaceModal({
 
 export default function WorkspaceList() {
   const navigate = useNavigate();
-  const { 
-    isMultiWorkspaceEnabled, 
+  const {
+    isMultiWorkspaceEnabled,
     enableMultiWorkspace,
     createWorkspace,
     setCurrentWorkspace,
@@ -118,14 +122,14 @@ export default function WorkspaceList() {
   // Fetch org dashboard for stats
   const { data: orgDashboard } = useQuery({
     queryKey: ['org-dashboard'],
-    queryFn: () => api.get('/api/workspaces/org/dashboard').then(r => r.data),
+    queryFn: () => api.get('/api/workspaces/org/dashboard').then((r) => r.data),
     enabled: isMultiWorkspaceEnabled,
   });
 
   // Fetch workspaces list
   const { data: workspaces = [], refetch } = useQuery({
     queryKey: ['workspaces'],
-    queryFn: () => api.get('/api/workspaces').then(r => r.data),
+    queryFn: () => api.get('/api/workspaces').then((r) => r.data),
     enabled: isMultiWorkspaceEnabled,
   });
 
@@ -147,17 +151,18 @@ export default function WorkspaceList() {
     refetch();
   };
 
-  const filteredWorkspaces = workspaces.filter((ws: Workspace) =>
-    ws.name.toLowerCase().includes(search.toLowerCase()) ||
-    ws.description?.toLowerCase().includes(search.toLowerCase())
+  const filteredWorkspaces = workspaces.filter(
+    (ws: Workspace) =>
+      ws.name.toLowerCase().includes(search.toLowerCase()) ||
+      ws.description?.toLowerCase().includes(search.toLowerCase())
   );
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'active':
-        return <CheckCircleIcon className="w-4 h-4 text-green-400" />;
+        return <CheckCircleIcon className="w-4 h-4 text-green-600" />;
       case 'inactive':
-        return <XCircleIcon className="w-4 h-4 text-yellow-400" />;
+        return <XCircleIcon className="w-4 h-4 text-yellow-600" />;
       case 'archived':
         return <ArchiveBoxIcon className="w-4 h-4 text-muted-foreground" />;
       default:
@@ -171,14 +176,12 @@ export default function WorkspaceList() {
       <div className="p-6">
         <div className="max-w-2xl mx-auto text-center py-12">
           <BuildingOfficeIcon className="w-16 h-16 text-muted-foreground mx-auto mb-6" />
-          <h1 className="text-2xl font-bold text-foreground mb-4">
-            Multi-Workspace Mode
-          </h1>
+          <h1 className="text-2xl font-bold text-foreground mb-4">Multi-Workspace Mode</h1>
           <p className="text-muted-foreground mb-8">
-            Enable multi-workspace mode to manage multiple products or services with separate 
+            Enable multi-workspace mode to manage multiple products or services with separate
             compliance tracking, while sharing a common control library across your organization.
           </p>
-          
+
           <div className="bg-surface-800 rounded-lg p-6 text-left mb-8">
             <h3 className="font-semibold text-foreground mb-4">What you get with workspaces:</h3>
             <ul className="space-y-3 text-sm text-muted-foreground">
@@ -221,9 +224,7 @@ export default function WorkspaceList() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Workspaces</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage workspaces for your organization
-          </p>
+          <p className="text-muted-foreground mt-1">Manage workspaces for your organization</p>
         </div>
         {canManageWorkspaces && (
           <button
@@ -235,7 +236,6 @@ export default function WorkspaceList() {
           </button>
         )}
       </div>
-
       {/* Org-level Stats */}
       {orgDashboard && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -265,11 +265,10 @@ export default function WorkspaceList() {
           </div>
         </div>
       )}
-
       {/* Search */}
       <div className="relative mb-6">
         <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-        <input
+        <Input
           type="text"
           placeholder="Search workspaces..."
           value={search}
@@ -277,7 +276,6 @@ export default function WorkspaceList() {
           className="w-full pl-10 pr-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand-500"
         />
       </div>
-
       {/* Workspaces Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredWorkspaces.map((workspace: Workspace) => {
@@ -320,7 +318,9 @@ export default function WorkspaceList() {
               <div className="grid grid-cols-3 gap-2 mb-4 text-center">
                 <div className="bg-surface-700/50 rounded p-2">
                   <p className="text-xs text-muted-foreground">Controls</p>
-                  <p className="text-sm font-medium text-foreground">{stats?.stats?.controls || 0}</p>
+                  <p className="text-sm font-medium text-foreground">
+                    {stats?.stats?.controls || 0}
+                  </p>
                 </div>
                 <div className="bg-surface-700/50 rounded p-2">
                   <p className="text-xs text-muted-foreground">Risks</p>
@@ -328,7 +328,9 @@ export default function WorkspaceList() {
                 </div>
                 <div className="bg-surface-700/50 rounded p-2">
                   <p className="text-xs text-muted-foreground">Score</p>
-                  <p className="text-sm font-medium text-brand-400">{stats?.complianceScore || 0}%</p>
+                  <p className="text-sm font-medium text-brand-400">
+                    {stats?.complianceScore || 0}%
+                  </p>
                 </div>
               </div>
 
@@ -353,7 +355,6 @@ export default function WorkspaceList() {
           );
         })}
       </div>
-
       {filteredWorkspaces.length === 0 && (
         <div className="text-center py-12">
           <BuildingOfficeIcon className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
@@ -362,7 +363,6 @@ export default function WorkspaceList() {
           </p>
         </div>
       )}
-
       <CreateWorkspaceModal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
@@ -371,4 +371,3 @@ export default function WorkspaceList() {
     </div>
   );
 }
-

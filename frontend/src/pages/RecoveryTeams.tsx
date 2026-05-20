@@ -7,9 +7,15 @@ import {
   FunnelIcon,
   LinkIcon,
 } from '@heroicons/react/24/outline';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import { api } from '@/lib/api';
 import clsx from 'clsx';
+
+import { Textarea } from '@/components/ui/Textarea';
+
+import { Input } from '@/components/ui/Input';
+
+import { SelectNative } from '@/components/ui/SelectNative';
 
 // ============================================
 // Types
@@ -116,16 +122,13 @@ export default function RecoveryTeams() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Recovery Teams</h1>
-          <p className="text-slate-400 mt-1">
-            Define and manage teams for BC/DR incident response
-          </p>
+          <p className="text-slate-400 mt-1">Define and manage teams for BC/DR incident response</p>
         </div>
         <Button variant="primary" onClick={() => setShowCreateModal(true)}>
           <PlusIcon className="h-4 w-4 mr-2" />
           Create Team
         </Button>
       </div>
-
       {/* Stats */}
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -135,24 +138,25 @@ export default function RecoveryTeams() {
           </div>
           <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
             <p className="text-slate-400 text-sm">Active Teams</p>
-            <p className="text-2xl font-bold text-green-400 mt-1">{stats.active_count || 0}</p>
+            <p className="text-2xl font-bold text-green-600 mt-1">{stats.active_count || 0}</p>
           </div>
           <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
             <p className="text-slate-400 text-sm">Total Members</p>
-            <p className="text-2xl font-bold text-cyan-400 mt-1">{stats.total_members || 0}</p>
+            <p className="text-2xl font-bold text-cyan-600 mt-1">{stats.total_members || 0}</p>
           </div>
           <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
             <p className="text-slate-400 text-sm">Crisis Management</p>
-            <p className="text-2xl font-bold text-red-400 mt-1">{stats.crisis_management_count || 0}</p>
+            <p className="text-2xl font-bold text-red-600 mt-1">
+              {stats.crisis_management_count || 0}
+            </p>
           </div>
         </div>
       )}
-
       {/* Filters */}
       <div className="flex items-center gap-4">
         <div className="flex-1 relative">
           <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-          <input
+          <Input
             type="text"
             placeholder="Search teams..."
             value={search}
@@ -162,7 +166,7 @@ export default function RecoveryTeams() {
         </div>
         <div className="flex items-center gap-2">
           <FunnelIcon className="h-5 w-5 text-slate-400" />
-          <select
+          <SelectNative
             value={teamType}
             onChange={(e) => setTeamType(e.target.value)}
             className="px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
@@ -172,10 +176,9 @@ export default function RecoveryTeams() {
                 {opt.label}
               </option>
             ))}
-          </select>
+          </SelectNative>
         </div>
       </div>
-
       {/* Teams List */}
       {isLoading ? (
         <div className="text-center py-12">
@@ -233,7 +236,7 @@ export default function RecoveryTeams() {
                     className={clsx(
                       'px-2 py-1 rounded text-xs font-medium',
                       team.isActive
-                        ? 'bg-green-500/20 text-green-400'
+                        ? 'bg-green-500/20 text-green-600'
                         : 'bg-slate-600 text-slate-400'
                     )}
                   >
@@ -245,19 +248,18 @@ export default function RecoveryTeams() {
           ))}
         </div>
       )}
-
       {/* Create Team Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
           <div className="bg-slate-800 rounded-xl shadow-2xl w-full max-w-md p-6">
             <h2 className="text-xl font-semibold text-white mb-6">Create Recovery Team</h2>
 
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Team Name <span className="text-red-400">*</span>
+                  Team Name <span className="text-red-600">*</span>
                 </label>
-                <input
+                <Input
                   type="text"
                   value={newTeamName ?? ''}
                   onChange={(e) => setNewTeamName(e.target.value)}
@@ -267,10 +269,8 @@ export default function RecoveryTeams() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Team Type
-                </label>
-                <select
+                <label className="block text-sm font-medium text-slate-300 mb-2">Team Type</label>
+                <SelectNative
                   value={newTeamType}
                   onChange={(e) => setNewTeamType(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
@@ -280,14 +280,12 @@ export default function RecoveryTeams() {
                       {opt.label}
                     </option>
                   ))}
-                </select>
+                </SelectNative>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Description
-                </label>
-                <textarea
+                <label className="block text-sm font-medium text-slate-300 mb-2">Description</label>
+                <Textarea
                   value={newTeamDescription ?? ''}
                   onChange={(e) => setNewTeamDescription(e.target.value)}
                   rows={3}

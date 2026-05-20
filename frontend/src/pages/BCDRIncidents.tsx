@@ -7,11 +7,15 @@ import {
   ClockIcon,
   PlayIcon,
 } from '@heroicons/react/24/outline';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import { DeclareIncidentModal } from '@/components/bcdr/DeclareIncidentModal';
 import { api } from '@/lib/api';
 import clsx from 'clsx';
 import { formatDistanceToNow } from 'date-fns';
+
+import { Input } from '@/components/ui/Input';
+
+import { SelectNative } from '@/components/ui/SelectNative';
 
 // ============================================
 // Types
@@ -48,9 +52,9 @@ const SEVERITY_COLORS: Record<string, string> = {
 };
 
 const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
-  active: { bg: 'bg-red-500/20', text: 'text-red-400' },
-  recovering: { bg: 'bg-orange-500/20', text: 'text-orange-400' },
-  resolved: { bg: 'bg-green-500/20', text: 'text-green-400' },
+  active: { bg: 'bg-red-500/20', text: 'text-red-600' },
+  recovering: { bg: 'bg-orange-500/20', text: 'text-orange-600' },
+  resolved: { bg: 'bg-green-500/20', text: 'text-green-600' },
   closed: { bg: 'bg-slate-600/50', text: 'text-slate-400' },
 };
 
@@ -102,7 +106,7 @@ export default function BCDRIncidents() {
       const response = await api.get('/bcdr/incidents/active');
       const data = response.data;
       // Handle both array response and { data: [] } response format
-      setActiveIncidents(Array.isArray(data) ? data : (data?.data || []));
+      setActiveIncidents(Array.isArray(data) ? data : data?.data || []);
     } catch (error) {
       console.error('Failed to load active incidents:', error);
       setActiveIncidents([]);
@@ -133,12 +137,13 @@ export default function BCDRIncidents() {
         <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <ExclamationTriangleIcon className="h-6 w-6 text-red-400 animate-pulse" />
+              <ExclamationTriangleIcon className="h-6 w-6 text-red-600 animate-pulse" />
               <div>
-                <h3 className="text-lg font-medium text-red-400">
-                  {safeActiveIncidents.length} Active Incident{safeActiveIncidents.length > 1 ? 's' : ''}
+                <h3 className="text-lg font-medium text-red-600">
+                  {safeActiveIncidents.length} Active Incident
+                  {safeActiveIncidents.length > 1 ? 's' : ''}
                 </h3>
-                <p className="text-sm text-red-300">
+                <p className="text-sm text-red-700">
                   {safeActiveIncidents.map((i) => i.title).join(', ')}
                 </p>
               </div>
@@ -153,7 +158,6 @@ export default function BCDRIncidents() {
           </div>
         </div>
       )}
-
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -167,7 +171,6 @@ export default function BCDRIncidents() {
           Declare Incident
         </Button>
       </div>
-
       {/* Stats */}
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -177,19 +180,19 @@ export default function BCDRIncidents() {
           </div>
           <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
             <p className="text-slate-400 text-sm">Active</p>
-            <p className="text-2xl font-bold text-red-400 mt-1">{stats.active_count || 0}</p>
+            <p className="text-2xl font-bold text-red-600 mt-1">{stats.active_count || 0}</p>
           </div>
           <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
             <p className="text-slate-400 text-sm">Recovering</p>
-            <p className="text-2xl font-bold text-orange-400 mt-1">{stats.recovering_count || 0}</p>
+            <p className="text-2xl font-bold text-orange-600 mt-1">{stats.recovering_count || 0}</p>
           </div>
           <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
             <p className="text-slate-400 text-sm">Resolved</p>
-            <p className="text-2xl font-bold text-green-400 mt-1">{stats.resolved_count || 0}</p>
+            <p className="text-2xl font-bold text-green-600 mt-1">{stats.resolved_count || 0}</p>
           </div>
           <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
             <p className="text-slate-400 text-sm">Avg Resolution</p>
-            <p className="text-2xl font-bold text-cyan-400 mt-1">
+            <p className="text-2xl font-bold text-cyan-600 mt-1">
               {stats.avg_resolution_minutes
                 ? `${Math.round(stats.avg_resolution_minutes / 60)}h`
                 : 'N/A'}
@@ -197,12 +200,11 @@ export default function BCDRIncidents() {
           </div>
         </div>
       )}
-
       {/* Filters */}
       <div className="flex items-center gap-4">
         <div className="flex-1 relative">
           <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-          <input
+          <Input
             type="text"
             placeholder="Search incidents..."
             value={search}
@@ -212,7 +214,7 @@ export default function BCDRIncidents() {
         </div>
         <div className="flex items-center gap-2">
           <FunnelIcon className="h-5 w-5 text-slate-400" />
-          <select
+          <SelectNative
             value={status}
             onChange={(e) => setStatus(e.target.value)}
             className="px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
@@ -222,10 +224,9 @@ export default function BCDRIncidents() {
                 {opt.label}
               </option>
             ))}
-          </select>
+          </SelectNative>
         </div>
       </div>
-
       {/* Incidents List */}
       {isLoading ? (
         <div className="text-center py-12">
@@ -250,8 +251,8 @@ export default function BCDRIncidents() {
                 incident.status === 'active'
                   ? 'border-red-500/50'
                   : incident.status === 'recovering'
-                  ? 'border-orange-500/50'
-                  : 'border-slate-700'
+                    ? 'border-orange-500/50'
+                    : 'border-slate-700'
               )}
               onClick={() => navigate(`/bcdr/incidents/${incident.id}`)}
             >
@@ -301,7 +302,6 @@ export default function BCDRIncidents() {
           ))}
         </div>
       )}
-
       {/* Declare Incident Modal */}
       {showDeclareModal && (
         <DeclareIncidentModal

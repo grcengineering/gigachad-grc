@@ -52,14 +52,14 @@ export default function WidgetPalette({ onSelect, onClose }: WidgetPaletteProps)
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
       <div className="bg-surface-900 rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-surface-700">
           <h2 className="text-lg font-semibold text-surface-100">Add Widget</h2>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-surface-700 rounded text-surface-400 hover:text-surface-200"
+            className="p-1 hover:bg-surface-700 rounded text-surface-600 hover:text-surface-200"
           >
             <XMarkIcon className="w-5 h-5" />
           </button>
@@ -69,7 +69,7 @@ export default function WidgetPalette({ onSelect, onClose }: WidgetPaletteProps)
         <div className="p-4 overflow-y-auto max-h-[60vh]">
           {Object.entries(widgetsByCategory).map(([category, widgets]) => (
             <div key={category} className="mb-6 last:mb-0">
-              <h3 className="text-sm font-medium text-surface-400 uppercase tracking-wider mb-3">
+              <h3 className="text-sm font-medium text-surface-600 uppercase tracking-wider mb-3">
                 {categoryLabels[category] || category}
               </h3>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -113,7 +113,3 @@ export default function WidgetPalette({ onSelect, onClose }: WidgetPaletteProps)
     </div>
   );
 }
-
-
-
-

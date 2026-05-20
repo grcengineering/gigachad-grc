@@ -1,21 +1,23 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { 
-  ClockIcon, 
-  UserGroupIcon, 
+import {
+  ClockIcon,
+  UserGroupIcon,
   BookOpenIcon,
   GlobeAltIcon,
   SparklesIcon,
   ArrowPathIcon,
   CheckIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import { trustConfigApi, TrustConfiguration as TrustConfigType } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/EmptyState';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
+
+import { Input } from '@/components/ui/Input';
 
 type TabId = 'sla' | 'assignment' | 'kb' | 'trust-center' | 'ai';
 
@@ -99,7 +101,7 @@ export default function TrustConfiguration() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-surface-100">Trust Configuration</h1>
-          <p className="mt-1 text-surface-400">
+          <p className="mt-1 text-surface-600">
             Configure SLAs, assignments, and features for the Trust module
           </p>
         </div>
@@ -126,7 +128,7 @@ export default function TrustConfiguration() {
                 'flex items-center gap-2 px-1 py-3 text-sm font-medium border-b-2 transition-colors',
                 activeTab === tab.id
                   ? 'border-brand-500 text-brand-400'
-                  : 'border-transparent text-surface-400 hover:text-surface-200'
+                  : 'border-transparent text-surface-600 hover:text-surface-200'
               )}
             >
               <tab.icon className="w-4 h-4" />
@@ -139,8 +141,8 @@ export default function TrustConfiguration() {
       {/* Tab Content */}
       <div className="bg-surface-900 border border-surface-800 rounded-xl p-6">
         {activeTab === 'sla' && config && (
-          <SlaSettingsTab 
-            config={config} 
+          <SlaSettingsTab
+            config={config}
             onUpdate={(slaSettings) => {
               updateMutation.mutate({ slaSettings });
             }}
@@ -148,7 +150,7 @@ export default function TrustConfiguration() {
           />
         )}
         {activeTab === 'assignment' && config && (
-          <AssignmentSettingsTab 
+          <AssignmentSettingsTab
             config={config}
             onUpdate={(assignmentSettings) => {
               updateMutation.mutate({ assignmentSettings });
@@ -157,7 +159,7 @@ export default function TrustConfiguration() {
           />
         )}
         {activeTab === 'kb' && config && (
-          <KbSettingsTab 
+          <KbSettingsTab
             config={config}
             onUpdate={(kbSettings) => {
               updateMutation.mutate({ kbSettings });
@@ -166,7 +168,7 @@ export default function TrustConfiguration() {
           />
         )}
         {activeTab === 'trust-center' && config && (
-          <TrustCenterSettingsTab 
+          <TrustCenterSettingsTab
             config={config}
             onUpdate={(trustCenterSettings) => {
               updateMutation.mutate({ trustCenterSettings });
@@ -175,7 +177,7 @@ export default function TrustConfiguration() {
           />
         )}
         {activeTab === 'ai' && config && (
-          <AiSettingsTab 
+          <AiSettingsTab
             config={config}
             onUpdate={(aiSettings) => {
               updateMutation.mutate({ aiSettings });
@@ -189,22 +191,26 @@ export default function TrustConfiguration() {
 }
 
 // SLA Settings Tab
-function SlaSettingsTab({ 
-  config, 
-  onUpdate, 
-  isUpdating 
-}: { 
-  config: TrustConfigType; 
+function SlaSettingsTab({
+  config,
+  onUpdate,
+  isUpdating,
+}: {
+  config: TrustConfigType;
   onUpdate: (settings: TrustConfigType['slaSettings']) => void;
   isUpdating: boolean;
 }) {
   const [settings, setSettings] = useState(config.slaSettings);
   const priorities = ['urgent', 'high', 'medium', 'low'] as const;
 
-  const handleChange = (priority: keyof typeof settings, field: 'targetHours' | 'warningHours', value: number) => {
-    setSettings(prev => ({
+  const handleChange = (
+    priority: keyof typeof settings,
+    field: 'targetHours' | 'warningHours',
+    value: number
+  ) => {
+    setSettings((prev) => ({
       ...prev,
-      [priority]: { ...prev[priority], [field]: value }
+      [priority]: { ...prev[priority], [field]: value },
     }));
   };
 
@@ -220,53 +226,62 @@ function SlaSettingsTab({
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-semibold text-surface-100 mb-2">SLA Targets by Priority</h3>
-        <p className="text-sm text-surface-400">
-          Define target response times for questionnaires based on priority level. 
-          The warning threshold triggers "At Risk" status.
+        <p className="text-sm text-surface-600">
+          Define target response times for questionnaires based on priority level. The warning
+          threshold triggers "At Risk" status.
         </p>
       </div>
-
       <div className="space-y-4">
         {priorities.map((priority) => (
           <div key={priority} className="bg-surface-800 rounded-lg p-4">
             <div className="flex items-center gap-3 mb-4">
-              <span className={clsx(
-                'px-3 py-1 text-sm font-medium rounded-full capitalize',
-                priority === 'urgent' ? 'bg-red-500/20 text-red-400' :
-                priority === 'high' ? 'bg-orange-500/20 text-orange-400' :
-                priority === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                'bg-surface-700 text-surface-300'
-              )}>
+              <span
+                className={clsx(
+                  'px-3 py-1 text-sm font-medium rounded-full capitalize',
+                  priority === 'urgent'
+                    ? 'bg-red-500/20 text-red-600'
+                    : priority === 'high'
+                      ? 'bg-orange-500/20 text-orange-600'
+                      : priority === 'medium'
+                        ? 'bg-yellow-500/20 text-yellow-600'
+                        : 'bg-surface-700 text-surface-700'
+                )}
+              >
                 {priority}
               </span>
               <span className="text-xs text-surface-500">
-                Current: {formatHoursToLabel(settings[priority].targetHours)} target, {formatHoursToLabel(settings[priority].warningHours)} warning
+                Current: {formatHoursToLabel(settings[priority].targetHours)} target,{' '}
+                {formatHoursToLabel(settings[priority].warningHours)} warning
               </span>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-surface-400 mb-1">
+                <label className="block text-sm font-medium text-surface-600 mb-1">
                   Target Time (hours)
                 </label>
-                <input
+                <Input
                   type="number"
                   min="1"
                   value={settings[priority].targetHours}
-                  onChange={(e) => handleChange(priority, 'targetHours', parseInt(e.target.value) || 1)}
+                  onChange={(e) =>
+                    handleChange(priority, 'targetHours', parseInt(e.target.value) || 1)
+                  }
                   className="w-full px-3 py-2 bg-surface-900 border border-surface-600 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-surface-400 mb-1">
+                <label className="block text-sm font-medium text-surface-600 mb-1">
                   Warning Threshold (hours)
                 </label>
-                <input
+                <Input
                   type="number"
                   min="1"
                   max={settings[priority].targetHours - 1}
                   value={settings[priority].warningHours}
-                  onChange={(e) => handleChange(priority, 'warningHours', parseInt(e.target.value) || 1)}
+                  onChange={(e) =>
+                    handleChange(priority, 'warningHours', parseInt(e.target.value) || 1)
+                  }
                   className="w-full px-3 py-2 bg-surface-900 border border-surface-600 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
                 />
               </div>
@@ -280,14 +295,18 @@ function SlaSettingsTab({
                 <span>{formatHoursToLabel(settings[priority].targetHours)}</span>
               </div>
               <div className="h-3 bg-surface-700 rounded-full overflow-hidden flex">
-                <div 
+                <div
                   className="bg-green-500/60 h-full"
-                  style={{ width: `${(settings[priority].warningHours / settings[priority].targetHours) * 100}%` }}
+                  style={{
+                    width: `${(settings[priority].warningHours / settings[priority].targetHours) * 100}%`,
+                  }}
                   title="On Track zone"
                 />
-                <div 
+                <div
                   className="bg-amber-500/60 h-full"
-                  style={{ width: `${((settings[priority].targetHours - settings[priority].warningHours) / settings[priority].targetHours) * 100}%` }}
+                  style={{
+                    width: `${((settings[priority].targetHours - settings[priority].warningHours) / settings[priority].targetHours) * 100}%`,
+                  }}
                   title="At Risk zone"
                 />
               </div>
@@ -309,9 +328,8 @@ function SlaSettingsTab({
           </div>
         ))}
       </div>
-
       <div className="flex justify-end">
-        <Button 
+        <Button
           onClick={() => onUpdate(settings)}
           isLoading={isUpdating}
           leftIcon={<CheckIcon className="w-4 h-4" />}
@@ -324,12 +342,12 @@ function SlaSettingsTab({
 }
 
 // Assignment Settings Tab
-function AssignmentSettingsTab({ 
-  config, 
-  onUpdate, 
-  isUpdating 
-}: { 
-  config: TrustConfigType; 
+function AssignmentSettingsTab({
+  config,
+  onUpdate,
+  isUpdating,
+}: {
+  config: TrustConfigType;
   onUpdate: (settings: TrustConfigType['assignmentSettings']) => void;
   isUpdating: boolean;
 }) {
@@ -339,7 +357,7 @@ function AssignmentSettingsTab({
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-semibold text-surface-100 mb-2">Assignment Settings</h3>
-        <p className="text-sm text-surface-400">
+        <p className="text-sm text-surface-600">
           Configure how questionnaires and questions are assigned to team members.
         </p>
       </div>
@@ -349,12 +367,14 @@ function AssignmentSettingsTab({
           <input
             type="checkbox"
             checked={settings.enableAutoAssignment}
-            onChange={(e) => setSettings(prev => ({ ...prev, enableAutoAssignment: e.target.checked }))}
+            onChange={(e) =>
+              setSettings((prev) => ({ ...prev, enableAutoAssignment: e.target.checked }))
+            }
             className="w-5 h-5 rounded border-surface-600 text-brand-500 focus:ring-brand-500 focus:ring-offset-surface-900"
           />
           <div>
             <p className="font-medium text-surface-100">Enable Auto-Assignment</p>
-            <p className="text-sm text-surface-400">
+            <p className="text-sm text-surface-600">
               Automatically assign new questionnaires to team members based on workload
             </p>
           </div>
@@ -362,7 +382,7 @@ function AssignmentSettingsTab({
       </div>
 
       <div className="flex justify-end">
-        <Button 
+        <Button
           onClick={() => onUpdate(settings)}
           isLoading={isUpdating}
           leftIcon={<CheckIcon className="w-4 h-4" />}
@@ -375,12 +395,12 @@ function AssignmentSettingsTab({
 }
 
 // Knowledge Base Settings Tab
-function KbSettingsTab({ 
-  config, 
-  onUpdate, 
-  isUpdating 
-}: { 
-  config: TrustConfigType; 
+function KbSettingsTab({
+  config,
+  onUpdate,
+  isUpdating,
+}: {
+  config: TrustConfigType;
   onUpdate: (settings: TrustConfigType['kbSettings']) => void;
   isUpdating: boolean;
 }) {
@@ -390,7 +410,7 @@ function KbSettingsTab({
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-semibold text-surface-100 mb-2">Knowledge Base Settings</h3>
-        <p className="text-sm text-surface-400">
+        <p className="text-sm text-surface-600">
           Configure how the knowledge base works for answer suggestions and quality control.
         </p>
       </div>
@@ -400,12 +420,14 @@ function KbSettingsTab({
           <input
             type="checkbox"
             checked={settings.requireApprovalForNewEntries}
-            onChange={(e) => setSettings(prev => ({ ...prev, requireApprovalForNewEntries: e.target.checked }))}
+            onChange={(e) =>
+              setSettings((prev) => ({ ...prev, requireApprovalForNewEntries: e.target.checked }))
+            }
             className="w-5 h-5 rounded border-surface-600 text-brand-500 focus:ring-brand-500 focus:ring-offset-surface-900"
           />
           <div>
             <p className="font-medium text-surface-100">Require Approval for New Entries</p>
-            <p className="text-sm text-surface-400">
+            <p className="text-sm text-surface-600">
               New knowledge base entries must be approved before they can be used
             </p>
           </div>
@@ -415,12 +437,14 @@ function KbSettingsTab({
           <input
             type="checkbox"
             checked={settings.autoSuggestFromKB}
-            onChange={(e) => setSettings(prev => ({ ...prev, autoSuggestFromKB: e.target.checked }))}
+            onChange={(e) =>
+              setSettings((prev) => ({ ...prev, autoSuggestFromKB: e.target.checked }))
+            }
             className="w-5 h-5 rounded border-surface-600 text-brand-500 focus:ring-brand-500 focus:ring-offset-surface-900"
           />
           <div>
             <p className="font-medium text-surface-100">Auto-Suggest from Knowledge Base</p>
-            <p className="text-sm text-surface-400">
+            <p className="text-sm text-surface-600">
               Automatically show relevant KB entries when answering questions
             </p>
           </div>
@@ -430,12 +454,14 @@ function KbSettingsTab({
           <input
             type="checkbox"
             checked={settings.trackUsageMetrics}
-            onChange={(e) => setSettings(prev => ({ ...prev, trackUsageMetrics: e.target.checked }))}
+            onChange={(e) =>
+              setSettings((prev) => ({ ...prev, trackUsageMetrics: e.target.checked }))
+            }
             className="w-5 h-5 rounded border-surface-600 text-brand-500 focus:ring-brand-500 focus:ring-offset-surface-900"
           />
           <div>
             <p className="font-medium text-surface-100">Track Usage Metrics</p>
-            <p className="text-sm text-surface-400">
+            <p className="text-sm text-surface-600">
               Track how often KB entries are used to identify popular answers
             </p>
           </div>
@@ -443,7 +469,7 @@ function KbSettingsTab({
       </div>
 
       <div className="flex justify-end">
-        <Button 
+        <Button
           onClick={() => onUpdate(settings)}
           isLoading={isUpdating}
           leftIcon={<CheckIcon className="w-4 h-4" />}
@@ -456,12 +482,12 @@ function KbSettingsTab({
 }
 
 // Trust Center Settings Tab
-function TrustCenterSettingsTab({ 
-  config, 
-  onUpdate, 
-  isUpdating 
-}: { 
-  config: TrustConfigType; 
+function TrustCenterSettingsTab({
+  config,
+  onUpdate,
+  isUpdating,
+}: {
+  config: TrustConfigType;
   onUpdate: (settings: TrustConfigType['trustCenterSettings']) => void;
   isUpdating: boolean;
 }) {
@@ -471,24 +497,21 @@ function TrustCenterSettingsTab({
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-semibold text-surface-100 mb-2">Trust Center Settings</h3>
-        <p className="text-sm text-surface-400">
+        <p className="text-sm text-surface-600">
           Configure your public-facing trust center portal.
         </p>
       </div>
-
       <div className="space-y-4">
         <label className="flex items-center gap-3 p-4 bg-surface-800 rounded-lg cursor-pointer">
           <input
             type="checkbox"
             checked={settings.enabled}
-            onChange={(e) => setSettings(prev => ({ ...prev, enabled: e.target.checked }))}
+            onChange={(e) => setSettings((prev) => ({ ...prev, enabled: e.target.checked }))}
             className="w-5 h-5 rounded border-surface-600 text-brand-500 focus:ring-brand-500 focus:ring-offset-surface-900"
           />
           <div>
             <p className="font-medium text-surface-100">Enable Trust Center</p>
-            <p className="text-sm text-surface-400">
-              Make your trust center publicly accessible
-            </p>
+            <p className="text-sm text-surface-600">Make your trust center publicly accessible</p>
           </div>
         </label>
 
@@ -496,25 +519,29 @@ function TrustCenterSettingsTab({
           <input
             type="checkbox"
             checked={settings.allowAnonymousAccess}
-            onChange={(e) => setSettings(prev => ({ ...prev, allowAnonymousAccess: e.target.checked }))}
+            onChange={(e) =>
+              setSettings((prev) => ({ ...prev, allowAnonymousAccess: e.target.checked }))
+            }
             className="w-5 h-5 rounded border-surface-600 text-brand-500 focus:ring-brand-500 focus:ring-offset-surface-900"
           />
           <div>
             <p className="font-medium text-surface-100">Allow Anonymous Access</p>
-            <p className="text-sm text-surface-400">
+            <p className="text-sm text-surface-600">
               Allow visitors to view the trust center without logging in
             </p>
           </div>
         </label>
 
         <div className="p-4 bg-surface-800 rounded-lg">
-          <label className="block text-sm font-medium text-surface-400 mb-2">
+          <label className="block text-sm font-medium text-surface-600 mb-2">
             Custom Domain (optional)
           </label>
-          <input
+          <Input
             type="text"
             value={settings.customDomain || ''}
-            onChange={(e) => setSettings(prev => ({ ...prev, customDomain: e.target.value || null }))}
+            onChange={(e) =>
+              setSettings((prev) => ({ ...prev, customDomain: e.target.value || null }))
+            }
             placeholder="trust.yourcompany.com"
             className="w-full px-3 py-2 bg-surface-900 border border-surface-600 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
           />
@@ -523,9 +550,8 @@ function TrustCenterSettingsTab({
           </p>
         </div>
       </div>
-
       <div className="flex justify-end">
-        <Button 
+        <Button
           onClick={() => onUpdate(settings)}
           isLoading={isUpdating}
           leftIcon={<CheckIcon className="w-4 h-4" />}
@@ -538,12 +564,12 @@ function TrustCenterSettingsTab({
 }
 
 // AI Settings Tab
-function AiSettingsTab({ 
-  config, 
-  onUpdate, 
-  isUpdating 
-}: { 
-  config: TrustConfigType; 
+function AiSettingsTab({
+  config,
+  onUpdate,
+  isUpdating,
+}: {
+  config: TrustConfigType;
   onUpdate: (settings: TrustConfigType['aiSettings']) => void;
   isUpdating: boolean;
 }) {
@@ -553,19 +579,19 @@ function AiSettingsTab({
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-semibold text-surface-100 mb-2">AI Features</h3>
-        <p className="text-sm text-surface-400">
+        <p className="text-sm text-surface-600">
           Enable optional AI-powered features to assist trust analysts.
         </p>
       </div>
 
       {!settings.enabled && (
         <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg flex items-start gap-3">
-          <ExclamationTriangleIcon className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+          <ExclamationTriangleIcon className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
           <div>
             <p className="text-sm text-amber-200 font-medium">AI Features Disabled</p>
-            <p className="text-xs text-amber-300/80 mt-1">
-              Enable AI to unlock auto-categorization and answer suggestions. 
-              Requires AI provider configuration in system settings.
+            <p className="text-xs text-amber-700/80 mt-1">
+              Enable AI to unlock auto-categorization and answer suggestions. Requires AI provider
+              configuration in system settings.
             </p>
           </div>
         </div>
@@ -576,12 +602,12 @@ function AiSettingsTab({
           <input
             type="checkbox"
             checked={settings.enabled}
-            onChange={(e) => setSettings(prev => ({ ...prev, enabled: e.target.checked }))}
+            onChange={(e) => setSettings((prev) => ({ ...prev, enabled: e.target.checked }))}
             className="w-5 h-5 rounded border-surface-600 text-brand-500 focus:ring-brand-500 focus:ring-offset-surface-900"
           />
           <div>
             <p className="font-medium text-surface-100">Enable AI Features</p>
-            <p className="text-sm text-surface-400">
+            <p className="text-sm text-surface-600">
               Turn on AI-powered assistance for the Trust module
             </p>
           </div>
@@ -593,12 +619,14 @@ function AiSettingsTab({
               <input
                 type="checkbox"
                 checked={settings.autoCategorizationEnabled}
-                onChange={(e) => setSettings(prev => ({ ...prev, autoCategorizationEnabled: e.target.checked }))}
+                onChange={(e) =>
+                  setSettings((prev) => ({ ...prev, autoCategorizationEnabled: e.target.checked }))
+                }
                 className="w-5 h-5 rounded border-surface-600 text-brand-500 focus:ring-brand-500 focus:ring-offset-surface-900"
               />
               <div>
                 <p className="font-medium text-surface-100">Auto-Categorization</p>
-                <p className="text-sm text-surface-400">
+                <p className="text-sm text-surface-600">
                   Automatically categorize incoming questions (Security, Privacy, Compliance, etc.)
                 </p>
               </div>
@@ -608,12 +636,14 @@ function AiSettingsTab({
               <input
                 type="checkbox"
                 checked={settings.answerSuggestionsEnabled}
-                onChange={(e) => setSettings(prev => ({ ...prev, answerSuggestionsEnabled: e.target.checked }))}
+                onChange={(e) =>
+                  setSettings((prev) => ({ ...prev, answerSuggestionsEnabled: e.target.checked }))
+                }
                 className="w-5 h-5 rounded border-surface-600 text-brand-500 focus:ring-brand-500 focus:ring-offset-surface-900"
               />
               <div>
                 <p className="font-medium text-surface-100">AI Answer Suggestions</p>
-                <p className="text-sm text-surface-400">
+                <p className="text-sm text-surface-600">
                   Generate draft answers using AI based on your knowledge base
                 </p>
               </div>
@@ -623,7 +653,7 @@ function AiSettingsTab({
       </div>
 
       <div className="flex justify-end">
-        <Button 
+        <Button
           onClick={() => onUpdate(settings)}
           isLoading={isUpdating}
           leftIcon={<CheckIcon className="w-4 h-4" />}
@@ -634,4 +664,3 @@ function AiSettingsTab({
     </div>
   );
 }
-

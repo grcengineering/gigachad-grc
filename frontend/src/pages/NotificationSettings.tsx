@@ -35,10 +35,10 @@ interface Notification {
 }
 
 const severityColors = {
-  info: 'bg-blue-900/30 text-blue-400 border-blue-700',
-  success: 'bg-green-900/30 text-green-400 border-green-700',
-  warning: 'bg-amber-900/30 text-amber-400 border-amber-700',
-  error: 'bg-red-900/30 text-red-400 border-red-700',
+  info: 'bg-blue-900/30 text-blue-600 border-blue-700',
+  success: 'bg-green-900/30 text-green-600 border-green-700',
+  warning: 'bg-amber-900/30 text-amber-600 border-amber-700',
+  error: 'bg-red-900/30 text-red-600 border-red-700',
 };
 
 const categoryIcons: Record<string, string> = {
@@ -76,11 +76,11 @@ function EmailConfigurationNotice() {
     return (
       <div className="bg-green-900/20 border border-green-700 rounded-xl p-4">
         <div className="flex items-start space-x-3">
-          <CheckCircleIcon className="h-6 w-6 text-green-400 flex-shrink-0 mt-0.5" />
+          <CheckCircleIcon className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
           <div>
-            <h4 className="text-green-400 font-medium">Email Notifications Active</h4>
+            <h4 className="text-green-600 font-medium">Email Notifications Active</h4>
             <p className="text-gray-300 text-sm mt-1">
-              Email delivery is configured using {emailStatus?.provider?.toUpperCase() || 'SMTP'}. 
+              Email delivery is configured using {emailStatus?.provider?.toUpperCase() || 'SMTP'}.
               Notifications will be sent to recipient email addresses.
             </p>
           </div>
@@ -92,11 +92,11 @@ function EmailConfigurationNotice() {
   return (
     <div className="bg-amber-900/20 border border-amber-700 rounded-xl p-4">
       <div className="flex items-start space-x-3">
-        <EnvelopeIcon className="h-6 w-6 text-amber-400 flex-shrink-0 mt-0.5" />
+        <EnvelopeIcon className="h-6 w-6 text-amber-600 flex-shrink-0 mt-0.5" />
         <div>
-          <h4 className="text-amber-400 font-medium">Email Notifications (Demo Mode)</h4>
+          <h4 className="text-amber-600 font-medium">Email Notifications (Demo Mode)</h4>
           <p className="text-gray-300 text-sm mt-1">
-            {emailStatus?.consoleReason || 
+            {emailStatus?.consoleReason ||
               'Email provider not configured. Configure SMTP, SendGrid, or AWS SES in environment variables to enable email delivery.'}
           </p>
           <p className="text-gray-400 text-xs mt-2">
@@ -116,12 +116,17 @@ export default function NotificationSettings() {
   const [hasChanges, setHasChanges] = useState(false);
 
   // Fetch all notifications
-  const { data: notificationsData, isLoading: notificationsLoading, refetch } = useQuery({
+  const {
+    data: notificationsData,
+    isLoading: notificationsLoading,
+    refetch,
+  } = useQuery({
     queryKey: ['notifications', 'all', activeTab],
-    queryFn: () => notificationsApi.list({ 
-      limit: 50, 
-      unreadOnly: activeTab === 'unread' 
-    }),
+    queryFn: () =>
+      notificationsApi.list({
+        limit: 50,
+        unreadOnly: activeTab === 'unread',
+      }),
     enabled: activeTab !== 'settings',
   });
   const notifications: Notification[] = notificationsData?.data?.notifications || [];
@@ -144,9 +149,9 @@ export default function NotificationSettings() {
 
   // Save preferences mutation
   const savePreferencesMutation = useMutation({
-    mutationFn: (prefs: NotificationPreference[]) => 
+    mutationFn: (prefs: NotificationPreference[]) =>
       notificationsApi.updatePreferences(
-        prefs.map(p => ({
+        prefs.map((p) => ({
           notificationType: p.notificationType,
           inApp: p.inApp,
           email: p.email,
@@ -191,18 +196,14 @@ export default function NotificationSettings() {
   });
 
   const handlePreferenceChange = (type: string, field: 'inApp' | 'email', value: boolean) => {
-    setLocalPreferences(prev => 
-      prev.map(p => 
-        p.notificationType === type 
-          ? { ...p, [field]: value }
-          : p
-      )
+    setLocalPreferences((prev) =>
+      prev.map((p) => (p.notificationType === type ? { ...p, [field]: value } : p))
     );
     setHasChanges(true);
   };
 
   const handleToggleAll = (field: 'inApp' | 'email', value: boolean) => {
-    setLocalPreferences(prev => prev.map(p => ({ ...p, [field]: value })));
+    setLocalPreferences((prev) => prev.map((p) => ({ ...p, [field]: value })));
     setHasChanges(true);
   };
 
@@ -211,13 +212,16 @@ export default function NotificationSettings() {
   };
 
   // Group preferences by category
-  const preferencesByCategory = localPreferences.reduce((acc, pref) => {
-    if (!acc[pref.category]) {
-      acc[pref.category] = [];
-    }
-    acc[pref.category].push(pref);
-    return acc;
-  }, {} as Record<string, NotificationPreference[]>);
+  const preferencesByCategory = localPreferences.reduce(
+    (acc, pref) => {
+      if (!acc[pref.category]) {
+        acc[pref.category] = [];
+      }
+      acc[pref.category].push(pref);
+      return acc;
+    },
+    {} as Record<string, NotificationPreference[]>
+  );
 
   const _categories = ['all', ...Object.keys(preferencesByCategory)];
   void _categories; // Available for filter UI
@@ -228,7 +232,9 @@ export default function NotificationSettings() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Notifications</h1>
-          <p className="text-gray-400 mt-1">Manage your notification preferences and view history</p>
+          <p className="text-gray-400 mt-1">
+            Manage your notification preferences and view history
+          </p>
         </div>
         <div className="flex items-center space-x-3">
           {activeTab !== 'settings' && (
@@ -243,7 +249,7 @@ export default function NotificationSettings() {
               {unreadCount > 0 && (
                 <button
                   onClick={() => markAllReadMutation.mutate()}
-                  className="px-3 py-2 text-sm text-indigo-400 hover:text-indigo-300 hover:bg-gray-700 rounded-lg transition-colors flex items-center space-x-1"
+                  className="px-3 py-2 text-sm text-indigo-600 hover:text-indigo-700 hover:bg-gray-700 rounded-lg transition-colors flex items-center space-x-1"
                 >
                   <CheckIcon className="h-4 w-4" />
                   <span>Mark all read</span>
@@ -256,7 +262,7 @@ export default function NotificationSettings() {
                       deleteAllMutation.mutate();
                     }
                   }}
-                  className="px-3 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-gray-700 rounded-lg transition-colors flex items-center space-x-1"
+                  className="px-3 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-gray-700 rounded-lg transition-colors flex items-center space-x-1"
                 >
                   <TrashIcon className="h-4 w-4" />
                   <span>Clear all</span>
@@ -284,7 +290,7 @@ export default function NotificationSettings() {
             onClick={() => setActiveTab('all')}
             className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
               activeTab === 'all'
-                ? 'border-indigo-500 text-indigo-400'
+                ? 'border-indigo-500 text-indigo-600'
                 : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-500'
             }`}
           >
@@ -294,7 +300,7 @@ export default function NotificationSettings() {
             onClick={() => setActiveTab('unread')}
             className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center space-x-2 ${
               activeTab === 'unread'
-                ? 'border-indigo-500 text-indigo-400'
+                ? 'border-indigo-500 text-indigo-600'
                 : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-500'
             }`}
           >
@@ -309,7 +315,7 @@ export default function NotificationSettings() {
             onClick={() => setActiveTab('settings')}
             className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
               activeTab === 'settings'
-                ? 'border-indigo-500 text-indigo-400'
+                ? 'border-indigo-500 text-indigo-600'
                 : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-500'
             }`}
           >
@@ -373,7 +379,10 @@ export default function NotificationSettings() {
             </div>
           ) : (
             Object.entries(preferencesByCategory).map(([category, prefs]) => (
-              <div key={category} className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+              <div
+                key={category}
+                className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden"
+              >
                 <div className="px-4 py-3 bg-gray-900 border-b border-gray-700">
                   <h3 className="text-lg font-medium text-white flex items-center space-x-2">
                     <span>{categoryIcons[category] || '📌'}</span>
@@ -382,7 +391,10 @@ export default function NotificationSettings() {
                 </div>
                 <div className="divide-y divide-gray-700">
                   {prefs.map((pref) => (
-                    <div key={pref.notificationType} className="px-4 py-4 flex items-center justify-between">
+                    <div
+                      key={pref.notificationType}
+                      className="px-4 py-4 flex items-center justify-between"
+                    >
                       <div className="flex-1">
                         <p className="text-white font-medium">{pref.typeName}</p>
                         <p className="text-sm text-gray-400">{pref.description}</p>
@@ -390,28 +402,52 @@ export default function NotificationSettings() {
                       <div className="flex items-center space-x-6">
                         {/* In-App Toggle */}
                         <label className="flex items-center space-x-2 cursor-pointer">
-                          <BellIcon className={`h-5 w-5 ${pref.inApp ? 'text-indigo-400' : 'text-gray-500'}`} />
+                          <BellIcon
+                            className={`h-5 w-5 ${pref.inApp ? 'text-indigo-600' : 'text-gray-500'}`}
+                          />
                           <input
                             type="checkbox"
                             checked={pref.inApp}
-                            onChange={(e) => handlePreferenceChange(pref.notificationType, 'inApp', e.target.checked)}
+                            onChange={(e) =>
+                              handlePreferenceChange(
+                                pref.notificationType,
+                                'inApp',
+                                e.target.checked
+                              )
+                            }
                             className="sr-only"
                           />
-                          <div className={`relative w-10 h-6 rounded-full transition-colors ${pref.inApp ? 'bg-indigo-600' : 'bg-gray-600'}`}>
-                            <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${pref.inApp ? 'translate-x-4' : 'translate-x-0'}`}></div>
+                          <div
+                            className={`relative w-10 h-6 rounded-full transition-colors ${pref.inApp ? 'bg-indigo-600' : 'bg-gray-600'}`}
+                          >
+                            <div
+                              className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${pref.inApp ? 'translate-x-4' : 'translate-x-0'}`}
+                            ></div>
                           </div>
                         </label>
                         {/* Email Toggle */}
                         <label className="flex items-center space-x-2 cursor-pointer">
-                          <EnvelopeIcon className={`h-5 w-5 ${pref.email ? 'text-indigo-400' : 'text-gray-500'}`} />
+                          <EnvelopeIcon
+                            className={`h-5 w-5 ${pref.email ? 'text-indigo-600' : 'text-gray-500'}`}
+                          />
                           <input
                             type="checkbox"
                             checked={pref.email}
-                            onChange={(e) => handlePreferenceChange(pref.notificationType, 'email', e.target.checked)}
+                            onChange={(e) =>
+                              handlePreferenceChange(
+                                pref.notificationType,
+                                'email',
+                                e.target.checked
+                              )
+                            }
                             className="sr-only"
                           />
-                          <div className={`relative w-10 h-6 rounded-full transition-colors ${pref.email ? 'bg-indigo-600' : 'bg-gray-600'}`}>
-                            <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${pref.email ? 'translate-x-4' : 'translate-x-0'}`}></div>
+                          <div
+                            className={`relative w-10 h-6 rounded-full transition-colors ${pref.email ? 'bg-indigo-600' : 'bg-gray-600'}`}
+                          >
+                            <div
+                              className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${pref.email ? 'translate-x-4' : 'translate-x-0'}`}
+                            ></div>
                           </div>
                         </label>
                       </div>
@@ -438,7 +474,9 @@ export default function NotificationSettings() {
               <BellIcon className="h-16 w-16 mx-auto text-gray-600 mb-4" />
               <h3 className="text-lg font-medium text-white">No notifications</h3>
               <p className="text-gray-400 mt-1">
-                {activeTab === 'unread' ? "You're all caught up!" : "You haven't received any notifications yet."}
+                {activeTab === 'unread'
+                  ? "You're all caught up!"
+                  : "You haven't received any notifications yet."}
               </p>
             </div>
           ) : (
@@ -451,13 +489,17 @@ export default function NotificationSettings() {
                   <div className="flex items-start justify-between">
                     <div className="flex items-start space-x-4 flex-1">
                       {/* Severity Badge */}
-                      <div className={`px-2.5 py-1 rounded-lg border text-xs font-medium ${severityColors[notification.severity]}`}>
+                      <div
+                        className={`px-2.5 py-1 rounded-lg border text-xs font-medium ${severityColors[notification.severity]}`}
+                      >
                         {notification.severity}
                       </div>
-                      
+
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-2">
-                          <h4 className={`text-sm font-medium ${notification.isRead ? 'text-gray-300' : 'text-white'}`}>
+                          <h4
+                            className={`text-sm font-medium ${notification.isRead ? 'text-gray-300' : 'text-white'}`}
+                          >
                             {notification.title}
                           </h4>
                           {!notification.isRead && (
@@ -467,7 +509,9 @@ export default function NotificationSettings() {
                         <p className="text-sm text-gray-400 mt-1">{notification.message}</p>
                         <div className="flex items-center space-x-3 mt-2">
                           <span className="text-xs text-gray-500">
-                            {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
+                            {formatDistanceToNow(new Date(notification.createdAt), {
+                              addSuffix: true,
+                            })}
                           </span>
                           {notification.entityType && (
                             <span className="text-xs text-gray-500 bg-gray-700 px-2 py-0.5 rounded">
@@ -483,7 +527,7 @@ export default function NotificationSettings() {
                       {!notification.isRead && (
                         <button
                           onClick={() => markReadMutation.mutate(notification.id)}
-                          className="p-2 text-gray-400 hover:text-green-400 hover:bg-gray-700 rounded-lg transition-colors"
+                          className="p-2 text-gray-400 hover:text-green-600 hover:bg-gray-700 rounded-lg transition-colors"
                           title="Mark as read"
                         >
                           <CheckIcon className="h-4 w-4" />
@@ -491,7 +535,7 @@ export default function NotificationSettings() {
                       )}
                       <button
                         onClick={() => deleteMutation.mutate(notification.id)}
-                        className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-700 rounded-lg transition-colors"
+                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-gray-700 rounded-lg transition-colors"
                         title="Delete"
                       >
                         <TrashIcon className="h-4 w-4" />
@@ -507,6 +551,3 @@ export default function NotificationSettings() {
     </div>
   );
 }
-
-
-

@@ -4,6 +4,8 @@ import { Dashboard } from '@/lib/dashboardWidgets';
 import { XMarkIcon, DocumentDuplicateIcon, EyeIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
+import { Button } from '@/components/ui/Button';
+
 interface TemplateGalleryProps {
   onClose: () => void;
   onSelectTemplate: (dashboardId: string) => void;
@@ -29,19 +31,17 @@ export default function TemplateGallery({ onClose, onSelectTemplate }: TemplateG
   });
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
       <div className="bg-surface-900 rounded-lg shadow-xl w-full max-w-4xl max-h-[80vh] overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-surface-700">
           <div>
             <h2 className="text-lg font-semibold text-surface-100">Dashboard Templates</h2>
-            <p className="text-sm text-surface-400">
-              Choose a template to get started quickly
-            </p>
+            <p className="text-sm text-surface-600">Choose a template to get started quickly</p>
           </div>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-surface-700 rounded text-surface-400 hover:text-surface-200"
+            className="p-1 hover:bg-surface-700 rounded text-surface-600 hover:text-surface-200"
           >
             <XMarkIcon className="w-5 h-5" />
           </button>
@@ -55,7 +55,7 @@ export default function TemplateGallery({ onClose, onSelectTemplate }: TemplateG
             </div>
           ) : templates?.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-surface-400">No templates available yet</p>
+              <p className="text-surface-600">No templates available yet</p>
               <p className="text-sm text-surface-500 mt-2">
                 Templates are created by admins and shared across the organization
               </p>
@@ -71,7 +71,7 @@ export default function TemplateGallery({ onClose, onSelectTemplate }: TemplateG
                     <div>
                       <h3 className="font-medium text-surface-200">{template.name}</h3>
                       {template.description && (
-                        <p className="text-sm text-surface-400 mt-1">{template.description}</p>
+                        <p className="text-sm text-surface-600 mt-1">{template.description}</p>
                       )}
                     </div>
                   </div>
@@ -99,20 +99,22 @@ export default function TemplateGallery({ onClose, onSelectTemplate }: TemplateG
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <button
+                    <Button
                       onClick={() => onSelectTemplate(template.id)}
-                      className="btn btn-ghost btn-sm flex-1"
+                      className="flex-1"
+                      variant="ghost"
                     >
                       <EyeIcon className="w-4 h-4 mr-1" /> Preview
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       onClick={() => duplicateMutation.mutate(template.id)}
                       disabled={duplicateMutation.isPending}
-                      className="btn btn-primary btn-sm flex-1"
+                      className="flex-1"
+                      variant="primary"
                     >
                       <DocumentDuplicateIcon className="w-4 h-4 mr-1" />
                       {duplicateMutation.isPending ? 'Applying...' : 'Use Template'}
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -130,7 +132,3 @@ export default function TemplateGallery({ onClose, onSelectTemplate }: TemplateG
     </div>
   );
 }
-
-
-
-

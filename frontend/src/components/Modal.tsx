@@ -1,7 +1,11 @@
-import { useEffect, useRef, ReactNode } from 'react';
-import { XMarkIcon } from '@heroicons/react/24/outline';
-import { Button } from './Button';
-import clsx from 'clsx';
+/**
+ * Legacy Modal API. Thin wrapper over the design-system Dialog primitive
+ * so existing callsites (5 of them) keep working with `isOpen` / `size`
+ * naming. New code should import `Dialog` from @/components/ui directly.
+ */
+import { ReactNode } from 'react';
+import { Dialog } from '@/components/ui/Dialog';
+import { Button } from '@/components/ui/Button';
 
 interface ModalProps {
   isOpen: boolean;
@@ -10,18 +14,22 @@ interface ModalProps {
   description?: string;
   children: ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
+  /** Kept for API compatibility — Dialog renders a close button by default. */
   showCloseButton?: boolean;
+  /** Kept for API compatibility — Dialog handles ESC via HeadlessUI. */
   closeOnEscape?: boolean;
+  /** Kept for API compatibility — Dialog closes on overlay click by default. */
   closeOnOverlayClick?: boolean;
   className?: string;
 }
 
-const sizeClasses = {
-  sm: 'max-w-sm',
-  md: 'max-w-md',
-  lg: 'max-w-lg',
-  xl: 'max-w-xl',
-  full: 'max-w-4xl',
+// Legacy 'full' size maps to Dialog's largest 'xl'.
+const sizeMap: Record<NonNullable<ModalProps['size']>, 'sm' | 'md' | 'lg' | 'xl'> = {
+  sm: 'sm',
+  md: 'md',
+  lg: 'lg',
+  xl: 'xl',
+  full: 'xl',
 };
 
 export function Modal({
@@ -31,107 +39,25 @@ export function Modal({
   description,
   children,
   size = 'md',
-  showCloseButton = true,
-  closeOnEscape = true,
-  closeOnOverlayClick = true,
   className,
 }: ModalProps) {
-  const modalRef = useRef<HTMLDivElement>(null);
-
-  // Handle Escape key
-  useEffect(() => {
-    if (!isOpen || !closeOnEscape) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, closeOnEscape, onClose]);
-
-  // Focus trap - focus first focusable element when modal opens
-  useEffect(() => {
-    if (!isOpen || !modalRef.current) return;
-
-    const focusableElements = modalRef.current.querySelectorAll(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-    );
-    const firstElement = focusableElements[0] as HTMLElement;
-    
-    if (firstElement) {
-      // Small delay to ensure the modal is fully rendered
-      setTimeout(() => firstElement.focus(), 50);
-    }
-
-    // Prevent body scroll when modal is open
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [isOpen]);
-
-  if (!isOpen) return null;
-
-  const handleOverlayClick = (e: React.MouseEvent) => {
-    if (closeOnOverlayClick && e.target === e.currentTarget) {
-      onClose();
-    }
-  };
-
   return (
-    <div
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-      onClick={handleOverlayClick}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby={title ? 'modal-title' : undefined}
-      aria-describedby={description ? 'modal-description' : undefined}
+    <Dialog
+      open={isOpen}
+      onClose={onClose}
+      title={title}
+      description={description}
+      size={sizeMap[size]}
+      className={className}
     >
-      <div
-        ref={modalRef}
-        className={clsx(
-          'bg-surface-800 rounded-xl border border-surface-700 w-full max-h-[90vh] overflow-y-auto',
-          sizeClasses[size],
-          className
-        )}
-      >
-        {/* Header */}
-        {(title || showCloseButton) && (
-          <div className="p-6 border-b border-surface-700 flex items-center justify-between">
-            <div>
-              {title && (
-                <h2 id="modal-title" className="text-xl font-semibold text-white">
-                  {title}
-                </h2>
-              )}
-              {description && (
-                <p id="modal-description" className="text-surface-400 mt-1 text-sm">
-                  {description}
-                </p>
-              )}
-            </div>
-            {showCloseButton && (
-              <button
-                onClick={onClose}
-                className="p-2 hover:bg-surface-700 rounded-lg text-surface-400 transition-colors"
-                aria-label="Close modal"
-              >
-                <XMarkIcon className="w-5 h-5" />
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Content */}
-        <div className={clsx(!title && !showCloseButton && 'pt-0', 'p-6')}>
-          {children}
-        </div>
-      </div>
-    </div>
+      {children}
+    </Dialog>
   );
+}
+
+/** Footer slot helper for Modal — equivalent to using <Dialog footer={...}>. */
+export function ModalFooter({ children, className }: { children: ReactNode; className?: string }) {
+  return <div className={className ?? 'flex justify-end gap-3 pt-4'}>{children}</div>;
 }
 
 // Confirmation Modal for delete operations
@@ -157,15 +83,9 @@ export function ConfirmModal({
   isLoading = false,
 }: ConfirmModalProps) {
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={title}
-      size="sm"
-      showCloseButton={false}
-    >
-      <p className="text-surface-300 mb-6">{message}</p>
-      <div className="flex justify-end gap-3">
+    <Modal isOpen={isOpen} onClose={onClose} title={title} size="sm">
+      <p className="text-surface-700 mb-6">{message}</p>
+      <ModalFooter>
         <Button variant="secondary" onClick={onClose} disabled={isLoading}>
           Cancel
         </Button>
@@ -177,14 +97,9 @@ export function ConfirmModal({
         >
           {confirmText}
         </Button>
-      </div>
+      </ModalFooter>
     </Modal>
   );
 }
 
 export default Modal;
-
-
-
-
-

@@ -17,8 +17,20 @@ import clsx from 'clsx';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 
+import { Input } from '@/components/ui/Input';
+
 interface SearchResult {
-  type: 'control' | 'framework' | 'policy' | 'evidence' | 'integration' | 'risk' | 'vendor' | 'audit' | 'user' | 'asset';
+  type:
+    | 'control'
+    | 'framework'
+    | 'policy'
+    | 'evidence'
+    | 'integration'
+    | 'risk'
+    | 'vendor'
+    | 'audit'
+    | 'user'
+    | 'asset';
   id: string;
   title: string;
   subtitle?: string;
@@ -143,8 +155,8 @@ export default function GlobalSearch() {
   return (
     <div ref={searchRef} className="relative flex-1 max-w-xl">
       <div className="relative">
-        <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-400" />
-        <input
+        <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-600" />
+        <Input
           ref={inputRef}
           type="text"
           placeholder="Search everything... (⌘K)"
@@ -162,24 +174,21 @@ export default function GlobalSearch() {
               setQuery('');
               setSelectedIndex(0);
             }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-surface-400 hover:text-surface-100"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-surface-600 hover:text-surface-100"
           >
             <XMarkIcon className="w-5 h-5" />
           </button>
         )}
       </div>
-
       {/* Results dropdown */}
       {isOpen && query.length >= 2 && (
         <div className="absolute top-full left-0 right-0 mt-2 bg-surface-900 border border-surface-800 rounded-lg shadow-xl max-h-96 overflow-y-auto z-50">
           {isLoading ? (
-            <div className="p-4 text-center text-surface-400">
+            <div className="p-4 text-center text-surface-600">
               <div className="animate-spin w-5 h-5 border-2 border-surface-700 border-t-brand-500 rounded-full mx-auto"></div>
             </div>
           ) : results.length === 0 ? (
-            <div className="p-4 text-center text-surface-400">
-              No results found for "{query}"
-            </div>
+            <div className="p-4 text-center text-surface-600">No results found for "{query}"</div>
           ) : (
             <div className="py-2">
               {results.map((result: SearchResult, index: number) => {
@@ -194,22 +203,28 @@ export default function GlobalSearch() {
                       'w-full px-4 py-3 flex items-center gap-3 text-left transition-colors',
                       isSelected
                         ? 'bg-brand-500/20 text-surface-100'
-                        : 'text-surface-300 hover:bg-surface-800'
+                        : 'text-surface-700 hover:bg-surface-800'
                     )}
                   >
-                    <div className={clsx(
-                      'p-2 rounded-lg',
-                      isSelected ? 'bg-brand-500/30' : 'bg-surface-800'
-                    )}>
+                    <div
+                      className={clsx(
+                        'p-2 rounded-lg',
+                        isSelected ? 'bg-brand-500/30' : 'bg-surface-800'
+                      )}
+                    >
                       <Icon className="w-4 h-4" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="font-medium truncate">{result.title}</span>
-                        <span className={clsx(
-                          'text-xs px-2 py-0.5 rounded',
-                          isSelected ? 'bg-brand-500/30 text-brand-300' : 'bg-surface-800 text-surface-500'
-                        )}>
+                        <span
+                          className={clsx(
+                            'text-xs px-2 py-0.5 rounded',
+                            isSelected
+                              ? 'bg-brand-500/30 text-brand-300'
+                              : 'bg-surface-800 text-surface-500'
+                          )}
+                        >
                           {SEARCH_LABELS[result.type]}
                         </span>
                       </div>

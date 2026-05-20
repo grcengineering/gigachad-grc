@@ -68,9 +68,9 @@ export default function AIRiskScoring({
   };
 
   const getConfidenceColor = (score: number) => {
-    if (score >= 0.8) return 'text-emerald-400';
-    if (score >= 0.6) return 'text-yellow-400';
-    return 'text-orange-400';
+    if (score >= 0.8) return 'text-emerald-600';
+    if (score >= 0.6) return 'text-yellow-600';
+    return 'text-orange-600';
   };
 
   const getSeverityColor = (value: number) => {
@@ -81,21 +81,26 @@ export default function AIRiskScoring({
   };
 
   return (
-    <div className={clsx('bg-gradient-to-br from-purple-900/20 to-blue-900/20 rounded-xl border border-purple-500/30 overflow-hidden', className)}>
+    <div
+      className={clsx(
+        'bg-gradient-to-br from-purple-900/20 to-blue-900/20 rounded-xl border border-purple-500/30 overflow-hidden',
+        className
+      )}
+    >
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-purple-500/30">
         <div className="flex items-center gap-2">
-          <SparklesIcon className="w-5 h-5 text-purple-400" />
+          <SparklesIcon className="w-5 h-5 text-purple-600" />
           <h3 className="font-medium text-white">AI Risk Scoring</h3>
         </div>
-        
+
         <button
           onClick={handleScore}
           disabled={scoringMutation.isPending || !riskTitle || !riskDescription}
           className={clsx(
             'flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all',
             scoringMutation.isPending
-              ? 'bg-purple-500/30 text-purple-300 cursor-wait'
+              ? 'bg-purple-500/30 text-purple-700 cursor-wait'
               : 'bg-purple-500 hover:bg-purple-600 text-white'
           )}
         >
@@ -119,35 +124,45 @@ export default function AIRiskScoring({
           {/* Scores */}
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-surface-800/50 rounded-lg p-3">
-              <div className="text-xs text-surface-400 mb-1">Suggested Likelihood</div>
+              <div className="text-xs text-surface-600 mb-1">Suggested Likelihood</div>
               <div className="flex items-center gap-2">
-                <div className={clsx('w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold', getSeverityColor(result.suggestedLikelihood))}>
+                <div
+                  className={clsx(
+                    'w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold',
+                    getSeverityColor(result.suggestedLikelihood)
+                  )}
+                >
                   {result.suggestedLikelihood}
                 </div>
                 <span className="text-white font-medium">
                   {LIKELIHOOD_LABELS[result.suggestedLikelihood - 1]}
                 </span>
               </div>
-              <p className="text-xs text-surface-400 mt-2">{result.likelihoodRationale}</p>
+              <p className="text-xs text-surface-600 mt-2">{result.likelihoodRationale}</p>
             </div>
 
             <div className="bg-surface-800/50 rounded-lg p-3">
-              <div className="text-xs text-surface-400 mb-1">Suggested Impact</div>
+              <div className="text-xs text-surface-600 mb-1">Suggested Impact</div>
               <div className="flex items-center gap-2">
-                <div className={clsx('w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold', getSeverityColor(result.suggestedImpact))}>
+                <div
+                  className={clsx(
+                    'w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold',
+                    getSeverityColor(result.suggestedImpact)
+                  )}
+                >
                   {result.suggestedImpact}
                 </div>
                 <span className="text-white font-medium">
                   {IMPACT_LABELS[result.suggestedImpact - 1]}
                 </span>
               </div>
-              <p className="text-xs text-surface-400 mt-2">{result.impactRationale}</p>
+              <p className="text-xs text-surface-600 mt-2">{result.impactRationale}</p>
             </div>
           </div>
 
           {/* Confidence */}
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-surface-400">AI Confidence:</span>
+            <span className="text-surface-600">AI Confidence:</span>
             <span className={clsx('font-medium', getConfidenceColor(result.confidenceScore))}>
               {Math.round(result.confidenceScore * 100)}%
             </span>
@@ -156,14 +171,14 @@ export default function AIRiskScoring({
           {/* Mitigations */}
           {result.suggestedMitigations.length > 0 && (
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm text-surface-400">
+              <div className="flex items-center gap-2 text-sm text-surface-600">
                 <LightBulbIcon className="w-4 h-4" />
                 Suggested Mitigations
               </div>
               <ul className="space-y-1">
                 {result.suggestedMitigations.map((mitigation, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-surface-300">
-                    <CheckCircleIcon className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
+                  <li key={i} className="flex items-start gap-2 text-sm text-surface-700">
+                    <CheckCircleIcon className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
                     {mitigation}
                   </li>
                 ))}
@@ -174,7 +189,7 @@ export default function AIRiskScoring({
           {/* Related Risks */}
           {result.relatedRisks.length > 0 && (
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm text-surface-400">
+              <div className="flex items-center gap-2 text-sm text-surface-600">
                 <ExclamationTriangleIcon className="w-4 h-4" />
                 Related Risks to Consider
               </div>
@@ -182,7 +197,7 @@ export default function AIRiskScoring({
                 {result.relatedRisks.map((risk, i) => (
                   <span
                     key={i}
-                    className="px-2 py-1 bg-surface-700/50 rounded text-xs text-surface-300"
+                    className="px-2 py-1 bg-surface-700/50 rounded text-xs text-surface-700"
                   >
                     {risk}
                   </span>
@@ -207,7 +222,7 @@ export default function AIRiskScoring({
       {result && !isExpanded && (
         <button
           onClick={() => setIsExpanded(true)}
-          className="w-full p-3 text-sm text-surface-400 hover:text-white transition-colors"
+          className="w-full p-3 text-sm text-surface-600 hover:text-white transition-colors"
         >
           Show AI analysis results
         </button>
@@ -215,7 +230,3 @@ export default function AIRiskScoring({
     </div>
   );
 }
-
-
-
-

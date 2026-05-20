@@ -27,7 +27,7 @@ export function RealTimePresence({ entityType, entityId }: RealTimePresenceProps
   }
 
   return (
-    <div className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-300">
+    <div className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-700">
       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
       Live updates
     </div>

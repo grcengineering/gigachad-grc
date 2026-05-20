@@ -14,7 +14,7 @@ import {
   AcademicCapIcon,
   RocketLaunchIcon,
 } from '@heroicons/react/24/outline';
-import { Button } from './Button';
+import { Button } from '@/components/ui/Button';
 import clsx from 'clsx';
 
 interface TourStep {
@@ -34,17 +34,16 @@ const TOUR_STEPS: TourStep[] = [
   {
     id: 'welcome',
     title: 'Welcome to GigaChad GRC! 🎉',
-    description: 'Your comprehensive Governance, Risk, and Compliance platform. Let\'s take a quick tour to help you get started.',
+    description:
+      "Your comprehensive Governance, Risk, and Compliance platform. Let's take a quick tour to help you get started.",
     icon: RocketLaunchIcon,
-    tips: [
-      'Press ⌘K anytime to search or run commands',
-      'Press ⌘/ to see all keyboard shortcuts',
-    ],
+    tips: ['Press ⌘K anytime to search or run commands', 'Press ⌘/ to see all keyboard shortcuts'],
   },
   {
     id: 'controls',
     title: 'Security Controls',
-    description: 'Manage your security controls, map them to compliance frameworks, and track implementation status across your organization.',
+    description:
+      'Manage your security controls, map them to compliance frameworks, and track implementation status across your organization.',
     icon: ShieldCheckIcon,
     action: {
       label: 'View Controls',
@@ -58,7 +57,8 @@ const TOUR_STEPS: TourStep[] = [
   {
     id: 'risks',
     title: 'Risk Management',
-    description: 'Identify, assess, and track risks with our comprehensive risk register. Visualize risks with heat maps and manage treatment plans.',
+    description:
+      'Identify, assess, and track risks with our comprehensive risk register. Visualize risks with heat maps and manage treatment plans.',
     icon: ExclamationTriangleIcon,
     action: {
       label: 'View Risks',
@@ -72,35 +72,32 @@ const TOUR_STEPS: TourStep[] = [
   {
     id: 'policies',
     title: 'Policy Management',
-    description: 'Create, version, and manage your security policies. Track reviews, approvals, and ensure employees acknowledge policy changes.',
+    description:
+      'Create, version, and manage your security policies. Track reviews, approvals, and ensure employees acknowledge policy changes.',
     icon: DocumentTextIcon,
     action: {
       label: 'View Policies',
       path: '/policies',
     },
-    tips: [
-      'Set up automated review reminders',
-      'Track policy acknowledgments',
-    ],
+    tips: ['Set up automated review reminders', 'Track policy acknowledgments'],
   },
   {
     id: 'vendors',
     title: 'Third-Party Risk Management',
-    description: 'Assess and monitor your vendors and suppliers. Track contracts, security assessments, and manage vendor relationships.',
+    description:
+      'Assess and monitor your vendors and suppliers. Track contracts, security assessments, and manage vendor relationships.',
     icon: BuildingOfficeIcon,
     action: {
       label: 'View Vendors',
       path: '/vendors',
     },
-    tips: [
-      'Use questionnaires for vendor assessments',
-      'Set up contract expiration alerts',
-    ],
+    tips: ['Use questionnaires for vendor assessments', 'Set up contract expiration alerts'],
   },
   {
     id: 'frameworks',
     title: 'Compliance Frameworks',
-    description: 'Map your controls to compliance frameworks like SOC 2, ISO 27001, HIPAA, and more. Track your readiness score in real-time.',
+    description:
+      'Map your controls to compliance frameworks like SOC 2, ISO 27001, HIPAA, and more. Track your readiness score in real-time.',
     icon: ChartBarIcon,
     action: {
       label: 'View Frameworks',
@@ -114,21 +111,20 @@ const TOUR_STEPS: TourStep[] = [
   {
     id: 'training',
     title: 'Security Awareness Training',
-    description: 'Keep your team security-aware with interactive training modules. Track completion and compliance across your organization.',
+    description:
+      'Keep your team security-aware with interactive training modules. Track completion and compliance across your organization.',
     icon: AcademicCapIcon,
     action: {
       label: 'Start Training',
       path: '/awareness-training',
     },
-    tips: [
-      'Assign training modules to employees',
-      'Track completion rates on the dashboard',
-    ],
+    tips: ['Assign training modules to employees', 'Track completion rates on the dashboard'],
   },
   {
     id: 'complete',
-    title: 'You\'re All Set! 🚀',
-    description: 'You\'re ready to start managing your GRC program. Remember, you can always access help from the command palette (⌘K) or view keyboard shortcuts (⌘/).',
+    title: "You're All Set! 🚀",
+    description:
+      "You're ready to start managing your GRC program. Remember, you can always access help from the command palette (⌘K) or view keyboard shortcuts (⌘/).",
     icon: SparklesIcon,
     tips: [
       'Start by mapping your controls to a framework',
@@ -157,13 +153,13 @@ export function OnboardingTour({ isOpen, onClose, onComplete }: OnboardingTourPr
     if (isLast) {
       handleComplete();
     } else {
-      setCurrentStep(prev => prev + 1);
+      setCurrentStep((prev) => prev + 1);
     }
   };
 
   const handlePrev = () => {
     if (!isFirst) {
-      setCurrentStep(prev => prev - 1);
+      setCurrentStep((prev) => prev - 1);
     }
   };
 
@@ -229,7 +225,7 @@ export function OnboardingTour({ isOpen, onClose, onComplete }: OnboardingTourPr
                 <div className="absolute top-4 right-4">
                   <button
                     onClick={handleSkip}
-                    className="text-sm text-surface-500 hover:text-surface-300 transition-colors"
+                    className="text-sm text-surface-500 hover:text-surface-700 transition-colors"
                   >
                     Skip tour
                   </button>
@@ -248,19 +244,17 @@ export function OnboardingTour({ isOpen, onClose, onComplete }: OnboardingTourPr
                   </Dialog.Title>
 
                   {/* Description */}
-                  <p className="text-surface-300 mb-6 leading-relaxed">
-                    {step.description}
-                  </p>
+                  <p className="text-surface-700 mb-6 leading-relaxed">{step.description}</p>
 
                   {/* Tips */}
                   {step.tips && step.tips.length > 0 && (
                     <div className="bg-surface-800/50 rounded-xl p-4 mb-6 text-left">
-                      <p className="text-xs font-semibold text-surface-400 uppercase tracking-wider mb-3">
+                      <p className="text-xs font-semibold text-surface-600 uppercase tracking-wider mb-3">
                         Pro Tips
                       </p>
                       <ul className="space-y-2">
                         {step.tips.map((tip, idx) => (
-                          <li key={idx} className="flex items-start gap-2 text-sm text-surface-300">
+                          <li key={idx} className="flex items-start gap-2 text-sm text-surface-700">
                             <CheckCircleIcon className="w-4 h-4 text-brand-400 flex-shrink-0 mt-0.5" />
                             {tip}
                           </li>
@@ -271,11 +265,7 @@ export function OnboardingTour({ isOpen, onClose, onComplete }: OnboardingTourPr
 
                   {/* Action Button */}
                   {step.action && (
-                    <Button
-                      onClick={handleAction}
-                      variant="secondary"
-                      className="mb-6"
-                    >
+                    <Button onClick={handleAction} variant="secondary" className="mb-6">
                       {step.action.label}
                       <ArrowRightIcon className="w-4 h-4 ml-2" />
                     </Button>
@@ -292,8 +282,8 @@ export function OnboardingTour({ isOpen, onClose, onComplete }: OnboardingTourPr
                           idx === currentStep
                             ? 'w-6 bg-brand-500'
                             : idx < currentStep
-                            ? 'bg-brand-500/50'
-                            : 'bg-surface-600'
+                              ? 'bg-brand-500/50'
+                              : 'bg-surface-600'
                         )}
                       />
                     ))}
@@ -309,7 +299,7 @@ export function OnboardingTour({ isOpen, onClose, onComplete }: OnboardingTourPr
                       'px-4 py-2 text-sm font-medium rounded-lg transition-colors',
                       isFirst
                         ? 'text-surface-600 cursor-not-allowed'
-                        : 'text-surface-300 hover:text-white hover:bg-surface-700'
+                        : 'text-surface-700 hover:text-white hover:bg-surface-700'
                     )}
                   >
                     Previous
@@ -385,10 +375,8 @@ export function WelcomeBanner({
             <SparklesIcon className="w-5 h-5 text-brand-400" />
           </div>
           <div>
-            <p className="text-white font-medium">
-              Welcome back{userName ? `, ${userName}` : ''}!
-            </p>
-            <p className="text-sm text-surface-400">
+            <p className="text-white font-medium">Welcome back{userName ? `, ${userName}` : ''}!</p>
+            <p className="text-sm text-surface-600">
               Need a refresher? Take the product tour anytime.
             </p>
           </div>
@@ -402,7 +390,7 @@ export function WelcomeBanner({
           </button>
           <button
             onClick={onDismiss}
-            className="p-1.5 rounded-lg hover:bg-surface-700 text-surface-400 hover:text-white transition-colors"
+            className="p-1.5 rounded-lg hover:bg-surface-700 text-surface-600 hover:text-white transition-colors"
           >
             <XMarkIcon className="w-4 h-4" />
           </button>
@@ -413,8 +401,3 @@ export function WelcomeBanner({
 }
 
 export default OnboardingTour;
-
-
-
-
-

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  ArrowLeftIcon, 
-  PencilIcon, 
+import {
+  ArrowLeftIcon,
+  PencilIcon,
   TrashIcon,
   CalendarDaysIcon,
   ExclamationTriangleIcon,
@@ -15,7 +15,7 @@ import { vendorsApi, tprmConfigApi, TprmFeatureSettings } from '../lib/api';
 import { Vendor } from '../lib/apiTypes';
 import { safeHref } from '../lib/safeHref';
 import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import { SkeletonDetailHeader, SkeletonDetailSection } from '@/components/Skeleton';
 import { ConfirmModal } from '@/components/Modal';
 import { SOC2AnalysisPanel } from '@/components/vendor/SOC2AnalysisPanel';
@@ -24,6 +24,12 @@ import { VendorRiskAssessmentPanel } from '@/components/vendor/VendorRiskAssessm
 import { VendorSecurityScanPanel } from '@/components/vendor/VendorSecurityScanPanel';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
+
+import { Textarea } from '@/components/ui/Textarea';
+
+import { Input } from '@/components/ui/Input';
+
+import { SelectNative } from '@/components/ui/SelectNative';
 
 // Review frequency labels
 const FREQUENCY_LABELS: Record<string, string> = {
@@ -60,7 +66,8 @@ export default function VendorDetail() {
   const [editing, setEditing] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showRiskAssessment, setShowRiskAssessment] = useState(false);
-  const [featureSettings, setFeatureSettings] = useState<TprmFeatureSettings>(DEFAULT_FEATURE_SETTINGS);
+  const [featureSettings, setFeatureSettings] =
+    useState<TprmFeatureSettings>(DEFAULT_FEATURE_SETTINGS);
 
   // Fetch TPRM configuration for feature settings
   useEffect(() => {
@@ -100,9 +107,10 @@ export default function VendorDetail() {
 
   const handleSave = async (formData: Partial<Vendor>) => {
     try {
-      const response = id === 'new'
-        ? await vendorsApi.create(formData as any)
-        : await vendorsApi.update(id!, formData as any);
+      const response =
+        id === 'new'
+          ? await vendorsApi.create(formData as any)
+          : await vendorsApi.update(id!, formData as any);
 
       const data = response.data;
       if (id === 'new') {
@@ -147,7 +155,7 @@ export default function VendorDetail() {
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate('/vendors')}
-            className="p-2 text-surface-400 hover:text-surface-100 hover:bg-surface-800 rounded-lg transition-colors"
+            className="p-2 text-surface-600 hover:text-surface-100 hover:bg-surface-800 rounded-lg transition-colors"
           >
             <ArrowLeftIcon className="w-5 h-5" />
           </button>
@@ -155,9 +163,7 @@ export default function VendorDetail() {
             <h1 className="text-3xl font-bold text-surface-100">
               {id === 'new' ? 'New Vendor' : vendor?.name || 'Vendor Details'}
             </h1>
-            {vendor?.vendorId && (
-              <p className="mt-1 text-surface-400">{vendor.vendorId}</p>
-            )}
+            {vendor?.vendorId && <p className="mt-1 text-surface-600">{vendor.vendorId}</p>}
           </div>
         </div>
 
@@ -195,13 +201,13 @@ export default function VendorDetail() {
         <VendorForm
           vendor={vendor}
           onSave={handleSave}
-          onCancel={() => id === 'new' ? navigate('/vendors') : setEditing(false)}
+          onCancel={() => (id === 'new' ? navigate('/vendors') : setEditing(false))}
         />
       ) : (
-        <VendorView 
-          vendor={vendor!} 
-          onRefresh={fetchVendor} 
-          featureSettings={featureSettings} 
+        <VendorView
+          vendor={vendor!}
+          onRefresh={fetchVendor}
+          featureSettings={featureSettings}
           onStartRiskAssessment={() => setShowRiskAssessment(true)}
         />
       )}
@@ -237,7 +243,7 @@ export default function VendorDetail() {
 function VendorForm({
   vendor,
   onSave,
-  onCancel
+  onCancel,
 }: {
   vendor: Vendor | null;
   onSave: (data: Partial<Vendor>) => void;
@@ -280,10 +286,10 @@ function VendorForm({
           <h3 className="text-lg font-medium text-surface-100 mb-4">Basic Information</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-surface-300 mb-1">
+              <label className="block text-sm font-medium text-surface-700 mb-1">
                 Vendor Name *
               </label>
-              <input
+              <Input
                 type="text"
                 required
                 value={formData.name}
@@ -293,10 +299,8 @@ function VendorForm({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-surface-300 mb-1">
-                Legal Name
-              </label>
-              <input
+              <label className="block text-sm font-medium text-surface-700 mb-1">Legal Name</label>
+              <Input
                 type="text"
                 value={formData.legalName}
                 onChange={(e) => setFormData({ ...formData, legalName: e.target.value })}
@@ -305,10 +309,8 @@ function VendorForm({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-surface-300 mb-1">
-                Category *
-              </label>
-              <select
+              <label className="block text-sm font-medium text-surface-700 mb-1">Category *</label>
+              <SelectNative
                 required
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
@@ -319,14 +321,12 @@ function VendorForm({
                 <option value="professional_services">Professional Services</option>
                 <option value="hardware_vendor">Hardware Vendor</option>
                 <option value="consultant">Consultant</option>
-              </select>
+              </SelectNative>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-surface-300 mb-1">
-                Tier *
-              </label>
-              <select
+              <label className="block text-sm font-medium text-surface-700 mb-1">Tier *</label>
+              <SelectNative
                 required
                 value={formData.tier}
                 onChange={(e) => setFormData({ ...formData, tier: e.target.value })}
@@ -336,14 +336,12 @@ function VendorForm({
                 <option value="tier_2">Tier 2 (High)</option>
                 <option value="tier_3">Tier 3 (Medium)</option>
                 <option value="tier_4">Tier 4 (Low)</option>
-              </select>
+              </SelectNative>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-surface-300 mb-1">
-                Status *
-              </label>
-              <select
+              <label className="block text-sm font-medium text-surface-700 mb-1">Status *</label>
+              <SelectNative
                 required
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
@@ -354,14 +352,12 @@ function VendorForm({
                 <option value="pending_onboarding">Pending Onboarding</option>
                 <option value="offboarding">Offboarding</option>
                 <option value="terminated">Terminated</option>
-              </select>
+              </SelectNative>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-surface-300 mb-1">
-                Website
-              </label>
-              <input
+              <label className="block text-sm font-medium text-surface-700 mb-1">Website</label>
+              <Input
                 type="url"
                 value={formData.website}
                 onChange={(e) => setFormData({ ...formData, website: e.target.value })}
@@ -376,10 +372,10 @@ function VendorForm({
           <h3 className="text-lg font-medium text-surface-100 mb-4">Primary Contact</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-surface-300 mb-1">
+              <label className="block text-sm font-medium text-surface-700 mb-1">
                 Contact Name
               </label>
-              <input
+              <Input
                 type="text"
                 value={formData.primaryContact}
                 onChange={(e) => setFormData({ ...formData, primaryContact: e.target.value })}
@@ -388,10 +384,8 @@ function VendorForm({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-surface-300 mb-1">
-                Email
-              </label>
-              <input
+              <label className="block text-sm font-medium text-surface-700 mb-1">Email</label>
+              <Input
                 type="email"
                 value={formData.primaryContactEmail}
                 onChange={(e) => setFormData({ ...formData, primaryContactEmail: e.target.value })}
@@ -400,10 +394,8 @@ function VendorForm({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-surface-300 mb-1">
-                Phone
-              </label>
-              <input
+              <label className="block text-sm font-medium text-surface-700 mb-1">Phone</label>
+              <Input
                 type="tel"
                 value={formData.primaryContactPhone}
                 onChange={(e) => setFormData({ ...formData, primaryContactPhone: e.target.value })}
@@ -416,10 +408,8 @@ function VendorForm({
         {/* Description and Notes */}
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-surface-300 mb-1">
-              Description
-            </label>
-            <textarea
+            <label className="block text-sm font-medium text-surface-700 mb-1">Description</label>
+            <Textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={3}
@@ -428,10 +418,8 @@ function VendorForm({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-surface-300 mb-1">
-              Notes
-            </label>
-            <textarea
+            <label className="block text-sm font-medium text-surface-700 mb-1">Notes</label>
+            <Textarea
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               rows={3}
@@ -440,23 +428,32 @@ function VendorForm({
           </div>
         </div>
       </div>
-
       {/* Actions */}
       <div className="flex items-center justify-end gap-3">
         <Button variant="secondary" type="button" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit">
-          Save Vendor
-        </Button>
+        <Button type="submit">Save Vendor</Button>
       </div>
     </form>
   );
 }
 
-function VendorView({ vendor, onRefresh, featureSettings, onStartRiskAssessment }: { vendor: Vendor; onRefresh?: () => void; featureSettings: TprmFeatureSettings; onStartRiskAssessment: () => void }) {
+function VendorView({
+  vendor,
+  onRefresh,
+  featureSettings,
+  onStartRiskAssessment,
+}: {
+  vendor: Vendor;
+  onRefresh?: () => void;
+  featureSettings: TprmFeatureSettings;
+  onStartRiskAssessment: () => void;
+}) {
   const [showSOC2Panel, setShowSOC2Panel] = useState(false);
-  const [selectedDocument, setSelectedDocument] = useState<{ id: string; title: string } | null>(null);
+  const [selectedDocument, setSelectedDocument] = useState<{ id: string; title: string } | null>(
+    null
+  );
 
   // Calculate review status
   const extendedVendor = vendor as Vendor & {
@@ -467,7 +464,9 @@ function VendorView({ vendor, onRefresh, featureSettings, onStartRiskAssessment 
     documents?: Array<{ id: string; title: string; documentType: string }>;
   };
 
-  const nextReviewDue = extendedVendor.nextReviewDue ? new Date(extendedVendor.nextReviewDue) : null;
+  const nextReviewDue = extendedVendor.nextReviewDue
+    ? new Date(extendedVendor.nextReviewDue)
+    : null;
   const isOverdue = nextReviewDue ? nextReviewDue < new Date() : false;
   const daysUntilReview = nextReviewDue
     ? Math.ceil((nextReviewDue.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
@@ -482,37 +481,52 @@ function VendorView({ vendor, onRefresh, featureSettings, onStartRiskAssessment 
     <div className="space-y-6">
       {/* Review Status Banner */}
       {nextReviewDue && (
-        <div className={clsx(
-          'p-4 rounded-lg border flex items-center justify-between',
-          isOverdue 
-            ? 'bg-red-500/10 border-red-500/30' 
-            : daysUntilReview !== null && daysUntilReview <= 30
-              ? 'bg-yellow-500/10 border-yellow-500/30'
-              : 'bg-surface-800 border-surface-700'
-        )}>
+        <div
+          className={clsx(
+            'p-4 rounded-lg border flex items-center justify-between',
+            isOverdue
+              ? 'bg-red-500/10 border-red-500/30'
+              : daysUntilReview !== null && daysUntilReview <= 30
+                ? 'bg-yellow-500/10 border-yellow-500/30'
+                : 'bg-surface-800 border-surface-700'
+          )}
+        >
           <div className="flex items-center gap-3">
             {isOverdue ? (
-              <ExclamationTriangleIcon className="w-5 h-5 text-red-400" />
+              <ExclamationTriangleIcon className="w-5 h-5 text-red-600" />
             ) : (
-              <CalendarDaysIcon className={clsx(
-                'w-5 h-5',
-                daysUntilReview !== null && daysUntilReview <= 30 ? 'text-yellow-400' : 'text-surface-400'
-              )} />
+              <CalendarDaysIcon
+                className={clsx(
+                  'w-5 h-5',
+                  daysUntilReview !== null && daysUntilReview <= 30
+                    ? 'text-yellow-600'
+                    : 'text-surface-600'
+                )}
+              />
             )}
             <div>
-              <p className={clsx(
-                'font-medium',
-                isOverdue ? 'text-red-400' : daysUntilReview !== null && daysUntilReview <= 30 ? 'text-yellow-400' : 'text-surface-200'
-              )}>
-                {isOverdue 
+              <p
+                className={clsx(
+                  'font-medium',
+                  isOverdue
+                    ? 'text-red-600'
+                    : daysUntilReview !== null && daysUntilReview <= 30
+                      ? 'text-yellow-600'
+                      : 'text-surface-200'
+                )}
+              >
+                {isOverdue
                   ? `Review Overdue by ${Math.abs(daysUntilReview!)} days`
-                  : `Next Review Due: ${nextReviewDue.toLocaleDateString()}`
-                }
+                  : `Next Review Due: ${nextReviewDue.toLocaleDateString()}`}
               </p>
-              <p className="text-sm text-surface-400">
-                Review Frequency: {FREQUENCY_LABELS[extendedVendor.reviewFrequency || 'annual'] || 'Annual'}
+              <p className="text-sm text-surface-600">
+                Review Frequency:{' '}
+                {FREQUENCY_LABELS[extendedVendor.reviewFrequency || 'annual'] || 'Annual'}
                 {extendedVendor.lastReviewedAt && (
-                  <> • Last Reviewed: {new Date(extendedVendor.lastReviewedAt).toLocaleDateString()}</>
+                  <>
+                    {' '}
+                    • Last Reviewed: {new Date(extendedVendor.lastReviewedAt).toLocaleDateString()}
+                  </>
                 )}
               </p>
             </div>
@@ -522,12 +536,15 @@ function VendorView({ vendor, onRefresh, featureSettings, onStartRiskAssessment 
             size="sm"
             leftIcon={<CheckCircleIcon className="w-4 h-4" />}
             onClick={() => {
-              vendorsApi.completeReview(vendor.id).then(() => {
-                toast.success('Review marked as complete');
-                window.location.reload();
-              }).catch(() => {
-                toast.error('Failed to complete review');
-              });
+              vendorsApi
+                .completeReview(vendor.id)
+                .then(() => {
+                  toast.success('Review marked as complete');
+                  window.location.reload();
+                })
+                .catch(() => {
+                  toast.error('Failed to complete review');
+                });
             }}
           >
             Mark Review Complete
@@ -546,9 +563,9 @@ function VendorView({ vendor, onRefresh, featureSettings, onStartRiskAssessment 
           <InfoField label="Status" value={vendor.status} capitalize />
           <InfoField label="Website" value={vendor.website} link />
           <InfoField label="Risk Score" value={vendor.inherentRiskScore} capitalize />
-          <InfoField 
-            label="Review Frequency" 
-            value={FREQUENCY_LABELS[extendedVendor.reviewFrequency || 'annual']} 
+          <InfoField
+            label="Review Frequency"
+            value={FREQUENCY_LABELS[extendedVendor.reviewFrequency || 'annual']}
           />
         </div>
       </div>
@@ -569,7 +586,7 @@ function VendorView({ vendor, onRefresh, featureSettings, onStartRiskAssessment 
       <div className="bg-surface-900 border border-surface-800 rounded-lg p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <DocumentTextIcon className="w-5 h-5 text-surface-400" />
+            <DocumentTextIcon className="w-5 h-5 text-surface-600" />
             <h3 className="text-lg font-medium text-surface-100">Documents</h3>
           </div>
         </div>
@@ -577,18 +594,18 @@ function VendorView({ vendor, onRefresh, featureSettings, onStartRiskAssessment 
         {extendedVendor.documents && extendedVendor.documents.length > 0 ? (
           <div className="space-y-3">
             {extendedVendor.documents.map((doc) => (
-              <div 
+              <div
                 key={doc.id}
                 className="flex items-center justify-between p-3 bg-surface-800/50 rounded-lg"
               >
                 <div className="flex items-center gap-3">
-                  <DocumentTextIcon className="w-5 h-5 text-surface-400" />
+                  <DocumentTextIcon className="w-5 h-5 text-surface-600" />
                   <div>
                     <p className="text-sm font-medium text-surface-200">{doc.title}</p>
-                    <p className="text-xs text-surface-400">{doc.documentType.replace('_', ' ')}</p>
+                    <p className="text-xs text-surface-600">{doc.documentType.replace('_', ' ')}</p>
                   </div>
                 </div>
-                {(doc.documentType.toLowerCase().includes('soc2') || 
+                {(doc.documentType.toLowerCase().includes('soc2') ||
                   doc.documentType.toLowerCase().includes('soc 2')) && (
                   <Button
                     variant="ghost"
@@ -603,7 +620,7 @@ function VendorView({ vendor, onRefresh, featureSettings, onStartRiskAssessment 
             ))}
           </div>
         ) : (
-          <div className="text-center py-6 text-surface-400">
+          <div className="text-center py-6 text-surface-600">
             <DocumentTextIcon className="w-10 h-10 mx-auto mb-2 opacity-50" />
             <p className="text-sm">No documents uploaded yet</p>
             <p className="text-xs mt-1">Upload SOC 2 reports for AI-powered analysis</p>
@@ -613,12 +630,12 @@ function VendorView({ vendor, onRefresh, featureSettings, onStartRiskAssessment 
         {/* Demo SOC 2 Analysis Section */}
         <div className="mt-4 pt-4 border-t border-surface-700">
           <div className="flex items-center gap-2 mb-3">
-            <SparklesIcon className="w-5 h-5 text-purple-400" />
+            <SparklesIcon className="w-5 h-5 text-purple-600" />
             <h4 className="font-medium text-surface-200">AI-Powered SOC 2 Analysis</h4>
           </div>
-          <p className="text-sm text-surface-400 mb-3">
-            Upload a SOC 2 Type II report to automatically extract exceptions, CUECs, 
-            and control gaps using AI.
+          <p className="text-sm text-surface-600 mb-3">
+            Upload a SOC 2 Type II report to automatically extract exceptions, CUECs, and control
+            gaps using AI.
           </p>
           <Button
             variant="outline"
@@ -677,7 +694,7 @@ function VendorView({ vendor, onRefresh, featureSettings, onStartRiskAssessment 
       {vendor.description && (
         <div className="bg-surface-900 border border-surface-800 rounded-lg p-6">
           <h3 className="text-lg font-medium text-surface-100 mb-4">Description</h3>
-          <p className="text-surface-300">{vendor.description}</p>
+          <p className="text-surface-700">{vendor.description}</p>
         </div>
       )}
 
@@ -685,7 +702,7 @@ function VendorView({ vendor, onRefresh, featureSettings, onStartRiskAssessment 
       {vendor.notes && (
         <div className="bg-surface-900 border border-surface-800 rounded-lg p-6">
           <h3 className="text-lg font-medium text-surface-100 mb-4">Notes</h3>
-          <p className="text-surface-300 whitespace-pre-wrap">{vendor.notes}</p>
+          <p className="text-surface-700 whitespace-pre-wrap">{vendor.notes}</p>
         </div>
       )}
     </div>
@@ -696,7 +713,7 @@ function InfoField({
   label,
   value,
   capitalize,
-  link
+  link,
 }: {
   label: string;
   value?: string | number | null;
@@ -709,7 +726,7 @@ function InfoField({
 
   return (
     <div>
-      <dt className="text-sm font-medium text-surface-400 mb-1">{label}</dt>
+      <dt className="text-sm font-medium text-surface-600 mb-1">{label}</dt>
       <dd className={`text-sm text-surface-100 ${capitalize ? 'capitalize' : ''}`}>
         {href ? (
           <a

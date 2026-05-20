@@ -10,6 +10,8 @@ import {
 } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 
+import { Button } from '@/components/ui/Button';
+
 interface ValidationResult {
   valid: boolean;
   errors?: string[];
@@ -175,10 +177,11 @@ export default function CodeEditor({
       {/* Toolbar */}
       <div className="flex items-center justify-between px-4 py-2 bg-surface-800/50 border-b border-surface-700">
         <div className="flex items-center gap-2">
-          <button
+          <Button
             onClick={handleValidate}
             disabled={isValidating}
-            className="btn-secondary text-sm flex items-center gap-1"
+            className="text-sm flex items-center gap-1"
+            variant="secondary"
           >
             {isValidating ? (
               <ArrowPathIcon className="w-4 h-4 animate-spin" />
@@ -186,11 +189,12 @@ export default function CodeEditor({
               <CheckCircleIcon className="w-4 h-4" />
             )}
             Validate
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={onTest}
             disabled={isTestLoading}
-            className="btn-primary text-sm flex items-center gap-1"
+            className="text-sm flex items-center gap-1"
+            variant="primary"
           >
             {isTestLoading ? (
               <ArrowPathIcon className="w-4 h-4 animate-spin" />
@@ -198,34 +202,35 @@ export default function CodeEditor({
               <PlayIcon className="w-4 h-4" />
             )}
             Test Run
-          </button>
+          </Button>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={handleCopy}
-            className="p-2 text-surface-400 hover:text-surface-200"
+            className="p-2 text-surface-600 hover:text-surface-200"
             title="Copy code"
           >
             <DocumentDuplicateIcon className="w-4 h-4" />
           </button>
           <button
             onClick={handleReset}
-            className="p-2 text-surface-400 hover:text-surface-200"
+            className="p-2 text-surface-600 hover:text-surface-200"
             title="Reset to template"
           >
             <ArrowPathIcon className="w-4 h-4" />
           </button>
         </div>
       </div>
-
       {/* Validation/Test Results */}
       {(validation || testResult) && (
         <div className="px-4 py-2 bg-surface-800/30 border-b border-surface-700">
           {validation && (
-            <div className={clsx(
-              'flex items-start gap-2 text-sm',
-              validation.valid ? 'text-green-400' : 'text-red-400'
-            )}>
+            <div
+              className={clsx(
+                'flex items-start gap-2 text-sm',
+                validation.valid ? 'text-green-600' : 'text-red-600'
+              )}
+            >
               {validation.valid ? (
                 <CheckCircleIcon className="w-5 h-5 flex-shrink-0" />
               ) : (
@@ -242,7 +247,7 @@ export default function CodeEditor({
                   </div>
                 )}
                 {validation.warnings && validation.warnings.length > 0 && (
-                  <div className="text-yellow-400 mt-1 flex items-start gap-1">
+                  <div className="text-yellow-600 mt-1 flex items-start gap-1">
                     <ExclamationTriangleIcon className="w-4 h-4 flex-shrink-0 mt-0.5" />
                     <div>
                       {validation.warnings.map((warn, i) => (
@@ -256,10 +261,12 @@ export default function CodeEditor({
           )}
 
           {testResult && (
-            <div className={clsx(
-              'flex items-start gap-2 text-sm mt-2',
-              testResult.success ? 'text-green-400' : 'text-red-400'
-            )}>
+            <div
+              className={clsx(
+                'flex items-start gap-2 text-sm mt-2',
+                testResult.success ? 'text-green-600' : 'text-red-600'
+              )}
+            >
               {testResult.success ? (
                 <CheckCircleIcon className="w-5 h-5 flex-shrink-0" />
               ) : (
@@ -268,7 +275,7 @@ export default function CodeEditor({
               <div>
                 <div>{testResult.message}</div>
                 {testResult.data && (
-                  <pre className="mt-2 p-2 bg-surface-900 rounded text-xs text-surface-300 overflow-auto max-h-32">
+                  <pre className="mt-2 p-2 bg-surface-900 rounded text-xs text-surface-700 overflow-auto max-h-32">
                     {JSON.stringify(testResult.data, null, 2)}
                   </pre>
                 )}
@@ -277,7 +284,6 @@ export default function CodeEditor({
           )}
         </div>
       )}
-
       {/* Editor */}
       <div className="flex-1 min-h-0">
         <Editor
@@ -298,15 +304,12 @@ export default function CodeEditor({
           }}
         />
       </div>
-
       {/* Help Text */}
       <div className="px-4 py-2 bg-surface-800/30 border-t border-surface-700 text-xs text-surface-500">
-        <strong>Tip:</strong> The <code className="bg-surface-700 px-1 rounded">sync(context)</code> function is called when syncing.
-        Return an object with an <code className="bg-surface-700 px-1 rounded">evidence</code> array containing data to save.
+        <strong>Tip:</strong> The <code className="bg-surface-700 px-1 rounded">sync(context)</code>{' '}
+        function is called when syncing. Return an object with an{' '}
+        <code className="bg-surface-700 px-1 rounded">evidence</code> array containing data to save.
       </div>
     </div>
   );
 }
-
-
-

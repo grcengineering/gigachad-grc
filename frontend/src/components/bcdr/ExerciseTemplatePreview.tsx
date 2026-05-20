@@ -7,7 +7,7 @@ import {
   BoltIcon,
   CheckCircleIcon,
 } from '@heroicons/react/24/outline';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import clsx from 'clsx';
 
 // ============================================
@@ -88,7 +88,7 @@ export function ExerciseTemplatePreview({
   canClone = true,
 }: ExerciseTemplatePreviewProps) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
       <div className="bg-slate-800 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700">
@@ -104,17 +104,14 @@ export function ExerciseTemplatePreview({
               <p className="text-sm text-slate-400">
                 {SCENARIO_TYPE_LABELS[template.scenarioType] || template.scenarioType}
                 {template.isGlobal && (
-                  <span className="ml-2 px-2 py-0.5 bg-cyan-500/20 text-cyan-400 rounded text-xs">
+                  <span className="ml-2 px-2 py-0.5 bg-cyan-500/20 text-cyan-600 rounded text-xs">
                     Global Template
                   </span>
                 )}
               </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
-          >
+          <button onClick={onClose} className="p-2 hover:bg-slate-700 rounded-lg transition-colors">
             <XMarkIcon className="h-5 w-5 text-slate-400" />
           </button>
         </div>
@@ -152,10 +149,7 @@ export function ExerciseTemplatePreview({
           {template.tags && template.tags.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {template.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="px-2 py-1 bg-slate-700 text-slate-300 rounded text-xs"
-                >
+                <span key={tag} className="px-2 py-1 bg-slate-700 text-slate-300 rounded text-xs">
                   {tag}
                 </span>
               ))}
@@ -183,7 +177,7 @@ export function ExerciseTemplatePreview({
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-white font-medium">{role.role}</span>
                       {role.required && (
-                        <span className="text-xs px-2 py-0.5 bg-red-500/20 text-red-400 rounded">
+                        <span className="text-xs px-2 py-0.5 bg-red-500/20 text-red-600 rounded">
                           Required
                         </span>
                       )}
@@ -206,7 +200,7 @@ export function ExerciseTemplatePreview({
                 {template.discussionQuestions.map((q, index) => (
                   <div key={q.id || index} className="bg-slate-700 rounded-lg p-4">
                     <div className="flex items-start gap-3">
-                      <span className="flex-shrink-0 w-6 h-6 bg-cyan-500/20 text-cyan-400 rounded-full flex items-center justify-center text-sm font-medium">
+                      <span className="flex-shrink-0 w-6 h-6 bg-cyan-500/20 text-cyan-600 rounded-full flex items-center justify-center text-sm font-medium">
                         {index + 1}
                       </span>
                       <div>
@@ -235,7 +229,7 @@ export function ExerciseTemplatePreview({
                 {template.injects.map((inject, index) => (
                   <div key={inject.id || index} className="bg-slate-700 rounded-lg p-4">
                     <div className="flex items-center gap-3 mb-2">
-                      <span className="px-2 py-1 bg-orange-500/20 text-orange-400 rounded text-xs font-medium">
+                      <span className="px-2 py-1 bg-orange-500/20 text-orange-600 rounded text-xs font-medium">
                         {inject.timing}
                       </span>
                       <span className="text-white font-medium">{inject.title}</span>
@@ -271,7 +265,7 @@ export function ExerciseTemplatePreview({
           {/* Facilitator Notes */}
           {template.facilitatorNotes && (
             <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
-              <h3 className="text-lg font-medium text-amber-400 mb-2">Facilitator Notes</h3>
+              <h3 className="text-lg font-medium text-amber-600 mb-2">Facilitator Notes</h3>
               <div className="text-sm text-slate-300 whitespace-pre-wrap">
                 {template.facilitatorNotes}
               </div>
@@ -281,9 +275,7 @@ export function ExerciseTemplatePreview({
 
         {/* Footer */}
         <div className="flex items-center justify-between px-6 py-4 border-t border-slate-700">
-          <div className="text-sm text-slate-400">
-            Used {template.usageCount} times
-          </div>
+          <div className="text-sm text-slate-400">Used {template.usageCount} times</div>
           <div className="flex items-center gap-3">
             <Button variant="secondary" onClick={onClose}>
               Close

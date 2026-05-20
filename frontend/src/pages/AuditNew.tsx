@@ -4,7 +4,13 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { auditsApi } from '@/lib/api';
 import toast from 'react-hot-toast';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
+
+import { Textarea } from '@/components/ui/Textarea';
+
+import { Input } from '@/components/ui/Input';
+
+import { SelectNative } from '@/components/ui/SelectNative';
 
 const AUDIT_TYPE_OPTIONS = [
   { value: 'internal', label: 'Internal' },
@@ -134,23 +140,22 @@ export default function AuditNew() {
       <div>
         <Link
           to="/audits"
-          className="inline-flex items-center text-sm text-surface-400 hover:text-surface-100 mb-4"
+          className="inline-flex items-center text-sm text-surface-600 hover:text-surface-100 mb-4"
         >
           <ArrowLeftIcon className="w-4 h-4 mr-1" />
           Back to Audits
         </Link>
         <h1 className="text-2xl font-bold text-surface-100">Create New Audit</h1>
-        <p className="text-surface-400 mt-1">Start a new compliance audit</p>
+        <p className="text-surface-600 mt-1">Start a new compliance audit</p>
       </div>
-
       {/* Form */}
       <form onSubmit={handleSubmit} className="card p-6 space-y-6">
         {/* Audit Name */}
         <div>
-          <label htmlFor="name" className="block text-sm font-medium text-surface-300 mb-1">
-            Audit Name <span className="text-red-400">*</span>
+          <label htmlFor="name" className="block text-sm font-medium text-surface-700 mb-1">
+            Audit Name <span className="text-red-600">*</span>
           </label>
-          <input
+          <Input
             id="name"
             type="text"
             value={formData.name}
@@ -158,15 +163,15 @@ export default function AuditNew() {
             placeholder="e.g., SOC 2 Type II 2025"
             className={`input ${errors.name ? 'border-red-500' : ''}`}
           />
-          {errors.name && <p className="mt-1 text-sm text-red-400">{errors.name}</p>}
+          {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
         </div>
 
         {/* Audit Type */}
         <div>
-          <label htmlFor="auditType" className="block text-sm font-medium text-surface-300 mb-1">
-            Audit Type <span className="text-red-400">*</span>
+          <label htmlFor="auditType" className="block text-sm font-medium text-surface-700 mb-1">
+            Audit Type <span className="text-red-600">*</span>
           </label>
-          <select
+          <SelectNative
             id="auditType"
             value={formData.auditType}
             onChange={(e) => {
@@ -183,15 +188,15 @@ export default function AuditNew() {
                 {option.label}
               </option>
             ))}
-          </select>
+          </SelectNative>
         </div>
 
         {/* Status */}
         <div>
-          <label htmlFor="status" className="block text-sm font-medium text-surface-300 mb-1">
+          <label htmlFor="status" className="block text-sm font-medium text-surface-700 mb-1">
             Initial Status
           </label>
-          <select
+          <SelectNative
             id="status"
             value={formData.status}
             onChange={(e) => handleChange('status', e.target.value)}
@@ -202,15 +207,15 @@ export default function AuditNew() {
                 {option.label}
               </option>
             ))}
-          </select>
+          </SelectNative>
         </div>
 
         {/* Framework */}
         <div>
-          <label htmlFor="framework" className="block text-sm font-medium text-surface-300 mb-1">
+          <label htmlFor="framework" className="block text-sm font-medium text-surface-700 mb-1">
             Framework
           </label>
-          <select
+          <SelectNative
             id="framework"
             value={formData.framework}
             onChange={(e) => handleChange('framework', e.target.value)}
@@ -222,7 +227,7 @@ export default function AuditNew() {
                 {option.label}
               </option>
             ))}
-          </select>
+          </SelectNative>
         </div>
 
         {/* Planned Dates */}
@@ -230,11 +235,11 @@ export default function AuditNew() {
           <div>
             <label
               htmlFor="plannedStartDate"
-              className="block text-sm font-medium text-surface-300 mb-1"
+              className="block text-sm font-medium text-surface-700 mb-1"
             >
               Planned Start Date
             </label>
-            <input
+            <Input
               id="plannedStartDate"
               type="date"
               value={formData.plannedStartDate}
@@ -245,11 +250,11 @@ export default function AuditNew() {
           <div>
             <label
               htmlFor="plannedEndDate"
-              className="block text-sm font-medium text-surface-300 mb-1"
+              className="block text-sm font-medium text-surface-700 mb-1"
             >
               Planned End Date
             </label>
-            <input
+            <Input
               id="plannedEndDate"
               type="date"
               value={formData.plannedEndDate}
@@ -261,10 +266,10 @@ export default function AuditNew() {
 
         {/* Description */}
         <div>
-          <label htmlFor="description" className="block text-sm font-medium text-surface-300 mb-1">
+          <label htmlFor="description" className="block text-sm font-medium text-surface-700 mb-1">
             Description
           </label>
-          <textarea
+          <Textarea
             id="description"
             value={formData.description}
             onChange={(e) => handleChange('description', e.target.value)}

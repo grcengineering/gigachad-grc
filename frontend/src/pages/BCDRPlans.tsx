@@ -12,6 +12,12 @@ import api from '@/lib/api';
 import { useDebounce } from '@/hooks/useDebounce';
 import clsx from 'clsx';
 
+import { Input } from '@/components/ui/Input';
+
+import { SelectNative } from '@/components/ui/SelectNative';
+
+import { Button } from '@/components/ui/Button';
+
 interface BCDRPlan {
   id: string;
   plan_id: string;
@@ -27,12 +33,12 @@ interface BCDRPlan {
 }
 
 const statusColors: Record<string, string> = {
-  draft: 'bg-surface-600 text-surface-300',
-  in_review: 'bg-yellow-500/20 text-yellow-400',
-  approved: 'bg-blue-500/20 text-blue-400',
-  published: 'bg-green-500/20 text-green-400',
-  archived: 'bg-surface-700 text-surface-400',
-  expired: 'bg-red-500/20 text-red-400',
+  draft: 'bg-surface-600 text-surface-700',
+  in_review: 'bg-yellow-500/20 text-yellow-600',
+  approved: 'bg-blue-500/20 text-blue-600',
+  published: 'bg-green-500/20 text-green-600',
+  archived: 'bg-surface-700 text-surface-600',
+  expired: 'bg-red-500/20 text-red-600',
 };
 
 const planTypeLabels: Record<string, string> = {
@@ -67,7 +73,7 @@ export default function BCDRPlans() {
       if (statusFilter) params.append('status', statusFilter);
       params.append('page', page.toString());
       params.append('limit', '25');
-      
+
       const res = await api.get(`/api/bcdr/plans?${params}`);
       return res.data;
     },
@@ -82,14 +88,16 @@ export default function BCDRPlans() {
     return (
       <div className="p-6">
         <div className="card p-8 text-center">
-          <ExclamationCircleIcon className="w-12 h-12 mx-auto mb-4 text-red-400" />
-          <h2 className="text-lg font-semibold text-surface-100 mb-2">Failed to load BC/DR Plans</h2>
-          <p className="text-surface-400 mb-4">
+          <ExclamationCircleIcon className="w-12 h-12 mx-auto mb-4 text-red-600" />
+          <h2 className="text-lg font-semibold text-surface-100 mb-2">
+            Failed to load BC/DR Plans
+          </h2>
+          <p className="text-surface-600 mb-4">
             {(error as Error).message || 'An unexpected error occurred'}
           </p>
-          <button onClick={() => refetch()} className="btn btn-primary">
+          <Button onClick={() => refetch()} variant="primary">
             Try Again
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -101,23 +109,22 @@ export default function BCDRPlans() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-surface-100">BC/DR Plans</h1>
-          <p className="text-surface-400 mt-1">
+          <p className="text-surface-600 mt-1">
             Manage business continuity and disaster recovery plans
           </p>
         </div>
-        <Link to="/bcdr/plans/new" className="btn btn-primary">
+        <Link to="/bcdr/plans/new" className="">
           <PlusIcon className="w-5 h-5 mr-2" />
           Create Plan
         </Link>
       </div>
-
       {/* Filters */}
       <div className="card p-4">
         <div className="flex flex-wrap gap-4">
           <div className="flex-1 min-w-64">
             <div className="relative">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-400" />
-              <input
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-600" />
+              <Input
                 type="text"
                 placeholder="Search plans..."
                 className="form-input pl-10 w-full"
@@ -127,19 +134,21 @@ export default function BCDRPlans() {
             </div>
           </div>
           <div className="w-48">
-            <select
+            <SelectNative
               className="form-select w-full"
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
             >
               <option value="">All Types</option>
               {Object.entries(planTypeLabels).map(([key, label]) => (
-                <option key={key} value={key}>{label}</option>
+                <option key={key} value={key}>
+                  {label}
+                </option>
               ))}
-            </select>
+            </SelectNative>
           </div>
           <div className="w-36">
-            <select
+            <SelectNative
               className="form-select w-full"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -150,14 +159,13 @@ export default function BCDRPlans() {
               <option value="approved">Approved</option>
               <option value="published">Published</option>
               <option value="archived">Archived</option>
-            </select>
+            </SelectNative>
           </div>
-          <button onClick={() => refetch()} className="btn btn-secondary">
+          <Button onClick={() => refetch()} variant="secondary">
             <ArrowPathIcon className="w-5 h-5" />
-          </button>
+          </Button>
         </div>
       </div>
-
       {/* Grid */}
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -170,10 +178,13 @@ export default function BCDRPlans() {
           ))}
         </div>
       ) : plans.length === 0 ? (
-        <div className="card p-8 text-center text-surface-400">
+        <div className="card p-8 text-center text-surface-600">
           <DocumentTextIcon className="w-12 h-12 mx-auto mb-4 opacity-50" />
           <p>No BC/DR plans found</p>
-          <Link to="/bcdr/plans/new" className="text-brand-400 hover:text-brand-300 mt-2 inline-block">
+          <Link
+            to="/bcdr/plans/new"
+            className="text-brand-400 hover:text-brand-300 mt-2 inline-block"
+          >
             Create your first plan →
           </Link>
         </div>
@@ -188,42 +199,40 @@ export default function BCDRPlans() {
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <DocumentTextIcon className="w-5 h-5 text-brand-400" />
-                  <span className={clsx(
-                    "px-2 py-0.5 rounded text-xs font-medium",
-                    statusColors[plan.status]
-                  )}>
+                  <span
+                    className={clsx(
+                      'px-2 py-0.5 rounded text-xs font-medium',
+                      statusColors[plan.status]
+                    )}
+                  >
                     {plan.status}
                   </span>
                 </div>
-                <span className="text-surface-400 text-xs">v{plan.version}</span>
+                <span className="text-surface-600 text-xs">v{plan.version}</span>
               </div>
-              
-              <h3 className="text-lg font-semibold text-surface-100 mb-1">
-                {plan.title}
-              </h3>
-              <p className="text-surface-400 text-sm mb-3">
-                {plan.plan_id}
-              </p>
-              
+
+              <h3 className="text-lg font-semibold text-surface-100 mb-1">{plan.title}</h3>
+              <p className="text-surface-600 text-sm mb-3">{plan.plan_id}</p>
+
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-surface-400">Type</span>
-                  <span className="text-surface-300">
+                  <span className="text-surface-600">Type</span>
+                  <span className="text-surface-700">
                     {planTypeLabels[plan.plan_type] || plan.plan_type}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-surface-400">Owner</span>
-                  <span className="text-surface-300">{plan.owner_name || '-'}</span>
+                  <span className="text-surface-600">Owner</span>
+                  <span className="text-surface-700">{plan.owner_name || '-'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-surface-400">Linked Controls</span>
-                  <span className="text-surface-300">{plan.control_count || 0}</span>
+                  <span className="text-surface-600">Linked Controls</span>
+                  <span className="text-surface-700">{plan.control_count || 0}</span>
                 </div>
                 {plan.effective_date && (
                   <div className="flex justify-between">
-                    <span className="text-surface-400">Effective</span>
-                    <span className="text-surface-300">
+                    <span className="text-surface-600">Effective</span>
+                    <span className="text-surface-700">
                       {new Date(plan.effective_date).toLocaleDateString()}
                     </span>
                   </div>
@@ -233,30 +242,30 @@ export default function BCDRPlans() {
           ))}
         </div>
       )}
-
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-4">
-          <button
+          <Button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
-            className="btn btn-secondary btn-sm"
+            className=""
+            variant="secondary"
           >
             Previous
-          </button>
-          <span className="text-surface-400 text-sm">
+          </Button>
+          <span className="text-surface-600 text-sm">
             Page {page} of {totalPages}
           </span>
-          <button
+          <Button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page === totalPages}
-            className="btn btn-secondary btn-sm"
+            className=""
+            variant="secondary"
           >
             Next
-          </button>
+          </Button>
         </div>
       )}
     </div>
   );
 }
-

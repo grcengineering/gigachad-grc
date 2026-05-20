@@ -39,7 +39,11 @@ const TABS: Tab[] = [
 
 function formatDate(dateString: string | null | undefined): string {
   if (!dateString) return '—';
-  return new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  return new Date(dateString).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
 }
 
 function getScoreColor(score: number | undefined): string {
@@ -58,23 +62,28 @@ function getScoreBgColor(score: number | undefined): string {
 
 function StatusBadge({ status }: { status: string | undefined }) {
   if (!status) return <span className="text-muted-foreground text-sm">—</span>;
-  
+
   const configs: Record<string, { color: string; icon: typeof CheckCircleIcon }> = {
-    clear: { color: 'bg-green-500/20 text-green-400', icon: CheckCircleIcon },
-    completed: { color: 'bg-green-500/20 text-green-400', icon: CheckCircleIcon },
-    acknowledged: { color: 'bg-green-500/20 text-green-400', icon: CheckCircleIcon },
-    approved: { color: 'bg-green-500/20 text-green-400', icon: CheckCircleIcon },
-    pending: { color: 'bg-yellow-500/20 text-yellow-400', icon: ClockIcon },
-    assigned: { color: 'bg-blue-500/20 text-blue-400', icon: ClockIcon },
-    in_progress: { color: 'bg-blue-500/20 text-blue-400', icon: ArrowPathIcon },
-    flagged: { color: 'bg-red-500/20 text-red-400', icon: XCircleIcon },
-    overdue: { color: 'bg-red-500/20 text-red-400', icon: ExclamationTriangleIcon },
-    declined: { color: 'bg-red-500/20 text-red-400', icon: XCircleIcon },
+    clear: { color: 'bg-green-500/20 text-green-600', icon: CheckCircleIcon },
+    completed: { color: 'bg-green-500/20 text-green-600', icon: CheckCircleIcon },
+    acknowledged: { color: 'bg-green-500/20 text-green-600', icon: CheckCircleIcon },
+    approved: { color: 'bg-green-500/20 text-green-600', icon: CheckCircleIcon },
+    pending: { color: 'bg-yellow-500/20 text-yellow-600', icon: ClockIcon },
+    assigned: { color: 'bg-blue-500/20 text-blue-600', icon: ClockIcon },
+    in_progress: { color: 'bg-blue-500/20 text-blue-600', icon: ArrowPathIcon },
+    flagged: { color: 'bg-red-500/20 text-red-600', icon: XCircleIcon },
+    overdue: { color: 'bg-red-500/20 text-red-600', icon: ExclamationTriangleIcon },
+    declined: { color: 'bg-red-500/20 text-red-600', icon: XCircleIcon },
   };
-  const config = configs[status] || { color: 'bg-gray-500/20 text-gray-400', icon: ExclamationTriangleIcon };
+  const config = configs[status] || {
+    color: 'bg-gray-500/20 text-gray-400',
+    icon: ExclamationTriangleIcon,
+  };
   const Icon = config.icon;
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${config.color}`}>
+    <span
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${config.color}`}
+    >
       <Icon className="h-3 w-3" />
       {status.replace('_', ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
     </span>
@@ -108,8 +117,12 @@ function NotFound() {
       <div className="card p-12 text-center">
         <UserIcon className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
         <h2 className="text-xl font-semibold text-foreground mb-2">Employee Not Found</h2>
-        <p className="text-muted-foreground mb-4">The employee you're looking for doesn't exist or has been removed.</p>
-        <Link to="/people" className="btn btn-primary">Back to Employees</Link>
+        <p className="text-muted-foreground mb-4">
+          The employee you're looking for doesn't exist or has been removed.
+        </p>
+        <Link to="/people" className="">
+          Back to Employees
+        </Link>
       </div>
     </div>
   );
@@ -119,7 +132,11 @@ export default function EmployeeDetail() {
   const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState('overview');
 
-  const { data: employee, isLoading, error } = useQuery({
+  const {
+    data: employee,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['employee-detail', id],
     queryFn: async () => {
       if (!id) throw new Error('No employee ID');
@@ -133,7 +150,10 @@ export default function EmployeeDetail() {
   if (error || !employee) return <NotFound />;
 
   // Transform data with defaults
-  const fullName = employee.fullName || `${employee.firstName || ''} ${employee.lastName || ''}`.trim() || employee.email;
+  const fullName =
+    employee.fullName ||
+    `${employee.firstName || ''} ${employee.lastName || ''}`.trim() ||
+    employee.email;
   const complianceScore = employee.complianceScore ?? 0;
   const backgroundChecks = employee.backgroundChecks || [];
   const trainingRecords = employee.trainingRecords || [];
@@ -147,14 +167,19 @@ export default function EmployeeDetail() {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Link to="/people" className="p-2 rounded-lg hover:bg-surface-700 text-muted-foreground hover:text-foreground">
+        <Link
+          to="/people"
+          className="p-2 rounded-lg hover:bg-surface-700 text-muted-foreground hover:text-foreground"
+        >
           <ArrowLeftIcon className="h-5 w-5" />
         </Link>
         <div className="flex-1">
           <h1 className="text-2xl font-bold text-foreground">{fullName}</h1>
           <p className="text-sm text-muted-foreground">{employee.email}</p>
         </div>
-        <div className={`flex items-center justify-center w-20 h-20 rounded-full text-2xl font-bold ${getScoreBgColor(complianceScore)} ${getScoreColor(complianceScore)}`}>
+        <div
+          className={`flex items-center justify-center w-20 h-20 rounded-full text-2xl font-bold ${getScoreBgColor(complianceScore)} ${getScoreColor(complianceScore)}`}
+        >
           {complianceScore}
         </div>
       </div>
@@ -228,7 +253,7 @@ export default function EmployeeDetail() {
             <div className="card p-6 space-y-4">
               <h3 className="font-semibold text-foreground">Compliance Issues</h3>
               {complianceIssues.length === 0 ? (
-                <div className="flex items-center gap-2 text-green-400">
+                <div className="flex items-center gap-2 text-green-600">
                   <CheckCircleIcon className="h-5 w-5" />
                   <span>No compliance issues</span>
                 </div>
@@ -236,10 +261,14 @@ export default function EmployeeDetail() {
                 <div className="space-y-2">
                   {complianceIssues.map((issue: any, i: number) => (
                     <div key={i} className="flex items-start gap-2 p-2 rounded bg-surface-700/50">
-                      <ExclamationTriangleIcon className={`h-4 w-4 mt-0.5 ${issue.severity === 'critical' ? 'text-red-400' : issue.severity === 'high' ? 'text-orange-400' : 'text-yellow-400'}`} />
+                      <ExclamationTriangleIcon
+                        className={`h-4 w-4 mt-0.5 ${issue.severity === 'critical' ? 'text-red-600' : issue.severity === 'high' ? 'text-orange-600' : 'text-yellow-600'}`}
+                      />
                       <div>
                         <p className="text-sm text-foreground">{issue.message}</p>
-                        <p className="text-xs text-muted-foreground capitalize">{(issue.type || '').replace('_', ' ')}</p>
+                        <p className="text-xs text-muted-foreground capitalize">
+                          {(issue.type || '').replace('_', ' ')}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -255,12 +284,17 @@ export default function EmployeeDetail() {
               ) : (
                 <div className="space-y-2">
                   {dataSources.map((source: any, i: number) => (
-                    <div key={i} className="flex items-center justify-between p-2 rounded bg-surface-700/50">
+                    <div
+                      key={i}
+                      className="flex items-center justify-between p-2 rounded bg-surface-700/50"
+                    >
                       <div>
                         <p className="text-sm font-medium text-foreground">{source.integration}</p>
                         <p className="text-xs text-muted-foreground">{source.type}</p>
                       </div>
-                      <p className="text-xs text-muted-foreground">Synced {formatDate(source.lastSyncedAt)}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Synced {formatDate(source.lastSyncedAt)}
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -281,14 +315,31 @@ export default function EmployeeDetail() {
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
                         <StatusBadge status={check.status} />
-                        <span className="text-sm text-muted-foreground capitalize">{check.checkType || 'Background'} Check</span>
+                        <span className="text-sm text-muted-foreground capitalize">
+                          {check.checkType || 'Background'} Check
+                        </span>
                       </div>
-                      <span className="text-sm text-muted-foreground">via {check.integration?.name || 'Unknown'}</span>
+                      <span className="text-sm text-muted-foreground">
+                        via {check.integration?.name || 'Unknown'}
+                      </span>
                     </div>
                     <div className="grid grid-cols-3 gap-4 text-sm">
-                      <div><span className="text-muted-foreground">Initiated:</span> <span className="text-foreground ml-1">{formatDate(check.initiatedAt)}</span></div>
-                      <div><span className="text-muted-foreground">Completed:</span> <span className="text-foreground ml-1">{formatDate(check.completedAt)}</span></div>
-                      <div><span className="text-muted-foreground">Expires:</span> <span className="text-foreground ml-1">{formatDate(check.expiresAt)}</span></div>
+                      <div>
+                        <span className="text-muted-foreground">Initiated:</span>{' '}
+                        <span className="text-foreground ml-1">
+                          {formatDate(check.initiatedAt)}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Completed:</span>{' '}
+                        <span className="text-foreground ml-1">
+                          {formatDate(check.completedAt)}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Expires:</span>{' '}
+                        <span className="text-foreground ml-1">{formatDate(check.expiresAt)}</span>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -310,7 +361,9 @@ export default function EmployeeDetail() {
                       <th className="text-left p-3 font-medium text-muted-foreground">Course</th>
                       <th className="text-center p-3 font-medium text-muted-foreground">Type</th>
                       <th className="text-center p-3 font-medium text-muted-foreground">Status</th>
-                      <th className="text-center p-3 font-medium text-muted-foreground">Due Date</th>
+                      <th className="text-center p-3 font-medium text-muted-foreground">
+                        Due Date
+                      </th>
                       <th className="text-center p-3 font-medium text-muted-foreground">Score</th>
                       <th className="text-right p-3 font-medium text-muted-foreground">Source</th>
                     </tr>
@@ -319,11 +372,23 @@ export default function EmployeeDetail() {
                     {trainingRecords.map((training: any) => (
                       <tr key={training.id} className="border-b border-border">
                         <td className="p-3 text-foreground">{training.courseName}</td>
-                        <td className="p-3 text-center"><span className={`text-xs px-2 py-0.5 rounded ${training.courseType === 'required' ? 'bg-red-500/20 text-red-400' : 'bg-gray-500/20 text-gray-400'}`}>{training.courseType || 'optional'}</span></td>
-                        <td className="p-3 text-center"><StatusBadge status={training.status} /></td>
-                        <td className="p-3 text-center text-muted-foreground">{formatDate(training.dueDate || training.completedAt)}</td>
+                        <td className="p-3 text-center">
+                          <span
+                            className={`text-xs px-2 py-0.5 rounded ${training.courseType === 'required' ? 'bg-red-500/20 text-red-600' : 'bg-gray-500/20 text-gray-400'}`}
+                          >
+                            {training.courseType || 'optional'}
+                          </span>
+                        </td>
+                        <td className="p-3 text-center">
+                          <StatusBadge status={training.status} />
+                        </td>
+                        <td className="p-3 text-center text-muted-foreground">
+                          {formatDate(training.dueDate || training.completedAt)}
+                        </td>
                         <td className="p-3 text-center text-foreground">{training.score ?? '—'}</td>
-                        <td className="p-3 text-right text-muted-foreground">{training.integration?.name || 'Manual'}</td>
+                        <td className="p-3 text-right text-muted-foreground">
+                          {training.integration?.name || 'Manual'}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -345,16 +410,41 @@ export default function EmployeeDetail() {
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
                         <ComputerDesktopIcon className="h-5 w-5 text-muted-foreground" />
-                        <span className="font-medium text-foreground">{asset.deviceName || asset.name || 'Unknown Device'}</span>
+                        <span className="font-medium text-foreground">
+                          {asset.deviceName || asset.name || 'Unknown Device'}
+                        </span>
                       </div>
-                      <span className={`text-xs px-2 py-0.5 rounded ${asset.isCompliant ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>{asset.isCompliant ? 'Compliant' : 'Non-Compliant'}</span>
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded ${asset.isCompliant ? 'bg-green-500/20 text-green-600' : 'bg-red-500/20 text-red-600'}`}
+                      >
+                        {asset.isCompliant ? 'Compliant' : 'Non-Compliant'}
+                      </span>
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div><span className="text-muted-foreground">Type:</span> <span className="text-foreground ml-1 capitalize">{asset.deviceType || asset.type || '—'}</span></div>
-                      <div><span className="text-muted-foreground">Model:</span> <span className="text-foreground ml-1">{asset.model || '—'}</span></div>
-                      <div><span className="text-muted-foreground">Serial:</span> <span className="text-foreground ml-1">{asset.serialNumber || '—'}</span></div>
-                      <div><span className="text-muted-foreground">OS:</span> <span className="text-foreground ml-1">{asset.osVersion || '—'}</span></div>
-                      <div className="col-span-2"><span className="text-muted-foreground">Last Check-in:</span> <span className="text-foreground ml-1">{formatDate(asset.lastCheckIn)}</span></div>
+                      <div>
+                        <span className="text-muted-foreground">Type:</span>{' '}
+                        <span className="text-foreground ml-1 capitalize">
+                          {asset.deviceType || asset.type || '—'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Model:</span>{' '}
+                        <span className="text-foreground ml-1">{asset.model || '—'}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Serial:</span>{' '}
+                        <span className="text-foreground ml-1">{asset.serialNumber || '—'}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">OS:</span>{' '}
+                        <span className="text-foreground ml-1">{asset.osVersion || '—'}</span>
+                      </div>
+                      <div className="col-span-2">
+                        <span className="text-muted-foreground">Last Check-in:</span>{' '}
+                        <span className="text-foreground ml-1">
+                          {formatDate(asset.lastCheckIn)}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -375,7 +465,9 @@ export default function EmployeeDetail() {
                     <div className="flex items-center gap-2">
                       <KeyIcon className="h-5 w-5 text-muted-foreground" />
                       <span className="text-foreground">MFA Status:</span>
-                      <span className={record.mfaEnabled ? 'text-green-400' : 'text-red-400'}>{record.mfaEnabled ? 'Enabled' : 'Disabled'}</span>
+                      <span className={record.mfaEnabled ? 'text-green-600' : 'text-red-600'}>
+                        {record.mfaEnabled ? 'Enabled' : 'Disabled'}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground">Last Review:</span>
@@ -388,9 +480,15 @@ export default function EmployeeDetail() {
                       <table className="w-full">
                         <thead>
                           <tr className="border-b border-border">
-                            <th className="text-left p-3 font-medium text-muted-foreground">System</th>
-                            <th className="text-left p-3 font-medium text-muted-foreground">Access Level</th>
-                            <th className="text-right p-3 font-medium text-muted-foreground">Last Accessed</th>
+                            <th className="text-left p-3 font-medium text-muted-foreground">
+                              System
+                            </th>
+                            <th className="text-left p-3 font-medium text-muted-foreground">
+                              Access Level
+                            </th>
+                            <th className="text-right p-3 font-medium text-muted-foreground">
+                              Last Accessed
+                            </th>
                           </tr>
                         </thead>
                         <tbody>
@@ -398,7 +496,9 @@ export default function EmployeeDetail() {
                             <tr key={i} className="border-b border-border">
                               <td className="p-3 text-foreground">{sys.name}</td>
                               <td className="p-3 text-muted-foreground">{sys.accessLevel}</td>
-                              <td className="p-3 text-right text-muted-foreground">{formatDate(sys.lastAccessed)}</td>
+                              <td className="p-3 text-right text-muted-foreground">
+                                {formatDate(sys.lastAccessed)}
+                              </td>
                             </tr>
                           ))}
                         </tbody>
@@ -419,18 +519,31 @@ export default function EmployeeDetail() {
             ) : (
               <div className="space-y-3">
                 {attestations.map((attestation: any) => (
-                  <div key={attestation.id} className="flex items-center justify-between p-3 border border-border rounded-lg">
+                  <div
+                    key={attestation.id}
+                    className="flex items-center justify-between p-3 border border-border rounded-lg"
+                  >
                     <div className="flex items-center gap-3">
                       <DocumentTextIcon className="h-5 w-5 text-muted-foreground" />
                       <div>
-                        <p className="font-medium text-foreground">{attestation.policy?.title || 'Unknown Policy'}</p>
-                        <p className="text-sm text-muted-foreground capitalize">{attestation.policy?.category || ''}</p>
+                        <p className="font-medium text-foreground">
+                          {attestation.policy?.title || 'Unknown Policy'}
+                        </p>
+                        <p className="text-sm text-muted-foreground capitalize">
+                          {attestation.policy?.category || ''}
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="text-right text-sm">
-                        <p className="text-muted-foreground">Requested: {formatDate(attestation.requestedAt)}</p>
-                        {attestation.respondedAt && <p className="text-muted-foreground">Responded: {formatDate(attestation.respondedAt)}</p>}
+                        <p className="text-muted-foreground">
+                          Requested: {formatDate(attestation.requestedAt)}
+                        </p>
+                        {attestation.respondedAt && (
+                          <p className="text-muted-foreground">
+                            Responded: {formatDate(attestation.respondedAt)}
+                          </p>
+                        )}
                       </div>
                       <StatusBadge status={attestation.status} />
                     </div>

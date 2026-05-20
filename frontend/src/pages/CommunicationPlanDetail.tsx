@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Badge } from '@/components/ui/Badge';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
@@ -16,8 +17,14 @@ import {
   ExclamationCircleIcon,
 } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import { SkeletonDetailHeader, SkeletonDetailSection } from '@/components/Skeleton';
+
+import { Textarea } from '@/components/ui/Textarea';
+
+import { Input } from '@/components/ui/Input';
+
+import { SelectNative } from '@/components/ui/SelectNative';
 
 interface CommunicationPlan {
   id: string;
@@ -49,10 +56,10 @@ const PLAN_TYPES = [
 ];
 
 const planTypeColors: Record<string, string> = {
-  emergency: 'bg-red-500/20 text-red-400',
-  crisis: 'bg-orange-500/20 text-orange-400',
-  incident: 'bg-yellow-500/20 text-yellow-400',
-  stakeholder: 'bg-blue-500/20 text-blue-400',
+  emergency: 'bg-red-500/20 text-red-600',
+  crisis: 'bg-orange-500/20 text-orange-600',
+  incident: 'bg-yellow-500/20 text-yellow-600',
+  stakeholder: 'bg-blue-500/20 text-blue-600',
 };
 
 export default function CommunicationPlanDetail() {
@@ -71,7 +78,11 @@ export default function CommunicationPlanDetail() {
     is_active: true,
   });
 
-  const { data: plan, isLoading, error } = useQuery<CommunicationPlan>({
+  const {
+    data: plan,
+    isLoading,
+    error,
+  } = useQuery<CommunicationPlan>({
     queryKey: ['communication-plan', id],
     queryFn: async () => {
       const res = await api.get(`/api/bcdr/communication/${id}`);
@@ -142,8 +153,12 @@ export default function CommunicationPlanDetail() {
       <div className="p-6 space-y-6">
         <SkeletonDetailHeader />
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2"><SkeletonDetailSection /></div>
-          <div><SkeletonDetailSection /></div>
+          <div className="lg:col-span-2">
+            <SkeletonDetailSection />
+          </div>
+          <div>
+            <SkeletonDetailSection />
+          </div>
         </div>
       </div>
     );
@@ -153,9 +168,11 @@ export default function CommunicationPlanDetail() {
     return (
       <div className="p-6">
         <div className="card p-8 text-center">
-          <ExclamationCircleIcon className="w-12 h-12 mx-auto mb-4 text-red-400" />
-          <h2 className="text-lg font-semibold text-surface-100 mb-2">Communication Plan Not Found</h2>
-          <p className="text-surface-400 mb-4">The requested plan could not be loaded.</p>
+          <ExclamationCircleIcon className="w-12 h-12 mx-auto mb-4 text-red-600" />
+          <h2 className="text-lg font-semibold text-surface-100 mb-2">
+            Communication Plan Not Found
+          </h2>
+          <p className="text-surface-600 mb-4">The requested plan could not be loaded.</p>
           <Button onClick={() => navigate('/bcdr/communication')}>Back to Plans</Button>
         </div>
       </div>
@@ -169,16 +186,17 @@ export default function CommunicationPlanDetail() {
         <div className="flex items-start gap-4">
           <button
             onClick={() => navigate('/bcdr/communication')}
-            className="p-2 hover:bg-surface-700 rounded-lg text-surface-400 mt-1"
+            className="p-2 hover:bg-surface-700 rounded-lg text-surface-600 mt-1"
           >
             <ArrowLeftIcon className="w-5 h-5" />
           </button>
           <div>
             <h1 className="text-2xl font-bold text-surface-100">Create Communication Plan</h1>
-            <p className="text-surface-400 mt-1">Set up emergency contact lists and communication protocols</p>
+            <p className="text-surface-600 mt-1">
+              Set up emergency contact lists and communication protocols
+            </p>
           </div>
         </div>
-
         <div className="card p-6">
           <form
             onSubmit={(e) => {
@@ -188,8 +206,8 @@ export default function CommunicationPlanDetail() {
             className="space-y-4"
           >
             <div>
-              <label className="block text-sm font-medium text-surface-300 mb-2">Plan Name *</label>
-              <input
+              <label className="block text-sm font-medium text-surface-700 mb-2">Plan Name *</label>
+              <Input
                 type="text"
                 value={editForm.name}
                 onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
@@ -200,21 +218,23 @@ export default function CommunicationPlanDetail() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-surface-300 mb-2">Plan Type</label>
-              <select
+              <label className="block text-sm font-medium text-surface-700 mb-2">Plan Type</label>
+              <SelectNative
                 value={editForm.plan_type}
                 onChange={(e) => setEditForm({ ...editForm, plan_type: e.target.value })}
                 className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-surface-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 {PLAN_TYPES.map((type) => (
-                  <option key={type.value} value={type.value}>{type.label}</option>
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
                 ))}
-              </select>
+              </SelectNative>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-surface-300 mb-2">Description</label>
-              <textarea
+              <label className="block text-sm font-medium text-surface-700 mb-2">Description</label>
+              <Textarea
                 value={editForm.description}
                 onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
                 rows={4}
@@ -231,7 +251,7 @@ export default function CommunicationPlanDetail() {
                 onChange={(e) => setEditForm({ ...editForm, is_active: e.target.checked })}
                 className="w-4 h-4 rounded bg-surface-700 border-surface-600 text-primary-500 focus:ring-primary-500"
               />
-              <label htmlFor="is_active" className="text-sm text-surface-300">
+              <label htmlFor="is_active" className="text-sm text-surface-700">
                 Active (plan is ready for use)
               </label>
             </div>
@@ -244,10 +264,7 @@ export default function CommunicationPlanDetail() {
               >
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                disabled={createMutation.isPending || !editForm.name}
-              >
+              <Button type="submit" disabled={createMutation.isPending || !editForm.name}>
                 {createMutation.isPending ? 'Creating...' : 'Create Plan'}
               </Button>
             </div>
@@ -259,7 +276,7 @@ export default function CommunicationPlanDetail() {
 
   // Detail view for existing plans - TypeScript guard (plan is guaranteed to exist at this point)
   if (!plan) return null;
-  
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -267,28 +284,34 @@ export default function CommunicationPlanDetail() {
         <div className="flex items-start gap-4">
           <button
             onClick={() => navigate('/bcdr/communication')}
-            className="p-2 hover:bg-surface-700 rounded-lg text-surface-400 mt-1"
+            className="p-2 hover:bg-surface-700 rounded-lg text-surface-600 mt-1"
           >
             <ArrowLeftIcon className="w-5 h-5" />
           </button>
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <MegaphoneIcon className="w-8 h-8 text-orange-400" />
+              <MegaphoneIcon className="w-8 h-8 text-orange-600" />
               <h1 className="text-2xl font-bold text-surface-100">{plan.name}</h1>
-              <span className={clsx(
-                'px-2 py-1 text-xs font-medium rounded-full',
-                planTypeColors[plan.plan_type] || 'bg-surface-600 text-surface-300'
-              )}>
-                {PLAN_TYPES.find(t => t.value === plan.plan_type)?.label || plan.plan_type}
+              <span
+                className={clsx(
+                  'px-2 py-1 text-xs font-medium rounded-full',
+                  planTypeColors[plan.plan_type] || 'bg-surface-600 text-surface-700'
+                )}
+              >
+                {PLAN_TYPES.find((t) => t.value === plan.plan_type)?.label || plan.plan_type}
               </span>
-              <span className={clsx(
-                'px-2 py-1 text-xs font-medium rounded-full',
-                plan.is_active ? 'bg-green-500/20 text-green-400' : 'bg-surface-600 text-surface-400'
-              )}>
+              <span
+                className={clsx(
+                  'px-2 py-1 text-xs font-medium rounded-full',
+                  plan.is_active
+                    ? 'bg-green-500/20 text-green-600'
+                    : 'bg-surface-600 text-surface-600'
+                )}
+              >
                 {plan.is_active ? 'Active' : 'Inactive'}
               </span>
             </div>
-            <p className="text-surface-400">{plan.description || 'No description provided'}</p>
+            <p className="text-surface-600">{plan.description || 'No description provided'}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -302,14 +325,13 @@ export default function CommunicationPlanDetail() {
           </Button>
         </div>
       </div>
-
       {/* Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <div className="card">
             <div className="p-4 border-b border-surface-700 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-surface-100">
-                <UserGroupIcon className="w-5 h-5 inline mr-2 text-surface-400" />
+                <UserGroupIcon className="w-5 h-5 inline mr-2 text-surface-600" />
                 Contacts ({plan.contacts?.length || 0})
               </h2>
               <Button size="sm">
@@ -325,19 +347,17 @@ export default function CommunicationPlanDetail() {
                       <div>
                         <div className="flex items-center gap-2 mb-1">
                           <span className="font-medium text-surface-100">{contact.name}</span>
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400">
-                            Level {contact.escalation_level}
-                          </span>
+                          <Badge variant="info">Level {contact.escalation_level}</Badge>
                         </div>
-                        <p className="text-sm text-surface-400">{contact.title}</p>
-                        <p className="text-sm text-surface-400">{contact.role_in_plan}</p>
+                        <p className="text-sm text-surface-600">{contact.title}</p>
+                        <p className="text-sm text-surface-600">{contact.role_in_plan}</p>
                       </div>
                       <div className="text-right text-sm">
-                        <div className="flex items-center gap-1 text-surface-300">
+                        <div className="flex items-center gap-1 text-surface-700">
                           <PhoneIcon className="w-4 h-4" />
                           {contact.primary_phone || 'N/A'}
                         </div>
-                        <div className="flex items-center gap-1 text-surface-300 mt-1">
+                        <div className="flex items-center gap-1 text-surface-700 mt-1">
                           <EnvelopeIcon className="w-4 h-4" />
                           {contact.email || 'N/A'}
                         </div>
@@ -346,7 +366,7 @@ export default function CommunicationPlanDetail() {
                   </div>
                 ))
               ) : (
-                <div className="p-8 text-center text-surface-400">
+                <div className="p-8 text-center text-surface-600">
                   <UserGroupIcon className="w-12 h-12 mx-auto mb-3 opacity-50" />
                   <p>No contacts added yet</p>
                   <p className="text-sm">Add contacts to this communication plan</p>
@@ -358,7 +378,7 @@ export default function CommunicationPlanDetail() {
 
         <div>
           <div className="card p-4">
-            <h3 className="text-sm font-medium text-surface-400 mb-3">Details</h3>
+            <h3 className="text-sm font-medium text-surface-600 mb-3">Details</h3>
             <div className="space-y-3">
               <div>
                 <span className="text-xs text-surface-500">Linked BC/DR Plan</span>
@@ -366,29 +386,27 @@ export default function CommunicationPlanDetail() {
               </div>
               <div>
                 <span className="text-xs text-surface-500">Created</span>
-                <p className="text-surface-100">
-                  {new Date(plan.created_at).toLocaleDateString()}
-                </p>
+                <p className="text-surface-100">{new Date(plan.created_at).toLocaleDateString()}</p>
               </div>
               <div>
                 <span className="text-xs text-surface-500">Last Updated</span>
-                <p className="text-surface-100">
-                  {new Date(plan.updated_at).toLocaleDateString()}
-                </p>
+                <p className="text-surface-100">{new Date(plan.updated_at).toLocaleDateString()}</p>
               </div>
             </div>
           </div>
         </div>
       </div>
-
       {/* Edit Modal */}
       {showEditModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
           <div className="card w-full max-w-lg mx-4">
             <div className="p-4 border-b border-surface-700 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-surface-100">Edit Communication Plan</h2>
-              <button onClick={() => setShowEditModal(false)} className="p-1 hover:bg-surface-700 rounded">
-                <XMarkIcon className="w-5 h-5 text-surface-400" />
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="p-1 hover:bg-surface-700 rounded"
+              >
+                <XMarkIcon className="w-5 h-5 text-surface-600" />
               </button>
             </div>
             <form
@@ -399,8 +417,10 @@ export default function CommunicationPlanDetail() {
               className="p-6 space-y-4"
             >
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-2">Plan Name *</label>
-                <input
+                <label className="block text-sm font-medium text-surface-700 mb-2">
+                  Plan Name *
+                </label>
+                <Input
                   type="text"
                   value={editForm.name}
                   onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
@@ -409,20 +429,24 @@ export default function CommunicationPlanDetail() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-2">Plan Type</label>
-                <select
+                <label className="block text-sm font-medium text-surface-700 mb-2">Plan Type</label>
+                <SelectNative
                   value={editForm.plan_type}
                   onChange={(e) => setEditForm({ ...editForm, plan_type: e.target.value })}
                   className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-surface-100"
                 >
                   {PLAN_TYPES.map((type) => (
-                    <option key={type.value} value={type.value}>{type.label}</option>
+                    <option key={type.value} value={type.value}>
+                      {type.label}
+                    </option>
                   ))}
-                </select>
+                </SelectNative>
               </div>
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-2">Description</label>
-                <textarea
+                <label className="block text-sm font-medium text-surface-700 mb-2">
+                  Description
+                </label>
+                <Textarea
                   value={editForm.description}
                   onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
                   rows={3}
@@ -437,7 +461,9 @@ export default function CommunicationPlanDetail() {
                   onChange={(e) => setEditForm({ ...editForm, is_active: e.target.checked })}
                   className="w-4 h-4 rounded bg-surface-700 border-surface-600 text-primary-500"
                 />
-                <label htmlFor="edit_is_active" className="text-sm text-surface-300">Active</label>
+                <label htmlFor="edit_is_active" className="text-sm text-surface-700">
+                  Active
+                </label>
               </div>
               <div className="flex justify-end gap-3 pt-4">
                 <Button type="button" variant="secondary" onClick={() => setShowEditModal(false)}>
@@ -451,15 +477,16 @@ export default function CommunicationPlanDetail() {
           </div>
         </div>
       )}
-
       {/* Delete Confirmation */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
           <div className="card w-full max-w-md mx-4 p-6">
-            <h2 className="text-lg font-semibold text-surface-100 mb-2">Delete Communication Plan?</h2>
-            <p className="text-surface-400 mb-4">
-              This will permanently delete "{plan.name}" and all associated contacts.
-              This action cannot be undone.
+            <h2 className="text-lg font-semibold text-surface-100 mb-2">
+              Delete Communication Plan?
+            </h2>
+            <p className="text-surface-600 mb-4">
+              This will permanently delete "{plan.name}" and all associated contacts. This action
+              cannot be undone.
             </p>
             <div className="flex justify-end gap-3">
               <Button variant="secondary" onClick={() => setShowDeleteConfirm(false)}>

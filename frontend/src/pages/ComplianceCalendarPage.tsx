@@ -11,7 +11,7 @@ export default function ComplianceCalendarPage() {
             <CalendarDaysIcon className="w-8 h-8 text-brand-500" />
             Compliance Calendar
           </h1>
-          <p className="text-surface-400 mt-1">
+          <p className="text-surface-600 mt-1">
             Track policy reviews, audit deadlines, and control assessments
           </p>
         </div>
@@ -22,8 +22,3 @@ export default function ComplianceCalendarPage() {
     </div>
   );
 }
-
-
-
-
-

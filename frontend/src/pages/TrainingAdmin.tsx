@@ -16,9 +16,15 @@ import {
   Cog6ToothIcon,
 } from '@heroicons/react/24/outline';
 import { trainingApi } from '@/lib/api';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import { useToast } from '@/hooks/useToast';
 import { SkeletonCard } from '@/components/Skeleton';
+
+import { Textarea } from '@/components/ui/Textarea';
+
+import { Input } from '@/components/ui/Input';
+
+import { SelectNative } from '@/components/ui/SelectNative';
 
 // Types
 interface CustomModule {
@@ -97,32 +103,93 @@ const DIFFICULTIES = [
 // Detailed descriptions for built-in modules
 const BUILTIN_MODULE_DESCRIPTIONS: Record<string, { description: string; topics: string[] }> = {
   'phishing-smishing-vishing': {
-    description: 'Learn to identify and protect yourself against phishing emails, smishing (SMS phishing), and vishing (voice phishing) attacks. This module covers real-world examples, red flags to watch for, and best practices for verifying suspicious communications.',
-    topics: ['Email phishing tactics', 'SMS/text message scams', 'Phone call fraud', 'Social engineering techniques', 'Verification best practices', 'Reporting suspicious activity'],
+    description:
+      'Learn to identify and protect yourself against phishing emails, smishing (SMS phishing), and vishing (voice phishing) attacks. This module covers real-world examples, red flags to watch for, and best practices for verifying suspicious communications.',
+    topics: [
+      'Email phishing tactics',
+      'SMS/text message scams',
+      'Phone call fraud',
+      'Social engineering techniques',
+      'Verification best practices',
+      'Reporting suspicious activity',
+    ],
   },
   'ceo-executive-fraud': {
-    description: 'Understand Business Email Compromise (BEC) and CEO fraud schemes where attackers impersonate executives to trick employees into transferring funds or sharing sensitive data. Learn verification protocols and authorization procedures.',
-    topics: ['Business Email Compromise (BEC)', 'Wire transfer fraud', 'Executive impersonation', 'Vendor email compromise', 'Multi-factor authorization', 'Out-of-band verification'],
+    description:
+      'Understand Business Email Compromise (BEC) and CEO fraud schemes where attackers impersonate executives to trick employees into transferring funds or sharing sensitive data. Learn verification protocols and authorization procedures.',
+    topics: [
+      'Business Email Compromise (BEC)',
+      'Wire transfer fraud',
+      'Executive impersonation',
+      'Vendor email compromise',
+      'Multi-factor authorization',
+      'Out-of-band verification',
+    ],
   },
   'watering-hole-attacks': {
-    description: 'Discover how attackers compromise legitimate websites frequented by target organizations to deliver malware. Learn to recognize compromised sites and protect against drive-by downloads.',
-    topics: ['Compromised website indicators', 'Drive-by download attacks', 'Browser security settings', 'Safe browsing practices', 'Zero-day exploit awareness', 'Network segmentation benefits'],
+    description:
+      'Discover how attackers compromise legitimate websites frequented by target organizations to deliver malware. Learn to recognize compromised sites and protect against drive-by downloads.',
+    topics: [
+      'Compromised website indicators',
+      'Drive-by download attacks',
+      'Browser security settings',
+      'Safe browsing practices',
+      'Zero-day exploit awareness',
+      'Network segmentation benefits',
+    ],
   },
   'general-cybersecurity': {
-    description: 'A comprehensive overview of cybersecurity fundamentals including password hygiene, device security, safe internet usage, and protecting company data both in the office and while working remotely.',
-    topics: ['Password management', 'Multi-factor authentication', 'Device security', 'Public Wi-Fi risks', 'Data classification', 'Physical security', 'Remote work security', 'Incident reporting'],
+    description:
+      'A comprehensive overview of cybersecurity fundamentals including password hygiene, device security, safe internet usage, and protecting company data both in the office and while working remotely.',
+    topics: [
+      'Password management',
+      'Multi-factor authentication',
+      'Device security',
+      'Public Wi-Fi risks',
+      'Data classification',
+      'Physical security',
+      'Remote work security',
+      'Incident reporting',
+    ],
   },
   'privacy-awareness': {
-    description: 'Understand data privacy principles, regulations like GDPR and CCPA, and your role in protecting personal information. Learn proper data handling, retention policies, and privacy-by-design concepts.',
-    topics: ['GDPR & CCPA basics', 'Personal data identification', 'Data subject rights', 'Consent management', 'Data minimization', 'Retention and disposal', 'Privacy incident handling'],
+    description:
+      'Understand data privacy principles, regulations like GDPR and CCPA, and your role in protecting personal information. Learn proper data handling, retention policies, and privacy-by-design concepts.',
+    topics: [
+      'GDPR & CCPA basics',
+      'Personal data identification',
+      'Data subject rights',
+      'Consent management',
+      'Data minimization',
+      'Retention and disposal',
+      'Privacy incident handling',
+    ],
   },
   'secure-coding': {
-    description: 'For developers and technical staff: Learn secure coding practices based on the OWASP Top 10, including input validation, authentication security, injection prevention, and secure session management.',
-    topics: ['OWASP Top 10 vulnerabilities', 'SQL injection prevention', 'Cross-site scripting (XSS)', 'Authentication best practices', 'Secure session handling', 'Input validation', 'Error handling', 'Security testing'],
+    description:
+      'For developers and technical staff: Learn secure coding practices based on the OWASP Top 10, including input validation, authentication security, injection prevention, and secure session management.',
+    topics: [
+      'OWASP Top 10 vulnerabilities',
+      'SQL injection prevention',
+      'Cross-site scripting (XSS)',
+      'Authentication best practices',
+      'Secure session handling',
+      'Input validation',
+      'Error handling',
+      'Security testing',
+    ],
   },
   'combined-training': {
-    description: 'A complete security and privacy awareness program combining all core modules into one comprehensive training. Ideal for annual compliance training or new employee onboarding.',
-    topics: ['All phishing attack types', 'Executive fraud prevention', 'General security hygiene', 'Privacy regulations', 'Incident response', 'Reporting procedures'],
+    description:
+      'A complete security and privacy awareness program combining all core modules into one comprehensive training. Ideal for annual compliance training or new employee onboarding.',
+    topics: [
+      'All phishing attack types',
+      'Executive fraud prevention',
+      'General security hygiene',
+      'Privacy regulations',
+      'Incident response',
+      'Reporting procedures',
+    ],
   },
 };
 
@@ -134,7 +201,16 @@ export default function TrainingAdmin() {
   const [editingModule, setEditingModule] = useState<CustomModule | null>(null);
   const [uploadingModuleId, setUploadingModuleId] = useState<string | null>(null);
   const [showUploadNewScorm, setShowUploadNewScorm] = useState(false);
-  const [viewingModule, setViewingModule] = useState<{ id: string; name: string; description: string; category: string; duration: number; difficulty: string; topics: string[]; isBuiltIn: boolean } | null>(null);
+  const [viewingModule, setViewingModule] = useState<{
+    id: string;
+    name: string;
+    description: string;
+    category: string;
+    duration: number;
+    difficulty: string;
+    topics: string[];
+    isBuiltIn: boolean;
+  } | null>(null);
 
   // Queries
   const { data: campaigns, isLoading: campaignsLoading } = useQuery({
@@ -176,7 +252,7 @@ export default function TrainingAdmin() {
             <Cog6ToothIcon className="w-7 h-7 text-brand-500" />
             Training Configuration
           </h1>
-          <p className="text-gray-500 dark:text-surface-400 mt-1">
+          <p className="text-gray-500 dark:text-surface-600 mt-1">
             Manage training campaigns, custom modules, and assignments
           </p>
         </div>
@@ -222,7 +298,7 @@ export default function TrainingAdmin() {
               className={`flex items-center gap-2 py-3 px-1 border-b-2 text-sm font-medium transition-colors ${
                 activeTab === tab.id
                   ? 'border-brand-500 text-brand-500 dark:text-brand-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-surface-400 dark:hover:text-surface-300'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-surface-600 dark:hover:text-surface-700'
               }`}
             >
               <tab.icon className="w-5 h-5" />
@@ -255,9 +331,7 @@ export default function TrainingAdmin() {
         />
       )}
 
-      {activeTab === 'assignments' && (
-        <StatsTab orgStats={orgStats} />
-      )}
+      {activeTab === 'assignments' && <StatsTab orgStats={orgStats} />}
 
       {/* Create/Edit Campaign Modal */}
       {(showCreateCampaign || editingCampaign) && (
@@ -284,25 +358,15 @@ export default function TrainingAdmin() {
 
       {/* Upload SCORM Modal (for existing module) */}
       {uploadingModuleId && (
-        <UploadScormModal
-          moduleId={uploadingModuleId}
-          onClose={() => setUploadingModuleId(null)}
-        />
+        <UploadScormModal moduleId={uploadingModuleId} onClose={() => setUploadingModuleId(null)} />
       )}
 
       {/* Upload New SCORM Module Modal */}
-      {showUploadNewScorm && (
-        <UploadNewScormModal
-          onClose={() => setShowUploadNewScorm(false)}
-        />
-      )}
+      {showUploadNewScorm && <UploadNewScormModal onClose={() => setShowUploadNewScorm(false)} />}
 
       {/* View Module Details Modal */}
       {viewingModule && (
-        <ModuleDetailModal
-          module={viewingModule}
-          onClose={() => setViewingModule(null)}
-        />
+        <ModuleDetailModal module={viewingModule} onClose={() => setViewingModule(null)} />
       )}
     </div>
   );
@@ -322,9 +386,9 @@ function StatCard({
 }) {
   const colorClasses = {
     brand: 'bg-brand-500/10 text-brand-500 dark:text-brand-400',
-    blue: 'bg-blue-500/10 text-blue-500 dark:text-blue-400',
-    emerald: 'bg-emerald-500/10 text-emerald-500 dark:text-emerald-400',
-    red: 'bg-red-500/10 text-red-500 dark:text-red-400',
+    blue: 'bg-blue-500/10 text-blue-500 dark:text-blue-600',
+    emerald: 'bg-emerald-500/10 text-emerald-500 dark:text-emerald-600',
+    red: 'bg-red-500/10 text-red-500 dark:text-red-600',
   };
 
   return (
@@ -335,7 +399,7 @@ function StatCard({
         </div>
         <div>
           <div className="text-2xl font-semibold text-gray-900 dark:text-white">{value}</div>
-          <div className="text-sm text-gray-500 dark:text-surface-400">{label}</div>
+          <div className="text-sm text-gray-500 dark:text-surface-600">{label}</div>
         </div>
       </div>
     </div>
@@ -381,9 +445,7 @@ function CampaignsTab({
   const getModuleNames = (moduleIds: string[]) => {
     if (!allModules) return moduleIds.join(', ');
     const allModulesList = [...allModules.builtIn, ...allModules.custom];
-    return moduleIds
-      .map((id) => allModulesList.find((m) => m.id === id)?.name || id)
-      .join(', ');
+    return moduleIds.map((id) => allModulesList.find((m) => m.id === id)?.name || id).join(', ');
   };
 
   if (isLoading) {
@@ -406,8 +468,10 @@ function CampaignsTab({
       {campaigns.length === 0 ? (
         <div className="text-center py-12 bg-white dark:bg-surface-800 rounded-xl border border-gray-200 dark:border-surface-700">
           <PlayIcon className="w-12 h-12 mx-auto text-gray-400 dark:text-surface-500" />
-          <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-white">No campaigns yet</h3>
-          <p className="mt-2 text-gray-500 dark:text-surface-400">
+          <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-white">
+            No campaigns yet
+          </h3>
+          <p className="mt-2 text-gray-500 dark:text-surface-600">
             Create your first training campaign to get started.
           </p>
         </div>
@@ -435,11 +499,11 @@ function CampaignsTab({
                     </span>
                   </div>
                   {campaign.description && (
-                    <p className="mt-1 text-gray-500 dark:text-surface-400 text-sm">
+                    <p className="mt-1 text-gray-500 dark:text-surface-600 text-sm">
                       {campaign.description}
                     </p>
                   )}
-                  <div className="mt-3 flex flex-wrap gap-4 text-sm text-gray-500 dark:text-surface-400">
+                  <div className="mt-3 flex flex-wrap gap-4 text-sm text-gray-500 dark:text-surface-600">
                     <span>
                       <strong>Modules:</strong> {getModuleNames(campaign.moduleIds as string[])}
                     </span>
@@ -469,11 +533,7 @@ function CampaignsTab({
                   >
                     Launch
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onEdit(campaign)}
-                  >
+                  <Button variant="ghost" size="sm" onClick={() => onEdit(campaign)}>
                     <PencilIcon className="w-4 h-4" />
                   </Button>
                   <Button
@@ -553,7 +613,11 @@ function ModulesTab({
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-medium text-gray-900 dark:text-white">Custom Modules</h3>
           <div className="flex gap-2">
-            <Button variant="secondary" onClick={onCreateNew} leftIcon={<PlusIcon className="w-4 h-4" />}>
+            <Button
+              variant="secondary"
+              onClick={onCreateNew}
+              leftIcon={<PlusIcon className="w-4 h-4" />}
+            >
               Add Module
             </Button>
             <Button onClick={onUploadNew} leftIcon={<ArrowUpTrayIcon className="w-4 h-4" />}>
@@ -562,13 +626,17 @@ function ModulesTab({
           </div>
         </div>
 
-        {(!allModules?.custom || allModules.custom.length === 0) ? (
+        {!allModules?.custom || allModules.custom.length === 0 ? (
           <div className="text-center py-8 bg-white dark:bg-surface-800 rounded-xl border border-gray-200 dark:border-surface-700">
             <DocumentArrowUpIcon className="w-10 h-10 mx-auto text-gray-400 dark:text-surface-500" />
-            <p className="mt-3 text-gray-500 dark:text-surface-400">
+            <p className="mt-3 text-gray-500 dark:text-surface-600">
               No custom modules yet. Click "Upload SCORM Package" to create custom training.
             </p>
-            <Button onClick={onUploadNew} className="mt-4" leftIcon={<ArrowUpTrayIcon className="w-4 h-4" />}>
+            <Button
+              onClick={onUploadNew}
+              className="mt-4"
+              leftIcon={<ArrowUpTrayIcon className="w-4 h-4" />}
+            >
               Upload SCORM Package
             </Button>
           </div>
@@ -581,21 +649,23 @@ function ModulesTab({
               >
                 <div
                   className="cursor-pointer"
-                  onClick={() => onView({
-                    id: module.id,
-                    name: module.name,
-                    description: module.description || 'No description available',
-                    category: module.category,
-                    duration: module.duration,
-                    difficulty: module.difficulty,
-                    topics: Array.isArray(module.topics) ? module.topics : [],
-                    isBuiltIn: false,
-                  })}
+                  onClick={() =>
+                    onView({
+                      id: module.id,
+                      name: module.name,
+                      description: module.description || 'No description available',
+                      category: module.category,
+                      duration: module.duration,
+                      difficulty: module.difficulty,
+                      topics: Array.isArray(module.topics) ? module.topics : [],
+                      isBuiltIn: false,
+                    })
+                  }
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
                       <h4 className="font-medium text-gray-900 dark:text-white">{module.name}</h4>
-                      <p className="text-sm text-gray-500 dark:text-surface-400 mt-1 line-clamp-2">
+                      <p className="text-sm text-gray-500 dark:text-surface-600 mt-1 line-clamp-2">
                         {module.description || 'Click to view details'}
                       </p>
                     </div>
@@ -610,7 +680,7 @@ function ModulesTab({
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-surface-400 mb-3">
+                  <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-surface-600 mb-3">
                     <span className="px-2 py-0.5 bg-gray-100 dark:bg-surface-700 rounded">
                       {module.category}
                     </span>
@@ -635,18 +705,31 @@ function ModulesTab({
                   <Button
                     variant="secondary"
                     size="sm"
-                    onClick={(e) => { e.stopPropagation(); onUpload(module.id); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onUpload(module.id);
+                    }}
                     leftIcon={<ArrowUpTrayIcon className="w-4 h-4" />}
                   >
                     Upload SCORM
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); onEdit(module); }}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEdit(module);
+                    }}
+                  >
                     <PencilIcon className="w-4 h-4" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(module.id); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteMutation.mutate(module.id);
+                    }}
                     className="text-red-500 hover:text-red-600"
                   >
                     <TrashIcon className="w-4 h-4" />
@@ -661,30 +744,35 @@ function ModulesTab({
       {/* Built-in Modules Section */}
       <div>
         <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Built-in Modules</h3>
-        <p className="text-sm text-gray-500 dark:text-surface-400 mb-4">Click any module to view details and topics covered</p>
+        <p className="text-sm text-gray-500 dark:text-surface-600 mb-4">
+          Click any module to view details and topics covered
+        </p>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {allModules?.builtIn.map((module) => {
             const details = BUILTIN_MODULE_DESCRIPTIONS[module.id];
             return (
               <div
                 key={module.id}
-                onClick={() => onView({
-                  id: module.id,
-                  name: module.name,
-                  description: details?.description || module.description || 'No description available',
-                  category: module.category,
-                  duration: module.duration,
-                  difficulty: module.difficulty,
-                  topics: details?.topics || [],
-                  isBuiltIn: true,
-                })}
+                onClick={() =>
+                  onView({
+                    id: module.id,
+                    name: module.name,
+                    description:
+                      details?.description || module.description || 'No description available',
+                    category: module.category,
+                    duration: module.duration,
+                    difficulty: module.difficulty,
+                    topics: details?.topics || [],
+                    isBuiltIn: true,
+                  })
+                }
                 className="bg-white dark:bg-surface-800 rounded-xl border border-gray-200 dark:border-surface-700 p-4 cursor-pointer hover:border-brand-500 hover:shadow-md transition-all"
               >
                 <h4 className="font-medium text-gray-900 dark:text-white">{module.name}</h4>
-                <p className="text-sm text-gray-500 dark:text-surface-400 mt-1 line-clamp-2">
+                <p className="text-sm text-gray-500 dark:text-surface-600 mt-1 line-clamp-2">
                   {details?.description || 'Click to view details'}
                 </p>
-                <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-surface-400 mt-3">
+                <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-surface-600 mt-3">
                   <span className="px-2 py-0.5 bg-gray-100 dark:bg-surface-700 rounded">
                     {module.category}
                   </span>
@@ -726,19 +814,25 @@ function StatsTab({ orgStats }: { orgStats: any }) {
             <div className="text-3xl font-bold text-gray-900 dark:text-white">
               {orgStats.totalProgress || 0}
             </div>
-            <div className="text-sm text-gray-500 dark:text-surface-400">Total Progress Records</div>
+            <div className="text-sm text-gray-500 dark:text-surface-600">
+              Total Progress Records
+            </div>
           </div>
           <div>
-            <div className="text-3xl font-bold text-emerald-500">{orgStats.completedProgress || 0}</div>
-            <div className="text-sm text-gray-500 dark:text-surface-400">Completed Trainings</div>
+            <div className="text-3xl font-bold text-emerald-500">
+              {orgStats.completedProgress || 0}
+            </div>
+            <div className="text-sm text-gray-500 dark:text-surface-600">Completed Trainings</div>
           </div>
           <div>
             <div className="text-3xl font-bold text-brand-500">{orgStats.completionRate || 0}%</div>
-            <div className="text-sm text-gray-500 dark:text-surface-400">Completion Rate</div>
+            <div className="text-sm text-gray-500 dark:text-surface-600">Completion Rate</div>
           </div>
           <div>
-            <div className="text-3xl font-bold text-red-500">{orgStats.overdueAssignments || 0}</div>
-            <div className="text-sm text-gray-500 dark:text-surface-400">Overdue Assignments</div>
+            <div className="text-3xl font-bold text-red-500">
+              {orgStats.overdueAssignments || 0}
+            </div>
+            <div className="text-sm text-gray-500 dark:text-surface-600">Overdue Assignments</div>
           </div>
         </div>
       </div>
@@ -848,7 +942,7 @@ function CampaignModal({
     : defaultBuiltInModules;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
       <div className="bg-white dark:bg-surface-800 rounded-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-200 dark:border-surface-700">
           <div className="flex items-center justify-between">
@@ -857,7 +951,7 @@ function CampaignModal({
             </h2>
             <button
               onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 dark:text-surface-400 dark:hover:text-surface-200"
+              className="text-gray-500 hover:text-gray-700 dark:text-surface-600 dark:hover:text-surface-200"
             >
               <XMarkIcon className="w-6 h-6" />
             </button>
@@ -867,10 +961,10 @@ function CampaignModal({
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-surface-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
               Campaign Name
             </label>
-            <input
+            <Input
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -881,10 +975,10 @@ function CampaignModal({
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-surface-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
               Description
             </label>
-            <textarea
+            <Textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={3}
@@ -894,7 +988,7 @@ function CampaignModal({
 
           {/* Modules */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-surface-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
               Select Modules
             </label>
             <div className="grid gap-2 max-h-48 overflow-y-auto border border-gray-200 dark:border-surface-600 rounded-lg p-3">
@@ -917,7 +1011,7 @@ function CampaignModal({
 
           {/* Target Roles */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-surface-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
               Target Roles
             </label>
             <div className="flex flex-wrap gap-2">
@@ -951,10 +1045,10 @@ function CampaignModal({
           {/* Dates */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-surface-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
                 Start Date
               </label>
-              <input
+              <Input
                 type="date"
                 value={formData.startDate}
                 onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
@@ -963,10 +1057,10 @@ function CampaignModal({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-surface-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
                 End Date (Due Date)
               </label>
-              <input
+              <Input
                 type="date"
                 value={formData.endDate}
                 onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
@@ -991,10 +1085,7 @@ function CampaignModal({
             <Button variant="secondary" onClick={onClose}>
               Cancel
             </Button>
-            <Button
-              type="submit"
-              disabled={createMutation.isPending || updateMutation.isPending}
-            >
+            <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
               {campaign ? 'Update Campaign' : 'Create Campaign'}
             </Button>
           </div>
@@ -1005,13 +1096,7 @@ function CampaignModal({
 }
 
 // Module Modal
-function ModuleModal({
-  module,
-  onClose,
-}: {
-  module: CustomModule | null;
-  onClose: () => void;
-}) {
+function ModuleModal({ module, onClose }: { module: CustomModule | null; onClose: () => void }) {
   const queryClient = useQueryClient();
   const toast = useToast();
 
@@ -1056,7 +1141,7 @@ function ModuleModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
       <div className="bg-white dark:bg-surface-800 rounded-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-200 dark:border-surface-700">
           <div className="flex items-center justify-between">
@@ -1065,7 +1150,7 @@ function ModuleModal({
             </h2>
             <button
               onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 dark:text-surface-400 dark:hover:text-surface-200"
+              className="text-gray-500 hover:text-gray-700 dark:text-surface-600 dark:hover:text-surface-200"
             >
               <XMarkIcon className="w-6 h-6" />
             </button>
@@ -1075,10 +1160,10 @@ function ModuleModal({
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-surface-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
               Module Name
             </label>
-            <input
+            <Input
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -1089,10 +1174,10 @@ function ModuleModal({
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-surface-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
               Description
             </label>
-            <textarea
+            <Textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={3}
@@ -1103,10 +1188,10 @@ function ModuleModal({
           {/* Category & Difficulty */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-surface-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
                 Category
               </label>
-              <select
+              <SelectNative
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
@@ -1116,13 +1201,13 @@ function ModuleModal({
                     {cat.label}
                   </option>
                 ))}
-              </select>
+              </SelectNative>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-surface-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
                 Difficulty
               </label>
-              <select
+              <SelectNative
                 value={formData.difficulty}
                 onChange={(e) => setFormData({ ...formData, difficulty: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
@@ -1132,19 +1217,21 @@ function ModuleModal({
                     {diff.label}
                   </option>
                 ))}
-              </select>
+              </SelectNative>
             </div>
           </div>
 
           {/* Duration */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-surface-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
               Duration (minutes)
             </label>
-            <input
+            <Input
               type="number"
               value={formData.duration}
-              onChange={(e) => setFormData({ ...formData, duration: parseInt(e.target.value) || 30 })}
+              onChange={(e) =>
+                setFormData({ ...formData, duration: parseInt(e.target.value) || 30 })
+              }
               min={1}
               className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
             />
@@ -1166,10 +1253,7 @@ function ModuleModal({
             <Button variant="secondary" onClick={onClose}>
               Cancel
             </Button>
-            <Button
-              type="submit"
-              disabled={createMutation.isPending || updateMutation.isPending}
-            >
+            <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
               {module ? 'Update Module' : 'Create Module'}
             </Button>
           </div>
@@ -1180,13 +1264,7 @@ function ModuleModal({
 }
 
 // Upload SCORM Modal
-function UploadScormModal({
-  moduleId,
-  onClose,
-}: {
-  moduleId: string;
-  onClose: () => void;
-}) {
+function UploadScormModal({ moduleId, onClose }: { moduleId: string; onClose: () => void }) {
   const queryClient = useQueryClient();
   const toast = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1222,7 +1300,7 @@ function UploadScormModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
       <div className="bg-white dark:bg-surface-800 rounded-xl max-w-md w-full mx-4">
         <div className="p-6 border-b border-gray-200 dark:border-surface-700">
           <div className="flex items-center justify-between">
@@ -1231,7 +1309,7 @@ function UploadScormModal({
             </h2>
             <button
               onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 dark:text-surface-400 dark:hover:text-surface-200"
+              className="text-gray-500 hover:text-gray-700 dark:text-surface-600 dark:hover:text-surface-200"
             >
               <XMarkIcon className="w-6 h-6" />
             </button>
@@ -1255,7 +1333,7 @@ function UploadScormModal({
             }`}
           >
             <ArrowUpTrayIcon className="w-10 h-10 mx-auto text-gray-400 dark:text-surface-500" />
-            <p className="mt-3 text-sm text-gray-500 dark:text-surface-400">
+            <p className="mt-3 text-sm text-gray-500 dark:text-surface-600">
               Drag and drop a SCORM ZIP file, or click to browse
             </p>
             <input
@@ -1275,14 +1353,11 @@ function UploadScormModal({
                 <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                   {file.name}
                 </p>
-                <p className="text-xs text-gray-500 dark:text-surface-400">
+                <p className="text-xs text-gray-500 dark:text-surface-600">
                   {(file.size / 1024 / 1024).toFixed(2)} MB
                 </p>
               </div>
-              <button
-                onClick={() => setFile(null)}
-                className="text-gray-400 hover:text-gray-600"
-              >
+              <button onClick={() => setFile(null)} className="text-gray-400 hover:text-gray-600">
                 <XMarkIcon className="w-5 h-5" />
               </button>
             </div>
@@ -1324,29 +1399,34 @@ function ModuleDetailModal({
   onClose: () => void;
 }) {
   const categoryLabel = CATEGORIES.find((c) => c.id === module.category)?.label || module.category;
-  const difficultyLabel = DIFFICULTIES.find((d) => d.id === module.difficulty)?.label || module.difficulty;
+  const difficultyLabel =
+    DIFFICULTIES.find((d) => d.id === module.difficulty)?.label || module.difficulty;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
       <div className="bg-white dark:bg-surface-800 rounded-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-200 dark:border-surface-700">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-lg ${module.isBuiltIn ? 'bg-brand-500/10 text-brand-500' : 'bg-emerald-500/10 text-emerald-500'}`}>
+              <div
+                className={`p-2 rounded-lg ${module.isBuiltIn ? 'bg-brand-500/10 text-brand-500' : 'bg-emerald-500/10 text-emerald-500'}`}
+              >
                 <AcademicCapIcon className="w-6 h-6" />
               </div>
               <div>
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                   {module.name}
                 </h2>
-                <span className={`text-xs font-medium ${module.isBuiltIn ? 'text-brand-500' : 'text-emerald-500'}`}>
+                <span
+                  className={`text-xs font-medium ${module.isBuiltIn ? 'text-brand-500' : 'text-emerald-500'}`}
+                >
                   {module.isBuiltIn ? 'Built-in Module' : 'Custom Module'}
                 </span>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 dark:text-surface-400 dark:hover:text-surface-200"
+              className="text-gray-500 hover:text-gray-700 dark:text-surface-600 dark:hover:text-surface-200"
             >
               <XMarkIcon className="w-6 h-6" />
             </button>
@@ -1356,21 +1436,23 @@ function ModuleDetailModal({
         <div className="p-6 space-y-5">
           {/* Module Info */}
           <div className="flex flex-wrap gap-3">
-            <span className="px-3 py-1 bg-gray-100 dark:bg-surface-700 rounded-full text-sm text-gray-700 dark:text-surface-300">
+            <span className="px-3 py-1 bg-gray-100 dark:bg-surface-700 rounded-full text-sm text-gray-700 dark:text-surface-700">
               {categoryLabel}
             </span>
-            <span className="px-3 py-1 bg-gray-100 dark:bg-surface-700 rounded-full text-sm text-gray-700 dark:text-surface-300">
+            <span className="px-3 py-1 bg-gray-100 dark:bg-surface-700 rounded-full text-sm text-gray-700 dark:text-surface-700">
               {module.duration} minutes
             </span>
-            <span className="px-3 py-1 bg-gray-100 dark:bg-surface-700 rounded-full text-sm text-gray-700 dark:text-surface-300 capitalize">
+            <span className="px-3 py-1 bg-gray-100 dark:bg-surface-700 rounded-full text-sm text-gray-700 dark:text-surface-700 capitalize">
               {difficultyLabel}
             </span>
           </div>
 
           {/* Description */}
           <div>
-            <h3 className="text-sm font-medium text-gray-700 dark:text-surface-300 mb-2">Description</h3>
-            <p className="text-gray-600 dark:text-surface-400 leading-relaxed">
+            <h3 className="text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
+              Description
+            </h3>
+            <p className="text-gray-600 dark:text-surface-600 leading-relaxed">
               {module.description}
             </p>
           </div>
@@ -1378,12 +1460,14 @@ function ModuleDetailModal({
           {/* Topics Covered */}
           {module.topics && module.topics.length > 0 && (
             <div>
-              <h3 className="text-sm font-medium text-gray-700 dark:text-surface-300 mb-3">Topics Covered</h3>
+              <h3 className="text-sm font-medium text-gray-700 dark:text-surface-700 mb-3">
+                Topics Covered
+              </h3>
               <ul className="space-y-2">
                 {module.topics.map((topic, index) => (
                   <li key={index} className="flex items-start gap-2">
                     <CheckCircleIcon className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-gray-600 dark:text-surface-400">{topic}</span>
+                    <span className="text-gray-600 dark:text-surface-600">{topic}</span>
                   </li>
                 ))}
               </ul>
@@ -1392,9 +1476,7 @@ function ModuleDetailModal({
 
           {/* Close Button */}
           <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-surface-700">
-            <Button onClick={onClose}>
-              Close
-            </Button>
+            <Button onClick={onClose}>Close</Button>
           </div>
         </div>
       </div>
@@ -1403,11 +1485,7 @@ function ModuleDetailModal({
 }
 
 // Upload New SCORM Module Modal - Create module and upload SCORM in one step
-function UploadNewScormModal({
-  onClose,
-}: {
-  onClose: () => void;
-}) {
+function UploadNewScormModal({ onClose }: { onClose: () => void }) {
   const queryClient = useQueryClient();
   const toast = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1435,7 +1513,7 @@ function UploadNewScormModal({
       setFile(droppedFile);
       // Auto-populate name from filename
       const nameFromFile = droppedFile.name.replace('.zip', '').replace(/[-_]/g, ' ');
-      setFormData(prev => ({ ...prev, name: nameFromFile }));
+      setFormData((prev) => ({ ...prev, name: nameFromFile }));
       setStep('details');
     } else {
       toast.error('Please upload a ZIP file');
@@ -1448,7 +1526,7 @@ function UploadNewScormModal({
       setFile(selectedFile);
       // Auto-populate name from filename
       const nameFromFile = selectedFile.name.replace('.zip', '').replace(/[-_]/g, ' ');
-      setFormData(prev => ({ ...prev, name: nameFromFile }));
+      setFormData((prev) => ({ ...prev, name: nameFromFile }));
       setStep('details');
     }
   };
@@ -1477,7 +1555,7 @@ function UploadNewScormModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
       <div className="bg-white dark:bg-surface-800 rounded-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-200 dark:border-surface-700">
           <div className="flex items-center justify-between">
@@ -1485,13 +1563,15 @@ function UploadNewScormModal({
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                 Upload SCORM Package
               </h2>
-              <p className="text-sm text-gray-500 dark:text-surface-400 mt-1">
-                {step === 'upload' ? 'Step 1: Select your SCORM package' : 'Step 2: Configure module details'}
+              <p className="text-sm text-gray-500 dark:text-surface-600 mt-1">
+                {step === 'upload'
+                  ? 'Step 1: Select your SCORM package'
+                  : 'Step 2: Configure module details'}
               </p>
             </div>
             <button
               onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 dark:text-surface-400 dark:hover:text-surface-200"
+              className="text-gray-500 hover:text-gray-700 dark:text-surface-600 dark:hover:text-surface-200"
             >
               <XMarkIcon className="w-6 h-6" />
             </button>
@@ -1516,10 +1596,10 @@ function UploadNewScormModal({
               }`}
             >
               <ArrowUpTrayIcon className="w-12 h-12 mx-auto text-gray-400 dark:text-surface-500" />
-              <p className="mt-4 text-base font-medium text-gray-700 dark:text-surface-300">
+              <p className="mt-4 text-base font-medium text-gray-700 dark:text-surface-700">
                 Drag and drop your SCORM package
               </p>
-              <p className="mt-2 text-sm text-gray-500 dark:text-surface-400">
+              <p className="mt-2 text-sm text-gray-500 dark:text-surface-600">
                 or click to browse (ZIP files only)
               </p>
               <input
@@ -1543,7 +1623,7 @@ function UploadNewScormModal({
             <div className="flex items-center gap-3 p-3 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-lg">
               <CheckCircleIcon className="w-5 h-5 text-emerald-500" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400 truncate">
+                <p className="text-sm font-medium text-emerald-700 dark:text-emerald-600 truncate">
                   {file?.name}
                 </p>
                 <p className="text-xs text-emerald-600 dark:text-emerald-500">
@@ -1556,7 +1636,7 @@ function UploadNewScormModal({
                   setFile(null);
                   setStep('upload');
                 }}
-                className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400"
+                className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-600"
               >
                 <XMarkIcon className="w-5 h-5" />
               </button>
@@ -1564,10 +1644,10 @@ function UploadNewScormModal({
 
             {/* Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-surface-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
                 Module Name *
               </label>
-              <input
+              <Input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -1578,10 +1658,10 @@ function UploadNewScormModal({
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-surface-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
                 Description
               </label>
-              <textarea
+              <Textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows={3}
@@ -1593,10 +1673,10 @@ function UploadNewScormModal({
             {/* Category & Difficulty */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-surface-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
                   Category
                 </label>
-                <select
+                <SelectNative
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
@@ -1606,13 +1686,13 @@ function UploadNewScormModal({
                       {cat.label}
                     </option>
                   ))}
-                </select>
+                </SelectNative>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-surface-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
                   Difficulty
                 </label>
-                <select
+                <SelectNative
                   value={formData.difficulty}
                   onChange={(e) => setFormData({ ...formData, difficulty: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
@@ -1622,19 +1702,21 @@ function UploadNewScormModal({
                       {diff.label}
                     </option>
                   ))}
-                </select>
+                </SelectNative>
               </div>
             </div>
 
             {/* Duration */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-surface-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
                 Duration (minutes)
               </label>
-              <input
+              <Input
                 type="number"
                 value={formData.duration}
-                onChange={(e) => setFormData({ ...formData, duration: parseInt(e.target.value) || 30 })}
+                onChange={(e) =>
+                  setFormData({ ...formData, duration: parseInt(e.target.value) || 30 })
+                }
                 min={1}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
               />
@@ -1648,7 +1730,9 @@ function UploadNewScormModal({
                 onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
                 className="rounded border-gray-300 text-brand-500 focus:ring-brand-500"
               />
-              <span className="text-sm text-gray-900 dark:text-white">Module is active and available for campaigns</span>
+              <span className="text-sm text-gray-900 dark:text-white">
+                Module is active and available for campaigns
+              </span>
             </label>
 
             {/* Actions */}

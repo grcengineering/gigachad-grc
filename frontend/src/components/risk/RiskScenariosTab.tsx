@@ -50,16 +50,11 @@ export default function RiskScenariosTab({
       </div>
 
       {scenarios.length === 0 ? (
-        <div className="text-center py-8 text-surface-400">
+        <div className="text-center py-8 text-surface-600">
           <DollarSign className="w-12 h-12 mx-auto mb-3 opacity-50" />
           <p>No scenarios defined</p>
-          <p className="text-sm mt-1">
-            Add FAIR-based scenarios to quantify risk impact
-          </p>
-          <button
-            onClick={onAddScenario}
-            className="mt-3 text-brand-400 hover:text-brand-300"
-          >
+          <p className="text-sm mt-1">Add FAIR-based scenarios to quantify risk impact</p>
+          <button onClick={onAddScenario} className="mt-3 text-brand-400 hover:text-brand-300">
             Add first scenario
           </button>
         </div>
@@ -75,43 +70,35 @@ export default function RiskScenariosTab({
                 <button
                   onClick={() => onDeleteScenario(scenario.id)}
                   disabled={isDeleting}
-                  className="p-2 hover:bg-red-500/20 rounded-lg text-red-400 disabled:opacity-50"
+                  className="p-2 hover:bg-red-500/20 rounded-lg text-red-600 disabled:opacity-50"
                   title="Delete scenario"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
               {scenario.description && (
-                <p className="text-sm text-surface-400 mb-3">
-                  {scenario.description}
-                </p>
+                <p className="text-sm text-surface-600 mb-3">{scenario.description}</p>
               )}
               <div className="grid grid-cols-3 gap-4">
                 <div className="flex items-center gap-2">
-                  <Percent className="w-4 h-4 text-surface-400" />
+                  <Percent className="w-4 h-4 text-surface-600" />
                   <div>
-                    <div className="text-xs text-surface-400">Probability</div>
-                    <div className="text-white">
-                      {formatPercent(scenario.probability)}
-                    </div>
+                    <div className="text-xs text-surface-600">Probability</div>
+                    <div className="text-white">{formatPercent(scenario.probability)}</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <DollarSign className="w-4 h-4 text-surface-400" />
+                  <DollarSign className="w-4 h-4 text-surface-600" />
                   <div>
-                    <div className="text-xs text-surface-400">Impact</div>
-                    <div className="text-white">
-                      {formatCurrency(scenario.impact)}
-                    </div>
+                    <div className="text-xs text-surface-600">Impact</div>
+                    <div className="text-white">{formatCurrency(scenario.impact)}</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <DollarSign className="w-4 h-4 text-amber-400" />
+                  <DollarSign className="w-4 h-4 text-amber-600" />
                   <div>
-                    <div className="text-xs text-surface-400">Expected Loss</div>
-                    <div className="text-amber-400">
-                      {formatCurrency(scenario.expectedLoss)}
-                    </div>
+                    <div className="text-xs text-surface-600">Expected Loss</div>
+                    <div className="text-amber-600">{formatCurrency(scenario.expectedLoss)}</div>
                   </div>
                 </div>
               </div>

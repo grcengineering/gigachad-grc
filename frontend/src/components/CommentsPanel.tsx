@@ -12,6 +12,12 @@ import {
 } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 
+import { Input } from '@/components/ui/Input';
+
+import { Button } from '@/components/ui/Button';
+
+import { Badge } from '@/components/ui/Badge';
+
 interface CommentsPanelProps {
   entityType: string;
   entityId: string;
@@ -86,30 +92,27 @@ export default function CommentsPanel({ entityType, entityId }: CommentsPanelPro
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
-        <ChatBubbleLeftRightIcon className="w-5 h-5 text-surface-400" />
-        <h3 className="text-sm font-semibold text-surface-100">
-          Comments ({comments.length})
-        </h3>
+        <ChatBubbleLeftRightIcon className="w-5 h-5 text-surface-600" />
+        <h3 className="text-sm font-semibold text-surface-100">Comments ({comments.length})</h3>
       </div>
-
       {/* New Comment Form */}
       <form onSubmit={handleSubmit} className="flex gap-2">
-        <input
+        <Input
           type="text"
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
           placeholder="Add a comment..."
           className="input flex-1"
         />
-        <button
+        <Button
           type="submit"
           disabled={!newComment.trim() || createMutation.isPending}
-          className="btn-primary px-3"
+          className="px-3"
+          variant="primary"
         >
           <PaperAirplaneIcon className="w-4 h-4" />
-        </button>
+        </Button>
       </form>
-
       {/* Comments List */}
       {isLoading ? (
         <div className="text-center py-4 text-surface-500">Loading comments...</div>
@@ -137,20 +140,24 @@ export default function CommentsPanel({ entityType, entityId }: CommentsPanelPro
                       {formatDate(comment.createdAt)}
                     </span>
                     {comment.isResolved && (
-                      <span className="badge badge-success text-xs">Resolved</span>
+                      <Badge className="text-xs" variant="success">
+                        Resolved
+                      </Badge>
                     )}
                   </div>
-                  <p className="text-sm text-surface-300">{comment.content}</p>
+                  <p className="text-sm text-surface-700">{comment.content}</p>
                 </div>
                 <div className="flex items-center gap-1">
                   <button
-                    onClick={() => resolveMutation.mutate({
-                      id: comment.id,
-                      isResolved: !comment.isResolved,
-                    })}
+                    onClick={() =>
+                      resolveMutation.mutate({
+                        id: comment.id,
+                        isResolved: !comment.isResolved,
+                      })
+                    }
                     className={clsx(
                       'p-1 rounded hover:bg-surface-700 transition-colors',
-                      comment.isResolved ? 'text-green-400' : 'text-surface-500'
+                      comment.isResolved ? 'text-green-600' : 'text-surface-500'
                     )}
                     title={comment.isResolved ? 'Unresolve' : 'Mark as resolved'}
                   >
@@ -159,7 +166,7 @@ export default function CommentsPanel({ entityType, entityId }: CommentsPanelPro
                   {comment.authorId === user?.id && (
                     <button
                       onClick={() => deleteMutation.mutate(comment.id)}
-                      className="p-1 rounded text-surface-500 hover:text-red-400 hover:bg-surface-700 transition-colors"
+                      className="p-1 rounded text-surface-500 hover:text-red-600 hover:bg-surface-700 transition-colors"
                       title="Delete"
                     >
                       <TrashIcon className="w-4 h-4" />
@@ -174,14 +181,14 @@ export default function CommentsPanel({ entityType, entityId }: CommentsPanelPro
                   {comment.replies.map((reply: any) => (
                     <div key={reply.id} className="text-sm">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium text-surface-300">
+                        <span className="font-medium text-surface-700">
                           {reply.author?.displayName || 'Unknown'}
                         </span>
                         <span className="text-xs text-surface-500">
                           {formatDate(reply.createdAt)}
                         </span>
                       </div>
-                      <p className="text-surface-400">{reply.content}</p>
+                      <p className="text-surface-600">{reply.content}</p>
                     </div>
                   ))}
                 </div>
@@ -190,7 +197,7 @@ export default function CommentsPanel({ entityType, entityId }: CommentsPanelPro
               {/* Reply Input */}
               {replyingTo === comment.id ? (
                 <div className="mt-3 flex gap-2">
-                  <input
+                  <Input
                     type="text"
                     value={replyContent}
                     onChange={(e) => setReplyContent(e.target.value)}
@@ -198,19 +205,20 @@ export default function CommentsPanel({ entityType, entityId }: CommentsPanelPro
                     className="input flex-1 text-sm"
                     autoFocus
                   />
-                  <button
+                  <Button
                     onClick={() => handleReply(comment.id)}
                     disabled={!replyContent.trim()}
-                    className="btn-primary px-2 py-1 text-sm"
+                    className="px-2 py-1 text-sm"
+                    variant="primary"
                   >
                     Reply
-                  </button>
+                  </Button>
                   <button
                     onClick={() => {
                       setReplyingTo(null);
                       setReplyContent('');
                     }}
-                    className="p-1 text-surface-500 hover:text-surface-300"
+                    className="p-1 text-surface-500 hover:text-surface-700"
                   >
                     <XMarkIcon className="w-4 h-4" />
                   </button>
@@ -218,7 +226,7 @@ export default function CommentsPanel({ entityType, entityId }: CommentsPanelPro
               ) : (
                 <button
                   onClick={() => setReplyingTo(comment.id)}
-                  className="mt-2 text-xs text-surface-500 hover:text-surface-300"
+                  className="mt-2 text-xs text-surface-500 hover:text-surface-700"
                 >
                   Reply
                 </button>
@@ -230,4 +238,3 @@ export default function CommentsPanel({ entityType, entityId }: CommentsPanelPro
     </div>
   );
 }
-

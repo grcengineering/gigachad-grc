@@ -11,6 +11,8 @@ import {
 import clsx from 'clsx';
 import { useDebounce } from '@/hooks/useDebounce';
 
+import { Input } from '@/components/ui/Input';
+
 interface AISmartSearchProps {
   onSearch?: (terms: string[], filters: Record<string, string>, entityTypes: string[]) => void;
   placeholder?: string;
@@ -27,7 +29,7 @@ const ENTITY_OPTIONS = [
 
 export default function AISmartSearch({
   onSearch,
-  placeholder = 'Ask a question or describe what you\'re looking for...',
+  placeholder = "Ask a question or describe what you're looking for...",
   className,
 }: AISmartSearchProps) {
   const [query, setQuery] = useState('');
@@ -52,7 +54,10 @@ export default function AISmartSearch({
     if (debouncedQuery.length > 10) {
       interpretMutation.mutate({
         query: debouncedQuery,
-        searchIn: selectedEntities.length > 0 ? selectedEntities as SmartSearchRequest['searchIn'] : undefined,
+        searchIn:
+          selectedEntities.length > 0
+            ? (selectedEntities as SmartSearchRequest['searchIn'])
+            : undefined,
       });
     }
   }, [debouncedQuery, selectedEntities]);
@@ -66,11 +71,7 @@ export default function AISmartSearch({
     if (!query.trim()) return;
 
     if (interpretation && onSearch) {
-      onSearch(
-        interpretation.searchTerms,
-        interpretation.filters,
-        interpretation.entityTypes
-      );
+      onSearch(interpretation.searchTerms, interpretation.filters, interpretation.entityTypes);
     } else {
       // Fallback to basic search
       onSearch?.([query], {}, selectedEntities);
@@ -84,10 +85,8 @@ export default function AISmartSearch({
   };
 
   const toggleEntity = (entity: string) => {
-    setSelectedEntities(prev =>
-      prev.includes(entity)
-        ? prev.filter(e => e !== entity)
-        : [...prev, entity]
+    setSelectedEntities((prev) =>
+      prev.includes(entity) ? prev.filter((e) => e !== entity) : [...prev, entity]
     );
   };
 
@@ -97,13 +96,13 @@ export default function AISmartSearch({
       <div className="relative">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           {interpretMutation.isPending ? (
-            <ArrowPathIcon className="w-5 h-5 text-purple-400 animate-spin" />
+            <ArrowPathIcon className="w-5 h-5 text-purple-600 animate-spin" />
           ) : (
-            <SparklesIcon className="w-5 h-5 text-purple-400" />
+            <SparklesIcon className="w-5 h-5 text-purple-600" />
           )}
         </div>
-        
-        <input
+
+        <Input
           type="text"
           value={query}
           onChange={(e) => handleInputChange(e.target.value)}
@@ -111,18 +110,18 @@ export default function AISmartSearch({
           placeholder={placeholder}
           className="w-full pl-10 pr-24 py-3 bg-surface-800 border border-surface-700 rounded-xl text-white placeholder-surface-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all"
         />
-        
+
         <div className="absolute inset-y-0 right-0 flex items-center gap-1 pr-2">
           <button
             onClick={() => setShowFilters(!showFilters)}
             className={clsx(
               'p-1.5 rounded-lg transition-colors',
-              showFilters ? 'bg-purple-500/30 text-purple-300' : 'text-surface-400 hover:text-white'
+              showFilters ? 'bg-purple-500/30 text-purple-700' : 'text-surface-600 hover:text-white'
             )}
           >
             <AdjustmentsHorizontalIcon className="w-5 h-5" />
           </button>
-          
+
           <button
             onClick={handleSearch}
             disabled={!query.trim()}
@@ -132,79 +131,78 @@ export default function AISmartSearch({
           </button>
         </div>
       </div>
-
       {/* Entity Filters */}
       {showFilters && (
         <div className="flex flex-wrap gap-2 p-3 bg-surface-800/50 rounded-lg border border-surface-700">
-          <span className="text-xs text-surface-400 mr-2 self-center">Search in:</span>
-          {ENTITY_OPTIONS.map(option => (
+          <span className="text-xs text-surface-600 mr-2 self-center">Search in:</span>
+          {ENTITY_OPTIONS.map((option) => (
             <button
               key={option.value}
               onClick={() => toggleEntity(option.value)}
               className={clsx(
                 'px-2.5 py-1 rounded-lg text-xs font-medium transition-all',
                 selectedEntities.includes(option.value)
-                  ? 'bg-purple-500/30 text-purple-300 border border-purple-500/50'
-                  : 'bg-surface-700/50 text-surface-400 hover:text-white border border-transparent'
+                  ? 'bg-purple-500/30 text-purple-700 border border-purple-500/50'
+                  : 'bg-surface-700/50 text-surface-600 hover:text-white border border-transparent'
               )}
             >
               {option.label}
             </button>
           ))}
-          
+
           {selectedEntities.length > 0 && (
             <button
               onClick={() => setSelectedEntities([])}
-              className="px-2 py-1 text-xs text-surface-400 hover:text-white"
+              className="px-2 py-1 text-xs text-surface-600 hover:text-white"
             >
               Clear all
             </button>
           )}
         </div>
       )}
-
       {/* AI Interpretation */}
       {interpretation && (
         <div className="p-3 bg-gradient-to-r from-purple-900/20 to-blue-900/20 rounded-lg border border-purple-500/30">
           <div className="flex items-start justify-between gap-2 mb-2">
             <div className="flex items-center gap-2">
-              <SparklesIcon className="w-4 h-4 text-purple-400" />
-              <span className="text-xs font-medium text-purple-300">AI Interpretation</span>
+              <SparklesIcon className="w-4 h-4 text-purple-600" />
+              <span className="text-xs font-medium text-purple-700">AI Interpretation</span>
             </div>
             <button
               onClick={() => setInterpretation(null)}
-              className="text-surface-400 hover:text-white"
+              className="text-surface-600 hover:text-white"
             >
               <XMarkIcon className="w-4 h-4" />
             </button>
           </div>
-          
+
           <p className="text-sm text-white mb-2">{interpretation.interpretedQuery}</p>
-          
+
           <div className="flex flex-wrap gap-2">
             {interpretation.searchTerms.map((term, i) => (
               <span
                 key={i}
-                className="px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded text-xs"
+                className="px-2 py-0.5 bg-purple-500/20 text-purple-700 rounded text-xs"
               >
                 {term}
               </span>
             ))}
-            
-            {Object.entries(interpretation.filters).map(([key, value]) => (
-              value && (
-                <span
-                  key={key}
-                  className="px-2 py-0.5 bg-cyan-500/20 text-cyan-300 rounded text-xs"
-                >
-                  {key}: {value}
-                </span>
-              )
-            ))}
+
+            {Object.entries(interpretation.filters).map(
+              ([key, value]) =>
+                value && (
+                  <span
+                    key={key}
+                    className="px-2 py-0.5 bg-cyan-500/20 text-cyan-700 rounded text-xs"
+                  >
+                    {key}: {value}
+                  </span>
+                )
+            )}
           </div>
 
           {interpretation.entityTypes.length > 0 && (
-            <div className="mt-2 text-xs text-surface-400">
+            <div className="mt-2 text-xs text-surface-600">
               Searching: {interpretation.entityTypes.join(', ')}
             </div>
           )}
@@ -213,4 +211,3 @@ export default function AISmartSearch({
     </div>
   );
 }
-

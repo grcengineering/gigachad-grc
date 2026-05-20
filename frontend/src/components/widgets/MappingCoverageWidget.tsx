@@ -67,7 +67,7 @@ export function MappingCoverageWidget({ frameworkId, className }: MappingCoverag
         </div>
         <div
           role="alert"
-          className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-sm text-red-300"
+          className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-sm text-red-700"
         >
           Failed to load mapping coverage
         </div>
@@ -96,7 +96,7 @@ export function MappingCoverageWidget({ frameworkId, className }: MappingCoverag
   const isZeroState = total === 0;
 
   const percentColor =
-    percent >= 80 ? 'text-green-400' : percent >= 50 ? 'text-yellow-400' : 'text-red-400';
+    percent >= 80 ? 'text-green-600' : percent >= 50 ? 'text-yellow-600' : 'text-red-600';
 
   return (
     <div role="region" aria-label={regionLabel} className={clsx('card p-6', className)}>
@@ -107,7 +107,7 @@ export function MappingCoverageWidget({ frameworkId, className }: MappingCoverag
 
       {isZeroState ? (
         <div className="py-6 text-center">
-          <p className="text-surface-400 text-sm">No data yet</p>
+          <p className="text-surface-600 text-sm">No data yet</p>
           <p className="text-surface-500 text-xs mt-1">
             {perFramework
               ? 'This framework has no requirements to map'
@@ -119,7 +119,7 @@ export function MappingCoverageWidget({ frameworkId, className }: MappingCoverag
           <p className={clsx('text-5xl font-bold', percentColor)} aria-label={`${percent} percent`}>
             {percent}%
           </p>
-          <p className="text-sm text-surface-400 mt-2">
+          <p className="text-sm text-surface-600 mt-2">
             {perFramework
               ? `${mapped} of ${total} mapped, ${unmapped} with no controls`
               : `${mapped} of ${total} mapped — ${unmapped} unmapped`}

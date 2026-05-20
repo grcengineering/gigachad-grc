@@ -9,11 +9,15 @@ import {
   DocumentTextIcon,
   UserGroupIcon,
 } from '@heroicons/react/24/outline';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import { PostIncidentReviewForm } from '@/components/bcdr/PostIncidentReviewForm';
 import { api } from '@/lib/api';
 import clsx from 'clsx';
 import { format } from 'date-fns';
+
+import { Textarea } from '@/components/ui/Textarea';
+
+import { SelectNative } from '@/components/ui/SelectNative';
 
 // ============================================
 // Types
@@ -248,7 +252,7 @@ export default function BCDRIncidentDetail() {
         <div className="flex items-center gap-3">
           {isActive && (
             <>
-              <select
+              <SelectNative
                 value={incident.status}
                 onChange={(e) => handleStatusChange(e.target.value)}
                 className="px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
@@ -259,7 +263,7 @@ export default function BCDRIncidentDetail() {
                     {s}
                   </option>
                 ))}
-              </select>
+              </SelectNative>
               {incident.status === 'resolved' && (
                 <Button variant="primary" onClick={() => setShowCloseIncident(true)}>
                   Close with PIR
@@ -271,19 +275,18 @@ export default function BCDRIncidentDetail() {
             className={clsx(
               'px-3 py-1 rounded text-sm font-medium capitalize',
               incident.status === 'active'
-                ? 'bg-red-500/20 text-red-400'
+                ? 'bg-red-500/20 text-red-600'
                 : incident.status === 'recovering'
-                ? 'bg-orange-500/20 text-orange-400'
-                : incident.status === 'resolved'
-                ? 'bg-green-500/20 text-green-400'
-                : 'bg-slate-600 text-slate-400'
+                  ? 'bg-orange-500/20 text-orange-600'
+                  : incident.status === 'resolved'
+                    ? 'bg-green-500/20 text-green-600'
+                    : 'bg-slate-600 text-slate-400'
             )}
           >
             {incident.status}
           </span>
         </div>
       </div>
-
       {/* Quick Actions */}
       {isActive && (
         <div className="flex items-center gap-3">
@@ -301,7 +304,6 @@ export default function BCDRIncidentDetail() {
           </Button>
         </div>
       )}
-
       <div className="grid grid-cols-3 gap-6">
         {/* Main Content */}
         <div className="col-span-2 space-y-6">
@@ -434,12 +436,13 @@ export default function BCDRIncidentDetail() {
                   </dd>
                 </div>
               )}
-              {incident.actualDowntimeMinutes !== null && incident.actualDowntimeMinutes !== undefined && (
-                <div>
-                  <dt className="text-slate-400">Actual Downtime</dt>
-                  <dd className="text-white">{incident.actualDowntimeMinutes} minutes</dd>
-                </div>
-              )}
+              {incident.actualDowntimeMinutes !== null &&
+                incident.actualDowntimeMinutes !== undefined && (
+                  <div>
+                    <dt className="text-slate-400">Actual Downtime</dt>
+                    <dd className="text-white">{incident.actualDowntimeMinutes} minutes</dd>
+                  </div>
+                )}
               {incident.financialImpact !== null && incident.financialImpact !== undefined && (
                 <div>
                   <dt className="text-slate-400">Financial Impact</dt>
@@ -494,13 +497,12 @@ export default function BCDRIncidentDetail() {
           </div>
         </div>
       </div>
-
       {/* Add Note Modal */}
       {showAddNote && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
           <div className="bg-slate-800 rounded-xl shadow-2xl w-full max-w-md p-6">
             <h2 className="text-xl font-semibold text-white mb-4">Add Timeline Entry</h2>
-            <textarea
+            <Textarea
               value={noteDescription}
               onChange={(e) => setNoteDescription(e.target.value)}
               rows={4}
@@ -518,13 +520,12 @@ export default function BCDRIncidentDetail() {
           </div>
         </div>
       )}
-
       {/* Activate Plan Modal */}
       {showActivatePlan && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
           <div className="bg-slate-800 rounded-xl shadow-2xl w-full max-w-md p-6">
             <h2 className="text-xl font-semibold text-white mb-4">Activate Plan</h2>
-            <select
+            <SelectNative
               value={selectedPlanId}
               onChange={(e) => setSelectedPlanId(e.target.value)}
               className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
@@ -535,7 +536,7 @@ export default function BCDRIncidentDetail() {
                   {plan.title}
                 </option>
               ))}
-            </select>
+            </SelectNative>
             <div className="flex items-center justify-end gap-3 mt-4">
               <Button variant="secondary" onClick={() => setShowActivatePlan(false)}>
                 Cancel
@@ -547,13 +548,12 @@ export default function BCDRIncidentDetail() {
           </div>
         </div>
       )}
-
       {/* Activate Team Modal */}
       {showActivateTeam && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
           <div className="bg-slate-800 rounded-xl shadow-2xl w-full max-w-md p-6">
             <h2 className="text-xl font-semibold text-white mb-4">Activate Team</h2>
-            <select
+            <SelectNative
               value={selectedTeamId}
               onChange={(e) => setSelectedTeamId(e.target.value)}
               className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
@@ -564,7 +564,7 @@ export default function BCDRIncidentDetail() {
                   {team.name}
                 </option>
               ))}
-            </select>
+            </SelectNative>
             <div className="flex items-center justify-end gap-3 mt-4">
               <Button variant="secondary" onClick={() => setShowActivateTeam(false)}>
                 Cancel

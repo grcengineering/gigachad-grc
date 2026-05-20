@@ -14,6 +14,8 @@ import {
 } from '@heroicons/react/24/outline';
 import CreateTaskModal from './CreateTaskModal';
 
+import { Input } from '@/components/ui/Input';
+
 interface RiskTasksPanelProps {
   riskId: string;
   onTaskAction?: () => void;
@@ -30,11 +32,11 @@ const taskTypeLabels: Record<string, string> = {
 };
 
 const statusColors: Record<string, string> = {
-  pending: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
-  in_progress: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-  completed: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+  pending: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-600',
+  in_progress: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-600',
+  completed: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-600',
   cancelled: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400',
-  reassigned: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
+  reassigned: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-600',
 };
 
 const priorityColors: Record<string, string> = {
@@ -62,7 +64,11 @@ export default function RiskTasksPanel({ riskId, onTaskAction }: RiskTasksPanelP
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [_selectedTask, _setSelectedTask] = useState<RiskWorkflowTask | null>(null);
 
-  const { data: tasks, isLoading, error } = useQuery({
+  const {
+    data: tasks,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['risk-tasks', riskId],
     queryFn: () => riskTasksApi.getForRisk(riskId),
   });
@@ -114,27 +120,23 @@ export default function RiskTasksPanel({ riskId, onTaskAction }: RiskTasksPanelP
   }
 
   if (error) {
-    return (
-      <div className="p-4 text-red-600 dark:text-red-400">
-        Failed to load tasks
-      </div>
-    );
+    return <div className="p-4 text-red-600 dark:text-red-600">Failed to load tasks</div>;
   }
 
   const tasksList = tasks?.data || [];
-  const activeTasks = tasksList.filter(t => t.status === 'pending' || t.status === 'in_progress');
-  const completedTasks = tasksList.filter(t => t.status === 'completed' || t.status === 'cancelled');
+  const activeTasks = tasksList.filter((t) => t.status === 'pending' || t.status === 'in_progress');
+  const completedTasks = tasksList.filter(
+    (t) => t.status === 'completed' || t.status === 'cancelled'
+  );
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
-          Workflow Tasks
-        </h3>
+        <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">Workflow Tasks</h3>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400"
+          className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-600"
         >
           <PlusIcon className="h-4 w-4" />
           Add Task
@@ -147,7 +149,7 @@ export default function RiskTasksPanel({ riskId, onTaskAction }: RiskTasksPanelP
           <ClockIcon className="h-4 w-4" />
           Active Tasks ({activeTasks.length})
         </h4>
-        
+
         {activeTasks.length === 0 ? (
           <p className="text-sm text-gray-500 dark:text-gray-400 py-4">
             No active tasks for this risk.
@@ -161,7 +163,9 @@ export default function RiskTasksPanel({ riskId, onTaskAction }: RiskTasksPanelP
                 onStart={() => startMutation.mutate(task.id)}
                 onComplete={() => completeMutation.mutate({ taskId: task.id })}
                 onCancel={(reason) => cancelMutation.mutate({ taskId: task.id, reason })}
-                isLoading={startMutation.isPending || completeMutation.isPending || cancelMutation.isPending}
+                isLoading={
+                  startMutation.isPending || completeMutation.isPending || cancelMutation.isPending
+                }
               />
             ))}
           </div>
@@ -215,50 +219,48 @@ function TaskCard({ task, onStart, onComplete, onCancel, isLoading }: TaskCardPr
   const isAssignedToMe = task.assigneeId === currentUserId;
 
   return (
-    <div className={`p-4 rounded-lg border ${
-      isOverdue 
-        ? 'border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-900/20' 
-        : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800'
-    }`}>
+    <div
+      className={`p-4 rounded-lg border ${
+        isOverdue
+          ? 'border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-900/20'
+          : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800'
+      }`}
+    >
       <div className="flex items-start gap-3">
         <StatusIcon status={task.status} />
-        
+
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h5 className="font-medium text-gray-900 dark:text-gray-100">
-              {task.title}
-            </h5>
+            <h5 className="font-medium text-gray-900 dark:text-gray-100">{task.title}</h5>
             <span className={`text-xs px-2 py-0.5 rounded-full ${statusColors[task.status]}`}>
               {task.status.replace('_', ' ')}
             </span>
             <span className={`text-xs font-medium ${priorityColors[task.priority]}`}>
               {task.priority}
             </span>
-            {task.isAutoCreated && (
-              <span className="text-xs text-gray-400">auto</span>
-            )}
+            {task.isAutoCreated && <span className="text-xs text-gray-400">auto</span>}
           </div>
-          
+
           {task.description && (
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              {task.description}
-            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{task.description}</p>
           )}
-          
+
           <div className="flex items-center gap-4 mt-2 text-xs text-gray-500 dark:text-gray-400">
             <span className="flex items-center gap-1">
               <UserIcon className="h-3 w-3" />
-              {task.assignee ? `${task.assignee.firstName} ${task.assignee.lastName}` : 'Unassigned'}
+              {task.assignee
+                ? `${task.assignee.firstName} ${task.assignee.lastName}`
+                : 'Unassigned'}
             </span>
             {task.dueDate && (
-              <span className={`flex items-center gap-1 ${isOverdue ? 'text-red-600 dark:text-red-400 font-medium' : ''}`}>
+              <span
+                className={`flex items-center gap-1 ${isOverdue ? 'text-red-600 dark:text-red-600 font-medium' : ''}`}
+              >
                 <ClockIcon className="h-3 w-3" />
                 Due {formatDistanceToNow(new Date(task.dueDate), { addSuffix: true })}
               </span>
             )}
-            <span>
-              Type: {taskTypeLabels[task.taskType] || task.taskType}
-            </span>
+            <span>Type: {taskTypeLabels[task.taskType] || task.taskType}</span>
           </div>
         </div>
 
@@ -298,14 +300,13 @@ function TaskCard({ task, onStart, onComplete, onCancel, isLoading }: TaskCardPr
           </div>
         )}
       </div>
-
       {/* Cancel Dialog */}
       {showCancelDialog && (
         <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Cancellation reason
           </label>
-          <input
+          <Input
             type="text"
             value={cancelReason}
             onChange={(e) => setCancelReason(e.target.value)}
@@ -340,9 +341,7 @@ function CompletedTaskRow({ task }: { task: RiskWorkflowTask }) {
   return (
     <div className="flex items-center gap-3 p-2 text-sm">
       <StatusIcon status={task.status} />
-      <span className="flex-1 text-gray-600 dark:text-gray-400">
-        {task.title}
-      </span>
+      <span className="flex-1 text-gray-600 dark:text-gray-400">{task.title}</span>
       <span className={`text-xs px-2 py-0.5 rounded-full ${statusColors[task.status]}`}>
         {task.status}
       </span>

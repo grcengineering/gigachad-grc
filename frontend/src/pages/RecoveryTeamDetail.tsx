@@ -10,9 +10,15 @@ import {
   PhoneIcon,
   EnvelopeIcon,
 } from '@heroicons/react/24/outline';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import { api } from '@/lib/api';
 import clsx from 'clsx';
+
+import { Textarea } from '@/components/ui/Textarea';
+
+import { Input } from '@/components/ui/Input';
+
+import { SelectNative } from '@/components/ui/SelectNative';
 
 // ============================================
 // Types
@@ -255,13 +261,12 @@ export default function RecoveryTeamDetail() {
         <span
           className={clsx(
             'px-3 py-1 rounded text-sm font-medium',
-            team.isActive ? 'bg-green-500/20 text-green-400' : 'bg-slate-600 text-slate-400'
+            team.isActive ? 'bg-green-500/20 text-green-600' : 'bg-slate-600 text-slate-400'
           )}
         >
           {team.isActive ? 'Active' : 'Inactive'}
         </span>
       </div>
-
       {/* Team Info */}
       {(team.description || team.activationCriteria || team.assemblyLocation) && (
         <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
@@ -293,7 +298,6 @@ export default function RecoveryTeamDetail() {
           </div>
         </div>
       )}
-
       {/* Members Section */}
       <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
         <div className="flex items-center justify-between mb-4">
@@ -329,16 +333,16 @@ export default function RecoveryTeamDetail() {
                         className={clsx(
                           'px-2 py-0.5 rounded text-xs',
                           member.role === 'team_lead'
-                            ? 'bg-red-500/20 text-red-400'
+                            ? 'bg-red-500/20 text-red-600'
                             : member.role === 'alternate_lead'
-                            ? 'bg-orange-500/20 text-orange-400'
-                            : 'bg-slate-600 text-slate-300'
+                              ? 'bg-orange-500/20 text-orange-600'
+                              : 'bg-slate-600 text-slate-300'
                         )}
                       >
                         {ROLE_OPTIONS.find((r) => r.value === member.role)?.label || member.role}
                       </span>
                       {!member.isPrimary && (
-                        <span className="px-2 py-0.5 bg-purple-500/20 text-purple-400 rounded text-xs">
+                        <span className="px-2 py-0.5 bg-purple-500/20 text-purple-600 rounded text-xs">
                           Alternate
                         </span>
                       )}
@@ -364,7 +368,7 @@ export default function RecoveryTeamDetail() {
                 </div>
                 <button
                   onClick={() => handleRemoveMember(member.id)}
-                  className="p-2 text-slate-400 hover:text-red-400"
+                  className="p-2 text-slate-400 hover:text-red-600"
                 >
                   <TrashIcon className="h-4 w-4" />
                 </button>
@@ -373,7 +377,6 @@ export default function RecoveryTeamDetail() {
           </div>
         )}
       </div>
-
       {/* Linked Plans Section */}
       <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
         <div className="flex items-center justify-between mb-4">
@@ -409,7 +412,7 @@ export default function RecoveryTeamDetail() {
                 </div>
                 <button
                   onClick={() => handleUnlinkPlan(link.planId)}
-                  className="p-2 text-slate-400 hover:text-red-400"
+                  className="p-2 text-slate-400 hover:text-red-600"
                 >
                   <TrashIcon className="h-4 w-4" />
                 </button>
@@ -418,10 +421,9 @@ export default function RecoveryTeamDetail() {
           </div>
         )}
       </div>
-
       {/* Add Member Modal */}
       {showAddMember && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
           <div className="bg-slate-800 rounded-xl shadow-2xl w-full max-w-md p-6">
             <h2 className="text-xl font-semibold text-white mb-6">Add Team Member</h2>
 
@@ -453,7 +455,7 @@ export default function RecoveryTeamDetail() {
 
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">Role</label>
-                <select
+                <SelectNative
                   value={memberRole}
                   onChange={(e) => setMemberRole(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
@@ -463,13 +465,13 @@ export default function RecoveryTeamDetail() {
                       {opt.label}
                     </option>
                   ))}
-                </select>
+                </SelectNative>
               </div>
 
               {!isExternal ? (
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">User</label>
-                  <select
+                  <SelectNative
                     value={memberUserId}
                     onChange={(e) => setMemberUserId(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
@@ -480,13 +482,13 @@ export default function RecoveryTeamDetail() {
                         {user.name} ({user.email})
                       </option>
                     ))}
-                  </select>
+                  </SelectNative>
                 </div>
               ) : (
                 <>
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-2">Name</label>
-                    <input
+                    <Input
                       type="text"
                       value={memberExternalName}
                       onChange={(e) => setMemberExternalName(e.target.value)}
@@ -495,7 +497,7 @@ export default function RecoveryTeamDetail() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-2">Email</label>
-                    <input
+                    <Input
                       type="email"
                       value={memberExternalEmail}
                       onChange={(e) => setMemberExternalEmail(e.target.value)}
@@ -504,7 +506,7 @@ export default function RecoveryTeamDetail() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-2">Phone</label>
-                    <input
+                    <Input
                       type="tel"
                       value={memberExternalPhone}
                       onChange={(e) => setMemberExternalPhone(e.target.value)}
@@ -518,7 +520,7 @@ export default function RecoveryTeamDetail() {
                 <label className="block text-sm font-medium text-slate-300 mb-2">
                   Responsibilities
                 </label>
-                <textarea
+                <Textarea
                   value={memberResponsibilities}
                   onChange={(e) => setMemberResponsibilities(e.target.value)}
                   rows={2}
@@ -538,19 +540,16 @@ export default function RecoveryTeamDetail() {
           </div>
         </div>
       )}
-
       {/* Link Plan Modal */}
       {showLinkPlan && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
           <div className="bg-slate-800 rounded-xl shadow-2xl w-full max-w-md p-6">
             <h2 className="text-xl font-semibold text-white mb-6">Link to Plan</h2>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  BC/DR Plan
-                </label>
-                <select
+                <label className="block text-sm font-medium text-slate-300 mb-2">BC/DR Plan</label>
+                <SelectNative
                   value={selectedPlanId}
                   onChange={(e) => setSelectedPlanId(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
@@ -561,14 +560,14 @@ export default function RecoveryTeamDetail() {
                       {plan.title}
                     </option>
                   ))}
-                </select>
+                </SelectNative>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">
                   Role in Plan (Optional)
                 </label>
-                <input
+                <Input
                   type="text"
                   value={roleInPlan}
                   onChange={(e) => setRoleInPlan(e.target.value)}

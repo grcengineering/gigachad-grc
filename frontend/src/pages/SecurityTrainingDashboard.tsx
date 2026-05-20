@@ -93,14 +93,14 @@ function StatCard({
         <div>
           <p className="text-sm text-muted-foreground">{title}</p>
           <p className="text-3xl font-bold text-foreground mt-1">{value}</p>
-          {subtitle && (
-            <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>
-          )}
+          {subtitle && <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>}
           {trend && (
-            <div className={clsx(
-              'flex items-center gap-1 mt-2 text-sm',
-              trend.isPositive ? 'text-green-400' : 'text-red-400'
-            )}>
+            <div
+              className={clsx(
+                'flex items-center gap-1 mt-2 text-sm',
+                trend.isPositive ? 'text-green-600' : 'text-red-600'
+              )}
+            >
               <ArrowTrendingUpIcon className={clsx('w-4 h-4', !trend.isPositive && 'rotate-180')} />
               <span>{trend.value}% vs last month</span>
             </div>
@@ -124,7 +124,7 @@ function ProgressBar({ value, max, color }: { value: number; max: number; color:
           style={{ width: `${percentage}%` }}
         />
       </div>
-      <span className="text-sm text-surface-400 w-12 text-right">{percentage}%</span>
+      <span className="text-sm text-surface-600 w-12 text-right">{percentage}%</span>
     </div>
   );
 }
@@ -160,8 +160,12 @@ export default function SecurityTrainingDashboard() {
     // From training API (different field names)
     totalAssignments: orgStatsData?.totalAssignments || 0,
     completedAssignments: orgStatsData?.completedAssignments || 0,
-    overdueAssignments: orgStatsData?.overdueAssignments || complianceData?.issueBreakdown?.overdueTrainings || 0,
-    inProgressAssignments: (orgStatsData?.totalAssignments || 0) - (orgStatsData?.completedAssignments || 0) - (orgStatsData?.overdueAssignments || 0),
+    overdueAssignments:
+      orgStatsData?.overdueAssignments || complianceData?.issueBreakdown?.overdueTrainings || 0,
+    inProgressAssignments:
+      (orgStatsData?.totalAssignments || 0) -
+      (orgStatsData?.completedAssignments || 0) -
+      (orgStatsData?.overdueAssignments || 0),
     completionRate: orgStatsData?.completionRate || orgStatsData?.assignmentCompletionRate || 0,
     averageScore: orgStatsData?.averageScore || 0,
     // From compliance API
@@ -182,7 +186,8 @@ export default function SecurityTrainingDashboard() {
     recentCompletions: orgStatsData?.recentCompletions || [],
   };
 
-  const pendingCount = stats.totalAssignments - stats.completedAssignments - stats.overdueAssignments;
+  const pendingCount =
+    stats.totalAssignments - stats.completedAssignments - stats.overdueAssignments;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -194,7 +199,7 @@ export default function SecurityTrainingDashboard() {
             Organization-wide security awareness training metrics and compliance
           </p>
         </div>
-        <Link to="/tools/awareness" className="btn-primary">
+        <Link to="/tools/awareness" className="">
           Manage Training
         </Link>
       </div>
@@ -247,28 +252,30 @@ export default function SecurityTrainingDashboard() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-green-500" />
-                  <span className="text-surface-300">Completed</span>
+                  <span className="text-surface-700">Completed</span>
                 </div>
                 <span className="text-foreground font-medium">{stats.completedAssignments}</span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-blue-500" />
-                  <span className="text-surface-300">In Progress</span>
+                  <span className="text-surface-700">In Progress</span>
                 </div>
                 <span className="text-foreground font-medium">{stats.inProgressAssignments}</span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                  <span className="text-surface-300">Pending</span>
+                  <span className="text-surface-700">Pending</span>
                 </div>
-                <span className="text-foreground font-medium">{pendingCount > 0 ? pendingCount : 0}</span>
+                <span className="text-foreground font-medium">
+                  {pendingCount > 0 ? pendingCount : 0}
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-red-500" />
-                  <span className="text-surface-300">Overdue</span>
+                  <span className="text-surface-700">Overdue</span>
                 </div>
                 <span className="text-foreground font-medium">{stats.overdueAssignments}</span>
               </div>
@@ -282,7 +289,7 @@ export default function SecurityTrainingDashboard() {
           {isLoading ? (
             <SkeletonTable rows={4} />
           ) : !stats.courseStats?.length ? (
-            <div className="text-center py-8 text-surface-400">
+            <div className="text-center py-8 text-surface-600">
               <AcademicCapIcon className="w-10 h-10 mx-auto mb-2 opacity-50" />
               <p>No course data available</p>
               <p className="text-sm mt-1">Training courses will appear here once assigned</p>
@@ -292,8 +299,8 @@ export default function SecurityTrainingDashboard() {
               {(stats.courseStats || []).slice(0, 5).map((course) => (
                 <div key={course.courseId}>
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-surface-300 text-sm">{course.courseName}</span>
-                    <span className="text-surface-400 text-sm">
+                    <span className="text-surface-700 text-sm">{course.courseName}</span>
+                    <span className="text-surface-600 text-sm">
                       {course.completed}/{course.assigned}
                     </span>
                   </div>
@@ -315,33 +322,41 @@ export default function SecurityTrainingDashboard() {
         <div className="card p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-foreground">Training by Department</h2>
-            <BuildingOffice2Icon className="w-5 h-5 text-surface-400" />
+            <BuildingOffice2Icon className="w-5 h-5 text-surface-600" />
           </div>
           {isLoading ? (
             <SkeletonTable rows={5} />
           ) : stats.departmentStats.length === 0 ? (
-            <div className="text-center py-8 text-surface-400">
+            <div className="text-center py-8 text-surface-600">
               <BuildingOffice2Icon className="w-10 h-10 mx-auto mb-2 opacity-50" />
               <p>No department data available</p>
             </div>
           ) : (
             <div className="space-y-3">
               {stats.departmentStats.slice(0, 6).map((dept) => (
-                <div key={dept.department} className="flex items-center justify-between py-2 border-b border-surface-700 last:border-0">
+                <div
+                  key={dept.department}
+                  className="flex items-center justify-between py-2 border-b border-surface-700 last:border-0"
+                >
                   <div>
                     <p className="text-foreground font-medium">{dept.department}</p>
-                    <p className="text-sm text-surface-400">{dept.employeeCount} employees</p>
+                    <p className="text-sm text-surface-600">{dept.employeeCount} employees</p>
                   </div>
                   <div className="text-right">
-                    <p className={clsx(
-                      'font-medium',
-                      dept.completionRate >= 80 ? 'text-green-400' :
-                      dept.completionRate >= 60 ? 'text-yellow-400' : 'text-red-400'
-                    )}>
+                    <p
+                      className={clsx(
+                        'font-medium',
+                        dept.completionRate >= 80
+                          ? 'text-green-600'
+                          : dept.completionRate >= 60
+                            ? 'text-yellow-600'
+                            : 'text-red-600'
+                      )}
+                    >
                       {dept.completionRate}%
                     </p>
                     {dept.overdueCount > 0 && (
-                      <p className="text-sm text-red-400">{dept.overdueCount} overdue</p>
+                      <p className="text-sm text-red-600">{dept.overdueCount} overdue</p>
                     )}
                   </div>
                 </div>
@@ -354,28 +369,33 @@ export default function SecurityTrainingDashboard() {
         <div className="card p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-foreground">Overdue Trainings</h2>
-            <span className="text-sm text-red-400 bg-red-500/10 px-2 py-1 rounded">
+            <span className="text-sm text-red-600 bg-red-500/10 px-2 py-1 rounded">
               {stats.overdueAssignments} total
             </span>
           </div>
           {isLoading ? (
             <SkeletonTable rows={5} />
           ) : stats.upcomingDue.length === 0 && stats.overdueAssignments === 0 ? (
-            <div className="text-center py-8 text-surface-400">
-              <CheckCircleIcon className="w-10 h-10 mx-auto mb-2 text-green-400 opacity-50" />
+            <div className="text-center py-8 text-surface-600">
+              <CheckCircleIcon className="w-10 h-10 mx-auto mb-2 text-green-600 opacity-50" />
               <p>No overdue trainings</p>
               <p className="text-sm mt-1">All employees are up to date</p>
             </div>
           ) : (
             <div className="space-y-3 max-h-[300px] overflow-y-auto">
               {stats.upcomingDue.slice(0, 10).map((item, idx) => (
-                <div key={idx} className="flex items-center justify-between py-2 border-b border-surface-700 last:border-0">
+                <div
+                  key={idx}
+                  className="flex items-center justify-between py-2 border-b border-surface-700 last:border-0"
+                >
                   <div>
-                    <p className="text-foreground font-medium">{item.employeeName || item.employeeEmail}</p>
-                    <p className="text-sm text-surface-400">{item.courseName}</p>
+                    <p className="text-foreground font-medium">
+                      {item.employeeName || item.employeeEmail}
+                    </p>
+                    <p className="text-sm text-surface-600">{item.courseName}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm text-red-400">
+                    <p className="text-sm text-red-600">
                       {item.dueDate ? new Date(item.dueDate).toLocaleDateString() : 'Overdue'}
                     </p>
                   </div>
@@ -390,12 +410,12 @@ export default function SecurityTrainingDashboard() {
       <div className="card p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-foreground">Recent Completions</h2>
-          <CalendarDaysIcon className="w-5 h-5 text-surface-400" />
+          <CalendarDaysIcon className="w-5 h-5 text-surface-600" />
         </div>
         {isLoading ? (
           <SkeletonTable rows={5} />
         ) : stats.recentCompletions.length === 0 ? (
-          <div className="text-center py-8 text-surface-400">
+          <div className="text-center py-8 text-surface-600">
             <ClockIcon className="w-10 h-10 mx-auto mb-2 opacity-50" />
             <p>No recent completions</p>
             <p className="text-sm mt-1">Training completions will appear here</p>
@@ -405,10 +425,10 @@ export default function SecurityTrainingDashboard() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-surface-700">
-                  <th className="text-left text-sm font-medium text-surface-400 pb-3">Employee</th>
-                  <th className="text-left text-sm font-medium text-surface-400 pb-3">Course</th>
-                  <th className="text-left text-sm font-medium text-surface-400 pb-3">Completed</th>
-                  <th className="text-right text-sm font-medium text-surface-400 pb-3">Score</th>
+                  <th className="text-left text-sm font-medium text-surface-600 pb-3">Employee</th>
+                  <th className="text-left text-sm font-medium text-surface-600 pb-3">Course</th>
+                  <th className="text-left text-sm font-medium text-surface-600 pb-3">Completed</th>
+                  <th className="text-right text-sm font-medium text-surface-600 pb-3">Score</th>
                 </tr>
               </thead>
               <tbody>
@@ -416,19 +436,24 @@ export default function SecurityTrainingDashboard() {
                   <tr key={idx} className="border-b border-surface-700/50">
                     <td className="py-3">
                       <p className="text-foreground">{completion.employeeName}</p>
-                      <p className="text-sm text-surface-400">{completion.employeeEmail}</p>
+                      <p className="text-sm text-surface-600">{completion.employeeEmail}</p>
                     </td>
-                    <td className="py-3 text-surface-300">{completion.courseName}</td>
-                    <td className="py-3 text-surface-400">
+                    <td className="py-3 text-surface-700">{completion.courseName}</td>
+                    <td className="py-3 text-surface-600">
                       {new Date(completion.completedAt).toLocaleDateString()}
                     </td>
                     <td className="py-3 text-right">
                       {completion.score !== undefined ? (
-                        <span className={clsx(
-                          'font-medium',
-                          completion.score >= 80 ? 'text-green-400' :
-                          completion.score >= 60 ? 'text-yellow-400' : 'text-red-400'
-                        )}>
+                        <span
+                          className={clsx(
+                            'font-medium',
+                            completion.score >= 80
+                              ? 'text-green-600'
+                              : completion.score >= 60
+                                ? 'text-yellow-600'
+                                : 'text-red-600'
+                          )}
+                        >
                           {completion.score}%
                         </span>
                       ) : (

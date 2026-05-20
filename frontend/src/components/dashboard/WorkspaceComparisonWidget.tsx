@@ -1,10 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { 
-  BuildingOfficeIcon, 
-  ChevronRightIcon,
-  CheckCircleIcon,
-} from '@heroicons/react/24/outline';
+import { BuildingOfficeIcon, ChevronRightIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api';
@@ -43,7 +39,7 @@ export function WorkspaceComparisonWidget() {
   // Only fetch if multi-workspace is enabled and user is admin
   const { data, isLoading } = useQuery<OrgDashboardData>({
     queryKey: ['org-dashboard'],
-    queryFn: () => api.get('/api/workspaces/org/dashboard').then(r => r.data),
+    queryFn: () => api.get('/api/workspaces/org/dashboard').then((r) => r.data),
     enabled: isMultiWorkspaceEnabled && user?.role === 'admin',
   });
 
@@ -76,10 +72,10 @@ export function WorkspaceComparisonWidget() {
   );
 
   const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-400';
-    if (score >= 60) return 'text-yellow-400';
-    if (score >= 40) return 'text-orange-400';
-    return 'text-red-400';
+    if (score >= 80) return 'text-green-600';
+    if (score >= 60) return 'text-yellow-600';
+    if (score >= 40) return 'text-orange-600';
+    return 'text-red-600';
   };
 
   return (
@@ -155,7 +151,7 @@ export function WorkspaceComparisonWidget() {
                 {workspace.complianceScore}%
               </div>
               {workspace.complianceScore >= 80 && (
-                <CheckCircleIcon className="w-4 h-4 text-green-400" />
+                <CheckCircleIcon className="w-4 h-4 text-green-600" />
               )}
             </div>
           </button>
@@ -178,4 +174,3 @@ export function WorkspaceComparisonWidget() {
 }
 
 export default WorkspaceComparisonWidget;
-

@@ -3,244 +3,114 @@
 @tailwind utilities;
 
 @layer base {
-  /* Dark mode (default) */
-  :root, .dark {
-    --bg-primary: theme('colors.surface.950');
-    --bg-secondary: theme('colors.surface.900');
-    --bg-tertiary: theme('colors.surface.800');
-    --bg-hover: theme('colors.surface.800');
-    --text-primary: theme('colors.surface.100');
-    --text-secondary: theme('colors.surface.300');
-    --text-muted: theme('colors.surface.400');
-    --text-faint: theme('colors.surface.500');
-    --border-color: theme('colors.surface.800');
-    --border-subtle: theme('colors.surface.700');
-    --input-bg: theme('colors.surface.800');
-    --card-bg: theme('colors.surface.900');
-    --scrollbar-track: theme('colors.surface.900');
-    --scrollbar-thumb: theme('colors.surface.700');
-    --scrollbar-thumb-hover: theme('colors.surface.600');
-  }
-
-  /* Light mode */
-  .light {
-    --bg-primary: theme('colors.white');
-    --bg-secondary: theme('colors.surface.50');
-    --bg-tertiary: theme('colors.surface.100');
-    --bg-hover: theme('colors.surface.100');
-    --text-primary: theme('colors.surface.900');
-    --text-secondary: theme('colors.surface.700');
-    --text-muted: theme('colors.surface.500');
-    --text-faint: theme('colors.surface.400');
-    --border-color: theme('colors.surface.200');
-    --border-subtle: theme('colors.surface.300');
-    --input-bg: theme('colors.white');
-    --card-bg: theme('colors.white');
-    --scrollbar-track: theme('colors.surface.100');
-    --scrollbar-thumb: theme('colors.surface.300');
-    --scrollbar-thumb-hover: theme('colors.surface.400');
+  :root {
+    --background: 252 252 251;
+    --foreground: 31 29 27;
+    --card: 255 255 255;
+    --card-foreground: 31 29 27;
+    --primary: 5 150 105;
+    --primary-foreground: 236 253 245;
+    --secondary: 245 244 241;
+    --secondary-foreground: 31 29 27;
+    --muted: 245 244 241;
+    --muted-foreground: 94 91 86;
+    --accent: 217 119 87;
+    --accent-foreground: 255 255 255;
+    --destructive: 220 38 38;
+    --destructive-foreground: 255 255 255;
+    --border: 232 231 226;
+    --input: 232 231 226;
+    --ring: 5 150 105;
+    --ring-offset: 252 252 251;
   }
 
   * {
-    border-color: var(--border-color);
+    @apply border-surface-200;
+  }
+
+  html {
+    color-scheme: light;
   }
 
   body {
-    background-color: var(--bg-primary);
-    color: var(--text-primary);
-    @apply antialiased;
+    @apply bg-surface-50 text-surface-900 antialiased;
+    font-feature-settings: "cv11", "ss01", "ss03";
+  }
+
+  *:focus-visible {
+    @apply outline-none ring-2 ring-brand-500 ring-offset-2 ring-offset-surface-50;
+  }
+
+  ::selection {
+    background-color: rgb(217 119 87 / 0.25);
+    color: rgb(31 29 27);
   }
 }
 
 @layer components {
+  /* Legacy utilities — kept as escape hatches. New code uses primitives. */
   .btn {
-    @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none;
+    @apply inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-50 disabled:opacity-50 disabled:pointer-events-none;
   }
 
   .btn-primary {
-    @apply btn bg-brand-600 text-white hover:bg-brand-700;
+    @apply btn bg-brand-600 text-white hover:bg-brand-700 shadow-sm;
   }
 
   .btn-secondary {
-    @apply btn;
-    background-color: var(--bg-tertiary);
-    color: var(--text-primary);
-  }
-
-  .btn-secondary:hover {
-    background-color: var(--bg-hover);
+    @apply btn bg-white text-surface-800 border border-surface-200 hover:bg-surface-100 shadow-sm;
   }
 
   .btn-outline {
-    @apply btn bg-transparent;
-    border: 1px solid var(--border-subtle);
-    color: var(--text-secondary);
-  }
-
-  .btn-outline:hover {
-    background-color: var(--bg-tertiary);
+    @apply btn border border-surface-300 bg-white text-surface-700 hover:bg-surface-100 hover:border-surface-400;
   }
 
   .btn-ghost {
-    @apply btn bg-transparent;
-    color: var(--text-secondary);
-  }
-
-  .btn-ghost:hover {
-    background-color: var(--bg-tertiary);
+    @apply btn bg-transparent text-surface-700 hover:bg-surface-100;
   }
 
   .btn-danger {
-    @apply btn bg-red-600 text-white hover:bg-red-700;
-  }
-
-  /* ===============================================
-     Button Variants for Button.tsx component
-     Theme-aware styling for consistent buttons
-     =============================================== */
-  
-  .btn-variant-primary {
-    @apply bg-brand-600 text-white hover:bg-brand-500 focus:ring-brand-500;
-  }
-  .btn-variant-primary:disabled {
-    @apply bg-brand-600/50 text-white/70;
-  }
-
-  .btn-variant-secondary {
-    background-color: #3f3f46; /* surface-700 */
-    color: #e4e4e7; /* surface-200 */
-    border: 1px solid #52525b; /* surface-600 */
-  }
-  .btn-variant-secondary:hover {
-    background-color: #52525b; /* surface-600 */
-  }
-  .btn-variant-secondary:disabled {
-    opacity: 0.5;
-  }
-  /* Light mode secondary button - explicit colors for better specificity */
-  .light .btn-variant-secondary {
-    background-color: #f4f4f5 !important; /* surface-100 */
-    border-color: #d4d4d8 !important; /* surface-300 */
-    color: #3f3f46 !important; /* surface-700 */
-  }
-  .light .btn-variant-secondary:hover {
-    background-color: #e4e4e7 !important; /* surface-200 */
-  }
-
-  .btn-variant-success {
-    @apply bg-green-600 text-white hover:bg-green-500 focus:ring-green-500;
-  }
-  .btn-variant-success:disabled {
-    @apply bg-green-600/50;
-  }
-
-  .btn-variant-danger {
-    @apply bg-red-600 text-white hover:bg-red-500 focus:ring-red-500;
-  }
-  .btn-variant-danger:disabled {
-    @apply bg-red-600/50;
-  }
-
-  .btn-variant-warning {
-    @apply bg-amber-500 text-white hover:bg-amber-400 focus:ring-amber-500;
-  }
-  .btn-variant-warning:disabled {
-    @apply bg-amber-500/50;
-  }
-
-  .btn-variant-outline {
-    @apply bg-transparent;
-    border: 1px solid var(--border-subtle);
-    color: var(--text-secondary);
-  }
-  .btn-variant-outline:hover {
-    background-color: var(--bg-tertiary);
-  }
-  .btn-variant-outline:disabled {
-    @apply bg-transparent opacity-50;
-  }
-
-  .btn-variant-ghost {
-    @apply bg-transparent;
-    color: var(--text-muted);
-  }
-  .btn-variant-ghost:hover {
-    background-color: var(--bg-tertiary);
-    color: var(--text-primary);
-  }
-  .btn-variant-ghost:disabled {
-    opacity: 0.5;
-  }
-
-  .btn-variant-link {
-    @apply bg-transparent text-brand-500 hover:text-brand-400 hover:underline focus:ring-brand-500;
-  }
-  .btn-variant-link:disabled {
-    @apply text-brand-600;
+    @apply btn bg-red-600 text-white hover:bg-red-700 shadow-sm;
   }
 
   .card {
-    background-color: var(--card-bg);
-    border: 1px solid var(--border-color);
-    @apply rounded-xl;
-  }
-
-  .light .card {
-    @apply shadow-sm;
+    @apply bg-white border border-surface-200 rounded-lg;
+    box-shadow:
+      0 1px 2px 0 rgba(30, 25, 20, 0.06),
+      0 1px 3px -1px rgba(30, 25, 20, 0.08);
   }
 
   .input {
-    @apply w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent disabled:opacity-50;
-    background-color: var(--input-bg);
-    border: 1px solid var(--border-subtle);
-    color: var(--text-primary);
-  }
-
-  .input::placeholder {
-    color: var(--text-faint);
+    @apply w-full rounded-md border border-surface-300 bg-white px-3 py-2 text-sm text-surface-900 placeholder:text-surface-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-1 focus-visible:ring-offset-surface-50 focus:border-transparent disabled:opacity-50;
   }
 
   .label {
-    @apply text-sm font-medium;
-    color: var(--text-secondary);
+    @apply text-sm font-medium text-surface-700;
   }
 
   .badge {
-    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+    @apply inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium;
   }
 
+  /* Legacy badge classes. New code: use <Badge variant="..."> from @/components/ui. */
   .badge-success {
-    @apply badge bg-green-500/20 text-green-600;
-  }
-  .dark .badge-success {
-    @apply text-green-400;
+    @apply badge bg-emerald-50 text-emerald-800 border border-emerald-200;
   }
 
   .badge-warning {
-    @apply badge bg-yellow-500/20 text-yellow-600;
-  }
-  .dark .badge-warning {
-    @apply text-yellow-400;
+    @apply badge bg-amber-50 text-amber-800 border border-amber-200;
   }
 
   .badge-danger {
-    @apply badge bg-red-500/20 text-red-600;
-  }
-  .dark .badge-danger {
-    @apply text-red-400;
+    @apply badge bg-red-50 text-red-800 border border-red-200;
   }
 
   .badge-info {
-    @apply badge bg-blue-500/20 text-blue-600;
-  }
-  .dark .badge-info {
-    @apply text-blue-400;
+    @apply badge bg-blue-50 text-blue-800 border border-blue-200;
   }
 
   .badge-neutral {
-    @apply badge;
-    background-color: var(--bg-tertiary);
-    color: var(--text-secondary);
+    @apply badge bg-surface-100 text-surface-700 border border-surface-300;
   }
 
   .stat-card {
@@ -248,18 +118,15 @@
   }
 
   .stat-value {
-    @apply text-3xl font-bold;
-    color: var(--text-primary);
+    @apply text-3xl font-bold text-surface-900;
   }
 
   .stat-label {
-    @apply text-sm mt-1;
-    color: var(--text-muted);
+    @apply text-sm text-surface-600 mt-1;
   }
 
   .progress-bar {
-    @apply h-2 rounded-full overflow-hidden;
-    background-color: var(--bg-tertiary);
+    @apply h-2 bg-surface-100 rounded-full overflow-hidden;
   }
 
   .progress-fill {
@@ -267,26 +134,57 @@
   }
 }
 
-/* Custom scrollbar */
+@layer utilities {
+  /* Skeleton shimmer — warm light */
+  .skeleton-shimmer {
+    background: linear-gradient(
+      90deg,
+      rgb(220 214 199 / 1) 0%,
+      rgb(196 189 170 / 1) 50%,
+      rgb(220 214 199 / 1) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.6s ease-in-out infinite;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* Card with subtle elevation */
+  .surface-elevated {
+    background: #ffffff;
+    box-shadow:
+      0 1px 2px 0 rgba(30, 25, 20, 0.06),
+      0 1px 3px -1px rgba(30, 25, 20, 0.08);
+  }
+
+  /* Hover-lift */
+  .lift-hover {
+    transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
+  }
+  .lift-hover:hover {
+    transform: translateY(-1px);
+    box-shadow:
+      0 6px 16px -4px rgba(30, 25, 20, 0.12),
+      0 0 0 1px rgba(30, 25, 20, 0.08);
+  }
+}
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background-color: var(--scrollbar-track);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: var(--scrollbar-thumb);
-  border-radius: 9999px;
+  @apply bg-surface-300/80 rounded-full hover:bg-surface-400;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background-color: var(--scrollbar-thumb-hover);
-}
-
-/* Table styles */
 .table-container {
   @apply overflow-x-auto;
 }
@@ -296,276 +194,25 @@ table {
 }
 
 thead {
-  border-bottom: 1px solid var(--border-color);
+  @apply border-b border-surface-200;
 }
 
 th {
-  @apply px-4 py-3 text-left text-xs font-medium uppercase tracking-wider;
-  color: var(--text-muted);
+  @apply px-4 py-3 text-left text-xs font-medium text-surface-500 uppercase tracking-wider;
 }
 
 td {
-  @apply px-4 py-4;
-  color: var(--text-secondary);
+  @apply px-4 py-4 text-surface-700;
 }
 
 tbody tr {
-  border-bottom: 1px solid var(--border-color);
-  transition: background-color 0.15s;
+  @apply border-b border-surface-200/60 hover:bg-surface-100/60 transition-colors;
 }
 
-tbody tr:hover {
-  background-color: var(--bg-hover);
-}
-
-/* ===============================================
-   COMPREHENSIVE LIGHT MODE OVERRIDES
-   =============================================== */
-
-/* Text color inversions for light mode */
-.light .text-white { color: theme('colors.surface.900'); }
-.light .text-surface-100 { color: theme('colors.surface.900'); }
-.light .text-surface-200 { color: theme('colors.surface.800'); }
-.light .text-surface-300 { color: theme('colors.surface.700'); }
-.light .text-surface-400 { color: theme('colors.surface.500'); }
-.light .text-surface-500 { color: theme('colors.surface.400'); }
-.light .text-surface-600 { color: theme('colors.surface.500'); }
-
-/* Background inversions for light mode */
-.light .bg-surface-700 { background-color: theme('colors.surface.200'); }
-.light .bg-surface-800 { background-color: theme('colors.surface.100'); }
-.light .bg-surface-800\/50 { background-color: rgba(244, 244, 245, 0.5); }
-.light .bg-surface-900 { background-color: theme('colors.surface.50'); }
-.light .bg-surface-950 { background-color: theme('colors.white'); }
-
-/* Border inversions for light mode */
-.light .border-surface-600 { border-color: theme('colors.surface.300'); }
-.light .border-surface-700 { border-color: theme('colors.surface.300'); }
-.light .border-surface-800 { border-color: theme('colors.surface.200'); }
-.light .border-surface-800\/50 { border-color: rgba(228, 228, 231, 0.5); }
-
-/* Divide color inversions for light mode */
-.light .divide-surface-700 > :not([hidden]) ~ :not([hidden]) { 
-  border-color: theme('colors.surface.200'); 
-}
-.light .divide-surface-800 > :not([hidden]) ~ :not([hidden]) { 
-  border-color: theme('colors.surface.200'); 
-}
-
-/* Hover state inversions for light mode */
-.light .hover\:text-white:hover { color: theme('colors.surface.900'); }
-.light .hover\:text-surface-100:hover { color: theme('colors.surface.900'); }
-.light .hover\:bg-surface-700:hover { background-color: theme('colors.surface.200'); }
-.light .hover\:bg-surface-700\/50:hover { background-color: rgba(228, 228, 231, 0.5); }
-.light .hover\:bg-surface-800:hover { background-color: theme('colors.surface.100'); }
-.light .hover\:bg-surface-800\/50:hover { background-color: rgba(244, 244, 245, 0.5); }
-.light .hover\:border-surface-600:hover { border-color: theme('colors.surface.400'); }
-
-/* Ring and focus state inversions */
-.light .focus\:ring-offset-surface-950 { --tw-ring-offset-color: theme('colors.white'); }
-.light .ring-offset-surface-950 { --tw-ring-offset-color: theme('colors.white'); }
-
-/* Placeholder text inversions */
-.light .placeholder\:text-surface-500::placeholder { color: theme('colors.surface.400'); }
-
-/* Opacity variants */
-.light .bg-surface-500\/10 { background-color: rgba(113, 113, 122, 0.1); }
-.light .bg-surface-500\/20 { background-color: rgba(113, 113, 122, 0.2); }
-
-/* Special fixes for specific component patterns */
-.light .bg-surface-800.rounded-xl { 
-  background-color: theme('colors.white'); 
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-/* Navigation active states */
-.light .bg-brand-600\/20 { background-color: rgba(22, 163, 74, 0.15); }
-
-/* ===============================================
-   LAYOUT-SPECIFIC LIGHT MODE FIXES
-   Header, Sidebar, and Navigation
-   =============================================== */
-
-/* Header/top bar - needs explicit override with higher specificity */
-.light .bg-surface-900\/80 { 
-  background-color: rgba(255, 255, 255, 0.9) !important; 
-}
-.light header.bg-surface-900\/80 {
-  background-color: rgba(255, 255, 255, 0.9) !important;
-  border-bottom-color: #e4e4e7 !important;
-}
-
-/* Sidebar background */
-.light aside.bg-surface-900,
-.light .bg-surface-900 {
-  background-color: #fafafa !important; /* surface-50 */
-}
-
-/* Main container background */
-.light .bg-surface-950 {
-  background-color: #ffffff !important;
-}
-
-/* Search button in header */
-.light .bg-surface-800.hover\:bg-surface-700 {
-  background-color: #f4f4f5 !important;
-  border-color: #d4d4d8 !important;
-}
-.light .bg-surface-800.hover\:bg-surface-700:hover {
-  background-color: #e4e4e7 !important;
-}
-
-/* Keyboard shortcut badges */
-.light .bg-surface-700.rounded {
-  background-color: #e4e4e7 !important;
-  color: #71717a !important;
-}
-.light kbd.bg-surface-700 {
-  background-color: #e4e4e7 !important;
-  color: #71717a !important;
-}
-
-/* Sidebar dividers */
-.light .bg-surface-800.my-2 {
-  background-color: #e4e4e7 !important;
-}
-.light .h-px.bg-surface-800 {
-  background-color: #e4e4e7 !important;
-}
-
-/* User avatar in sidebar */
-.light .bg-surface-700.flex.items-center.justify-center {
-  background-color: #e4e4e7 !important;
-}
-
-/* ===============================================
-   SEMANTIC COLOR FIXES FOR LIGHT MODE
-   Status badges, alerts, and semantic text colors
-   =============================================== */
-
-/* Red colors - use -600 in light mode for better contrast */
-.light .text-red-400 { color: theme('colors.red.600'); }
-.light .text-red-500 { color: theme('colors.red.600'); }
-.light .border-red-500\/30 { border-color: rgba(220, 38, 38, 0.3); }
-
-/* Green colors - use -600 in light mode for better contrast */
-.light .text-green-400 { color: theme('colors.green.600'); }
-.light .text-green-500 { color: theme('colors.green.600'); }
-.light .border-green-500\/30 { border-color: rgba(22, 163, 74, 0.3); }
-
-/* Yellow/Amber colors - use -600 in light mode for better contrast */
-.light .text-yellow-400 { color: theme('colors.yellow.600'); }
-.light .text-yellow-500 { color: theme('colors.yellow.600'); }
-.light .text-amber-400 { color: theme('colors.amber.600'); }
-.light .text-amber-500 { color: theme('colors.amber.600'); }
-.light .border-yellow-500\/30 { border-color: rgba(202, 138, 4, 0.3); }
-.light .border-amber-500\/30 { border-color: rgba(217, 119, 6, 0.3); }
-
-/* Orange colors - use -600 in light mode for better contrast */
-.light .text-orange-400 { color: theme('colors.orange.600'); }
-.light .text-orange-500 { color: theme('colors.orange.600'); }
-.light .border-orange-500\/30 { border-color: rgba(234, 88, 12, 0.3); }
-
-/* Blue colors - use -600 in light mode for better contrast */
-.light .text-blue-400 { color: theme('colors.blue.600'); }
-.light .text-blue-500 { color: theme('colors.blue.600'); }
-.light .border-blue-500\/30 { border-color: rgba(37, 99, 235, 0.3); }
-
-/* Purple colors - use -600 in light mode for better contrast */
-.light .text-purple-400 { color: theme('colors.purple.600'); }
-.light .text-purple-500 { color: theme('colors.purple.600'); }
-.light .border-purple-500\/30 { border-color: rgba(147, 51, 234, 0.3); }
-
-/* Teal colors - use -600 in light mode for better contrast */
-.light .text-teal-400 { color: theme('colors.teal.600'); }
-.light .text-teal-500 { color: theme('colors.teal.600'); }
-.light .border-teal-500\/30 { border-color: rgba(13, 148, 136, 0.3); }
-
-/* Brand colors - ensure proper contrast in light mode */
-.light .text-brand-300 { color: theme('colors.brand.600'); }
-.light .text-brand-400 { color: theme('colors.brand.600'); }
-.light .hover\:text-brand-300:hover { color: theme('colors.brand.500'); }
-.light .hover\:text-brand-400:hover { color: theme('colors.brand.500'); }
-
-/* Background tint adjustments for light mode status badges */
-.light .bg-red-500\/10 { background-color: rgba(220, 38, 38, 0.1); }
-.light .bg-red-500\/20 { background-color: rgba(220, 38, 38, 0.15); }
-.light .hover\:bg-red-500\/20:hover { background-color: rgba(220, 38, 38, 0.2); }
-
-.light .bg-green-500\/10 { background-color: rgba(22, 163, 74, 0.1); }
-.light .bg-green-500\/20 { background-color: rgba(22, 163, 74, 0.15); }
-.light .hover\:bg-green-500\/20:hover { background-color: rgba(22, 163, 74, 0.2); }
-
-.light .bg-yellow-500\/10 { background-color: rgba(202, 138, 4, 0.1); }
-.light .bg-yellow-500\/20 { background-color: rgba(202, 138, 4, 0.15); }
-.light .hover\:bg-yellow-500\/20:hover { background-color: rgba(202, 138, 4, 0.2); }
-
-.light .bg-orange-500\/10 { background-color: rgba(234, 88, 12, 0.1); }
-.light .bg-orange-500\/20 { background-color: rgba(234, 88, 12, 0.15); }
-.light .hover\:bg-orange-500\/20:hover { background-color: rgba(234, 88, 12, 0.2); }
-
-.light .bg-blue-500\/10 { background-color: rgba(37, 99, 235, 0.1); }
-.light .bg-blue-500\/20 { background-color: rgba(37, 99, 235, 0.15); }
-.light .hover\:bg-blue-500\/20:hover { background-color: rgba(37, 99, 235, 0.2); }
-
-.light .bg-purple-500\/10 { background-color: rgba(147, 51, 234, 0.1); }
-.light .bg-purple-500\/20 { background-color: rgba(147, 51, 234, 0.15); }
-.light .hover\:bg-purple-500\/20:hover { background-color: rgba(147, 51, 234, 0.2); }
-
-.light .bg-teal-500\/10 { background-color: rgba(13, 148, 136, 0.1); }
-.light .bg-teal-500\/20 { background-color: rgba(13, 148, 136, 0.15); }
-.light .hover\:bg-teal-500\/20:hover { background-color: rgba(13, 148, 136, 0.2); }
-
-/* Gradient adjustments for light mode */
-.light .bg-gradient-to-r.from-brand-900\/50 {
-  --tw-gradient-from: rgba(22, 163, 74, 0.1);
-}
-.light .bg-gradient-to-r.to-surface-800 {
-  --tw-gradient-to: rgba(244, 244, 245, 1);
-}
-
-/* BC/DR specific - Readiness score card gradient */
-.light .card.bg-gradient-to-r {
-  background: linear-gradient(to right, rgba(22, 163, 74, 0.08), rgba(250, 250, 250, 1)) !important;
-}
-
-/* Form select styling for light mode */
-.light .form-select,
-.light select.form-select {
-  background-color: #ffffff;
-  border-color: #d4d4d8;
-  color: #3f3f46;
-}
-.light .form-select:focus {
-  border-color: theme('colors.brand.500');
-}
-
-/* Form input styling for light mode */
-.light .form-input,
-.light input.form-input {
-  background-color: #ffffff;
-  border-color: #d4d4d8;
-  color: #3f3f46;
-}
-.light .form-input::placeholder {
-  color: #a1a1aa;
-}
-.light .form-input:focus {
-  border-color: theme('colors.brand.500');
-}
-
-/* Table header in light mode */
-.light thead.bg-surface-800\/50,
-.light .bg-surface-800\/50 {
-  background-color: rgba(244, 244, 245, 0.8);
-}
-
-/* Hover states for table rows and cards in light mode */
-.light .hover\:bg-surface-800\/30:hover {
-  background-color: rgba(244, 244, 245, 0.5);
-}
-
-/* Icon colors - ensure good visibility */
-.light .opacity-50 {
-  opacity: 0.6;
-}
+[cmdk-root] { @apply w-full; }
+[cmdk-input] { @apply w-full bg-transparent text-surface-900 placeholder:text-surface-400 outline-none border-0; }
+[cmdk-list] { @apply max-h-96 overflow-y-auto overscroll-contain; }
+[cmdk-item] { @apply flex items-center gap-3 px-3 py-2 rounded-md text-sm text-surface-700 cursor-pointer transition-colors; }
+[cmdk-item][data-selected="true"] { @apply bg-surface-100 text-surface-900; }
+[cmdk-group-heading] { @apply px-3 py-1.5 text-xs font-medium text-surface-500 uppercase tracking-wider; }
+[cmdk-empty] { @apply px-3 py-6 text-center text-sm text-surface-500; }

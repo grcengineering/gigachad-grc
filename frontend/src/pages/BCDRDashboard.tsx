@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { Badge } from '@/components/ui/Badge';
 import { Link } from 'react-router-dom';
 import {
   ShieldExclamationIcon,
@@ -17,6 +18,8 @@ import {
 } from '@heroicons/react/24/outline';
 import api from '@/lib/api';
 import clsx from 'clsx';
+
+import { Button } from '@/components/ui/Button';
 
 interface DashboardSummary {
   processes: {
@@ -73,9 +76,23 @@ interface BCDRMetrics {
 
 // Default values for safe rendering when data is not available
 const DEFAULT_SUMMARY: DashboardSummary = {
-  processes: { total: 0, tier_1_count: 0, tier_2_count: 0, tier_3_count: 0, tier_4_count: 0, overdue_review_count: 0 },
+  processes: {
+    total: 0,
+    tier_1_count: 0,
+    tier_2_count: 0,
+    tier_3_count: 0,
+    tier_4_count: 0,
+    overdue_review_count: 0,
+  },
   plans: { total: 0, published_count: 0, draft_count: 0, overdue_review_count: 0 },
-  tests: { total: 0, completed_count: 0, passed_count: 0, failed_count: 0, upcoming_count: 0, openFindingsCount: 0 },
+  tests: {
+    total: 0,
+    completed_count: 0,
+    passed_count: 0,
+    failed_count: 0,
+    upcoming_count: 0,
+    openFindingsCount: 0,
+  },
   runbooks: { total: 0, published_count: 0, needs_review_count: 0 },
   upcomingTests: [],
   overdueItems: { totalOverdue: 0, plans: [], processes: [], findings: [] },
@@ -87,7 +104,12 @@ const DEFAULT_METRICS: BCDRMetrics = {
 };
 
 export default function BCDRDashboard() {
-  const { data: summaryData, isLoading: summaryLoading, error: summaryError, refetch: refetchSummary } = useQuery<DashboardSummary>({
+  const {
+    data: summaryData,
+    isLoading: summaryLoading,
+    error: summaryError,
+    refetch: refetchSummary,
+  } = useQuery<DashboardSummary>({
     queryKey: ['bcdr-dashboard'],
     queryFn: async () => {
       const res = await api.get('/api/bcdr/dashboard');
@@ -97,7 +119,12 @@ export default function BCDRDashboard() {
     retry: 1,
   });
 
-  const { data: metricsData, isLoading: metricsLoading, error: metricsError, refetch: refetchMetrics } = useQuery<BCDRMetrics>({
+  const {
+    data: metricsData,
+    isLoading: metricsLoading,
+    error: metricsError,
+    refetch: refetchMetrics,
+  } = useQuery<BCDRMetrics>({
     queryKey: ['bcdr-metrics'],
     queryFn: async () => {
       const res = await api.get('/api/bcdr/dashboard/metrics');
@@ -137,7 +164,7 @@ export default function BCDRDashboard() {
 
   const isLoading = summaryLoading || metricsLoading;
   const hasError = summaryError || metricsError;
-  
+
   // Use default values if data is undefined or incomplete
   const summary = summaryData ? { ...DEFAULT_SUMMARY, ...summaryData } : DEFAULT_SUMMARY;
   const metrics = metricsData ? { ...DEFAULT_METRICS, ...metricsData } : DEFAULT_METRICS;
@@ -159,30 +186,33 @@ export default function BCDRDashboard() {
     return (
       <div className="p-6">
         <div className="card p-8 text-center">
-          <ExclamationCircleIcon className="w-12 h-12 mx-auto mb-4 text-red-400" />
-          <h2 className="text-lg font-semibold text-surface-100 mb-2">Failed to load BC/DR Dashboard</h2>
-          <p className="text-surface-400 mb-4">
+          <ExclamationCircleIcon className="w-12 h-12 mx-auto mb-4 text-red-600" />
+          <h2 className="text-lg font-semibold text-surface-100 mb-2">
+            Failed to load BC/DR Dashboard
+          </h2>
+          <p className="text-surface-600 mb-4">
             {((summaryError || metricsError) as Error)?.message || 'An unexpected error occurred'}
           </p>
-          <button 
+          <Button
             onClick={() => {
               refetchSummary();
               refetchMetrics();
-            }} 
-            className="btn btn-primary"
+            }}
+            variant="primary"
           >
             Try Again
-          </button>
+          </Button>
         </div>
       </div>
     );
   }
 
-  const readinessColor = (metrics.readinessScore ?? 0) >= 80 
-    ? 'text-green-400' 
-    : (metrics.readinessScore ?? 0) >= 60 
-      ? 'text-yellow-400' 
-      : 'text-red-400';
+  const readinessColor =
+    (metrics.readinessScore ?? 0) >= 80
+      ? 'text-green-600'
+      : (metrics.readinessScore ?? 0) >= 60
+        ? 'text-yellow-600'
+        : 'text-red-600';
 
   // Safe array accessors
   const activeIncidentsList = Array.isArray(activeIncidents) ? activeIncidents : [];
@@ -196,13 +226,17 @@ export default function BCDRDashboard() {
         <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <ExclamationTriangleIcon className="h-6 w-6 text-red-400 animate-pulse" />
+              <ExclamationTriangleIcon className="h-6 w-6 text-red-600 animate-pulse" />
               <div>
-                <h3 className="text-lg font-medium text-red-400">
-                  {activeIncidentsList.length} Active Incident{activeIncidentsList.length > 1 ? 's' : ''}
+                <h3 className="text-lg font-medium text-red-600">
+                  {activeIncidentsList.length} Active Incident
+                  {activeIncidentsList.length > 1 ? 's' : ''}
                 </h3>
-                <p className="text-sm text-red-300">
-                  {activeIncidentsList.slice(0, 2).map((i: any) => i.title).join(', ')}
+                <p className="text-sm text-red-700">
+                  {activeIncidentsList
+                    .slice(0, 2)
+                    .map((i: any) => i.title)
+                    .join(', ')}
                   {activeIncidentsList.length > 2 && ` and ${activeIncidentsList.length - 2} more`}
                 </p>
               </div>
@@ -222,18 +256,16 @@ export default function BCDRDashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-surface-100">BC/DR Dashboard</h1>
-          <p className="text-surface-400 mt-1">
-            Business Continuity & Disaster Recovery Overview
-          </p>
+          <p className="text-surface-600 mt-1">Business Continuity & Disaster Recovery Overview</p>
         </div>
         <div className="flex gap-3">
-          <Link to="/bcdr/incidents" className="btn btn-secondary">
+          <Link to="/bcdr/incidents" className="">
             Incidents
           </Link>
-          <Link to="/bcdr/processes/new" className="btn btn-primary">
+          <Link to="/bcdr/processes/new" className="">
             Add Process
           </Link>
-          <Link to="/bcdr/plans/new" className="btn btn-secondary">
+          <Link to="/bcdr/plans/new" className="">
             Create Plan
           </Link>
         </div>
@@ -244,15 +276,15 @@ export default function BCDRDashboard() {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold text-surface-200">BC/DR Readiness Score</h2>
-            <p className="text-surface-400 text-sm mt-1">
+            <p className="text-surface-600 text-sm mt-1">
               Overall preparedness based on RTO coverage, plan coverage, and test success rate
             </p>
           </div>
           <div className="text-right">
-            <div className={clsx("text-5xl font-bold", readinessColor)}>
+            <div className={clsx('text-5xl font-bold', readinessColor)}>
               {metrics.readinessScore ?? 0}%
             </div>
-            <div className="flex items-center gap-4 mt-2 text-sm text-surface-400">
+            <div className="flex items-center gap-4 mt-2 text-sm text-surface-600">
               <span>RTO: {metrics.metrics?.rtoCoverage ?? 0}%</span>
               <span>Plans: {metrics.metrics?.planCoverage ?? 0}%</span>
               <span>Tests: {metrics.metrics?.testSuccessRate ?? 0}%</span>
@@ -266,19 +298,21 @@ export default function BCDRDashboard() {
         <Link to="/bcdr/processes" className="card p-6 hover:border-brand-500/50 transition-colors">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-surface-400">Business Processes</p>
+              <p className="text-sm text-surface-600">Business Processes</p>
               <p className="text-3xl font-bold text-surface-100 mt-1">
                 {summary.processes?.total ?? 0}
               </p>
               <div className="flex items-center gap-2 mt-2 text-xs">
-                <span className="text-red-400">Tier 1: {summary.processes?.tier_1_count ?? 0}</span>
-                <span className="text-yellow-400">Tier 2: {summary.processes?.tier_2_count ?? 0}</span>
+                <span className="text-red-600">Tier 1: {summary.processes?.tier_1_count ?? 0}</span>
+                <span className="text-yellow-600">
+                  Tier 2: {summary.processes?.tier_2_count ?? 0}
+                </span>
               </div>
             </div>
             <ShieldExclamationIcon className="w-10 h-10 text-brand-400" />
           </div>
           {(summary.processes?.overdue_review_count ?? 0) > 0 && (
-            <div className="mt-3 flex items-center gap-1 text-yellow-400 text-xs">
+            <div className="mt-3 flex items-center gap-1 text-yellow-600 text-xs">
               <ExclamationTriangleIcon className="w-4 h-4" />
               {summary.processes?.overdue_review_count} overdue for review
             </div>
@@ -288,35 +322,37 @@ export default function BCDRDashboard() {
         <Link to="/bcdr/plans" className="card p-6 hover:border-brand-500/50 transition-colors">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-surface-400">BC/DR Plans</p>
+              <p className="text-sm text-surface-600">BC/DR Plans</p>
               <p className="text-3xl font-bold text-surface-100 mt-1">
                 {summary.plans?.total ?? 0}
               </p>
               <div className="flex items-center gap-2 mt-2 text-xs">
-                <span className="text-green-400">{summary.plans?.published_count ?? 0} published</span>
-                <span className="text-surface-400">{summary.plans?.draft_count ?? 0} draft</span>
+                <span className="text-green-600">
+                  {summary.plans?.published_count ?? 0} published
+                </span>
+                <span className="text-surface-600">{summary.plans?.draft_count ?? 0} draft</span>
               </div>
             </div>
-            <DocumentTextIcon className="w-10 h-10 text-blue-400" />
+            <DocumentTextIcon className="w-10 h-10 text-blue-600" />
           </div>
         </Link>
 
         <Link to="/bcdr/tests" className="card p-6 hover:border-brand-500/50 transition-colors">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-surface-400">DR Tests</p>
+              <p className="text-sm text-surface-600">DR Tests</p>
               <p className="text-3xl font-bold text-surface-100 mt-1">
                 {summary.tests?.completed_count ?? 0}
               </p>
               <div className="flex items-center gap-2 mt-2 text-xs">
-                <span className="text-green-400">{summary.tests?.passed_count ?? 0} passed</span>
-                <span className="text-red-400">{summary.tests?.failed_count ?? 0} failed</span>
+                <span className="text-green-600">{summary.tests?.passed_count ?? 0} passed</span>
+                <span className="text-red-600">{summary.tests?.failed_count ?? 0} failed</span>
               </div>
             </div>
-            <BeakerIcon className="w-10 h-10 text-purple-400" />
+            <BeakerIcon className="w-10 h-10 text-purple-600" />
           </div>
           {(summary.tests?.openFindingsCount ?? 0) > 0 && (
-            <div className="mt-3 flex items-center gap-1 text-yellow-400 text-xs">
+            <div className="mt-3 flex items-center gap-1 text-yellow-600 text-xs">
               <ExclamationTriangleIcon className="w-4 h-4" />
               {summary.tests?.openFindingsCount} open findings
             </div>
@@ -326,18 +362,20 @@ export default function BCDRDashboard() {
         <Link to="/bcdr/runbooks" className="card p-6 hover:border-brand-500/50 transition-colors">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-surface-400">Runbooks</p>
+              <p className="text-sm text-surface-600">Runbooks</p>
               <p className="text-3xl font-bold text-surface-100 mt-1">
                 {summary.runbooks?.total ?? 0}
               </p>
               <div className="flex items-center gap-2 mt-2 text-xs">
-                <span className="text-green-400">{summary.runbooks?.published_count ?? 0} published</span>
+                <span className="text-green-600">
+                  {summary.runbooks?.published_count ?? 0} published
+                </span>
               </div>
             </div>
-            <BookOpenIcon className="w-10 h-10 text-teal-400" />
+            <BookOpenIcon className="w-10 h-10 text-teal-600" />
           </div>
           {(summary.runbooks?.needs_review_count ?? 0) > 0 && (
-            <div className="mt-3 flex items-center gap-1 text-yellow-400 text-xs">
+            <div className="mt-3 flex items-center gap-1 text-yellow-600 text-xs">
               <ClockIcon className="w-4 h-4" />
               {summary.runbooks?.needs_review_count} need review
             </div>
@@ -365,10 +403,10 @@ export default function BCDRDashboard() {
                 >
                   <div>
                     <p className="text-surface-100 font-medium">{test.name}</p>
-                    <p className="text-surface-400 text-sm">{test.test_type}</p>
+                    <p className="text-surface-600 text-sm">{test.test_type}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-surface-300 text-sm">
+                    <p className="text-surface-700 text-sm">
                       {new Date(test.scheduled_date).toLocaleDateString()}
                     </p>
                   </div>
@@ -376,10 +414,13 @@ export default function BCDRDashboard() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 text-surface-400">
+            <div className="text-center py-8 text-surface-600">
               <BeakerIcon className="w-12 h-12 mx-auto mb-2 opacity-50" />
               <p>No upcoming tests scheduled</p>
-              <Link to="/bcdr/tests/new" className="text-brand-400 text-sm hover:text-brand-300 mt-2 inline-block">
+              <Link
+                to="/bcdr/tests/new"
+                className="text-brand-400 text-sm hover:text-brand-300 mt-2 inline-block"
+              >
                 Schedule a test →
               </Link>
             </div>
@@ -391,15 +432,13 @@ export default function BCDRDashboard() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-surface-100">Overdue Items</h2>
             {(summary.overdueItems?.totalOverdue ?? 0) > 0 && (
-              <span className="px-2 py-1 rounded-full bg-red-500/20 text-red-400 text-xs font-medium">
-                {summary.overdueItems?.totalOverdue} items
-              </span>
+              <Badge variant="danger">{summary.overdueItems?.totalOverdue} items</Badge>
             )}
           </div>
           {(summary.overdueItems?.totalOverdue ?? 0) === 0 ? (
-            <div className="text-center py-8 text-surface-400">
-              <CheckCircleIcon className="w-12 h-12 mx-auto mb-2 text-green-400 opacity-50" />
-              <p className="text-green-400">All items are up to date!</p>
+            <div className="text-center py-8 text-surface-600">
+              <CheckCircleIcon className="w-12 h-12 mx-auto mb-2 text-green-600 opacity-50" />
+              <p className="text-green-600">All items are up to date!</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -409,10 +448,10 @@ export default function BCDRDashboard() {
                   to={`/bcdr/plans/${plan.id}`}
                   className="flex items-center gap-3 p-3 rounded-lg bg-red-500/10 hover:bg-red-500/20 transition-colors"
                 >
-                  <DocumentTextIcon className="w-5 h-5 text-red-400 flex-shrink-0" />
+                  <DocumentTextIcon className="w-5 h-5 text-red-600 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-surface-100 truncate">{plan.title}</p>
-                    <p className="text-red-400 text-xs">Review overdue</p>
+                    <p className="text-red-600 text-xs">Review overdue</p>
                   </div>
                 </Link>
               ))}
@@ -422,10 +461,10 @@ export default function BCDRDashboard() {
                   to={`/bcdr/processes/${process.id}`}
                   className="flex items-center gap-3 p-3 rounded-lg bg-yellow-500/10 hover:bg-yellow-500/20 transition-colors"
                 >
-                  <ShieldExclamationIcon className="w-5 h-5 text-yellow-400 flex-shrink-0" />
+                  <ShieldExclamationIcon className="w-5 h-5 text-yellow-600 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-surface-100 truncate">{process.title}</p>
-                    <p className="text-yellow-400 text-xs">BIA review overdue</p>
+                    <p className="text-yellow-600 text-xs">BIA review overdue</p>
                   </div>
                 </Link>
               ))}
@@ -435,10 +474,10 @@ export default function BCDRDashboard() {
                   to={`/bcdr/tests/${finding.test_id}`}
                   className="flex items-center gap-3 p-3 rounded-lg bg-orange-500/10 hover:bg-orange-500/20 transition-colors"
                 >
-                  <XCircleIcon className="w-5 h-5 text-orange-400 flex-shrink-0" />
+                  <XCircleIcon className="w-5 h-5 text-orange-600 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-surface-100 truncate">{finding.title}</p>
-                    <p className="text-orange-400 text-xs">Remediation overdue</p>
+                    <p className="text-orange-600 text-xs">Remediation overdue</p>
                   </div>
                 </Link>
               ))}
@@ -453,19 +492,19 @@ export default function BCDRDashboard() {
         <div className="card p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-surface-100 flex items-center gap-2">
-              <ClipboardDocumentCheckIcon className="w-5 h-5 text-surface-400" />
+              <ClipboardDocumentCheckIcon className="w-5 h-5 text-surface-600" />
               Pending Attestations
             </h2>
             {pendingAttestationsList.length > 0 && (
-              <span className="px-2 py-1 rounded-full bg-yellow-500/20 text-yellow-400 text-xs font-medium">
+              <span className="px-2 py-1 rounded-full bg-yellow-500/20 text-yellow-600 text-xs font-medium">
                 {pendingAttestationsList.length} pending
               </span>
             )}
           </div>
           {pendingAttestationsList.length === 0 ? (
-            <div className="text-center py-8 text-surface-400">
-              <CheckCircleIcon className="w-12 h-12 mx-auto mb-2 text-green-400 opacity-50" />
-              <p className="text-green-400">All attestations complete!</p>
+            <div className="text-center py-8 text-surface-600">
+              <CheckCircleIcon className="w-12 h-12 mx-auto mb-2 text-green-600 opacity-50" />
+              <p className="text-green-600">All attestations complete!</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -475,17 +514,20 @@ export default function BCDRDashboard() {
                   to={`/bcdr/plans/${attestation.plan_id}`}
                   className="flex items-center gap-3 p-3 rounded-lg bg-yellow-500/10 hover:bg-yellow-500/20 transition-colors"
                 >
-                  <ClipboardDocumentCheckIcon className="w-5 h-5 text-yellow-400 flex-shrink-0" />
+                  <ClipboardDocumentCheckIcon className="w-5 h-5 text-yellow-600 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-surface-100 truncate">{attestation.plan_title}</p>
-                    <p className="text-yellow-400 text-xs capitalize">
+                    <p className="text-yellow-600 text-xs capitalize">
                       {attestation.attestation_type?.replace('_', ' ')} attestation
                     </p>
                   </div>
                 </Link>
               ))}
               {pendingAttestationsList.length > 3 && (
-                <Link to="/bcdr/attestations" className="text-brand-400 text-sm hover:text-brand-300 block text-center">
+                <Link
+                  to="/bcdr/attestations"
+                  className="text-brand-400 text-sm hover:text-brand-300 block text-center"
+                >
                   View all {pendingAttestationsList.length} pending →
                 </Link>
               )}
@@ -497,19 +539,17 @@ export default function BCDRDashboard() {
         <div className="card p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-surface-100 flex items-center gap-2">
-              <BuildingOfficeIcon className="w-5 h-5 text-surface-400" />
+              <BuildingOfficeIcon className="w-5 h-5 text-surface-600" />
               Vendor Recovery Gaps
             </h2>
             {vendorGapsList.length > 0 && (
-              <span className="px-2 py-1 rounded-full bg-red-500/20 text-red-400 text-xs font-medium">
-                {vendorGapsList.length} gaps
-              </span>
+              <Badge variant="danger">{vendorGapsList.length} gaps</Badge>
             )}
           </div>
           {vendorGapsList.length === 0 ? (
-            <div className="text-center py-8 text-surface-400">
-              <CheckCircleIcon className="w-12 h-12 mx-auto mb-2 text-green-400 opacity-50" />
-              <p className="text-green-400">No vendor recovery gaps!</p>
+            <div className="text-center py-8 text-surface-600">
+              <CheckCircleIcon className="w-12 h-12 mx-auto mb-2 text-green-600 opacity-50" />
+              <p className="text-green-600">No vendor recovery gaps!</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -519,17 +559,17 @@ export default function BCDRDashboard() {
                   to={`/bcdr/processes/${gap.process_id}`}
                   className="flex items-center gap-3 p-3 rounded-lg bg-red-500/10 hover:bg-red-500/20 transition-colors"
                 >
-                  <BuildingOfficeIcon className="w-5 h-5 text-red-400 flex-shrink-0" />
+                  <BuildingOfficeIcon className="w-5 h-5 text-red-600 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-surface-100 truncate">{gap.vendor_name}</p>
-                    <p className="text-red-400 text-xs">
+                    <p className="text-red-600 text-xs">
                       RTO gap: {gap.rto_gap_hours}h for {gap.process_name}
                     </p>
                   </div>
                 </Link>
               ))}
               {vendorGapsList.length > 3 && (
-                <p className="text-surface-400 text-sm text-center">
+                <p className="text-surface-600 text-sm text-center">
                   +{vendorGapsList.length - 3} more gaps
                 </p>
               )}
@@ -553,28 +593,28 @@ export default function BCDRDashboard() {
             to="/bcdr/plans/new"
             className="p-4 rounded-lg bg-surface-800/50 hover:bg-surface-700/50 transition-colors text-center"
           >
-            <DocumentTextIcon className="w-8 h-8 mx-auto mb-2 text-blue-400" />
+            <DocumentTextIcon className="w-8 h-8 mx-auto mb-2 text-blue-600" />
             <span className="text-surface-200 text-sm">Create Plan</span>
           </Link>
           <Link
             to="/bcdr/tests/new"
             className="p-4 rounded-lg bg-surface-800/50 hover:bg-surface-700/50 transition-colors text-center"
           >
-            <BeakerIcon className="w-8 h-8 mx-auto mb-2 text-purple-400" />
+            <BeakerIcon className="w-8 h-8 mx-auto mb-2 text-purple-600" />
             <span className="text-surface-200 text-sm">Schedule Test</span>
           </Link>
           <Link
             to="/bcdr/runbooks/new"
             className="p-4 rounded-lg bg-surface-800/50 hover:bg-surface-700/50 transition-colors text-center"
           >
-            <BookOpenIcon className="w-8 h-8 mx-auto mb-2 text-teal-400" />
+            <BookOpenIcon className="w-8 h-8 mx-auto mb-2 text-teal-600" />
             <span className="text-surface-200 text-sm">Create Runbook</span>
           </Link>
           <Link
             to="/bcdr/recovery-teams"
             className="p-4 rounded-lg bg-surface-800/50 hover:bg-surface-700/50 transition-colors text-center"
           >
-            <UserGroupIcon className="w-8 h-8 mx-auto mb-2 text-green-400" />
+            <UserGroupIcon className="w-8 h-8 mx-auto mb-2 text-green-600" />
             <span className="text-surface-200 text-sm">Recovery Teams</span>
           </Link>
         </div>
@@ -582,4 +622,3 @@ export default function BCDRDashboard() {
     </div>
   );
 }
-

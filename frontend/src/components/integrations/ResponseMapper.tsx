@@ -7,6 +7,10 @@ import {
 } from '@heroicons/react/24/outline';
 import type { ResponseMapping } from './AdvancedBuilderTab';
 
+import { Input } from '@/components/ui/Input';
+
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface ResponseMapperProps {
   mappings: ResponseMapping[];
   onChange: (mappings: ResponseMapping[]) => void;
@@ -52,7 +56,7 @@ const SUGGESTED_FIELDS = [
 // Helper to get JSON paths from a sample object
 function extractJsonPaths(obj: any, prefix = ''): string[] {
   const paths: string[] = [];
-  
+
   if (obj && typeof obj === 'object') {
     if (Array.isArray(obj)) {
       if (obj.length > 0) {
@@ -60,7 +64,7 @@ function extractJsonPaths(obj: any, prefix = ''): string[] {
       }
       paths.push(`${prefix}[*]`);
     } else {
-      Object.keys(obj).forEach(key => {
+      Object.keys(obj).forEach((key) => {
         const newPath = prefix ? `${prefix}.${key}` : key;
         paths.push(newPath);
         if (typeof obj[key] === 'object' && obj[key] !== null) {
@@ -69,11 +73,15 @@ function extractJsonPaths(obj: any, prefix = ''): string[] {
       });
     }
   }
-  
+
   return paths;
 }
 
-export default function ResponseMapper({ mappings, onChange, sampleResponse }: ResponseMapperProps) {
+export default function ResponseMapper({
+  mappings,
+  onChange,
+  sampleResponse,
+}: ResponseMapperProps) {
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   const availablePaths = sampleResponse ? extractJsonPaths(sampleResponse) : [];
@@ -89,11 +97,11 @@ export default function ResponseMapper({ mappings, onChange, sampleResponse }: R
   };
 
   const updateMapping = (id: string, updates: Partial<ResponseMapping>) => {
-    onChange(mappings.map(m => m.id === id ? { ...m, ...updates } : m));
+    onChange(mappings.map((m) => (m.id === id ? { ...m, ...updates } : m)));
   };
 
   const deleteMapping = (id: string) => {
-    onChange(mappings.filter(m => m.id !== id));
+    onChange(mappings.filter((m) => m.id !== id));
   };
 
   const addSuggestedField = (field: string) => {
@@ -112,16 +120,15 @@ export default function ResponseMapper({ mappings, onChange, sampleResponse }: R
       <div className="p-4 bg-surface-800/50 rounded-lg border border-surface-700">
         <div className="flex items-start gap-2">
           <InformationCircleIcon className="w-5 h-5 text-brand-400 flex-shrink-0 mt-0.5" />
-          <div className="text-sm text-surface-400">
-            <p className="font-medium text-surface-300 mb-1">Response Mapping</p>
+          <div className="text-sm text-surface-600">
+            <p className="font-medium text-surface-700 mb-1">Response Mapping</p>
             <p>
-              Map fields from the API response to evidence fields. Use JSON path notation 
-              (e.g., <code className="text-brand-400">data.users[0].email</code>) to extract nested values.
+              Map fields from the API response to evidence fields. Use JSON path notation (e.g.,{' '}
+              <code className="text-brand-400">data.users[0].email</code>) to extract nested values.
             </p>
           </div>
         </div>
       </div>
-
       {/* Quick Add Suggestions */}
       <div>
         <button
@@ -145,37 +152,35 @@ export default function ResponseMapper({ mappings, onChange, sampleResponse }: R
           </div>
         )}
       </div>
-
       {/* Sample Response Paths */}
       {availablePaths.length > 0 && (
         <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
-          <p className="text-xs text-green-400 font-medium mb-2">
+          <p className="text-xs text-green-600 font-medium mb-2">
             Detected paths from sample response:
           </p>
           <div className="flex flex-wrap gap-1">
-            {availablePaths.slice(0, 15).map(path => (
+            {availablePaths.slice(0, 15).map((path) => (
               <button
                 key={path}
                 onClick={() => addSuggestedField(path)}
-                className="px-2 py-0.5 text-xs font-mono bg-green-500/20 hover:bg-green-500/30 rounded text-green-300 transition-colors"
+                className="px-2 py-0.5 text-xs font-mono bg-green-500/20 hover:bg-green-500/30 rounded text-green-700 transition-colors"
               >
                 {path}
               </button>
             ))}
             {availablePaths.length > 15 && (
-              <span className="px-2 py-0.5 text-xs text-green-400">
+              <span className="px-2 py-0.5 text-xs text-green-600">
                 +{availablePaths.length - 15} more
               </span>
             )}
           </div>
         </div>
       )}
-
       {/* Mapping List */}
       <div className="space-y-3">
         {mappings.map((mapping) => (
-          <div 
-            key={mapping.id} 
+          <div
+            key={mapping.id}
             className="p-4 bg-surface-800/50 rounded-lg border border-surface-700"
           >
             <div className="flex items-start gap-4">
@@ -183,7 +188,7 @@ export default function ResponseMapper({ mappings, onChange, sampleResponse }: R
                 {/* Source Path */}
                 <div>
                   <label className="text-xs text-surface-500 block mb-1">Source Path (JSON)</label>
-                  <input
+                  <Input
                     type="text"
                     value={mapping.sourcePath}
                     onChange={(e) => updateMapping(mapping.id, { sourcePath: e.target.value })}
@@ -193,7 +198,7 @@ export default function ResponseMapper({ mappings, onChange, sampleResponse }: R
                   />
                   {availablePaths.length > 0 && (
                     <datalist id={`paths-${mapping.id}`}>
-                      {availablePaths.map(path => (
+                      {availablePaths.map((path) => (
                         <option key={path} value={path} />
                       ))}
                     </datalist>
@@ -205,7 +210,7 @@ export default function ResponseMapper({ mappings, onChange, sampleResponse }: R
                   <label className="text-xs text-surface-500 block mb-1">Target Field</label>
                   <div className="flex items-center gap-2">
                     <ArrowRightIcon className="w-4 h-4 text-surface-500 flex-shrink-0 hidden md:block" />
-                    <input
+                    <Input
                       type="text"
                       value={mapping.targetField}
                       onChange={(e) => updateMapping(mapping.id, { targetField: e.target.value })}
@@ -218,36 +223,46 @@ export default function ResponseMapper({ mappings, onChange, sampleResponse }: R
                 {/* Data Type */}
                 <div>
                   <label className="text-xs text-surface-500 block mb-1">Data Type</label>
-                  <select
+                  <SelectNative
                     value={mapping.dataType}
-                    onChange={(e) => updateMapping(mapping.id, { dataType: e.target.value as ResponseMapping['dataType'] })}
+                    onChange={(e) =>
+                      updateMapping(mapping.id, {
+                        dataType: e.target.value as ResponseMapping['dataType'],
+                      })
+                    }
                     className="input w-full text-sm"
                   >
-                    {DATA_TYPES.map(type => (
-                      <option key={type.value} value={type.value}>{type.label}</option>
+                    {DATA_TYPES.map((type) => (
+                      <option key={type.value} value={type.value}>
+                        {type.label}
+                      </option>
                     ))}
-                  </select>
+                  </SelectNative>
                 </div>
 
                 {/* Transformation */}
                 <div>
                   <label className="text-xs text-surface-500 block mb-1">Transformation</label>
-                  <select
+                  <SelectNative
                     value={mapping.transformation || ''}
-                    onChange={(e) => updateMapping(mapping.id, { transformation: e.target.value || undefined })}
+                    onChange={(e) =>
+                      updateMapping(mapping.id, { transformation: e.target.value || undefined })
+                    }
                     className="input w-full text-sm"
                   >
-                    {COMMON_TRANSFORMATIONS.map(t => (
-                      <option key={t.value} value={t.value}>{t.label}</option>
+                    {COMMON_TRANSFORMATIONS.map((t) => (
+                      <option key={t.value} value={t.value}>
+                        {t.label}
+                      </option>
                     ))}
-                  </select>
+                  </SelectNative>
                 </div>
               </div>
 
               {/* Delete Button */}
               <button
                 onClick={() => deleteMapping(mapping.id)}
-                className="p-2 text-surface-400 hover:text-red-400 hover:bg-surface-800 rounded-lg transition-colors"
+                className="p-2 text-surface-600 hover:text-red-600 hover:bg-surface-800 rounded-lg transition-colors"
               >
                 <TrashIcon className="w-4 h-4" />
               </button>
@@ -258,9 +273,9 @@ export default function ResponseMapper({ mappings, onChange, sampleResponse }: R
               <div className="mt-3 pt-3 border-t border-surface-700 text-xs text-surface-500">
                 <code className="text-brand-400">{mapping.sourcePath}</code>
                 {' → '}
-                <code className="text-green-400">{mapping.targetField}</code>
+                <code className="text-green-600">{mapping.targetField}</code>
                 {mapping.transformation && (
-                  <span className="text-surface-400"> ({mapping.transformation})</span>
+                  <span className="text-surface-600"> ({mapping.transformation})</span>
                 )}
               </div>
             )}
@@ -273,11 +288,10 @@ export default function ResponseMapper({ mappings, onChange, sampleResponse }: R
           </div>
         )}
       </div>
-
       {/* Add Button */}
       <button
         onClick={addMapping}
-        className="w-full p-3 rounded-lg border border-dashed border-surface-700 hover:border-surface-500 text-surface-400 hover:text-surface-200 transition-colors flex items-center justify-center gap-2"
+        className="w-full p-3 rounded-lg border border-dashed border-surface-700 hover:border-surface-500 text-surface-600 hover:text-surface-200 transition-colors flex items-center justify-center gap-2"
       >
         <PlusIcon className="w-4 h-4" />
         Add Field Mapping
@@ -285,4 +299,3 @@ export default function ResponseMapper({ mappings, onChange, sampleResponse }: R
     </div>
   );
 }
-

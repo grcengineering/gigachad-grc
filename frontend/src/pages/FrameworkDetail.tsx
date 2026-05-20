@@ -33,11 +33,21 @@ import {
 } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 
+import { Textarea } from '@/components/ui/Textarea';
+
+import { Input } from '@/components/ui/Input';
+
+import { SelectNative } from '@/components/ui/SelectNative';
+
+import { Button } from '@/components/ui/Button';
+
+import { Badge } from '@/components/ui/Badge';
+
 const STATUS_CONFIG = {
-  compliant: { icon: CheckCircleIcon, color: 'text-green-400', bg: 'bg-green-400/10' },
-  partial: { icon: ExclamationTriangleIcon, color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
-  non_compliant: { icon: XCircleIcon, color: 'text-red-400', bg: 'bg-red-400/10' },
-  not_applicable: { icon: MinusCircleIcon, color: 'text-surface-400', bg: 'bg-surface-400/10' },
+  compliant: { icon: CheckCircleIcon, color: 'text-green-600', bg: 'bg-green-400/10' },
+  partial: { icon: ExclamationTriangleIcon, color: 'text-yellow-600', bg: 'bg-yellow-400/10' },
+  non_compliant: { icon: XCircleIcon, color: 'text-red-600', bg: 'bg-red-400/10' },
+  not_applicable: { icon: MinusCircleIcon, color: 'text-surface-600', bg: 'bg-surface-400/10' },
   not_assessed: { icon: MinusCircleIcon, color: 'text-surface-500', bg: 'bg-surface-500/10' },
 };
 
@@ -185,14 +195,14 @@ export default function FrameworkDetail() {
   if (!framework) {
     return (
       <div className="text-center py-12">
-        <p className="text-surface-400">Framework not found</p>
+        <p className="text-surface-600">Framework not found</p>
       </div>
     );
   }
 
   const score = readiness?.score || 0;
   const scoreColor =
-    score >= 80 ? 'text-green-400' : score >= 50 ? 'text-yellow-400' : 'text-red-400';
+    score >= 80 ? 'text-green-600' : score >= 50 ? 'text-yellow-600' : 'text-red-600';
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -200,7 +210,7 @@ export default function FrameworkDetail() {
       <div>
         <Link
           to="/frameworks"
-          className="inline-flex items-center text-sm text-surface-400 hover:text-surface-100 mb-4"
+          className="inline-flex items-center text-sm text-surface-600 hover:text-surface-100 mb-4"
         >
           <ArrowLeftIcon className="w-4 h-4 mr-1" />
           Back to Frameworks
@@ -208,17 +218,18 @@ export default function FrameworkDetail() {
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-2xl font-bold text-surface-100">{framework.name}</h1>
-            <p className="text-surface-400 mt-1">{framework.description}</p>
+            <p className="text-surface-600 mt-1">{framework.description}</p>
           </div>
-          <span className="badge badge-info text-sm uppercase">{framework.type}</span>
+          <Badge className="text-sm uppercase" variant="info">
+            {framework.type}
+          </Badge>
         </div>
       </div>
-
       {/* Readiness Overview */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         {/* Score Card */}
         <div className="card p-6 lg:col-span-1">
-          <p className="text-sm text-surface-400 mb-2">Readiness Score</p>
+          <p className="text-sm text-surface-600 mb-2">Readiness Score</p>
           <p className={clsx('text-5xl font-bold', scoreColor)}>{score}%</p>
           <div className="progress-bar mt-4">
             <div
@@ -233,7 +244,7 @@ export default function FrameworkDetail() {
 
         {/* Status Breakdown */}
         <div className="card p-6 lg:col-span-3">
-          <p className="text-sm text-surface-400 mb-4">Requirements by Status (click to filter)</p>
+          <p className="text-sm text-surface-600 mb-4">Requirements by Status (click to filter)</p>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             {readiness?.requirementsByStatus && (
               <>
@@ -285,14 +296,14 @@ export default function FrameworkDetail() {
           </div>
           {statusFilter !== 'all' && (
             <div className="flex items-center gap-2 text-sm mt-4 pt-4 border-t border-surface-800">
-              <span className="text-surface-400">Filtering by:</span>
+              <span className="text-surface-600">Filtering by:</span>
               <span
                 className={clsx(
                   'px-2 py-1 rounded-full text-xs font-medium',
-                  statusFilter === 'compliant' && 'bg-green-400/20 text-green-400',
-                  statusFilter === 'partial' && 'bg-yellow-400/20 text-yellow-400',
-                  statusFilter === 'non_compliant' && 'bg-red-400/20 text-red-400',
-                  statusFilter === 'not_applicable' && 'bg-surface-400/20 text-surface-400',
+                  statusFilter === 'compliant' && 'bg-green-400/20 text-green-600',
+                  statusFilter === 'partial' && 'bg-yellow-400/20 text-yellow-600',
+                  statusFilter === 'non_compliant' && 'bg-red-400/20 text-red-600',
+                  statusFilter === 'not_applicable' && 'bg-surface-400/20 text-surface-600',
                   statusFilter === 'not_assessed' && 'bg-surface-500/20 text-surface-500'
                 )}
               >
@@ -304,7 +315,7 @@ export default function FrameworkDetail() {
               </span>
               <button
                 onClick={() => setStatusFilter('all')}
-                className="text-surface-400 hover:text-surface-100 ml-2"
+                className="text-surface-600 hover:text-surface-100 ml-2"
               >
                 <XMarkIcon className="w-4 h-4" />
               </button>
@@ -314,50 +325,62 @@ export default function FrameworkDetail() {
 
         <MappingCoverageWidget frameworkId={id} className="lg:col-span-1" />
       </div>
-
       {/* Mappings toolbar */}
       {(canManageMappings || canExportMappings) && (
         <div className="flex items-center justify-end gap-2 mb-4">
           {canManageMappings && (
-            <button
+            <Button
               type="button"
               onClick={() => setIsMappingImportOpen(true)}
-              className="btn-secondary text-sm"
+              className="text-sm"
+              variant="secondary"
             >
               <ArrowUpTrayIcon className="w-4 h-4 mr-1" />
               Import mappings
-            </button>
+            </Button>
           )}
           {canExportMappings && (
-            <button type="button" onClick={handleExportMappings} className="btn-secondary text-sm">
+            <Button
+              type="button"
+              onClick={handleExportMappings}
+              className="text-sm"
+              variant="secondary"
+            >
               <ArrowDownTrayIcon className="w-4 h-4 mr-1" />
               Export mappings
-            </button>
+            </Button>
           )}
         </div>
       )}
-
       {/* Requirements Tree */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className={clsx('card', selectedReq ? 'lg:col-span-2' : 'lg:col-span-3')}>
           <div className="p-4 border-b border-surface-800 flex items-center justify-between">
             <div>
               <h2 className="text-lg font-semibold text-surface-100">Requirements</h2>
-              <p className="text-sm text-surface-400 mt-1">
+              <p className="text-sm text-surface-600 mt-1">
                 {requirements && requirements.length > 0
                   ? 'Click on any requirement to view details'
                   : 'Add requirements to define compliance criteria'}
               </p>
             </div>
             <div className="flex gap-2">
-              <button onClick={() => setIsUploadModalOpen(true)} className="btn-secondary text-sm">
+              <Button
+                onClick={() => setIsUploadModalOpen(true)}
+                className="text-sm"
+                variant="secondary"
+              >
                 <ArrowUpTrayIcon className="w-4 h-4 mr-1" />
                 Bulk Upload
-              </button>
-              <button onClick={() => setIsCreateModalOpen(true)} className="btn-primary text-sm">
+              </Button>
+              <Button
+                onClick={() => setIsCreateModalOpen(true)}
+                className="text-sm"
+                variant="primary"
+              >
                 <PlusIcon className="w-4 h-4 mr-1" />
                 Add Requirement
-              </button>
+              </Button>
             </div>
           </div>
           <div className="divide-y divide-surface-800 max-h-[600px] overflow-y-auto">
@@ -376,14 +399,15 @@ export default function FrameworkDetail() {
               ))
             ) : (
               <div className="p-12 text-center">
-                <p className="text-surface-400 mb-4">No requirements yet</p>
-                <button
+                <p className="text-surface-600 mb-4">No requirements yet</p>
+                <Button
                   onClick={() => setIsCreateModalOpen(true)}
-                  className="btn-secondary text-sm"
+                  className="text-sm"
+                  variant="secondary"
                 >
                   <PlusIcon className="w-4 h-4 mr-1" />
                   Add Your First Requirement
-                </button>
+                </Button>
               </div>
             )}
           </div>
@@ -398,16 +422,15 @@ export default function FrameworkDetail() {
           />
         )}
       </div>
-
       {/* Create Requirement Modal */}
       {isCreateModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
           <div className="bg-surface-900 border border-surface-800 rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-surface-100">Add Requirement</h2>
               <button
                 onClick={() => setIsCreateModalOpen(false)}
-                className="text-surface-400 hover:text-surface-200"
+                className="text-surface-600 hover:text-surface-200"
               >
                 <XMarkIcon className="w-6 h-6" />
               </button>
@@ -416,10 +439,10 @@ export default function FrameworkDetail() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-surface-300 mb-1">
+                  <label className="block text-sm font-medium text-surface-700 mb-1">
                     Reference *
                   </label>
-                  <input
+                  <Input
                     type="text"
                     required
                     value={formData.reference}
@@ -440,14 +463,14 @@ export default function FrameworkDetail() {
                       onChange={(e) => setFormData({ ...formData, isCategory: e.target.checked })}
                       className="w-4 h-4"
                     />
-                    <span className="text-sm text-surface-300">This is a category</span>
+                    <span className="text-sm text-surface-700">This is a category</span>
                   </label>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-1">Title *</label>
-                <input
+                <label className="block text-sm font-medium text-surface-700 mb-1">Title *</label>
+                <Input
                   type="text"
                   required
                   value={formData.title}
@@ -458,10 +481,10 @@ export default function FrameworkDetail() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-1">
+                <label className="block text-sm font-medium text-surface-700 mb-1">
                   Description *
                 </label>
-                <textarea
+                <Textarea
                   required
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -472,10 +495,10 @@ export default function FrameworkDetail() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-1">
+                <label className="block text-sm font-medium text-surface-700 mb-1">
                   Guidance (Optional)
                 </label>
-                <textarea
+                <Textarea
                   value={formData.guidance}
                   onChange={(e) => setFormData({ ...formData, guidance: e.target.value })}
                   placeholder="Additional implementation guidance..."
@@ -485,29 +508,30 @@ export default function FrameworkDetail() {
               </div>
 
               <div className="flex gap-3 pt-4">
-                <button
+                <Button
                   type="button"
                   onClick={() => setIsCreateModalOpen(false)}
-                  className="btn-secondary flex-1"
+                  className="flex-1"
+                  variant="secondary"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
                   disabled={createMutation.isPending}
-                  className="btn-primary flex-1"
+                  className="flex-1"
+                  variant="primary"
                 >
                   {createMutation.isPending ? 'Creating...' : 'Create Requirement'}
-                </button>
+                </Button>
               </div>
             </form>
           </div>
         </div>
       )}
-
       {/* Bulk Upload Modal */}
       {isUploadModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
           <div className="bg-surface-900 border border-surface-800 rounded-lg p-6 w-full max-w-xl">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-surface-100">Bulk Upload Requirements</h2>
@@ -516,7 +540,7 @@ export default function FrameworkDetail() {
                   setIsUploadModalOpen(false);
                   setSelectedFile(null);
                 }}
-                className="text-surface-400 hover:text-surface-200"
+                className="text-surface-600 hover:text-surface-200"
               >
                 <XMarkIcon className="w-6 h-6" />
               </button>
@@ -525,36 +549,36 @@ export default function FrameworkDetail() {
             <div className="space-y-4">
               {/* Instructions */}
               <div className="p-4 bg-surface-800/50 rounded-lg border border-surface-700">
-                <p className="text-sm text-surface-300 mb-2">
+                <p className="text-sm text-surface-700 mb-2">
                   Upload a CSV, Excel (.xlsx, .xls), or JSON file with the following columns:
                 </p>
-                <ul className="text-xs text-surface-400 space-y-1 list-disc list-inside">
+                <ul className="text-xs text-surface-600 space-y-1 list-disc list-inside">
                   <li>
-                    <span className="font-medium text-surface-300">reference</span> - Unique
+                    <span className="font-medium text-surface-700">reference</span> - Unique
                     identifier (required)
                   </li>
                   <li>
-                    <span className="font-medium text-surface-300">title</span> - Requirement title
+                    <span className="font-medium text-surface-700">title</span> - Requirement title
                     (required)
                   </li>
                   <li>
-                    <span className="font-medium text-surface-300">description</span> - Detailed
+                    <span className="font-medium text-surface-700">description</span> - Detailed
                     description (required)
                   </li>
                   <li>
-                    <span className="font-medium text-surface-300">guidance</span> - Implementation
+                    <span className="font-medium text-surface-700">guidance</span> - Implementation
                     guidance (optional)
                   </li>
                   <li>
-                    <span className="font-medium text-surface-300">isCategory</span> - true/false
+                    <span className="font-medium text-surface-700">isCategory</span> - true/false
                     (optional)
                   </li>
                   <li>
-                    <span className="font-medium text-surface-300">order</span> - Display order
+                    <span className="font-medium text-surface-700">order</span> - Display order
                     number (optional)
                   </li>
                   <li>
-                    <span className="font-medium text-surface-300">level</span> - Hierarchy level
+                    <span className="font-medium text-surface-700">level</span> - Hierarchy level
                     0-3 (optional)
                   </li>
                 </ul>
@@ -562,7 +586,7 @@ export default function FrameworkDetail() {
 
               {/* File Input */}
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-2">
+                <label className="block text-sm font-medium text-surface-700 mb-2">
                   Select File
                 </label>
                 <div className="relative">
@@ -570,7 +594,7 @@ export default function FrameworkDetail() {
                     type="file"
                     accept=".csv,.xlsx,.xls,.json"
                     onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                    className="block w-full text-sm text-surface-300
+                    className="block w-full text-sm text-surface-700
                       file:mr-4 file:py-2 file:px-4
                       file:rounded-lg file:border-0
                       file:text-sm file:font-medium
@@ -580,7 +604,7 @@ export default function FrameworkDetail() {
                   />
                 </div>
                 {selectedFile && (
-                  <p className="text-xs text-surface-400 mt-2">
+                  <p className="text-xs text-surface-600 mt-2">
                     Selected: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
                   </p>
                 )}
@@ -590,7 +614,7 @@ export default function FrameworkDetail() {
               <div className="flex items-center gap-4 text-sm">
                 <div className="flex items-center gap-2">
                   <DocumentArrowDownIcon className="w-4 h-4 text-brand-400" />
-                  <span className="text-surface-400">Templates:</span>
+                  <span className="text-surface-600">Templates:</span>
                 </div>
                 <a
                   href="/templates/requirements-template.csv"
@@ -610,29 +634,30 @@ export default function FrameworkDetail() {
 
               {/* Action Buttons */}
               <div className="flex gap-3 pt-4">
-                <button
+                <Button
                   type="button"
                   onClick={() => {
                     setIsUploadModalOpen(false);
                     setSelectedFile(null);
                   }}
-                  className="btn-secondary flex-1"
+                  className="flex-1"
+                  variant="secondary"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={handleFileUpload}
                   disabled={!selectedFile || uploadMutation.isPending}
-                  className="btn-primary flex-1"
+                  className="flex-1"
+                  variant="primary"
                 >
                   {uploadMutation.isPending ? 'Uploading...' : 'Upload'}
-                </button>
+                </Button>
               </div>
             </div>
           </div>
         </div>
       )}
-
       {/* Mapping Import Wizard */}
       <MappingImportWizard
         open={isMappingImportOpen}
@@ -680,7 +705,7 @@ function StatusCard({
         <Icon className={clsx('w-4 h-4', config.color)} />
         <span className={clsx('text-xl font-bold', config.color)}>{value}</span>
       </div>
-      <p className="text-xs text-surface-400 mt-1">{label}</p>
+      <p className="text-xs text-surface-600 mt-1">{label}</p>
       {isActive && <p className={clsx('text-xs mt-1', config.color)}>Click to clear</p>}
     </button>
   );
@@ -767,9 +792,9 @@ function RequirementRow({
             }}
           >
             {isExpanded ? (
-              <ChevronDownIcon className="w-4 h-4 text-surface-400" />
+              <ChevronDownIcon className="w-4 h-4 text-surface-600" />
             ) : (
-              <ChevronRightIcon className="w-4 h-4 text-surface-400" />
+              <ChevronRightIcon className="w-4 h-4 text-surface-600" />
             )}
           </button>
         ) : (
@@ -790,14 +815,15 @@ function RequirementRow({
         </div>
 
         {requirement.isCategory ? (
-          <span className="badge badge-neutral text-xs">Category</span>
+          <Badge className="text-xs" variant="neutral">
+            Category
+          </Badge>
         ) : (
-          <span className="badge badge-neutral text-xs">
+          <Badge className="text-xs" variant="neutral">
             {requirement.mappings?.length || 0} controls
-          </span>
+          </Badge>
         )}
       </div>
-
       {hasChildren && isExpanded && (
         <>
           {requirement.children.map((child: any) => (
@@ -990,10 +1016,9 @@ function RequirementDetailPanel({
       <div className="p-4 border-b border-surface-800 flex items-center justify-between">
         <h3 className="font-semibold text-surface-100">Requirement Details</h3>
         <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded transition-colors">
-          <XMarkIcon className="w-5 h-5 text-surface-400" />
+          <XMarkIcon className="w-5 h-5 text-surface-600" />
         </button>
       </div>
-
       <div className="p-4 space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto">
         {/* Reference & Title */}
         <div>
@@ -1007,7 +1032,7 @@ function RequirementDetailPanel({
         {requirement.description && (
           <div>
             <p className="text-xs text-surface-500 uppercase tracking-wide mb-1">Description</p>
-            <p className="text-sm text-surface-300 leading-relaxed line-clamp-4">
+            <p className="text-sm text-surface-700 leading-relaxed line-clamp-4">
               {requirement.description}
             </p>
           </div>
@@ -1035,14 +1060,14 @@ function RequirementDetailPanel({
                 <div className="flex gap-2">
                   <button
                     onClick={() => setIsEditing(false)}
-                    className="text-xs text-surface-400 hover:text-surface-300"
+                    className="text-xs text-surface-600 hover:text-surface-700"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleSave}
                     disabled={updateMutation.isPending}
-                    className="text-xs text-green-400 hover:text-green-300"
+                    className="text-xs text-green-600 hover:text-green-700"
                   >
                     {updateMutation.isPending ? 'Saving...' : 'Save'}
                   </button>
@@ -1054,8 +1079,8 @@ function RequirementDetailPanel({
               <div className="space-y-3">
                 {/* Owner Select */}
                 <div>
-                  <label className="block text-xs text-surface-400 mb-1">Owner</label>
-                  <select
+                  <label className="block text-xs text-surface-600 mb-1">Owner</label>
+                  <SelectNative
                     value={selectedOwner}
                     onChange={(e) => setSelectedOwner(e.target.value)}
                     className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-sm text-surface-100 focus:outline-none focus:border-brand-500"
@@ -1066,13 +1091,13 @@ function RequirementDetailPanel({
                         {user.displayName} ({user.role})
                       </option>
                     ))}
-                  </select>
+                  </SelectNative>
                 </div>
 
                 {/* Priority */}
                 <div>
-                  <label className="block text-xs text-surface-400 mb-1">Priority</label>
-                  <select
+                  <label className="block text-xs text-surface-600 mb-1">Priority</label>
+                  <SelectNative
                     value={priority}
                     onChange={(e) => setPriority(e.target.value)}
                     className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-sm text-surface-100 focus:outline-none focus:border-brand-500"
@@ -1081,13 +1106,13 @@ function RequirementDetailPanel({
                     <option value="high">High</option>
                     <option value="medium">Medium</option>
                     <option value="low">Low</option>
-                  </select>
+                  </SelectNative>
                 </div>
 
                 {/* Due Date */}
                 <div>
-                  <label className="block text-xs text-surface-400 mb-1">Due Date</label>
-                  <input
+                  <label className="block text-xs text-surface-600 mb-1">Due Date</label>
+                  <Input
                     type="date"
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
@@ -1097,8 +1122,8 @@ function RequirementDetailPanel({
 
                 {/* Notes */}
                 <div>
-                  <label className="block text-xs text-surface-400 mb-1">Notes</label>
-                  <textarea
+                  <label className="block text-xs text-surface-600 mb-1">Notes</label>
+                  <Textarea
                     value={ownerNotes}
                     onChange={(e) => setOwnerNotes(e.target.value)}
                     rows={3}
@@ -1112,7 +1137,7 @@ function RequirementDetailPanel({
                 {/* Current Owner */}
                 <div className="flex items-center gap-2 p-2 bg-surface-800/50 rounded-lg">
                   <UserIcon className="w-4 h-4 text-surface-500" />
-                  <span className="text-sm text-surface-300">
+                  <span className="text-sm text-surface-700">
                     {currentOwner?.displayName || 'Unassigned'}
                   </span>
                 </div>
@@ -1124,13 +1149,13 @@ function RequirementDetailPanel({
                       className={clsx(
                         'w-4 h-4',
                         currentPriority === 'high'
-                          ? 'text-red-400'
+                          ? 'text-red-600'
                           : currentPriority === 'medium'
-                            ? 'text-yellow-400'
-                            : 'text-green-400'
+                            ? 'text-yellow-600'
+                            : 'text-green-600'
                       )}
                     />
-                    <span className="text-sm text-surface-300 capitalize">
+                    <span className="text-sm text-surface-700 capitalize">
                       {currentPriority} Priority
                     </span>
                   </div>
@@ -1140,7 +1165,7 @@ function RequirementDetailPanel({
                 {currentDueDate && (
                   <div className="flex items-center gap-2 p-2 bg-surface-800/50 rounded-lg">
                     <CalendarIcon className="w-4 h-4 text-surface-500" />
-                    <span className="text-sm text-surface-300">
+                    <span className="text-sm text-surface-700">
                       Due: {new Date(currentDueDate).toLocaleDateString()}
                     </span>
                   </div>
@@ -1150,7 +1175,7 @@ function RequirementDetailPanel({
                 {currentNotes && (
                   <div className="p-2 bg-surface-800/50 rounded-lg">
                     <p className="text-xs text-surface-500 mb-1">Notes</p>
-                    <p className="text-sm text-surface-300">{currentNotes}</p>
+                    <p className="text-sm text-surface-700">{currentNotes}</p>
                   </div>
                 )}
               </div>
@@ -1213,7 +1238,7 @@ function RequirementDetailPanel({
                             <span
                               className={
                                 mapping.mappingType === 'supporting'
-                                  ? 'inline-block mt-1 text-xs text-surface-400 uppercase tracking-wide'
+                                  ? 'inline-block mt-1 text-xs text-surface-600 uppercase tracking-wide'
                                   : 'inline-block mt-1 text-xs text-brand-400 uppercase tracking-wide'
                               }
                             >
@@ -1237,7 +1262,7 @@ function RequirementDetailPanel({
                                 setOpenMenuId(isMenuOpen ? null : mapping.id);
                                 setPendingDeleteId(null);
                               }}
-                              className="p-1 rounded hover:bg-surface-700 text-surface-400 hover:text-surface-200 opacity-60 group-hover:opacity-100 focus:opacity-100 focus:outline-none focus:ring-1 focus:ring-brand-500 transition-opacity"
+                              className="p-1 rounded hover:bg-surface-700 text-surface-600 hover:text-surface-200 opacity-60 group-hover:opacity-100 focus:opacity-100 focus:outline-none focus:ring-1 focus:ring-brand-500 transition-opacity"
                             >
                               <EllipsisVerticalIcon className="w-4 h-4" />
                             </button>
@@ -1300,7 +1325,7 @@ function RequirementDetailPanel({
                                       setOpenMenuId(null);
                                       setPendingDeleteId(mapping.id);
                                     }}
-                                    className="block w-full text-left px-3 py-1.5 text-sm text-red-400 hover:bg-surface-700"
+                                    className="block w-full text-left px-3 py-1.5 text-sm text-red-600 hover:bg-surface-700"
                                   >
                                     Delete
                                   </button>
@@ -1326,7 +1351,7 @@ function RequirementDetailPanel({
                                   e.stopPropagation();
                                   setPendingDeleteId(null);
                                 }}
-                                className="px-2 py-1 text-surface-300 hover:text-surface-100"
+                                className="px-2 py-1 text-surface-700 hover:text-surface-100"
                                 disabled={deleteMutation.isPending}
                               >
                                 Cancel
@@ -1342,7 +1367,7 @@ function RequirementDetailPanel({
                                   });
                                 }}
                                 disabled={deleteMutation.isPending}
-                                className="px-2 py-1 bg-red-500/20 text-red-300 hover:bg-red-500/30 rounded disabled:opacity-50"
+                                className="px-2 py-1 bg-red-500/20 text-red-700 hover:bg-red-500/30 rounded disabled:opacity-50"
                               >
                                 {deleteMutation.isPending ? 'Removing…' : 'Confirm'}
                               </button>
@@ -1422,7 +1447,7 @@ function RequirementDetailPanel({
             <p className="text-xs text-surface-500 uppercase tracking-wide mb-1">
               Sub-requirements
             </p>
-            <p className="text-sm text-surface-300">
+            <p className="text-sm text-surface-700">
               {requirement.children.length} child requirement(s)
             </p>
           </div>

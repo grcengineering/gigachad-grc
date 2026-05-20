@@ -18,9 +18,13 @@ import {
 } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import { SkeletonGrid } from '@/components/Skeleton';
 import api from '@/lib/api';
+
+import { Input } from '@/components/ui/Input';
+
+import { SelectNative } from '@/components/ui/SelectNative';
 
 interface CatalogFramework {
   id: string;
@@ -56,17 +60,23 @@ const categoryIcons: Record<string, React.ReactNode> = {
 };
 
 const categoryColors: Record<string, string> = {
-  security: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  privacy: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-  industry: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-  government: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+  security: 'bg-blue-500/20 text-blue-600 border-blue-500/30',
+  privacy: 'bg-purple-500/20 text-purple-600 border-purple-500/30',
+  industry: 'bg-amber-500/20 text-amber-600 border-amber-500/30',
+  government: 'bg-emerald-500/20 text-emerald-600 border-emerald-500/30',
 };
 
-function RequirementTree({ requirements, level = 0 }: { requirements: RequirementNode[]; level?: number }) {
+function RequirementTree({
+  requirements,
+  level = 0,
+}: {
+  requirements: RequirementNode[];
+  level?: number;
+}) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const toggleExpand = (reference: string) => {
-    setExpanded(prev => {
+    setExpanded((prev) => {
       const next = new Set(prev);
       if (next.has(reference)) {
         next.delete(reference);
@@ -96,7 +106,7 @@ function RequirementTree({ requirements, level = 0 }: { requirements: Requiremen
               {hasChildren ? (
                 <button
                   onClick={() => toggleExpand(req.reference)}
-                  className="mt-0.5 text-surface-400 hover:text-surface-200"
+                  className="mt-0.5 text-surface-600 hover:text-surface-200"
                 >
                   {isExpanded ? (
                     <ChevronDownIcon className="w-4 h-4" />
@@ -109,24 +119,26 @@ function RequirementTree({ requirements, level = 0 }: { requirements: Requiremen
               )}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className={clsx(
-                    'text-xs font-mono px-1.5 py-0.5 rounded',
-                    req.isCategory
-                      ? 'bg-brand-500/20 text-brand-400'
-                      : 'bg-surface-700 text-surface-300'
-                  )}>
+                  <span
+                    className={clsx(
+                      'text-xs font-mono px-1.5 py-0.5 rounded',
+                      req.isCategory
+                        ? 'bg-brand-500/20 text-brand-400'
+                        : 'bg-surface-700 text-surface-700'
+                    )}
+                  >
                     {req.reference}
                   </span>
-                  <span className={clsx(
-                    'font-medium truncate',
-                    req.isCategory ? 'text-surface-100' : 'text-surface-200'
-                  )}>
+                  <span
+                    className={clsx(
+                      'font-medium truncate',
+                      req.isCategory ? 'text-surface-100' : 'text-surface-200'
+                    )}
+                  >
                     {req.title}
                   </span>
                 </div>
-                <p className="text-sm text-surface-400 mt-1 line-clamp-2">
-                  {req.description}
-                </p>
+                <p className="text-sm text-surface-600 mt-1 line-clamp-2">{req.description}</p>
               </div>
             </div>
             {hasChildren && isExpanded && (
@@ -151,27 +163,29 @@ function FrameworkPreviewModal({
   isActivating: boolean;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70">
+    <div className="fixed inset-0 z-50 grid place-items-center p-4 bg-black/70">
       <div className="bg-surface-900 rounded-xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl border border-surface-700">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-surface-700">
           <div className="flex items-center gap-4">
-            <div className={clsx(
-              'p-3 rounded-lg border',
-              categoryColors[framework.category] || categoryColors.security
-            )}>
+            <div
+              className={clsx(
+                'p-3 rounded-lg border',
+                categoryColors[framework.category] || categoryColors.security
+              )}
+            >
               {categoryIcons[framework.category] || categoryIcons.security}
             </div>
             <div>
               <h2 className="text-xl font-semibold text-surface-100">{framework.name}</h2>
-              <p className="text-sm text-surface-400">
+              <p className="text-sm text-surface-600">
                 {framework.source} • Version {framework.version}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-surface-400 hover:text-surface-200 hover:bg-surface-800 rounded-lg transition-colors"
+            className="p-2 text-surface-600 hover:text-surface-200 hover:bg-surface-800 rounded-lg transition-colors"
           >
             <XCircleIcon className="w-6 h-6" />
           </button>
@@ -180,15 +194,19 @@ function FrameworkPreviewModal({
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
           <div className="mb-6">
-            <p className="text-surface-300">{framework.description}</p>
+            <p className="text-surface-700">{framework.description}</p>
             <div className="flex items-center gap-4 mt-4">
               <div className="px-3 py-1.5 bg-surface-800 rounded-lg">
-                <span className="text-sm text-surface-400">Requirements:</span>
-                <span className="ml-2 font-semibold text-surface-100">{framework.requirementCount}</span>
+                <span className="text-sm text-surface-600">Requirements:</span>
+                <span className="ml-2 font-semibold text-surface-100">
+                  {framework.requirementCount}
+                </span>
               </div>
               <div className="px-3 py-1.5 bg-surface-800 rounded-lg">
-                <span className="text-sm text-surface-400">Categories:</span>
-                <span className="ml-2 font-semibold text-surface-100">{framework.categoryCount}</span>
+                <span className="text-sm text-surface-600">Categories:</span>
+                <span className="ml-2 font-semibold text-surface-100">
+                  {framework.categoryCount}
+                </span>
               </div>
             </div>
           </div>
@@ -233,35 +251,35 @@ function FrameworkCard({
   isActivating: boolean;
 }) {
   return (
-    <div className={clsx(
-      'group bg-surface-800/50 border rounded-xl p-5 transition-all duration-200',
-      framework.isActivated
-        ? 'border-green-500/30 bg-green-500/5'
-        : 'border-surface-700 hover:border-surface-600 hover:bg-surface-800/70'
-    )}>
+    <div
+      className={clsx(
+        'group bg-surface-800/50 border rounded-xl p-5 transition-all duration-200',
+        framework.isActivated
+          ? 'border-green-500/30 bg-green-500/5'
+          : 'border-surface-700 hover:border-surface-600 hover:bg-surface-800/70'
+      )}
+    >
       <div className="flex items-start justify-between mb-4">
-        <div className={clsx(
-          'p-2.5 rounded-lg border',
-          categoryColors[framework.category] || categoryColors.security
-        )}>
+        <div
+          className={clsx(
+            'p-2.5 rounded-lg border',
+            categoryColors[framework.category] || categoryColors.security
+          )}
+        >
           {categoryIcons[framework.category] || categoryIcons.security}
         </div>
         {framework.isActivated && (
-          <span className="flex items-center gap-1.5 text-xs font-medium text-green-400 bg-green-500/10 px-2.5 py-1 rounded-full">
+          <span className="flex items-center gap-1.5 text-xs font-medium text-green-600 bg-green-500/10 px-2.5 py-1 rounded-full">
             <CheckCircleIcon className="w-4 h-4" />
             Activated
           </span>
         )}
       </div>
 
-      <h3 className="text-lg font-semibold text-surface-100 mb-1">
-        {framework.name}
-      </h3>
-      <p className="text-sm text-surface-400 mb-4 line-clamp-2">
-        {framework.description}
-      </p>
+      <h3 className="text-lg font-semibold text-surface-100 mb-1">{framework.name}</h3>
+      <p className="text-sm text-surface-600 mb-4 line-clamp-2">{framework.description}</p>
 
-      <div className="flex items-center gap-3 text-sm text-surface-400 mb-4">
+      <div className="flex items-center gap-3 text-sm text-surface-600 mb-4">
         <span>{framework.requirementCount} requirements</span>
         <span>•</span>
         <span>{framework.categoryCount} categories</span>
@@ -322,13 +340,15 @@ export default function FrameworkLibrary() {
   // Fetch catalog status (frameworks with activation status)
   const { data: frameworks, isLoading } = useQuery({
     queryKey: ['framework-catalog-status'],
-    queryFn: () => api.get('/api/frameworks/catalog/status').then(res => res.data as CatalogFramework[]),
+    queryFn: () =>
+      api.get('/api/frameworks/catalog/status').then((res) => res.data as CatalogFramework[]),
   });
 
   // Fetch framework details for preview
   const { refetch: _fetchDetails } = useQuery({
     queryKey: ['framework-catalog-detail', previewFramework?.id],
-    queryFn: () => api.get(`/api/frameworks/catalog/${previewFramework?.id}`).then(res => res.data),
+    queryFn: () =>
+      api.get(`/api/frameworks/catalog/${previewFramework?.id}`).then((res) => res.data),
     enabled: false,
   });
 
@@ -350,7 +370,8 @@ export default function FrameworkLibrary() {
 
   // Deactivate mutation
   const deactivateMutation = useMutation({
-    mutationFn: (frameworkId: string) => api.delete(`/api/frameworks/catalog/${frameworkId}/deactivate`),
+    mutationFn: (frameworkId: string) =>
+      api.delete(`/api/frameworks/catalog/${frameworkId}/deactivate`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['framework-catalog-status'] });
       queryClient.invalidateQueries({ queryKey: ['frameworks'] });
@@ -376,15 +397,22 @@ export default function FrameworkLibrary() {
   };
 
   const handleDeactivate = (frameworkId: string) => {
-    if (confirm('Are you sure you want to deactivate this framework? Control mappings and assessments will be preserved but hidden.')) {
+    if (
+      confirm(
+        'Are you sure you want to deactivate this framework? Control mappings and assessments will be preserved but hidden.'
+      )
+    ) {
       deactivateMutation.mutate(frameworkId);
     }
   };
 
   // Filter frameworks
   const filteredFrameworks = frameworks?.filter((f: CatalogFramework) => {
-    if (searchQuery && !f.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
-        !f.description.toLowerCase().includes(searchQuery.toLowerCase())) {
+    if (
+      searchQuery &&
+      !f.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+      !f.description.toLowerCase().includes(searchQuery.toLowerCase())
+    ) {
       return false;
     }
     if (categoryFilter !== 'all' && f.category !== categoryFilter) {
@@ -405,7 +433,7 @@ export default function FrameworkLibrary() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-surface-100">Framework Library</h1>
-            <p className="text-surface-400 mt-1">
+            <p className="text-surface-600 mt-1">
               Browse and activate compliance frameworks for your organization
             </p>
           </div>
@@ -421,12 +449,12 @@ export default function FrameworkLibrary() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-surface-100">Framework Library</h1>
-          <p className="text-surface-400 mt-1">
+          <p className="text-surface-600 mt-1">
             Browse and activate compliance frameworks for your organization
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-sm text-surface-400">
+          <span className="text-sm text-surface-600">
             {activatedCount} of {frameworks?.length || 0} frameworks activated
           </span>
           <Link to="/frameworks">
@@ -436,12 +464,11 @@ export default function FrameworkLibrary() {
           </Link>
         </div>
       </div>
-
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-4">
         <div className="relative flex-1 min-w-[250px] max-w-md">
-          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-400" />
-          <input
+          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-600" />
+          <Input
             type="text"
             placeholder="Search frameworks..."
             value={searchQuery}
@@ -451,8 +478,8 @@ export default function FrameworkLibrary() {
         </div>
 
         <div className="flex items-center gap-2">
-          <FunnelIcon className="w-5 h-5 text-surface-400" />
-          <select
+          <FunnelIcon className="w-5 h-5 text-surface-600" />
+          <SelectNative
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
             className="px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:ring-2 focus:ring-brand-500/50"
@@ -463,7 +490,7 @@ export default function FrameworkLibrary() {
                 {cat.charAt(0).toUpperCase() + cat.slice(1)}
               </option>
             ))}
-          </select>
+          </SelectNative>
         </div>
 
         <label className="flex items-center gap-2 cursor-pointer">
@@ -473,10 +500,9 @@ export default function FrameworkLibrary() {
             onChange={(e) => setShowActivatedOnly(e.target.checked)}
             className="w-4 h-4 rounded border-surface-600 bg-surface-800 text-brand-500 focus:ring-brand-500/50"
           />
-          <span className="text-sm text-surface-300">Show activated only</span>
+          <span className="text-sm text-surface-700">Show activated only</span>
         </label>
       </div>
-
       {/* Framework Grid */}
       {filteredFrameworks && filteredFrameworks.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -486,7 +512,9 @@ export default function FrameworkLibrary() {
               framework={framework}
               onPreview={() => handlePreview(framework)}
               onActivate={() => handleActivate(framework.id)}
-              onDeactivate={() => framework.activatedFrameworkId && handleDeactivate(framework.activatedFrameworkId)}
+              onDeactivate={() =>
+                framework.activatedFrameworkId && handleDeactivate(framework.activatedFrameworkId)
+              }
               isActivating={activatingId === framework.id}
             />
           ))}
@@ -495,14 +523,13 @@ export default function FrameworkLibrary() {
         <div className="text-center py-16 bg-surface-800/30 rounded-xl border border-surface-700">
           <BookOpenIcon className="w-12 h-12 text-surface-500 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-surface-200 mb-2">No frameworks found</h3>
-          <p className="text-surface-400">
+          <p className="text-surface-600">
             {searchQuery || categoryFilter !== 'all'
               ? 'Try adjusting your search or filter criteria'
               : 'No frameworks are available in the library'}
           </p>
         </div>
       )}
-
       {/* Preview Modal */}
       {previewFramework && (
         <FrameworkPreviewModal

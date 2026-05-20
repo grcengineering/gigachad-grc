@@ -4,6 +4,8 @@ import DOMPurify from 'dompurify';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBrandingConfig } from '@/contexts/BrandingContext';
 
+import { Button } from '@/components/ui/Button';
+
 /**
  * SECURITY: Sanitize URL parameters to prevent XSS attacks
  * Only allows alphanumeric characters, spaces, and basic punctuation
@@ -55,32 +57,31 @@ export default function Login() {
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-brand-600/20 rounded-full blur-3xl"></div>
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-brand-600/10 rounded-full blur-3xl"></div>
       </div>
-
       <div className="relative z-10 w-full max-w-md">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
           <img src={branding.logoUrl} alt="Logo" className="w-16 h-16 object-contain mb-4" />
           <h1 className="text-3xl font-bold text-surface-100">{branding.platformName}</h1>
-          <p className="text-surface-400 mt-2">Governance, Risk, and Compliance Platform</p>
+          <p className="text-surface-600 mt-2">Governance, Risk, and Compliance Platform</p>
         </div>
 
         {/* Error display */}
         {error && (
           <div className="mb-4 p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
-            <p className="text-red-400 text-sm">{error}</p>
+            <p className="text-red-600 text-sm">{error}</p>
           </div>
         )}
 
         {/* Login card */}
         <div className="card p-8">
           <h2 className="text-xl font-semibold text-surface-100 text-center mb-2">Welcome Back</h2>
-          <p className="text-surface-400 text-center mb-8">
+          <p className="text-surface-600 text-center mb-8">
             Sign in to access your compliance dashboard
           </p>
 
-          <button onClick={login} className="btn-primary w-full py-3 text-base">
+          <Button onClick={login} className="w-full py-3 text-base" variant="primary">
             Sign in with SSO
-          </button>
+          </Button>
 
           {/* Dev login option */}
           {isDev && devLogin && (

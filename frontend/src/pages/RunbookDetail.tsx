@@ -12,8 +12,14 @@ import {
   ExclamationCircleIcon,
 } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import { SkeletonDetailHeader, SkeletonDetailSection } from '@/components/Skeleton';
+
+import { Textarea } from '@/components/ui/Textarea';
+
+import { Input } from '@/components/ui/Input';
+
+import { SelectNative } from '@/components/ui/SelectNative';
 
 interface RunbookStep {
   id: string;
@@ -51,11 +57,11 @@ interface Runbook {
 }
 
 const STATUS_OPTIONS = [
-  { value: 'draft', label: 'Draft', color: 'bg-surface-600 text-surface-300' },
-  { value: 'approved', label: 'Approved', color: 'bg-blue-500/20 text-blue-400' },
-  { value: 'published', label: 'Published', color: 'bg-green-500/20 text-green-400' },
-  { value: 'needs_review', label: 'Needs Review', color: 'bg-yellow-500/20 text-yellow-400' },
-  { value: 'archived', label: 'Archived', color: 'bg-surface-700 text-surface-400' },
+  { value: 'draft', label: 'Draft', color: 'bg-surface-600 text-surface-700' },
+  { value: 'approved', label: 'Approved', color: 'bg-blue-500/20 text-blue-600' },
+  { value: 'published', label: 'Published', color: 'bg-green-500/20 text-green-600' },
+  { value: 'needs_review', label: 'Needs Review', color: 'bg-yellow-500/20 text-yellow-600' },
+  { value: 'archived', label: 'Archived', color: 'bg-surface-700 text-surface-600' },
 ];
 
 const CATEGORY_OPTIONS = [
@@ -88,7 +94,11 @@ export default function RunbookDetail() {
     rollback_procedure: '',
   });
 
-  const { data: runbook, isLoading, error } = useQuery<Runbook>({
+  const {
+    data: runbook,
+    isLoading,
+    error,
+  } = useQuery<Runbook>({
     queryKey: ['runbook', id],
     queryFn: async () => {
       const res = await api.get(`/api/bcdr/runbooks/${id}`);
@@ -178,11 +188,11 @@ export default function RunbookDetail() {
   });
 
   const getStatusConfig = (status: string) => {
-    return STATUS_OPTIONS.find(s => s.value === status) || STATUS_OPTIONS[0];
+    return STATUS_OPTIONS.find((s) => s.value === status) || STATUS_OPTIONS[0];
   };
 
   const getCategoryConfig = (category: string) => {
-    return CATEGORY_OPTIONS.find(c => c.value === category) || CATEGORY_OPTIONS[6];
+    return CATEGORY_OPTIONS.find((c) => c.value === category) || CATEGORY_OPTIONS[6];
   };
 
   if (isLoading && !isNewRunbook) {
@@ -190,8 +200,12 @@ export default function RunbookDetail() {
       <div className="p-6 space-y-6">
         <SkeletonDetailHeader />
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2"><SkeletonDetailSection /></div>
-          <div><SkeletonDetailSection /></div>
+          <div className="lg:col-span-2">
+            <SkeletonDetailSection />
+          </div>
+          <div>
+            <SkeletonDetailSection />
+          </div>
         </div>
       </div>
     );
@@ -201,9 +215,9 @@ export default function RunbookDetail() {
     return (
       <div className="p-6">
         <div className="card p-8 text-center">
-          <ExclamationCircleIcon className="w-12 h-12 mx-auto mb-4 text-red-400" />
+          <ExclamationCircleIcon className="w-12 h-12 mx-auto mb-4 text-red-600" />
           <h2 className="text-lg font-semibold text-surface-100 mb-2">Runbook Not Found</h2>
-          <p className="text-surface-400 mb-4">The requested runbook could not be loaded.</p>
+          <p className="text-surface-600 mb-4">The requested runbook could not be loaded.</p>
           <Button onClick={() => navigate('/bcdr/runbooks')}>Back to Runbooks</Button>
         </div>
       </div>
@@ -217,16 +231,15 @@ export default function RunbookDetail() {
         <div className="flex items-start gap-4">
           <button
             onClick={() => navigate('/bcdr/runbooks')}
-            className="p-2 hover:bg-surface-700 rounded-lg text-surface-400 mt-1"
+            className="p-2 hover:bg-surface-700 rounded-lg text-surface-600 mt-1"
           >
             <ArrowLeftIcon className="w-5 h-5" />
           </button>
           <div>
             <h1 className="text-2xl font-bold text-surface-100">Create New Runbook</h1>
-            <p className="text-surface-400">Define step-by-step recovery procedures</p>
+            <p className="text-surface-600">Define step-by-step recovery procedures</p>
           </div>
         </div>
-
         <div className="card p-6">
           <form
             onSubmit={(e) => {
@@ -237,10 +250,8 @@ export default function RunbookDetail() {
           >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-2">
-                  Title *
-                </label>
-                <input
+                <label className="block text-sm font-medium text-surface-700 mb-2">Title *</label>
+                <Input
                   type="text"
                   className="form-input w-full"
                   value={editForm.title}
@@ -250,10 +261,10 @@ export default function RunbookDetail() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-2">
+                <label className="block text-sm font-medium text-surface-700 mb-2">
                   System Name
                 </label>
-                <input
+                <Input
                   type="text"
                   className="form-input w-full"
                   value={editForm.system_name}
@@ -264,10 +275,8 @@ export default function RunbookDetail() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-surface-300 mb-2">
-                Description
-              </label>
-              <textarea
+              <label className="block text-sm font-medium text-surface-700 mb-2">Description</label>
+              <Textarea
                 className="form-input w-full"
                 rows={3}
                 value={editForm.description}
@@ -278,10 +287,8 @@ export default function RunbookDetail() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-2">
-                  Category
-                </label>
-                <select
+                <label className="block text-sm font-medium text-surface-700 mb-2">Category</label>
+                <SelectNative
                   className="form-select w-full"
                   value={editForm.category}
                   onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
@@ -291,13 +298,11 @@ export default function RunbookDetail() {
                       {cat.icon} {cat.label}
                     </option>
                   ))}
-                </select>
+                </SelectNative>
               </div>
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-2">
-                  Status
-                </label>
-                <select
+                <label className="block text-sm font-medium text-surface-700 mb-2">Status</label>
+                <SelectNative
                   className="form-select w-full"
                   value={editForm.status}
                   onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
@@ -307,27 +312,32 @@ export default function RunbookDetail() {
                       {status.label}
                     </option>
                   ))}
-                </select>
+                </SelectNative>
               </div>
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-2">
+                <label className="block text-sm font-medium text-surface-700 mb-2">
                   Estimated Duration (minutes)
                 </label>
-                <input
+                <Input
                   type="number"
                   className="form-input w-full"
                   value={editForm.estimated_duration_minutes}
-                  onChange={(e) => setEditForm({ ...editForm, estimated_duration_minutes: parseInt(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    setEditForm({
+                      ...editForm,
+                      estimated_duration_minutes: parseInt(e.target.value) || 0,
+                    })
+                  }
                   min="1"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-surface-300 mb-2">
+              <label className="block text-sm font-medium text-surface-700 mb-2">
                 Prerequisites
               </label>
-              <textarea
+              <Textarea
                 className="form-input w-full"
                 rows={3}
                 value={editForm.prerequisites}
@@ -337,10 +347,10 @@ export default function RunbookDetail() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-surface-300 mb-2">
+              <label className="block text-sm font-medium text-surface-700 mb-2">
                 Post-Conditions
               </label>
-              <textarea
+              <Textarea
                 className="form-input w-full"
                 rows={3}
                 value={editForm.post_conditions}
@@ -350,10 +360,10 @@ export default function RunbookDetail() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-surface-300 mb-2">
+              <label className="block text-sm font-medium text-surface-700 mb-2">
                 Rollback Procedure
               </label>
-              <textarea
+              <Textarea
                 className="form-input w-full"
                 rows={3}
                 value={editForm.rollback_procedure}
@@ -363,17 +373,10 @@ export default function RunbookDetail() {
             </div>
 
             <div className="flex justify-end gap-3 pt-4 border-t border-surface-700">
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => navigate('/bcdr/runbooks')}
-              >
+              <Button type="button" variant="secondary" onClick={() => navigate('/bcdr/runbooks')}>
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                isLoading={createMutation.isPending}
-              >
+              <Button type="submit" isLoading={createMutation.isPending}>
                 Create Runbook
               </Button>
             </div>
@@ -393,7 +396,7 @@ export default function RunbookDetail() {
       <div className="flex items-start gap-4">
         <button
           onClick={() => navigate('/bcdr/runbooks')}
-          className="p-2 hover:bg-surface-700 rounded-lg text-surface-400 mt-1"
+          className="p-2 hover:bg-surface-700 rounded-lg text-surface-600 mt-1"
         >
           <ArrowLeftIcon className="w-5 h-5" />
         </button>
@@ -401,11 +404,15 @@ export default function RunbookDetail() {
           <div className="flex items-center gap-3 mb-2">
             <span className="text-2xl">{categoryConfig.icon}</span>
             <h1 className="text-2xl font-bold text-surface-100">{runbook!.title}</h1>
-            <span className={clsx('px-3 py-1 rounded-full text-sm font-medium', statusConfig.color)}>
+            <span
+              className={clsx('px-3 py-1 rounded-full text-sm font-medium', statusConfig.color)}
+            >
               {statusConfig.label}
             </span>
           </div>
-          <p className="text-surface-400">{runbook!.runbook_id} | v{runbook!.version}</p>
+          <p className="text-surface-600">
+            {runbook!.runbook_id} | v{runbook!.version}
+          </p>
         </div>
         <div className="flex gap-2">
           <Button variant="secondary" onClick={() => setShowEditModal(true)}>
@@ -418,7 +425,6 @@ export default function RunbookDetail() {
           </Button>
         </div>
       </div>
-
       {/* Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content */}
@@ -426,7 +432,7 @@ export default function RunbookDetail() {
           {/* Description */}
           <div className="card p-6">
             <h2 className="text-lg font-semibold text-surface-100 mb-4">Description</h2>
-            <p className="text-surface-300 whitespace-pre-wrap">
+            <p className="text-surface-700 whitespace-pre-wrap">
               {runbook!.description || 'No description provided'}
             </p>
           </div>
@@ -435,7 +441,7 @@ export default function RunbookDetail() {
           {runbook!.prerequisites && (
             <div className="card p-6">
               <h2 className="text-lg font-semibold text-surface-100 mb-4">Prerequisites</h2>
-              <p className="text-surface-300 whitespace-pre-wrap">{runbook!.prerequisites}</p>
+              <p className="text-surface-700 whitespace-pre-wrap">{runbook!.prerequisites}</p>
             </div>
           )}
 
@@ -443,9 +449,7 @@ export default function RunbookDetail() {
           <div className="card p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-surface-100">Steps</h2>
-              <span className="text-surface-400 text-sm">
-                {runbook!.steps?.length || 0} steps
-              </span>
+              <span className="text-surface-600 text-sm">{runbook!.steps?.length || 0} steps</span>
             </div>
             {runbook!.steps && runbook!.steps.length > 0 ? (
               <div className="space-y-4">
@@ -456,7 +460,7 @@ export default function RunbookDetail() {
                     </div>
                     <div className="flex-1">
                       <h4 className="font-medium text-surface-100">{step.title}</h4>
-                      <p className="text-surface-400 text-sm mt-1">{step.description}</p>
+                      <p className="text-surface-600 text-sm mt-1">{step.description}</p>
                       {step.role_responsible && (
                         <p className="text-surface-500 text-xs mt-2">
                           Responsible: {step.role_responsible}
@@ -464,7 +468,7 @@ export default function RunbookDetail() {
                       )}
                     </div>
                     {step.expected_duration_minutes && (
-                      <div className="flex items-center gap-1 text-surface-400 text-sm">
+                      <div className="flex items-center gap-1 text-surface-600 text-sm">
                         <ClockIcon className="w-4 h-4" />
                         {step.expected_duration_minutes}m
                       </div>
@@ -473,7 +477,7 @@ export default function RunbookDetail() {
                 ))}
               </div>
             ) : (
-              <p className="text-surface-400 text-center py-8">
+              <p className="text-surface-600 text-center py-8">
                 No steps defined yet. Edit the runbook to add steps.
               </p>
             )}
@@ -483,7 +487,7 @@ export default function RunbookDetail() {
           {runbook!.rollback_procedure && (
             <div className="card p-6 border-l-4 border-yellow-500">
               <h2 className="text-lg font-semibold text-surface-100 mb-4">Rollback Procedure</h2>
-              <p className="text-surface-300 whitespace-pre-wrap">{runbook!.rollback_procedure}</p>
+              <p className="text-surface-700 whitespace-pre-wrap">{runbook!.rollback_procedure}</p>
             </div>
           )}
         </div>
@@ -495,19 +499,19 @@ export default function RunbookDetail() {
             <h3 className="text-lg font-semibold text-surface-100 mb-4">Details</h3>
             <dl className="space-y-4">
               <div>
-                <dt className="text-surface-400 text-sm">Category</dt>
+                <dt className="text-surface-600 text-sm">Category</dt>
                 <dd className="text-surface-100 mt-1">
                   {categoryConfig.icon} {categoryConfig.label}
                 </dd>
               </div>
               {runbook!.system_name && (
                 <div>
-                  <dt className="text-surface-400 text-sm">System</dt>
+                  <dt className="text-surface-600 text-sm">System</dt>
                   <dd className="text-surface-100 mt-1">{runbook!.system_name}</dd>
                 </div>
               )}
               <div>
-                <dt className="text-surface-400 text-sm">Estimated Duration</dt>
+                <dt className="text-surface-600 text-sm">Estimated Duration</dt>
                 <dd className="text-surface-100 mt-1 flex items-center gap-1">
                   <ClockIcon className="w-4 h-4" />
                   {runbook!.estimated_duration_minutes || 0} minutes
@@ -515,13 +519,13 @@ export default function RunbookDetail() {
               </div>
               {runbook!.owner_name && (
                 <div>
-                  <dt className="text-surface-400 text-sm">Owner</dt>
+                  <dt className="text-surface-600 text-sm">Owner</dt>
                   <dd className="text-surface-100 mt-1">{runbook!.owner_name}</dd>
                 </div>
               )}
               {runbook!.process_name && (
                 <div>
-                  <dt className="text-surface-400 text-sm">Business Process</dt>
+                  <dt className="text-surface-600 text-sm">Business Process</dt>
                   <dd className="text-surface-100 mt-1">{runbook!.process_name}</dd>
                 </div>
               )}
@@ -532,23 +536,22 @@ export default function RunbookDetail() {
           {runbook!.post_conditions && (
             <div className="card p-6">
               <h3 className="text-lg font-semibold text-surface-100 mb-4">Post-Conditions</h3>
-              <p className="text-surface-300 text-sm whitespace-pre-wrap">
+              <p className="text-surface-700 text-sm whitespace-pre-wrap">
                 {runbook!.post_conditions}
               </p>
             </div>
           )}
         </div>
       </div>
-
       {/* Edit Modal */}
       {showEditModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50 p-4">
           <div className="card p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-surface-100">Edit Runbook</h2>
               <button
                 onClick={() => setShowEditModal(false)}
-                className="p-2 hover:bg-surface-700 rounded-lg text-surface-400"
+                className="p-2 hover:bg-surface-700 rounded-lg text-surface-600"
               >
                 <XMarkIcon className="w-5 h-5" />
               </button>
@@ -561,8 +564,8 @@ export default function RunbookDetail() {
               className="space-y-4"
             >
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-2">Title</label>
-                <input
+                <label className="block text-sm font-medium text-surface-700 mb-2">Title</label>
+                <Input
                   type="text"
                   className="form-input w-full"
                   value={editForm.title}
@@ -571,8 +574,10 @@ export default function RunbookDetail() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-2">Description</label>
-                <textarea
+                <label className="block text-sm font-medium text-surface-700 mb-2">
+                  Description
+                </label>
+                <Textarea
                   className="form-input w-full"
                   rows={3}
                   value={editForm.description}
@@ -581,28 +586,34 @@ export default function RunbookDetail() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-surface-300 mb-2">Category</label>
-                  <select
+                  <label className="block text-sm font-medium text-surface-700 mb-2">
+                    Category
+                  </label>
+                  <SelectNative
                     className="form-select w-full"
                     value={editForm.category}
                     onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
                   >
                     {CATEGORY_OPTIONS.map((cat) => (
-                      <option key={cat.value} value={cat.value}>{cat.label}</option>
+                      <option key={cat.value} value={cat.value}>
+                        {cat.label}
+                      </option>
                     ))}
-                  </select>
+                  </SelectNative>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-surface-300 mb-2">Status</label>
-                  <select
+                  <label className="block text-sm font-medium text-surface-700 mb-2">Status</label>
+                  <SelectNative
                     className="form-select w-full"
                     value={editForm.status}
                     onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
                   >
                     {STATUS_OPTIONS.map((status) => (
-                      <option key={status.value} value={status.value}>{status.label}</option>
+                      <option key={status.value} value={status.value}>
+                        {status.label}
+                      </option>
                     ))}
-                  </select>
+                  </SelectNative>
                 </div>
               </div>
               <div className="flex justify-end gap-3 pt-4">
@@ -617,13 +628,12 @@ export default function RunbookDetail() {
           </div>
         </div>
       )}
-
       {/* Delete Confirmation */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50 p-4">
           <div className="card p-6 w-full max-w-md">
             <h2 className="text-xl font-bold text-surface-100 mb-4">Delete Runbook</h2>
-            <p className="text-surface-400 mb-6">
+            <p className="text-surface-600 mb-6">
               Are you sure you want to delete "{runbook!.title}"? This action cannot be undone.
             </p>
             <div className="flex justify-end gap-3">

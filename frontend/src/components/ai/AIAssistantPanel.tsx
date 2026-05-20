@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Badge } from '@/components/ui/Badge';
 import { useQuery } from '@tanstack/react-query';
 import { aiApi } from '@/lib/api';
 import {
@@ -21,7 +22,13 @@ interface AIAssistantPanelProps {
   onClose: () => void;
 }
 
-type AIFeature = 'risk-scoring' | 'categorization' | 'mapping' | 'policy' | 'gap-analysis' | 'settings';
+type AIFeature =
+  | 'risk-scoring'
+  | 'categorization'
+  | 'mapping'
+  | 'policy'
+  | 'gap-analysis'
+  | 'settings';
 
 const AI_FEATURES = [
   {
@@ -29,7 +36,7 @@ const AI_FEATURES = [
     name: 'Risk Scoring',
     description: 'Get AI suggestions for risk likelihood and impact',
     icon: ExclamationTriangleIcon,
-    color: 'text-red-400',
+    color: 'text-red-600',
     bgColor: 'bg-red-500/10',
   },
   {
@@ -37,7 +44,7 @@ const AI_FEATURES = [
     name: 'Auto-Categorization',
     description: 'Automatically categorize controls, risks, and policies',
     icon: ClipboardDocumentCheckIcon,
-    color: 'text-cyan-400',
+    color: 'text-cyan-600',
     bgColor: 'bg-cyan-500/10',
   },
   {
@@ -45,7 +52,7 @@ const AI_FEATURES = [
     name: 'Control Mapping',
     description: 'Suggest framework mappings for controls',
     icon: ShieldCheckIcon,
-    color: 'text-emerald-400',
+    color: 'text-emerald-600',
     bgColor: 'bg-emerald-500/10',
   },
   {
@@ -53,7 +60,7 @@ const AI_FEATURES = [
     name: 'Policy Generation',
     description: 'Generate compliant policy drafts',
     icon: DocumentTextIcon,
-    color: 'text-blue-400',
+    color: 'text-blue-600',
     bgColor: 'bg-blue-500/10',
   },
   {
@@ -61,7 +68,7 @@ const AI_FEATURES = [
     name: 'Gap Analysis',
     description: 'Analyze compliance gaps across frameworks',
     icon: ClipboardDocumentCheckIcon,
-    color: 'text-purple-400',
+    color: 'text-purple-600',
     bgColor: 'bg-purple-500/10',
   },
 ];
@@ -96,14 +103,14 @@ export default function AIAssistantPanel({ isOpen, onClose }: AIAssistantPanelPr
           </div>
           <div>
             <h2 className="font-semibold text-white">AI Assistant</h2>
-            <p className="text-xs text-surface-400">
+            <p className="text-xs text-surface-600">
               {isConfigured ? 'Ready to help' : 'Not configured'}
             </p>
           </div>
         </div>
         <button
           onClick={onClose}
-          className="p-1.5 text-surface-400 hover:text-white rounded-lg hover:bg-surface-800 transition-colors"
+          className="p-1.5 text-surface-600 hover:text-white rounded-lg hover:bg-surface-800 transition-colors"
         >
           <XMarkIcon className="w-5 h-5" />
         </button>
@@ -111,42 +118,42 @@ export default function AIAssistantPanel({ isOpen, onClose }: AIAssistantPanelPr
 
       {/* Status Banner */}
       {!isLoading && (
-        <div className={clsx(
-          'mx-4 mt-4 p-3 rounded-lg flex items-center gap-3',
-          isMockMode 
-            ? 'bg-amber-500/10 border border-amber-500/30'
-            : isConfigured 
-              ? 'bg-emerald-500/10 border border-emerald-500/30' 
-              : 'bg-yellow-500/10 border border-yellow-500/30'
-        )}>
+        <div
+          className={clsx(
+            'mx-4 mt-4 p-3 rounded-lg flex items-center gap-3',
+            isMockMode
+              ? 'bg-amber-500/10 border border-amber-500/30'
+              : isConfigured
+                ? 'bg-emerald-500/10 border border-emerald-500/30'
+                : 'bg-yellow-500/10 border border-yellow-500/30'
+          )}
+        >
           {isMockMode ? (
             <>
-              <BeakerIcon className="w-5 h-5 text-amber-400" />
+              <BeakerIcon className="w-5 h-5 text-amber-600" />
               <div className="flex-1">
-                <p className="text-sm font-medium text-amber-400">Demo Mode</p>
-                <p className="text-xs text-surface-400">
+                <p className="text-sm font-medium text-amber-600">Demo Mode</p>
+                <p className="text-xs text-surface-600">
                   Using template-based responses for testing
                 </p>
               </div>
             </>
           ) : isConfigured ? (
             <>
-              <CheckCircleIcon className="w-5 h-5 text-emerald-400" />
+              <CheckCircleIcon className="w-5 h-5 text-emerald-600" />
               <div className="flex-1">
-                <p className="text-sm font-medium text-emerald-400">AI Enabled</p>
-                <p className="text-xs text-surface-400">
+                <p className="text-sm font-medium text-emerald-600">AI Enabled</p>
+                <p className="text-xs text-surface-600">
                   Using {config?.provider} ({config?.model})
                 </p>
               </div>
             </>
           ) : (
             <>
-              <XCircleIcon className="w-5 h-5 text-yellow-400" />
+              <XCircleIcon className="w-5 h-5 text-yellow-600" />
               <div className="flex-1">
-                <p className="text-sm font-medium text-yellow-400">AI Not Configured</p>
-                <p className="text-xs text-surface-400">
-                  Set OPENAI_API_KEY or ANTHROPIC_API_KEY
-                </p>
+                <p className="text-sm font-medium text-yellow-600">AI Not Configured</p>
+                <p className="text-xs text-surface-600">Set OPENAI_API_KEY or ANTHROPIC_API_KEY</p>
               </div>
             </>
           )}
@@ -156,10 +163,10 @@ export default function AIAssistantPanel({ isOpen, onClose }: AIAssistantPanelPr
       {/* Mock Mode Info Banner */}
       {isMockMode && (
         <div className="mx-4 mt-2 p-2 rounded-lg bg-surface-800/50 border border-surface-700">
-          <p className="text-xs text-surface-400">
-            <span className="text-amber-400 font-medium">Demo Mode:</span> AI responses are 
-            generated from policy templates. Perfect for testing and demonstrations. 
-            Add an API key to enable full AI capabilities.
+          <p className="text-xs text-surface-600">
+            <span className="text-amber-600 font-medium">Demo Mode:</span> AI responses are
+            generated from policy templates. Perfect for testing and demonstrations. Add an API key
+            to enable full AI capabilities.
           </p>
         </div>
       )}
@@ -167,7 +174,7 @@ export default function AIAssistantPanel({ isOpen, onClose }: AIAssistantPanelPr
       {/* Feature List */}
       <div className="flex-1 overflow-y-auto p-4">
         <div className="space-y-2">
-          {AI_FEATURES.map(feature => (
+          {AI_FEATURES.map((feature) => (
             <button
               key={feature.id}
               onClick={() => setSelectedFeature(feature.id)}
@@ -186,12 +193,14 @@ export default function AIAssistantPanel({ isOpen, onClose }: AIAssistantPanelPr
                 </div>
                 <div className="flex-1">
                   <h3 className="font-medium text-white">{feature.name}</h3>
-                  <p className="text-xs text-surface-400">{feature.description}</p>
+                  <p className="text-xs text-surface-600">{feature.description}</p>
                 </div>
-                <ChevronRightIcon className={clsx(
-                  'w-5 h-5 text-surface-500 transition-transform',
-                  selectedFeature === feature.id && 'rotate-90'
-                )} />
+                <ChevronRightIcon
+                  className={clsx(
+                    'w-5 h-5 text-surface-500 transition-transform',
+                    selectedFeature === feature.id && 'rotate-90'
+                  )}
+                />
               </div>
             </button>
           ))}
@@ -200,7 +209,7 @@ export default function AIAssistantPanel({ isOpen, onClose }: AIAssistantPanelPr
         {/* Settings Link */}
         <button
           onClick={() => setSelectedFeature('settings')}
-          className="w-full mt-4 p-3 flex items-center gap-3 text-surface-400 hover:text-white transition-colors"
+          className="w-full mt-4 p-3 flex items-center gap-3 text-surface-600 hover:text-white transition-colors"
         >
           <Cog6ToothIcon className="w-5 h-5" />
           <span className="text-sm">AI Settings</span>
@@ -215,15 +224,22 @@ export default function AIAssistantPanel({ isOpen, onClose }: AIAssistantPanelPr
           {selectedFeature === 'mapping' && <MappingPanel isMockMode={isMockMode} />}
           {selectedFeature === 'policy' && <PolicyPanel isMockMode={isMockMode} />}
           {selectedFeature === 'gap-analysis' && <GapAnalysisPanel isMockMode={isMockMode} />}
-          {selectedFeature === 'settings' && <SettingsPanel config={config} isMockMode={isMockMode} mockModeReason={mockModeReason} />}
+          {selectedFeature === 'settings' && (
+            <SettingsPanel
+              config={config}
+              isMockMode={isMockMode}
+              mockModeReason={mockModeReason}
+            />
+          )}
         </div>
       )}
 
       {/* Quick Tip */}
       <div className="p-4 border-t border-surface-800 bg-surface-800/50">
-        <p className="text-xs text-surface-400">
-          <span className="text-purple-400 font-medium">Tip:</span> AI features are also available
-          directly in forms. Look for the <SparklesIcon className="w-3 h-3 inline text-purple-400" /> icon.
+        <p className="text-xs text-surface-600">
+          <span className="text-purple-600 font-medium">Tip:</span> AI features are also available
+          directly in forms. Look for the{' '}
+          <SparklesIcon className="w-3 h-3 inline text-purple-600" /> icon.
         </p>
       </div>
     </div>
@@ -237,10 +253,10 @@ interface FeaturePanelProps {
 
 function MockModeBadge() {
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-amber-500/20 text-amber-400 border border-amber-500/30">
+    <Badge variant="warning" className="inline-flex items-center gap-1">
       <BeakerIcon className="w-3 h-3" />
       Demo Mode
-    </span>
+    </Badge>
   );
 }
 
@@ -251,9 +267,9 @@ function RiskScoringPanel({ isMockMode }: FeaturePanelProps) {
         <h4 className="font-medium text-white">AI Risk Scoring</h4>
         {isMockMode && <MockModeBadge />}
       </div>
-      <p className="text-sm text-surface-400">
-        Navigate to a risk and click "AI Score" to get intelligent suggestions
-        for likelihood and impact based on the risk description.
+      <p className="text-sm text-surface-600">
+        Navigate to a risk and click "AI Score" to get intelligent suggestions for likelihood and
+        impact based on the risk description.
       </p>
       <div className="text-xs text-surface-500">
         The AI considers:
@@ -265,7 +281,7 @@ function RiskScoringPanel({ isMockMode }: FeaturePanelProps) {
         </ul>
       </div>
       {isMockMode && (
-        <p className="text-xs text-amber-400/70 italic">
+        <p className="text-xs text-amber-600/70 italic">
           In demo mode, scores are generated based on keyword analysis.
         </p>
       )}
@@ -280,9 +296,9 @@ function CategorizationPanel({ isMockMode }: FeaturePanelProps) {
         <h4 className="font-medium text-white">Auto-Categorization</h4>
         {isMockMode && <MockModeBadge />}
       </div>
-      <p className="text-sm text-surface-400">
-        When creating controls, risks, or policies, the AI can suggest
-        appropriate categories based on the content.
+      <p className="text-sm text-surface-600">
+        When creating controls, risks, or policies, the AI can suggest appropriate categories based
+        on the content.
       </p>
       <div className="text-xs text-surface-500">
         Works with:
@@ -304,9 +320,9 @@ function MappingPanel({ isMockMode }: FeaturePanelProps) {
         <h4 className="font-medium text-white">Control Mapping Suggestions</h4>
         {isMockMode && <MockModeBadge />}
       </div>
-      <p className="text-sm text-surface-400">
-        Get intelligent suggestions for mapping controls to framework requirements
-        across SOC 2, ISO 27001, NIST, and more.
+      <p className="text-sm text-surface-600">
+        Get intelligent suggestions for mapping controls to framework requirements across SOC 2, ISO
+        27001, NIST, and more.
       </p>
     </div>
   );
@@ -319,9 +335,8 @@ function PolicyPanel({ isMockMode }: FeaturePanelProps) {
         <h4 className="font-medium text-white">Policy Draft Generation</h4>
         {isMockMode && <MockModeBadge />}
       </div>
-      <p className="text-sm text-surface-400">
-        Generate professional policy drafts tailored to your industry
-        and compliance requirements.
+      <p className="text-sm text-surface-600">
+        Generate professional policy drafts tailored to your industry and compliance requirements.
       </p>
       <div className="text-xs text-surface-500">
         Supported policies:
@@ -339,7 +354,7 @@ function PolicyPanel({ isMockMode }: FeaturePanelProps) {
         </ul>
       </div>
       {isMockMode && (
-        <p className="text-xs text-amber-400/70 italic">
+        <p className="text-xs text-amber-600/70 italic">
           Demo mode uses comprehensive policy templates with framework mappings.
         </p>
       )}
@@ -354,9 +369,8 @@ function GapAnalysisPanel({ isMockMode }: FeaturePanelProps) {
         <h4 className="font-medium text-white">Compliance Gap Analysis</h4>
         {isMockMode && <MockModeBadge />}
       </div>
-      <p className="text-sm text-surface-400">
-        Analyze your existing controls against framework requirements
-        to identify compliance gaps.
+      <p className="text-sm text-surface-600">
+        Analyze your existing controls against framework requirements to identify compliance gaps.
       </p>
     </div>
   );
@@ -377,44 +391,40 @@ function SettingsPanel({ config, isMockMode, mockModeReason }: SettingsPanelProp
       </div>
       <div className="space-y-2 text-sm">
         <div className="flex justify-between">
-          <span className="text-surface-400">Provider</span>
+          <span className="text-surface-600">Provider</span>
           <span className="text-white">
             {isMockMode ? 'Mock (Demo)' : config?.provider || 'Not set'}
           </span>
         </div>
         <div className="flex justify-between">
-          <span className="text-surface-400">Model</span>
+          <span className="text-surface-600">Model</span>
           <span className="text-white">
             {isMockMode ? 'Template-based' : config?.model || 'Not set'}
           </span>
         </div>
         <div className="flex justify-between">
-          <span className="text-surface-400">Status</span>
-          <span className={isMockMode ? 'text-amber-400' : 'text-emerald-400'}>
+          <span className="text-surface-600">Status</span>
+          <span className={isMockMode ? 'text-amber-600' : 'text-emerald-600'}>
             {isMockMode ? 'Demo Mode' : 'Production'}
           </span>
         </div>
       </div>
-      
+
       {isMockMode && mockModeReason && (
-        <div className="p-2 bg-amber-500/10 border border-amber-500/20 rounded text-xs text-amber-400/80">
+        <div className="p-2 bg-amber-500/10 border border-amber-500/20 rounded text-xs text-amber-600/80">
           {mockModeReason}
         </div>
       )}
-      
+
       <p className="text-xs text-surface-500 mt-2">
         To enable full AI capabilities, set environment variables:
-        <code className="block mt-1 p-2 bg-surface-800 rounded text-surface-300">
+        <code className="block mt-1 p-2 bg-surface-800 rounded text-surface-700">
           OPENAI_API_KEY=sk-...
         </code>
-        <code className="block mt-1 p-2 bg-surface-800 rounded text-surface-300">
+        <code className="block mt-1 p-2 bg-surface-800 rounded text-surface-700">
           ANTHROPIC_API_KEY=sk-ant-...
         </code>
       </p>
     </div>
   );
 }
-
-
-
-

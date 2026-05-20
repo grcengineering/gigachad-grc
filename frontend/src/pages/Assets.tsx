@@ -18,11 +18,15 @@ import {
   AlertTriangle,
   CheckCircle,
 } from 'lucide-react';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import { SkeletonTable } from '@/components/Skeleton';
 import { ExportDropdown } from '@/components/ExportDropdown';
 import { exportConfigs } from '@/lib/export';
 import toast from 'react-hot-toast';
+
+import { Input } from '@/components/ui/Input';
+
+import { SelectNative } from '@/components/ui/SelectNative';
 
 interface AssetListResponse {
   assets: Asset[];
@@ -49,9 +53,9 @@ const CRITICALITY_LEVELS = [
 ];
 
 const STATUSES = [
-  { value: 'active', label: 'Active', color: 'bg-emerald-500/20 text-emerald-400' },
-  { value: 'inactive', label: 'Inactive', color: 'bg-surface-500/20 text-surface-400' },
-  { value: 'decommissioned', label: 'Decommissioned', color: 'bg-red-500/20 text-red-400' },
+  { value: 'active', label: 'Active', color: 'bg-emerald-500/20 text-emerald-600' },
+  { value: 'inactive', label: 'Inactive', color: 'bg-surface-500/20 text-surface-600' },
+  { value: 'decommissioned', label: 'Decommissioned', color: 'bg-red-500/20 text-red-600' },
 ];
 
 export default function Assets() {
@@ -153,19 +157,19 @@ export default function Assets() {
   });
 
   const getCriticalityColor = (criticality: string) => {
-    const level = CRITICALITY_LEVELS.find(l => l.value === criticality);
+    const level = CRITICALITY_LEVELS.find((l) => l.value === criticality);
     return level?.color || 'bg-surface-500';
   };
 
   const getStatusBadge = (status: string) => {
-    const s = STATUSES.find(st => st.value === status);
-    return s?.color || 'bg-surface-500/20 text-surface-400';
+    const s = STATUSES.find((st) => st.value === status);
+    return s?.color || 'bg-surface-500/20 text-surface-600';
   };
 
   const getTypeIcon = (type: string) => {
-    const t = ASSET_TYPES.find(at => at.value === type);
+    const t = ASSET_TYPES.find((at) => at.value === type);
     const Icon = t?.icon || Server;
-    return <Icon className="w-5 h-5 text-surface-400" />;
+    return <Icon className="w-5 h-5 text-surface-600" />;
   };
 
   return (
@@ -174,7 +178,7 @@ export default function Assets() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-white">Asset Inventory</h1>
-          <p className="text-surface-400 mt-1">
+          <p className="text-surface-600 mt-1">
             View and manage organizational assets synced from integrations
           </p>
         </div>
@@ -193,15 +197,11 @@ export default function Assets() {
           >
             Sync Assets
           </Button>
-          <Button
-            onClick={() => setShowCreateModal(true)}
-            leftIcon={<Plus className="w-4 h-4" />}
-          >
+          <Button onClick={() => setShowCreateModal(true)} leftIcon={<Plus className="w-4 h-4" />}>
             Add Asset
           </Button>
         </div>
       </div>
-
       {/* Stats Cards */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -211,7 +211,7 @@ export default function Assets() {
                 <Server className="w-5 h-5 text-brand-400" />
               </div>
               <div>
-                <p className="text-sm text-surface-400">Total Assets</p>
+                <p className="text-sm text-surface-600">Total Assets</p>
                 <p className="text-2xl font-semibold text-white">{stats.totalAssets}</p>
               </div>
             </div>
@@ -219,10 +219,10 @@ export default function Assets() {
           <div className="bg-surface-800 rounded-xl border border-surface-700 p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-emerald-500/20 rounded-lg">
-                <CheckCircle className="w-5 h-5 text-emerald-400" />
+                <CheckCircle className="w-5 h-5 text-emerald-600" />
               </div>
               <div>
-                <p className="text-sm text-surface-400">Active</p>
+                <p className="text-sm text-surface-600">Active</p>
                 <p className="text-2xl font-semibold text-white">
                   {stats.byStatus?.find((s: any) => s.status === 'active')?.count || 0}
                 </p>
@@ -232,10 +232,10 @@ export default function Assets() {
           <div className="bg-surface-800 rounded-xl border border-surface-700 p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-red-500/20 rounded-lg">
-                <AlertTriangle className="w-5 h-5 text-red-400" />
+                <AlertTriangle className="w-5 h-5 text-red-600" />
               </div>
               <div>
-                <p className="text-sm text-surface-400">Critical</p>
+                <p className="text-sm text-surface-600">Critical</p>
                 <p className="text-2xl font-semibold text-white">
                   {stats.byCriticality?.find((c: any) => c.criticality === 'critical')?.count || 0}
                 </p>
@@ -245,37 +245,36 @@ export default function Assets() {
           <div className="bg-surface-800 rounded-xl border border-surface-700 p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-amber-500/20 rounded-lg">
-                <RefreshCw className="w-5 h-5 text-amber-400" />
+                <RefreshCw className="w-5 h-5 text-amber-600" />
               </div>
               <div>
-                <p className="text-sm text-surface-400">Recently Synced</p>
+                <p className="text-sm text-surface-600">Recently Synced</p>
                 <p className="text-2xl font-semibold text-white">{stats.recentlySynced || 0}</p>
               </div>
             </div>
           </div>
         </div>
       )}
-
       {/* Search and Filters */}
       <div className="bg-surface-800 rounded-xl border border-surface-700 p-4">
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Search */}
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
-            <input
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-600" />
+            <Input
               type="text"
               placeholder="Search assets..."
               value={filters.search}
-              onChange={e => updateFilter('search', e.target.value)}
+              onChange={(e) => updateFilter('search', e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white placeholder-surface-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
           {/* Filters */}
           <div className="flex gap-3">
-            <select
+            <SelectNative
               value={filters.source}
-              onChange={e => updateFilter('source', e.target.value)}
+              onChange={(e) => updateFilter('source', e.target.value)}
               className="px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               <option value="">All Sources</option>
@@ -284,50 +283,49 @@ export default function Assets() {
                   {source}
                 </option>
               ))}
-            </select>
+            </SelectNative>
 
-            <select
+            <SelectNative
               value={filters.type}
-              onChange={e => updateFilter('type', e.target.value)}
+              onChange={(e) => updateFilter('type', e.target.value)}
               className="px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               <option value="">All Types</option>
-              {ASSET_TYPES.map(type => (
+              {ASSET_TYPES.map((type) => (
                 <option key={type.value} value={type.value}>
                   {type.label}
                 </option>
               ))}
-            </select>
+            </SelectNative>
 
-            <select
+            <SelectNative
               value={filters.criticality}
-              onChange={e => updateFilter('criticality', e.target.value)}
+              onChange={(e) => updateFilter('criticality', e.target.value)}
               className="px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               <option value="">All Criticality</option>
-              {CRITICALITY_LEVELS.map(level => (
+              {CRITICALITY_LEVELS.map((level) => (
                 <option key={level.value} value={level.value}>
                   {level.label}
                 </option>
               ))}
-            </select>
+            </SelectNative>
 
-            <select
+            <SelectNative
               value={filters.status}
-              onChange={e => updateFilter('status', e.target.value)}
+              onChange={(e) => updateFilter('status', e.target.value)}
               className="px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               <option value="">All Statuses</option>
-              {STATUSES.map(status => (
+              {STATUSES.map((status) => (
                 <option key={status.value} value={status.value}>
                   {status.label}
                 </option>
               ))}
-            </select>
+            </SelectNative>
           </div>
         </div>
       </div>
-
       {/* Assets Table */}
       <div className="bg-surface-800 rounded-xl border border-surface-700 overflow-hidden">
         {isLoading ? (
@@ -335,7 +333,7 @@ export default function Assets() {
         ) : data?.assets.length === 0 ? (
           <div className="p-8 text-center">
             <Server className="w-12 h-12 text-surface-500 mx-auto mb-4" />
-            <p className="text-surface-400">No assets found</p>
+            <p className="text-surface-600">No assets found</p>
             <p className="text-surface-500 text-sm mt-2">
               Sync assets from integrations or add them manually
             </p>
@@ -344,17 +342,23 @@ export default function Assets() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-surface-700">
-                <th className="text-left px-4 py-3 text-sm font-medium text-surface-400">Asset</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-surface-400">Type</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-surface-400">Source</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-surface-400">Criticality</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-surface-400">Status</th>
-                <th className="text-center px-4 py-3 text-sm font-medium text-surface-400">Risks</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-surface-400">Last Synced</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-surface-600">Asset</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-surface-600">Type</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-surface-600">Source</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-surface-600">
+                  Criticality
+                </th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-surface-600">Status</th>
+                <th className="text-center px-4 py-3 text-sm font-medium text-surface-600">
+                  Risks
+                </th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-surface-600">
+                  Last Synced
+                </th>
               </tr>
             </thead>
             <tbody>
-              {data?.assets.map(asset => (
+              {data?.assets.map((asset) => (
                 <tr
                   key={asset.id}
                   onClick={() => navigate(`/assets/${asset.id}`)}
@@ -365,32 +369,34 @@ export default function Assets() {
                       {getTypeIcon(asset.type)}
                       <div>
                         <p className="text-white font-medium">{asset.name}</p>
-                        {asset.owner && (
-                          <p className="text-surface-400 text-sm">{asset.owner}</p>
-                        )}
+                        {asset.owner && <p className="text-surface-600 text-sm">{asset.owner}</p>}
                       </div>
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <span className="text-surface-300 capitalize">{asset.type}</span>
+                    <span className="text-surface-700 capitalize">{asset.type}</span>
                   </td>
                   <td className="px-4 py-3">
-                    <span className="text-surface-300 capitalize">{asset.source}</span>
+                    <span className="text-surface-700 capitalize">{asset.source}</span>
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
-                      <span className={`w-2 h-2 rounded-full ${getCriticalityColor(asset.criticality || '')}`} />
-                      <span className="text-surface-300 capitalize">{asset.criticality}</span>
+                      <span
+                        className={`w-2 h-2 rounded-full ${getCriticalityColor(asset.criticality || '')}`}
+                      />
+                      <span className="text-surface-700 capitalize">{asset.criticality}</span>
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusBadge(asset.status || '')}`}>
+                    <span
+                      className={`px-2 py-1 rounded text-xs font-medium ${getStatusBadge(asset.status || '')}`}
+                    >
                       {asset.status}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-center">
                     {(asset.riskCount ?? 0) > 0 ? (
-                      <span className="px-2 py-1 bg-red-500/20 text-red-400 rounded text-sm">
+                      <span className="px-2 py-1 bg-red-500/20 text-red-600 rounded text-sm">
                         {asset.riskCount ?? 0}
                       </span>
                     ) : (
@@ -399,7 +405,7 @@ export default function Assets() {
                   </td>
                   <td className="px-4 py-3">
                     {asset.lastSyncAt ? (
-                      <span className="text-surface-400 text-sm">
+                      <span className="text-surface-600 text-sm">
                         {new Date(asset.lastSyncAt).toLocaleDateString()}
                       </span>
                     ) : (
@@ -415,22 +421,22 @@ export default function Assets() {
         {/* Pagination */}
         {data && data.total > 25 && (
           <div className="px-4 py-3 border-t border-surface-700 flex items-center justify-between">
-            <p className="text-sm text-surface-400">
-              Showing {(filters.page - 1) * 25 + 1} to{' '}
-              {Math.min(filters.page * 25, data.total)} of {data.total} assets
+            <p className="text-sm text-surface-600">
+              Showing {(filters.page - 1) * 25 + 1} to {Math.min(filters.page * 25, data.total)} of{' '}
+              {data.total} assets
             </p>
             <div className="flex gap-2">
               <button
                 onClick={() => updateFilter('page', String(filters.page - 1))}
                 disabled={filters.page === 1}
-                className="px-3 py-1 bg-surface-700 rounded text-surface-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-surface-600"
+                className="px-3 py-1 bg-surface-700 rounded text-surface-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-surface-600"
               >
                 Previous
               </button>
               <button
                 onClick={() => updateFilter('page', String(filters.page + 1))}
                 disabled={filters.page * 25 >= data.total}
-                className="px-3 py-1 bg-surface-700 rounded text-surface-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-surface-600"
+                className="px-3 py-1 bg-surface-700 rounded text-surface-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-surface-600"
               >
                 Next
               </button>
@@ -438,7 +444,6 @@ export default function Assets() {
           </div>
         )}
       </div>
-
       {/* Create Asset Modal */}
       {showCreateModal && (
         <CreateAssetModal
@@ -449,7 +454,6 @@ export default function Assets() {
           isPending={createMutation.isPending}
         />
       )}
-
       {/* Sync Modal */}
       {showSyncModal && (
         <SyncAssetModal
@@ -479,27 +483,27 @@ function CreateAssetModal({
   isPending: boolean;
 }) {
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
       <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-lg">
         <div className="p-4 border-b border-surface-700 flex justify-between items-center">
           <h3 className="text-lg font-medium text-white">Add Manual Asset</h3>
           <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
-            <X className="w-5 h-5 text-surface-400" />
+            <X className="w-5 h-5 text-surface-600" />
           </button>
         </div>
         <form
-          onSubmit={e => {
+          onSubmit={(e) => {
             e.preventDefault();
             onSubmit();
           }}
           className="p-4 space-y-4"
         >
           <div>
-            <label className="block text-sm text-surface-400 mb-2">Name *</label>
-            <input
+            <label className="block text-sm text-surface-600 mb-2">Name *</label>
+            <Input
               type="text"
               value={asset.name}
-              onChange={e => onChange({ ...asset, name: e.target.value })}
+              onChange={(e) => onChange({ ...asset, name: e.target.value })}
               required
               className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
               placeholder="e.g., Production Server 1"
@@ -507,70 +511,70 @@ function CreateAssetModal({
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm text-surface-400 mb-2">Type *</label>
-              <select
+              <label className="block text-sm text-surface-600 mb-2">Type *</label>
+              <SelectNative
                 value={asset.type}
-                onChange={e => onChange({ ...asset, type: e.target.value })}
+                onChange={(e) => onChange({ ...asset, type: e.target.value })}
                 className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
               >
-                {ASSET_TYPES.map(type => (
+                {ASSET_TYPES.map((type) => (
                   <option key={type.value} value={type.value}>
                     {type.label}
                   </option>
                 ))}
-              </select>
+              </SelectNative>
             </div>
             <div>
-              <label className="block text-sm text-surface-400 mb-2">Criticality</label>
-              <select
+              <label className="block text-sm text-surface-600 mb-2">Criticality</label>
+              <SelectNative
                 value={asset.criticality}
-                onChange={e => onChange({ ...asset, criticality: e.target.value })}
+                onChange={(e) => onChange({ ...asset, criticality: e.target.value })}
                 className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
               >
-                {CRITICALITY_LEVELS.map(level => (
+                {CRITICALITY_LEVELS.map((level) => (
                   <option key={level.value} value={level.value}>
                     {level.label}
                   </option>
                 ))}
-              </select>
+              </SelectNative>
             </div>
           </div>
           <div>
-            <label className="block text-sm text-surface-400 mb-2">Category</label>
-            <input
+            <label className="block text-sm text-surface-600 mb-2">Category</label>
+            <Input
               type="text"
               value={asset.category}
-              onChange={e => onChange({ ...asset, category: e.target.value })}
+              onChange={(e) => onChange({ ...asset, category: e.target.value })}
               className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
               placeholder="e.g., Web Server, Database"
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm text-surface-400 mb-2">Owner</label>
-              <input
+              <label className="block text-sm text-surface-600 mb-2">Owner</label>
+              <Input
                 type="text"
                 value={asset.owner}
-                onChange={e => onChange({ ...asset, owner: e.target.value })}
+                onChange={(e) => onChange({ ...asset, owner: e.target.value })}
                 className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
               />
             </div>
             <div>
-              <label className="block text-sm text-surface-400 mb-2">Department</label>
-              <input
+              <label className="block text-sm text-surface-600 mb-2">Department</label>
+              <Input
                 type="text"
                 value={asset.department}
-                onChange={e => onChange({ ...asset, department: e.target.value })}
+                onChange={(e) => onChange({ ...asset, department: e.target.value })}
                 className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
               />
             </div>
           </div>
           <div>
-            <label className="block text-sm text-surface-400 mb-2">Location</label>
-            <input
+            <label className="block text-sm text-surface-600 mb-2">Location</label>
+            <Input
               type="text"
               value={asset.location}
-              onChange={e => onChange({ ...asset, location: e.target.value })}
+              onChange={(e) => onChange({ ...asset, location: e.target.value })}
               className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
               placeholder="e.g., AWS us-east-1, Office HQ"
             />
@@ -590,13 +594,7 @@ function CreateAssetModal({
 }
 
 // Sync Modal Component
-function SyncAssetModal({
-  onClose,
-  onSuccess,
-}: {
-  onClose: () => void;
-  onSuccess: () => void;
-}) {
+function SyncAssetModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
   const [selectedIntegration, setSelectedIntegration] = useState('');
   const [syncResult, setSyncResult] = useState<any>(null);
 
@@ -623,31 +621,37 @@ function SyncAssetModal({
   });
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
       <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-lg">
         <div className="p-4 border-b border-surface-700 flex justify-between items-center">
           <h3 className="text-lg font-medium text-white">Sync Assets from Integration</h3>
           <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
-            <X className="w-5 h-5 text-surface-400" />
+            <X className="w-5 h-5 text-surface-600" />
           </button>
         </div>
         <div className="p-4 space-y-4">
           {syncResult ? (
             <div className="space-y-4">
-              <div className={`p-4 rounded-lg ${syncResult.itemsFailed === 0 ? 'bg-emerald-500/20' : 'bg-amber-500/20'}`}>
-                <h4 className={`font-medium ${syncResult.itemsFailed === 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
+              <div
+                className={`p-4 rounded-lg ${syncResult.itemsFailed === 0 ? 'bg-emerald-500/20' : 'bg-amber-500/20'}`}
+              >
+                <h4
+                  className={`font-medium ${syncResult.itemsFailed === 0 ? 'text-emerald-600' : 'text-amber-600'}`}
+                >
                   Sync Complete
                 </h4>
                 <div className="mt-2 space-y-1 text-sm">
-                  <p className="text-surface-300">Items processed: {syncResult.itemsProcessed}</p>
-                  <p className="text-surface-300">Items created/updated: {syncResult.itemsCreated}</p>
-                  <p className="text-surface-300">Items failed: {syncResult.itemsFailed}</p>
-                  <p className="text-surface-300">Duration: {syncResult.duration}ms</p>
+                  <p className="text-surface-700">Items processed: {syncResult.itemsProcessed}</p>
+                  <p className="text-surface-700">
+                    Items created/updated: {syncResult.itemsCreated}
+                  </p>
+                  <p className="text-surface-700">Items failed: {syncResult.itemsFailed}</p>
+                  <p className="text-surface-700">Duration: {syncResult.duration}ms</p>
                 </div>
                 {syncResult.errors?.length > 0 && (
                   <div className="mt-3">
-                    <p className="text-red-400 text-sm font-medium">Errors:</p>
-                    <ul className="text-red-300 text-sm mt-1 list-disc list-inside">
+                    <p className="text-red-600 text-sm font-medium">Errors:</p>
+                    <ul className="text-red-700 text-sm mt-1 list-disc list-inside">
                       {syncResult.errors.slice(0, 5).map((err: string, i: number) => (
                         <li key={i}>{err}</li>
                       ))}
@@ -667,7 +671,7 @@ function SyncAssetModal({
           ) : (
             <>
               <div>
-                <label className="block text-sm text-surface-400 mb-2">Select Integration</label>
+                <label className="block text-sm text-surface-600 mb-2">Select Integration</label>
                 {integrations?.length === 0 ? (
                   <p className="text-surface-500 py-4">
                     No integrations available for asset sync. Configure a Jamf integration first.
@@ -688,12 +692,12 @@ function SyncAssetModal({
                           name="integration"
                           value={integration.id}
                           checked={selectedIntegration === integration.id}
-                          onChange={e => setSelectedIntegration(e.target.value)}
+                          onChange={(e) => setSelectedIntegration(e.target.value)}
                           className="sr-only"
                         />
                         <div>
                           <p className="text-white font-medium">{integration.name}</p>
-                          <p className="text-surface-400 text-sm capitalize">{integration.type}</p>
+                          <p className="text-surface-600 text-sm capitalize">{integration.type}</p>
                         </div>
                       </label>
                     ))}
@@ -701,7 +705,10 @@ function SyncAssetModal({
                 )}
               </div>
               <div className="flex justify-end gap-3 pt-2">
-                <button onClick={onClose} className="px-4 py-2 bg-surface-700 text-surface-300 rounded-lg">
+                <button
+                  onClick={onClose}
+                  className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg"
+                >
                   Cancel
                 </button>
                 <button
@@ -720,6 +727,3 @@ function SyncAssetModal({
     </div>
   );
 }
-
-
-

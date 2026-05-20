@@ -9,6 +9,12 @@ import {
 import clsx from 'clsx';
 import type { IntegrationType, ConfigField, EvidenceType } from '@/lib/integrationTypes';
 
+import { Textarea } from '@/components/ui/Textarea';
+
+import { Input } from '@/components/ui/Input';
+
+import { SelectNative } from '@/components/ui/SelectNative';
+
 interface QuickSetupConfig {
   name: string;
   description: string;
@@ -28,9 +34,13 @@ const PRESETS = {
   security_essentials: {
     label: 'Security Essentials',
     description: 'Core security data for compliance',
-    filter: (e: EvidenceType) => 
-      e.key.includes('security') || e.key.includes('audit') || e.key.includes('iam') || 
-      e.key.includes('users') || e.key.includes('mfa') || e.key.includes('policy'),
+    filter: (e: EvidenceType) =>
+      e.key.includes('security') ||
+      e.key.includes('audit') ||
+      e.key.includes('iam') ||
+      e.key.includes('users') ||
+      e.key.includes('mfa') ||
+      e.key.includes('policy'),
   },
   full_compliance: {
     label: 'Full Compliance',
@@ -47,60 +57,78 @@ const PRESETS = {
 // Group evidence types by category (derived from key naming)
 function groupEvidenceTypes(evidenceTypes: EvidenceType[]): Record<string, EvidenceType[]> {
   const groups: Record<string, EvidenceType[]> = {};
-  
-  evidenceTypes.forEach(et => {
+
+  evidenceTypes.forEach((et) => {
     let category = 'General';
     const key = et.key.toLowerCase();
-    
-    if (key.includes('user') || key.includes('member') || key.includes('people') || key.includes('iam')) {
+
+    if (
+      key.includes('user') ||
+      key.includes('member') ||
+      key.includes('people') ||
+      key.includes('iam')
+    ) {
       category = 'Users & Access';
-    } else if (key.includes('security') || key.includes('threat') || key.includes('vuln') || key.includes('alert')) {
+    } else if (
+      key.includes('security') ||
+      key.includes('threat') ||
+      key.includes('vuln') ||
+      key.includes('alert')
+    ) {
       category = 'Security';
     } else if (key.includes('audit') || key.includes('log') || key.includes('event')) {
       category = 'Audit & Logs';
     } else if (key.includes('policy') || key.includes('rule') || key.includes('compliance')) {
       category = 'Policies & Compliance';
-    } else if (key.includes('device') || key.includes('asset') || key.includes('instance') || key.includes('server')) {
+    } else if (
+      key.includes('device') ||
+      key.includes('asset') ||
+      key.includes('instance') ||
+      key.includes('server')
+    ) {
       category = 'Assets & Infrastructure';
     } else if (key.includes('app') || key.includes('service') || key.includes('project')) {
       category = 'Applications';
     }
-    
+
     if (!groups[category]) {
       groups[category] = [];
     }
     groups[category].push(et);
   });
-  
+
   return groups;
 }
 
 export default function QuickSetupTab({ typeMeta, config, onChange }: QuickSetupTabProps) {
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['Users & Access', 'Security']));
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
+    new Set(['Users & Access', 'Security'])
+  );
   const [searchQuery, setSearchQuery] = useState('');
 
-  const groupedEvidence = useMemo(() => 
-    groupEvidenceTypes(typeMeta.evidenceTypes || []),
+  const groupedEvidence = useMemo(
+    () => groupEvidenceTypes(typeMeta.evidenceTypes || []),
     [typeMeta.evidenceTypes]
   );
 
   const filteredGroups = useMemo(() => {
     if (!searchQuery) return groupedEvidence;
-    
+
     const query = searchQuery.toLowerCase();
     const filtered: Record<string, EvidenceType[]> = {};
-    
+
     Object.entries(groupedEvidence).forEach(([category, types]) => {
-      const matchingTypes = types.filter(t => 
-        t.label.toLowerCase().includes(query) || 
-        t.description.toLowerCase().includes(query) ||
-        t.key.toLowerCase().includes(query)
+      const matchingTypes = types.filter(
+        (t) =>
+          t.label.toLowerCase().includes(query) ||
+          t.description.toLowerCase().includes(query) ||
+          t.key.toLowerCase().includes(query)
       );
       if (matchingTypes.length > 0) {
         filtered[category] = matchingTypes;
       }
     });
-    
+
     return filtered;
   }, [groupedEvidence, searchQuery]);
 
@@ -116,19 +144,19 @@ export default function QuickSetupTab({ typeMeta, config, onChange }: QuickSetup
 
   const toggleEvidenceType = (key: string) => {
     const newTypes = config.evidenceTypes.includes(key)
-      ? config.evidenceTypes.filter(k => k !== key)
+      ? config.evidenceTypes.filter((k) => k !== key)
       : [...config.evidenceTypes, key];
     onChange({ ...config, evidenceTypes: newTypes });
   };
 
   const selectAllInCategory = (category: string) => {
-    const categoryKeys = groupedEvidence[category]?.map(e => e.key) || [];
-    const allSelected = categoryKeys.every(k => config.evidenceTypes.includes(k));
-    
+    const categoryKeys = groupedEvidence[category]?.map((e) => e.key) || [];
+    const allSelected = categoryKeys.every((k) => config.evidenceTypes.includes(k));
+
     if (allSelected) {
-      onChange({ 
-        ...config, 
-        evidenceTypes: config.evidenceTypes.filter(k => !categoryKeys.includes(k)) 
+      onChange({
+        ...config,
+        evidenceTypes: config.evidenceTypes.filter((k) => !categoryKeys.includes(k)),
       });
     } else {
       const newTypes = new Set([...config.evidenceTypes, ...categoryKeys]);
@@ -138,9 +166,7 @@ export default function QuickSetupTab({ typeMeta, config, onChange }: QuickSetup
 
   const applyPreset = (presetKey: keyof typeof PRESETS) => {
     const preset = PRESETS[presetKey];
-    const selectedTypes = (typeMeta.evidenceTypes || [])
-      .filter(preset.filter)
-      .map(e => e.key);
+    const selectedTypes = (typeMeta.evidenceTypes || []).filter(preset.filter).map((e) => e.key);
     onChange({ ...config, evidenceTypes: selectedTypes });
   };
 
@@ -153,26 +179,30 @@ export default function QuickSetupTab({ typeMeta, config, onChange }: QuickSetup
 
   const renderConfigField = (field: ConfigField) => {
     const value = config.credentials[field.key] || '';
-    
+
     switch (field.type) {
       case 'select':
         return (
-          <select
+          <SelectNative
             value={value}
             onChange={(e) => updateCredential(field.key, e.target.value)}
             className="input w-full"
           >
             <option value="">Select {field.label}</option>
-            {field.options?.map(opt => {
+            {field.options?.map((opt) => {
               const optValue = typeof opt === 'string' ? opt : opt.value;
               const optLabel = typeof opt === 'string' ? opt : opt.label;
-              return <option key={optValue} value={optValue}>{optLabel}</option>;
+              return (
+                <option key={optValue} value={optValue}>
+                  {optLabel}
+                </option>
+              );
             })}
-          </select>
+          </SelectNative>
         );
       case 'textarea':
         return (
-          <textarea
+          <Textarea
             value={value}
             onChange={(e) => updateCredential(field.key, e.target.value)}
             placeholder={field.placeholder}
@@ -182,7 +212,7 @@ export default function QuickSetupTab({ typeMeta, config, onChange }: QuickSetup
         );
       case 'password':
         return (
-          <input
+          <Input
             type="password"
             value={value}
             onChange={(e) => updateCredential(field.key, e.target.value)}
@@ -192,12 +222,12 @@ export default function QuickSetupTab({ typeMeta, config, onChange }: QuickSetup
         );
       default:
         return (
-          <input
+          <Input
             type={field.type === 'url' ? 'url' : 'text'}
             value={value}
             onChange={(e) => updateCredential(field.key, e.target.value)}
             placeholder={field.placeholder}
-            className="input w-full"
+            className="w-full"
           />
         );
     }
@@ -210,8 +240,8 @@ export default function QuickSetupTab({ typeMeta, config, onChange }: QuickSetup
         <h3 className="text-sm font-semibold text-surface-200 mb-4">Basic Information</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm text-surface-400 mb-1.5">Name</label>
-            <input
+            <label className="block text-sm text-surface-600 mb-1.5">Name</label>
+            <Input
               type="text"
               value={config.name}
               onChange={(e) => onChange({ ...config, name: e.target.value })}
@@ -219,22 +249,22 @@ export default function QuickSetupTab({ typeMeta, config, onChange }: QuickSetup
             />
           </div>
           <div>
-            <label className="block text-sm text-surface-400 mb-1.5">Sync Frequency</label>
-            <select
+            <label className="block text-sm text-surface-600 mb-1.5">Sync Frequency</label>
+            <SelectNative
               value={config.syncFrequency}
               onChange={(e) => onChange({ ...config, syncFrequency: e.target.value })}
               className="input w-full"
             >
-              {typeMeta.syncFrequencies?.map(freq => (
+              {typeMeta.syncFrequencies?.map((freq) => (
                 <option key={freq} value={freq}>
                   {freq.charAt(0).toUpperCase() + freq.slice(1)}
                 </option>
               ))}
-            </select>
+            </SelectNative>
           </div>
           <div className="md:col-span-2">
-            <label className="block text-sm text-surface-400 mb-1.5">Description (optional)</label>
-            <textarea
+            <label className="block text-sm text-surface-600 mb-1.5">Description (optional)</label>
+            <Textarea
               value={config.description}
               onChange={(e) => onChange({ ...config, description: e.target.value })}
               placeholder="Brief description of this integration instance"
@@ -244,16 +274,15 @@ export default function QuickSetupTab({ typeMeta, config, onChange }: QuickSetup
           </div>
         </div>
       </section>
-
       {/* Connection Settings */}
       <section>
         <h3 className="text-sm font-semibold text-surface-200 mb-4">Connection Settings</h3>
         <div className="space-y-4">
-          {typeMeta.configFields?.map(field => (
+          {typeMeta.configFields?.map((field) => (
             <div key={field.key}>
-              <label className="block text-sm text-surface-400 mb-1.5">
+              <label className="block text-sm text-surface-600 mb-1.5">
                 {field.label}
-                {field.required && <span className="text-red-400 ml-1">*</span>}
+                {field.required && <span className="text-red-600 ml-1">*</span>}
               </label>
               {renderConfigField(field)}
               {field.helpText && (
@@ -266,7 +295,6 @@ export default function QuickSetupTab({ typeMeta, config, onChange }: QuickSetup
           ))}
         </div>
       </section>
-
       {/* Data Selection */}
       {typeMeta.evidenceTypes && typeMeta.evidenceTypes.length > 0 && (
         <section>
@@ -294,7 +322,7 @@ export default function QuickSetupTab({ typeMeta, config, onChange }: QuickSetup
           {/* Search */}
           <div className="relative mb-4">
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-500" />
-            <input
+            <Input
               type="text"
               placeholder="Search data types..."
               value={searchQuery}
@@ -307,21 +335,23 @@ export default function QuickSetupTab({ typeMeta, config, onChange }: QuickSetup
           <div className="space-y-2 border border-surface-800 rounded-lg overflow-hidden">
             {Object.entries(filteredGroups).map(([category, types]) => {
               const isExpanded = expandedCategories.has(category);
-              const selectedCount = types.filter(t => config.evidenceTypes.includes(t.key)).length;
+              const selectedCount = types.filter((t) =>
+                config.evidenceTypes.includes(t.key)
+              ).length;
               const allSelected = selectedCount === types.length;
 
               return (
                 <div key={category} className="bg-surface-800/50">
                   {/* Category Header */}
-                  <div 
+                  <div
                     className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-surface-800 transition-colors"
                     onClick={() => toggleCategory(category)}
                   >
                     <div className="flex items-center gap-2">
                       {isExpanded ? (
-                        <ChevronDownIcon className="w-4 h-4 text-surface-400" />
+                        <ChevronDownIcon className="w-4 h-4 text-surface-600" />
                       ) : (
-                        <ChevronRightIcon className="w-4 h-4 text-surface-400" />
+                        <ChevronRightIcon className="w-4 h-4 text-surface-600" />
                       )}
                       <span className="font-medium text-surface-200">{category}</span>
                       <span className="text-xs text-surface-500">
@@ -342,7 +372,7 @@ export default function QuickSetupTab({ typeMeta, config, onChange }: QuickSetup
                   {/* Evidence Types */}
                   {isExpanded && (
                     <div className="px-4 pb-3 space-y-1">
-                      {types.map(evidenceType => {
+                      {types.map((evidenceType) => {
                         const isSelected = config.evidenceTypes.includes(evidenceType.key);
                         return (
                           <div
@@ -350,17 +380,19 @@ export default function QuickSetupTab({ typeMeta, config, onChange }: QuickSetup
                             onClick={() => toggleEvidenceType(evidenceType.key)}
                             className={clsx(
                               'flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-colors',
-                              isSelected 
-                                ? 'bg-brand-500/10 border border-brand-500/30' 
+                              isSelected
+                                ? 'bg-brand-500/10 border border-brand-500/30'
                                 : 'bg-surface-900/50 border border-transparent hover:border-surface-700'
                             )}
                           >
-                            <div className={clsx(
-                              'w-5 h-5 rounded flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors',
-                              isSelected 
-                                ? 'bg-brand-500 text-white' 
-                                : 'bg-surface-700 border border-surface-600'
-                            )}>
+                            <div
+                              className={clsx(
+                                'w-5 h-5 rounded flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors',
+                                isSelected
+                                  ? 'bg-brand-500 text-white'
+                                  : 'bg-surface-700 border border-surface-600'
+                              )}
+                            >
                               {isSelected && <CheckIcon className="w-3.5 h-3.5" />}
                             </div>
                             <div className="flex-1 min-w-0">
@@ -384,20 +416,23 @@ export default function QuickSetupTab({ typeMeta, config, onChange }: QuickSetup
           {/* Summary */}
           {config.evidenceTypes.length > 0 && (
             <div className="mt-4 p-4 bg-surface-800/50 rounded-lg border border-surface-700">
-              <h4 className="text-xs font-semibold text-surface-300 uppercase mb-2">
+              <h4 className="text-xs font-semibold text-surface-700 uppercase mb-2">
                 Collection Summary
               </h4>
               <div className="flex flex-wrap gap-1.5">
-                {config.evidenceTypes.slice(0, 10).map(key => {
-                  const et = typeMeta.evidenceTypes?.find(e => e.key === key);
+                {config.evidenceTypes.slice(0, 10).map((key) => {
+                  const et = typeMeta.evidenceTypes?.find((e) => e.key === key);
                   return (
-                    <span key={key} className="px-2 py-1 text-xs bg-surface-700 rounded text-surface-300">
+                    <span
+                      key={key}
+                      className="px-2 py-1 text-xs bg-surface-700 rounded text-surface-700"
+                    >
                       {et?.label || key}
                     </span>
                   );
                 })}
                 {config.evidenceTypes.length > 10 && (
-                  <span className="px-2 py-1 text-xs bg-surface-700 rounded text-surface-400">
+                  <span className="px-2 py-1 text-xs bg-surface-700 rounded text-surface-600">
                     +{config.evidenceTypes.length - 10} more
                   </span>
                 )}
@@ -409,7 +444,3 @@ export default function QuickSetupTab({ typeMeta, config, onChange }: QuickSetup
     </div>
   );
 }
-
-
-
-

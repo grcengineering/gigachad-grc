@@ -1,18 +1,18 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { 
-  SparklesIcon, 
+import {
+  SparklesIcon,
   ArrowPathIcon,
   LightBulbIcon,
   CheckCircleIcon,
   ExclamationCircleIcon,
   ClipboardDocumentIcon,
   ChevronDownIcon,
-  ChevronUpIcon
+  ChevronUpIcon,
 } from '@heroicons/react/24/outline';
 import { trustAiApi, trustConfigApi, AnswerSuggestion } from '../../lib/api';
 import { useAuth } from '../../contexts/AuthContext';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 
@@ -105,33 +105,38 @@ export function AIAnswerAssistant({
     draftMutation.mutate();
   };
 
-  const isLoading = draftMutation.isPending || improveMutation.isPending || checkAiMutation.isPending;
+  const isLoading =
+    draftMutation.isPending || improveMutation.isPending || checkAiMutation.isPending;
 
   const confidenceColor = (confidence: number) => {
-    if (confidence >= 70) return 'text-green-400';
-    if (confidence >= 40) return 'text-amber-400';
-    return 'text-red-400';
+    if (confidence >= 70) return 'text-green-600';
+    if (confidence >= 40) return 'text-amber-600';
+    return 'text-red-600';
   };
 
   return (
-    <div className={clsx(
-      'bg-gradient-to-br from-purple-500/10 to-blue-500/10 border border-purple-500/30 rounded-lg overflow-hidden',
-      className
-    )}>
+    <div
+      className={clsx(
+        'bg-gradient-to-br from-purple-500/10 to-blue-500/10 border border-purple-500/30 rounded-lg overflow-hidden',
+        className
+      )}
+    >
       {/* Header */}
-      <div 
+      <div
         className="px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-purple-500/5 transition-colors"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center gap-2">
-          <SparklesIcon className="w-5 h-5 text-purple-400" />
+          <SparklesIcon className="w-5 h-5 text-purple-600" />
           <span className="font-medium text-surface-100">AI Assistant</span>
-          {aiEnabled === false && (
-            <span className="text-xs text-surface-500">(Disabled)</span>
-          )}
+          {aiEnabled === false && <span className="text-xs text-surface-500">(Disabled)</span>}
         </div>
-        <button className="p-1 text-surface-400 hover:text-surface-200">
-          {isExpanded ? <ChevronUpIcon className="w-4 h-4" /> : <ChevronDownIcon className="w-4 h-4" />}
+        <button className="p-1 text-surface-600 hover:text-surface-200">
+          {isExpanded ? (
+            <ChevronUpIcon className="w-4 h-4" />
+          ) : (
+            <ChevronDownIcon className="w-4 h-4" />
+          )}
         </button>
       </div>
 
@@ -146,7 +151,7 @@ export function AIAnswerAssistant({
               onClick={handleGenerateDraft}
               isLoading={draftMutation.isPending}
               leftIcon={<LightBulbIcon className="w-4 h-4" />}
-              className="flex-1 border-purple-500/50 hover:border-purple-500 text-purple-300"
+              className="flex-1 border-purple-500/50 hover:border-purple-500 text-purple-700"
             >
               Draft Answer
             </Button>
@@ -157,7 +162,7 @@ export function AIAnswerAssistant({
                 onClick={() => improveMutation.mutate()}
                 isLoading={improveMutation.isPending}
                 leftIcon={<ArrowPathIcon className="w-4 h-4" />}
-                className="flex-1 border-blue-500/50 hover:border-blue-500 text-blue-300"
+                className="flex-1 border-blue-500/50 hover:border-blue-500 text-blue-700"
               >
                 Improve Answer
               </Button>
@@ -170,8 +175,10 @@ export function AIAnswerAssistant({
               {/* Confidence Indicator */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-surface-400">Confidence:</span>
-                  <span className={clsx('text-sm font-bold', confidenceColor(suggestion.confidence))}>
+                  <span className="text-xs text-surface-600">Confidence:</span>
+                  <span
+                    className={clsx('text-sm font-bold', confidenceColor(suggestion.confidence))}
+                  >
                     {suggestion.confidence}%
                   </span>
                 </div>
@@ -191,7 +198,7 @@ export function AIAnswerAssistant({
 
               {/* Reasoning */}
               {suggestion.reasoning && (
-                <div className="flex items-start gap-2 text-xs text-surface-400">
+                <div className="flex items-start gap-2 text-xs text-surface-600">
                   <ExclamationCircleIcon className="w-4 h-4 flex-shrink-0 mt-0.5" />
                   <span>{suggestion.reasoning}</span>
                 </div>
@@ -203,9 +210,9 @@ export function AIAnswerAssistant({
                   <p className="text-xs text-surface-500 mb-1">Sources:</p>
                   <div className="flex flex-wrap gap-1">
                     {suggestion.sources.map((source) => (
-                      <span 
+                      <span
                         key={source.id}
-                        className="px-2 py-0.5 text-xs bg-surface-700 text-surface-300 rounded"
+                        className="px-2 py-0.5 text-xs bg-surface-700 text-surface-700 rounded"
                       >
                         {source.title}
                       </span>
@@ -247,4 +254,3 @@ export function AIAnswerAssistant({
     </div>
   );
 }
-

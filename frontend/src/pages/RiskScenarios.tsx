@@ -13,11 +13,17 @@ import {
   ChartBarIcon,
 } from '@heroicons/react/24/outline';
 import { riskScenariosApi, RiskScenario } from '@/lib/api';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/Modal';
 import { SkeletonTable } from '@/components/Skeleton';
 import { EmptyState } from '@/components/EmptyState';
 import { useToast } from '@/hooks/useToast';
+
+import { Textarea } from '@/components/ui/Textarea';
+
+import { Input } from '@/components/ui/Input';
+
+import { SelectNative } from '@/components/ui/SelectNative';
 
 interface SimulationResult {
   inherentRisk: { score: number; level: string };
@@ -83,23 +89,28 @@ const IMPACT_OPTIONS = [
 
 const getRiskColor = (level: string) => {
   switch (level) {
-    case 'critical': return 'text-red-500 bg-red-500/20';
-    case 'high': return 'text-orange-500 bg-orange-500/20';
-    case 'medium': return 'text-yellow-500 bg-yellow-500/20';
-    case 'low': return 'text-green-500 bg-green-500/20';
-    default: return 'text-surface-400 bg-surface-500/20';
+    case 'critical':
+      return 'text-red-500 bg-red-500/20';
+    case 'high':
+      return 'text-orange-500 bg-orange-500/20';
+    case 'medium':
+      return 'text-yellow-500 bg-yellow-500/20';
+    case 'low':
+      return 'text-green-500 bg-green-500/20';
+    default:
+      return 'text-surface-600 bg-surface-500/20';
   }
 };
 
 export default function RiskScenarios() {
   const queryClient = useQueryClient();
   const toast = useToast();
-  
+
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [threatActorFilter, setThreatActorFilter] = useState('');
   const [showTemplatesOnly, setShowTemplatesOnly] = useState(false);
-  
+
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingScenario, setEditingScenario] = useState<RiskScenario | null>(null);
   const [simulatingScenario, setSimulatingScenario] = useState<RiskScenario | null>(null);
@@ -143,7 +154,7 @@ export default function RiskScenarios() {
 
   // Create mutation
   const createMutation = useMutation({
-    mutationFn: (data: Parameters<typeof riskScenariosApi.create>[0]) => 
+    mutationFn: (data: Parameters<typeof riskScenariosApi.create>[0]) =>
       riskScenariosApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['risk-scenarios'] });
@@ -158,8 +169,7 @@ export default function RiskScenarios() {
 
   // Update mutation
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) =>
-      riskScenariosApi.update(id, data),
+    mutationFn: ({ id, data }: { id: string; data: any }) => riskScenariosApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['risk-scenarios'] });
       setEditingScenario(null);
@@ -210,7 +220,13 @@ export default function RiskScenarios() {
 
   const scenarios = (scenariosData as any)?.data || [];
   const libraryCategories = libraryData || [];
-  const stats = statsData || { total: 0, templates: 0, byCategory: [], byThreatActor: [], byRiskLevel: [] };
+  const stats = statsData || {
+    total: 0,
+    templates: 0,
+    byCategory: [],
+    byThreatActor: [],
+    byRiskLevel: [],
+  };
 
   const handleRunSimulation = () => {
     if (simulatingScenario) {
@@ -219,10 +235,10 @@ export default function RiskScenarios() {
   };
 
   const getThreatActorLabel = (value: string) =>
-    THREAT_ACTORS.find(t => t.value === value)?.label || value;
+    THREAT_ACTORS.find((t) => t.value === value)?.label || value;
 
   const getAttackVectorLabel = (value: string) =>
-    ATTACK_VECTORS.find(v => v.value === value)?.label || value;
+    ATTACK_VECTORS.find((v) => v.value === value)?.label || value;
 
   return (
     <div className="space-y-6">
@@ -244,7 +260,6 @@ export default function RiskScenarios() {
           New Scenario
         </Button>
       </div>
-
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="card p-4">
@@ -257,8 +272,9 @@ export default function RiskScenarios() {
         </div>
         <div className="card p-4">
           <p className="text-sm text-muted-foreground">High/Critical Risk</p>
-          <p className="text-2xl font-bold text-red-400">
-            {stats.byRiskLevel?.filter((r: any) => ['high', 'critical'].includes(r.level))
+          <p className="text-2xl font-bold text-red-600">
+            {stats.byRiskLevel
+              ?.filter((r: any) => ['high', 'critical'].includes(r.level))
               .reduce((sum: number, r: any) => sum + r.count, 0) || 0}
           </p>
         </div>
@@ -267,14 +283,13 @@ export default function RiskScenarios() {
           <p className="text-2xl font-bold text-foreground">{stats.byCategory?.length || 0}</p>
         </div>
       </div>
-
       {/* Filters */}
       <div className="card p-4">
         <div className="flex flex-wrap gap-4">
           <div className="flex-1 min-w-[200px]">
             <div className="relative">
               <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <input
+              <Input
                 type="text"
                 placeholder="Search scenarios..."
                 value={searchTerm}
@@ -283,26 +298,30 @@ export default function RiskScenarios() {
               />
             </div>
           </div>
-          <select
+          <SelectNative
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
             className="px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-foreground"
           >
             <option value="">All Categories</option>
-            {CATEGORIES.map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
+            {CATEGORIES.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
             ))}
-          </select>
-          <select
+          </SelectNative>
+          <SelectNative
             value={threatActorFilter}
             onChange={(e) => setThreatActorFilter(e.target.value)}
             className="px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-foreground"
           >
             <option value="">All Threat Actors</option>
-            {THREAT_ACTORS.map(actor => (
-              <option key={actor.value} value={actor.value}>{actor.label}</option>
+            {THREAT_ACTORS.map((actor) => (
+              <option key={actor.value} value={actor.value}>
+                {actor.label}
+              </option>
             ))}
-          </select>
+          </SelectNative>
           <label className="flex items-center gap-2 text-foreground">
             <input
               type="checkbox"
@@ -314,7 +333,6 @@ export default function RiskScenarios() {
           </label>
         </div>
       </div>
-
       {/* Scenarios List */}
       {isLoading ? (
         <SkeletonTable rows={8} columns={6} />
@@ -346,7 +364,9 @@ export default function RiskScenarios() {
                       </span>
                     )}
                     {scenario.riskLevel && (
-                      <span className={`px-2 py-0.5 text-xs rounded-full ${getRiskColor(scenario.riskLevel)}`}>
+                      <span
+                        className={`px-2 py-0.5 text-xs rounded-full ${getRiskColor(scenario.riskLevel)}`}
+                      >
                         {scenario.riskLevel.toUpperCase()}
                       </span>
                     )}
@@ -367,9 +387,7 @@ export default function RiskScenarios() {
                         {tag}
                       </span>
                     ))}
-                    {(scenario.usageCount ?? 0) > 0 && (
-                      <span>Used {scenario.usageCount}x</span>
-                    )}
+                    {(scenario.usageCount ?? 0) > 0 && <span>Used {scenario.usageCount}x</span>}
                   </div>
                 </div>
                 <div className="flex items-center gap-2 ml-4" onClick={(e) => e.stopPropagation()}>
@@ -379,21 +397,21 @@ export default function RiskScenarios() {
                       setSimulationResult(null);
                       setSimulationParams({ controlEffectiveness: 50, mitigations: [] });
                     }}
-                    className="p-2 text-surface-400 hover:text-brand-400 hover:bg-surface-700 rounded-lg transition-colors"
+                    className="p-2 text-surface-600 hover:text-brand-400 hover:bg-surface-700 rounded-lg transition-colors"
                     title="Run Simulation"
                   >
                     <PlayCircleIcon className="h-5 w-5" />
                   </button>
                   <button
                     onClick={() => cloneMutation.mutate({ id: scenario.id })}
-                    className="p-2 text-surface-400 hover:text-brand-400 hover:bg-surface-700 rounded-lg transition-colors"
+                    className="p-2 text-surface-600 hover:text-brand-400 hover:bg-surface-700 rounded-lg transition-colors"
                     title="Clone"
                   >
                     <DocumentDuplicateIcon className="h-5 w-5" />
                   </button>
                   <button
                     onClick={() => setEditingScenario(scenario)}
-                    className="p-2 text-surface-400 hover:text-brand-400 hover:bg-surface-700 rounded-lg transition-colors"
+                    className="p-2 text-surface-600 hover:text-brand-400 hover:bg-surface-700 rounded-lg transition-colors"
                     title="Edit"
                   >
                     <PencilIcon className="h-5 w-5" />
@@ -404,7 +422,7 @@ export default function RiskScenarios() {
                         deleteMutation.mutate(scenario.id);
                       }
                     }}
-                    className="p-2 text-surface-400 hover:text-red-400 hover:bg-surface-700 rounded-lg transition-colors"
+                    className="p-2 text-surface-600 hover:text-red-600 hover:bg-surface-700 rounded-lg transition-colors"
                     title="Delete"
                   >
                     <TrashIcon className="h-5 w-5" />
@@ -415,7 +433,6 @@ export default function RiskScenarios() {
           ))}
         </div>
       )}
-
       {/* Scenario Library Section */}
       {libraryCategories.length > 0 && !showTemplatesOnly && (
         <div className="card p-6">
@@ -423,30 +440,43 @@ export default function RiskScenarios() {
             <div>
               <h3 className="text-lg font-semibold text-foreground">Scenario Library</h3>
               <p className="text-sm text-muted-foreground mt-1">
-                Browse pre-built risk scenarios organized by category. Clone any scenario to customize it for your organization.
+                Browse pre-built risk scenarios organized by category. Clone any scenario to
+                customize it for your organization.
               </p>
             </div>
             <span className="text-xs bg-brand-500/20 text-brand-400 px-2 py-1 rounded-full">
               {libraryCategories.reduce((sum, cat) => sum + cat.templates.length, 0)} scenarios
             </span>
           </div>
-          
+
           <div className="space-y-6">
             {libraryCategories.map((categoryGroup) => (
               <div key={categoryGroup.category}>
-                <h4 className="text-sm font-medium text-surface-300 mb-3 flex items-center gap-2">
+                <h4 className="text-sm font-medium text-surface-700 mb-3 flex items-center gap-2">
                   <span className="w-2 h-2 bg-brand-500 rounded-full"></span>
                   {categoryGroup.category}
-                  <span className="text-xs text-surface-500">({categoryGroup.templates.length})</span>
+                  <span className="text-xs text-surface-500">
+                    ({categoryGroup.templates.length})
+                  </span>
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                   {categoryGroup.templates.map((template: RiskScenario) => (
-                    <div key={template.id} className="bg-surface-700/50 hover:bg-surface-700 rounded-lg p-4 transition-colors group">
-                      <h5 className="font-medium text-foreground text-sm line-clamp-1">{template.title}</h5>
-                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{template.description}</p>
+                    <div
+                      key={template.id}
+                      className="bg-surface-700/50 hover:bg-surface-700 rounded-lg p-4 transition-colors group"
+                    >
+                      <h5 className="font-medium text-foreground text-sm line-clamp-1">
+                        {template.title}
+                      </h5>
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                        {template.description}
+                      </p>
                       <div className="flex flex-wrap gap-1 mt-2">
                         {template.tags?.slice(0, 3).map((tag: string) => (
-                          <span key={tag} className="text-xs bg-surface-600 text-surface-300 px-1.5 py-0.5 rounded">
+                          <span
+                            key={tag}
+                            className="text-xs bg-surface-600 text-surface-700 px-1.5 py-0.5 rounded"
+                          >
                             {tag}
                           </span>
                         ))}
@@ -475,7 +505,6 @@ export default function RiskScenarios() {
           </div>
         </div>
       )}
-
       {/* Create/Edit Modal */}
       <Modal
         isOpen={isCreateModalOpen || !!editingScenario}
@@ -498,7 +527,6 @@ export default function RiskScenarios() {
           isLoading={createMutation.isPending || updateMutation.isPending}
         />
       </Modal>
-
       {/* Simulation Modal */}
       <Modal
         isOpen={!!simulatingScenario}
@@ -516,10 +544,16 @@ export default function RiskScenarios() {
               <p className="text-sm text-muted-foreground mt-1">{simulatingScenario.description}</p>
               <div className="flex items-center gap-4 mt-3 text-sm">
                 <span className="text-muted-foreground">
-                  Threat: <span className="text-foreground">{getThreatActorLabel(simulatingScenario.threatActor)}</span>
+                  Threat:{' '}
+                  <span className="text-foreground">
+                    {getThreatActorLabel(simulatingScenario.threatActor)}
+                  </span>
                 </span>
                 <span className="text-muted-foreground">
-                  Vector: <span className="text-foreground">{getAttackVectorLabel(simulatingScenario.attackVector)}</span>
+                  Vector:{' '}
+                  <span className="text-foreground">
+                    {getAttackVectorLabel(simulatingScenario.attackVector)}
+                  </span>
                 </span>
               </div>
             </div>
@@ -534,10 +568,12 @@ export default function RiskScenarios() {
                   min="0"
                   max="100"
                   value={simulationParams.controlEffectiveness}
-                  onChange={(e) => setSimulationParams({
-                    ...simulationParams,
-                    controlEffectiveness: parseInt(e.target.value),
-                  })}
+                  onChange={(e) =>
+                    setSimulationParams({
+                      ...simulationParams,
+                      controlEffectiveness: parseInt(e.target.value),
+                    })
+                  }
                   className="w-full"
                 />
               </div>
@@ -546,14 +582,19 @@ export default function RiskScenarios() {
                 <label className="block text-sm font-medium text-foreground mb-2">
                   Mitigations (comma-separated)
                 </label>
-                <input
+                <Input
                   type="text"
                   placeholder="e.g., MFA, Employee Training, Network Segmentation"
                   value={simulationParams.mitigations.join(', ')}
-                  onChange={(e) => setSimulationParams({
-                    ...simulationParams,
-                    mitigations: e.target.value.split(',').map(s => s.trim()).filter(Boolean),
-                  })}
+                  onChange={(e) =>
+                    setSimulationParams({
+                      ...simulationParams,
+                      mitigations: e.target.value
+                        .split(',')
+                        .map((s) => s.trim())
+                        .filter(Boolean),
+                    })
+                  }
                   className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-foreground"
                 />
               </div>
@@ -571,8 +612,12 @@ export default function RiskScenarios() {
                   <div>
                     <p className="text-sm text-muted-foreground mb-1">Inherent Risk</p>
                     <div className="flex items-center gap-2">
-                      <span className="text-2xl font-bold text-foreground">{simulationResult.inherentRisk.score}</span>
-                      <span className={`px-2 py-1 text-xs rounded ${getRiskColor(simulationResult.inherentRisk.level)}`}>
+                      <span className="text-2xl font-bold text-foreground">
+                        {simulationResult.inherentRisk.score}
+                      </span>
+                      <span
+                        className={`px-2 py-1 text-xs rounded ${getRiskColor(simulationResult.inherentRisk.level)}`}
+                      >
                         {simulationResult.inherentRisk.level.toUpperCase()}
                       </span>
                     </div>
@@ -580,8 +625,12 @@ export default function RiskScenarios() {
                   <div>
                     <p className="text-sm text-muted-foreground mb-1">Residual Risk</p>
                     <div className="flex items-center gap-2">
-                      <span className="text-2xl font-bold text-foreground">{simulationResult.residualRisk.score}</span>
-                      <span className={`px-2 py-1 text-xs rounded ${getRiskColor(simulationResult.residualRisk.level)}`}>
+                      <span className="text-2xl font-bold text-foreground">
+                        {simulationResult.residualRisk.score}
+                      </span>
+                      <span
+                        className={`px-2 py-1 text-xs rounded ${getRiskColor(simulationResult.residualRisk.level)}`}
+                      >
                         {simulationResult.residualRisk.level.toUpperCase()}
                       </span>
                     </div>
@@ -596,7 +645,9 @@ export default function RiskScenarios() {
                         style={{ width: `${simulationResult.riskReduction}%` }}
                       />
                     </div>
-                    <span className="text-green-400 font-semibold">{simulationResult.riskReduction}%</span>
+                    <span className="text-green-600 font-semibold">
+                      {simulationResult.riskReduction}%
+                    </span>
                   </div>
                 </div>
                 {simulationResult.recommendations.length > 0 && (
@@ -604,7 +655,10 @@ export default function RiskScenarios() {
                     <p className="text-sm font-medium text-foreground mb-2">Recommendations</p>
                     <ul className="space-y-1">
                       {simulationResult.recommendations.map((rec, i) => (
-                        <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
+                        <li
+                          key={i}
+                          className="text-sm text-muted-foreground flex items-start gap-2"
+                        >
                           <span className="text-brand-400">•</span>
                           {rec}
                         </li>
@@ -648,8 +702,14 @@ function ScenarioForm({ scenario, onSubmit, isLoading }: ScenarioFormProps) {
     e.preventDefault();
     onSubmit({
       ...formData,
-      targetAssets: formData.targetAssets.split(',').map((s: string) => s.trim()).filter(Boolean),
-      tags: formData.tags.split(',').map((s: string) => s.trim()).filter(Boolean),
+      targetAssets: formData.targetAssets
+        .split(',')
+        .map((s: string) => s.trim())
+        .filter(Boolean),
+      tags: formData.tags
+        .split(',')
+        .map((s: string) => s.trim())
+        .filter(Boolean),
     });
   };
 
@@ -657,7 +717,7 @@ function ScenarioForm({ scenario, onSubmit, isLoading }: ScenarioFormProps) {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-foreground mb-1">Title *</label>
-        <input
+        <Input
           type="text"
           required
           value={formData.title}
@@ -666,10 +726,9 @@ function ScenarioForm({ scenario, onSubmit, isLoading }: ScenarioFormProps) {
           placeholder="e.g., Phishing Attack on Employees"
         />
       </div>
-
       <div>
         <label className="block text-sm font-medium text-foreground mb-1">Description *</label>
-        <textarea
+        <Textarea
           required
           rows={3}
           value={formData.description}
@@ -678,55 +737,59 @@ function ScenarioForm({ scenario, onSubmit, isLoading }: ScenarioFormProps) {
           placeholder="Describe the risk scenario in detail..."
         />
       </div>
-
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-foreground mb-1">Category *</label>
-          <select
+          <SelectNative
             required
             value={formData.category}
             onChange={(e) => setFormData({ ...formData, category: e.target.value })}
             className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-foreground"
           >
-            {CATEGORIES.map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
+            {CATEGORIES.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
             ))}
-          </select>
+          </SelectNative>
         </div>
 
         <div>
           <label className="block text-sm font-medium text-foreground mb-1">Threat Actor *</label>
-          <select
+          <SelectNative
             required
             value={formData.threatActor}
             onChange={(e) => setFormData({ ...formData, threatActor: e.target.value })}
             className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-foreground"
           >
-            {THREAT_ACTORS.map(actor => (
-              <option key={actor.value} value={actor.value}>{actor.label}</option>
+            {THREAT_ACTORS.map((actor) => (
+              <option key={actor.value} value={actor.value}>
+                {actor.label}
+              </option>
             ))}
-          </select>
+          </SelectNative>
         </div>
       </div>
-
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-foreground mb-1">Attack Vector *</label>
-          <select
+          <SelectNative
             required
             value={formData.attackVector}
             onChange={(e) => setFormData({ ...formData, attackVector: e.target.value })}
             className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-foreground"
           >
-            {ATTACK_VECTORS.map(vector => (
-              <option key={vector.value} value={vector.value}>{vector.label}</option>
+            {ATTACK_VECTORS.map((vector) => (
+              <option key={vector.value} value={vector.value}>
+                {vector.label}
+              </option>
             ))}
-          </select>
+          </SelectNative>
         </div>
 
         <div>
           <label className="block text-sm font-medium text-foreground mb-1">Target Assets</label>
-          <input
+          <Input
             type="text"
             value={formData.targetAssets}
             onChange={(e) => setFormData({ ...formData, targetAssets: e.target.value })}
@@ -735,40 +798,42 @@ function ScenarioForm({ scenario, onSubmit, isLoading }: ScenarioFormProps) {
           />
         </div>
       </div>
-
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-foreground mb-1">Likelihood *</label>
-          <select
+          <SelectNative
             required
             value={formData.likelihood}
             onChange={(e) => setFormData({ ...formData, likelihood: e.target.value })}
             className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-foreground"
           >
-            {LIKELIHOOD_OPTIONS.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            {LIKELIHOOD_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
             ))}
-          </select>
+          </SelectNative>
         </div>
 
         <div>
           <label className="block text-sm font-medium text-foreground mb-1">Impact *</label>
-          <select
+          <SelectNative
             required
             value={formData.impact}
             onChange={(e) => setFormData({ ...formData, impact: e.target.value })}
             className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-foreground"
           >
-            {IMPACT_OPTIONS.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            {IMPACT_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
             ))}
-          </select>
+          </SelectNative>
         </div>
       </div>
-
       <div>
         <label className="block text-sm font-medium text-foreground mb-1">Tags</label>
-        <input
+        <Input
           type="text"
           value={formData.tags}
           onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
@@ -776,10 +841,11 @@ function ScenarioForm({ scenario, onSubmit, isLoading }: ScenarioFormProps) {
           placeholder="e.g., critical, compliance, data (comma-separated)"
         />
       </div>
-
       <div>
-        <label className="block text-sm font-medium text-foreground mb-1">Mitigation Strategy</label>
-        <textarea
+        <label className="block text-sm font-medium text-foreground mb-1">
+          Mitigation Strategy
+        </label>
+        <Textarea
           rows={2}
           value={formData.mitigationStrategy}
           onChange={(e) => setFormData({ ...formData, mitigationStrategy: e.target.value })}
@@ -787,7 +853,6 @@ function ScenarioForm({ scenario, onSubmit, isLoading }: ScenarioFormProps) {
           placeholder="Describe how this risk can be mitigated..."
         />
       </div>
-
       <div className="flex items-center gap-2">
         <input
           type="checkbox"
@@ -800,7 +865,6 @@ function ScenarioForm({ scenario, onSubmit, isLoading }: ScenarioFormProps) {
           Save as template (available for reuse)
         </label>
       </div>
-
       <div className="flex justify-end gap-3 pt-4 border-t border-surface-700">
         <Button type="submit" isLoading={isLoading}>
           {scenario ? 'Update Scenario' : 'Create Scenario'}

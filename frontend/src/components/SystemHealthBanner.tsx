@@ -84,15 +84,13 @@ export function SystemHealthBanner() {
   return (
     <div
       className={`mb-6 rounded-lg border ${
-        hasCritical
-          ? 'border-red-500/50 bg-red-500/10'
-          : 'border-yellow-500/50 bg-yellow-500/10'
+        hasCritical ? 'border-red-500/50 bg-red-500/10' : 'border-yellow-500/50 bg-yellow-500/10'
       }`}
     >
       {/* Header */}
       <div
         className={`flex items-center justify-between px-4 py-3 cursor-pointer ${
-          hasCritical ? 'text-red-400' : 'text-yellow-400'
+          hasCritical ? 'text-red-600' : 'text-yellow-600'
         }`}
         onClick={() => setExpanded(!expanded)}
       >
@@ -149,20 +147,14 @@ export function SystemHealthBanner() {
   );
 }
 
-function WarningItem({
-  warning,
-  onDismiss,
-}: {
-  warning: SystemWarning;
-  onDismiss: () => void;
-}) {
+function WarningItem({ warning, onDismiss }: { warning: SystemWarning; onDismiss: () => void }) {
   const isCritical = warning.severity === 'critical';
 
   return (
     <div className="px-4 py-3 flex items-start gap-4">
       <div
         className={`mt-0.5 p-1 rounded ${
-          isCritical ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-yellow-400'
+          isCritical ? 'bg-red-500/20 text-red-600' : 'bg-yellow-500/20 text-yellow-600'
         }`}
       >
         {isCritical ? (
@@ -176,9 +168,7 @@ function WarningItem({
         <div className="flex items-center gap-2">
           <span
             className={`text-xs font-medium px-2 py-0.5 rounded ${
-              isCritical
-                ? 'bg-red-500/20 text-red-400'
-                : 'bg-yellow-500/20 text-yellow-400'
+              isCritical ? 'bg-red-500/20 text-red-600' : 'bg-yellow-500/20 text-yellow-600'
             }`}
           >
             {warning.category.toUpperCase()}
@@ -224,4 +214,3 @@ function WarningItem({
 }
 
 export default SystemHealthBanner;
-

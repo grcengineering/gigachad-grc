@@ -2,12 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { customDashboardsApi } from '@/lib/api';
 import { DashboardWidget, WIDGET_TYPES } from '@/lib/dashboardWidgets';
 import WidgetRenderer from './WidgetRenderer';
-import {
-  PencilIcon,
-  TrashIcon,
-  ArrowPathIcon,
-  Bars3Icon,
-} from '@heroicons/react/24/outline';
+import { PencilIcon, TrashIcon, ArrowPathIcon, Bars3Icon } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 
 interface WidgetContainerProps {
@@ -58,7 +53,7 @@ export default function WidgetContainer({
         <div className="flex items-center gap-2">
           {isEditing && (
             <div className="widget-drag-handle cursor-move p-1 hover:bg-surface-700 rounded">
-              <Bars3Icon className="w-4 h-4 text-surface-400" />
+              <Bars3Icon className="w-4 h-4 text-surface-600" />
             </div>
           )}
           <h3 className="text-sm font-medium text-surface-200 truncate">{widget.title}</h3>
@@ -67,7 +62,7 @@ export default function WidgetContainer({
           {widgetDef?.requiresDataSource && (
             <button
               onClick={handleRefresh}
-              className="p-1 hover:bg-surface-700 rounded text-surface-400 hover:text-surface-200 transition-colors"
+              className="p-1 hover:bg-surface-700 rounded text-surface-600 hover:text-surface-200 transition-colors"
               title="Refresh data"
             >
               <ArrowPathIcon className={clsx('w-4 h-4', isLoading && 'animate-spin')} />
@@ -77,14 +72,14 @@ export default function WidgetContainer({
             <>
               <button
                 onClick={onEdit}
-                className="p-1 hover:bg-surface-700 rounded text-surface-400 hover:text-surface-200 transition-colors"
+                className="p-1 hover:bg-surface-700 rounded text-surface-600 hover:text-surface-200 transition-colors"
                 title="Edit widget"
               >
                 <PencilIcon className="w-4 h-4" />
               </button>
               <button
                 onClick={onDelete}
-                className="p-1 hover:bg-red-500/20 rounded text-surface-400 hover:text-red-400 transition-colors"
+                className="p-1 hover:bg-red-500/20 rounded text-surface-600 hover:text-red-600 transition-colors"
                 title="Delete widget"
               >
                 <TrashIcon className="w-4 h-4" />
@@ -97,7 +92,7 @@ export default function WidgetContainer({
       {/* Content */}
       <div className="flex-1 p-4 overflow-auto">
         {error ? (
-          <div className="flex items-center justify-center h-full text-red-400 text-sm">
+          <div className="flex items-center justify-center h-full text-red-600 text-sm">
             Failed to load data
           </div>
         ) : isLoading && widgetDef?.requiresDataSource ? (
@@ -111,7 +106,3 @@ export default function WidgetContainer({
     </div>
   );
 }
-
-
-
-

@@ -1,11 +1,14 @@
 import { useState } from 'react';
-import {
-  PlusIcon,
-  TrashIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
-} from '@heroicons/react/24/outline';
+import { PlusIcon, TrashIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
+
+import { Textarea } from '@/components/ui/Textarea';
+
+import { Input } from '@/components/ui/Input';
+
+import { SelectNative } from '@/components/ui/SelectNative';
+
+import { Button } from '@/components/ui/Button';
 
 interface EndpointConfig {
   name: string;
@@ -105,25 +108,20 @@ export default function VisualConfigBuilder({ config, onChange, onTest, isTestLo
     <div className="space-y-6">
       {/* Base URL */}
       <div>
-        <label className="block text-sm font-medium text-surface-300 mb-2">
-          Base URL
-        </label>
-        <input
+        <label className="block text-sm font-medium text-surface-700 mb-2">Base URL</label>
+        <Input
           type="text"
           value={config.baseUrl}
           onChange={(e) => updateBaseUrl(e.target.value)}
           placeholder="https://api.example.com"
           className="input w-full"
         />
-        <p className="text-xs text-surface-500 mt-1">
-          The base URL for all API requests
-        </p>
+        <p className="text-xs text-surface-500 mt-1">The base URL for all API requests</p>
       </div>
-
       {/* Authentication */}
       <div className="border border-surface-700 rounded-lg p-4">
         <h3 className="text-sm font-medium text-surface-200 mb-4">Authentication</h3>
-        
+
         <div className="flex gap-4 mb-4">
           <label className="flex items-center gap-2 cursor-pointer">
             <input
@@ -133,7 +131,7 @@ export default function VisualConfigBuilder({ config, onChange, onTest, isTestLo
               onChange={() => updateAuthType(null)}
               className="text-brand-500"
             />
-            <span className="text-sm text-surface-300">None</span>
+            <span className="text-sm text-surface-700">None</span>
           </label>
           <label className="flex items-center gap-2 cursor-pointer">
             <input
@@ -143,7 +141,7 @@ export default function VisualConfigBuilder({ config, onChange, onTest, isTestLo
               onChange={() => updateAuthType('api_key')}
               className="text-brand-500"
             />
-            <span className="text-sm text-surface-300">API Key</span>
+            <span className="text-sm text-surface-700">API Key</span>
           </label>
           <label className="flex items-center gap-2 cursor-pointer">
             <input
@@ -153,7 +151,7 @@ export default function VisualConfigBuilder({ config, onChange, onTest, isTestLo
               onChange={() => updateAuthType('oauth2')}
               className="text-brand-500"
             />
-            <span className="text-sm text-surface-300">OAuth 2.0</span>
+            <span className="text-sm text-surface-700">OAuth 2.0</span>
           </label>
         </div>
 
@@ -161,36 +159,45 @@ export default function VisualConfigBuilder({ config, onChange, onTest, isTestLo
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs text-surface-400 mb-1">Key Name</label>
-                <input
+                <label className="block text-xs text-surface-600 mb-1">Key Name</label>
+                <Input
                   type="text"
                   value={config.authConfig?.keyName || ''}
-                  onChange={(e) => updateAuthConfig({ ...config.authConfig, keyName: e.target.value })}
+                  onChange={(e) =>
+                    updateAuthConfig({ ...config.authConfig, keyName: e.target.value })
+                  }
                   placeholder="X-API-Key"
                   className="input w-full text-sm"
                 />
               </div>
               <div>
-                <label className="block text-xs text-surface-400 mb-1">Key Value</label>
-                <input
+                <label className="block text-xs text-surface-600 mb-1">Key Value</label>
+                <Input
                   type="password"
                   value={config.authConfig?.keyValue || ''}
-                  onChange={(e) => updateAuthConfig({ ...config.authConfig, keyValue: e.target.value })}
+                  onChange={(e) =>
+                    updateAuthConfig({ ...config.authConfig, keyValue: e.target.value })
+                  }
                   placeholder="Your API key"
                   className="input w-full text-sm"
                 />
               </div>
             </div>
             <div>
-              <label className="block text-xs text-surface-400 mb-1">Send In</label>
-              <select
+              <label className="block text-xs text-surface-600 mb-1">Send In</label>
+              <SelectNative
                 value={config.authConfig?.location || 'header'}
-                onChange={(e) => updateAuthConfig({ ...config.authConfig, location: e.target.value as 'header' | 'query' })}
+                onChange={(e) =>
+                  updateAuthConfig({
+                    ...config.authConfig,
+                    location: e.target.value as 'header' | 'query',
+                  })
+                }
                 className="input w-full text-sm"
               >
                 <option value="header">Header</option>
                 <option value="query">Query Parameter</option>
-              </select>
+              </SelectNative>
             </div>
           </div>
         )}
@@ -198,40 +205,46 @@ export default function VisualConfigBuilder({ config, onChange, onTest, isTestLo
         {config.authType === 'oauth2' && (
           <div className="space-y-3">
             <div>
-              <label className="block text-xs text-surface-400 mb-1">Token URL</label>
-              <input
+              <label className="block text-xs text-surface-600 mb-1">Token URL</label>
+              <Input
                 type="text"
                 value={config.authConfig?.tokenUrl || ''}
-                onChange={(e) => updateAuthConfig({ ...config.authConfig, tokenUrl: e.target.value })}
+                onChange={(e) =>
+                  updateAuthConfig({ ...config.authConfig, tokenUrl: e.target.value })
+                }
                 placeholder="https://auth.example.com/oauth/token"
                 className="input w-full text-sm"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs text-surface-400 mb-1">Client ID</label>
-                <input
+                <label className="block text-xs text-surface-600 mb-1">Client ID</label>
+                <Input
                   type="text"
                   value={config.authConfig?.clientId || ''}
-                  onChange={(e) => updateAuthConfig({ ...config.authConfig, clientId: e.target.value })}
+                  onChange={(e) =>
+                    updateAuthConfig({ ...config.authConfig, clientId: e.target.value })
+                  }
                   placeholder="client_id"
                   className="input w-full text-sm"
                 />
               </div>
               <div>
-                <label className="block text-xs text-surface-400 mb-1">Client Secret</label>
-                <input
+                <label className="block text-xs text-surface-600 mb-1">Client Secret</label>
+                <Input
                   type="password"
                   value={config.authConfig?.clientSecret || ''}
-                  onChange={(e) => updateAuthConfig({ ...config.authConfig, clientSecret: e.target.value })}
+                  onChange={(e) =>
+                    updateAuthConfig({ ...config.authConfig, clientSecret: e.target.value })
+                  }
                   placeholder="client_secret"
                   className="input w-full text-sm"
                 />
               </div>
             </div>
             <div>
-              <label className="block text-xs text-surface-400 mb-1">Scope (optional)</label>
-              <input
+              <label className="block text-xs text-surface-600 mb-1">Scope (optional)</label>
+              <Input
                 type="text"
                 value={config.authConfig?.scope || ''}
                 onChange={(e) => updateAuthConfig({ ...config.authConfig, scope: e.target.value })}
@@ -242,18 +255,18 @@ export default function VisualConfigBuilder({ config, onChange, onTest, isTestLo
           </div>
         )}
       </div>
-
       {/* Endpoints */}
       <div>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-medium text-surface-200">Endpoints</h3>
-          <button
+          <Button
             onClick={addEndpoint}
-            className="btn-secondary text-sm flex items-center gap-1"
+            className="text-sm flex items-center gap-1"
+            variant="secondary"
           >
             <PlusIcon className="w-4 h-4" />
             Add Endpoint
-          </button>
+          </Button>
         </div>
 
         {config.endpoints.length === 0 ? (
@@ -301,10 +314,14 @@ function EndpointCard({
   isTestLoading,
 }: EndpointCardProps) {
   const [headersText, setHeadersText] = useState(
-    Object.entries(endpoint.headers || {}).map(([k, v]) => `${k}: ${v}`).join('\n')
+    Object.entries(endpoint.headers || {})
+      .map(([k, v]) => `${k}: ${v}`)
+      .join('\n')
   );
   const [paramsText, setParamsText] = useState(
-    Object.entries(endpoint.params || {}).map(([k, v]) => `${k}=${v}`).join('\n')
+    Object.entries(endpoint.params || {})
+      .map(([k, v]) => `${k}=${v}`)
+      .join('\n')
   );
 
   const parseKeyValue = (text: string, separator: string): Record<string, string> => {
@@ -321,11 +338,11 @@ function EndpointCard({
   };
 
   const methodColors: Record<string, string> = {
-    GET: 'bg-green-500/20 text-green-400',
-    POST: 'bg-blue-500/20 text-blue-400',
-    PUT: 'bg-yellow-500/20 text-yellow-400',
-    DELETE: 'bg-red-500/20 text-red-400',
-    PATCH: 'bg-purple-500/20 text-purple-400',
+    GET: 'bg-green-500/20 text-green-600',
+    POST: 'bg-blue-500/20 text-blue-600',
+    PUT: 'bg-yellow-500/20 text-yellow-600',
+    DELETE: 'bg-red-500/20 text-red-600',
+    PATCH: 'bg-purple-500/20 text-purple-600',
   };
 
   return (
@@ -336,7 +353,12 @@ function EndpointCard({
         onClick={onToggle}
       >
         <div className="flex items-center gap-3">
-          <span className={clsx('px-2 py-0.5 rounded text-xs font-medium', methodColors[endpoint.method])}>
+          <span
+            className={clsx(
+              'px-2 py-0.5 rounded text-xs font-medium',
+              methodColors[endpoint.method]
+            )}
+          >
             {endpoint.method}
           </span>
           <span className="text-surface-200 font-medium">{endpoint.name || endpoint.path}</span>
@@ -357,7 +379,7 @@ function EndpointCard({
               e.stopPropagation();
               onRemove();
             }}
-            className="p-1 text-surface-500 hover:text-red-400"
+            className="p-1 text-surface-500 hover:text-red-600"
           >
             <TrashIcon className="w-4 h-4" />
           </button>
@@ -368,15 +390,14 @@ function EndpointCard({
           )}
         </div>
       </div>
-
       {/* Expanded Content */}
       {isExpanded && (
         <div className="p-4 space-y-4 bg-surface-900/30">
           {/* Name & Description */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs text-surface-400 mb-1">Name</label>
-              <input
+              <label className="block text-xs text-surface-600 mb-1">Name</label>
+              <Input
                 type="text"
                 value={endpoint.name}
                 onChange={(e) => onChange({ name: e.target.value })}
@@ -385,8 +406,8 @@ function EndpointCard({
               />
             </div>
             <div>
-              <label className="block text-xs text-surface-400 mb-1">Description</label>
-              <input
+              <label className="block text-xs text-surface-600 mb-1">Description</label>
+              <Input
                 type="text"
                 value={endpoint.description}
                 onChange={(e) => onChange({ description: e.target.value })}
@@ -399,20 +420,22 @@ function EndpointCard({
           {/* Method & Path */}
           <div className="flex gap-4">
             <div className="w-32">
-              <label className="block text-xs text-surface-400 mb-1">Method</label>
-              <select
+              <label className="block text-xs text-surface-600 mb-1">Method</label>
+              <SelectNative
                 value={endpoint.method}
                 onChange={(e) => onChange({ method: e.target.value as any })}
                 className="input w-full text-sm"
               >
                 {HTTP_METHODS.map((m) => (
-                  <option key={m} value={m}>{m}</option>
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
                 ))}
-              </select>
+              </SelectNative>
             </div>
             <div className="flex-1">
-              <label className="block text-xs text-surface-400 mb-1">Path</label>
-              <input
+              <label className="block text-xs text-surface-600 mb-1">Path</label>
+              <Input
                 type="text"
                 value={endpoint.path}
                 onChange={(e) => onChange({ path: e.target.value })}
@@ -424,10 +447,10 @@ function EndpointCard({
 
           {/* Headers */}
           <div>
-            <label className="block text-xs text-surface-400 mb-1">
+            <label className="block text-xs text-surface-600 mb-1">
               Headers <span className="text-surface-600">(one per line, format: Key: Value)</span>
             </label>
-            <textarea
+            <Textarea
               value={headersText}
               onChange={(e) => {
                 setHeadersText(e.target.value);
@@ -441,10 +464,11 @@ function EndpointCard({
 
           {/* Query Params */}
           <div>
-            <label className="block text-xs text-surface-400 mb-1">
-              Query Parameters <span className="text-surface-600">(one per line, format: key=value)</span>
+            <label className="block text-xs text-surface-600 mb-1">
+              Query Parameters{' '}
+              <span className="text-surface-600">(one per line, format: key=value)</span>
             </label>
-            <textarea
+            <Textarea
               value={paramsText}
               onChange={(e) => {
                 setParamsText(e.target.value);
@@ -459,8 +483,8 @@ function EndpointCard({
           {/* Request Body (for POST/PUT/PATCH) */}
           {['POST', 'PUT', 'PATCH'].includes(endpoint.method) && (
             <div>
-              <label className="block text-xs text-surface-400 mb-1">Request Body (JSON)</label>
-              <textarea
+              <label className="block text-xs text-surface-600 mb-1">Request Body (JSON)</label>
+              <Textarea
                 value={JSON.stringify(endpoint.body || {}, null, 2)}
                 onChange={(e) => {
                   try {
@@ -479,40 +503,48 @@ function EndpointCard({
 
           {/* Response Mapping */}
           <div className="border-t border-surface-700 pt-4">
-            <h4 className="text-xs font-medium text-surface-300 mb-3">Response Mapping (JSONPath)</h4>
+            <h4 className="text-xs font-medium text-surface-700 mb-3">
+              Response Mapping (JSONPath)
+            </h4>
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs text-surface-500 mb-1">Title Field</label>
-                <input
+                <Input
                   type="text"
                   value={endpoint.responseMapping?.title || ''}
-                  onChange={(e) => onChange({
-                    responseMapping: { ...endpoint.responseMapping, title: e.target.value }
-                  })}
+                  onChange={(e) =>
+                    onChange({
+                      responseMapping: { ...endpoint.responseMapping, title: e.target.value },
+                    })
+                  }
                   placeholder="$.data.name"
                   className="input w-full text-sm font-mono"
                 />
               </div>
               <div>
                 <label className="block text-xs text-surface-500 mb-1">Description Field</label>
-                <input
+                <Input
                   type="text"
                   value={endpoint.responseMapping?.description || ''}
-                  onChange={(e) => onChange({
-                    responseMapping: { ...endpoint.responseMapping, description: e.target.value }
-                  })}
+                  onChange={(e) =>
+                    onChange({
+                      responseMapping: { ...endpoint.responseMapping, description: e.target.value },
+                    })
+                  }
                   placeholder="$.data.summary"
                   className="input w-full text-sm font-mono"
                 />
               </div>
               <div>
                 <label className="block text-xs text-surface-500 mb-1">Data Field</label>
-                <input
+                <Input
                   type="text"
                   value={endpoint.responseMapping?.data || ''}
-                  onChange={(e) => onChange({
-                    responseMapping: { ...endpoint.responseMapping, data: e.target.value }
-                  })}
+                  onChange={(e) =>
+                    onChange({
+                      responseMapping: { ...endpoint.responseMapping, data: e.target.value },
+                    })
+                  }
                   placeholder="$.data"
                   className="input w-full text-sm font-mono"
                 />
@@ -527,6 +559,3 @@ function EndpointCard({
     </div>
   );
 }
-
-
-

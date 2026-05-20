@@ -11,10 +11,20 @@ import { useWorkspace, Workspace, WorkspaceMember } from '@/contexts/WorkspaceCo
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
 
+import { Textarea } from '@/components/ui/Textarea';
+
+import { Input } from '@/components/ui/Input';
+
+import { SelectNative } from '@/components/ui/SelectNative';
+
 const WORKSPACE_ROLES = [
   { value: 'owner', label: 'Owner', description: 'Full control of workspace' },
   { value: 'manager', label: 'Manager', description: 'Can manage controls, evidence, risks' },
-  { value: 'contributor', label: 'Contributor', description: 'Can add evidence, update implementations' },
+  {
+    value: 'contributor',
+    label: 'Contributor',
+    description: 'Can add evidence, update implementations',
+  },
   { value: 'viewer', label: 'Viewer', description: 'Read-only access' },
 ];
 
@@ -38,13 +48,11 @@ function AddMemberModal({
   // Fetch organization users
   const { data: orgUsers = [] } = useQuery({
     queryKey: ['org-users'],
-    queryFn: () => api.get('/api/users').then(r => r.data?.data || r.data || []),
+    queryFn: () => api.get('/api/users').then((r) => r.data?.data || r.data || []),
     enabled: isOpen,
   });
 
-  const availableUsers = orgUsers.filter(
-    (user: any) => !existingMemberIds.includes(user.id)
-  );
+  const availableUsers = orgUsers.filter((user: any) => !existingMemberIds.includes(user.id));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,7 +79,7 @@ function AddMemberModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
       <div className="bg-surface-800 rounded-lg shadow-xl w-full max-w-md p-6">
         <h3 className="text-lg font-semibold text-foreground mb-4">Add Member</h3>
         <form onSubmit={handleSubmit}>
@@ -80,7 +88,7 @@ function AddMemberModal({
               <label className="block text-sm font-medium text-foreground mb-1">
                 Select User *
               </label>
-              <select
+              <SelectNative
                 value={selectedUserId}
                 onChange={(e) => setSelectedUserId(e.target.value)}
                 className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-brand-500"
@@ -92,7 +100,7 @@ function AddMemberModal({
                     {user.displayName || user.email} ({user.email})
                   </option>
                 ))}
-              </select>
+              </SelectNative>
               {availableUsers.length === 0 && (
                 <p className="text-sm text-muted-foreground mt-1">
                   All organization members are already in this workspace.
@@ -100,10 +108,8 @@ function AddMemberModal({
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">
-                Role
-              </label>
-              <select
+              <label className="block text-sm font-medium text-foreground mb-1">Role</label>
+              <SelectNative
                 value={selectedRole}
                 onChange={(e) => setSelectedRole(e.target.value)}
                 className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-brand-500"
@@ -113,7 +119,7 @@ function AddMemberModal({
                     {role.label} - {role.description}
                   </option>
                 ))}
-              </select>
+              </SelectNative>
             </div>
           </div>
           <div className="mt-6 flex justify-end gap-3">
@@ -150,9 +156,13 @@ export default function WorkspaceSettings() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Fetch workspace details
-  const { data: workspace, isLoading, refetch } = useQuery({
+  const {
+    data: workspace,
+    isLoading,
+    refetch,
+  } = useQuery({
     queryKey: ['workspace', id],
-    queryFn: () => api.get(`/api/workspaces/${id}`).then(r => r.data),
+    queryFn: () => api.get(`/api/workspaces/${id}`).then((r) => r.data),
     enabled: !!id,
   });
 
@@ -252,7 +262,6 @@ export default function WorkspaceSettings() {
           <p className="text-muted-foreground mt-1">{workspace.name}</p>
         </div>
       </div>
-
       {/* Basic Information */}
       <section className="bg-surface-800 rounded-lg p-6 border border-surface-700 mb-6">
         <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
@@ -264,7 +273,7 @@ export default function WorkspaceSettings() {
             <label className="block text-sm font-medium text-foreground mb-1">
               Workspace Name *
             </label>
-            <input
+            <Input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -272,10 +281,8 @@ export default function WorkspaceSettings() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">
-              Description
-            </label>
-            <textarea
+            <label className="block text-sm font-medium text-foreground mb-1">Description</label>
+            <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
@@ -283,10 +290,8 @@ export default function WorkspaceSettings() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">
-              Slug
-            </label>
-            <input
+            <label className="block text-sm font-medium text-foreground mb-1">Slug</label>
+            <Input
               type="text"
               value={workspace.slug}
               disabled
@@ -307,7 +312,6 @@ export default function WorkspaceSettings() {
           </div>
         </div>
       </section>
-
       {/* Members */}
       <section className="bg-surface-800 rounded-lg p-6 border border-surface-700 mb-6">
         <div className="flex items-center justify-between mb-4">
@@ -339,9 +343,11 @@ export default function WorkspaceSettings() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <select
+                <SelectNative
                   value={member.role}
-                  onChange={(e) => updateMemberMutation.mutate({ userId: member.userId, role: e.target.value })}
+                  onChange={(e) =>
+                    updateMemberMutation.mutate({ userId: member.userId, role: e.target.value })
+                  }
                   className="px-2 py-1 text-sm bg-surface-700 border border-surface-600 rounded text-foreground focus:outline-none"
                 >
                   {WORKSPACE_ROLES.map((role) => (
@@ -349,10 +355,10 @@ export default function WorkspaceSettings() {
                       {role.label}
                     </option>
                   ))}
-                </select>
+                </SelectNative>
                 <button
                   onClick={() => removeMemberMutation.mutate(member.userId)}
-                  className="p-1.5 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded"
+                  className="p-1.5 text-red-600 hover:text-red-700 hover:bg-red-500/10 rounded"
                   title="Remove member"
                 >
                   <TrashIcon className="w-4 h-4" />
@@ -368,10 +374,9 @@ export default function WorkspaceSettings() {
           )}
         </div>
       </section>
-
       {/* Danger Zone */}
       <section className="bg-red-500/10 rounded-lg p-6 border border-red-500/30">
-        <h2 className="text-lg font-semibold text-red-400 mb-4">Danger Zone</h2>
+        <h2 className="text-lg font-semibold text-red-600 mb-4">Danger Zone</h2>
         <div className="flex items-center justify-between">
           <div>
             <p className="text-foreground font-medium">Archive this workspace</p>
@@ -387,7 +392,6 @@ export default function WorkspaceSettings() {
           </button>
         </div>
       </section>
-
       {/* Add Member Modal */}
       <AddMemberModal
         isOpen={showAddMember}
@@ -396,15 +400,14 @@ export default function WorkspaceSettings() {
         existingMemberIds={existingMemberIds}
         onSuccess={() => refetch()}
       />
-
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
           <div className="bg-surface-800 rounded-lg shadow-xl w-full max-w-md p-6">
             <h3 className="text-lg font-semibold text-foreground mb-4">Archive Workspace?</h3>
             <p className="text-muted-foreground mb-6">
-              Are you sure you want to archive <strong>{workspace.name}</strong>? 
-              This workspace will be hidden but data will be preserved.
+              Are you sure you want to archive <strong>{workspace.name}</strong>? This workspace
+              will be hidden but data will be preserved.
             </p>
             <div className="flex justify-end gap-3">
               <button
@@ -430,4 +433,3 @@ export default function WorkspaceSettings() {
     </div>
   );
 }
-

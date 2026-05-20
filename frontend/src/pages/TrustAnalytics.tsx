@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
-import { 
+import {
   ChartBarIcon,
   ClockIcon,
   DocumentTextIcon,
   CheckCircleIcon,
   BookOpenIcon,
-  ArrowTrendingUpIcon
+  ArrowTrendingUpIcon,
 } from '@heroicons/react/24/outline';
 import { questionnairesApi, knowledgeBaseApi } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -91,7 +91,7 @@ export default function TrustAnalytics() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-surface-100">Trust Analytics</h1>
-          <p className="mt-1 text-surface-400">
+          <p className="mt-1 text-surface-600">
             Insights into questionnaire performance and knowledge base usage
           </p>
         </div>
@@ -134,48 +134,51 @@ export default function TrustAnalytics() {
         <div className="bg-surface-900 border border-surface-800 rounded-xl p-6">
           <h3 className="text-lg font-semibold text-surface-100 mb-4">Questions by Status</h3>
           <LazyRechartsWrapper height={250}>
-            {(Recharts) => analytics?.questionsByStatus ? (
-              <Recharts.ResponsiveContainer width="100%" height={250}>
-                <Recharts.PieChart>
-                  <Recharts.Pie
-                    data={analytics.questionsByStatus.map((s: any) => ({
-                      name: s.status.charAt(0).toUpperCase() + s.status.slice(1).replace('_', ' '),
-                      value: s.count,
-                    }))}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={2}
-                    dataKey="value"
-                    label={({ name, value }) => `${name}: ${value}`}
-                  >
-                    {analytics.questionsByStatus.map((entry: any, index: number) => (
-                      <Recharts.Cell 
-                        key={`cell-${index}`} 
-                        fill={STATUS_COLORS[entry.status] || '#6B7280'} 
-                      />
-                    ))}
-                  </Recharts.Pie>
-                  <Recharts.Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#1F2937', 
-                      border: '1px solid #374151',
-                      borderRadius: '8px',
-                    }}
-                  />
-                </Recharts.PieChart>
-              </Recharts.ResponsiveContainer>
-            ) : null}
+            {(Recharts) =>
+              analytics?.questionsByStatus ? (
+                <Recharts.ResponsiveContainer width="100%" height={250}>
+                  <Recharts.PieChart>
+                    <Recharts.Pie
+                      data={analytics.questionsByStatus.map((s: any) => ({
+                        name:
+                          s.status.charAt(0).toUpperCase() + s.status.slice(1).replace('_', ' '),
+                        value: s.count,
+                      }))}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={100}
+                      paddingAngle={2}
+                      dataKey="value"
+                      label={({ name, value }) => `${name}: ${value}`}
+                    >
+                      {analytics.questionsByStatus.map((entry: any, index: number) => (
+                        <Recharts.Cell
+                          key={`cell-${index}`}
+                          fill={STATUS_COLORS[entry.status] || '#6B7280'}
+                        />
+                      ))}
+                    </Recharts.Pie>
+                    <Recharts.Tooltip
+                      contentStyle={{
+                        backgroundColor: '#1F2937',
+                        border: '1px solid #374151',
+                        borderRadius: '8px',
+                      }}
+                    />
+                  </Recharts.PieChart>
+                </Recharts.ResponsiveContainer>
+              ) : null
+            }
           </LazyRechartsWrapper>
           <div className="flex flex-wrap justify-center gap-4 mt-4">
             {analytics?.questionsByStatus?.map((s: any) => (
               <div key={s.status} className="flex items-center gap-2 text-sm">
-                <div 
-                  className="w-3 h-3 rounded-full" 
-                  style={{ backgroundColor: STATUS_COLORS[s.status] || '#6B7280' }} 
+                <div
+                  className="w-3 h-3 rounded-full"
+                  style={{ backgroundColor: STATUS_COLORS[s.status] || '#6B7280' }}
                 />
-                <span className="text-surface-300 capitalize">{s.status.replace('_', ' ')}</span>
+                <span className="text-surface-700 capitalize">{s.status.replace('_', ' ')}</span>
               </div>
             ))}
           </div>
@@ -183,40 +186,44 @@ export default function TrustAnalytics() {
 
         {/* Questionnaires by Priority */}
         <div className="bg-surface-900 border border-surface-800 rounded-xl p-6">
-          <h3 className="text-lg font-semibold text-surface-100 mb-4">Questionnaires by Priority</h3>
+          <h3 className="text-lg font-semibold text-surface-100 mb-4">
+            Questionnaires by Priority
+          </h3>
           <LazyRechartsWrapper height={250}>
-            {(Recharts) => analytics?.questionnairesByPriority ? (
-              <Recharts.ResponsiveContainer width="100%" height={250}>
-                <Recharts.BarChart
-                  data={analytics.questionnairesByPriority.map((p: any) => ({
-                    name: p.priority.charAt(0).toUpperCase() + p.priority.slice(1),
-                    count: p.count,
-                    fill: PRIORITY_COLORS[p.priority] || '#6B7280',
-                  }))}
-                  layout="vertical"
-                  margin={{ left: 60, right: 20 }}
-                >
-                  <Recharts.CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <Recharts.XAxis type="number" stroke="#9CA3AF" />
-                  <Recharts.YAxis type="category" dataKey="name" stroke="#9CA3AF" />
-                  <Recharts.Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#1F2937', 
-                      border: '1px solid #374151',
-                      borderRadius: '8px',
-                    }}
-                  />
-                  <Recharts.Bar dataKey="count" radius={[0, 4, 4, 0]}>
-                    {analytics.questionnairesByPriority.map((entry: any, index: number) => (
-                      <Recharts.Cell 
-                        key={`cell-${index}`} 
-                        fill={PRIORITY_COLORS[entry.priority] || '#6B7280'} 
-                      />
-                    ))}
-                  </Recharts.Bar>
-                </Recharts.BarChart>
-              </Recharts.ResponsiveContainer>
-            ) : null}
+            {(Recharts) =>
+              analytics?.questionnairesByPriority ? (
+                <Recharts.ResponsiveContainer width="100%" height={250}>
+                  <Recharts.BarChart
+                    data={analytics.questionnairesByPriority.map((p: any) => ({
+                      name: p.priority.charAt(0).toUpperCase() + p.priority.slice(1),
+                      count: p.count,
+                      fill: PRIORITY_COLORS[p.priority] || '#6B7280',
+                    }))}
+                    layout="vertical"
+                    margin={{ left: 60, right: 20 }}
+                  >
+                    <Recharts.CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                    <Recharts.XAxis type="number" stroke="#9CA3AF" />
+                    <Recharts.YAxis type="category" dataKey="name" stroke="#9CA3AF" />
+                    <Recharts.Tooltip
+                      contentStyle={{
+                        backgroundColor: '#1F2937',
+                        border: '1px solid #374151',
+                        borderRadius: '8px',
+                      }}
+                    />
+                    <Recharts.Bar dataKey="count" radius={[0, 4, 4, 0]}>
+                      {analytics.questionnairesByPriority.map((entry: any, index: number) => (
+                        <Recharts.Cell
+                          key={`cell-${index}`}
+                          fill={PRIORITY_COLORS[entry.priority] || '#6B7280'}
+                        />
+                      ))}
+                    </Recharts.Bar>
+                  </Recharts.BarChart>
+                </Recharts.ResponsiveContainer>
+              ) : null
+            }
           </LazyRechartsWrapper>
         </div>
       </div>
@@ -226,15 +233,15 @@ export default function TrustAnalytics() {
         {/* Average Response Time by Priority */}
         <div className="bg-surface-900 border border-surface-800 rounded-xl p-6">
           <div className="flex items-center gap-2 mb-4">
-            <ClockIcon className="w-5 h-5 text-surface-400" />
+            <ClockIcon className="w-5 h-5 text-surface-600" />
             <h3 className="text-lg font-semibold text-surface-100">Average Response Time</h3>
           </div>
           <div className="space-y-4">
             {analytics?.responseTimeByPriority?.map((item: any) => (
               <div key={item.priority} className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <span 
-                    className="w-3 h-3 rounded-full" 
+                  <span
+                    className="w-3 h-3 rounded-full"
                     style={{ backgroundColor: PRIORITY_COLORS[item.priority] || '#6B7280' }}
                   />
                   <span className="text-surface-200 capitalize">{item.priority}</span>
@@ -243,63 +250,64 @@ export default function TrustAnalytics() {
                   <span className="text-surface-100 font-semibold">
                     {formatHours(item.avgHours)}
                   </span>
-                  <span className="text-xs text-surface-500 ml-2">
-                    ({item.count} completed)
-                  </span>
+                  <span className="text-xs text-surface-500 ml-2">({item.count} completed)</span>
                 </div>
               </div>
-            )) || (
-              <p className="text-surface-400 text-sm">No completion data available</p>
-            )}
+            )) || <p className="text-surface-600 text-sm">No completion data available</p>}
           </div>
         </div>
 
         {/* Completion Trend */}
         <div className="bg-surface-900 border border-surface-800 rounded-xl p-6">
           <div className="flex items-center gap-2 mb-4">
-            <ArrowTrendingUpIcon className="w-5 h-5 text-surface-400" />
+            <ArrowTrendingUpIcon className="w-5 h-5 text-surface-600" />
             <h3 className="text-lg font-semibold text-surface-100">Completion Trend</h3>
           </div>
           <LazyRechartsWrapper height={200}>
-            {(Recharts) => analytics?.completionTrend && analytics.completionTrend.length > 0 ? (
-              <Recharts.ResponsiveContainer width="100%" height={200}>
-                <Recharts.AreaChart
-                  data={analytics.completionTrend.map((t: any) => ({
-                    week: new Date(t.week).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-                    completions: t.count,
-                  }))}
-                  margin={{ left: 0, right: 0 }}
-                >
-                  <defs>
-                    <linearGradient id="colorCompletions" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <Recharts.CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <Recharts.XAxis dataKey="week" stroke="#9CA3AF" fontSize={12} />
-                  <Recharts.YAxis stroke="#9CA3AF" fontSize={12} />
-                  <Recharts.Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#1F2937', 
-                      border: '1px solid #374151',
-                      borderRadius: '8px',
-                    }}
-                  />
-                  <Recharts.Area 
-                    type="monotone" 
-                    dataKey="completions" 
-                    stroke="#10B981" 
-                    fillOpacity={1} 
-                    fill="url(#colorCompletions)" 
-                  />
-                </Recharts.AreaChart>
-              </Recharts.ResponsiveContainer>
-            ) : (
-              <div className="h-[200px] flex items-center justify-center text-surface-400 text-sm">
-                No completion data for this period
-              </div>
-            )}
+            {(Recharts) =>
+              analytics?.completionTrend && analytics.completionTrend.length > 0 ? (
+                <Recharts.ResponsiveContainer width="100%" height={200}>
+                  <Recharts.AreaChart
+                    data={analytics.completionTrend.map((t: any) => ({
+                      week: new Date(t.week).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                      }),
+                      completions: t.count,
+                    }))}
+                    margin={{ left: 0, right: 0 }}
+                  >
+                    <defs>
+                      <linearGradient id="colorCompletions" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10B981" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <Recharts.CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                    <Recharts.XAxis dataKey="week" stroke="#9CA3AF" fontSize={12} />
+                    <Recharts.YAxis stroke="#9CA3AF" fontSize={12} />
+                    <Recharts.Tooltip
+                      contentStyle={{
+                        backgroundColor: '#1F2937',
+                        border: '1px solid #374151',
+                        borderRadius: '8px',
+                      }}
+                    />
+                    <Recharts.Area
+                      type="monotone"
+                      dataKey="completions"
+                      stroke="#10B981"
+                      fillOpacity={1}
+                      fill="url(#colorCompletions)"
+                    />
+                  </Recharts.AreaChart>
+                </Recharts.ResponsiveContainer>
+              ) : (
+                <div className="h-[200px] flex items-center justify-center text-surface-600 text-sm">
+                  No completion data for this period
+                </div>
+              )
+            }
           </LazyRechartsWrapper>
         </div>
       </div>
@@ -307,15 +315,17 @@ export default function TrustAnalytics() {
       {/* Top Knowledge Base Entries */}
       <div className="bg-surface-900 border border-surface-800 rounded-xl p-6">
         <div className="flex items-center gap-2 mb-4">
-          <BookOpenIcon className="w-5 h-5 text-surface-400" />
-          <h3 className="text-lg font-semibold text-surface-100">Most Used Knowledge Base Entries</h3>
+          <BookOpenIcon className="w-5 h-5 text-surface-600" />
+          <h3 className="text-lg font-semibold text-surface-100">
+            Most Used Knowledge Base Entries
+          </h3>
         </div>
         {analytics?.topKbEntries && analytics.topKbEntries.length > 0 ? (
           <div className="divide-y divide-surface-700">
             {analytics.topKbEntries.map((entry: any, index: number) => (
               <div key={entry.id} className="flex items-center justify-between py-3">
                 <div className="flex items-center gap-3">
-                  <span className="w-6 h-6 flex items-center justify-center bg-surface-700 text-surface-400 text-sm font-bold rounded">
+                  <span className="w-6 h-6 flex items-center justify-center bg-surface-700 text-surface-600 text-sm font-bold rounded">
                     {index + 1}
                   </span>
                   <div>
@@ -325,14 +335,12 @@ export default function TrustAnalytics() {
                     )}
                   </div>
                 </div>
-                <span className="text-surface-400 text-sm">
-                  {entry.usageCount} uses
-                </span>
+                <span className="text-surface-600 text-sm">{entry.usageCount} uses</span>
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-surface-400 text-sm">No usage data available yet</p>
+          <p className="text-surface-600 text-sm">No usage data available yet</p>
         )}
       </div>
     </div>
@@ -363,11 +371,11 @@ function StatCard({
   subtitle?: string;
 }) {
   const colorClasses = {
-    blue: 'bg-blue-500/20 text-blue-400',
-    green: 'bg-green-500/20 text-green-400',
-    purple: 'bg-purple-500/20 text-purple-400',
-    amber: 'bg-amber-500/20 text-amber-400',
-    red: 'bg-red-500/20 text-red-400',
+    blue: 'bg-blue-500/20 text-blue-600',
+    green: 'bg-green-500/20 text-green-600',
+    purple: 'bg-purple-500/20 text-purple-600',
+    amber: 'bg-amber-500/20 text-amber-600',
+    red: 'bg-red-500/20 text-red-600',
   };
 
   return (
@@ -376,13 +384,10 @@ function StatCard({
         <div className={clsx('p-2 rounded-lg', colorClasses[color])}>
           <Icon className="w-5 h-5" />
         </div>
-        <span className="text-sm text-surface-400">{title}</span>
+        <span className="text-sm text-surface-600">{title}</span>
       </div>
       <p className="text-3xl font-bold text-surface-100">{value}</p>
-      {subtitle && (
-        <p className="text-xs text-surface-500 mt-1">{subtitle}</p>
-      )}
+      {subtitle && <p className="text-xs text-surface-500 mt-1">{subtitle}</p>}
     </div>
   );
 }
-

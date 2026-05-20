@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { auditsApi } from '@/lib/api';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import { SkeletonTable } from '@/components/Skeleton';
 import { ExportDropdown } from '@/components/ExportDropdown';
 import { exportConfigs } from '@/lib/export';
@@ -11,6 +11,10 @@ import {
   MagnifyingGlassIcon,
   ClipboardDocumentListIcon,
 } from '@heroicons/react/24/outline';
+
+import { Input } from '@/components/ui/Input';
+
+import { SelectNative } from '@/components/ui/SelectNative';
 
 interface Audit {
   id: string;
@@ -58,16 +62,20 @@ export default function Audits() {
 
   const { data: audits = [], isLoading } = useQuery({
     queryKey: ['audits', statusFilter, typeFilter],
-    queryFn: () => auditsApi.list({
-      status: (statusFilter || undefined) as any,
-      auditType: (typeFilter || undefined) as any,
-    }).then((res) => res.data),
+    queryFn: () =>
+      auditsApi
+        .list({
+          status: (statusFilter || undefined) as any,
+          auditType: (typeFilter || undefined) as any,
+        })
+        .then((res) => res.data),
   });
 
-  const filteredAudits = (audits as unknown as Audit[]).filter((audit: Audit) =>
-    audit.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    audit.auditId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    audit.framework?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredAudits = (audits as unknown as Audit[]).filter(
+    (audit: Audit) =>
+      audit.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      audit.auditId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      audit.framework?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -76,7 +84,7 @@ export default function Audits() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-surface-100">Audits</h1>
-          <p className="text-surface-400 mt-1">Manage internal and external compliance audits</p>
+          <p className="text-surface-600 mt-1">Manage internal and external compliance audits</p>
         </div>
         <div className="flex gap-3">
           <ExportDropdown
@@ -94,12 +102,11 @@ export default function Audits() {
           </Button>
         </div>
       </div>
-
       {/* Filters */}
       <div className="flex items-center gap-4">
         <div className="flex-1 relative">
           <MagnifyingGlassIcon className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-surface-500" />
-          <input
+          <Input
             type="text"
             placeholder="Search audits..."
             value={searchTerm}
@@ -108,7 +115,7 @@ export default function Audits() {
           />
         </div>
 
-        <select
+        <SelectNative
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
           className="px-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:ring-2 focus:ring-brand-500"
@@ -120,9 +127,9 @@ export default function Audits() {
           <option value="reporting">Reporting</option>
           <option value="completed">Completed</option>
           <option value="cancelled">Cancelled</option>
-        </select>
+        </SelectNative>
 
-        <select
+        <SelectNative
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value)}
           className="px-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:ring-2 focus:ring-brand-500"
@@ -132,16 +139,15 @@ export default function Audits() {
           <option value="external">External</option>
           <option value="surveillance">Surveillance</option>
           <option value="certification">Certification</option>
-        </select>
+        </SelectNative>
       </div>
-
       {/* Audits List */}
       {isLoading ? (
         <SkeletonTable rows={5} columns={4} />
       ) : filteredAudits.length === 0 ? (
         <div className="text-center py-12">
           <ClipboardDocumentListIcon className="w-12 h-12 mx-auto text-surface-600 mb-4" />
-          <h3 className="text-lg font-medium text-surface-300 mb-2">No audits found</h3>
+          <h3 className="text-lg font-medium text-surface-700 mb-2">No audits found</h3>
           <p className="text-surface-500 mb-4">Get started by creating your first audit</p>
           <Button
             onClick={() => navigate('/audits/new')}
@@ -164,12 +170,12 @@ export default function Audits() {
                     <h3 className="text-lg font-semibold text-surface-100">{audit.name}</h3>
                     <span className="text-sm text-surface-500">#{audit.auditId}</span>
                     {audit.isExternal && (
-                      <span className="px-2 py-1 bg-purple-600/20 text-purple-400 rounded text-xs font-medium">
+                      <span className="px-2 py-1 bg-purple-600/20 text-purple-600 rounded text-xs font-medium">
                         External
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-4 text-sm text-surface-400">
+                  <div className="flex items-center gap-4 text-sm text-surface-600">
                     <span>{auditTypeLabels[audit.auditType] || audit.auditType}</span>
                     {audit.framework && <span>• {audit.framework}</span>}
                     {audit.plannedStartDate && (
@@ -177,7 +183,9 @@ export default function Audits() {
                     )}
                   </div>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[audit.status]}`}>
+                <span
+                  className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[audit.status]}`}
+                >
                   {audit.status.charAt(0).toUpperCase() + audit.status.slice(1)}
                 </span>
               </div>
@@ -185,22 +193,32 @@ export default function Audits() {
               <div className="grid grid-cols-4 gap-4 pt-4 border-t border-surface-700">
                 <div>
                   <div className="text-sm text-surface-500 mb-1">Requests</div>
-                  <div className="text-lg font-semibold text-surface-100">{audit._count.requests}</div>
+                  <div className="text-lg font-semibold text-surface-100">
+                    {audit._count.requests}
+                  </div>
                 </div>
                 <div>
                   <div className="text-sm text-surface-500 mb-1">Evidence</div>
-                  <div className="text-lg font-semibold text-surface-100">{audit._count.evidence}</div>
+                  <div className="text-lg font-semibold text-surface-100">
+                    {audit._count.evidence}
+                  </div>
                 </div>
                 <div>
                   <div className="text-sm text-surface-500 mb-1">Tests</div>
-                  <div className="text-lg font-semibold text-surface-100">{audit._count.testResults}</div>
+                  <div className="text-lg font-semibold text-surface-100">
+                    {audit._count.testResults}
+                  </div>
                 </div>
                 <div>
                   <div className="text-sm text-surface-500 mb-1">Findings</div>
                   <div className="flex items-baseline gap-2">
-                    <div className="text-lg font-semibold text-surface-100">{audit._count.findings}</div>
+                    <div className="text-lg font-semibold text-surface-100">
+                      {audit._count.findings}
+                    </div>
                     {audit.criticalFindings > 0 && (
-                      <span className="text-xs text-red-400">({audit.criticalFindings} critical)</span>
+                      <span className="text-xs text-red-600">
+                        ({audit.criticalFindings} critical)
+                      </span>
                     )}
                   </div>
                 </div>

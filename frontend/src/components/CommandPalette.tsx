@@ -51,54 +51,197 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     queryKey: ['command-search', query],
     queryFn: async () => {
       if (query.length < 2) return { controls: [], policies: [], risks: [], vendors: [] };
-      
+
       const [controls, policies, risks, vendors] = await Promise.all([
-        controlsApi.list({ search: query, limit: 5 }).then(r => r.data?.data || []).catch(() => []),
-        policiesApi.list({ search: query, limit: 5 }).then(r => r.data?.data || []).catch(() => []),
-        risksApi.list({ search: query, limit: 5 }).then(r => r.data?.risks || []).catch(() => []),
-        vendorsApi.list({ search: query, limit: 5 }).then(r => r.data?.data || []).catch(() => []),
+        controlsApi
+          .list({ search: query, limit: 5 })
+          .then((r) => r.data?.data || [])
+          .catch(() => []),
+        policiesApi
+          .list({ search: query, limit: 5 })
+          .then((r) => r.data?.data || [])
+          .catch(() => []),
+        risksApi
+          .list({ search: query, limit: 5 })
+          .then((r) => r.data?.risks || [])
+          .catch(() => []),
+        vendorsApi
+          .list({ search: query, limit: 5 })
+          .then((r) => r.data?.data || [])
+          .catch(() => []),
       ]);
-      
+
       return { controls, policies, risks, vendors };
     },
     enabled: query.length >= 2,
   });
 
   // Base commands
-  const baseCommands: CommandItem[] = useMemo(() => [
-    // Navigation
-    { id: 'nav-dashboard', name: 'Go to Dashboard', icon: HomeIcon, action: () => navigate('/'), category: 'navigation', keywords: ['home'] },
-    { id: 'nav-controls', name: 'Go to Controls', icon: ShieldCheckIcon, action: () => navigate('/controls'), category: 'navigation' },
-    { id: 'nav-risks', name: 'Go to Risks', icon: ExclamationTriangleIcon, action: () => navigate('/risks'), category: 'navigation' },
-    { id: 'nav-policies', name: 'Go to Policies', icon: DocumentTextIcon, action: () => navigate('/policies'), category: 'navigation' },
-    { id: 'nav-evidence', name: 'Go to Evidence', icon: FolderOpenIcon, action: () => navigate('/evidence'), category: 'navigation' },
-    { id: 'nav-vendors', name: 'Go to Vendors', icon: BuildingOfficeIcon, action: () => navigate('/vendors'), category: 'navigation', keywords: ['tprm', 'third party'] },
-    { id: 'nav-frameworks', name: 'Go to Frameworks', icon: ChartBarIcon, action: () => navigate('/frameworks'), category: 'navigation', keywords: ['compliance', 'soc2', 'iso'] },
-    { id: 'nav-audits', name: 'Go to Audits', icon: ClipboardDocumentCheckIcon, action: () => navigate('/audits'), category: 'navigation' },
-    { id: 'nav-calendar', name: 'Go to Calendar', icon: CalendarDaysIcon, action: () => navigate('/compliance-calendar'), category: 'navigation', keywords: ['schedule', 'events'] },
-    { id: 'nav-reports', name: 'Go to Risk Reports', icon: ChartBarIcon, action: () => navigate('/risk-reports'), category: 'navigation' },
-    { id: 'nav-training', name: 'Go to Training', icon: AcademicCapIcon, action: () => navigate('/tools/awareness'), category: 'navigation', keywords: ['security awareness'] },
-    { id: 'nav-users', name: 'Go to Users', icon: UserGroupIcon, action: () => navigate('/users'), category: 'navigation' },
-    
-    // Actions
-    { id: 'action-new-control', name: 'Create New Control', icon: PlusIcon, action: () => navigate('/controls/new'), category: 'actions', keywords: ['add control'] },
-    { id: 'action-new-risk', name: 'Create New Risk', icon: PlusIcon, action: () => navigate('/risks/new'), category: 'actions', keywords: ['add risk', 'register risk'] },
-    { id: 'action-upload-evidence', name: 'Upload Evidence', icon: ArrowUpTrayIcon, action: () => navigate('/evidence/new'), category: 'actions', keywords: ['add evidence'] },
-    { id: 'action-new-vendor', name: 'Add New Vendor', icon: PlusIcon, action: () => navigate('/vendors/new'), category: 'actions' },
-    { id: 'action-new-policy', name: 'Create New Policy', icon: PlusIcon, action: () => navigate('/policies/new'), category: 'actions' },
-    
-    // Settings
-    { id: 'settings-profile', name: 'Profile Settings', icon: Cog6ToothIcon, action: () => navigate('/settings'), category: 'settings' },
-    { id: 'settings-notifications', name: 'Notification Settings', icon: BellIcon, action: () => navigate('/notification-settings'), category: 'settings' },
-    { id: 'settings-permissions', name: 'Permission Groups', icon: UserGroupIcon, action: () => navigate('/permission-groups'), category: 'settings' },
-  ], [navigate]);
+  const baseCommands: CommandItem[] = useMemo(
+    () => [
+      // Navigation
+      {
+        id: 'nav-dashboard',
+        name: 'Go to Dashboard',
+        icon: HomeIcon,
+        action: () => navigate('/'),
+        category: 'navigation',
+        keywords: ['home'],
+      },
+      {
+        id: 'nav-controls',
+        name: 'Go to Controls',
+        icon: ShieldCheckIcon,
+        action: () => navigate('/controls'),
+        category: 'navigation',
+      },
+      {
+        id: 'nav-risks',
+        name: 'Go to Risks',
+        icon: ExclamationTriangleIcon,
+        action: () => navigate('/risks'),
+        category: 'navigation',
+      },
+      {
+        id: 'nav-policies',
+        name: 'Go to Policies',
+        icon: DocumentTextIcon,
+        action: () => navigate('/policies'),
+        category: 'navigation',
+      },
+      {
+        id: 'nav-evidence',
+        name: 'Go to Evidence',
+        icon: FolderOpenIcon,
+        action: () => navigate('/evidence'),
+        category: 'navigation',
+      },
+      {
+        id: 'nav-vendors',
+        name: 'Go to Vendors',
+        icon: BuildingOfficeIcon,
+        action: () => navigate('/vendors'),
+        category: 'navigation',
+        keywords: ['tprm', 'third party'],
+      },
+      {
+        id: 'nav-frameworks',
+        name: 'Go to Frameworks',
+        icon: ChartBarIcon,
+        action: () => navigate('/frameworks'),
+        category: 'navigation',
+        keywords: ['compliance', 'soc2', 'iso'],
+      },
+      {
+        id: 'nav-audits',
+        name: 'Go to Audits',
+        icon: ClipboardDocumentCheckIcon,
+        action: () => navigate('/audits'),
+        category: 'navigation',
+      },
+      {
+        id: 'nav-calendar',
+        name: 'Go to Calendar',
+        icon: CalendarDaysIcon,
+        action: () => navigate('/compliance-calendar'),
+        category: 'navigation',
+        keywords: ['schedule', 'events'],
+      },
+      {
+        id: 'nav-reports',
+        name: 'Go to Risk Reports',
+        icon: ChartBarIcon,
+        action: () => navigate('/risk-reports'),
+        category: 'navigation',
+      },
+      {
+        id: 'nav-training',
+        name: 'Go to Training',
+        icon: AcademicCapIcon,
+        action: () => navigate('/tools/awareness'),
+        category: 'navigation',
+        keywords: ['security awareness'],
+      },
+      {
+        id: 'nav-users',
+        name: 'Go to Users',
+        icon: UserGroupIcon,
+        action: () => navigate('/users'),
+        category: 'navigation',
+      },
+
+      // Actions
+      {
+        id: 'action-new-control',
+        name: 'Create New Control',
+        icon: PlusIcon,
+        action: () => navigate('/controls/new'),
+        category: 'actions',
+        keywords: ['add control'],
+      },
+      {
+        id: 'action-new-risk',
+        name: 'Create New Risk',
+        icon: PlusIcon,
+        action: () => navigate('/risks/new'),
+        category: 'actions',
+        keywords: ['add risk', 'register risk'],
+      },
+      {
+        id: 'action-upload-evidence',
+        name: 'Upload Evidence',
+        icon: ArrowUpTrayIcon,
+        action: () => navigate('/evidence/new'),
+        category: 'actions',
+        keywords: ['add evidence'],
+      },
+      {
+        id: 'action-new-vendor',
+        name: 'Add New Vendor',
+        icon: PlusIcon,
+        action: () => navigate('/vendors/new'),
+        category: 'actions',
+      },
+      {
+        id: 'action-new-policy',
+        name: 'Create New Policy',
+        icon: PlusIcon,
+        action: () => navigate('/policies/new'),
+        category: 'actions',
+      },
+
+      // Settings
+      {
+        id: 'settings-profile',
+        name: 'Profile Settings',
+        icon: Cog6ToothIcon,
+        action: () => navigate('/settings'),
+        category: 'settings',
+      },
+      {
+        id: 'settings-notifications',
+        name: 'Notification Settings',
+        icon: BellIcon,
+        action: () => navigate('/notification-settings'),
+        category: 'settings',
+      },
+      {
+        id: 'settings-permissions',
+        name: 'Permission Groups',
+        icon: UserGroupIcon,
+        action: () => navigate('/permission-groups'),
+        category: 'settings',
+      },
+    ],
+    [navigate]
+  );
 
   // Build search result commands
   const searchCommands: CommandItem[] = useMemo(() => {
     if (!searchResults) return [];
-    
+
     const commands: CommandItem[] = [];
-    
+
     searchResults.controls?.forEach((control: any) => {
       commands.push({
         id: `control-${control.id}`,
@@ -109,7 +252,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         category: 'search',
       });
     });
-    
+
     searchResults.policies?.forEach((policy: any) => {
       commands.push({
         id: `policy-${policy.id}`,
@@ -120,7 +263,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         category: 'search',
       });
     });
-    
+
     searchResults.risks?.forEach((risk: any) => {
       commands.push({
         id: `risk-${risk.id}`,
@@ -131,7 +274,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         category: 'search',
       });
     });
-    
+
     searchResults.vendors?.forEach((vendor: any) => {
       commands.push({
         id: `vendor-${vendor.id}`,
@@ -142,43 +285,45 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         category: 'search',
       });
     });
-    
+
     return commands;
   }, [searchResults, navigate]);
 
   // Filter and combine commands
   const filteredCommands = useMemo(() => {
     const lowerQuery = query.toLowerCase();
-    
+
     // If there's a search query, prioritize search results
     if (query.length >= 2) {
-      const filtered = baseCommands.filter(cmd => 
-        cmd.name.toLowerCase().includes(lowerQuery) ||
-        cmd.keywords?.some(k => k.toLowerCase().includes(lowerQuery))
+      const filtered = baseCommands.filter(
+        (cmd) =>
+          cmd.name.toLowerCase().includes(lowerQuery) ||
+          cmd.keywords?.some((k) => k.toLowerCase().includes(lowerQuery))
       );
       return [...searchCommands, ...filtered];
     }
-    
+
     // Otherwise show all base commands
     if (!query) return baseCommands;
-    
-    return baseCommands.filter(cmd => 
-      cmd.name.toLowerCase().includes(lowerQuery) ||
-      cmd.keywords?.some(k => k.toLowerCase().includes(lowerQuery))
+
+    return baseCommands.filter(
+      (cmd) =>
+        cmd.name.toLowerCase().includes(lowerQuery) ||
+        cmd.keywords?.some((k) => k.toLowerCase().includes(lowerQuery))
     );
   }, [query, baseCommands, searchCommands]);
 
   // Group commands by category
   const groupedCommands = useMemo(() => {
     const groups: Record<string, CommandItem[]> = {};
-    
-    filteredCommands.forEach(cmd => {
+
+    filteredCommands.forEach((cmd) => {
       if (!groups[cmd.category]) {
         groups[cmd.category] = [];
       }
       groups[cmd.category].push(cmd);
     });
-    
+
     return groups;
   }, [filteredCommands]);
 
@@ -190,13 +335,16 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
   };
 
   // Handle command selection
-  const handleSelect = useCallback((command: CommandItem | null) => {
-    if (command) {
-      command.action();
-      onClose();
-      setQuery('');
-    }
-  }, [onClose]);
+  const handleSelect = useCallback(
+    (command: CommandItem | null) => {
+      if (command) {
+        command.action();
+        onClose();
+        setQuery('');
+      }
+    },
+    [onClose]
+  );
 
   // Focus input when opened
   useEffect(() => {
@@ -214,11 +362,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
 
   return (
     <Transition.Root show={isOpen} as={Fragment}>
-      <Dialog
-        as="div"
-        className="relative z-50"
-        onClose={onClose}
-      >
+      <Dialog as="div" className="relative z-50" onClose={onClose}>
         <Transition.Child
           as={Fragment}
           enter="ease-out duration-200"
@@ -246,7 +390,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                 {/* Search Input */}
                 <div className="relative">
                   <MagnifyingGlassIcon
-                    className="pointer-events-none absolute left-4 top-3.5 h-5 w-5 text-surface-400"
+                    className="pointer-events-none absolute left-4 top-3.5 h-5 w-5 text-surface-600"
                     aria-hidden="true"
                   />
                   <Combobox.Input
@@ -257,7 +401,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                     value={query}
                   />
                   <div className="absolute right-4 top-3 text-xs text-surface-500 hidden sm:flex items-center gap-1">
-                    <kbd className="px-1.5 py-0.5 bg-surface-700 rounded text-surface-400">Esc</kbd>
+                    <kbd className="px-1.5 py-0.5 bg-surface-700 rounded text-surface-600">Esc</kbd>
                     <span>to close</span>
                   </div>
                 </div>
@@ -286,15 +430,19 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                           >
                             {({ active }) => (
                               <>
-                                <command.icon className={clsx(
-                                  'w-5 h-5 flex-shrink-0',
-                                  active ? 'text-brand-400' : 'text-surface-400'
-                                )} />
+                                <command.icon
+                                  className={clsx(
+                                    'w-5 h-5 flex-shrink-0',
+                                    active ? 'text-brand-400' : 'text-surface-600'
+                                  )}
+                                />
                                 <div className="flex-1 min-w-0">
-                                  <p className={clsx(
-                                    'text-sm font-medium truncate',
-                                    active ? 'text-white' : 'text-surface-200'
-                                  )}>
+                                  <p
+                                    className={clsx(
+                                      'text-sm font-medium truncate',
+                                      active ? 'text-white' : 'text-surface-200'
+                                    )}
+                                  >
                                     {command.name}
                                   </p>
                                   {command.description && (
@@ -304,7 +452,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                                   )}
                                 </div>
                                 {command.shortcut && (
-                                  <kbd className="px-2 py-1 text-xs bg-surface-700 rounded text-surface-400">
+                                  <kbd className="px-2 py-1 text-xs bg-surface-700 rounded text-surface-600">
                                     {command.shortcut}
                                   </kbd>
                                 )}
@@ -321,9 +469,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                 {query && filteredCommands.length === 0 && (
                   <div className="px-6 py-14 text-center border-t border-surface-700">
                     <MagnifyingGlassIcon className="mx-auto h-8 w-8 text-surface-500" />
-                    <p className="mt-4 text-sm text-surface-400">
-                      No results found for "{query}"
-                    </p>
+                    <p className="mt-4 text-sm text-surface-600">No results found for "{query}"</p>
                     <p className="mt-2 text-xs text-surface-500">
                       Try searching for controls, policies, risks, or use a command
                     </p>
@@ -360,7 +506,7 @@ export function useCommandPalette() {
 
   const open = useCallback(() => setIsOpen(true), []);
   const close = useCallback(() => setIsOpen(false), []);
-  const toggle = useCallback(() => setIsOpen(prev => !prev), []);
+  const toggle = useCallback(() => setIsOpen((prev) => !prev), []);
 
   // Global keyboard shortcut
   useEffect(() => {
@@ -380,4 +526,3 @@ export function useCommandPalette() {
 }
 
 export default CommandPalette;
-

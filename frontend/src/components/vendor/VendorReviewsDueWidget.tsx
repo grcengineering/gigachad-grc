@@ -23,10 +23,10 @@ const TIER_LABELS: Record<string, string> = {
 };
 
 const TIER_COLORS: Record<string, string> = {
-  tier_1: 'bg-red-500/20 text-red-400',
-  tier_2: 'bg-orange-500/20 text-orange-400',
-  tier_3: 'bg-yellow-500/20 text-yellow-400',
-  tier_4: 'bg-green-500/20 text-green-400',
+  tier_1: 'bg-red-500/20 text-red-600',
+  tier_2: 'bg-orange-500/20 text-orange-600',
+  tier_3: 'bg-yellow-500/20 text-yellow-600',
+  tier_4: 'bg-green-500/20 text-green-600',
 };
 
 export function VendorReviewsDueWidget({ className }: VendorReviewsDueWidgetProps) {
@@ -55,7 +55,7 @@ export function VendorReviewsDueWidget({ className }: VendorReviewsDueWidgetProp
   if (error) {
     return (
       <div className={clsx('card p-6', className)}>
-        <div className="text-center text-surface-400">
+        <div className="text-center text-surface-600">
           <ExclamationTriangleIcon className="w-8 h-8 mx-auto mb-2" />
           <p>Failed to load review data</p>
         </div>
@@ -70,7 +70,8 @@ export function VendorReviewsDueWidget({ className }: VendorReviewsDueWidgetProp
     summary: { overdueCount: 0, dueThisWeekCount: 0, dueThisMonthCount: 0, upcomingCount: 0 },
   };
 
-  const hasAnyReviews = summary.overdueCount > 0 || summary.dueThisWeekCount > 0 || summary.dueThisMonthCount > 0;
+  const hasAnyReviews =
+    summary.overdueCount > 0 || summary.dueThisWeekCount > 0 || summary.dueThisMonthCount > 0;
 
   return (
     <div className={clsx('card p-6', className)}>
@@ -90,41 +91,57 @@ export function VendorReviewsDueWidget({ className }: VendorReviewsDueWidgetProp
 
       {/* Summary Stats */}
       <div className="grid grid-cols-3 gap-3 mb-4">
-        <div className={clsx(
-          'p-3 rounded-lg text-center',
-          summary.overdueCount > 0 ? 'bg-red-500/10 border border-red-500/30' : 'bg-surface-800'
-        )}>
-          <p className={clsx(
-            'text-2xl font-bold',
-            summary.overdueCount > 0 ? 'text-red-400' : 'text-surface-300'
-          )}>
+        <div
+          className={clsx(
+            'p-3 rounded-lg text-center',
+            summary.overdueCount > 0 ? 'bg-red-500/10 border border-red-500/30' : 'bg-surface-800'
+          )}
+        >
+          <p
+            className={clsx(
+              'text-2xl font-bold',
+              summary.overdueCount > 0 ? 'text-red-600' : 'text-surface-700'
+            )}
+          >
             {summary.overdueCount}
           </p>
-          <p className="text-xs text-surface-400">Overdue</p>
+          <p className="text-xs text-surface-600">Overdue</p>
         </div>
-        <div className={clsx(
-          'p-3 rounded-lg text-center',
-          summary.dueThisWeekCount > 0 ? 'bg-orange-500/10 border border-orange-500/30' : 'bg-surface-800'
-        )}>
-          <p className={clsx(
-            'text-2xl font-bold',
-            summary.dueThisWeekCount > 0 ? 'text-orange-400' : 'text-surface-300'
-          )}>
+        <div
+          className={clsx(
+            'p-3 rounded-lg text-center',
+            summary.dueThisWeekCount > 0
+              ? 'bg-orange-500/10 border border-orange-500/30'
+              : 'bg-surface-800'
+          )}
+        >
+          <p
+            className={clsx(
+              'text-2xl font-bold',
+              summary.dueThisWeekCount > 0 ? 'text-orange-600' : 'text-surface-700'
+            )}
+          >
             {summary.dueThisWeekCount}
           </p>
-          <p className="text-xs text-surface-400">This Week</p>
+          <p className="text-xs text-surface-600">This Week</p>
         </div>
-        <div className={clsx(
-          'p-3 rounded-lg text-center',
-          summary.dueThisMonthCount > 0 ? 'bg-yellow-500/10 border border-yellow-500/30' : 'bg-surface-800'
-        )}>
-          <p className={clsx(
-            'text-2xl font-bold',
-            summary.dueThisMonthCount > 0 ? 'text-yellow-400' : 'text-surface-300'
-          )}>
+        <div
+          className={clsx(
+            'p-3 rounded-lg text-center',
+            summary.dueThisMonthCount > 0
+              ? 'bg-yellow-500/10 border border-yellow-500/30'
+              : 'bg-surface-800'
+          )}
+        >
+          <p
+            className={clsx(
+              'text-2xl font-bold',
+              summary.dueThisMonthCount > 0 ? 'text-yellow-600' : 'text-surface-700'
+            )}
+          >
             {summary.dueThisMonthCount}
           </p>
-          <p className="text-xs text-surface-400">This Month</p>
+          <p className="text-xs text-surface-600">This Month</p>
         </div>
       </div>
 
@@ -132,7 +149,7 @@ export function VendorReviewsDueWidget({ className }: VendorReviewsDueWidgetProp
       {!hasAnyReviews ? (
         <div className="text-center py-6">
           <BuildingOfficeIcon className="w-10 h-10 text-surface-600 mx-auto mb-2" />
-          <p className="text-surface-400 text-sm">No reviews due</p>
+          <p className="text-surface-600 text-sm">No reviews due</p>
           <p className="text-surface-500 text-xs mt-1">All vendor reviews are up to date</p>
         </div>
       ) : (
@@ -172,7 +189,7 @@ export function VendorReviewsDueWidget({ className }: VendorReviewsDueWidgetProp
       {/* Footer */}
       {summary.upcomingCount > 0 && (
         <div className="mt-4 pt-3 border-t border-surface-700 text-center">
-          <p className="text-xs text-surface-400">
+          <p className="text-xs text-surface-600">
             {summary.upcomingCount} reviews scheduled in the next 90 days
           </p>
         </div>
@@ -189,9 +206,9 @@ interface ReviewItemProps {
 
 function ReviewItem({ vendor, status, statusText }: ReviewItemProps) {
   const statusColors = {
-    overdue: 'text-red-400',
-    thisWeek: 'text-orange-400',
-    thisMonth: 'text-yellow-400',
+    overdue: 'text-red-600',
+    thisWeek: 'text-orange-600',
+    thisMonth: 'text-yellow-600',
   };
 
   const statusIcons = {
@@ -214,22 +231,21 @@ function ReviewItem({ vendor, status, statusText }: ReviewItemProps) {
             {vendor.name}
           </p>
           <div className="flex items-center gap-2 mt-0.5">
-            <span className={clsx(
-              'text-xs px-1.5 py-0.5 rounded',
-              TIER_COLORS[vendor.tier] || 'bg-surface-700 text-surface-400'
-            )}>
+            <span
+              className={clsx(
+                'text-xs px-1.5 py-0.5 rounded',
+                TIER_COLORS[vendor.tier] || 'bg-surface-700 text-surface-600'
+              )}
+            >
               {TIER_LABELS[vendor.tier] || vendor.tier}
             </span>
-            <span className={clsx('text-xs', statusColors[status])}>
-              {statusText}
-            </span>
+            <span className={clsx('text-xs', statusColors[status])}>{statusText}</span>
           </div>
         </div>
       </div>
-      <ChevronRightIcon className="w-4 h-4 text-surface-500 group-hover:text-surface-300 flex-shrink-0" />
+      <ChevronRightIcon className="w-4 h-4 text-surface-500 group-hover:text-surface-700 flex-shrink-0" />
     </Link>
   );
 }
 
 export default VendorReviewsDueWidget;
-

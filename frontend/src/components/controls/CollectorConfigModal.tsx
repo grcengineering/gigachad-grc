@@ -1,9 +1,22 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { XMarkIcon, ArrowPathIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
+import {
+  XMarkIcon,
+  ArrowPathIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+} from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import { collectorsApi, integrationsApi } from '@/lib/api';
+
+import { Textarea } from '@/components/ui/Textarea';
+
+import { Input } from '@/components/ui/Input';
+
+import { SelectNative } from '@/components/ui/SelectNative';
+
+import { Button } from '@/components/ui/Button';
 
 interface Props {
   controlId: string;
@@ -19,7 +32,12 @@ const SCHEDULE_FREQUENCIES = [
   { value: 'monthly', label: 'Monthly' },
 ];
 
-export default function CollectorConfigModal({ controlId, implementationId, collector, onClose }: Props) {
+export default function CollectorConfigModal({
+  controlId,
+  implementationId,
+  collector,
+  onClose,
+}: Props) {
   const queryClient = useQueryClient();
   const isEditing = !!collector;
 
@@ -32,10 +50,18 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
   const [endpoint, setEndpoint] = useState(collector?.endpoint || '');
   const [method, setMethod] = useState(collector?.method || 'GET');
   const [headers, setHeaders] = useState(
-    collector?.headers ? Object.entries(collector.headers).map(([k, v]) => `${k}: ${v}`).join('\n') : ''
+    collector?.headers
+      ? Object.entries(collector.headers)
+          .map(([k, v]) => `${k}: ${v}`)
+          .join('\n')
+      : ''
   );
   const [queryParams, setQueryParams] = useState(
-    collector?.queryParams ? Object.entries(collector.queryParams).map(([k, v]) => `${k}=${v}`).join('\n') : ''
+    collector?.queryParams
+      ? Object.entries(collector.queryParams)
+          .map(([k, v]) => `${k}=${v}`)
+          .join('\n')
+      : ''
   );
   const [body, setBody] = useState(collector?.body ? JSON.stringify(collector.body, null, 2) : '');
   const [authType, setAuthType] = useState(collector?.authType || '');
@@ -59,9 +85,15 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
     dataField: collector?.responseMapping?.dataField || '',
   });
   const [scheduleEnabled, setScheduleEnabled] = useState(collector?.scheduleEnabled || false);
-  const [scheduleFrequency, setScheduleFrequency] = useState(collector?.scheduleFrequency || 'daily');
+  const [scheduleFrequency, setScheduleFrequency] = useState(
+    collector?.scheduleFrequency || 'daily'
+  );
 
-  const [testResult, setTestResult] = useState<{ success: boolean; message: string; data?: any } | null>(null);
+  const [testResult, setTestResult] = useState<{
+    success: boolean;
+    message: string;
+    data?: any;
+  } | null>(null);
 
   // Fetch integrations for the dropdown
   const { data: integrationsData } = useQuery({
@@ -110,9 +142,10 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
       evidenceType,
       scheduleEnabled,
       scheduleFrequency: scheduleEnabled ? scheduleFrequency : undefined,
-      responseMapping: responseMapping.titleField || responseMapping.descriptionField || responseMapping.dataField
-        ? responseMapping
-        : undefined,
+      responseMapping:
+        responseMapping.titleField || responseMapping.descriptionField || responseMapping.dataField
+          ? responseMapping
+          : undefined,
     };
 
     if (mode === 'integration') {
@@ -194,10 +227,9 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 grid place-items-center p-4">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/70" onClick={onClose} />
-
       {/* Modal */}
       <div className="relative bg-surface-900 rounded-xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl">
         {/* Header */}
@@ -206,11 +238,11 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
             <h2 className="text-lg font-semibold text-surface-100">
               {isEditing ? 'Edit Evidence Collector' : 'Create Evidence Collector'}
             </h2>
-            <p className="text-sm text-surface-400">
+            <p className="text-sm text-surface-600">
               Configure an API endpoint to automatically collect evidence
             </p>
           </div>
-          <button onClick={onClose} className="p-2 text-surface-400 hover:text-surface-200">
+          <button onClick={onClose} className="p-2 text-surface-600 hover:text-surface-200">
             <XMarkIcon className="w-5 h-5" />
           </button>
         </div>
@@ -221,7 +253,7 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="label">Name *</label>
-              <input
+              <Input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -231,7 +263,7 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
             </div>
             <div>
               <label className="label">Evidence Type</label>
-              <select
+              <SelectNative
                 value={evidenceType}
                 onChange={(e) => setEvidenceType(e.target.value)}
                 className="input mt-1"
@@ -240,13 +272,13 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
                 <option value="config">Configuration</option>
                 <option value="log">Log</option>
                 <option value="report">Report</option>
-              </select>
+              </SelectNative>
             </div>
           </div>
 
           <div>
             <label className="label">Description</label>
-            <textarea
+            <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="What this collector does..."
@@ -268,8 +300,10 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
                   className="text-brand-500"
                 />
                 <div>
-                  <span className="text-sm text-surface-300">Use Existing Integration</span>
-                  <p className="text-xs text-surface-500">Leverage auth from a configured integration</p>
+                  <span className="text-sm text-surface-700">Use Existing Integration</span>
+                  <p className="text-xs text-surface-500">
+                    Leverage auth from a configured integration
+                  </p>
                 </div>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
@@ -281,8 +315,10 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
                   className="text-brand-500"
                 />
                 <div>
-                  <span className="text-sm text-surface-300">Standalone API</span>
-                  <p className="text-xs text-surface-500">Configure a completely separate API endpoint</p>
+                  <span className="text-sm text-surface-700">Standalone API</span>
+                  <p className="text-xs text-surface-500">
+                    Configure a completely separate API endpoint
+                  </p>
                 </div>
               </label>
             </div>
@@ -290,7 +326,7 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
             {mode === 'integration' && (
               <div className="mt-4">
                 <label className="label">Integration</label>
-                <select
+                <SelectNative
                   value={integrationId}
                   onChange={(e) => setIntegrationId(e.target.value)}
                   className="input mt-1"
@@ -301,14 +337,14 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
                       {int.name} ({int.type})
                     </option>
                   ))}
-                </select>
+                </SelectNative>
               </div>
             )}
 
             {mode === 'standalone' && (
               <div className="mt-4">
                 <label className="label">Base URL</label>
-                <input
+                <Input
                   type="text"
                   value={baseUrl}
                   onChange={(e) => setBaseUrl(e.target.value)}
@@ -326,19 +362,21 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
             <div className="flex gap-4">
               <div className="w-32">
                 <label className="label">Method</label>
-                <select
+                <SelectNative
                   value={method}
                   onChange={(e) => setMethod(e.target.value)}
                   className="input mt-1"
                 >
                   {HTTP_METHODS.map((m) => (
-                    <option key={m} value={m}>{m}</option>
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
                   ))}
-                </select>
+                </SelectNative>
               </div>
               <div className="flex-1">
                 <label className="label">Endpoint Path</label>
-                <input
+                <Input
                   type="text"
                   value={endpoint}
                   onChange={(e) => setEndpoint(e.target.value)}
@@ -350,7 +388,7 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
 
             <div>
               <label className="label">Headers (one per line: Key: Value)</label>
-              <textarea
+              <Textarea
                 value={headers}
                 onChange={(e) => setHeaders(e.target.value)}
                 placeholder="Accept: application/json"
@@ -361,7 +399,7 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
 
             <div>
               <label className="label">Query Parameters (one per line: key=value)</label>
-              <textarea
+              <Textarea
                 value={queryParams}
                 onChange={(e) => setQueryParams(e.target.value)}
                 placeholder="page=1&#10;limit=100"
@@ -373,7 +411,7 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
             {['POST', 'PUT', 'PATCH'].includes(method) && (
               <div>
                 <label className="label">Request Body (JSON)</label>
-                <textarea
+                <Textarea
                   value={body}
                   onChange={(e) => setBody(e.target.value)}
                   placeholder='{"key": "value"}'
@@ -391,7 +429,7 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
 
               <div>
                 <label className="label">Auth Type</label>
-                <select
+                <SelectNative
                   value={authType}
                   onChange={(e) => setAuthType(e.target.value)}
                   className="input mt-1"
@@ -401,14 +439,14 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
                   <option value="oauth2">OAuth 2.0</option>
                   <option value="bearer">Bearer Token</option>
                   <option value="basic">Basic Auth</option>
-                </select>
+                </SelectNative>
               </div>
 
               {authType === 'api_key' && (
                 <div className="grid grid-cols-3 gap-4">
                   <div>
                     <label className="label">Key Name</label>
-                    <input
+                    <Input
                       type="text"
                       value={authConfig.keyName}
                       onChange={(e) => setAuthConfig({ ...authConfig, keyName: e.target.value })}
@@ -418,7 +456,7 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
                   </div>
                   <div>
                     <label className="label">Key Value</label>
-                    <input
+                    <Input
                       type="password"
                       value={authConfig.keyValue}
                       onChange={(e) => setAuthConfig({ ...authConfig, keyValue: e.target.value })}
@@ -428,14 +466,14 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
                   </div>
                   <div>
                     <label className="label">Send In</label>
-                    <select
+                    <SelectNative
                       value={authConfig.location}
                       onChange={(e) => setAuthConfig({ ...authConfig, location: e.target.value })}
                       className="input mt-1"
                     >
                       <option value="header">Header</option>
                       <option value="query">Query Parameter</option>
-                    </select>
+                    </SelectNative>
                   </div>
                 </div>
               )}
@@ -444,7 +482,7 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
                 <div className="space-y-3">
                   <div>
                     <label className="label">Token URL</label>
-                    <input
+                    <Input
                       type="text"
                       value={authConfig.tokenUrl}
                       onChange={(e) => setAuthConfig({ ...authConfig, tokenUrl: e.target.value })}
@@ -455,7 +493,7 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="label">Client ID</label>
-                      <input
+                      <Input
                         type="text"
                         value={authConfig.clientId}
                         onChange={(e) => setAuthConfig({ ...authConfig, clientId: e.target.value })}
@@ -464,17 +502,19 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
                     </div>
                     <div>
                       <label className="label">Client Secret</label>
-                      <input
+                      <Input
                         type="password"
                         value={authConfig.clientSecret}
-                        onChange={(e) => setAuthConfig({ ...authConfig, clientSecret: e.target.value })}
+                        onChange={(e) =>
+                          setAuthConfig({ ...authConfig, clientSecret: e.target.value })
+                        }
                         className="input mt-1"
                       />
                     </div>
                   </div>
                   <div>
                     <label className="label">Scope (optional)</label>
-                    <input
+                    <Input
                       type="text"
                       value={authConfig.scope}
                       onChange={(e) => setAuthConfig({ ...authConfig, scope: e.target.value })}
@@ -488,7 +528,7 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
               {authType === 'bearer' && (
                 <div>
                   <label className="label">Bearer Token</label>
-                  <input
+                  <Input
                     type="password"
                     value={authConfig.token}
                     onChange={(e) => setAuthConfig({ ...authConfig, token: e.target.value })}
@@ -502,7 +542,7 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="label">Username</label>
-                    <input
+                    <Input
                       type="text"
                       value={authConfig.username}
                       onChange={(e) => setAuthConfig({ ...authConfig, username: e.target.value })}
@@ -511,7 +551,7 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
                   </div>
                   <div>
                     <label className="label">Password</label>
-                    <input
+                    <Input
                       type="password"
                       value={authConfig.password}
                       onChange={(e) => setAuthConfig({ ...authConfig, password: e.target.value })}
@@ -529,7 +569,7 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
 
             <div>
               <label className="label">Evidence Title Template</label>
-              <input
+              <Input
                 type="text"
                 value={evidenceTitle}
                 onChange={(e) => setEvidenceTitle(e.target.value)}
@@ -544,30 +584,36 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <label className="label">Title Field (JSONPath)</label>
-                <input
+                <Input
                   type="text"
                   value={responseMapping.titleField}
-                  onChange={(e) => setResponseMapping({ ...responseMapping, titleField: e.target.value })}
+                  onChange={(e) =>
+                    setResponseMapping({ ...responseMapping, titleField: e.target.value })
+                  }
                   placeholder="$.data.name"
                   className="input mt-1 font-mono text-sm"
                 />
               </div>
               <div>
                 <label className="label">Description Field</label>
-                <input
+                <Input
                   type="text"
                   value={responseMapping.descriptionField}
-                  onChange={(e) => setResponseMapping({ ...responseMapping, descriptionField: e.target.value })}
+                  onChange={(e) =>
+                    setResponseMapping({ ...responseMapping, descriptionField: e.target.value })
+                  }
                   placeholder="$.data.summary"
                   className="input mt-1 font-mono text-sm"
                 />
               </div>
               <div>
                 <label className="label">Data Field</label>
-                <input
+                <Input
                   type="text"
                   value={responseMapping.dataField}
-                  onChange={(e) => setResponseMapping({ ...responseMapping, dataField: e.target.value })}
+                  onChange={(e) =>
+                    setResponseMapping({ ...responseMapping, dataField: e.target.value })
+                  }
                   placeholder="$.data"
                   className="input mt-1 font-mono text-sm"
                 />
@@ -586,46 +632,55 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
                   onChange={(e) => setScheduleEnabled(e.target.checked)}
                   className="rounded border-surface-600 text-brand-500 focus:ring-brand-500"
                 />
-                <span className="text-sm text-surface-300">Enable scheduled collection</span>
+                <span className="text-sm text-surface-700">Enable scheduled collection</span>
               </label>
             </div>
 
             {scheduleEnabled && (
               <div>
                 <label className="label">Frequency</label>
-                <select
+                <SelectNative
                   value={scheduleFrequency}
                   onChange={(e) => setScheduleFrequency(e.target.value)}
                   className="input mt-1"
                 >
                   {SCHEDULE_FREQUENCIES.map((freq) => (
-                    <option key={freq.value} value={freq.value}>{freq.label}</option>
+                    <option key={freq.value} value={freq.value}>
+                      {freq.label}
+                    </option>
                   ))}
-                </select>
+                </SelectNative>
               </div>
             )}
           </div>
 
           {/* Test Result */}
           {testResult && (
-            <div className={clsx(
-              'p-4 rounded-lg border',
-              testResult.success
-                ? 'bg-green-500/10 border-green-500/20'
-                : 'bg-red-500/10 border-red-500/20'
-            )}>
+            <div
+              className={clsx(
+                'p-4 rounded-lg border',
+                testResult.success
+                  ? 'bg-green-500/10 border-green-500/20'
+                  : 'bg-red-500/10 border-red-500/20'
+              )}
+            >
               <div className="flex items-start gap-2">
                 {testResult.success ? (
-                  <CheckCircleIcon className="w-5 h-5 text-green-400 flex-shrink-0" />
+                  <CheckCircleIcon className="w-5 h-5 text-green-600 flex-shrink-0" />
                 ) : (
-                  <XCircleIcon className="w-5 h-5 text-red-400 flex-shrink-0" />
+                  <XCircleIcon className="w-5 h-5 text-red-600 flex-shrink-0" />
                 )}
                 <div className="flex-1">
-                  <p className={clsx('text-sm', testResult.success ? 'text-green-400' : 'text-red-400')}>
+                  <p
+                    className={clsx(
+                      'text-sm',
+                      testResult.success ? 'text-green-600' : 'text-red-600'
+                    )}
+                  >
                     {testResult.message}
                   </p>
                   {testResult.data && (
-                    <pre className="mt-2 p-2 bg-surface-900/50 rounded text-xs text-surface-400 overflow-auto max-h-32">
+                    <pre className="mt-2 p-2 bg-surface-900/50 rounded text-xs text-surface-600 overflow-auto max-h-32">
                       {JSON.stringify(testResult.data, null, 2)}
                     </pre>
                   )}
@@ -639,10 +694,11 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
         <div className="flex items-center justify-between px-6 py-4 border-t border-surface-700 bg-surface-800/50">
           <div>
             {isEditing && (
-              <button
+              <Button
                 onClick={() => testMutation.mutate()}
                 disabled={testMutation.isPending}
-                className="btn-secondary text-sm"
+                className="text-sm"
+                variant="secondary"
               >
                 {testMutation.isPending ? (
                   <ArrowPathIcon className="w-4 h-4 mr-1 animate-spin" />
@@ -650,26 +706,27 @@ export default function CollectorConfigModal({ controlId, implementationId, coll
                   <ArrowPathIcon className="w-4 h-4 mr-1" />
                 )}
                 Test Connection
-              </button>
+              </Button>
             )}
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={onClose} className="btn-secondary">
+            <Button onClick={onClose} variant="secondary">
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={handleSave}
               disabled={saveMutation.isPending || !name.trim()}
-              className="btn-primary"
+              variant="primary"
             >
-              {saveMutation.isPending ? 'Saving...' : isEditing ? 'Save Changes' : 'Create Collector'}
-            </button>
+              {saveMutation.isPending
+                ? 'Saving...'
+                : isEditing
+                  ? 'Save Changes'
+                  : 'Create Collector'}
+            </Button>
           </div>
         </div>
       </div>
     </div>
   );
 }
-
-
-

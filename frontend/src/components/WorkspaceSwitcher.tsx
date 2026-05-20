@@ -1,8 +1,8 @@
 import { Fragment, useState } from 'react';
 import { Menu, Transition } from '@headlessui/react';
-import { 
-  ChevronDownIcon, 
-  BuildingOfficeIcon, 
+import {
+  ChevronDownIcon,
+  BuildingOfficeIcon,
   PlusIcon,
   Cog6ToothIcon,
   ChartBarIcon,
@@ -10,6 +10,11 @@ import {
 import { useWorkspace, Workspace } from '@/contexts/WorkspaceContext';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+
+import { Textarea } from '@/components/ui/Textarea';
+import { Input } from '@/components/ui/Input';
+import { Dialog } from '@/components/ui/Dialog';
+import { Button } from '@/components/ui/Button';
 
 interface CreateWorkspaceModalProps {
   isOpen: boolean;
@@ -39,67 +44,62 @@ function CreateWorkspaceModal({ isOpen, onClose, onCreate }: CreateWorkspaceModa
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-surface-800 rounded-lg shadow-xl w-full max-w-md p-6">
-        <h3 className="text-lg font-semibold text-foreground mb-4">Create New Workspace</h3>
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1">
-                Workspace Name *
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g., Product A, Enterprise Edition"
-                className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand-500"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1">
-                Description (optional)
-              </label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Brief description of this workspace..."
-                rows={2}
-                className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
-              />
-            </div>
-          </div>
-          <div className="mt-6 flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={!name.trim() || isCreating}
-              className="px-4 py-2 text-sm bg-brand-600 text-white rounded-lg hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isCreating ? 'Creating...' : 'Create Workspace'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <Dialog
+      open={isOpen}
+      onClose={onClose}
+      title="Create New Workspace"
+      size="md"
+      footer={
+        <div className="flex justify-end gap-3">
+          <Button variant="ghost" onClick={onClose} disabled={isCreating}>
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            form="create-workspace-form"
+            disabled={!name.trim() || isCreating}
+            isLoading={isCreating}
+          >
+            Create Workspace
+          </Button>
+        </div>
+      }
+    >
+      <form id="create-workspace-form" onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-surface-800 mb-1">
+            Workspace Name *
+          </label>
+          <Input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="e.g., Product A, Enterprise Edition"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-surface-800 mb-1">
+            Description (optional)
+          </label>
+          <Textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Brief description of this workspace..."
+            rows={2}
+          />
+        </div>
+      </form>
+    </Dialog>
   );
 }
 
 export function WorkspaceSwitcher() {
-  const { 
-    isMultiWorkspaceEnabled, 
-    workspaces, 
-    currentWorkspace, 
+  const {
+    isMultiWorkspaceEnabled,
+    workspaces,
+    currentWorkspace,
     setCurrentWorkspace,
     createWorkspace,
     canManageWorkspaces,
@@ -122,17 +122,17 @@ export function WorkspaceSwitcher() {
     setCurrentWorkspace(newWorkspace);
   };
 
-  const activeWorkspaces = workspaces.filter(w => w.status === 'active');
+  const activeWorkspaces = workspaces.filter((w) => w.status === 'active');
 
   return (
     <>
       <Menu as="div" className="relative">
         <Menu.Button className="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-800 hover:bg-surface-700 border border-surface-600 transition-colors text-sm text-foreground">
-          <BuildingOfficeIcon className="w-4 h-4 text-surface-300" />
+          <BuildingOfficeIcon className="w-4 h-4 text-surface-700" />
           <span className="font-medium max-w-[160px] truncate">
             {currentWorkspace?.name || 'Select Workspace'}
           </span>
-          <ChevronDownIcon className="w-4 h-4 text-surface-300" />
+          <ChevronDownIcon className="w-4 h-4 text-surface-700" />
         </Menu.Button>
 
         <Transition
@@ -151,7 +151,7 @@ export function WorkspaceSwitcher() {
                 Workspaces
               </p>
             </div>
-            
+
             <div className="max-h-60 overflow-y-auto">
               {activeWorkspaces.map((workspace) => (
                 <Menu.Item key={workspace.id}>
@@ -161,9 +161,7 @@ export function WorkspaceSwitcher() {
                       className={`w-full text-left px-4 py-2 text-sm flex items-center gap-2 ${
                         active ? 'bg-surface-700' : ''
                       } ${
-                        currentWorkspace?.id === workspace.id 
-                          ? 'text-brand-400' 
-                          : 'text-foreground'
+                        currentWorkspace?.id === workspace.id ? 'text-brand-400' : 'text-foreground'
                       }`}
                     >
                       <BuildingOfficeIcon className="w-4 h-4 flex-shrink-0" />
@@ -253,6 +251,3 @@ export function WorkspaceSwitcher() {
 }
 
 export default WorkspaceSwitcher;
-
-
-

@@ -1,132 +1,111 @@
 import { forwardRef, ButtonHTMLAttributes, ReactNode } from 'react';
-import clsx from 'clsx';
+import { cn } from '@/lib/cn';
+import { Loader2 } from 'lucide-react';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost' | 'outline';
-export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg';
+export type ButtonVariant =
+  | 'primary'
+  | 'secondary'
+  | 'outline'
+  | 'ghost'
+  | 'danger'
+  | 'link'
+  | 'success'
+  | 'warning';
+export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'icon';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   size?: ButtonSize;
+  /** Show a spinner and disable the button. */
+  loading?: boolean;
+  /** Legacy alias for `loading`. Prefer `loading` in new code. */
   isLoading?: boolean;
+  /** Optional text shown next to the spinner while loading. */
+  loadingText?: ReactNode;
   leftIcon?: ReactNode;
   rightIcon?: ReactNode;
-  children: ReactNode;
+  fullWidth?: boolean;
 }
 
-const variantStyles: Record<ButtonVariant, string> = {
-  primary: 'bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500 disabled:bg-blue-400',
-  secondary: 'bg-surface-700 hover:bg-surface-600 text-surface-100 focus:ring-surface-500 disabled:bg-surface-800',
-  danger: 'bg-red-600 hover:bg-red-700 text-white focus:ring-red-500 disabled:bg-red-400',
-  ghost: 'bg-transparent hover:bg-surface-800 text-surface-300 hover:text-surface-100 focus:ring-surface-500',
-  outline: 'bg-transparent border border-surface-600 hover:bg-surface-800 text-surface-300 hover:text-surface-100 focus:ring-surface-500',
+// NOTE: We use `!` on text-color because our custom font-size utilities
+// (text-small, text-body, text-h1, etc.) confuse tailwind-merge — it
+// can't distinguish a custom size from a color and drops the color from
+// the merged class string. Forcing with ! pins the color.
+const variants: Record<ButtonVariant, string> = {
+  primary:
+    'bg-brand-600 !text-white shadow-sm hover:bg-brand-500 active:bg-brand-700 focus-visible:ring-brand-500 disabled:hover:bg-brand-600',
+  secondary:
+    'bg-surface-200 !text-surface-900 border border-surface-400 hover:bg-surface-300 focus-visible:ring-brand-500',
+  outline:
+    'border border-surface-400 bg-white !text-surface-900 hover:bg-surface-100 hover:border-surface-500 focus-visible:ring-brand-500',
+  ghost:
+    'bg-transparent !text-surface-700 hover:bg-surface-100 hover:!text-surface-900 focus-visible:ring-brand-500',
+  danger:
+    'bg-red-600 !text-white shadow-sm hover:bg-red-500 active:bg-red-700 focus-visible:ring-red-500 disabled:hover:bg-red-600',
+  link: 'bg-transparent !text-brand-700 hover:!text-brand-800 underline-offset-4 hover:underline focus-visible:ring-brand-500',
+  success:
+    'bg-emerald-600 !text-white shadow-sm hover:bg-emerald-500 active:bg-emerald-700 focus-visible:ring-emerald-500 disabled:hover:bg-emerald-600',
+  warning:
+    'bg-amber-500 !text-white shadow-sm hover:bg-amber-400 active:bg-amber-600 focus-visible:ring-amber-500 disabled:hover:bg-amber-500',
 };
 
-const sizeStyles: Record<ButtonSize, string> = {
-  xs: 'px-2 py-1 text-xs',
-  sm: 'px-3 py-1.5 text-sm',
-  md: 'px-4 py-2 text-sm',
-  lg: 'px-6 py-3 text-base',
+const sizes: Record<ButtonSize, string> = {
+  xs: 'h-7 px-2 text-small gap-1 rounded-md',
+  sm: 'h-8 px-3 text-small gap-1.5 rounded-md',
+  md: 'h-9 px-4 text-body gap-2 rounded-md',
+  lg: 'h-10 px-5 text-body gap-2 rounded-lg',
+  xl: 'h-12 px-6 text-h2 gap-2 rounded-lg',
+  icon: 'h-9 w-9 rounded-md',
 };
 
-/**
- * Accessible Button Component
- * 
- * Features:
- * - Proper focus management with visible focus ring
- * - Loading state with aria-busy
- * - Disabled state handling
- * - Keyboard accessible
- */
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   (
     {
+      className,
       variant = 'primary',
       size = 'md',
-      isLoading = false,
+      loading,
+      isLoading,
+      loadingText,
       leftIcon,
       rightIcon,
-      children,
-      className,
+      fullWidth,
       disabled,
-      type = 'button',
-      'aria-label': ariaLabel,
+      children,
       ...props
     },
     ref
   ) => {
-    const isDisabled = disabled || isLoading;
-
+    const isBusy = loading ?? isLoading ?? false;
     return (
       <button
         ref={ref}
-        type={type}
-        disabled={isDisabled}
-        aria-disabled={isDisabled}
-        aria-busy={isLoading}
-        aria-label={ariaLabel}
-        className={clsx(
-          'inline-flex items-center justify-center gap-2 font-medium rounded-lg',
-          'transition-colors duration-200',
-          'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-surface-900',
-          'disabled:cursor-not-allowed disabled:opacity-60',
-          variantStyles[variant],
-          sizeStyles[size],
+        disabled={disabled || isBusy}
+        className={cn(
+          'inline-flex items-center justify-center font-medium transition-colors',
+          'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-50',
+          'disabled:opacity-50 disabled:cursor-not-allowed',
+          variants[variant],
+          sizes[size],
+          fullWidth && 'w-full',
           className
         )}
         {...props}
       >
-        {isLoading ? (
+        {isBusy ? (
           <>
-            <LoadingSpinner size={size} />
-            <span className="sr-only">Loading...</span>
-            {children}
+            <Loader2 className={cn('animate-spin', size === 'icon' ? 'h-4 w-4' : 'h-4 w-4')} />
+            {size !== 'icon' && (loadingText ?? children)}
           </>
         ) : (
           <>
-            {leftIcon && <span aria-hidden="true">{leftIcon}</span>}
-            {children}
-            {rightIcon && <span aria-hidden="true">{rightIcon}</span>}
+            {leftIcon}
+            {size !== 'icon' && children}
+            {rightIcon}
           </>
         )}
       </button>
     );
   }
 );
-
 Button.displayName = 'Button';
-
-function LoadingSpinner({ size }: { size: ButtonSize }) {
-  const sizeClasses: Record<ButtonSize, string> = {
-    xs: 'h-3 w-3',
-    sm: 'h-3.5 w-3.5',
-    md: 'h-4 w-4',
-    lg: 'h-5 w-5',
-  };
-
-  return (
-    <svg
-      className={clsx('animate-spin', sizeClasses[size])}
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <circle
-        className="opacity-25"
-        cx="12"
-        cy="12"
-        r="10"
-        stroke="currentColor"
-        strokeWidth="4"
-      />
-      <path
-        className="opacity-75"
-        fill="currentColor"
-        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-      />
-    </svg>
-  );
-}
-
-export default Button;
-

@@ -41,7 +41,13 @@ const severityColors: Record<string, string> = {
   observation: '#6b7280',
 };
 
-function StatCard({ title, value, icon: Icon, trend, color }: {
+function StatCard({
+  title,
+  value,
+  icon: Icon,
+  trend,
+  color,
+}: {
   title: string;
   value: number | string;
   icon: typeof ChartBarIcon;
@@ -52,12 +58,14 @@ function StatCard({ title, value, icon: Icon, trend, color }: {
     <div className="bg-surface-800 rounded-lg p-6 border border-surface-700">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-surface-400 text-sm">{title}</p>
+          <p className="text-surface-600 text-sm">{title}</p>
           <p className={`text-3xl font-bold mt-1 ${color || 'text-white'}`}>{value}</p>
           {trend && <p className="text-sm text-surface-500 mt-1">{trend}</p>}
         </div>
-        <div className={`p-3 rounded-lg ${color ? 'bg-opacity-10' : 'bg-surface-700'}`}
-          style={{ backgroundColor: color ? `${color}20` : undefined }}>
+        <div
+          className={`p-3 rounded-lg ${color ? 'bg-opacity-10' : 'bg-surface-700'}`}
+          style={{ backgroundColor: color ? `${color}20` : undefined }}
+        >
           <Icon className="h-6 w-6" style={{ color: color || '#9ca3af' }} />
         </div>
       </div>
@@ -98,9 +106,7 @@ export default function AuditAnalytics() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-white">Audit Analytics</h1>
-        <p className="text-surface-400 mt-1">
-          Insights and trends across your audit program
-        </p>
+        <p className="text-surface-600 mt-1">Insights and trends across your audit program</p>
       </div>
 
       {/* Stats Grid */}
@@ -139,7 +145,7 @@ export default function AuditAnalytics() {
             <LazyRechartsWrapper height={256}>
               {(Recharts) => {
                 const { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } = Recharts;
-                const data = (findings?.bySeverity || []).map(item => ({
+                const data = (findings?.bySeverity || []).map((item) => ({
                   name: item.severity,
                   value: item.count,
                 }));
@@ -156,7 +162,10 @@ export default function AuditAnalytics() {
                         dataKey="value"
                       >
                         {data.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={severityColors[entry.name] || '#6b7280'} />
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={severityColors[entry.name] || '#6b7280'}
+                          />
                         ))}
                       </Pie>
                       <Tooltip />
@@ -189,12 +198,7 @@ export default function AuditAnalytics() {
                           borderRadius: '8px',
                         }}
                       />
-                      <Area
-                        type="monotone"
-                        dataKey="count"
-                        stroke="#8b5cf6"
-                        fill="#8b5cf680"
-                      />
+                      <Area type="monotone" dataKey="count" stroke="#8b5cf6" fill="#8b5cf680" />
                     </AreaChart>
                   </ResponsiveContainer>
                 );
@@ -214,35 +218,38 @@ export default function AuditAnalytics() {
           </div>
           <p className="text-4xl font-bold text-white">
             {findings?.avgRemediationDays || 0}
-            <span className="text-lg font-normal text-surface-400 ml-2">days</span>
+            <span className="text-lg font-normal text-surface-600 ml-2">days</span>
           </p>
         </div>
 
         {/* Completion Rate */}
         <div className="bg-surface-800 rounded-lg p-6 border border-surface-700">
           <div className="flex items-center gap-3 mb-4">
-            <CheckCircleIcon className="h-6 w-6 text-green-400" />
+            <CheckCircleIcon className="h-6 w-6 text-green-600" />
             <h3 className="text-lg font-semibold text-white">Audit Completion Rate</h3>
           </div>
           <p className="text-4xl font-bold text-white">
             {dashboard?.totalAudits
               ? Math.round((dashboard.completedAudits / dashboard.totalAudits) * 100)
               : 0}
-            <span className="text-lg font-normal text-surface-400 ml-1">%</span>
+            <span className="text-lg font-normal text-surface-600 ml-1">%</span>
           </p>
         </div>
 
         {/* Request Status */}
         <div className="bg-surface-800 rounded-lg p-6 border border-surface-700">
           <div className="flex items-center gap-3 mb-4">
-            <DocumentMagnifyingGlassIcon className="h-6 w-6 text-blue-400" />
+            <DocumentMagnifyingGlassIcon className="h-6 w-6 text-blue-600" />
             <h3 className="text-lg font-semibold text-white">Request Completion</h3>
           </div>
           <p className="text-4xl font-bold text-white">
             {dashboard?.totalRequests
-              ? Math.round(((dashboard.totalRequests - dashboard.openRequests) / dashboard.totalRequests) * 100)
+              ? Math.round(
+                  ((dashboard.totalRequests - dashboard.openRequests) / dashboard.totalRequests) *
+                    100
+                )
               : 0}
-            <span className="text-lg font-normal text-surface-400 ml-1">%</span>
+            <span className="text-lg font-normal text-surface-600 ml-1">%</span>
           </p>
         </div>
       </div>
@@ -285,4 +292,3 @@ export default function AuditAnalytics() {
     </div>
   );
 }
-
