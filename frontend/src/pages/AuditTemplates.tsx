@@ -17,6 +17,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { Input } from '@/components/ui/Input';
 
 import { SelectNative } from '@/components/ui/SelectNative';
+import { Dialog } from '@/components/ui/Dialog';
 
 interface AuditTemplate {
   id: string;
@@ -256,93 +257,80 @@ export default function AuditTemplates() {
         </div>
       )}
       {/* Create Template Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-          <div className="bg-surface-800 rounded-lg p-6 w-full max-w-lg border border-surface-700">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-white">Create Audit Template</h2>
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="p-1 hover:bg-surface-700 rounded"
+      <Dialog open={showCreateModal} onClose={() => setShowCreateModal(false)}>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-white">Create Audit Template</h2>
+          <button
+            onClick={() => setShowCreateModal(false)}
+            className="p-1 hover:bg-surface-700 rounded"
+          >
+            <XMarkIcon className="h-5 w-5 text-surface-600" />
+          </button>
+        </div>
+
+        <form onSubmit={handleCreateSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-1">
+              Template Name *
+            </label>
+            <Input
+              type="text"
+              value={createForm.name}
+              onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
+              className="w-full bg-surface-700 border border-surface-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+              placeholder="e.g., SOC 2 Annual Audit"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-1">Description</label>
+            <Textarea
+              value={createForm.description}
+              onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
+              rows={3}
+              className="w-full bg-surface-700 border border-surface-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+              placeholder="Describe the purpose of this template..."
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-surface-700 mb-1">Audit Type</label>
+              <SelectNative
+                value={createForm.auditType}
+                onChange={(e) => setCreateForm({ ...createForm, auditType: e.target.value })}
+                className="w-full bg-surface-700 border border-surface-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
               >
-                <XMarkIcon className="h-5 w-5 text-surface-600" />
-              </button>
+                {Object.entries(auditTypeLabels).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </SelectNative>
             </div>
 
-            <form onSubmit={handleCreateSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-1">
-                  Template Name *
-                </label>
-                <Input
-                  type="text"
-                  value={createForm.name}
-                  onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
-                  className="w-full bg-surface-700 border border-surface-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-                  placeholder="e.g., SOC 2 Annual Audit"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-1">
-                  Description
-                </label>
-                <Textarea
-                  value={createForm.description}
-                  onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
-                  rows={3}
-                  className="w-full bg-surface-700 border border-surface-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-                  placeholder="Describe the purpose of this template..."
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-surface-700 mb-1">
-                    Audit Type
-                  </label>
-                  <SelectNative
-                    value={createForm.auditType}
-                    onChange={(e) => setCreateForm({ ...createForm, auditType: e.target.value })}
-                    className="w-full bg-surface-700 border border-surface-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-                  >
-                    {Object.entries(auditTypeLabels).map(([value, label]) => (
-                      <option key={value} value={value}>
-                        {label}
-                      </option>
-                    ))}
-                  </SelectNative>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-surface-700 mb-1">
-                    Framework
-                  </label>
-                  <Input
-                    type="text"
-                    value={createForm.framework}
-                    onChange={(e) => setCreateForm({ ...createForm, framework: e.target.value })}
-                    className="w-full bg-surface-700 border border-surface-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-                    placeholder="e.g., SOC 2, ISO 27001"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4">
-                <Button type="button" variant="secondary" onClick={() => setShowCreateModal(false)}>
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={createMutation.isPending || !createForm.name.trim()}
-                >
-                  {createMutation.isPending ? 'Creating...' : 'Create Template'}
-                </Button>
-              </div>
-            </form>
+            <div>
+              <label className="block text-sm font-medium text-surface-700 mb-1">Framework</label>
+              <Input
+                type="text"
+                value={createForm.framework}
+                onChange={(e) => setCreateForm({ ...createForm, framework: e.target.value })}
+                className="w-full bg-surface-700 border border-surface-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                placeholder="e.g., SOC 2, ISO 27001"
+              />
+            </div>
           </div>
-        </div>
-      )}
+
+          <div className="flex justify-end gap-3 pt-4">
+            <Button type="button" variant="secondary" onClick={() => setShowCreateModal(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={createMutation.isPending || !createForm.name.trim()}>
+              {createMutation.isPending ? 'Creating...' : 'Create Template'}
+            </Button>
+          </div>
+        </form>
+      </Dialog>
     </div>
   );
 }

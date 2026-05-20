@@ -106,6 +106,7 @@ function saveDashboardConfig(config: DashboardConfig) {
 import { CONTROL_STATUS_COLORS, POLICY_STATUS_COLORS } from '@/lib/constants';
 
 import { Button } from '@/components/ui/Button';
+import { Dialog } from '@/components/ui/Dialog';
 
 // Default empty summary to prevent crashes
 const DEFAULT_SUMMARY = {
@@ -364,59 +365,52 @@ export default function Dashboard() {
         </div>
       </div>
       {/* Dashboard Configuration Modal */}
-      {showConfigModal && (
-        <div className="fixed inset-0 z-50 grid place-items-center">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setShowConfigModal(false)} />
-          <div className="relative bg-surface-900 border border-surface-700 rounded-xl shadow-2xl w-full max-w-md mx-4 animate-fade-in">
-            <div className="flex items-center justify-between p-4 border-b border-surface-700">
-              <h3 className="text-lg font-semibold text-surface-100">Customize Dashboard</h3>
-              <button
-                onClick={() => setShowConfigModal(false)}
-                className="text-surface-600 hover:text-surface-100 transition-colors"
-              >
-                <XMarkIcon className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="p-4 space-y-3 max-h-[60vh] overflow-y-auto">
-              <p className="text-sm text-surface-600 mb-4">
-                Toggle widgets to show or hide them on your dashboard.
-              </p>
-              {(Object.keys(WIDGET_LABELS) as Array<keyof DashboardConfig['widgets']>).map(
-                (widget) => (
-                  <button
-                    key={widget}
-                    onClick={() => toggleWidget(widget)}
-                    className={clsx(
-                      'w-full flex items-center justify-between p-3 rounded-lg border transition-all',
-                      config.widgets[widget]
-                        ? 'bg-brand-500/10 border-brand-500/30 text-surface-100'
-                        : 'bg-surface-800 border-surface-700 text-surface-600'
-                    )}
-                  >
-                    <span className="font-medium">{WIDGET_LABELS[widget]}</span>
-                    {config.widgets[widget] ? (
-                      <EyeIcon className="w-5 h-5 text-brand-400" />
-                    ) : (
-                      <EyeSlashIcon className="w-5 h-5 text-surface-500" />
-                    )}
-                  </button>
-                )
-              )}
-            </div>
-            <div className="flex items-center justify-between p-4 border-t border-surface-700">
-              <button
-                onClick={resetConfig}
-                className="text-sm text-surface-600 hover:text-surface-100 transition-colors"
-              >
-                Reset to Default
-              </button>
-              <Button onClick={() => setShowConfigModal(false)} variant="primary">
-                Done
-              </Button>
-            </div>
-          </div>
+      <Dialog open={showConfigModal} onClose={() => setShowConfigModal(false)}>
+        <div className="flex items-center justify-between p-4 border-b border-surface-700">
+          <h3 className="text-lg font-semibold text-surface-100">Customize Dashboard</h3>
+          <button
+            onClick={() => setShowConfigModal(false)}
+            className="text-surface-600 hover:text-surface-100 transition-colors"
+          >
+            <XMarkIcon className="w-5 h-5" />
+          </button>
         </div>
-      )}
+        <div className="p-4 space-y-3 max-h-[60vh] overflow-y-auto">
+          <p className="text-sm text-surface-600 mb-4">
+            Toggle widgets to show or hide them on your dashboard.
+          </p>
+          {(Object.keys(WIDGET_LABELS) as Array<keyof DashboardConfig['widgets']>).map((widget) => (
+            <button
+              key={widget}
+              onClick={() => toggleWidget(widget)}
+              className={clsx(
+                'w-full flex items-center justify-between p-3 rounded-lg border transition-all',
+                config.widgets[widget]
+                  ? 'bg-brand-500/10 border-brand-500/30 text-surface-100'
+                  : 'bg-surface-800 border-surface-700 text-surface-600'
+              )}
+            >
+              <span className="font-medium">{WIDGET_LABELS[widget]}</span>
+              {config.widgets[widget] ? (
+                <EyeIcon className="w-5 h-5 text-brand-400" />
+              ) : (
+                <EyeSlashIcon className="w-5 h-5 text-surface-500" />
+              )}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center justify-between p-4 border-t border-surface-700">
+          <button
+            onClick={resetConfig}
+            className="text-sm text-surface-600 hover:text-surface-100 transition-colors"
+          >
+            Reset to Default
+          </button>
+          <Button onClick={() => setShowConfigModal(false)} variant="primary">
+            Done
+          </Button>
+        </div>
+      </Dialog>
       {/* Onboarding Banner - Shows when organization is empty */}
       <OnboardingBanner />
       {/* Demo Mode Banner - Shows when demo data is active */}

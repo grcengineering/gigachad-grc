@@ -17,6 +17,7 @@ import toast from 'react-hot-toast';
 import { Input } from '@/components/ui/Input';
 
 import { SelectNative } from '@/components/ui/SelectNative';
+import { Dialog } from '@/components/ui/Dialog';
 
 export default function KnowledgeBase() {
   const { user } = useAuth();
@@ -273,81 +274,77 @@ privacy,GDPR Compliance,Are you GDPR compliant?,"We are fully GDPR compliant and
         </div>
       )}
       {/* Bulk Upload Modal */}
-      {showBulkUpload && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 grid place-items-center z-50">
-          <div className="bg-surface-900 border border-surface-800 rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold text-surface-100">
-                Bulk Upload Knowledge Base Entries
-              </h2>
-              <button
-                onClick={downloadTemplate}
-                className="flex items-center gap-2 px-3 py-1.5 text-sm bg-surface-700 text-surface-200 rounded-lg hover:bg-surface-600 transition-colors"
-              >
-                <ArrowDownTrayIcon className="w-4 h-4" />
-                Download Template
-              </button>
-            </div>
-            <p className="text-surface-600 mb-4">
-              Upload a CSV file with your knowledge base entries. Required columns: category, title,
-              answer. Optional: question, tags (semicolon-separated), framework, status, isPublic.
-            </p>
+      <Dialog open={showBulkUpload} onClose={() => setShowBulkUpload(false)}>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-bold text-surface-100">
+            Bulk Upload Knowledge Base Entries
+          </h2>
+          <button
+            onClick={downloadTemplate}
+            className="flex items-center gap-2 px-3 py-1.5 text-sm bg-surface-700 text-surface-200 rounded-lg hover:bg-surface-600 transition-colors"
+          >
+            <ArrowDownTrayIcon className="w-4 h-4" />
+            Download Template
+          </button>
+        </div>
+        <p className="text-surface-600 mb-4">
+          Upload a CSV file with your knowledge base entries. Required columns: category, title,
+          answer. Optional: question, tags (semicolon-separated), framework, status, isPublic.
+        </p>
 
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-surface-600 mb-2">CSV File</label>
-              <div className="border-2 border-dashed border-surface-700 rounded-lg p-8 text-center">
-                <input
-                  type="file"
-                  accept=".csv"
-                  onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
-                  className="hidden"
-                  id="csv-upload"
-                />
-                <label
-                  htmlFor="csv-upload"
-                  className="cursor-pointer inline-flex flex-col items-center"
-                >
-                  <ArrowUpTrayIcon className="w-12 h-12 text-surface-500 mb-2" />
-                  <span className="text-surface-700 mb-1">
-                    {csvFile ? csvFile.name : 'Click to select CSV file'}
-                  </span>
-                  <span className="text-sm text-surface-500">or drag and drop</span>
-                </label>
-              </div>
-            </div>
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-surface-600 mb-2">CSV File</label>
+          <div className="border-2 border-dashed border-surface-700 rounded-lg p-8 text-center">
+            <input
+              type="file"
+              accept=".csv"
+              onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
+              className="hidden"
+              id="csv-upload"
+            />
+            <label
+              htmlFor="csv-upload"
+              className="cursor-pointer inline-flex flex-col items-center"
+            >
+              <ArrowUpTrayIcon className="w-12 h-12 text-surface-500 mb-2" />
+              <span className="text-surface-700 mb-1">
+                {csvFile ? csvFile.name : 'Click to select CSV file'}
+              </span>
+              <span className="text-sm text-surface-500">or drag and drop</span>
+            </label>
+          </div>
+        </div>
 
-            <div className="mb-4 bg-surface-800 rounded-lg p-4">
-              <h3 className="text-sm font-medium text-surface-700 mb-2">Example CSV Format:</h3>
-              <pre className="text-xs text-surface-600 font-mono overflow-x-auto">
-                {`category,title,question,answer,tags,framework,status,isPublic
+        <div className="mb-4 bg-surface-800 rounded-lg p-4">
+          <h3 className="text-sm font-medium text-surface-700 mb-2">Example CSV Format:</h3>
+          <pre className="text-xs text-surface-600 font-mono overflow-x-auto">
+            {`category,title,question,answer,tags,framework,status,isPublic
 security,Data Encryption at Rest,Does your platform encrypt data at rest?,"Yes, all data is encrypted at rest using AES-256 encryption. We maintain strict key management practices.",encryption;data security,SOC2,approved,true
 privacy,GDPR Compliance,Are you GDPR compliant?,"We are fully GDPR compliant and maintain all necessary documentation, including DPIAs and data mapping.",GDPR;privacy;compliance,GDPR,approved,true
 technical,Multi-Factor Authentication,Do you support MFA?,"Yes, we support multiple MFA methods including TOTP, SMS, and hardware tokens.",authentication;security;MFA,SOC2,approved,true`}
-              </pre>
-              <p className="text-xs text-surface-500 mt-2">
-                Note: Use quotes around values containing commas. Separate multiple tags with
-                semicolons.
-              </p>
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  setShowBulkUpload(false);
-                  setCsvFile(null);
-                }}
-                disabled={uploading}
-              >
-                Cancel
-              </Button>
-              <Button onClick={handleBulkUpload} disabled={!csvFile} isLoading={uploading}>
-                Upload
-              </Button>
-            </div>
-          </div>
+          </pre>
+          <p className="text-xs text-surface-500 mt-2">
+            Note: Use quotes around values containing commas. Separate multiple tags with
+            semicolons.
+          </p>
         </div>
-      )}
+
+        <div className="flex justify-end gap-2">
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setShowBulkUpload(false);
+              setCsvFile(null);
+            }}
+            disabled={uploading}
+          >
+            Cancel
+          </Button>
+          <Button onClick={handleBulkUpload} disabled={!csvFile} isLoading={uploading}>
+            Upload
+          </Button>
+        </div>
+      </Dialog>
     </div>
   );
 }

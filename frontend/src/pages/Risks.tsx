@@ -86,6 +86,7 @@ import { AlertTriangle, Plus, Search, BarChart3, Shield, Clock, Target, X } from
 import clsx from 'clsx';
 
 import { SelectNative } from '@/components/ui/SelectNative';
+import { Dialog } from '@/components/ui/Dialog';
 
 // Risk create form schema
 const riskCreateSchema = z.object({
@@ -774,156 +775,145 @@ export default function Risks() {
         )}
       </div>
       {/* Create Risk Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-          <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-surface-700 flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-white">Create New Risk</h2>
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="p-2 hover:bg-surface-700 rounded-lg text-surface-600"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={form.handleSubmit(onSubmit)} className="p-6 space-y-4">
-              {/* Title */}
-              <FormField label="Title" error={form.formState.errors.title} required>
-                <Input
-                  {...form.register('title')}
-                  error={!!form.formState.errors.title}
-                  placeholder="e.g., Data breach from unauthorized access"
-                />
-              </FormField>
-
-              {/* Description */}
-              <FormField label="Description" error={form.formState.errors.description} required>
-                <Textarea
-                  {...form.register('description')}
-                  rows={3}
-                  error={!!form.formState.errors.description}
-                  placeholder="Describe the risk in detail..."
-                />
-              </FormField>
-
-              {/* Category */}
-              <FormField label="Category" error={form.formState.errors.category} required>
-                <Select {...form.register('category')} error={!!form.formState.errors.category}>
-                  {CATEGORIES.map((cat) => (
-                    <option key={cat.value} value={cat.value}>
-                      {cat.label}
-                    </option>
-                  ))}
-                </Select>
-              </FormField>
-
-              {/* Qualitative Scoring */}
-              <div className="grid grid-cols-2 gap-4">
-                <FormField label="Likelihood" error={form.formState.errors.likelihood} required>
-                  <Select
-                    {...form.register('likelihood')}
-                    error={!!form.formState.errors.likelihood}
-                  >
-                    {LIKELIHOODS.map((l) => (
-                      <option key={l.value} value={l.value}>
-                        {l.label}
-                      </option>
-                    ))}
-                  </Select>
-                </FormField>
-                <FormField label="Impact" error={form.formState.errors.impact} required>
-                  <Select {...form.register('impact')} error={!!form.formState.errors.impact}>
-                    {IMPACTS.map((i) => (
-                      <option key={i.value} value={i.value}>
-                        {i.label}
-                      </option>
-                    ))}
-                  </Select>
-                </FormField>
-              </div>
-
-              {/* Quantitative Scoring (Optional) */}
-              <div className="grid grid-cols-2 gap-4">
-                <FormField label="Likelihood % (Optional)" hint="0-100">
-                  <Input
-                    type="number"
-                    min="0"
-                    max="100"
-                    {...form.register('likelihoodPct', { valueAsNumber: true })}
-                    placeholder="0-100"
-                  />
-                </FormField>
-                <FormField label="Impact Value $ (Optional)">
-                  <Input
-                    type="number"
-                    min="0"
-                    {...form.register('impactValue', { valueAsNumber: true })}
-                    placeholder="Dollar amount"
-                  />
-                </FormField>
-              </div>
-
-              {/* Tags */}
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-2">Tags</label>
-                <div className="flex gap-2 mb-2 flex-wrap">
-                  {tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="px-2 py-1 bg-brand-500/20 text-brand-400 rounded text-sm flex items-center gap-1"
-                    >
-                      {tag}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveTag(tag)}
-                        className="hover:text-brand-300"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-                <div className="flex gap-2">
-                  <Input
-                    type="text"
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
-                    placeholder="Add tag..."
-                    className="flex-1"
-                  />
-                  <Button type="button" variant="secondary" onClick={handleAddTag}>
-                    Add
-                  </Button>
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="flex justify-end gap-3 pt-4 border-t border-surface-700">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => {
-                    setShowCreateModal(false);
-                    form.reset();
-                    setTags([]);
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  isLoading={createMutation.isPending}
-                  loadingText="Creating..."
-                >
-                  Create Risk
-                </Button>
-              </div>
-            </form>
-          </div>
+      <Dialog open={showCreateModal} onClose={() => setShowCreateModal(false)}>
+        <div className="p-6 border-b border-surface-700 flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-white">Create New Risk</h2>
+          <button
+            onClick={() => setShowCreateModal(false)}
+            className="p-2 hover:bg-surface-700 rounded-lg text-surface-600"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
-      )}
+
+        <form onSubmit={form.handleSubmit(onSubmit)} className="p-6 space-y-4">
+          {/* Title */}
+          <FormField label="Title" error={form.formState.errors.title} required>
+            <Input
+              {...form.register('title')}
+              error={!!form.formState.errors.title}
+              placeholder="e.g., Data breach from unauthorized access"
+            />
+          </FormField>
+
+          {/* Description */}
+          <FormField label="Description" error={form.formState.errors.description} required>
+            <Textarea
+              {...form.register('description')}
+              rows={3}
+              error={!!form.formState.errors.description}
+              placeholder="Describe the risk in detail..."
+            />
+          </FormField>
+
+          {/* Category */}
+          <FormField label="Category" error={form.formState.errors.category} required>
+            <Select {...form.register('category')} error={!!form.formState.errors.category}>
+              {CATEGORIES.map((cat) => (
+                <option key={cat.value} value={cat.value}>
+                  {cat.label}
+                </option>
+              ))}
+            </Select>
+          </FormField>
+
+          {/* Qualitative Scoring */}
+          <div className="grid grid-cols-2 gap-4">
+            <FormField label="Likelihood" error={form.formState.errors.likelihood} required>
+              <Select {...form.register('likelihood')} error={!!form.formState.errors.likelihood}>
+                {LIKELIHOODS.map((l) => (
+                  <option key={l.value} value={l.value}>
+                    {l.label}
+                  </option>
+                ))}
+              </Select>
+            </FormField>
+            <FormField label="Impact" error={form.formState.errors.impact} required>
+              <Select {...form.register('impact')} error={!!form.formState.errors.impact}>
+                {IMPACTS.map((i) => (
+                  <option key={i.value} value={i.value}>
+                    {i.label}
+                  </option>
+                ))}
+              </Select>
+            </FormField>
+          </div>
+
+          {/* Quantitative Scoring (Optional) */}
+          <div className="grid grid-cols-2 gap-4">
+            <FormField label="Likelihood % (Optional)" hint="0-100">
+              <Input
+                type="number"
+                min="0"
+                max="100"
+                {...form.register('likelihoodPct', { valueAsNumber: true })}
+                placeholder="0-100"
+              />
+            </FormField>
+            <FormField label="Impact Value $ (Optional)">
+              <Input
+                type="number"
+                min="0"
+                {...form.register('impactValue', { valueAsNumber: true })}
+                placeholder="Dollar amount"
+              />
+            </FormField>
+          </div>
+
+          {/* Tags */}
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-2">Tags</label>
+            <div className="flex gap-2 mb-2 flex-wrap">
+              {tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="px-2 py-1 bg-brand-500/20 text-brand-400 rounded text-sm flex items-center gap-1"
+                >
+                  {tag}
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveTag(tag)}
+                    className="hover:text-brand-300"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <Input
+                type="text"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
+                placeholder="Add tag..."
+                className="flex-1"
+              />
+              <Button type="button" variant="secondary" onClick={handleAddTag}>
+                Add
+              </Button>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex justify-end gap-3 pt-4 border-t border-surface-700">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                setShowCreateModal(false);
+                form.reset();
+                setTags([]);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" isLoading={createMutation.isPending} loadingText="Creating...">
+              Create Risk
+            </Button>
+          </div>
+        </form>
+      </Dialog>
     </div>
   );
 }

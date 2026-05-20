@@ -14,6 +14,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { Input } from '@/components/ui/Input';
 
 import { SelectNative } from '@/components/ui/SelectNative';
+import { Dialog } from '@/components/ui/Dialog';
 
 interface Contract {
   id: string;
@@ -581,41 +582,37 @@ export default function ContractDetail() {
         <ContractView contract={contract} onEdit={() => setEditing(true)} onDelete={handleDelete} />
       ) : null}
       {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-          <div className="bg-surface-900 border border-surface-800 rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold text-surface-100 mb-2">Delete Contract</h3>
-            <p className="text-surface-600 mb-6">
-              Are you sure you want to delete this contract? This action cannot be undone.
-            </p>
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="px-4 py-2 bg-surface-800 text-surface-100 rounded-lg hover:bg-surface-700 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={async () => {
-                  try {
-                    if (id) {
-                      await contractsApi.delete(id);
-                    }
-                    toast.success('Contract deleted successfully');
-                    navigate('/contracts');
-                  } catch (error) {
-                    console.error('Error deleting contract:', error);
-                    toast.error('Failed to delete contract');
-                  }
-                }}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
+      <Dialog open={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)}>
+        <h3 className="text-lg font-semibold text-surface-100 mb-2">Delete Contract</h3>
+        <p className="text-surface-600 mb-6">
+          Are you sure you want to delete this contract? This action cannot be undone.
+        </p>
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={() => setShowDeleteConfirm(false)}
+            className="px-4 py-2 bg-surface-800 text-surface-100 rounded-lg hover:bg-surface-700 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={async () => {
+              try {
+                if (id) {
+                  await contractsApi.delete(id);
+                }
+                toast.success('Contract deleted successfully');
+                navigate('/contracts');
+              } catch (error) {
+                console.error('Error deleting contract:', error);
+                toast.error('Failed to delete contract');
+              }
+            }}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+          >
+            Delete
+          </button>
         </div>
-      )}
+      </Dialog>
     </div>
   );
 }

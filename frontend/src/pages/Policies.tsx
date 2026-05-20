@@ -21,6 +21,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { Input } from '@/components/ui/Input';
 
 import { SelectNative } from '@/components/ui/SelectNative';
+import { Dialog } from '@/components/ui/Dialog';
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   draft: { label: 'Draft', color: '' },
@@ -258,131 +259,126 @@ function UploadPolicyModal({ onClose, onSuccess }: { onClose: () => void; onSucc
   };
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center">
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative bg-surface-900 border border-surface-800 rounded-xl w-full max-w-lg mx-4 p-6 animate-slide-up">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold text-surface-100">Upload Policy</h2>
-          <button onClick={onClose} className="text-surface-600 hover:text-surface-100">
-            <XMarkIcon className="w-5 h-5" />
-          </button>
+    <Dialog open onClose={onClose}>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-lg font-semibold text-surface-100">Upload Policy</h2>
+        <button onClick={onClose} className="text-surface-600 hover:text-surface-100">
+          <XMarkIcon className="w-5 h-5" />
+        </button>
+      </div>
+
+      <div className="space-y-4">
+        {/* File Drop Zone */}
+        <div
+          className={clsx(
+            'border-2 border-dashed rounded-lg p-8 text-center transition-colors',
+            isDragging ? 'border-brand-500 bg-brand-500/10' : 'border-surface-700',
+            file && 'border-green-500 bg-green-500/10'
+          )}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setIsDragging(true);
+          }}
+          onDragLeave={() => setIsDragging(false)}
+          onDrop={handleDrop}
+        >
+          {file ? (
+            <div className="flex items-center justify-center gap-3">
+              <DocumentTextIcon className="w-8 h-8 text-green-600" />
+              <div className="text-left">
+                <p className="text-surface-100 font-medium">{file.name}</p>
+                <p className="text-surface-500 text-sm">
+                  {(file.size / 1024 / 1024).toFixed(2)} MB
+                </p>
+              </div>
+              <button
+                onClick={() => setFile(null)}
+                className="ml-2 text-surface-600 hover:text-red-600"
+              >
+                <XMarkIcon className="w-5 h-5" />
+              </button>
+            </div>
+          ) : (
+            <>
+              <ArrowUpTrayIcon className="w-10 h-10 text-surface-500 mx-auto mb-3" />
+              <p className="text-surface-700 mb-2">Drag and drop a file here, or click to browse</p>
+              <input
+                type="file"
+                onChange={handleFileSelect}
+                className="hidden"
+                id="policy-file"
+                accept=".pdf,.doc,.docx,.txt"
+              />
+              <label htmlFor="policy-file" className="cursor-pointer">
+                Choose File
+              </label>
+            </>
+          )}
         </div>
 
-        <div className="space-y-4">
-          {/* File Drop Zone */}
-          <div
-            className={clsx(
-              'border-2 border-dashed rounded-lg p-8 text-center transition-colors',
-              isDragging ? 'border-brand-500 bg-brand-500/10' : 'border-surface-700',
-              file && 'border-green-500 bg-green-500/10'
-            )}
-            onDragOver={(e) => {
-              e.preventDefault();
-              setIsDragging(true);
-            }}
-            onDragLeave={() => setIsDragging(false)}
-            onDrop={handleDrop}
-          >
-            {file ? (
-              <div className="flex items-center justify-center gap-3">
-                <DocumentTextIcon className="w-8 h-8 text-green-600" />
-                <div className="text-left">
-                  <p className="text-surface-100 font-medium">{file.name}</p>
-                  <p className="text-surface-500 text-sm">
-                    {(file.size / 1024 / 1024).toFixed(2)} MB
-                  </p>
-                </div>
-                <button
-                  onClick={() => setFile(null)}
-                  className="ml-2 text-surface-600 hover:text-red-600"
-                >
-                  <XMarkIcon className="w-5 h-5" />
-                </button>
-              </div>
-            ) : (
-              <>
-                <ArrowUpTrayIcon className="w-10 h-10 text-surface-500 mx-auto mb-3" />
-                <p className="text-surface-700 mb-2">
-                  Drag and drop a file here, or click to browse
-                </p>
-                <input
-                  type="file"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                  id="policy-file"
-                  accept=".pdf,.doc,.docx,.txt"
-                />
-                <label htmlFor="policy-file" className="cursor-pointer">
-                  Choose File
-                </label>
-              </>
-            )}
-          </div>
+        <div>
+          <label className="label">Title *</label>
+          <Input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="input mt-1"
+            placeholder="e.g., Information Security Policy"
+            required
+          />
+        </div>
 
+        <div>
+          <label className="label">Description</label>
+          <Textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="input mt-1"
+            rows={2}
+            placeholder="Brief description of the policy..."
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="label">Title *</label>
+            <label className="label">Category *</label>
+            <SelectNative
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="input mt-1"
+            >
+              {CATEGORY_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </SelectNative>
+          </div>
+          <div>
+            <label className="label">Version</label>
             <Input
               type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              value={version}
+              onChange={(e) => setVersion(e.target.value)}
               className="input mt-1"
-              placeholder="e.g., Information Security Policy"
-              required
+              placeholder="1.0"
             />
           </div>
-
-          <div>
-            <label className="label">Description</label>
-            <Textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="input mt-1"
-              rows={2}
-              placeholder="Brief description of the policy..."
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="label">Category *</label>
-              <SelectNative
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="input mt-1"
-              >
-                {CATEGORY_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </SelectNative>
-            </div>
-            <div>
-              <label className="label">Version</label>
-              <Input
-                type="text"
-                value={version}
-                onChange={(e) => setVersion(e.target.value)}
-                className="input mt-1"
-                placeholder="1.0"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="flex justify-end gap-3 mt-6">
-          <Button variant="secondary" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button
-            onClick={() => uploadMutation.mutate()}
-            disabled={!file || !title}
-            isLoading={uploadMutation.isPending}
-          >
-            Upload Policy
-          </Button>
         </div>
       </div>
-    </div>
+
+      <div className="flex justify-end gap-3 mt-6">
+        <Button variant="secondary" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button
+          onClick={() => uploadMutation.mutate()}
+          disabled={!file || !title}
+          isLoading={uploadMutation.isPending}
+        >
+          Upload Policy
+        </Button>
+      </div>
+    </Dialog>
   );
 }

@@ -16,6 +16,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { Input } from '@/components/ui/Input';
 
 import { SelectNative } from '@/components/ui/SelectNative';
+import { Dialog } from '@/components/ui/Dialog';
 
 // ============================================
 // Types
@@ -249,67 +250,63 @@ export default function RecoveryTeams() {
         </div>
       )}
       {/* Create Team Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
-          <div className="bg-slate-800 rounded-xl shadow-2xl w-full max-w-md p-6">
-            <h2 className="text-xl font-semibold text-white mb-6">Create Recovery Team</h2>
+      <Dialog open={showCreateModal} onClose={() => setShowCreateModal(false)}>
+        <h2 className="text-xl font-semibold text-white mb-6">Create Recovery Team</h2>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Team Name <span className="text-red-600">*</span>
-                </label>
-                <Input
-                  type="text"
-                  value={newTeamName ?? ''}
-                  onChange={(e) => setNewTeamName(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
-                  placeholder="e.g., Crisis Management Team"
-                />
-              </div>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              Team Name <span className="text-red-600">*</span>
+            </label>
+            <Input
+              type="text"
+              value={newTeamName ?? ''}
+              onChange={(e) => setNewTeamName(e.target.value)}
+              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
+              placeholder="e.g., Crisis Management Team"
+            />
+          </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Team Type</label>
-                <SelectNative
-                  value={newTeamType}
-                  onChange={(e) => setNewTeamType(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
-                >
-                  {TEAM_TYPE_OPTIONS.filter((t) => t.value).map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </SelectNative>
-              </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Team Type</label>
+            <SelectNative
+              value={newTeamType}
+              onChange={(e) => setNewTeamType(e.target.value)}
+              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
+            >
+              {TEAM_TYPE_OPTIONS.filter((t) => t.value).map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </SelectNative>
+          </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Description</label>
-                <Textarea
-                  value={newTeamDescription ?? ''}
-                  onChange={(e) => setNewTeamDescription(e.target.value)}
-                  rows={3}
-                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
-                  placeholder="Brief description of the team's purpose..."
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-3 mt-6">
-              <Button
-                variant="secondary"
-                onClick={() => setShowCreateModal(false)}
-                disabled={isCreating}
-              >
-                Cancel
-              </Button>
-              <Button variant="primary" onClick={handleCreateTeam} disabled={isCreating}>
-                {isCreating ? 'Creating...' : 'Create Team'}
-              </Button>
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Description</label>
+            <Textarea
+              value={newTeamDescription ?? ''}
+              onChange={(e) => setNewTeamDescription(e.target.value)}
+              rows={3}
+              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
+              placeholder="Brief description of the team's purpose..."
+            />
           </div>
         </div>
-      )}
+
+        <div className="flex items-center justify-end gap-3 mt-6">
+          <Button
+            variant="secondary"
+            onClick={() => setShowCreateModal(false)}
+            disabled={isCreating}
+          >
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleCreateTeam} disabled={isCreating}>
+            {isCreating ? 'Creating...' : 'Create Team'}
+          </Button>
+        </div>
+      </Dialog>
     </div>
   );
 }

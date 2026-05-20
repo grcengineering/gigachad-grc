@@ -18,6 +18,7 @@ import api from '@/lib/api';
 import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
+import { Dialog } from '@/components/ui/Dialog';
 
 function CreateWorkspaceModal({
   isOpen,
@@ -52,56 +53,54 @@ function CreateWorkspaceModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
-      <div className="bg-surface-800 rounded-lg shadow-xl w-full max-w-md p-6">
-        <h3 className="text-lg font-semibold text-foreground mb-4">Create New Workspace</h3>
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1">
-                Workspace Name *
-              </label>
-              <Input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g., Product A, Enterprise Edition"
-                className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand-500"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1">
-                Description (optional)
-              </label>
-              <Textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Brief description of this workspace..."
-                rows={2}
-                className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
-              />
-            </div>
+    <Dialog open onClose={onClose}>
+      <h3 className="text-lg font-semibold text-foreground mb-4">Create New Workspace</h3>
+      <form onSubmit={handleSubmit}>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1">
+              Workspace Name *
+            </label>
+            <Input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g., Product A, Enterprise Edition"
+              className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand-500"
+              required
+            />
           </div>
-          <div className="mt-6 flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={!name.trim() || isCreating}
-              className="px-4 py-2 text-sm bg-brand-600 text-white rounded-lg hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isCreating ? 'Creating...' : 'Create Workspace'}
-            </button>
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1">
+              Description (optional)
+            </label>
+            <Textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Brief description of this workspace..."
+              rows={2}
+              className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+            />
           </div>
-        </form>
-      </div>
-    </div>
+        </div>
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={!name.trim() || isCreating}
+            className="px-4 py-2 text-sm bg-brand-600 text-white rounded-lg hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isCreating ? 'Creating...' : 'Create Workspace'}
+          </button>
+        </div>
+      </form>
+    </Dialog>
   );
 }
 

@@ -19,6 +19,7 @@ import {
 import { Button } from '@/components/ui/Button';
 import { Tooltip } from '@/components/Tooltip';
 import clsx from 'clsx';
+import { Dialog } from '@/components/ui/Dialog';
 
 // ============================================
 // Tooltip Descriptions
@@ -374,205 +375,203 @@ function SubdomainCrawlModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-surface-900 border border-surface-700 rounded-xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-surface-700">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-brand-500/20 rounded-lg">
-              <LinkIcon className="w-5 h-5 text-brand-400" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-surface-100">{subdomain.fullDomain}</h3>
-              <p className="text-sm text-surface-600">Discovered pages and links</p>
-            </div>
+    <Dialog open onClose={onClose}>
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 border-b border-surface-700">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-brand-500/20 rounded-lg">
+            <LinkIcon className="w-5 h-5 text-brand-400" />
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 text-surface-600 hover:text-surface-200 hover:bg-surface-800 rounded-lg transition-colors"
-          >
-            <XMarkIcon className="w-5 h-5" />
-          </button>
+          <div>
+            <h3 className="font-semibold text-surface-100">{subdomain.fullDomain}</h3>
+            <p className="text-sm text-surface-600">Discovered pages and links</p>
+          </div>
         </div>
-
-        {/* Content */}
-        <div className="flex-1 overflow-hidden">
-          {loading && (
-            <div className="flex flex-col items-center justify-center h-64">
-              <ArrowPathIcon className="w-10 h-10 text-brand-400 animate-spin mb-4" />
-              <p className="text-surface-700">Crawling {subdomain.fullDomain}...</p>
-              <p className="text-sm text-surface-500 mt-1">Discovering pages and links</p>
-            </div>
-          )}
-
-          {error && (
-            <div className="flex flex-col items-center justify-center h-64">
-              <ExclamationTriangleIcon className="w-10 h-10 text-red-600 mb-4" />
-              <p className="text-surface-700">{error}</p>
-            </div>
-          )}
-
-          {crawlResult && (
-            <>
-              {/* Stats Bar */}
-              <div className="flex items-center gap-6 p-4 bg-surface-800/50 border-b border-surface-700">
-                <div>
-                  <div className="text-2xl font-bold text-surface-100">
-                    {crawlResult.pages.length}
-                  </div>
-                  <div className="text-xs text-surface-600">Pages Found</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-surface-100">
-                    {crawlResult.externalLinks.length}
-                  </div>
-                  <div className="text-xs text-surface-600">External Links</div>
-                </div>
-                <div className="ml-auto text-xs text-surface-500">
-                  Crawled {new Date(crawlResult.crawledAt).toLocaleTimeString()}
-                </div>
-              </div>
-
-              {/* Tabs */}
-              <div className="flex border-b border-surface-700">
-                <button
-                  onClick={() => setActiveTab('pages')}
-                  className={clsx(
-                    'px-4 py-2 text-sm font-medium border-b-2 transition-colors',
-                    activeTab === 'pages'
-                      ? 'border-brand-400 text-brand-400'
-                      : 'border-transparent text-surface-600 hover:text-surface-200'
-                  )}
-                >
-                  Internal Pages ({crawlResult.pages.length})
-                </button>
-                <button
-                  onClick={() => setActiveTab('external')}
-                  className={clsx(
-                    'px-4 py-2 text-sm font-medium border-b-2 transition-colors',
-                    activeTab === 'external'
-                      ? 'border-brand-400 text-brand-400'
-                      : 'border-transparent text-surface-600 hover:text-surface-200'
-                  )}
-                >
-                  External Links ({crawlResult.externalLinks.length})
-                </button>
-              </div>
-
-              {/* Table */}
-              <div className="overflow-auto max-h-[calc(85vh-280px)]">
-                <table className="w-full text-sm">
-                  <thead className="sticky top-0 bg-surface-800 z-10">
-                    <tr className="border-b border-surface-700">
-                      <th className="px-4 py-2 text-left text-xs font-medium text-surface-600 uppercase">
-                        Page
-                      </th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-surface-600 uppercase w-20">
-                        Status
-                      </th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-surface-600 uppercase w-24 hidden md:table-cell">
-                        Size
-                      </th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-surface-600 uppercase w-12"></th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-surface-800">
-                    {(activeTab === 'pages' ? crawlResult.pages : crawlResult.externalLinks).map(
-                      (page, idx) => (
-                        <tr key={idx} className="hover:bg-surface-800/50">
-                          <td className="px-4 py-3">
-                            <div className="flex items-start gap-2">
-                              <DocumentTextIcon className="w-4 h-4 text-surface-500 mt-0.5 flex-shrink-0" />
-                              <div className="min-w-0">
-                                <div
-                                  className="font-medium text-surface-200 truncate max-w-md"
-                                  title={page.title || page.url}
-                                >
-                                  {page.title || new URL(page.url).pathname || '/'}
-                                </div>
-                                <div
-                                  className="text-xs text-surface-500 truncate max-w-md"
-                                  title={page.url}
-                                >
-                                  {page.url}
-                                </div>
-                                {page.linkText && (
-                                  <div className="text-xs text-surface-600 mt-0.5 truncate max-w-md">
-                                    Link text: "{page.linkText}"
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3">
-                            {page.statusCode ? (
-                              <span
-                                className={clsx(
-                                  'px-2 py-0.5 rounded text-xs font-mono',
-                                  page.statusCode >= 200 && page.statusCode < 300
-                                    ? 'bg-green-500/20 text-green-600'
-                                    : page.statusCode >= 300 && page.statusCode < 400
-                                      ? 'bg-blue-500/20 text-blue-600'
-                                      : page.statusCode >= 400
-                                        ? 'bg-red-500/20 text-red-600'
-                                        : 'bg-surface-700 text-surface-600'
-                                )}
-                              >
-                                {page.statusCode}
-                              </span>
-                            ) : (
-                              <span className="text-surface-600">—</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-surface-500 text-xs hidden md:table-cell">
-                            {formatSize(page.size)}
-                          </td>
-                          <td className="px-4 py-3">
-                            <a
-                              href={page.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="p-1 text-surface-600 hover:text-brand-400 transition-colors"
-                              title="Open in new tab"
-                            >
-                              <ArrowTopRightOnSquareIcon className="w-4 h-4" />
-                            </a>
-                          </td>
-                        </tr>
-                      )
-                    )}
-                  </tbody>
-                </table>
-
-                {((activeTab === 'pages' && crawlResult.pages.length === 0) ||
-                  (activeTab === 'external' && crawlResult.externalLinks.length === 0)) && (
-                  <div className="flex flex-col items-center justify-center py-12 text-surface-500">
-                    <DocumentTextIcon className="w-8 h-8 mb-2" />
-                    <p>No {activeTab === 'pages' ? 'pages' : 'external links'} found</p>
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="p-4 border-t border-surface-700 flex justify-between items-center">
-          <a
-            href={`${subdomain.hasSSL ? 'https' : 'http'}://${subdomain.fullDomain}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-brand-400 hover:text-brand-300 flex items-center gap-1"
-          >
-            Open {subdomain.fullDomain}
-            <ArrowTopRightOnSquareIcon className="w-4 h-4" />
-          </a>
-          <Button variant="outline" size="sm" onClick={onClose}>
-            Close
-          </Button>
-        </div>
+        <button
+          onClick={onClose}
+          className="p-2 text-surface-600 hover:text-surface-200 hover:bg-surface-800 rounded-lg transition-colors"
+        >
+          <XMarkIcon className="w-5 h-5" />
+        </button>
       </div>
-    </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-hidden">
+        {loading && (
+          <div className="flex flex-col items-center justify-center h-64">
+            <ArrowPathIcon className="w-10 h-10 text-brand-400 animate-spin mb-4" />
+            <p className="text-surface-700">Crawling {subdomain.fullDomain}...</p>
+            <p className="text-sm text-surface-500 mt-1">Discovering pages and links</p>
+          </div>
+        )}
+
+        {error && (
+          <div className="flex flex-col items-center justify-center h-64">
+            <ExclamationTriangleIcon className="w-10 h-10 text-red-600 mb-4" />
+            <p className="text-surface-700">{error}</p>
+          </div>
+        )}
+
+        {crawlResult && (
+          <>
+            {/* Stats Bar */}
+            <div className="flex items-center gap-6 p-4 bg-surface-800/50 border-b border-surface-700">
+              <div>
+                <div className="text-2xl font-bold text-surface-100">
+                  {crawlResult.pages.length}
+                </div>
+                <div className="text-xs text-surface-600">Pages Found</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-surface-100">
+                  {crawlResult.externalLinks.length}
+                </div>
+                <div className="text-xs text-surface-600">External Links</div>
+              </div>
+              <div className="ml-auto text-xs text-surface-500">
+                Crawled {new Date(crawlResult.crawledAt).toLocaleTimeString()}
+              </div>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex border-b border-surface-700">
+              <button
+                onClick={() => setActiveTab('pages')}
+                className={clsx(
+                  'px-4 py-2 text-sm font-medium border-b-2 transition-colors',
+                  activeTab === 'pages'
+                    ? 'border-brand-400 text-brand-400'
+                    : 'border-transparent text-surface-600 hover:text-surface-200'
+                )}
+              >
+                Internal Pages ({crawlResult.pages.length})
+              </button>
+              <button
+                onClick={() => setActiveTab('external')}
+                className={clsx(
+                  'px-4 py-2 text-sm font-medium border-b-2 transition-colors',
+                  activeTab === 'external'
+                    ? 'border-brand-400 text-brand-400'
+                    : 'border-transparent text-surface-600 hover:text-surface-200'
+                )}
+              >
+                External Links ({crawlResult.externalLinks.length})
+              </button>
+            </div>
+
+            {/* Table */}
+            <div className="overflow-auto max-h-[calc(85vh-280px)]">
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 bg-surface-800 z-10">
+                  <tr className="border-b border-surface-700">
+                    <th className="px-4 py-2 text-left text-xs font-medium text-surface-600 uppercase">
+                      Page
+                    </th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-surface-600 uppercase w-20">
+                      Status
+                    </th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-surface-600 uppercase w-24 hidden md:table-cell">
+                      Size
+                    </th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-surface-600 uppercase w-12"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-surface-800">
+                  {(activeTab === 'pages' ? crawlResult.pages : crawlResult.externalLinks).map(
+                    (page, idx) => (
+                      <tr key={idx} className="hover:bg-surface-800/50">
+                        <td className="px-4 py-3">
+                          <div className="flex items-start gap-2">
+                            <DocumentTextIcon className="w-4 h-4 text-surface-500 mt-0.5 flex-shrink-0" />
+                            <div className="min-w-0">
+                              <div
+                                className="font-medium text-surface-200 truncate max-w-md"
+                                title={page.title || page.url}
+                              >
+                                {page.title || new URL(page.url).pathname || '/'}
+                              </div>
+                              <div
+                                className="text-xs text-surface-500 truncate max-w-md"
+                                title={page.url}
+                              >
+                                {page.url}
+                              </div>
+                              {page.linkText && (
+                                <div className="text-xs text-surface-600 mt-0.5 truncate max-w-md">
+                                  Link text: "{page.linkText}"
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          {page.statusCode ? (
+                            <span
+                              className={clsx(
+                                'px-2 py-0.5 rounded text-xs font-mono',
+                                page.statusCode >= 200 && page.statusCode < 300
+                                  ? 'bg-green-500/20 text-green-600'
+                                  : page.statusCode >= 300 && page.statusCode < 400
+                                    ? 'bg-blue-500/20 text-blue-600'
+                                    : page.statusCode >= 400
+                                      ? 'bg-red-500/20 text-red-600'
+                                      : 'bg-surface-700 text-surface-600'
+                              )}
+                            >
+                              {page.statusCode}
+                            </span>
+                          ) : (
+                            <span className="text-surface-600">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-surface-500 text-xs hidden md:table-cell">
+                          {formatSize(page.size)}
+                        </td>
+                        <td className="px-4 py-3">
+                          <a
+                            href={page.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1 text-surface-600 hover:text-brand-400 transition-colors"
+                            title="Open in new tab"
+                          >
+                            <ArrowTopRightOnSquareIcon className="w-4 h-4" />
+                          </a>
+                        </td>
+                      </tr>
+                    )
+                  )}
+                </tbody>
+              </table>
+
+              {((activeTab === 'pages' && crawlResult.pages.length === 0) ||
+                (activeTab === 'external' && crawlResult.externalLinks.length === 0)) && (
+                <div className="flex flex-col items-center justify-center py-12 text-surface-500">
+                  <DocumentTextIcon className="w-8 h-8 mb-2" />
+                  <p>No {activeTab === 'pages' ? 'pages' : 'external links'} found</p>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="p-4 border-t border-surface-700 flex justify-between items-center">
+        <a
+          href={`${subdomain.hasSSL ? 'https' : 'http'}://${subdomain.fullDomain}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-sm text-brand-400 hover:text-brand-300 flex items-center gap-1"
+        >
+          Open {subdomain.fullDomain}
+          <ArrowTopRightOnSquareIcon className="w-4 h-4" />
+        </a>
+        <Button variant="outline" size="sm" onClick={onClose}>
+          Close
+        </Button>
+      </div>
+    </Dialog>
   );
 }
 
