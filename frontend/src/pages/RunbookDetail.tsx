@@ -20,6 +20,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { Input } from '@/components/ui/Input';
 
 import { SelectNative } from '@/components/ui/SelectNative';
+import { Dialog } from '@/components/ui/Dialog';
 
 interface RunbookStep {
   id: string;
@@ -544,113 +545,101 @@ export default function RunbookDetail() {
         </div>
       </div>
       {/* Edit Modal */}
-      {showEditModal && (
-        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50 p-4">
-          <div className="card p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-surface-100">Edit Runbook</h2>
-              <button
-                onClick={() => setShowEditModal(false)}
-                className="p-2 hover:bg-surface-700 rounded-lg text-surface-600"
-              >
-                <XMarkIcon className="w-5 h-5" />
-              </button>
-            </div>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                updateMutation.mutate(editForm);
-              }}
-              className="space-y-4"
-            >
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-2">Title</label>
-                <Input
-                  type="text"
-                  className="form-input w-full"
-                  value={editForm.title}
-                  onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-2">
-                  Description
-                </label>
-                <Textarea
-                  className="form-input w-full"
-                  rows={3}
-                  value={editForm.description}
-                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-surface-700 mb-2">
-                    Category
-                  </label>
-                  <SelectNative
-                    className="form-select w-full"
-                    value={editForm.category}
-                    onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
-                  >
-                    {CATEGORY_OPTIONS.map((cat) => (
-                      <option key={cat.value} value={cat.value}>
-                        {cat.label}
-                      </option>
-                    ))}
-                  </SelectNative>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-surface-700 mb-2">Status</label>
-                  <SelectNative
-                    className="form-select w-full"
-                    value={editForm.status}
-                    onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
-                  >
-                    {STATUS_OPTIONS.map((status) => (
-                      <option key={status.value} value={status.value}>
-                        {status.label}
-                      </option>
-                    ))}
-                  </SelectNative>
-                </div>
-              </div>
-              <div className="flex justify-end gap-3 pt-4">
-                <Button type="button" variant="secondary" onClick={() => setShowEditModal(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" isLoading={updateMutation.isPending}>
-                  Save Changes
-                </Button>
-              </div>
-            </form>
-          </div>
+      <Dialog open={showEditModal} onClose={() => setShowEditModal(false)}>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold text-surface-100">Edit Runbook</h2>
+          <button
+            onClick={() => setShowEditModal(false)}
+            className="p-2 hover:bg-surface-700 rounded-lg text-surface-600"
+          >
+            <XMarkIcon className="w-5 h-5" />
+          </button>
         </div>
-      )}
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            updateMutation.mutate(editForm);
+          }}
+          className="space-y-4"
+        >
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-2">Title</label>
+            <Input
+              type="text"
+              className="form-input w-full"
+              value={editForm.title}
+              onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-2">Description</label>
+            <Textarea
+              className="form-input w-full"
+              rows={3}
+              value={editForm.description}
+              onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-surface-700 mb-2">Category</label>
+              <SelectNative
+                className="form-select w-full"
+                value={editForm.category}
+                onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
+              >
+                {CATEGORY_OPTIONS.map((cat) => (
+                  <option key={cat.value} value={cat.value}>
+                    {cat.label}
+                  </option>
+                ))}
+              </SelectNative>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-surface-700 mb-2">Status</label>
+              <SelectNative
+                className="form-select w-full"
+                value={editForm.status}
+                onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
+              >
+                {STATUS_OPTIONS.map((status) => (
+                  <option key={status.value} value={status.value}>
+                    {status.label}
+                  </option>
+                ))}
+              </SelectNative>
+            </div>
+          </div>
+          <div className="flex justify-end gap-3 pt-4">
+            <Button type="button" variant="secondary" onClick={() => setShowEditModal(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" isLoading={updateMutation.isPending}>
+              Save Changes
+            </Button>
+          </div>
+        </form>
+      </Dialog>
       {/* Delete Confirmation */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50 p-4">
-          <div className="card p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold text-surface-100 mb-4">Delete Runbook</h2>
-            <p className="text-surface-600 mb-6">
-              Are you sure you want to delete "{runbook!.title}"? This action cannot be undone.
-            </p>
-            <div className="flex justify-end gap-3">
-              <Button variant="secondary" onClick={() => setShowDeleteConfirm(false)}>
-                Cancel
-              </Button>
-              <Button
-                variant="danger"
-                onClick={() => deleteMutation.mutate()}
-                isLoading={deleteMutation.isPending}
-              >
-                Delete
-              </Button>
-            </div>
-          </div>
+      <Dialog open={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)}>
+        <h2 className="text-xl font-bold text-surface-100 mb-4">Delete Runbook</h2>
+        <p className="text-surface-600 mb-6">
+          Are you sure you want to delete "{runbook!.title}"? This action cannot be undone.
+        </p>
+        <div className="flex justify-end gap-3">
+          <Button variant="secondary" onClick={() => setShowDeleteConfirm(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="danger"
+            onClick={() => deleteMutation.mutate()}
+            isLoading={deleteMutation.isPending}
+          >
+            Delete
+          </Button>
         </div>
-      )}
+      </Dialog>
     </div>
   );
 }

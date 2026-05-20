@@ -30,6 +30,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { Input } from '@/components/ui/Input';
 
 import { SelectNative } from '@/components/ui/SelectNative';
+import { Dialog } from '@/components/ui/Dialog';
 
 // Using RiskDetail from apiTypes as RiskDetailData
 
@@ -823,79 +824,74 @@ function LinkControlModal({
   );
 
   return (
-    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-      <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-lg">
-        <div className="p-4 border-b border-surface-700 flex justify-between items-center">
-          <h3 className="text-lg font-medium text-white">Link Control</h3>
-          <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
-            <X className="w-5 h-5 text-surface-600" />
-          </button>
-        </div>
-        <div className="p-4 space-y-4">
-          <Input
-            type="text"
-            placeholder="Search controls..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-          />
-          <div className="max-h-60 overflow-y-auto space-y-2">
-            {availableControls.map((control) => (
-              <label
-                key={control.id}
-                className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer ${
-                  selectedControlId === control.id
-                    ? 'bg-brand-500/20'
-                    : 'bg-surface-700 hover:bg-surface-600'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="control"
-                  value={control.id}
-                  checked={selectedControlId === control.id}
-                  onChange={(e) => setSelectedControlId(e.target.value)}
-                  className="sr-only"
-                />
-                <div>
-                  <span className="text-brand-400 font-mono text-sm">{control.controlId}</span>
-                  <p className="text-white">{control.title}</p>
-                </div>
-              </label>
-            ))}
-          </div>
-          {selectedControlId && (
-            <div>
-              <label className="block text-sm text-surface-600 mb-2">Control Effectiveness</label>
-              <SelectNative
-                value={effectiveness}
-                onChange={(e) => setEffectiveness(e.target.value)}
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-              >
-                <option value="none">None</option>
-                <option value="partial">Partial</option>
-                <option value="full">Full</option>
-              </SelectNative>
-            </div>
-          )}
-        </div>
-        <div className="p-4 border-t border-surface-700 flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => selectedControlId && onLink(selectedControlId, effectiveness)}
-            disabled={!selectedControlId || isPending}
-            className="px-4 py-2 bg-brand-500 text-white rounded-lg disabled:opacity-50"
-          >
-            {isPending ? 'Linking...' : 'Link Control'}
-          </button>
-        </div>
+    <Dialog open onClose={onClose}>
+      <div className="p-4 border-b border-surface-700 flex justify-between items-center">
+        <h3 className="text-lg font-medium text-white">Link Control</h3>
+        <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
+          <X className="w-5 h-5 text-surface-600" />
+        </button>
       </div>
-    </div>
+      <div className="p-4 space-y-4">
+        <Input
+          type="text"
+          placeholder="Search controls..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+        />
+        <div className="max-h-60 overflow-y-auto space-y-2">
+          {availableControls.map((control) => (
+            <label
+              key={control.id}
+              className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer ${
+                selectedControlId === control.id
+                  ? 'bg-brand-500/20'
+                  : 'bg-surface-700 hover:bg-surface-600'
+              }`}
+            >
+              <input
+                type="radio"
+                name="control"
+                value={control.id}
+                checked={selectedControlId === control.id}
+                onChange={(e) => setSelectedControlId(e.target.value)}
+                className="sr-only"
+              />
+              <div>
+                <span className="text-brand-400 font-mono text-sm">{control.controlId}</span>
+                <p className="text-white">{control.title}</p>
+              </div>
+            </label>
+          ))}
+        </div>
+        {selectedControlId && (
+          <div>
+            <label className="block text-sm text-surface-600 mb-2">Control Effectiveness</label>
+            <SelectNative
+              value={effectiveness}
+              onChange={(e) => setEffectiveness(e.target.value)}
+              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            >
+              <option value="none">None</option>
+              <option value="partial">Partial</option>
+              <option value="full">Full</option>
+            </SelectNative>
+          </div>
+        )}
+      </div>
+      <div className="p-4 border-t border-surface-700 flex justify-end gap-3">
+        <button onClick={onClose} className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg">
+          Cancel
+        </button>
+        <button
+          onClick={() => selectedControlId && onLink(selectedControlId, effectiveness)}
+          disabled={!selectedControlId || isPending}
+          className="px-4 py-2 bg-brand-500 text-white rounded-lg disabled:opacity-50"
+        >
+          {isPending ? 'Linking...' : 'Link Control'}
+        </button>
+      </div>
+    </Dialog>
   );
 }
 
@@ -926,69 +922,64 @@ function LinkAssetModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-      <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-lg">
-        <div className="p-4 border-b border-surface-700 flex justify-between items-center">
-          <h3 className="text-lg font-medium text-white">Link Assets</h3>
-          <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
-            <X className="w-5 h-5 text-surface-600" />
-          </button>
-        </div>
-        <div className="p-4 space-y-4">
-          <Input
-            type="text"
-            placeholder="Search assets..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-          />
-          <div className="max-h-60 overflow-y-auto space-y-2">
-            {availableAssets.length === 0 ? (
-              <p className="text-center text-surface-500 py-4">No assets available</p>
-            ) : (
-              availableAssets.map((asset) => (
-                <label
-                  key={asset.id}
-                  className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer ${
-                    selectedAssetIds.includes(asset.id)
-                      ? 'bg-brand-500/20'
-                      : 'bg-surface-700 hover:bg-surface-600'
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedAssetIds.includes(asset.id)}
-                    onChange={() => toggleAsset(asset.id)}
-                    className="rounded border-surface-500"
-                  />
-                  <div>
-                    <p className="text-white">{asset.name}</p>
-                    <p className="text-sm text-surface-600">
-                      {asset.type} • {asset.source}
-                    </p>
-                  </div>
-                </label>
-              ))
-            )}
-          </div>
-        </div>
-        <div className="p-4 border-t border-surface-700 flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => onLink(selectedAssetIds)}
-            disabled={selectedAssetIds.length === 0 || isPending}
-            className="px-4 py-2 bg-brand-500 text-white rounded-lg disabled:opacity-50"
-          >
-            {isPending ? 'Linking...' : `Link ${selectedAssetIds.length} Asset(s)`}
-          </button>
+    <Dialog open onClose={onClose}>
+      <div className="p-4 border-b border-surface-700 flex justify-between items-center">
+        <h3 className="text-lg font-medium text-white">Link Assets</h3>
+        <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
+          <X className="w-5 h-5 text-surface-600" />
+        </button>
+      </div>
+      <div className="p-4 space-y-4">
+        <Input
+          type="text"
+          placeholder="Search assets..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+        />
+        <div className="max-h-60 overflow-y-auto space-y-2">
+          {availableAssets.length === 0 ? (
+            <p className="text-center text-surface-500 py-4">No assets available</p>
+          ) : (
+            availableAssets.map((asset) => (
+              <label
+                key={asset.id}
+                className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer ${
+                  selectedAssetIds.includes(asset.id)
+                    ? 'bg-brand-500/20'
+                    : 'bg-surface-700 hover:bg-surface-600'
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedAssetIds.includes(asset.id)}
+                  onChange={() => toggleAsset(asset.id)}
+                  className="rounded border-surface-500"
+                />
+                <div>
+                  <p className="text-white">{asset.name}</p>
+                  <p className="text-sm text-surface-600">
+                    {asset.type} • {asset.source}
+                  </p>
+                </div>
+              </label>
+            ))
+          )}
         </div>
       </div>
-    </div>
+      <div className="p-4 border-t border-surface-700 flex justify-end gap-3">
+        <button onClick={onClose} className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg">
+          Cancel
+        </button>
+        <button
+          onClick={() => onLink(selectedAssetIds)}
+          disabled={selectedAssetIds.length === 0 || isPending}
+          className="px-4 py-2 bg-brand-500 text-white rounded-lg disabled:opacity-50"
+        >
+          {isPending ? 'Linking...' : `Link ${selectedAssetIds.length} Asset(s)`}
+        </button>
+      </div>
+    </Dialog>
   );
 }
 
@@ -1012,78 +1003,73 @@ function TreatmentModal({
   const [dueDate, setDueDate] = useState(currentDueDate ? currentDueDate.split('T')[0] : '');
 
   return (
-    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-      <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-lg">
-        <div className="p-4 border-b border-surface-700 flex justify-between items-center">
-          <h3 className="text-lg font-medium text-white">Treatment Plan</h3>
-          <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
-            <X className="w-5 h-5 text-surface-600" />
-          </button>
-        </div>
-        <div className="p-4 space-y-4">
-          <div>
-            <label className="block text-sm text-surface-600 mb-2">Treatment Strategy</label>
-            <div className="grid grid-cols-2 gap-2">
-              {TREATMENT_PLANS.map((tp) => (
-                <button
-                  key={tp.value}
-                  type="button"
-                  onClick={() => setPlan(tp.value)}
-                  className={`p-3 rounded-lg text-left ${
-                    plan === tp.value
-                      ? 'bg-brand-500/20 border border-brand-500'
-                      : 'bg-surface-700 border border-surface-600 hover:bg-surface-600'
-                  }`}
-                >
-                  <p className="text-white font-medium">{tp.label}</p>
-                  <p className="text-surface-600 text-sm">{tp.description}</p>
-                </button>
-              ))}
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm text-surface-600 mb-2">Due Date</label>
-            <Input
-              type="date"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-            />
-          </div>
-          <div>
-            <label className="block text-sm text-surface-600 mb-2">Notes</label>
-            <Textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={3}
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-              placeholder="Describe the treatment approach..."
-            />
+    <Dialog open onClose={onClose}>
+      <div className="p-4 border-b border-surface-700 flex justify-between items-center">
+        <h3 className="text-lg font-medium text-white">Treatment Plan</h3>
+        <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
+          <X className="w-5 h-5 text-surface-600" />
+        </button>
+      </div>
+      <div className="p-4 space-y-4">
+        <div>
+          <label className="block text-sm text-surface-600 mb-2">Treatment Strategy</label>
+          <div className="grid grid-cols-2 gap-2">
+            {TREATMENT_PLANS.map((tp) => (
+              <button
+                key={tp.value}
+                type="button"
+                onClick={() => setPlan(tp.value)}
+                className={`p-3 rounded-lg text-left ${
+                  plan === tp.value
+                    ? 'bg-brand-500/20 border border-brand-500'
+                    : 'bg-surface-700 border border-surface-600 hover:bg-surface-600'
+                }`}
+              >
+                <p className="text-white font-medium">{tp.label}</p>
+                <p className="text-surface-600 text-sm">{tp.description}</p>
+              </button>
+            ))}
           </div>
         </div>
-        <div className="p-4 border-t border-surface-700 flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() =>
-              onSave({
-                treatmentPlan: plan,
-                treatmentNotes: notes,
-                treatmentDueDate: dueDate || undefined,
-              })
-            }
-            disabled={isPending}
-            className="px-4 py-2 bg-brand-500 text-white rounded-lg disabled:opacity-50"
-          >
-            {isPending ? 'Saving...' : 'Save Treatment'}
-          </button>
+        <div>
+          <label className="block text-sm text-surface-600 mb-2">Due Date</label>
+          <Input
+            type="date"
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
+            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+          />
+        </div>
+        <div>
+          <label className="block text-sm text-surface-600 mb-2">Notes</label>
+          <Textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={3}
+            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            placeholder="Describe the treatment approach..."
+          />
         </div>
       </div>
-    </div>
+      <div className="p-4 border-t border-surface-700 flex justify-end gap-3">
+        <button onClick={onClose} className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg">
+          Cancel
+        </button>
+        <button
+          onClick={() =>
+            onSave({
+              treatmentPlan: plan,
+              treatmentNotes: notes,
+              treatmentDueDate: dueDate || undefined,
+            })
+          }
+          disabled={isPending}
+          className="px-4 py-2 bg-brand-500 text-white rounded-lg disabled:opacity-50"
+        >
+          {isPending ? 'Saving...' : 'Save Treatment'}
+        </button>
+      </div>
+    </Dialog>
   );
 }
 
@@ -1107,116 +1093,114 @@ function ScenarioModal({
   });
 
   return (
-    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-      <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-lg">
-        <div className="p-4 border-b border-surface-700 flex justify-between items-center">
-          <h3 className="text-lg font-medium text-white">Add Scenario</h3>
-          <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
-            <X className="w-5 h-5 text-surface-600" />
-          </button>
+    <Dialog open onClose={onClose}>
+      <div className="p-4 border-b border-surface-700 flex justify-between items-center">
+        <h3 className="text-lg font-medium text-white">Add Scenario</h3>
+        <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
+          <X className="w-5 h-5 text-surface-600" />
+        </button>
+      </div>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          onCreate(scenario);
+        }}
+        className="p-4 space-y-4"
+      >
+        <div>
+          <label className="block text-sm text-surface-600 mb-2">Title *</label>
+          <Input
+            type="text"
+            value={scenario.title}
+            onChange={(e) => setScenario((prev) => ({ ...prev, title: e.target.value }))}
+            required
+            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            placeholder="e.g., Phishing attack on employees"
+          />
         </div>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            onCreate(scenario);
-          }}
-          className="p-4 space-y-4"
-        >
+        <div>
+          <label className="block text-sm text-surface-600 mb-2">Description *</label>
+          <Textarea
+            value={scenario.description}
+            onChange={(e) => setScenario((prev) => ({ ...prev, description: e.target.value }))}
+            required
+            rows={2}
+            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm text-surface-600 mb-2">Title *</label>
+            <label className="block text-sm text-surface-600 mb-2">Threat Actor</label>
+            <SelectNative
+              value={scenario.threatActor}
+              onChange={(e) => setScenario((prev) => ({ ...prev, threatActor: e.target.value }))}
+              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            >
+              <option value="">Select...</option>
+              <option value="insider">Insider</option>
+              <option value="external">External</option>
+              <option value="natural">Natural Event</option>
+            </SelectNative>
+          </div>
+          <div>
+            <label className="block text-sm text-surface-600 mb-2">Attack Vector</label>
             <Input
               type="text"
-              value={scenario.title}
-              onChange={(e) => setScenario((prev) => ({ ...prev, title: e.target.value }))}
-              required
+              value={scenario.attackVector}
+              onChange={(e) => setScenario((prev) => ({ ...prev, attackVector: e.target.value }))}
               className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-              placeholder="e.g., Phishing attack on employees"
+              placeholder="e.g., Email, Network"
             />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm text-surface-600 mb-2">Likelihood</label>
+            <SelectNative
+              value={scenario.likelihood}
+              onChange={(e) => setScenario((prev) => ({ ...prev, likelihood: e.target.value }))}
+              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            >
+              {LIKELIHOODS.map((l) => (
+                <option key={l} value={l}>
+                  {l.replace('_', ' ')}
+                </option>
+              ))}
+            </SelectNative>
           </div>
           <div>
-            <label className="block text-sm text-surface-600 mb-2">Description *</label>
-            <Textarea
-              value={scenario.description}
-              onChange={(e) => setScenario((prev) => ({ ...prev, description: e.target.value }))}
-              required
-              rows={2}
+            <label className="block text-sm text-surface-600 mb-2">Impact</label>
+            <SelectNative
+              value={scenario.impact}
+              onChange={(e) => setScenario((prev) => ({ ...prev, impact: e.target.value }))}
               className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm text-surface-600 mb-2">Threat Actor</label>
-              <SelectNative
-                value={scenario.threatActor}
-                onChange={(e) => setScenario((prev) => ({ ...prev, threatActor: e.target.value }))}
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-              >
-                <option value="">Select...</option>
-                <option value="insider">Insider</option>
-                <option value="external">External</option>
-                <option value="natural">Natural Event</option>
-              </SelectNative>
-            </div>
-            <div>
-              <label className="block text-sm text-surface-600 mb-2">Attack Vector</label>
-              <Input
-                type="text"
-                value={scenario.attackVector}
-                onChange={(e) => setScenario((prev) => ({ ...prev, attackVector: e.target.value }))}
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-                placeholder="e.g., Email, Network"
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm text-surface-600 mb-2">Likelihood</label>
-              <SelectNative
-                value={scenario.likelihood}
-                onChange={(e) => setScenario((prev) => ({ ...prev, likelihood: e.target.value }))}
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-              >
-                {LIKELIHOODS.map((l) => (
-                  <option key={l} value={l}>
-                    {l.replace('_', ' ')}
-                  </option>
-                ))}
-              </SelectNative>
-            </div>
-            <div>
-              <label className="block text-sm text-surface-600 mb-2">Impact</label>
-              <SelectNative
-                value={scenario.impact}
-                onChange={(e) => setScenario((prev) => ({ ...prev, impact: e.target.value }))}
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-              >
-                {IMPACTS.map((i) => (
-                  <option key={i} value={i}>
-                    {i}
-                  </option>
-                ))}
-              </SelectNative>
-            </div>
-          </div>
-          <div className="flex justify-end gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg"
             >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isPending}
-              className="px-4 py-2 bg-brand-500 text-white rounded-lg disabled:opacity-50"
-            >
-              {isPending ? 'Creating...' : 'Create Scenario'}
-            </button>
+              {IMPACTS.map((i) => (
+                <option key={i} value={i}>
+                  {i}
+                </option>
+              ))}
+            </SelectNative>
           </div>
-        </form>
-      </div>
-    </div>
+        </div>
+        <div className="flex justify-end gap-3 pt-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={isPending}
+            className="px-4 py-2 bg-brand-500 text-white rounded-lg disabled:opacity-50"
+          >
+            {isPending ? 'Creating...' : 'Create Scenario'}
+          </button>
+        </div>
+      </form>
+    </Dialog>
   );
 }
 
@@ -1287,159 +1271,154 @@ function EditRiskModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-      <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-surface-700 flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-white">Edit Risk</h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-surface-700 rounded-lg text-surface-600"
-          >
-            <X className="w-5 h-5" />
-          </button>
+    <Dialog open onClose={onClose}>
+      <div className="p-6 border-b border-surface-700 flex items-center justify-between">
+        <h2 className="text-xl font-semibold text-white">Edit Risk</h2>
+        <button onClick={onClose} className="p-2 hover:bg-surface-700 rounded-lg text-surface-600">
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          onSave(formData);
+        }}
+        className="p-6 space-y-4"
+      >
+        {/* Title */}
+        <div>
+          <label className="block text-sm font-medium text-surface-700 mb-2">Title *</label>
+          <Input
+            type="text"
+            value={formData.title}
+            onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
+            required
+            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white placeholder-surface-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
+          />
         </div>
 
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            onSave(formData);
-          }}
-          className="p-6 space-y-4"
-        >
-          {/* Title */}
-          <div>
-            <label className="block text-sm font-medium text-surface-700 mb-2">Title *</label>
-            <Input
-              type="text"
-              value={formData.title}
-              onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
-              required
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white placeholder-surface-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
-            />
-          </div>
+        {/* Description */}
+        <div>
+          <label className="block text-sm font-medium text-surface-700 mb-2">Description *</label>
+          <Textarea
+            value={formData.description}
+            onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
+            required
+            rows={4}
+            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white placeholder-surface-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
+          />
+        </div>
 
-          {/* Description */}
+        {/* Category and Source */}
+        <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-surface-700 mb-2">Description *</label>
-            <Textarea
-              value={formData.description}
-              onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
-              required
-              rows={4}
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white placeholder-surface-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
-            />
-          </div>
-
-          {/* Category and Source */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-surface-700 mb-2">Category</label>
-              <SelectNative
-                value={formData.category}
-                onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value }))}
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-              >
-                {CATEGORIES.map((cat) => (
-                  <option key={cat.value} value={cat.value}>
-                    {cat.label}
-                  </option>
-                ))}
-              </SelectNative>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-surface-700 mb-2">Source</label>
-              <SelectNative
-                value={formData.source}
-                onChange={(e) => setFormData((prev) => ({ ...prev, source: e.target.value }))}
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-              >
-                {SOURCES.map((src) => (
-                  <option key={src.value} value={src.value}>
-                    {src.label}
-                  </option>
-                ))}
-              </SelectNative>
-            </div>
-          </div>
-
-          {/* Initial Severity */}
-          <div>
-            <label className="block text-sm font-medium text-surface-700 mb-2">
-              Initial Severity
-            </label>
+            <label className="block text-sm font-medium text-surface-700 mb-2">Category</label>
             <SelectNative
-              value={formData.initialSeverity}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, initialSeverity: e.target.value as any }))
-              }
+              value={formData.category}
+              onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value }))}
               className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
-              {SEVERITIES.map((sev) => (
-                <option key={sev.value} value={sev.value}>
-                  {sev.label}
+              {CATEGORIES.map((cat) => (
+                <option key={cat.value} value={cat.value}>
+                  {cat.label}
                 </option>
               ))}
             </SelectNative>
           </div>
-
-          {/* Tags */}
           <div>
-            <label className="block text-sm font-medium text-surface-700 mb-2">Tags</label>
-            <div className="flex gap-2 mb-2 flex-wrap">
-              {formData.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="px-2 py-1 bg-brand-500/20 text-brand-400 rounded text-sm flex items-center gap-1"
-                >
-                  {tag}
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveTag(tag)}
-                    className="hover:text-brand-300"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
+            <label className="block text-sm font-medium text-surface-700 mb-2">Source</label>
+            <SelectNative
+              value={formData.source}
+              onChange={(e) => setFormData((prev) => ({ ...prev, source: e.target.value }))}
+              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+            >
+              {SOURCES.map((src) => (
+                <option key={src.value} value={src.value}>
+                  {src.label}
+                </option>
               ))}
-            </div>
-            <div className="flex gap-2">
-              <Input
-                type="text"
-                value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
-                className="flex-1 px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white placeholder-surface-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                placeholder="Add tag..."
-              />
-              <button
-                type="button"
-                onClick={handleAddTag}
-                className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg hover:bg-surface-600"
-              >
-                Add
-              </button>
-            </div>
+            </SelectNative>
           </div>
+        </div>
 
-          {/* Actions */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-surface-700">
+        {/* Initial Severity */}
+        <div>
+          <label className="block text-sm font-medium text-surface-700 mb-2">
+            Initial Severity
+          </label>
+          <SelectNative
+            value={formData.initialSeverity}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, initialSeverity: e.target.value as any }))
+            }
+            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+          >
+            {SEVERITIES.map((sev) => (
+              <option key={sev.value} value={sev.value}>
+                {sev.label}
+              </option>
+            ))}
+          </SelectNative>
+        </div>
+
+        {/* Tags */}
+        <div>
+          <label className="block text-sm font-medium text-surface-700 mb-2">Tags</label>
+          <div className="flex gap-2 mb-2 flex-wrap">
+            {formData.tags.map((tag) => (
+              <span
+                key={tag}
+                className="px-2 py-1 bg-brand-500/20 text-brand-400 rounded text-sm flex items-center gap-1"
+              >
+                {tag}
+                <button
+                  type="button"
+                  onClick={() => handleRemoveTag(tag)}
+                  className="hover:text-brand-300"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <Input
+              type="text"
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
+              className="flex-1 px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white placeholder-surface-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
+              placeholder="Add tag..."
+            />
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleAddTag}
               className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg hover:bg-surface-600"
             >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isPending}
-              className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 disabled:opacity-50"
-            >
-              {isPending ? 'Saving...' : 'Save Changes'}
+              Add
             </button>
           </div>
-        </form>
-      </div>
-    </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex justify-end gap-3 pt-4 border-t border-surface-700">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg hover:bg-surface-600"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={isPending}
+            className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 disabled:opacity-50"
+          >
+            {isPending ? 'Saving...' : 'Save Changes'}
+          </button>
+        </div>
+      </form>
+    </Dialog>
   );
 }

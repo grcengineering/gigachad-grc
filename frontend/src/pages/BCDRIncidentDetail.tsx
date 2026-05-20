@@ -18,6 +18,7 @@ import { format } from 'date-fns';
 import { Textarea } from '@/components/ui/Textarea';
 
 import { SelectNative } from '@/components/ui/SelectNative';
+import { Dialog } from '@/components/ui/Dialog';
 
 // ============================================
 // Types
@@ -498,84 +499,72 @@ export default function BCDRIncidentDetail() {
         </div>
       </div>
       {/* Add Note Modal */}
-      {showAddNote && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
-          <div className="bg-slate-800 rounded-xl shadow-2xl w-full max-w-md p-6">
-            <h2 className="text-xl font-semibold text-white mb-4">Add Timeline Entry</h2>
-            <Textarea
-              value={noteDescription}
-              onChange={(e) => setNoteDescription(e.target.value)}
-              rows={4}
-              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
-              placeholder="Describe the action taken or update..."
-            />
-            <div className="flex items-center justify-end gap-3 mt-4">
-              <Button variant="secondary" onClick={() => setShowAddNote(false)}>
-                Cancel
-              </Button>
-              <Button variant="primary" onClick={handleAddNote} disabled={isSubmitting}>
-                {isSubmitting ? 'Adding...' : 'Add Entry'}
-              </Button>
-            </div>
-          </div>
+      <Dialog open={showAddNote} onClose={() => setShowAddNote(false)}>
+        <h2 className="text-xl font-semibold text-white mb-4">Add Timeline Entry</h2>
+        <Textarea
+          value={noteDescription}
+          onChange={(e) => setNoteDescription(e.target.value)}
+          rows={4}
+          className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
+          placeholder="Describe the action taken or update..."
+        />
+        <div className="flex items-center justify-end gap-3 mt-4">
+          <Button variant="secondary" onClick={() => setShowAddNote(false)}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleAddNote} disabled={isSubmitting}>
+            {isSubmitting ? 'Adding...' : 'Add Entry'}
+          </Button>
         </div>
-      )}
+      </Dialog>
       {/* Activate Plan Modal */}
-      {showActivatePlan && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
-          <div className="bg-slate-800 rounded-xl shadow-2xl w-full max-w-md p-6">
-            <h2 className="text-xl font-semibold text-white mb-4">Activate Plan</h2>
-            <SelectNative
-              value={selectedPlanId}
-              onChange={(e) => setSelectedPlanId(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
-            >
-              <option value="">Select plan...</option>
-              {plans.map((plan) => (
-                <option key={plan.id} value={plan.id}>
-                  {plan.title}
-                </option>
-              ))}
-            </SelectNative>
-            <div className="flex items-center justify-end gap-3 mt-4">
-              <Button variant="secondary" onClick={() => setShowActivatePlan(false)}>
-                Cancel
-              </Button>
-              <Button variant="primary" onClick={handleActivatePlan} disabled={isSubmitting}>
-                {isSubmitting ? 'Activating...' : 'Activate'}
-              </Button>
-            </div>
-          </div>
+      <Dialog open={showActivatePlan} onClose={() => setShowActivatePlan(false)}>
+        <h2 className="text-xl font-semibold text-white mb-4">Activate Plan</h2>
+        <SelectNative
+          value={selectedPlanId}
+          onChange={(e) => setSelectedPlanId(e.target.value)}
+          className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
+        >
+          <option value="">Select plan...</option>
+          {plans.map((plan) => (
+            <option key={plan.id} value={plan.id}>
+              {plan.title}
+            </option>
+          ))}
+        </SelectNative>
+        <div className="flex items-center justify-end gap-3 mt-4">
+          <Button variant="secondary" onClick={() => setShowActivatePlan(false)}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleActivatePlan} disabled={isSubmitting}>
+            {isSubmitting ? 'Activating...' : 'Activate'}
+          </Button>
         </div>
-      )}
+      </Dialog>
       {/* Activate Team Modal */}
-      {showActivateTeam && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
-          <div className="bg-slate-800 rounded-xl shadow-2xl w-full max-w-md p-6">
-            <h2 className="text-xl font-semibold text-white mb-4">Activate Team</h2>
-            <SelectNative
-              value={selectedTeamId}
-              onChange={(e) => setSelectedTeamId(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
-            >
-              <option value="">Select team...</option>
-              {teams.map((team) => (
-                <option key={team.id} value={team.id}>
-                  {team.name}
-                </option>
-              ))}
-            </SelectNative>
-            <div className="flex items-center justify-end gap-3 mt-4">
-              <Button variant="secondary" onClick={() => setShowActivateTeam(false)}>
-                Cancel
-              </Button>
-              <Button variant="primary" onClick={handleActivateTeam} disabled={isSubmitting}>
-                {isSubmitting ? 'Activating...' : 'Activate'}
-              </Button>
-            </div>
-          </div>
+      <Dialog open={showActivateTeam} onClose={() => setShowActivateTeam(false)}>
+        <h2 className="text-xl font-semibold text-white mb-4">Activate Team</h2>
+        <SelectNative
+          value={selectedTeamId}
+          onChange={(e) => setSelectedTeamId(e.target.value)}
+          className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
+        >
+          <option value="">Select team...</option>
+          {teams.map((team) => (
+            <option key={team.id} value={team.id}>
+              {team.name}
+            </option>
+          ))}
+        </SelectNative>
+        <div className="flex items-center justify-end gap-3 mt-4">
+          <Button variant="secondary" onClick={() => setShowActivateTeam(false)}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleActivateTeam} disabled={isSubmitting}>
+            {isSubmitting ? 'Activating...' : 'Activate'}
+          </Button>
         </div>
-      )}
+      </Dialog>
     </div>
   );
 }

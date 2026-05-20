@@ -26,6 +26,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { Input } from '@/components/ui/Input';
 
 import { SelectNative } from '@/components/ui/SelectNative';
+import { Dialog } from '@/components/ui/Dialog';
 
 interface DRTest {
   id: string;
@@ -716,228 +717,202 @@ export default function DRTestDetail() {
         </div>
       )}
       {/* Edit Modal */}
-      {showEditModal && (
-        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50 p-4">
-          <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-surface-700 flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-white">Edit DR Test</h2>
-              <button
-                onClick={() => setShowEditModal(false)}
-                className="p-2 hover:bg-surface-700 rounded-lg text-surface-600"
-              >
-                <XMarkIcon className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                updateMutation.mutate(editForm);
-              }}
-              className="p-6 space-y-4"
-            >
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-2">Name *</label>
-                <Input
-                  type="text"
-                  value={editForm.name}
-                  onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
-                  required
-                  className="input w-full"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-surface-700 mb-2">
-                    Test Type
-                  </label>
-                  <SelectNative
-                    value={editForm.test_type}
-                    onChange={(e) =>
-                      setEditForm((prev) => ({ ...prev, test_type: e.target.value }))
-                    }
-                    className="input w-full"
-                  >
-                    {TEST_TYPES.map((type) => (
-                      <option key={type.value} value={type.value}>
-                        {type.label}
-                      </option>
-                    ))}
-                  </SelectNative>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-surface-700 mb-2">Status</label>
-                  <SelectNative
-                    value={editForm.status}
-                    onChange={(e) => setEditForm((prev) => ({ ...prev, status: e.target.value }))}
-                    className="input w-full"
-                  >
-                    {STATUS_OPTIONS.map((status) => (
-                      <option key={status.value} value={status.value}>
-                        {status.label}
-                      </option>
-                    ))}
-                  </SelectNative>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-2">
-                  Description
-                </label>
-                <Textarea
-                  value={editForm.description}
-                  onChange={(e) =>
-                    setEditForm((prev) => ({ ...prev, description: e.target.value }))
-                  }
-                  rows={3}
-                  className="input w-full"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-2">
-                  Objectives
-                </label>
-                <Textarea
-                  value={editForm.objectives}
-                  onChange={(e) => setEditForm((prev) => ({ ...prev, objectives: e.target.value }))}
-                  rows={3}
-                  className="input w-full"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-2">Scope</label>
-                <Textarea
-                  value={editForm.scope}
-                  onChange={(e) => setEditForm((prev) => ({ ...prev, scope: e.target.value }))}
-                  rows={2}
-                  className="input w-full"
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4 border-t border-surface-700">
-                <Button variant="secondary" type="button" onClick={() => setShowEditModal(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={updateMutation.isPending}>
-                  {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
-                </Button>
-              </div>
-            </form>
-          </div>
+      <Dialog open={showEditModal} onClose={() => setShowEditModal(false)}>
+        <div className="p-6 border-b border-surface-700 flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-white">Edit DR Test</h2>
+          <button
+            onClick={() => setShowEditModal(false)}
+            className="p-2 hover:bg-surface-700 rounded-lg text-surface-600"
+          >
+            <XMarkIcon className="w-5 h-5" />
+          </button>
         </div>
-      )}
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            updateMutation.mutate(editForm);
+          }}
+          className="p-6 space-y-4"
+        >
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-2">Name *</label>
+            <Input
+              type="text"
+              value={editForm.name}
+              onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
+              required
+              className="input w-full"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-surface-700 mb-2">Test Type</label>
+              <SelectNative
+                value={editForm.test_type}
+                onChange={(e) => setEditForm((prev) => ({ ...prev, test_type: e.target.value }))}
+                className="input w-full"
+              >
+                {TEST_TYPES.map((type) => (
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
+                ))}
+              </SelectNative>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-surface-700 mb-2">Status</label>
+              <SelectNative
+                value={editForm.status}
+                onChange={(e) => setEditForm((prev) => ({ ...prev, status: e.target.value }))}
+                className="input w-full"
+              >
+                {STATUS_OPTIONS.map((status) => (
+                  <option key={status.value} value={status.value}>
+                    {status.label}
+                  </option>
+                ))}
+              </SelectNative>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-2">Description</label>
+            <Textarea
+              value={editForm.description}
+              onChange={(e) => setEditForm((prev) => ({ ...prev, description: e.target.value }))}
+              rows={3}
+              className="input w-full"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-2">Objectives</label>
+            <Textarea
+              value={editForm.objectives}
+              onChange={(e) => setEditForm((prev) => ({ ...prev, objectives: e.target.value }))}
+              rows={3}
+              className="input w-full"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-2">Scope</label>
+            <Textarea
+              value={editForm.scope}
+              onChange={(e) => setEditForm((prev) => ({ ...prev, scope: e.target.value }))}
+              rows={2}
+              className="input w-full"
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-surface-700">
+            <Button variant="secondary" type="button" onClick={() => setShowEditModal(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={updateMutation.isPending}>
+              {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </div>
+        </form>
+      </Dialog>
       {/* Complete Test Modal */}
-      {showCompleteModal && (
-        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50 p-4">
-          <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-lg">
-            <div className="p-6 border-b border-surface-700 flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-white">Complete DR Test</h2>
-              <button
-                onClick={() => setShowCompleteModal(false)}
-                className="p-2 hover:bg-surface-700 rounded-lg text-surface-600"
-              >
-                <XMarkIcon className="w-5 h-5" />
-              </button>
-            </div>
+      <Dialog open={showCompleteModal} onClose={() => setShowCompleteModal(false)}>
+        <div className="p-6 border-b border-surface-700 flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-white">Complete DR Test</h2>
+          <button
+            onClick={() => setShowCompleteModal(false)}
+            className="p-2 hover:bg-surface-700 rounded-lg text-surface-600"
+          >
+            <XMarkIcon className="w-5 h-5" />
+          </button>
+        </div>
 
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                completeMutation.mutate(completeForm);
-              }}
-              className="p-6 space-y-4"
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            completeMutation.mutate(completeForm);
+          }}
+          className="p-6 space-y-4"
+        >
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-2">Result *</label>
+            <SelectNative
+              value={completeForm.result}
+              onChange={(e) => setCompleteForm((prev) => ({ ...prev, result: e.target.value }))}
+              className="input w-full"
             >
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-2">Result *</label>
-                <SelectNative
-                  value={completeForm.result}
-                  onChange={(e) => setCompleteForm((prev) => ({ ...prev, result: e.target.value }))}
-                  className="input w-full"
-                >
-                  {RESULT_OPTIONS.map((result) => (
-                    <option key={result.value} value={result.value}>
-                      {result.label}
-                    </option>
-                  ))}
-                </SelectNative>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-2">
-                  Actual Recovery Time (minutes)
-                </label>
-                <Input
-                  type="number"
-                  value={completeForm.actual_recovery_time_minutes}
-                  onChange={(e) =>
-                    setCompleteForm((prev) => ({
-                      ...prev,
-                      actual_recovery_time_minutes: parseInt(e.target.value) || 0,
-                    }))
-                  }
-                  min="0"
-                  className="input w-full"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-2">
-                  Lessons Learned
-                </label>
-                <Textarea
-                  value={completeForm.lessons_learned}
-                  onChange={(e) =>
-                    setCompleteForm((prev) => ({ ...prev, lessons_learned: e.target.value }))
-                  }
-                  rows={4}
-                  className="input w-full"
-                  placeholder="Document key takeaways from this test..."
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4 border-t border-surface-700">
-                <Button
-                  variant="secondary"
-                  type="button"
-                  onClick={() => setShowCompleteModal(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={completeMutation.isPending}>
-                  {completeMutation.isPending ? 'Completing...' : 'Complete Test'}
-                </Button>
-              </div>
-            </form>
+              {RESULT_OPTIONS.map((result) => (
+                <option key={result.value} value={result.value}>
+                  {result.label}
+                </option>
+              ))}
+            </SelectNative>
           </div>
-        </div>
-      )}
+
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-2">
+              Actual Recovery Time (minutes)
+            </label>
+            <Input
+              type="number"
+              value={completeForm.actual_recovery_time_minutes}
+              onChange={(e) =>
+                setCompleteForm((prev) => ({
+                  ...prev,
+                  actual_recovery_time_minutes: parseInt(e.target.value) || 0,
+                }))
+              }
+              min="0"
+              className="input w-full"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-2">
+              Lessons Learned
+            </label>
+            <Textarea
+              value={completeForm.lessons_learned}
+              onChange={(e) =>
+                setCompleteForm((prev) => ({ ...prev, lessons_learned: e.target.value }))
+              }
+              rows={4}
+              className="input w-full"
+              placeholder="Document key takeaways from this test..."
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-surface-700">
+            <Button variant="secondary" type="button" onClick={() => setShowCompleteModal(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={completeMutation.isPending}>
+              {completeMutation.isPending ? 'Completing...' : 'Complete Test'}
+            </Button>
+          </div>
+        </form>
+      </Dialog>
       {/* Delete Confirmation */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50 p-4">
-          <div className="bg-surface-800 rounded-xl border border-surface-700 p-6 max-w-md w-full">
-            <h3 className="text-lg font-semibold text-white mb-2">Delete DR Test</h3>
-            <p className="text-surface-600 mb-6">
-              Are you sure you want to delete "{test.name}"? This action cannot be undone.
-            </p>
-            <div className="flex justify-end gap-3">
-              <Button variant="secondary" onClick={() => setShowDeleteConfirm(false)}>
-                Cancel
-              </Button>
-              <Button
-                variant="danger"
-                onClick={() => deleteMutation.mutate()}
-                disabled={deleteMutation.isPending}
-              >
-                {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
-              </Button>
-            </div>
-          </div>
+      <Dialog open={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)}>
+        <h3 className="text-lg font-semibold text-white mb-2">Delete DR Test</h3>
+        <p className="text-surface-600 mb-6">
+          Are you sure you want to delete "{test.name}"? This action cannot be undone.
+        </p>
+        <div className="flex justify-end gap-3">
+          <Button variant="secondary" onClick={() => setShowDeleteConfirm(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="danger"
+            onClick={() => deleteMutation.mutate()}
+            disabled={deleteMutation.isPending}
+          >
+            {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+          </Button>
         </div>
-      )}
+      </Dialog>
     </div>
   );
 }

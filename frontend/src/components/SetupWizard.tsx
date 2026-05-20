@@ -12,6 +12,7 @@ import {
   Cog6ToothIcon,
 } from '@heroicons/react/24/outline';
 import { api } from '../lib/api';
+import { Dialog } from '@/components/ui/Dialog';
 
 interface SetupStep {
   id: string;
@@ -155,20 +156,18 @@ export function SetupWizard({ onClose }: { onClose: () => void }) {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-black/70 grid place-items-center z-50">
-        <div className="bg-surface-800 rounded-xl p-8 max-w-2xl w-full mx-4">
-          <div className="flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            <span className="ml-3 text-foreground">Loading setup status...</span>
-          </div>
+      <Dialog open onClose={onClose}>
+        <div className="flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <span className="ml-3 text-foreground">Loading setup status...</span>
         </div>
-      </div>
+      </Dialog>
     );
   }
 
   return (
-    <div className="fixed inset-0 bg-black/70 grid place-items-center z-50 p-4">
-      <div className="bg-surface-800 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+    <Dialog open onClose={onClose} size="xl">
+      <div className="flex flex-col">
         {/* Header */}
         <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
           <div>
@@ -381,7 +380,7 @@ export function SetupWizard({ onClose }: { onClose: () => void }) {
           </div>
         </div>
       </div>
-    </div>
+    </Dialog>
   );
 }
 

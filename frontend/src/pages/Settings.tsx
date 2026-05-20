@@ -39,6 +39,7 @@ import { Input } from '@/components/ui/Input';
 import { SelectNative } from '@/components/ui/SelectNative';
 
 import { Button } from '@/components/ui/Button';
+import { Dialog } from '@/components/ui/Dialog';
 
 interface SettingsProps {
   section:
@@ -713,33 +714,29 @@ function MultiWorkspaceSettings() {
       </div>
 
       {/* Disable Warning Modal */}
-      {showDisableWarning && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
-          <div className="bg-surface-800 rounded-lg shadow-xl w-full max-w-md p-6">
-            <h3 className="text-lg font-semibold text-surface-100 mb-4">
-              Disable Multi-Workspace Mode?
-            </h3>
-            <p className="text-surface-600 mb-6">
-              This will hide all workspace-related features. Your data will be preserved but
-              workspace filtering will be disabled across the platform.
-            </p>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setShowDisableWarning(false)}
-                className="px-4 py-2 text-sm text-surface-600 hover:text-surface-100"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDisable}
-                className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700"
-              >
-                Disable Multi-Workspace
-              </button>
-            </div>
-          </div>
+      <Dialog open={showDisableWarning} onClose={() => setShowDisableWarning(false)}>
+        <h3 className="text-lg font-semibold text-surface-100 mb-4">
+          Disable Multi-Workspace Mode?
+        </h3>
+        <p className="text-surface-600 mb-6">
+          This will hide all workspace-related features. Your data will be preserved but workspace
+          filtering will be disabled across the platform.
+        </p>
+        <div className="flex justify-end gap-3">
+          <button
+            onClick={() => setShowDisableWarning(false)}
+            className="px-4 py-2 text-sm text-surface-600 hover:text-surface-100"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={confirmDisable}
+            className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700"
+          >
+            Disable Multi-Workspace
+          </button>
         </div>
-      )}
+      </Dialog>
     </>
   );
 }
@@ -1369,110 +1366,104 @@ function ApiSettings() {
         </div>
       </div>
       {/* Create Key Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-          <div className="bg-surface-900 rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold text-surface-100 mb-4">Create API Key</h3>
-            <form onSubmit={handleCreate} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-1">Name</label>
-                <Input
-                  type="text"
-                  value={newKeyName}
-                  onChange={(e) => setNewKeyName(e.target.value)}
-                  className="input w-full"
-                  placeholder="e.g., Production API Key"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-1">
-                  Description (optional)
-                </label>
-                <Input
-                  type="text"
-                  value={newKeyDescription}
-                  onChange={(e) => setNewKeyDescription(e.target.value)}
-                  className="input w-full"
-                  placeholder="e.g., Used for CI/CD pipeline"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-1">Scopes</label>
-                <div className="space-y-2 max-h-40 overflow-y-auto">
-                  {availableScopes.map((scope) => (
-                    <label key={scope} className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={newKeyScopes.includes(scope)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setNewKeyScopes([...newKeyScopes, scope]);
-                          } else {
-                            setNewKeyScopes(newKeyScopes.filter((s) => s !== scope));
-                          }
-                        }}
-                        className="rounded border-surface-600 bg-surface-800 text-primary-500"
-                      />
-                      <span className="text-surface-700 text-sm">{scope}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-              <div className="flex justify-end gap-2 pt-4">
-                <Button type="button" onClick={() => setShowCreateModal(false)} variant="secondary">
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={createMutation.isPending || !newKeyName.trim()}
-                  variant="primary"
-                >
-                  {createMutation.isPending ? 'Creating...' : 'Create Key'}
-                </Button>
-              </div>
-            </form>
+      <Dialog open={showCreateModal} onClose={() => setShowCreateModal(false)}>
+        <h3 className="text-lg font-semibold text-surface-100 mb-4">Create API Key</h3>
+        <form onSubmit={handleCreate} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-1">Name</label>
+            <Input
+              type="text"
+              value={newKeyName}
+              onChange={(e) => setNewKeyName(e.target.value)}
+              className="input w-full"
+              placeholder="e.g., Production API Key"
+              required
+            />
           </div>
-        </div>
-      )}
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-1">
+              Description (optional)
+            </label>
+            <Input
+              type="text"
+              value={newKeyDescription}
+              onChange={(e) => setNewKeyDescription(e.target.value)}
+              className="input w-full"
+              placeholder="e.g., Used for CI/CD pipeline"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-1">Scopes</label>
+            <div className="space-y-2 max-h-40 overflow-y-auto">
+              {availableScopes.map((scope) => (
+                <label key={scope} className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={newKeyScopes.includes(scope)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setNewKeyScopes([...newKeyScopes, scope]);
+                      } else {
+                        setNewKeyScopes(newKeyScopes.filter((s) => s !== scope));
+                      }
+                    }}
+                    className="rounded border-surface-600 bg-surface-800 text-primary-500"
+                  />
+                  <span className="text-surface-700 text-sm">{scope}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-4">
+            <Button type="button" onClick={() => setShowCreateModal(false)} variant="secondary">
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={createMutation.isPending || !newKeyName.trim()}
+              variant="primary"
+            >
+              {createMutation.isPending ? 'Creating...' : 'Create Key'}
+            </Button>
+          </div>
+        </form>
+      </Dialog>
       {/* New Key Display Modal */}
-      {showNewKeyModal && newKey && (
-        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-          <div className="bg-surface-900 rounded-lg p-6 w-full max-w-lg">
-            <div className="flex items-center gap-2 mb-4">
-              <CheckCircleIcon className="w-6 h-6 text-green-600" />
-              <h3 className="text-lg font-semibold text-surface-100">API Key Created</h3>
-            </div>
-            <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg mb-4">
-              <p className="text-amber-600 text-sm">
-                Copy this key now. You won't be able to see it again!
-              </p>
-            </div>
-            <div className="bg-surface-800 rounded-lg p-4">
-              <div className="flex items-center justify-between">
-                <code className="text-green-600 text-sm break-all">{newKey.key}</code>
-                <Button
-                  className="text-sm ml-2 flex-shrink-0"
-                  onClick={() => copyToClipboard(newKey.key)}
-                  variant="secondary"
-                >
-                  Copy
-                </Button>
-              </div>
-            </div>
-            <div className="flex justify-end mt-4">
+      {newKey && (
+        <Dialog open={showNewKeyModal} onClose={() => setShowNewKeyModal(false)}>
+          <div className="flex items-center gap-2 mb-4">
+            <CheckCircleIcon className="w-6 h-6 text-green-600" />
+            <h3 className="text-lg font-semibold text-surface-100">API Key Created</h3>
+          </div>
+          <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg mb-4">
+            <p className="text-amber-600 text-sm">
+              Copy this key now. You won't be able to see it again!
+            </p>
+          </div>
+          <div className="bg-surface-800 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <code className="text-green-600 text-sm break-all">{newKey.key}</code>
               <Button
-                onClick={() => {
-                  setShowNewKeyModal(false);
-                  setNewKey(null);
-                }}
-                variant="primary"
+                className="text-sm ml-2 flex-shrink-0"
+                onClick={() => copyToClipboard(newKey.key)}
+                variant="secondary"
               >
-                Done
+                Copy
               </Button>
             </div>
           </div>
-        </div>
+          <div className="flex justify-end mt-4">
+            <Button
+              onClick={() => {
+                setShowNewKeyModal(false);
+                setNewKey(null);
+              }}
+              variant="primary"
+            >
+              Done
+            </Button>
+          </div>
+        </Dialog>
       )}
     </div>
   );
@@ -1623,55 +1614,49 @@ function DashboardTemplatesSettings() {
         </ul>
       </div>
       {/* Create Template Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-          <div className="bg-surface-900 rounded-lg shadow-xl w-full max-w-md p-6">
-            <h2 className="text-lg font-semibold text-surface-100 mb-4">
-              Create Dashboard Template
-            </h2>
-            <form onSubmit={handleCreate}>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-surface-700 mb-2">
-                    Template Name
-                  </label>
-                  <Input
-                    type="text"
-                    value={newTemplateName}
-                    onChange={(e) => setNewTemplateName(e.target.value)}
-                    className="input w-full"
-                    placeholder="Executive Overview"
-                    autoFocus
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-surface-700 mb-2">
-                    Description (optional)
-                  </label>
-                  <Textarea
-                    value={newTemplateDescription}
-                    onChange={(e) => setNewTemplateDescription(e.target.value)}
-                    className="input w-full h-20"
-                    placeholder="A high-level overview for executives..."
-                  />
-                </div>
-              </div>
-              <div className="flex items-center justify-end gap-3 mt-6">
-                <Button type="button" onClick={() => setShowCreateModal(false)} variant="ghost">
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={!newTemplateName.trim() || createMutation.isPending}
-                  variant="primary"
-                >
-                  {createMutation.isPending ? 'Creating...' : 'Create Template'}
-                </Button>
-              </div>
-            </form>
+      <Dialog open={showCreateModal} onClose={() => setShowCreateModal(false)}>
+        <h2 className="text-lg font-semibold text-surface-100 mb-4">Create Dashboard Template</h2>
+        <form onSubmit={handleCreate}>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-surface-700 mb-2">
+                Template Name
+              </label>
+              <Input
+                type="text"
+                value={newTemplateName}
+                onChange={(e) => setNewTemplateName(e.target.value)}
+                className="input w-full"
+                placeholder="Executive Overview"
+                autoFocus
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-surface-700 mb-2">
+                Description (optional)
+              </label>
+              <Textarea
+                value={newTemplateDescription}
+                onChange={(e) => setNewTemplateDescription(e.target.value)}
+                className="input w-full h-20"
+                placeholder="A high-level overview for executives..."
+              />
+            </div>
           </div>
-        </div>
-      )}
+          <div className="flex items-center justify-end gap-3 mt-6">
+            <Button type="button" onClick={() => setShowCreateModal(false)} variant="ghost">
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={!newTemplateName.trim() || createMutation.isPending}
+              variant="primary"
+            >
+              {createMutation.isPending ? 'Creating...' : 'Create Template'}
+            </Button>
+          </div>
+        </form>
+      </Dialog>
     </div>
   );
 }

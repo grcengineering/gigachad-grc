@@ -23,6 +23,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { Input } from '@/components/ui/Input';
 
 import { SelectNative } from '@/components/ui/SelectNative';
+import { Dialog } from '@/components/ui/Dialog';
 
 interface BusinessProcess {
   id: string;
@@ -535,268 +536,248 @@ export default function BusinessProcessDetail() {
         </div>
       )}
       {/* Edit Modal */}
-      {showEditModal && (
-        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50 p-4">
-          <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-surface-700 flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-white">Edit Business Process</h2>
-              <button
-                onClick={() => setShowEditModal(false)}
-                className="p-2 hover:bg-surface-700 rounded-lg text-surface-600"
-              >
-                <XMarkIcon className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                updateMutation.mutate(editForm);
-              }}
-              className="p-6 space-y-4"
-            >
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-2">Name *</label>
-                <Input
-                  type="text"
-                  value={editForm.name}
-                  onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
-                  required
-                  className="input w-full"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-2">
-                  Description
-                </label>
-                <Textarea
-                  value={editForm.description}
-                  onChange={(e) =>
-                    setEditForm((prev) => ({ ...prev, description: e.target.value }))
-                  }
-                  rows={3}
-                  className="input w-full"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-surface-700 mb-2">
-                    Department
-                  </label>
-                  <Input
-                    type="text"
-                    value={editForm.department}
-                    onChange={(e) =>
-                      setEditForm((prev) => ({ ...prev, department: e.target.value }))
-                    }
-                    className="input w-full"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-surface-700 mb-2">
-                    Criticality Tier
-                  </label>
-                  <SelectNative
-                    value={editForm.criticality_tier}
-                    onChange={(e) =>
-                      setEditForm((prev) => ({ ...prev, criticality_tier: e.target.value }))
-                    }
-                    className="input w-full"
-                  >
-                    {CRITICALITY_TIERS.map((tier) => (
-                      <option key={tier.value} value={tier.value}>
-                        {tier.label}
-                      </option>
-                    ))}
-                  </SelectNative>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-surface-700 mb-2">
-                    RTO (hours)
-                  </label>
-                  <Input
-                    type="number"
-                    value={editForm.rto_hours}
-                    onChange={(e) =>
-                      setEditForm((prev) => ({ ...prev, rto_hours: parseInt(e.target.value) || 0 }))
-                    }
-                    min="0"
-                    className="input w-full"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-surface-700 mb-2">
-                    RPO (hours)
-                  </label>
-                  <Input
-                    type="number"
-                    value={editForm.rpo_hours}
-                    onChange={(e) =>
-                      setEditForm((prev) => ({ ...prev, rpo_hours: parseInt(e.target.value) || 0 }))
-                    }
-                    min="0"
-                    className="input w-full"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-surface-700 mb-2">
-                    MTPD (hours)
-                  </label>
-                  <Input
-                    type="number"
-                    value={editForm.mtpd_hours}
-                    onChange={(e) =>
-                      setEditForm((prev) => ({
-                        ...prev,
-                        mtpd_hours: parseInt(e.target.value) || 0,
-                      }))
-                    }
-                    min="0"
-                    className="input w-full"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-2">
-                  Business Impact Description
-                </label>
-                <Textarea
-                  value={editForm.impact_description}
-                  onChange={(e) =>
-                    setEditForm((prev) => ({ ...prev, impact_description: e.target.value }))
-                  }
-                  rows={2}
-                  className="input w-full"
-                  placeholder="Describe the impact if this process is unavailable..."
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-surface-700 mb-2">
-                    Recovery Priority
-                  </label>
-                  <Input
-                    type="number"
-                    value={editForm.recovery_priority}
-                    onChange={(e) =>
-                      setEditForm((prev) => ({
-                        ...prev,
-                        recovery_priority: parseInt(e.target.value) || 1,
-                      }))
-                    }
-                    min="1"
-                    className="input w-full"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-surface-700 mb-2">
-                    Minimum Staff Required
-                  </label>
-                  <Input
-                    type="number"
-                    value={editForm.minimum_staff_required}
-                    onChange={(e) =>
-                      setEditForm((prev) => ({
-                        ...prev,
-                        minimum_staff_required: parseInt(e.target.value) || 0,
-                      }))
-                    }
-                    min="0"
-                    className="input w-full"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={editForm.alternate_site_required}
-                    onChange={(e) =>
-                      setEditForm((prev) => ({
-                        ...prev,
-                        alternate_site_required: e.target.checked,
-                      }))
-                    }
-                    className="rounded border-surface-600 bg-surface-700 text-brand-600"
-                  />
-                  <span className="text-surface-700 text-sm">Alternate Site Required</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={editForm.manual_workaround_available}
-                    onChange={(e) =>
-                      setEditForm((prev) => ({
-                        ...prev,
-                        manual_workaround_available: e.target.checked,
-                      }))
-                    }
-                    className="rounded border-surface-600 bg-surface-700 text-brand-600"
-                  />
-                  <span className="text-surface-700 text-sm">Manual Workaround Available</span>
-                </label>
-              </div>
-
-              {editForm.manual_workaround_available && (
-                <div>
-                  <label className="block text-sm font-medium text-surface-700 mb-2">
-                    Workaround Description
-                  </label>
-                  <Textarea
-                    value={editForm.workaround_description}
-                    onChange={(e) =>
-                      setEditForm((prev) => ({ ...prev, workaround_description: e.target.value }))
-                    }
-                    rows={2}
-                    className="input w-full"
-                  />
-                </div>
-              )}
-
-              <div className="flex justify-end gap-3 pt-4 border-t border-surface-700">
-                <Button variant="secondary" type="button" onClick={() => setShowEditModal(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={updateMutation.isPending}>
-                  {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
-                </Button>
-              </div>
-            </form>
-          </div>
+      <Dialog open={showEditModal} onClose={() => setShowEditModal(false)}>
+        <div className="p-6 border-b border-surface-700 flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-white">Edit Business Process</h2>
+          <button
+            onClick={() => setShowEditModal(false)}
+            className="p-2 hover:bg-surface-700 rounded-lg text-surface-600"
+          >
+            <XMarkIcon className="w-5 h-5" />
+          </button>
         </div>
-      )}
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            updateMutation.mutate(editForm);
+          }}
+          className="p-6 space-y-4"
+        >
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-2">Name *</label>
+            <Input
+              type="text"
+              value={editForm.name}
+              onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
+              required
+              className="input w-full"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-2">Description</label>
+            <Textarea
+              value={editForm.description}
+              onChange={(e) => setEditForm((prev) => ({ ...prev, description: e.target.value }))}
+              rows={3}
+              className="input w-full"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-surface-700 mb-2">Department</label>
+              <Input
+                type="text"
+                value={editForm.department}
+                onChange={(e) => setEditForm((prev) => ({ ...prev, department: e.target.value }))}
+                className="input w-full"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-surface-700 mb-2">
+                Criticality Tier
+              </label>
+              <SelectNative
+                value={editForm.criticality_tier}
+                onChange={(e) =>
+                  setEditForm((prev) => ({ ...prev, criticality_tier: e.target.value }))
+                }
+                className="input w-full"
+              >
+                {CRITICALITY_TIERS.map((tier) => (
+                  <option key={tier.value} value={tier.value}>
+                    {tier.label}
+                  </option>
+                ))}
+              </SelectNative>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-surface-700 mb-2">RTO (hours)</label>
+              <Input
+                type="number"
+                value={editForm.rto_hours}
+                onChange={(e) =>
+                  setEditForm((prev) => ({ ...prev, rto_hours: parseInt(e.target.value) || 0 }))
+                }
+                min="0"
+                className="input w-full"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-surface-700 mb-2">RPO (hours)</label>
+              <Input
+                type="number"
+                value={editForm.rpo_hours}
+                onChange={(e) =>
+                  setEditForm((prev) => ({ ...prev, rpo_hours: parseInt(e.target.value) || 0 }))
+                }
+                min="0"
+                className="input w-full"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-surface-700 mb-2">
+                MTPD (hours)
+              </label>
+              <Input
+                type="number"
+                value={editForm.mtpd_hours}
+                onChange={(e) =>
+                  setEditForm((prev) => ({
+                    ...prev,
+                    mtpd_hours: parseInt(e.target.value) || 0,
+                  }))
+                }
+                min="0"
+                className="input w-full"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-2">
+              Business Impact Description
+            </label>
+            <Textarea
+              value={editForm.impact_description}
+              onChange={(e) =>
+                setEditForm((prev) => ({ ...prev, impact_description: e.target.value }))
+              }
+              rows={2}
+              className="input w-full"
+              placeholder="Describe the impact if this process is unavailable..."
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-surface-700 mb-2">
+                Recovery Priority
+              </label>
+              <Input
+                type="number"
+                value={editForm.recovery_priority}
+                onChange={(e) =>
+                  setEditForm((prev) => ({
+                    ...prev,
+                    recovery_priority: parseInt(e.target.value) || 1,
+                  }))
+                }
+                min="1"
+                className="input w-full"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-surface-700 mb-2">
+                Minimum Staff Required
+              </label>
+              <Input
+                type="number"
+                value={editForm.minimum_staff_required}
+                onChange={(e) =>
+                  setEditForm((prev) => ({
+                    ...prev,
+                    minimum_staff_required: parseInt(e.target.value) || 0,
+                  }))
+                }
+                min="0"
+                className="input w-full"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={editForm.alternate_site_required}
+                onChange={(e) =>
+                  setEditForm((prev) => ({
+                    ...prev,
+                    alternate_site_required: e.target.checked,
+                  }))
+                }
+                className="rounded border-surface-600 bg-surface-700 text-brand-600"
+              />
+              <span className="text-surface-700 text-sm">Alternate Site Required</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={editForm.manual_workaround_available}
+                onChange={(e) =>
+                  setEditForm((prev) => ({
+                    ...prev,
+                    manual_workaround_available: e.target.checked,
+                  }))
+                }
+                className="rounded border-surface-600 bg-surface-700 text-brand-600"
+              />
+              <span className="text-surface-700 text-sm">Manual Workaround Available</span>
+            </label>
+          </div>
+
+          {editForm.manual_workaround_available && (
+            <div>
+              <label className="block text-sm font-medium text-surface-700 mb-2">
+                Workaround Description
+              </label>
+              <Textarea
+                value={editForm.workaround_description}
+                onChange={(e) =>
+                  setEditForm((prev) => ({ ...prev, workaround_description: e.target.value }))
+                }
+                rows={2}
+                className="input w-full"
+              />
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-surface-700">
+            <Button variant="secondary" type="button" onClick={() => setShowEditModal(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={updateMutation.isPending}>
+              {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </div>
+        </form>
+      </Dialog>
       {/* Delete Confirmation */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50 p-4">
-          <div className="bg-surface-800 rounded-xl border border-surface-700 p-6 max-w-md w-full">
-            <h3 className="text-lg font-semibold text-white mb-2">Delete Business Process</h3>
-            <p className="text-surface-600 mb-6">
-              Are you sure you want to delete "{process.name}"? This action cannot be undone and
-              will remove all associated data.
-            </p>
-            <div className="flex justify-end gap-3">
-              <Button variant="secondary" onClick={() => setShowDeleteConfirm(false)}>
-                Cancel
-              </Button>
-              <Button
-                variant="danger"
-                onClick={() => deleteMutation.mutate()}
-                disabled={deleteMutation.isPending}
-              >
-                {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
-              </Button>
-            </div>
-          </div>
+      <Dialog open={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)}>
+        <h3 className="text-lg font-semibold text-white mb-2">Delete Business Process</h3>
+        <p className="text-surface-600 mb-6">
+          Are you sure you want to delete "{process.name}"? This action cannot be undone and will
+          remove all associated data.
+        </p>
+        <div className="flex justify-end gap-3">
+          <Button variant="secondary" onClick={() => setShowDeleteConfirm(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="danger"
+            onClick={() => deleteMutation.mutate()}
+            disabled={deleteMutation.isPending}
+          >
+            {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+          </Button>
         </div>
-      )}
+      </Dialog>
     </div>
   );
 }

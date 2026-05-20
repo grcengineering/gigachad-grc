@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { XMarkIcon } from '@heroicons/react/24/outline';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { integrationsApi } from '@/lib/api';
 import toast from 'react-hot-toast';
@@ -7,6 +6,7 @@ import clsx from 'clsx';
 import QuickSetupTab from './QuickSetupTab';
 import AdvancedBuilderTab from './AdvancedBuilderTab';
 import RawApiTab from './RawApiTab';
+import { Dialog } from '@/components/ui/Dialog';
 import type { IntegrationType } from '@/lib/integrationTypes';
 
 import { Button } from '@/components/ui/Button';
@@ -122,9 +122,8 @@ export default function IntegrationConfigModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center">
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative bg-surface-900 border border-surface-800 rounded-xl w-full max-w-4xl mx-4 max-h-[90vh] overflow-hidden flex flex-col">
+    <Dialog open onClose={onClose} size="xl">
+      <div className="flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-surface-800">
           <div>
@@ -135,12 +134,6 @@ export default function IntegrationConfigModal({
                 : 'Set up your integration connection'}
             </p>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-surface-800 rounded-lg transition-colors"
-          >
-            <XMarkIcon className="w-5 h-5 text-surface-600" />
-          </button>
         </div>
 
         {/* Tabs */}
@@ -230,6 +223,6 @@ export default function IntegrationConfigModal({
           </div>
         </div>
       </div>
-    </div>
+    </Dialog>
   );
 }

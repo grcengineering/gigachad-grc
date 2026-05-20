@@ -13,6 +13,7 @@ import { SkeletonGrid } from '@/components/Skeleton';
 import { EmptyState } from '@/components/EmptyState';
 
 import { Input } from '@/components/ui/Input';
+import { Dialog } from '@/components/ui/Dialog';
 
 const RESOURCES = [
   { id: 'controls', label: 'Controls', description: 'Security and compliance controls' },
@@ -285,129 +286,127 @@ function PermissionGroupModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-      <div className="bg-surface-800 rounded-lg w-full max-w-4xl mx-4 max-h-[90vh] overflow-hidden flex flex-col">
-        <div className="p-4 border-b border-surface-700 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-white">
-            {group ? 'Edit Permission Group' : 'Create Permission Group'}
-          </h2>
-          <button onClick={onClose} className="p-1 text-surface-600 hover:text-white">
-            <XMarkIcon className="w-5 h-5" />
-          </button>
+    <Dialog open onClose={onClose}>
+      <div className="p-4 border-b border-surface-700 flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-white">
+          {group ? 'Edit Permission Group' : 'Create Permission Group'}
+        </h2>
+        <button onClick={onClose} className="p-1 text-surface-600 hover:text-white">
+          <XMarkIcon className="w-5 h-5" />
+        </button>
+      </div>
+
+      <div className="p-4 overflow-y-auto flex-1 space-y-6">
+        {/* Name and Description */}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm text-surface-600 mb-1">Group Name</label>
+            <Input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full bg-surface-900 border border-surface-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+              placeholder="e.g., Compliance Manager"
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-surface-600 mb-1">Description</label>
+            <Input
+              type="text"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="w-full bg-surface-900 border border-surface-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+              placeholder="Brief description of this role"
+            />
+          </div>
         </div>
 
-        <div className="p-4 overflow-y-auto flex-1 space-y-6">
-          {/* Name and Description */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm text-surface-600 mb-1">Group Name</label>
-              <Input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full bg-surface-900 border border-surface-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-                placeholder="e.g., Compliance Manager"
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-surface-600 mb-1">Description</label>
-              <Input
-                type="text"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="w-full bg-surface-900 border border-surface-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-                placeholder="Brief description of this role"
-              />
-            </div>
-          </div>
-
-          {/* Permission Matrix */}
-          <div>
-            <label className="block text-sm text-surface-600 mb-3">Permission Matrix</label>
-            <div className="bg-surface-900 rounded-lg border border-surface-700 overflow-hidden">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-surface-800">
-                    <th className="text-left text-surface-600 font-medium px-4 py-3 w-48">
-                      Resource
+        {/* Permission Matrix */}
+        <div>
+          <label className="block text-sm text-surface-600 mb-3">Permission Matrix</label>
+          <div className="bg-surface-900 rounded-lg border border-surface-700 overflow-hidden">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-surface-800">
+                  <th className="text-left text-surface-600 font-medium px-4 py-3 w-48">
+                    Resource
+                  </th>
+                  {ACTIONS.map((action) => (
+                    <th
+                      key={action}
+                      className="text-center text-surface-600 font-medium px-2 py-3 text-xs uppercase"
+                    >
+                      {action}
                     </th>
-                    {ACTIONS.map((action) => (
-                      <th
-                        key={action}
-                        className="text-center text-surface-600 font-medium px-2 py-3 text-xs uppercase"
-                      >
-                        {action}
-                      </th>
-                    ))}
-                    <th className="text-center text-surface-600 font-medium px-2 py-3 text-xs uppercase">
-                      All
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-surface-700">
-                  {RESOURCES.map((resource) => {
-                    const currentActions = permissions[resource.id] || [];
-                    const allSelected = currentActions.length === ACTIONS.length;
-                    return (
-                      <tr key={resource.id} className="hover:bg-surface-800/50">
-                        <td className="px-4 py-3">
-                          <div className="text-white text-sm font-medium">{resource.label}</div>
-                          <div className="text-surface-500 text-xs">{resource.description}</div>
-                        </td>
-                        {ACTIONS.map((action) => (
-                          <td key={action} className="text-center px-2 py-3">
-                            <button
-                              onClick={() => toggleAction(resource.id, action)}
-                              className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${
-                                currentActions.includes(action)
-                                  ? 'bg-brand-500 border-brand-500'
-                                  : 'border-surface-600 hover:border-surface-500'
-                              }`}
-                            >
-                              {currentActions.includes(action) && (
-                                <CheckIcon className="w-4 h-4 text-white" />
-                              )}
-                            </button>
-                          </td>
-                        ))}
-                        <td className="text-center px-2 py-3">
+                  ))}
+                  <th className="text-center text-surface-600 font-medium px-2 py-3 text-xs uppercase">
+                    All
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-surface-700">
+                {RESOURCES.map((resource) => {
+                  const currentActions = permissions[resource.id] || [];
+                  const allSelected = currentActions.length === ACTIONS.length;
+                  return (
+                    <tr key={resource.id} className="hover:bg-surface-800/50">
+                      <td className="px-4 py-3">
+                        <div className="text-white text-sm font-medium">{resource.label}</div>
+                        <div className="text-surface-500 text-xs">{resource.description}</div>
+                      </td>
+                      {ACTIONS.map((action) => (
+                        <td key={action} className="text-center px-2 py-3">
                           <button
-                            onClick={() => toggleAllActions(resource.id)}
+                            onClick={() => toggleAction(resource.id, action)}
                             className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${
-                              allSelected
-                                ? 'bg-emerald-500 border-emerald-500'
+                              currentActions.includes(action)
+                                ? 'bg-brand-500 border-brand-500'
                                 : 'border-surface-600 hover:border-surface-500'
                             }`}
                           >
-                            {allSelected && <CheckIcon className="w-4 h-4 text-white" />}
+                            {currentActions.includes(action) && (
+                              <CheckIcon className="w-4 h-4 text-white" />
+                            )}
                           </button>
                         </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                      ))}
+                      <td className="text-center px-2 py-3">
+                        <button
+                          onClick={() => toggleAllActions(resource.id)}
+                          className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${
+                            allSelected
+                              ? 'bg-emerald-500 border-emerald-500'
+                              : 'border-surface-600 hover:border-surface-500'
+                          }`}
+                        >
+                          {allSelected && <CheckIcon className="w-4 h-4 text-white" />}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
-
-        <div className="p-4 border-t border-surface-700 flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-surface-700 text-white rounded-lg hover:bg-surface-600 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={!name.trim() || createMutation.isPending || updateMutation.isPending}
-            className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {group ? 'Save Changes' : 'Create Group'}
-          </button>
-        </div>
       </div>
-    </div>
+
+      <div className="p-4 border-t border-surface-700 flex justify-end gap-3">
+        <button
+          onClick={onClose}
+          className="px-4 py-2 bg-surface-700 text-white rounded-lg hover:bg-surface-600 transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleSubmit}
+          disabled={!name.trim() || createMutation.isPending || updateMutation.isPending}
+          className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {group ? 'Save Changes' : 'Create Group'}
+        </button>
+      </div>
+    </Dialog>
   );
 }
 
@@ -418,42 +417,40 @@ function GroupMembersModal({ group, onClose }: { group: PermissionGroup; onClose
   });
 
   return (
-    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-      <div className="bg-surface-800 rounded-lg w-full max-w-lg mx-4 max-h-[80vh] overflow-hidden">
-        <div className="p-4 border-b border-surface-700 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-white">Members of {group.name}</h2>
-          <button onClick={onClose} className="p-1 text-surface-600 hover:text-white">
-            <XMarkIcon className="w-5 h-5" />
-          </button>
-        </div>
-        <div className="p-4 overflow-y-auto max-h-[60vh]">
-          {isLoading ? (
-            <div className="text-center text-surface-600 py-8">Loading members...</div>
-          ) : members?.length === 0 ? (
-            <div className="text-center text-surface-600 py-8">No members in this group</div>
-          ) : (
-            <div className="space-y-2">
-              {members?.map((member: any) => (
-                <div
-                  key={member.id}
-                  className="flex items-center gap-3 p-3 bg-surface-700 rounded-lg"
-                >
-                  <div className="w-10 h-10 rounded-full bg-brand-500/20 flex items-center justify-center text-brand-400 font-medium">
-                    {member.displayName.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-white font-medium">{member.displayName}</div>
-                    <div className="text-surface-600 text-sm">{member.email}</div>
-                  </div>
-                  <div className="text-surface-500 text-xs">
-                    Joined {new Date(member.joinedAt).toLocaleDateString()}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+    <Dialog open onClose={onClose}>
+      <div className="p-4 border-b border-surface-700 flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-white">Members of {group.name}</h2>
+        <button onClick={onClose} className="p-1 text-surface-600 hover:text-white">
+          <XMarkIcon className="w-5 h-5" />
+        </button>
       </div>
-    </div>
+      <div className="p-4 overflow-y-auto max-h-[60vh]">
+        {isLoading ? (
+          <div className="text-center text-surface-600 py-8">Loading members...</div>
+        ) : members?.length === 0 ? (
+          <div className="text-center text-surface-600 py-8">No members in this group</div>
+        ) : (
+          <div className="space-y-2">
+            {members?.map((member: any) => (
+              <div
+                key={member.id}
+                className="flex items-center gap-3 p-3 bg-surface-700 rounded-lg"
+              >
+                <div className="w-10 h-10 rounded-full bg-brand-500/20 flex items-center justify-center text-brand-400 font-medium">
+                  {member.displayName.charAt(0).toUpperCase()}
+                </div>
+                <div className="flex-1">
+                  <div className="text-white font-medium">{member.displayName}</div>
+                  <div className="text-surface-600 text-sm">{member.email}</div>
+                </div>
+                <div className="text-surface-500 text-xs">
+                  Joined {new Date(member.joinedAt).toLocaleDateString()}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </Dialog>
   );
 }

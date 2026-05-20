@@ -25,6 +25,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { Input } from '@/components/ui/Input';
 
 import { SelectNative } from '@/components/ui/SelectNative';
+import { Dialog } from '@/components/ui/Dialog';
 
 // Types
 interface CustomModule {
@@ -942,156 +943,154 @@ function CampaignModal({
     : defaultBuiltInModules;
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
-      <div className="bg-white dark:bg-surface-800 rounded-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200 dark:border-surface-700">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              {campaign ? 'Edit Campaign' : 'Create Campaign'}
-            </h2>
-            <button
-              onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 dark:text-surface-600 dark:hover:text-surface-200"
-            >
-              <XMarkIcon className="w-6 h-6" />
-            </button>
+    <Dialog open onClose={onClose}>
+      <div className="p-6 border-b border-gray-200 dark:border-surface-700">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+            {campaign ? 'Edit Campaign' : 'Create Campaign'}
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700 dark:text-surface-600 dark:hover:text-surface-200"
+          >
+            <XMarkIcon className="w-6 h-6" />
+          </button>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        {/* Name */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
+            Campaign Name
+          </label>
+          <Input
+            type="text"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
+            required
+          />
+        </div>
+
+        {/* Description */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
+            Description
+          </label>
+          <Textarea
+            value={formData.description}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            rows={3}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
+          />
+        </div>
+
+        {/* Modules */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
+            Select Modules
+          </label>
+          <div className="grid gap-2 max-h-48 overflow-y-auto border border-gray-200 dark:border-surface-600 rounded-lg p-3">
+            {allModulesList.map((module) => (
+              <label key={module.id} className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.moduleIds.includes(module.id)}
+                  onChange={() => toggleModule(module.id)}
+                  className="rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                />
+                <span className="text-sm text-gray-900 dark:text-white">{module.name}</span>
+                {'isBuiltIn' in module && module.isBuiltIn && (
+                  <span className="text-xs text-gray-400">(Built-in)</span>
+                )}
+              </label>
+            ))}
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Name */}
+        {/* Target Roles */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
+            Target Roles
+          </label>
+          <div className="flex flex-wrap gap-2">
+            <label className="flex items-center gap-2 cursor-pointer px-3 py-2 border border-gray-200 dark:border-surface-600 rounded-lg">
+              <input
+                type="checkbox"
+                checked={formData.targetGroups.includes('all')}
+                onChange={() => toggleRole('all')}
+                className="rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+              />
+              <span className="text-sm text-gray-900 dark:text-white">All Users</span>
+            </label>
+            {ROLES.map((role) => (
+              <label
+                key={role.id}
+                className="flex items-center gap-2 cursor-pointer px-3 py-2 border border-gray-200 dark:border-surface-600 rounded-lg"
+              >
+                <input
+                  type="checkbox"
+                  checked={formData.targetGroups.includes(role.id)}
+                  onChange={() => toggleRole(role.id)}
+                  disabled={formData.targetGroups.includes('all')}
+                  className="rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                />
+                <span className="text-sm text-gray-900 dark:text-white">{role.label}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Dates */}
+        <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
-              Campaign Name
+              Start Date
             </label>
             <Input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              type="date"
+              value={formData.startDate}
+              onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
               required
             />
           </div>
-
-          {/* Description */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
-              Description
+              End Date (Due Date)
             </label>
-            <Textarea
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              rows={3}
+            <Input
+              type="date"
+              value={formData.endDate}
+              onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
             />
           </div>
+        </div>
 
-          {/* Modules */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
-              Select Modules
-            </label>
-            <div className="grid gap-2 max-h-48 overflow-y-auto border border-gray-200 dark:border-surface-600 rounded-lg p-3">
-              {allModulesList.map((module) => (
-                <label key={module.id} className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.moduleIds.includes(module.id)}
-                    onChange={() => toggleModule(module.id)}
-                    className="rounded border-gray-300 text-brand-500 focus:ring-brand-500"
-                  />
-                  <span className="text-sm text-gray-900 dark:text-white">{module.name}</span>
-                  {'isBuiltIn' in module && module.isBuiltIn && (
-                    <span className="text-xs text-gray-400">(Built-in)</span>
-                  )}
-                </label>
-              ))}
-            </div>
-          </div>
+        {/* Active Status */}
+        <label className="flex items-center gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={formData.isActive}
+            onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+            className="rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+          />
+          <span className="text-sm text-gray-900 dark:text-white">Campaign is active</span>
+        </label>
 
-          {/* Target Roles */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
-              Target Roles
-            </label>
-            <div className="flex flex-wrap gap-2">
-              <label className="flex items-center gap-2 cursor-pointer px-3 py-2 border border-gray-200 dark:border-surface-600 rounded-lg">
-                <input
-                  type="checkbox"
-                  checked={formData.targetGroups.includes('all')}
-                  onChange={() => toggleRole('all')}
-                  className="rounded border-gray-300 text-brand-500 focus:ring-brand-500"
-                />
-                <span className="text-sm text-gray-900 dark:text-white">All Users</span>
-              </label>
-              {ROLES.map((role) => (
-                <label
-                  key={role.id}
-                  className="flex items-center gap-2 cursor-pointer px-3 py-2 border border-gray-200 dark:border-surface-600 rounded-lg"
-                >
-                  <input
-                    type="checkbox"
-                    checked={formData.targetGroups.includes(role.id)}
-                    onChange={() => toggleRole(role.id)}
-                    disabled={formData.targetGroups.includes('all')}
-                    className="rounded border-gray-300 text-brand-500 focus:ring-brand-500"
-                  />
-                  <span className="text-sm text-gray-900 dark:text-white">{role.label}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* Dates */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
-                Start Date
-              </label>
-              <Input
-                type="date"
-                value={formData.startDate}
-                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
-                End Date (Due Date)
-              </label>
-              <Input
-                type="date"
-                value={formData.endDate}
-                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
-              />
-            </div>
-          </div>
-
-          {/* Active Status */}
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={formData.isActive}
-              onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-              className="rounded border-gray-300 text-brand-500 focus:ring-brand-500"
-            />
-            <span className="text-sm text-gray-900 dark:text-white">Campaign is active</span>
-          </label>
-
-          {/* Actions */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-surface-700">
-            <Button variant="secondary" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
-              {campaign ? 'Update Campaign' : 'Create Campaign'}
-            </Button>
-          </div>
-        </form>
-      </div>
-    </div>
+        {/* Actions */}
+        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-surface-700">
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
+            {campaign ? 'Update Campaign' : 'Create Campaign'}
+          </Button>
+        </div>
+      </form>
+    </Dialog>
   );
 }
 
@@ -1141,125 +1140,121 @@ function ModuleModal({ module, onClose }: { module: CustomModule | null; onClose
   };
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
-      <div className="bg-white dark:bg-surface-800 rounded-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200 dark:border-surface-700">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              {module ? 'Edit Module' : 'Create Module'}
-            </h2>
-            <button
-              onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 dark:text-surface-600 dark:hover:text-surface-200"
+    <Dialog open onClose={onClose}>
+      <div className="p-6 border-b border-gray-200 dark:border-surface-700">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+            {module ? 'Edit Module' : 'Create Module'}
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700 dark:text-surface-600 dark:hover:text-surface-200"
+          >
+            <XMarkIcon className="w-6 h-6" />
+          </button>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        {/* Name */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
+            Module Name
+          </label>
+          <Input
+            type="text"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
+            required
+          />
+        </div>
+
+        {/* Description */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
+            Description
+          </label>
+          <Textarea
+            value={formData.description}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            rows={3}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
+          />
+        </div>
+
+        {/* Category & Difficulty */}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
+              Category
+            </label>
+            <SelectNative
+              value={formData.category}
+              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
             >
-              <XMarkIcon className="w-6 h-6" />
-            </button>
+              {CATEGORIES.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.label}
+                </option>
+              ))}
+            </SelectNative>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
+              Difficulty
+            </label>
+            <SelectNative
+              value={formData.difficulty}
+              onChange={(e) => setFormData({ ...formData, difficulty: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
+            >
+              {DIFFICULTIES.map((diff) => (
+                <option key={diff.id} value={diff.id}>
+                  {diff.label}
+                </option>
+              ))}
+            </SelectNative>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {/* Name */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
-              Module Name
-            </label>
-            <Input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
-              required
-            />
-          </div>
-
-          {/* Description */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
-              Description
-            </label>
-            <Textarea
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
-            />
-          </div>
-
-          {/* Category & Difficulty */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
-                Category
-              </label>
-              <SelectNative
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
-              >
-                {CATEGORIES.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.label}
-                  </option>
-                ))}
-              </SelectNative>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
-                Difficulty
-              </label>
-              <SelectNative
-                value={formData.difficulty}
-                onChange={(e) => setFormData({ ...formData, difficulty: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
-              >
-                {DIFFICULTIES.map((diff) => (
-                  <option key={diff.id} value={diff.id}>
-                    {diff.label}
-                  </option>
-                ))}
-              </SelectNative>
-            </div>
-          </div>
-
-          {/* Duration */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
-              Duration (minutes)
-            </label>
-            <Input
-              type="number"
-              value={formData.duration}
-              onChange={(e) =>
-                setFormData({ ...formData, duration: parseInt(e.target.value) || 30 })
-              }
-              min={1}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
-            />
-          </div>
-
-          {/* Active Status */}
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={formData.isActive}
-              onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-              className="rounded border-gray-300 text-brand-500 focus:ring-brand-500"
-            />
-            <span className="text-sm text-gray-900 dark:text-white">Module is active</span>
+        {/* Duration */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
+            Duration (minutes)
           </label>
+          <Input
+            type="number"
+            value={formData.duration}
+            onChange={(e) => setFormData({ ...formData, duration: parseInt(e.target.value) || 30 })}
+            min={1}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
+          />
+        </div>
 
-          {/* Actions */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-surface-700">
-            <Button variant="secondary" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
-              {module ? 'Update Module' : 'Create Module'}
-            </Button>
-          </div>
-        </form>
-      </div>
-    </div>
+        {/* Active Status */}
+        <label className="flex items-center gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={formData.isActive}
+            onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+            className="rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+          />
+          <span className="text-sm text-gray-900 dark:text-white">Module is active</span>
+        </label>
+
+        {/* Actions */}
+        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-surface-700">
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
+            {module ? 'Update Module' : 'Create Module'}
+          </Button>
+        </div>
+      </form>
+    </Dialog>
   );
 }
 
@@ -1300,84 +1295,82 @@ function UploadScormModal({ moduleId, onClose }: { moduleId: string; onClose: ()
   };
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
-      <div className="bg-white dark:bg-surface-800 rounded-xl max-w-md w-full mx-4">
-        <div className="p-6 border-b border-gray-200 dark:border-surface-700">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              Upload SCORM Package
-            </h2>
-            <button
-              onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 dark:text-surface-600 dark:hover:text-surface-200"
-            >
-              <XMarkIcon className="w-6 h-6" />
-            </button>
-          </div>
-        </div>
-
-        <div className="p-6 space-y-4">
-          {/* Drop Zone */}
-          <div
-            onDragOver={(e) => {
-              e.preventDefault();
-              setIsDragging(true);
-            }}
-            onDragLeave={() => setIsDragging(false)}
-            onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
-            className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-              isDragging
-                ? 'border-brand-500 bg-brand-500/5'
-                : 'border-gray-300 dark:border-surface-600 hover:border-brand-500'
-            }`}
+    <Dialog open onClose={onClose}>
+      <div className="p-6 border-b border-gray-200 dark:border-surface-700">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+            Upload SCORM Package
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700 dark:text-surface-600 dark:hover:text-surface-200"
           >
-            <ArrowUpTrayIcon className="w-10 h-10 mx-auto text-gray-400 dark:text-surface-500" />
-            <p className="mt-3 text-sm text-gray-500 dark:text-surface-600">
-              Drag and drop a SCORM ZIP file, or click to browse
-            </p>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".zip"
-              onChange={handleFileSelect}
-              className="hidden"
-            />
-          </div>
-
-          {/* Selected File */}
-          {file && (
-            <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-surface-700 rounded-lg">
-              <FolderIcon className="w-5 h-5 text-brand-500" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                  {file.name}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-surface-600">
-                  {(file.size / 1024 / 1024).toFixed(2)} MB
-                </p>
-              </div>
-              <button onClick={() => setFile(null)} className="text-gray-400 hover:text-gray-600">
-                <XMarkIcon className="w-5 h-5" />
-              </button>
-            </div>
-          )}
-
-          {/* Actions */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-surface-700">
-            <Button variant="secondary" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button
-              onClick={() => file && uploadMutation.mutate(file)}
-              disabled={!file || uploadMutation.isPending}
-            >
-              {uploadMutation.isPending ? 'Uploading...' : 'Upload'}
-            </Button>
-          </div>
+            <XMarkIcon className="w-6 h-6" />
+          </button>
         </div>
       </div>
-    </div>
+
+      <div className="p-6 space-y-4">
+        {/* Drop Zone */}
+        <div
+          onDragOver={(e) => {
+            e.preventDefault();
+            setIsDragging(true);
+          }}
+          onDragLeave={() => setIsDragging(false)}
+          onDrop={handleDrop}
+          onClick={() => fileInputRef.current?.click()}
+          className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+            isDragging
+              ? 'border-brand-500 bg-brand-500/5'
+              : 'border-gray-300 dark:border-surface-600 hover:border-brand-500'
+          }`}
+        >
+          <ArrowUpTrayIcon className="w-10 h-10 mx-auto text-gray-400 dark:text-surface-500" />
+          <p className="mt-3 text-sm text-gray-500 dark:text-surface-600">
+            Drag and drop a SCORM ZIP file, or click to browse
+          </p>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".zip"
+            onChange={handleFileSelect}
+            className="hidden"
+          />
+        </div>
+
+        {/* Selected File */}
+        {file && (
+          <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-surface-700 rounded-lg">
+            <FolderIcon className="w-5 h-5 text-brand-500" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                {file.name}
+              </p>
+              <p className="text-xs text-gray-500 dark:text-surface-600">
+                {(file.size / 1024 / 1024).toFixed(2)} MB
+              </p>
+            </div>
+            <button onClick={() => setFile(null)} className="text-gray-400 hover:text-gray-600">
+              <XMarkIcon className="w-5 h-5" />
+            </button>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-surface-700">
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            onClick={() => file && uploadMutation.mutate(file)}
+            disabled={!file || uploadMutation.isPending}
+          >
+            {uploadMutation.isPending ? 'Uploading...' : 'Upload'}
+          </Button>
+        </div>
+      </div>
+    </Dialog>
   );
 }
 
@@ -1403,84 +1396,80 @@ function ModuleDetailModal({
     DIFFICULTIES.find((d) => d.id === module.difficulty)?.label || module.difficulty;
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
-      <div className="bg-white dark:bg-surface-800 rounded-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200 dark:border-surface-700">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div
-                className={`p-2 rounded-lg ${module.isBuiltIn ? 'bg-brand-500/10 text-brand-500' : 'bg-emerald-500/10 text-emerald-500'}`}
-              >
-                <AcademicCapIcon className="w-6 h-6" />
-              </div>
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                  {module.name}
-                </h2>
-                <span
-                  className={`text-xs font-medium ${module.isBuiltIn ? 'text-brand-500' : 'text-emerald-500'}`}
-                >
-                  {module.isBuiltIn ? 'Built-in Module' : 'Custom Module'}
-                </span>
-              </div>
-            </div>
-            <button
-              onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 dark:text-surface-600 dark:hover:text-surface-200"
+    <Dialog open onClose={onClose}>
+      <div className="p-6 border-b border-gray-200 dark:border-surface-700">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div
+              className={`p-2 rounded-lg ${module.isBuiltIn ? 'bg-brand-500/10 text-brand-500' : 'bg-emerald-500/10 text-emerald-500'}`}
             >
-              <XMarkIcon className="w-6 h-6" />
-            </button>
-          </div>
-        </div>
-
-        <div className="p-6 space-y-5">
-          {/* Module Info */}
-          <div className="flex flex-wrap gap-3">
-            <span className="px-3 py-1 bg-gray-100 dark:bg-surface-700 rounded-full text-sm text-gray-700 dark:text-surface-700">
-              {categoryLabel}
-            </span>
-            <span className="px-3 py-1 bg-gray-100 dark:bg-surface-700 rounded-full text-sm text-gray-700 dark:text-surface-700">
-              {module.duration} minutes
-            </span>
-            <span className="px-3 py-1 bg-gray-100 dark:bg-surface-700 rounded-full text-sm text-gray-700 dark:text-surface-700 capitalize">
-              {difficultyLabel}
-            </span>
-          </div>
-
-          {/* Description */}
-          <div>
-            <h3 className="text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
-              Description
-            </h3>
-            <p className="text-gray-600 dark:text-surface-600 leading-relaxed">
-              {module.description}
-            </p>
-          </div>
-
-          {/* Topics Covered */}
-          {module.topics && module.topics.length > 0 && (
-            <div>
-              <h3 className="text-sm font-medium text-gray-700 dark:text-surface-700 mb-3">
-                Topics Covered
-              </h3>
-              <ul className="space-y-2">
-                {module.topics.map((topic, index) => (
-                  <li key={index} className="flex items-start gap-2">
-                    <CheckCircleIcon className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-gray-600 dark:text-surface-600">{topic}</span>
-                  </li>
-                ))}
-              </ul>
+              <AcademicCapIcon className="w-6 h-6" />
             </div>
-          )}
-
-          {/* Close Button */}
-          <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-surface-700">
-            <Button onClick={onClose}>Close</Button>
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{module.name}</h2>
+              <span
+                className={`text-xs font-medium ${module.isBuiltIn ? 'text-brand-500' : 'text-emerald-500'}`}
+              >
+                {module.isBuiltIn ? 'Built-in Module' : 'Custom Module'}
+              </span>
+            </div>
           </div>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700 dark:text-surface-600 dark:hover:text-surface-200"
+          >
+            <XMarkIcon className="w-6 h-6" />
+          </button>
         </div>
       </div>
-    </div>
+
+      <div className="p-6 space-y-5">
+        {/* Module Info */}
+        <div className="flex flex-wrap gap-3">
+          <span className="px-3 py-1 bg-gray-100 dark:bg-surface-700 rounded-full text-sm text-gray-700 dark:text-surface-700">
+            {categoryLabel}
+          </span>
+          <span className="px-3 py-1 bg-gray-100 dark:bg-surface-700 rounded-full text-sm text-gray-700 dark:text-surface-700">
+            {module.duration} minutes
+          </span>
+          <span className="px-3 py-1 bg-gray-100 dark:bg-surface-700 rounded-full text-sm text-gray-700 dark:text-surface-700 capitalize">
+            {difficultyLabel}
+          </span>
+        </div>
+
+        {/* Description */}
+        <div>
+          <h3 className="text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
+            Description
+          </h3>
+          <p className="text-gray-600 dark:text-surface-600 leading-relaxed">
+            {module.description}
+          </p>
+        </div>
+
+        {/* Topics Covered */}
+        {module.topics && module.topics.length > 0 && (
+          <div>
+            <h3 className="text-sm font-medium text-gray-700 dark:text-surface-700 mb-3">
+              Topics Covered
+            </h3>
+            <ul className="space-y-2">
+              {module.topics.map((topic, index) => (
+                <li key={index} className="flex items-start gap-2">
+                  <CheckCircleIcon className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                  <span className="text-gray-600 dark:text-surface-600">{topic}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Close Button */}
+        <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-surface-700">
+          <Button onClick={onClose}>Close</Button>
+        </div>
+      </div>
+    </Dialog>
   );
 }
 
@@ -1555,214 +1544,212 @@ function UploadNewScormModal({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
-      <div className="bg-white dark:bg-surface-800 rounded-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200 dark:border-surface-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                Upload SCORM Package
-              </h2>
-              <p className="text-sm text-gray-500 dark:text-surface-600 mt-1">
-                {step === 'upload'
-                  ? 'Step 1: Select your SCORM package'
-                  : 'Step 2: Configure module details'}
+    <Dialog open onClose={onClose}>
+      <div className="p-6 border-b border-gray-200 dark:border-surface-700">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              Upload SCORM Package
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-surface-600 mt-1">
+              {step === 'upload'
+                ? 'Step 1: Select your SCORM package'
+                : 'Step 2: Configure module details'}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700 dark:text-surface-600 dark:hover:text-surface-200"
+          >
+            <XMarkIcon className="w-6 h-6" />
+          </button>
+        </div>
+      </div>
+
+      {step === 'upload' ? (
+        <div className="p-6 space-y-4">
+          {/* Drop Zone */}
+          <div
+            onDragOver={(e) => {
+              e.preventDefault();
+              setIsDragging(true);
+            }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+            className={`border-2 border-dashed rounded-lg p-12 text-center cursor-pointer transition-colors ${
+              isDragging
+                ? 'border-brand-500 bg-brand-500/5'
+                : 'border-gray-300 dark:border-surface-600 hover:border-brand-500'
+            }`}
+          >
+            <ArrowUpTrayIcon className="w-12 h-12 mx-auto text-gray-400 dark:text-surface-500" />
+            <p className="mt-4 text-base font-medium text-gray-700 dark:text-surface-700">
+              Drag and drop your SCORM package
+            </p>
+            <p className="mt-2 text-sm text-gray-500 dark:text-surface-600">
+              or click to browse (ZIP files only)
+            </p>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".zip"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+          </div>
+
+          <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-surface-700">
+            <Button variant="secondary" onClick={onClose}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {/* Selected File */}
+          <div className="flex items-center gap-3 p-3 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-lg">
+            <CheckCircleIcon className="w-5 h-5 text-emerald-500" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-emerald-700 dark:text-emerald-600 truncate">
+                {file?.name}
+              </p>
+              <p className="text-xs text-emerald-600 dark:text-emerald-500">
+                {file && (file.size / 1024 / 1024).toFixed(2)} MB
               </p>
             </div>
             <button
-              onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 dark:text-surface-600 dark:hover:text-surface-200"
+              type="button"
+              onClick={() => {
+                setFile(null);
+                setStep('upload');
+              }}
+              className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-600"
             >
-              <XMarkIcon className="w-6 h-6" />
+              <XMarkIcon className="w-5 h-5" />
             </button>
           </div>
-        </div>
 
-        {step === 'upload' ? (
-          <div className="p-6 space-y-4">
-            {/* Drop Zone */}
-            <div
-              onDragOver={(e) => {
-                e.preventDefault();
-                setIsDragging(true);
-              }}
-              onDragLeave={() => setIsDragging(false)}
-              onDrop={handleDrop}
-              onClick={() => fileInputRef.current?.click()}
-              className={`border-2 border-dashed rounded-lg p-12 text-center cursor-pointer transition-colors ${
-                isDragging
-                  ? 'border-brand-500 bg-brand-500/5'
-                  : 'border-gray-300 dark:border-surface-600 hover:border-brand-500'
-              }`}
-            >
-              <ArrowUpTrayIcon className="w-12 h-12 mx-auto text-gray-400 dark:text-surface-500" />
-              <p className="mt-4 text-base font-medium text-gray-700 dark:text-surface-700">
-                Drag and drop your SCORM package
-              </p>
-              <p className="mt-2 text-sm text-gray-500 dark:text-surface-600">
-                or click to browse (ZIP files only)
-              </p>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".zip"
-                onChange={handleFileSelect}
-                className="hidden"
-              />
+          {/* Name */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
+              Module Name *
+            </label>
+            <Input
+              type="text"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
+              required
+            />
+          </div>
+
+          {/* Description */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
+              Description
+            </label>
+            <Textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              rows={3}
+              placeholder="Describe what this training module covers..."
+              className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
+            />
+          </div>
+
+          {/* Category & Difficulty */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
+                Category
+              </label>
+              <SelectNative
+                value={formData.category}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
+              >
+                {CATEGORIES.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.label}
+                  </option>
+                ))}
+              </SelectNative>
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
+                Difficulty
+              </label>
+              <SelectNative
+                value={formData.difficulty}
+                onChange={(e) => setFormData({ ...formData, difficulty: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
+              >
+                {DIFFICULTIES.map((diff) => (
+                  <option key={diff.id} value={diff.id}>
+                    {diff.label}
+                  </option>
+                ))}
+              </SelectNative>
+            </div>
+          </div>
 
-            <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-surface-700">
+          {/* Duration */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
+              Duration (minutes)
+            </label>
+            <Input
+              type="number"
+              value={formData.duration}
+              onChange={(e) =>
+                setFormData({ ...formData, duration: parseInt(e.target.value) || 30 })
+              }
+              min={1}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
+            />
+          </div>
+
+          {/* Active Status */}
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={formData.isActive}
+              onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+              className="rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+            />
+            <span className="text-sm text-gray-900 dark:text-white">
+              Module is active and available for campaigns
+            </span>
+          </label>
+
+          {/* Actions */}
+          <div className="flex justify-between gap-3 pt-4 border-t border-gray-200 dark:border-surface-700">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                setFile(null);
+                setStep('upload');
+              }}
+            >
+              Back
+            </Button>
+            <div className="flex gap-3">
               <Button variant="secondary" onClick={onClose}>
                 Cancel
               </Button>
+              <Button
+                type="submit"
+                disabled={isUploading || !formData.name}
+                leftIcon={isUploading ? undefined : <ArrowUpTrayIcon className="w-4 h-4" />}
+              >
+                {isUploading ? 'Creating Module...' : 'Create Module'}
+              </Button>
             </div>
           </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="p-6 space-y-4">
-            {/* Selected File */}
-            <div className="flex items-center gap-3 p-3 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-lg">
-              <CheckCircleIcon className="w-5 h-5 text-emerald-500" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-emerald-700 dark:text-emerald-600 truncate">
-                  {file?.name}
-                </p>
-                <p className="text-xs text-emerald-600 dark:text-emerald-500">
-                  {file && (file.size / 1024 / 1024).toFixed(2)} MB
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setFile(null);
-                  setStep('upload');
-                }}
-                className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-600"
-              >
-                <XMarkIcon className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Name */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
-                Module Name *
-              </label>
-              <Input
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
-                required
-              />
-            </div>
-
-            {/* Description */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
-                Description
-              </label>
-              <Textarea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                rows={3}
-                placeholder="Describe what this training module covers..."
-                className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
-              />
-            </div>
-
-            {/* Category & Difficulty */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
-                  Category
-                </label>
-                <SelectNative
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
-                >
-                  {CATEGORIES.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.label}
-                    </option>
-                  ))}
-                </SelectNative>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
-                  Difficulty
-                </label>
-                <SelectNative
-                  value={formData.difficulty}
-                  onChange={(e) => setFormData({ ...formData, difficulty: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
-                >
-                  {DIFFICULTIES.map((diff) => (
-                    <option key={diff.id} value={diff.id}>
-                      {diff.label}
-                    </option>
-                  ))}
-                </SelectNative>
-              </div>
-            </div>
-
-            {/* Duration */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
-                Duration (minutes)
-              </label>
-              <Input
-                type="number"
-                value={formData.duration}
-                onChange={(e) =>
-                  setFormData({ ...formData, duration: parseInt(e.target.value) || 30 })
-                }
-                min={1}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
-              />
-            </div>
-
-            {/* Active Status */}
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.isActive}
-                onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                className="rounded border-gray-300 text-brand-500 focus:ring-brand-500"
-              />
-              <span className="text-sm text-gray-900 dark:text-white">
-                Module is active and available for campaigns
-              </span>
-            </label>
-
-            {/* Actions */}
-            <div className="flex justify-between gap-3 pt-4 border-t border-gray-200 dark:border-surface-700">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => {
-                  setFile(null);
-                  setStep('upload');
-                }}
-              >
-                Back
-              </Button>
-              <div className="flex gap-3">
-                <Button variant="secondary" onClick={onClose}>
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={isUploading || !formData.name}
-                  leftIcon={isUploading ? undefined : <ArrowUpTrayIcon className="w-4 h-4" />}
-                >
-                  {isUploading ? 'Creating Module...' : 'Create Module'}
-                </Button>
-              </div>
-            </div>
-          </form>
-        )}
-      </div>
-    </div>
+        </form>
+      )}
+    </Dialog>
   );
 }

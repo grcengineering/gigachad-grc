@@ -19,6 +19,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { Input } from '@/components/ui/Input';
 
 import { SelectNative } from '@/components/ui/SelectNative';
+import { Dialog } from '@/components/ui/Dialog';
 
 // ============================================
 // Types
@@ -422,172 +423,164 @@ export default function RecoveryTeamDetail() {
         )}
       </div>
       {/* Add Member Modal */}
-      {showAddMember && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
-          <div className="bg-slate-800 rounded-xl shadow-2xl w-full max-w-md p-6">
-            <h2 className="text-xl font-semibold text-white mb-6">Add Team Member</h2>
+      <Dialog open={showAddMember} onClose={() => setShowAddMember(false)}>
+        <h2 className="text-xl font-semibold text-white mb-6">Add Team Member</h2>
 
-            <div className="space-y-4">
-              <div className="flex items-center gap-4 mb-4">
-                <button
-                  onClick={() => setIsExternal(false)}
-                  className={clsx(
-                    'flex-1 py-2 rounded-lg text-center transition-all',
-                    !isExternal
-                      ? 'bg-cyan-500 text-white'
-                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                  )}
-                >
-                  Internal User
-                </button>
-                <button
-                  onClick={() => setIsExternal(true)}
-                  className={clsx(
-                    'flex-1 py-2 rounded-lg text-center transition-all',
-                    isExternal
-                      ? 'bg-cyan-500 text-white'
-                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                  )}
-                >
-                  External Contact
-                </button>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Role</label>
-                <SelectNative
-                  value={memberRole}
-                  onChange={(e) => setMemberRole(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
-                >
-                  {ROLE_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </SelectNative>
-              </div>
-
-              {!isExternal ? (
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">User</label>
-                  <SelectNative
-                    value={memberUserId}
-                    onChange={(e) => setMemberUserId(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
-                  >
-                    <option value="">Select user...</option>
-                    {users.map((user) => (
-                      <option key={user.id} value={user.id}>
-                        {user.name} ({user.email})
-                      </option>
-                    ))}
-                  </SelectNative>
-                </div>
-              ) : (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">Name</label>
-                    <Input
-                      type="text"
-                      value={memberExternalName}
-                      onChange={(e) => setMemberExternalName(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">Email</label>
-                    <Input
-                      type="email"
-                      value={memberExternalEmail}
-                      onChange={(e) => setMemberExternalEmail(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">Phone</label>
-                    <Input
-                      type="tel"
-                      value={memberExternalPhone}
-                      onChange={(e) => setMemberExternalPhone(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
-                    />
-                  </div>
-                </>
+        <div className="space-y-4">
+          <div className="flex items-center gap-4 mb-4">
+            <button
+              onClick={() => setIsExternal(false)}
+              className={clsx(
+                'flex-1 py-2 rounded-lg text-center transition-all',
+                !isExternal
+                  ? 'bg-cyan-500 text-white'
+                  : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
               )}
-
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Responsibilities
-                </label>
-                <Textarea
-                  value={memberResponsibilities}
-                  onChange={(e) => setMemberResponsibilities(e.target.value)}
-                  rows={2}
-                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-3 mt-6">
-              <Button variant="secondary" onClick={() => setShowAddMember(false)}>
-                Cancel
-              </Button>
-              <Button variant="primary" onClick={handleAddMember} disabled={isAddingMember}>
-                {isAddingMember ? 'Adding...' : 'Add Member'}
-              </Button>
-            </div>
+            >
+              Internal User
+            </button>
+            <button
+              onClick={() => setIsExternal(true)}
+              className={clsx(
+                'flex-1 py-2 rounded-lg text-center transition-all',
+                isExternal
+                  ? 'bg-cyan-500 text-white'
+                  : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+              )}
+            >
+              External Contact
+            </button>
           </div>
-        </div>
-      )}
-      {/* Link Plan Modal */}
-      {showLinkPlan && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
-          <div className="bg-slate-800 rounded-xl shadow-2xl w-full max-w-md p-6">
-            <h2 className="text-xl font-semibold text-white mb-6">Link to Plan</h2>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">BC/DR Plan</label>
-                <SelectNative
-                  value={selectedPlanId}
-                  onChange={(e) => setSelectedPlanId(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
-                >
-                  <option value="">Select plan...</option>
-                  {plans.map((plan) => (
-                    <option key={plan.id} value={plan.id}>
-                      {plan.title}
-                    </option>
-                  ))}
-                </SelectNative>
-              </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Role</label>
+            <SelectNative
+              value={memberRole}
+              onChange={(e) => setMemberRole(e.target.value)}
+              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
+            >
+              {ROLE_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </SelectNative>
+          </div>
 
+          {!isExternal ? (
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">User</label>
+              <SelectNative
+                value={memberUserId}
+                onChange={(e) => setMemberUserId(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
+              >
+                <option value="">Select user...</option>
+                {users.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.name} ({user.email})
+                  </option>
+                ))}
+              </SelectNative>
+            </div>
+          ) : (
+            <>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Role in Plan (Optional)
-                </label>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Name</label>
                 <Input
                   type="text"
-                  value={roleInPlan}
-                  onChange={(e) => setRoleInPlan(e.target.value)}
+                  value={memberExternalName}
+                  onChange={(e) => setMemberExternalName(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
-                  placeholder="e.g., Primary response team"
                 />
               </div>
-            </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Email</label>
+                <Input
+                  type="email"
+                  value={memberExternalEmail}
+                  onChange={(e) => setMemberExternalEmail(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Phone</label>
+                <Input
+                  type="tel"
+                  value={memberExternalPhone}
+                  onChange={(e) => setMemberExternalPhone(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
+                />
+              </div>
+            </>
+          )}
 
-            <div className="flex items-center justify-end gap-3 mt-6">
-              <Button variant="secondary" onClick={() => setShowLinkPlan(false)}>
-                Cancel
-              </Button>
-              <Button variant="primary" onClick={handleLinkPlan} disabled={isLinkingPlan}>
-                {isLinkingPlan ? 'Linking...' : 'Link Plan'}
-              </Button>
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              Responsibilities
+            </label>
+            <Textarea
+              value={memberResponsibilities}
+              onChange={(e) => setMemberResponsibilities(e.target.value)}
+              rows={2}
+              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
+            />
           </div>
         </div>
-      )}
+
+        <div className="flex items-center justify-end gap-3 mt-6">
+          <Button variant="secondary" onClick={() => setShowAddMember(false)}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleAddMember} disabled={isAddingMember}>
+            {isAddingMember ? 'Adding...' : 'Add Member'}
+          </Button>
+        </div>
+      </Dialog>
+      {/* Link Plan Modal */}
+      <Dialog open={showLinkPlan} onClose={() => setShowLinkPlan(false)}>
+        <h2 className="text-xl font-semibold text-white mb-6">Link to Plan</h2>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">BC/DR Plan</label>
+            <SelectNative
+              value={selectedPlanId}
+              onChange={(e) => setSelectedPlanId(e.target.value)}
+              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
+            >
+              <option value="">Select plan...</option>
+              {plans.map((plan) => (
+                <option key={plan.id} value={plan.id}>
+                  {plan.title}
+                </option>
+              ))}
+            </SelectNative>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              Role in Plan (Optional)
+            </label>
+            <Input
+              type="text"
+              value={roleInPlan}
+              onChange={(e) => setRoleInPlan(e.target.value)}
+              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
+              placeholder="e.g., Primary response team"
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center justify-end gap-3 mt-6">
+          <Button variant="secondary" onClick={() => setShowLinkPlan(false)}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleLinkPlan} disabled={isLinkingPlan}>
+            {isLinkingPlan ? 'Linking...' : 'Link Plan'}
+          </Button>
+        </div>
+      </Dialog>
     </div>
   );
 }
