@@ -1,5 +1,4 @@
 import {
-  XMarkIcon,
   ClockIcon,
   UserGroupIcon,
   TagIcon,
@@ -8,6 +7,8 @@ import {
   CheckCircleIcon,
 } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/Button';
+import { Dialog } from '@/components/ui/Dialog';
+import { Badge } from '@/components/ui/Badge';
 import clsx from 'clsx';
 
 // ============================================
@@ -88,34 +89,48 @@ export function ExerciseTemplatePreview({
   canClone = true,
 }: ExerciseTemplatePreviewProps) {
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
-      <div className="bg-slate-800 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700">
-          <div className="flex items-center gap-4">
-            <div
-              className={clsx(
-                'w-3 h-3 rounded-full',
-                CATEGORY_COLORS[template.category] || 'bg-slate-500'
+    <Dialog
+      open
+      onClose={onClose}
+      size="xl"
+      title={
+        <div className="flex items-center gap-4">
+          <div
+            className={clsx(
+              'w-3 h-3 rounded-full',
+              CATEGORY_COLORS[template.category] || 'bg-surface-400'
+            )}
+          />
+          <div>
+            <span>{template.title}</span>
+            <p className="text-small text-surface-600 font-normal">
+              {SCENARIO_TYPE_LABELS[template.scenarioType] || template.scenarioType}
+              {template.isGlobal && (
+                <Badge variant="info" className="ml-2">
+                  Global Template
+                </Badge>
               )}
-            />
-            <div>
-              <h2 className="text-xl font-semibold text-white">{template.title}</h2>
-              <p className="text-sm text-slate-400">
-                {SCENARIO_TYPE_LABELS[template.scenarioType] || template.scenarioType}
-                {template.isGlobal && (
-                  <span className="ml-2 px-2 py-0.5 bg-cyan-500/20 text-cyan-600 rounded text-xs">
-                    Global Template
-                  </span>
-                )}
-              </p>
-            </div>
+            </p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-slate-700 rounded-lg transition-colors">
-            <XMarkIcon className="h-5 w-5 text-slate-400" />
-          </button>
         </div>
-
+      }
+      footer={
+        <div className="flex items-center justify-between w-full">
+          <div className="text-sm text-surface-600">Used {template.usageCount} times</div>
+          <div className="flex items-center gap-3">
+            <Button variant="secondary" onClick={onClose}>
+              Close
+            </Button>
+            {canClone && (
+              <Button variant="primary" onClick={onUseTemplate}>
+                Use This Template
+              </Button>
+            )}
+          </div>
+        </div>
+      }
+    >
+      <div className="flex flex-col">
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
           {/* Meta info */}
@@ -272,22 +287,7 @@ export function ExerciseTemplatePreview({
             </div>
           )}
         </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-slate-700">
-          <div className="text-sm text-slate-400">Used {template.usageCount} times</div>
-          <div className="flex items-center gap-3">
-            <Button variant="secondary" onClick={onClose}>
-              Close
-            </Button>
-            {canClone && (
-              <Button variant="primary" onClick={onUseTemplate}>
-                Use This Template
-              </Button>
-            )}
-          </div>
-        </div>
       </div>
-    </div>
+    </Dialog>
   );
 }

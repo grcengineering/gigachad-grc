@@ -1,14 +1,13 @@
 import { useState } from 'react';
 import {
-  XMarkIcon,
   CheckCircleIcon,
   XCircleIcon,
   ClipboardDocumentCheckIcon,
 } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/Button';
+import { Dialog } from '@/components/ui/Dialog';
 import { api } from '@/lib/api';
 import clsx from 'clsx';
-
 import { Textarea } from '@/components/ui/Textarea';
 
 // ============================================
@@ -257,36 +256,20 @@ export function PlanAttestationModal({
   );
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
-      <div className="bg-slate-800 rounded-xl shadow-2xl w-full max-w-lg">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-cyan-500/20 rounded-lg">
-              <ClipboardDocumentCheckIcon className="h-6 w-6 text-cyan-600" />
-            </div>
-            <h2 className="text-xl font-semibold text-white">
-              {mode === 'request' ? 'Request Attestation' : 'Plan Attestation'}
-            </h2>
+    <Dialog
+      open
+      onClose={onClose}
+      size="lg"
+      title={
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-brand-100 rounded-lg">
+            <ClipboardDocumentCheckIcon className="h-6 w-6 text-brand-700" />
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-slate-700 rounded-lg transition-colors">
-            <XMarkIcon className="h-5 w-5 text-slate-400" />
-          </button>
+          <span>{mode === 'request' ? 'Request Attestation' : 'Plan Attestation'}</span>
         </div>
-
-        {/* Content */}
-        <div className="px-6 py-6">
-          {mode === 'request' ? renderRequestMode() : renderSubmitMode()}
-
-          {error && (
-            <div className="mt-4 bg-red-500/20 border border-red-500 rounded-lg p-3">
-              <p className="text-red-600 text-sm">{error}</p>
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-700">
+      }
+      footer={
+        <div className="flex items-center justify-end gap-3">
           <Button variant="secondary" onClick={onClose} disabled={isSubmitting}>
             Cancel
           </Button>
@@ -294,17 +277,24 @@ export function PlanAttestationModal({
             variant="primary"
             onClick={mode === 'request' ? handleRequestAttestation : handleSubmitAttestation}
             disabled={isSubmitting}
+            isLoading={isSubmitting}
           >
-            {isSubmitting
-              ? 'Submitting...'
-              : mode === 'request'
-                ? 'Send Request'
-                : submitAction === 'attested'
-                  ? 'Submit Attestation'
-                  : 'Submit Response'}
+            {mode === 'request'
+              ? 'Send Request'
+              : submitAction === 'attested'
+                ? 'Submit Attestation'
+                : 'Submit Response'}
           </Button>
         </div>
-      </div>
-    </div>
+      }
+    >
+      {mode === 'request' ? renderRequestMode() : renderSubmitMode()}
+
+      {error && (
+        <div className="mt-4 bg-red-50 border border-red-200 rounded-md p-3">
+          <p className="text-red-700 text-sm">{error}</p>
+        </div>
+      )}
+    </Dialog>
   );
 }
