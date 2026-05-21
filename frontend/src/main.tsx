@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import App from './App';
 import { AuthProvider } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { BrandingProvider } from './contexts/BrandingContext';
 import { WorkspaceProvider } from './contexts/WorkspaceContext';
 import { ModuleProvider } from './contexts/ModuleContext';
@@ -110,34 +111,37 @@ const queryClient = new QueryClient({
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ErrorBoundary>
-      <BrandingProvider>
-        <BrowserRouter
-          future={{
-            v7_startTransition: true,
-            v7_relativeSplatPath: true,
-          }}
-        >
-          <QueryClientProvider client={queryClient}>
-            <AuthProvider>
-              <ModuleProvider>
-                <WorkspaceProvider>
-                  {/* Global UI components */}
-                  <NetworkStatus />
-                  <SessionWarning warningThreshold={2 * 60 * 1000} />
-                  <App />
-                  <Toaster
-                    position="top-right"
-                    toastOptions={{
-                      className: 'bg-white text-surface-900 border border-surface-200 shadow-lift',
-                      duration: 4000,
-                    }}
-                  />
-                </WorkspaceProvider>
-              </ModuleProvider>
-            </AuthProvider>
-          </QueryClientProvider>
-        </BrowserRouter>
-      </BrandingProvider>
+      <ThemeProvider>
+        <BrandingProvider>
+          <BrowserRouter
+            future={{
+              v7_startTransition: true,
+              v7_relativeSplatPath: true,
+            }}
+          >
+            <QueryClientProvider client={queryClient}>
+              <AuthProvider>
+                <ModuleProvider>
+                  <WorkspaceProvider>
+                    {/* Global UI components */}
+                    <NetworkStatus />
+                    <SessionWarning warningThreshold={2 * 60 * 1000} />
+                    <App />
+                    <Toaster
+                      position="top-right"
+                      toastOptions={{
+                        className:
+                          'bg-white text-surface-900 border border-surface-200 dark:bg-surface-900 dark:text-surface-100 dark:border-surface-800 shadow-lift',
+                        duration: 4000,
+                      }}
+                    />
+                  </WorkspaceProvider>
+                </ModuleProvider>
+              </AuthProvider>
+            </QueryClientProvider>
+          </BrowserRouter>
+        </BrandingProvider>
+      </ThemeProvider>
     </ErrorBoundary>
   </React.StrictMode>
 );

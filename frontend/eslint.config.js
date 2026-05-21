@@ -41,12 +41,16 @@ const designSystemRules = [
     message:
       'Do not hand-roll centered modal overlays with `grid place-items-center`. Use <Dialog open={...} onClose={...}> from @/components/ui.',
   },
-  // 4. Faint text colors on the light cream background
+  // 4. Faint text colors on the light cream background.
+  //    The negative-lookbehind for `:` skips dark-mode forms — in dark mode
+  //    the 300/400 shades are the BRIGHT text colors, intentionally used
+  //    (e.g., `dark:text-brand-300`). Hover/focus modifiers also bypass
+  //    because they target ephemeral states.
   {
     selector:
-      'JSXAttribute[name.name="className"] Literal[value=/\\btext-(green|yellow|red|blue|orange|purple|teal|cyan|indigo|emerald|sky|violet|amber|fuchsia|lime|rose|surface)-(300|400)\\b/]',
+      'JSXAttribute[name.name="className"] Literal[value=/(?<!:)\\btext-(green|yellow|red|blue|orange|purple|teal|cyan|indigo|emerald|sky|violet|amber|fuchsia|lime|rose|surface)-(300|400)\\b/]',
     message:
-      'Text-300/400 shades are unreadable on the cream background. Use 600-800 for text or `text-surface-500` for muted.',
+      'Text-300/400 shades are unreadable on the cream background. Use 600-800 for text or `text-surface-500` for muted. (Dark-mode forms `dark:text-*-300/400` are allowed.)',
   },
   // 5. `rounded-full` on what looks like a text pill (has px-* and bg-*-* together)
   {
