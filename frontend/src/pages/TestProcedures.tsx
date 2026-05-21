@@ -19,6 +19,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { Input } from '@/components/ui/Input';
 
 import { SelectNative } from '@/components/ui/SelectNative';
+import { Dialog } from '@/components/ui/Dialog';
 
 interface TestProcedure {
   id: string;
@@ -346,98 +347,81 @@ export default function TestProcedures() {
         </div>
       )}
       {/* Create Test Procedure Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-          <div className="bg-surface-800 rounded-lg p-6 w-full max-w-lg border border-surface-700">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-white">Create Test Procedure</h2>
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="p-1 hover:bg-surface-700 rounded"
+      <Dialog open={showCreateModal} onClose={() => setShowCreateModal(false)}>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-white">Create Test Procedure</h2>
+          <button
+            onClick={() => setShowCreateModal(false)}
+            className="p-1 hover:bg-surface-700 rounded"
+          >
+            <XMarkIcon className="h-5 w-5 text-surface-600" />
+          </button>
+        </div>
+
+        <form onSubmit={handleCreateSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-1">Title *</label>
+            <Input
+              type="text"
+              value={createForm.title}
+              onChange={(e) => setCreateForm((prev) => ({ ...prev, title: e.target.value }))}
+              className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              placeholder="Procedure title"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-surface-700 mb-1">Test Type</label>
+              <SelectNative
+                value={createForm.testType}
+                onChange={(e) => setCreateForm((prev) => ({ ...prev, testType: e.target.value }))}
+                className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
               >
-                <XMarkIcon className="h-5 w-5 text-surface-600" />
-              </button>
+                <option value="inquiry">Inquiry</option>
+                <option value="observation">Observation</option>
+                <option value="inspection">Inspection</option>
+                <option value="reperformance">Reperformance</option>
+              </SelectNative>
             </div>
 
-            <form onSubmit={handleCreateSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-1">Title *</label>
-                <Input
-                  type="text"
-                  value={createForm.title}
-                  onChange={(e) => setCreateForm((prev) => ({ ...prev, title: e.target.value }))}
-                  className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-                  placeholder="Procedure title"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-surface-700 mb-1">
-                    Test Type
-                  </label>
-                  <SelectNative
-                    value={createForm.testType}
-                    onChange={(e) =>
-                      setCreateForm((prev) => ({ ...prev, testType: e.target.value }))
-                    }
-                    className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-                  >
-                    <option value="inquiry">Inquiry</option>
-                    <option value="observation">Observation</option>
-                    <option value="inspection">Inspection</option>
-                    <option value="reperformance">Reperformance</option>
-                  </SelectNative>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-surface-700 mb-1">
-                    Sample Size
-                  </label>
-                  <Input
-                    type="number"
-                    value={createForm.sampleSize}
-                    onChange={(e) =>
-                      setCreateForm((prev) => ({
-                        ...prev,
-                        sampleSize: parseInt(e.target.value) || 0,
-                      }))
-                    }
-                    className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-                    min="1"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-1">
-                  Test Method
-                </label>
-                <Textarea
-                  value={createForm.testMethod}
-                  onChange={(e) =>
-                    setCreateForm((prev) => ({ ...prev, testMethod: e.target.value }))
-                  }
-                  className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white h-24"
-                  placeholder="Describe the testing methodology..."
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4">
-                <Button type="button" variant="secondary" onClick={() => setShowCreateModal(false)}>
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={createMutation.isPending || !createForm.title.trim()}
-                >
-                  {createMutation.isPending ? 'Creating...' : 'Create Procedure'}
-                </Button>
-              </div>
-            </form>
+            <div>
+              <label className="block text-sm font-medium text-surface-700 mb-1">Sample Size</label>
+              <Input
+                type="number"
+                value={createForm.sampleSize}
+                onChange={(e) =>
+                  setCreateForm((prev) => ({
+                    ...prev,
+                    sampleSize: parseInt(e.target.value) || 0,
+                  }))
+                }
+                className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+                min="1"
+              />
+            </div>
           </div>
-        </div>
-      )}
+
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-1">Test Method</label>
+            <Textarea
+              value={createForm.testMethod}
+              onChange={(e) => setCreateForm((prev) => ({ ...prev, testMethod: e.target.value }))}
+              className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white h-24"
+              placeholder="Describe the testing methodology..."
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <Button type="button" variant="secondary" onClick={() => setShowCreateModal(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={createMutation.isPending || !createForm.title.trim()}>
+              {createMutation.isPending ? 'Creating...' : 'Create Procedure'}
+            </Button>
+          </div>
+        </form>
+      </Dialog>
     </div>
   );
 }

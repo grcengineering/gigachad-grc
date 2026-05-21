@@ -42,6 +42,7 @@ import { SelectNative } from '@/components/ui/SelectNative';
 import { Button } from '@/components/ui/Button';
 
 import { Badge } from '@/components/ui/Badge';
+import { Dialog } from '@/components/ui/Dialog';
 
 const STATUS_CONFIG = {
   compliant: { icon: CheckCircleIcon, color: 'text-green-600', bg: 'bg-green-400/10' },
@@ -423,241 +424,227 @@ export default function FrameworkDetail() {
         )}
       </div>
       {/* Create Requirement Modal */}
-      {isCreateModalOpen && (
-        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-          <div className="bg-surface-900 border border-surface-800 rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-surface-100">Add Requirement</h2>
-              <button
-                onClick={() => setIsCreateModalOpen(false)}
-                className="text-surface-600 hover:text-surface-200"
-              >
-                <XMarkIcon className="w-6 h-6" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-surface-700 mb-1">
-                    Reference *
-                  </label>
-                  <Input
-                    type="text"
-                    required
-                    value={formData.reference}
-                    onChange={(e) => setFormData({ ...formData, reference: e.target.value })}
-                    placeholder="e.g., CC1.1, A.5.1.1"
-                    className="input w-full"
-                  />
-                  <p className="text-xs text-surface-500 mt-1">
-                    Unique identifier for this requirement
-                  </p>
-                </div>
-
-                <div className="flex items-center">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.isCategory}
-                      onChange={(e) => setFormData({ ...formData, isCategory: e.target.checked })}
-                      className="w-4 h-4"
-                    />
-                    <span className="text-sm text-surface-700">This is a category</span>
-                  </label>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-1">Title *</label>
-                <Input
-                  type="text"
-                  required
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="Brief title for the requirement"
-                  className="input w-full"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-1">
-                  Description *
-                </label>
-                <Textarea
-                  required
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="What does this requirement entail?"
-                  rows={3}
-                  className="input w-full"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-1">
-                  Guidance (Optional)
-                </label>
-                <Textarea
-                  value={formData.guidance}
-                  onChange={(e) => setFormData({ ...formData, guidance: e.target.value })}
-                  placeholder="Additional implementation guidance..."
-                  rows={3}
-                  className="input w-full"
-                />
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <Button
-                  type="button"
-                  onClick={() => setIsCreateModalOpen(false)}
-                  className="flex-1"
-                  variant="secondary"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={createMutation.isPending}
-                  className="flex-1"
-                  variant="primary"
-                >
-                  {createMutation.isPending ? 'Creating...' : 'Create Requirement'}
-                </Button>
-              </div>
-            </form>
-          </div>
+      <Dialog open={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)}>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold text-surface-100">Add Requirement</h2>
+          <button
+            onClick={() => setIsCreateModalOpen(false)}
+            className="text-surface-600 hover:text-surface-200"
+          >
+            <XMarkIcon className="w-6 h-6" />
+          </button>
         </div>
-      )}
-      {/* Bulk Upload Modal */}
-      {isUploadModalOpen && (
-        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-          <div className="bg-surface-900 border border-surface-800 rounded-lg p-6 w-full max-w-xl">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-surface-100">Bulk Upload Requirements</h2>
-              <button
-                onClick={() => {
-                  setIsUploadModalOpen(false);
-                  setSelectedFile(null);
-                }}
-                className="text-surface-600 hover:text-surface-200"
-              >
-                <XMarkIcon className="w-6 h-6" />
-              </button>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-surface-700 mb-1">Reference *</label>
+              <Input
+                type="text"
+                required
+                value={formData.reference}
+                onChange={(e) => setFormData({ ...formData, reference: e.target.value })}
+                placeholder="e.g., CC1.1, A.5.1.1"
+                className="input w-full"
+              />
+              <p className="text-xs text-surface-500 mt-1">
+                Unique identifier for this requirement
+              </p>
             </div>
 
-            <div className="space-y-4">
-              {/* Instructions */}
-              <div className="p-4 bg-surface-800/50 rounded-lg border border-surface-700">
-                <p className="text-sm text-surface-700 mb-2">
-                  Upload a CSV, Excel (.xlsx, .xls), or JSON file with the following columns:
-                </p>
-                <ul className="text-xs text-surface-600 space-y-1 list-disc list-inside">
-                  <li>
-                    <span className="font-medium text-surface-700">reference</span> - Unique
-                    identifier (required)
-                  </li>
-                  <li>
-                    <span className="font-medium text-surface-700">title</span> - Requirement title
-                    (required)
-                  </li>
-                  <li>
-                    <span className="font-medium text-surface-700">description</span> - Detailed
-                    description (required)
-                  </li>
-                  <li>
-                    <span className="font-medium text-surface-700">guidance</span> - Implementation
-                    guidance (optional)
-                  </li>
-                  <li>
-                    <span className="font-medium text-surface-700">isCategory</span> - true/false
-                    (optional)
-                  </li>
-                  <li>
-                    <span className="font-medium text-surface-700">order</span> - Display order
-                    number (optional)
-                  </li>
-                  <li>
-                    <span className="font-medium text-surface-700">level</span> - Hierarchy level
-                    0-3 (optional)
-                  </li>
-                </ul>
-              </div>
+            <div className="flex items-center">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.isCategory}
+                  onChange={(e) => setFormData({ ...formData, isCategory: e.target.checked })}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm text-surface-700">This is a category</span>
+              </label>
+            </div>
+          </div>
 
-              {/* File Input */}
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-2">
-                  Select File
-                </label>
-                <div className="relative">
-                  <input
-                    type="file"
-                    accept=".csv,.xlsx,.xls,.json"
-                    onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                    className="block w-full text-sm text-surface-700
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-1">Title *</label>
+            <Input
+              type="text"
+              required
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              placeholder="Brief title for the requirement"
+              className="input w-full"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-1">Description *</label>
+            <Textarea
+              required
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              placeholder="What does this requirement entail?"
+              rows={3}
+              className="input w-full"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-1">
+              Guidance (Optional)
+            </label>
+            <Textarea
+              value={formData.guidance}
+              onChange={(e) => setFormData({ ...formData, guidance: e.target.value })}
+              placeholder="Additional implementation guidance..."
+              rows={3}
+              className="input w-full"
+            />
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <Button
+              type="button"
+              onClick={() => setIsCreateModalOpen(false)}
+              className="flex-1"
+              variant="secondary"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={createMutation.isPending}
+              className="flex-1"
+              variant="primary"
+            >
+              {createMutation.isPending ? 'Creating...' : 'Create Requirement'}
+            </Button>
+          </div>
+        </form>
+      </Dialog>
+      {/* Bulk Upload Modal */}
+      <Dialog open={isUploadModalOpen} onClose={() => setIsUploadModalOpen(false)}>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold text-surface-100">Bulk Upload Requirements</h2>
+          <button
+            onClick={() => {
+              setIsUploadModalOpen(false);
+              setSelectedFile(null);
+            }}
+            className="text-surface-600 hover:text-surface-200"
+          >
+            <XMarkIcon className="w-6 h-6" />
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          {/* Instructions */}
+          <div className="p-4 bg-surface-800/50 rounded-lg border border-surface-700">
+            <p className="text-sm text-surface-700 mb-2">
+              Upload a CSV, Excel (.xlsx, .xls), or JSON file with the following columns:
+            </p>
+            <ul className="text-xs text-surface-600 space-y-1 list-disc list-inside">
+              <li>
+                <span className="font-medium text-surface-700">reference</span> - Unique identifier
+                (required)
+              </li>
+              <li>
+                <span className="font-medium text-surface-700">title</span> - Requirement title
+                (required)
+              </li>
+              <li>
+                <span className="font-medium text-surface-700">description</span> - Detailed
+                description (required)
+              </li>
+              <li>
+                <span className="font-medium text-surface-700">guidance</span> - Implementation
+                guidance (optional)
+              </li>
+              <li>
+                <span className="font-medium text-surface-700">isCategory</span> - true/false
+                (optional)
+              </li>
+              <li>
+                <span className="font-medium text-surface-700">order</span> - Display order number
+                (optional)
+              </li>
+              <li>
+                <span className="font-medium text-surface-700">level</span> - Hierarchy level 0-3
+                (optional)
+              </li>
+            </ul>
+          </div>
+
+          {/* File Input */}
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-2">Select File</label>
+            <div className="relative">
+              <input
+                type="file"
+                accept=".csv,.xlsx,.xls,.json"
+                onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                className="block w-full text-sm text-surface-700
                       file:mr-4 file:py-2 file:px-4
                       file:rounded-lg file:border-0
                       file:text-sm file:font-medium
                       file:bg-brand-600 file:text-white
                       hover:file:bg-brand-700
                       file:cursor-pointer cursor-pointer"
-                  />
-                </div>
-                {selectedFile && (
-                  <p className="text-xs text-surface-600 mt-2">
-                    Selected: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
-                  </p>
-                )}
-              </div>
-
-              {/* Download Template Links */}
-              <div className="flex items-center gap-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <DocumentArrowDownIcon className="w-4 h-4 text-brand-400" />
-                  <span className="text-surface-600">Templates:</span>
-                </div>
-                <a
-                  href="/templates/requirements-template.csv"
-                  download
-                  className="text-brand-400 hover:text-brand-300 underline"
-                >
-                  CSV
-                </a>
-                <a
-                  href="/templates/requirements-template.json"
-                  download
-                  className="text-brand-400 hover:text-brand-300 underline"
-                >
-                  JSON
-                </a>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-3 pt-4">
-                <Button
-                  type="button"
-                  onClick={() => {
-                    setIsUploadModalOpen(false);
-                    setSelectedFile(null);
-                  }}
-                  className="flex-1"
-                  variant="secondary"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleFileUpload}
-                  disabled={!selectedFile || uploadMutation.isPending}
-                  className="flex-1"
-                  variant="primary"
-                >
-                  {uploadMutation.isPending ? 'Uploading...' : 'Upload'}
-                </Button>
-              </div>
+              />
             </div>
+            {selectedFile && (
+              <p className="text-xs text-surface-600 mt-2">
+                Selected: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
+              </p>
+            )}
+          </div>
+
+          {/* Download Template Links */}
+          <div className="flex items-center gap-4 text-sm">
+            <div className="flex items-center gap-2">
+              <DocumentArrowDownIcon className="w-4 h-4 text-brand-400" />
+              <span className="text-surface-600">Templates:</span>
+            </div>
+            <a
+              href="/templates/requirements-template.csv"
+              download
+              className="text-brand-400 hover:text-brand-300 underline"
+            >
+              CSV
+            </a>
+            <a
+              href="/templates/requirements-template.json"
+              download
+              className="text-brand-400 hover:text-brand-300 underline"
+            >
+              JSON
+            </a>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-3 pt-4">
+            <Button
+              type="button"
+              onClick={() => {
+                setIsUploadModalOpen(false);
+                setSelectedFile(null);
+              }}
+              className="flex-1"
+              variant="secondary"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleFileUpload}
+              disabled={!selectedFile || uploadMutation.isPending}
+              className="flex-1"
+              variant="primary"
+            >
+              {uploadMutation.isPending ? 'Uploading...' : 'Upload'}
+            </Button>
           </div>
         </div>
-      )}
+      </Dialog>
       {/* Mapping Import Wizard */}
       <MappingImportWizard
         open={isMappingImportOpen}

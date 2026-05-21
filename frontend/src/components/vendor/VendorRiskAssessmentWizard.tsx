@@ -1,19 +1,16 @@
 import { useState } from 'react';
 import {
-  XMarkIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   CheckCircleIcon,
   ShieldExclamationIcon,
 } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/Button';
+import { Dialog } from '@/components/ui/Dialog';
 import { vendorsApi } from '@/lib/api';
 import clsx from 'clsx';
-
 import { Textarea } from '@/components/ui/Textarea';
-
 import { Input } from '@/components/ui/Input';
-
 import { SelectNative } from '@/components/ui/SelectNative';
 
 // ============================================
@@ -657,8 +654,8 @@ export function VendorRiskAssessmentWizard({
   };
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
-      <div className="bg-surface-900 border border-surface-800 rounded-lg w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+    <Dialog open onClose={onClose} size="xl">
+      <div className="flex flex-col max-h-[80vh]">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-surface-800">
           <div className="flex items-center gap-3">
@@ -668,12 +665,6 @@ export function VendorRiskAssessmentWizard({
               <p className="text-sm text-surface-600">{vendorName}</p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 text-surface-600 hover:text-surface-100 hover:bg-surface-800 rounded-lg"
-          >
-            <XMarkIcon className="w-5 h-5" />
-          </button>
         </div>
 
         {/* Progress */}
@@ -737,6 +728,6 @@ export function VendorRiskAssessmentWizard({
           )}
         </div>
       </div>
-    </div>
+    </Dialog>
   );
 }

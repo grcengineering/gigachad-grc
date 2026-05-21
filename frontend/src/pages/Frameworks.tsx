@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { Input } from '@/components/ui/Input';
 
 import { Badge } from '@/components/ui/Badge';
+import { Dialog } from '@/components/ui/Dialog';
 
 export default function Frameworks() {
   const queryClient = useQueryClient();
@@ -124,111 +125,102 @@ export default function Frameworks() {
         </div>
       )}
       {/* Create Framework Modal */}
-      {isCreateModalOpen && (
-        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-          <div className="bg-surface-900 border border-surface-800 rounded-lg p-6 w-full max-w-md">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-surface-100">Create Framework</h2>
-              <button
-                onClick={() => setIsCreateModalOpen(false)}
-                className="text-surface-600 hover:text-surface-200"
-              >
-                <XMarkIcon className="w-6 h-6" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-1">
-                  Framework Name *
-                </label>
-                <Input
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g., SOC 2, ISO 27001, GDPR"
-                  className="input w-full"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-1">Type *</label>
-                <Input
-                  type="text"
-                  required
-                  value={formData.type}
-                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                  placeholder="e.g., Security & Privacy, Data Protection"
-                  className="input w-full"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-1">Version</label>
-                <Input
-                  type="text"
-                  value={formData.version}
-                  onChange={(e) => setFormData({ ...formData, version: e.target.value })}
-                  placeholder="e.g., 2017, 2022, 1.0"
-                  className="input w-full"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-1">
-                  Description
-                </label>
-                <Textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Brief description of the framework..."
-                  rows={3}
-                  className="input w-full"
-                />
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => setIsCreateModalOpen(false)}
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" isLoading={createMutation.isPending} className="flex-1">
-                  Create Framework
-                </Button>
-              </div>
-            </form>
-          </div>
+      <Dialog open={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)}>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold text-surface-100">Create Framework</h2>
+          <button
+            onClick={() => setIsCreateModalOpen(false)}
+            className="text-surface-600 hover:text-surface-200"
+          >
+            <XMarkIcon className="w-6 h-6" />
+          </button>
         </div>
-      )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-1">
+              Framework Name *
+            </label>
+            <Input
+              type="text"
+              required
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              placeholder="e.g., SOC 2, ISO 27001, GDPR"
+              className="input w-full"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-1">Type *</label>
+            <Input
+              type="text"
+              required
+              value={formData.type}
+              onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+              placeholder="e.g., Security & Privacy, Data Protection"
+              className="input w-full"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-1">Version</label>
+            <Input
+              type="text"
+              value={formData.version}
+              onChange={(e) => setFormData({ ...formData, version: e.target.value })}
+              placeholder="e.g., 2017, 2022, 1.0"
+              className="input w-full"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-1">Description</label>
+            <Textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              placeholder="Brief description of the framework..."
+              rows={3}
+              className="input w-full"
+            />
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setIsCreateModalOpen(false)}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button type="submit" isLoading={createMutation.isPending} className="flex-1">
+              Create Framework
+            </Button>
+          </div>
+        </form>
+      </Dialog>
       {/* Delete Confirmation Modal */}
       {deleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-          <div className="bg-surface-900 border border-surface-800 rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold text-surface-100 mb-2">Delete Framework</h3>
-            <p className="text-surface-600 mb-6">
-              Are you sure you want to delete "{deleteConfirm.name}"? This will also delete all
-              requirements and mappings associated with this framework. This action cannot be
-              undone.
-            </p>
-            <div className="flex justify-end gap-2">
-              <Button variant="secondary" onClick={() => setDeleteConfirm(null)}>
-                Cancel
-              </Button>
-              <Button
-                variant="danger"
-                onClick={() => deleteMutation.mutate(deleteConfirm.id)}
-                isLoading={deleteMutation.isPending}
-              >
-                Delete
-              </Button>
-            </div>
+        <Dialog open onClose={() => setDeleteConfirm(null)}>
+          <h3 className="text-lg font-semibold text-surface-100 mb-2">Delete Framework</h3>
+          <p className="text-surface-600 mb-6">
+            Are you sure you want to delete "{deleteConfirm.name}"? This will also delete all
+            requirements and mappings associated with this framework. This action cannot be undone.
+          </p>
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" onClick={() => setDeleteConfirm(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              onClick={() => deleteMutation.mutate(deleteConfirm.id)}
+              isLoading={deleteMutation.isPending}
+            >
+              Delete
+            </Button>
           </div>
-        </div>
+        </Dialog>
       )}
     </div>
   );

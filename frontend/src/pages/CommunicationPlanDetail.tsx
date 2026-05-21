@@ -25,6 +25,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { Input } from '@/components/ui/Input';
 
 import { SelectNative } from '@/components/ui/SelectNative';
+import { Dialog } from '@/components/ui/Dialog';
 
 interface CommunicationPlan {
   id: string;
@@ -397,112 +398,98 @@ export default function CommunicationPlanDetail() {
         </div>
       </div>
       {/* Edit Modal */}
-      {showEditModal && (
-        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-          <div className="card w-full max-w-lg mx-4">
-            <div className="p-4 border-b border-surface-700 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-surface-100">Edit Communication Plan</h2>
-              <button
-                onClick={() => setShowEditModal(false)}
-                className="p-1 hover:bg-surface-700 rounded"
-              >
-                <XMarkIcon className="w-5 h-5 text-surface-600" />
-              </button>
-            </div>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                updateMutation.mutate(editForm);
-              }}
-              className="p-6 space-y-4"
+      <Dialog open={showEditModal} onClose={() => setShowEditModal(false)}>
+        <div className="p-4 border-b border-surface-700 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-surface-100">Edit Communication Plan</h2>
+          <button
+            onClick={() => setShowEditModal(false)}
+            className="p-1 hover:bg-surface-700 rounded"
+          >
+            <XMarkIcon className="w-5 h-5 text-surface-600" />
+          </button>
+        </div>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            updateMutation.mutate(editForm);
+          }}
+          className="p-6 space-y-4"
+        >
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-2">Plan Name *</label>
+            <Input
+              type="text"
+              value={editForm.name}
+              onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+              className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-surface-100"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-2">Plan Type</label>
+            <SelectNative
+              value={editForm.plan_type}
+              onChange={(e) => setEditForm({ ...editForm, plan_type: e.target.value })}
+              className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-surface-100"
             >
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-2">
-                  Plan Name *
-                </label>
-                <Input
-                  type="text"
-                  value={editForm.name}
-                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                  className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-surface-100"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-2">Plan Type</label>
-                <SelectNative
-                  value={editForm.plan_type}
-                  onChange={(e) => setEditForm({ ...editForm, plan_type: e.target.value })}
-                  className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-surface-100"
-                >
-                  {PLAN_TYPES.map((type) => (
-                    <option key={type.value} value={type.value}>
-                      {type.label}
-                    </option>
-                  ))}
-                </SelectNative>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-2">
-                  Description
-                </label>
-                <Textarea
-                  value={editForm.description}
-                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                  rows={3}
-                  className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-surface-100"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="edit_is_active"
-                  checked={editForm.is_active}
-                  onChange={(e) => setEditForm({ ...editForm, is_active: e.target.checked })}
-                  className="w-4 h-4 rounded bg-surface-700 border-surface-600 text-primary-500"
-                />
-                <label htmlFor="edit_is_active" className="text-sm text-surface-700">
-                  Active
-                </label>
-              </div>
-              <div className="flex justify-end gap-3 pt-4">
-                <Button type="button" variant="secondary" onClick={() => setShowEditModal(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={updateMutation.isPending}>
-                  {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
-                </Button>
-              </div>
-            </form>
+              {PLAN_TYPES.map((type) => (
+                <option key={type.value} value={type.value}>
+                  {type.label}
+                </option>
+              ))}
+            </SelectNative>
           </div>
-        </div>
-      )}
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-2">Description</label>
+            <Textarea
+              value={editForm.description}
+              onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+              rows={3}
+              className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-surface-100"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="edit_is_active"
+              checked={editForm.is_active}
+              onChange={(e) => setEditForm({ ...editForm, is_active: e.target.checked })}
+              className="w-4 h-4 rounded bg-surface-700 border-surface-600 text-primary-500"
+            />
+            <label htmlFor="edit_is_active" className="text-sm text-surface-700">
+              Active
+            </label>
+          </div>
+          <div className="flex justify-end gap-3 pt-4">
+            <Button type="button" variant="secondary" onClick={() => setShowEditModal(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={updateMutation.isPending}>
+              {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </div>
+        </form>
+      </Dialog>
       {/* Delete Confirmation */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-          <div className="card w-full max-w-md mx-4 p-6">
-            <h2 className="text-lg font-semibold text-surface-100 mb-2">
-              Delete Communication Plan?
-            </h2>
-            <p className="text-surface-600 mb-4">
-              This will permanently delete "{plan.name}" and all associated contacts. This action
-              cannot be undone.
-            </p>
-            <div className="flex justify-end gap-3">
-              <Button variant="secondary" onClick={() => setShowDeleteConfirm(false)}>
-                Cancel
-              </Button>
-              <Button
-                variant="danger"
-                onClick={() => deleteMutation.mutate()}
-                disabled={deleteMutation.isPending}
-              >
-                {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
-              </Button>
-            </div>
-          </div>
+      <Dialog open={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)}>
+        <h2 className="text-lg font-semibold text-surface-100 mb-2">Delete Communication Plan?</h2>
+        <p className="text-surface-600 mb-4">
+          This will permanently delete "{plan.name}" and all associated contacts. This action cannot
+          be undone.
+        </p>
+        <div className="flex justify-end gap-3">
+          <Button variant="secondary" onClick={() => setShowDeleteConfirm(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="danger"
+            onClick={() => deleteMutation.mutate()}
+            disabled={deleteMutation.isPending}
+          >
+            {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+          </Button>
         </div>
-      )}
+      </Dialog>
     </div>
   );
 }

@@ -25,6 +25,7 @@ import api from '@/lib/api';
 import { Input } from '@/components/ui/Input';
 
 import { SelectNative } from '@/components/ui/SelectNative';
+import { Dialog } from '@/components/ui/Dialog';
 
 interface CatalogFramework {
   id: string;
@@ -163,77 +164,73 @@ function FrameworkPreviewModal({
   isActivating: boolean;
 }) {
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center p-4 bg-black/70">
-      <div className="bg-surface-900 rounded-xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl border border-surface-700">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-surface-700">
-          <div className="flex items-center gap-4">
-            <div
-              className={clsx(
-                'p-3 rounded-lg border',
-                categoryColors[framework.category] || categoryColors.security
-              )}
-            >
-              {categoryIcons[framework.category] || categoryIcons.security}
-            </div>
-            <div>
-              <h2 className="text-xl font-semibold text-surface-100">{framework.name}</h2>
-              <p className="text-sm text-surface-600">
-                {framework.source} • Version {framework.version}
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 text-surface-600 hover:text-surface-200 hover:bg-surface-800 rounded-lg transition-colors"
+    <Dialog open onClose={onClose}>
+      {/* Header */}
+      <div className="flex items-center justify-between p-6 border-b border-surface-700">
+        <div className="flex items-center gap-4">
+          <div
+            className={clsx(
+              'p-3 rounded-lg border',
+              categoryColors[framework.category] || categoryColors.security
+            )}
           >
-            <XCircleIcon className="w-6 h-6" />
-          </button>
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
-          <div className="mb-6">
-            <p className="text-surface-700">{framework.description}</p>
-            <div className="flex items-center gap-4 mt-4">
-              <div className="px-3 py-1.5 bg-surface-800 rounded-lg">
-                <span className="text-sm text-surface-600">Requirements:</span>
-                <span className="ml-2 font-semibold text-surface-100">
-                  {framework.requirementCount}
-                </span>
-              </div>
-              <div className="px-3 py-1.5 bg-surface-800 rounded-lg">
-                <span className="text-sm text-surface-600">Categories:</span>
-                <span className="ml-2 font-semibold text-surface-100">
-                  {framework.categoryCount}
-                </span>
-              </div>
-            </div>
+            {categoryIcons[framework.category] || categoryIcons.security}
           </div>
-
           <div>
-            <h3 className="text-lg font-medium text-surface-100 mb-4">Requirements Structure</h3>
-            <div className="bg-surface-800/30 rounded-lg p-4 max-h-[400px] overflow-y-auto">
-              <RequirementTree requirements={framework.requirements} />
+            <h2 className="text-xl font-semibold text-surface-100">{framework.name}</h2>
+            <p className="text-sm text-surface-600">
+              {framework.source} • Version {framework.version}
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={onClose}
+          className="p-2 text-surface-600 hover:text-surface-200 hover:bg-surface-800 rounded-lg transition-colors"
+        >
+          <XCircleIcon className="w-6 h-6" />
+        </button>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto p-6">
+        <div className="mb-6">
+          <p className="text-surface-700">{framework.description}</p>
+          <div className="flex items-center gap-4 mt-4">
+            <div className="px-3 py-1.5 bg-surface-800 rounded-lg">
+              <span className="text-sm text-surface-600">Requirements:</span>
+              <span className="ml-2 font-semibold text-surface-100">
+                {framework.requirementCount}
+              </span>
+            </div>
+            <div className="px-3 py-1.5 bg-surface-800 rounded-lg">
+              <span className="text-sm text-surface-600">Categories:</span>
+              <span className="ml-2 font-semibold text-surface-100">{framework.categoryCount}</span>
             </div>
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-6 border-t border-surface-700">
-          <Button variant="secondary" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button
-            onClick={onActivate}
-            disabled={isActivating}
-            leftIcon={<PlusCircleIcon className="w-5 h-5" />}
-          >
-            {isActivating ? 'Activating...' : 'Activate Framework'}
-          </Button>
+        <div>
+          <h3 className="text-lg font-medium text-surface-100 mb-4">Requirements Structure</h3>
+          <div className="bg-surface-800/30 rounded-lg p-4 max-h-[400px] overflow-y-auto">
+            <RequirementTree requirements={framework.requirements} />
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Footer */}
+      <div className="flex items-center justify-end gap-3 p-6 border-t border-surface-700">
+        <Button variant="secondary" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button
+          onClick={onActivate}
+          disabled={isActivating}
+          leftIcon={<PlusCircleIcon className="w-5 h-5" />}
+        >
+          {isActivating ? 'Activating...' : 'Activate Framework'}
+        </Button>
+      </div>
+    </Dialog>
   );
 }
 

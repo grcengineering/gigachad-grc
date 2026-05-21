@@ -29,6 +29,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { Input } from '@/components/ui/Input';
 
 import { SelectNative } from '@/components/ui/SelectNative';
+import { Dialog } from '@/components/ui/Dialog';
 
 const ASSET_TYPES = [
   { value: 'server', label: 'Server', icon: HardDrive },
@@ -478,283 +479,261 @@ export default function AssetDetail() {
         )}
       </div>
       {/* Edit Modal */}
-      {showEditModal && (
-        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-          <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-surface-700 flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-white">Edit Asset</h2>
-              <button
-                onClick={() => setShowEditModal(false)}
-                className="p-2 hover:bg-surface-700 rounded-lg text-surface-600"
+      <Dialog open={showEditModal} onClose={() => setShowEditModal(false)}>
+        <div className="p-6 border-b border-surface-700 flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-white">Edit Asset</h2>
+          <button
+            onClick={() => setShowEditModal(false)}
+            className="p-2 hover:bg-surface-700 rounded-lg text-surface-600"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            updateMutation.mutate(editForm);
+          }}
+          className="p-6 space-y-4"
+        >
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-2">Name *</label>
+            <Input
+              type="text"
+              value={editForm.name}
+              onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
+              required
+              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-surface-700 mb-2">Type *</label>
+              <SelectNative
+                value={editForm.type}
+                onChange={(e) => setEditForm((prev) => ({ ...prev, type: e.target.value }))}
+                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
               >
-                <X className="w-5 h-5" />
-              </button>
+                {ASSET_TYPES.map((type) => (
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
+                ))}
+              </SelectNative>
             </div>
+            <div>
+              <label className="block text-sm font-medium text-surface-700 mb-2">Status</label>
+              <SelectNative
+                value={editForm.status}
+                onChange={(e) => setEditForm((prev) => ({ ...prev, status: e.target.value }))}
+                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              >
+                {STATUSES.map((status) => (
+                  <option key={status.value} value={status.value}>
+                    {status.label}
+                  </option>
+                ))}
+              </SelectNative>
+            </div>
+          </div>
 
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                updateMutation.mutate(editForm);
-              }}
-              className="p-6 space-y-4"
-            >
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-2">Name *</label>
-                <Input
-                  type="text"
-                  value={editForm.name}
-                  onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
-                  required
-                  className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-                />
-              </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-surface-700 mb-2">Criticality</label>
+              <SelectNative
+                value={editForm.criticality}
+                onChange={(e) => setEditForm((prev) => ({ ...prev, criticality: e.target.value }))}
+                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              >
+                {CRITICALITY_LEVELS.map((level) => (
+                  <option key={level.value} value={level.value}>
+                    {level.label}
+                  </option>
+                ))}
+              </SelectNative>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-surface-700 mb-2">Category</label>
+              <Input
+                type="text"
+                value={editForm.category}
+                onChange={(e) => setEditForm((prev) => ({ ...prev, category: e.target.value }))}
+                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+                placeholder="e.g., Web Server"
+              />
+            </div>
+          </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-surface-700 mb-2">Type *</label>
-                  <SelectNative
-                    value={editForm.type}
-                    onChange={(e) => setEditForm((prev) => ({ ...prev, type: e.target.value }))}
-                    className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-                  >
-                    {ASSET_TYPES.map((type) => (
-                      <option key={type.value} value={type.value}>
-                        {type.label}
-                      </option>
-                    ))}
-                  </SelectNative>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-surface-700 mb-2">Status</label>
-                  <SelectNative
-                    value={editForm.status}
-                    onChange={(e) => setEditForm((prev) => ({ ...prev, status: e.target.value }))}
-                    className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-                  >
-                    {STATUSES.map((status) => (
-                      <option key={status.value} value={status.value}>
-                        {status.label}
-                      </option>
-                    ))}
-                  </SelectNative>
-                </div>
-              </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-surface-700 mb-2">Owner</label>
+              <Input
+                type="text"
+                value={editForm.owner}
+                onChange={(e) => setEditForm((prev) => ({ ...prev, owner: e.target.value }))}
+                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-surface-700 mb-2">Department</label>
+              <Input
+                type="text"
+                value={editForm.department}
+                onChange={(e) => setEditForm((prev) => ({ ...prev, department: e.target.value }))}
+                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              />
+            </div>
+          </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-surface-700 mb-2">
-                    Criticality
-                  </label>
-                  <SelectNative
-                    value={editForm.criticality}
-                    onChange={(e) =>
-                      setEditForm((prev) => ({ ...prev, criticality: e.target.value }))
-                    }
-                    className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-                  >
-                    {CRITICALITY_LEVELS.map((level) => (
-                      <option key={level.value} value={level.value}>
-                        {level.label}
-                      </option>
-                    ))}
-                  </SelectNative>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-surface-700 mb-2">
-                    Category
-                  </label>
-                  <Input
-                    type="text"
-                    value={editForm.category}
-                    onChange={(e) => setEditForm((prev) => ({ ...prev, category: e.target.value }))}
-                    className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-                    placeholder="e.g., Web Server"
-                  />
-                </div>
-              </div>
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-2">Location</label>
+            <Input
+              type="text"
+              value={editForm.location}
+              onChange={(e) => setEditForm((prev) => ({ ...prev, location: e.target.value }))}
+              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              placeholder="e.g., AWS us-east-1, Office HQ"
+            />
+          </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-surface-700 mb-2">Owner</label>
-                  <Input
-                    type="text"
-                    value={editForm.owner}
-                    onChange={(e) => setEditForm((prev) => ({ ...prev, owner: e.target.value }))}
-                    className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-surface-700 mb-2">
-                    Department
-                  </label>
-                  <Input
-                    type="text"
-                    value={editForm.department}
-                    onChange={(e) =>
-                      setEditForm((prev) => ({ ...prev, department: e.target.value }))
-                    }
-                    className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-                  />
-                </div>
-              </div>
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-2">Description</label>
+            <Textarea
+              value={editForm.description}
+              onChange={(e) => setEditForm((prev) => ({ ...prev, description: e.target.value }))}
+              rows={3}
+              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              placeholder="Describe this asset..."
+            />
+          </div>
 
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-2">Location</label>
-                <Input
-                  type="text"
-                  value={editForm.location}
-                  onChange={(e) => setEditForm((prev) => ({ ...prev, location: e.target.value }))}
-                  className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-                  placeholder="e.g., AWS us-east-1, Office HQ"
-                />
-              </div>
+          {/* BC/DR Fields */}
+          <div className="border-t border-surface-700 pt-4 mt-4">
+            <h4 className="text-sm font-medium text-surface-200 mb-4 flex items-center gap-2">
+              <ShieldAlert className="w-4 h-4 text-brand-400" />
+              Business Continuity / Disaster Recovery
+            </h4>
 
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-surface-700 mb-2">
-                  Description
+                  RTO (Hours)
                 </label>
-                <Textarea
-                  value={editForm.description}
+                <Input
+                  type="number"
+                  min="0"
+                  value={editForm.rtoHours ?? ''}
                   onChange={(e) =>
-                    setEditForm((prev) => ({ ...prev, description: e.target.value }))
+                    setEditForm((prev) => ({
+                      ...prev,
+                      rtoHours: e.target.value ? parseInt(e.target.value) : undefined,
+                    }))
                   }
-                  rows={3}
                   className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-                  placeholder="Describe this asset..."
+                  placeholder="e.g., 4"
                 />
+                <p className="text-xs text-surface-500 mt-1">Recovery Time Objective</p>
               </div>
-
-              {/* BC/DR Fields */}
-              <div className="border-t border-surface-700 pt-4 mt-4">
-                <h4 className="text-sm font-medium text-surface-200 mb-4 flex items-center gap-2">
-                  <ShieldAlert className="w-4 h-4 text-brand-400" />
-                  Business Continuity / Disaster Recovery
-                </h4>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-surface-700 mb-2">
-                      RTO (Hours)
-                    </label>
-                    <Input
-                      type="number"
-                      min="0"
-                      value={editForm.rtoHours ?? ''}
-                      onChange={(e) =>
-                        setEditForm((prev) => ({
-                          ...prev,
-                          rtoHours: e.target.value ? parseInt(e.target.value) : undefined,
-                        }))
-                      }
-                      className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-                      placeholder="e.g., 4"
-                    />
-                    <p className="text-xs text-surface-500 mt-1">Recovery Time Objective</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-surface-700 mb-2">
-                      RPO (Hours)
-                    </label>
-                    <Input
-                      type="number"
-                      min="0"
-                      value={editForm.rpoHours ?? ''}
-                      onChange={(e) =>
-                        setEditForm((prev) => ({
-                          ...prev,
-                          rpoHours: e.target.value ? parseInt(e.target.value) : undefined,
-                        }))
-                      }
-                      className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-                      placeholder="e.g., 1"
-                    />
-                    <p className="text-xs text-surface-500 mt-1">Recovery Point Objective</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 mt-4">
-                  <div>
-                    <label className="block text-sm font-medium text-surface-700 mb-2">
-                      BC/DR Criticality
-                    </label>
-                    <SelectNative
-                      value={editForm.bcdrCriticality}
-                      onChange={(e) =>
-                        setEditForm((prev) => ({ ...prev, bcdrCriticality: e.target.value }))
-                      }
-                      className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-                    >
-                      <option value="">Not set</option>
-                      <option value="tier_1_critical">Tier 1 - Critical</option>
-                      <option value="tier_2_essential">Tier 2 - Essential</option>
-                      <option value="tier_3_important">Tier 3 - Important</option>
-                      <option value="tier_4_standard">Tier 4 - Standard</option>
-                    </SelectNative>
-                  </div>
-                </div>
-
-                <div className="mt-4">
-                  <label className="block text-sm font-medium text-surface-700 mb-2">
-                    Recovery Notes
-                  </label>
-                  <Textarea
-                    value={editForm.recoveryNotes}
-                    onChange={(e) =>
-                      setEditForm((prev) => ({ ...prev, recoveryNotes: e.target.value }))
-                    }
-                    rows={2}
-                    className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-                    placeholder="Notes about recovery procedures for this asset..."
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-surface-700 mb-2">
+                  RPO (Hours)
+                </label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={editForm.rpoHours ?? ''}
+                  onChange={(e) =>
+                    setEditForm((prev) => ({
+                      ...prev,
+                      rpoHours: e.target.value ? parseInt(e.target.value) : undefined,
+                    }))
+                  }
+                  className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+                  placeholder="e.g., 1"
+                />
+                <p className="text-xs text-surface-500 mt-1">Recovery Point Objective</p>
               </div>
+            </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-surface-700">
-                <button
-                  type="button"
-                  onClick={() => setShowEditModal(false)}
-                  className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg hover:bg-surface-600"
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              <div>
+                <label className="block text-sm font-medium text-surface-700 mb-2">
+                  BC/DR Criticality
+                </label>
+                <SelectNative
+                  value={editForm.bcdrCriticality}
+                  onChange={(e) =>
+                    setEditForm((prev) => ({ ...prev, bcdrCriticality: e.target.value }))
+                  }
+                  className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={updateMutation.isPending}
-                  className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 disabled:opacity-50"
-                >
-                  {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
-                </button>
+                  <option value="">Not set</option>
+                  <option value="tier_1_critical">Tier 1 - Critical</option>
+                  <option value="tier_2_essential">Tier 2 - Essential</option>
+                  <option value="tier_3_important">Tier 3 - Important</option>
+                  <option value="tier_4_standard">Tier 4 - Standard</option>
+                </SelectNative>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
-      {/* Delete Confirmation */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-          <div className="bg-surface-800 rounded-xl border border-surface-700 p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold text-white mb-2">Delete Asset</h3>
-            <p className="text-surface-600 mb-6">
-              Are you sure you want to delete "{asset.name}"? This action cannot be undone.
-            </p>
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg hover:bg-surface-600"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => deleteMutation.mutate()}
-                disabled={deleteMutation.isPending}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
-              >
-                {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
-              </button>
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-surface-700 mb-2">
+                Recovery Notes
+              </label>
+              <Textarea
+                value={editForm.recoveryNotes}
+                onChange={(e) =>
+                  setEditForm((prev) => ({ ...prev, recoveryNotes: e.target.value }))
+                }
+                rows={2}
+                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+                placeholder="Notes about recovery procedures for this asset..."
+              />
             </div>
           </div>
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-surface-700">
+            <button
+              type="button"
+              onClick={() => setShowEditModal(false)}
+              className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg hover:bg-surface-600"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={updateMutation.isPending}
+              className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 disabled:opacity-50"
+            >
+              {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        </form>
+      </Dialog>
+      {/* Delete Confirmation */}
+      <Dialog open={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)}>
+        <h3 className="text-lg font-semibold text-white mb-2">Delete Asset</h3>
+        <p className="text-surface-600 mb-6">
+          Are you sure you want to delete "{asset.name}"? This action cannot be undone.
+        </p>
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={() => setShowDeleteConfirm(false)}
+            className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg hover:bg-surface-600"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => deleteMutation.mutate()}
+            disabled={deleteMutation.isPending}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+          >
+            {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+          </button>
         </div>
-      )}
+      </Dialog>
     </div>
   );
 }

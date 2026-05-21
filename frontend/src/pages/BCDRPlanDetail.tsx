@@ -23,6 +23,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { Input } from '@/components/ui/Input';
 
 import { SelectNative } from '@/components/ui/SelectNative';
+import { Dialog } from '@/components/ui/Dialog';
 
 interface BCDRPlan {
   id: string;
@@ -613,190 +614,168 @@ export default function BCDRPlanDetail() {
         </div>
       )}
       {/* Edit Modal */}
-      {showEditModal && (
-        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50 p-4">
-          <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-surface-700 flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-white">Edit BC/DR Plan</h2>
-              <button
-                onClick={() => setShowEditModal(false)}
-                className="p-2 hover:bg-surface-700 rounded-lg text-surface-600"
-              >
-                <XMarkIcon className="w-5 h-5" />
-              </button>
-            </div>
+      <Dialog open={showEditModal} onClose={() => setShowEditModal(false)}>
+        <div className="p-6 border-b border-surface-700 flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-white">Edit BC/DR Plan</h2>
+          <button
+            onClick={() => setShowEditModal(false)}
+            className="p-2 hover:bg-surface-700 rounded-lg text-surface-600"
+          >
+            <XMarkIcon className="w-5 h-5" />
+          </button>
+        </div>
 
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (isNewPlan) {
-                  createMutation.mutate(editForm);
-                } else {
-                  updateMutation.mutate(editForm);
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (isNewPlan) {
+              createMutation.mutate(editForm);
+            } else {
+              updateMutation.mutate(editForm);
+            }
+          }}
+          className="p-6 space-y-4"
+        >
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-2">Title *</label>
+            <Input
+              type="text"
+              value={editForm.title}
+              onChange={(e) => setEditForm((prev) => ({ ...prev, title: e.target.value }))}
+              required
+              className="input w-full"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-surface-700 mb-2">Plan Type</label>
+              <SelectNative
+                value={editForm.plan_type}
+                onChange={(e) => setEditForm((prev) => ({ ...prev, plan_type: e.target.value }))}
+                className="input w-full"
+              >
+                {PLAN_TYPES.map((type) => (
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
+                ))}
+              </SelectNative>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-surface-700 mb-2">Status</label>
+              <SelectNative
+                value={editForm.status}
+                onChange={(e) => setEditForm((prev) => ({ ...prev, status: e.target.value }))}
+                className="input w-full"
+              >
+                {STATUS_OPTIONS.map((status) => (
+                  <option key={status.value} value={status.value}>
+                    {status.label}
+                  </option>
+                ))}
+              </SelectNative>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-2">Description</label>
+            <Textarea
+              value={editForm.description}
+              onChange={(e) => setEditForm((prev) => ({ ...prev, description: e.target.value }))}
+              rows={3}
+              className="input w-full"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-2">Objectives</label>
+            <Textarea
+              value={editForm.objectives}
+              onChange={(e) => setEditForm((prev) => ({ ...prev, objectives: e.target.value }))}
+              rows={3}
+              className="input w-full"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-2">Scope</label>
+            <Textarea
+              value={editForm.scope}
+              onChange={(e) => setEditForm((prev) => ({ ...prev, scope: e.target.value }))}
+              rows={3}
+              className="input w-full"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-surface-700 mb-2">
+                Activation Criteria
+              </label>
+              <Textarea
+                value={editForm.activation_criteria}
+                onChange={(e) =>
+                  setEditForm((prev) => ({ ...prev, activation_criteria: e.target.value }))
                 }
-              }}
-              className="p-6 space-y-4"
-            >
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-2">Title *</label>
-                <Input
-                  type="text"
-                  value={editForm.title}
-                  onChange={(e) => setEditForm((prev) => ({ ...prev, title: e.target.value }))}
-                  required
-                  className="input w-full"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-surface-700 mb-2">
-                    Plan Type
-                  </label>
-                  <SelectNative
-                    value={editForm.plan_type}
-                    onChange={(e) =>
-                      setEditForm((prev) => ({ ...prev, plan_type: e.target.value }))
-                    }
-                    className="input w-full"
-                  >
-                    {PLAN_TYPES.map((type) => (
-                      <option key={type.value} value={type.value}>
-                        {type.label}
-                      </option>
-                    ))}
-                  </SelectNative>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-surface-700 mb-2">Status</label>
-                  <SelectNative
-                    value={editForm.status}
-                    onChange={(e) => setEditForm((prev) => ({ ...prev, status: e.target.value }))}
-                    className="input w-full"
-                  >
-                    {STATUS_OPTIONS.map((status) => (
-                      <option key={status.value} value={status.value}>
-                        {status.label}
-                      </option>
-                    ))}
-                  </SelectNative>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-2">
-                  Description
-                </label>
-                <Textarea
-                  value={editForm.description}
-                  onChange={(e) =>
-                    setEditForm((prev) => ({ ...prev, description: e.target.value }))
-                  }
-                  rows={3}
-                  className="input w-full"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-2">
-                  Objectives
-                </label>
-                <Textarea
-                  value={editForm.objectives}
-                  onChange={(e) => setEditForm((prev) => ({ ...prev, objectives: e.target.value }))}
-                  rows={3}
-                  className="input w-full"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-2">Scope</label>
-                <Textarea
-                  value={editForm.scope}
-                  onChange={(e) => setEditForm((prev) => ({ ...prev, scope: e.target.value }))}
-                  rows={3}
-                  className="input w-full"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-surface-700 mb-2">
-                    Activation Criteria
-                  </label>
-                  <Textarea
-                    value={editForm.activation_criteria}
-                    onChange={(e) =>
-                      setEditForm((prev) => ({ ...prev, activation_criteria: e.target.value }))
-                    }
-                    rows={2}
-                    className="input w-full"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-surface-700 mb-2">
-                    Deactivation Criteria
-                  </label>
-                  <Textarea
-                    value={editForm.deactivation_criteria}
-                    onChange={(e) =>
-                      setEditForm((prev) => ({ ...prev, deactivation_criteria: e.target.value }))
-                    }
-                    rows={2}
-                    className="input w-full"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-2">
-                  Assumptions
-                </label>
-                <Textarea
-                  value={editForm.assumptions}
-                  onChange={(e) =>
-                    setEditForm((prev) => ({ ...prev, assumptions: e.target.value }))
-                  }
-                  rows={2}
-                  className="input w-full"
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4 border-t border-surface-700">
-                <Button variant="secondary" type="button" onClick={() => setShowEditModal(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={updateMutation.isPending}>
-                  {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-      {/* Delete Confirmation */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50 p-4">
-          <div className="bg-surface-800 rounded-xl border border-surface-700 p-6 max-w-md w-full">
-            <h3 className="text-lg font-semibold text-white mb-2">Delete BC/DR Plan</h3>
-            <p className="text-surface-600 mb-6">
-              Are you sure you want to delete "{plan.title}"? This action cannot be undone.
-            </p>
-            <div className="flex justify-end gap-3">
-              <Button variant="secondary" onClick={() => setShowDeleteConfirm(false)}>
-                Cancel
-              </Button>
-              <Button
-                variant="danger"
-                onClick={() => deleteMutation.mutate()}
-                disabled={deleteMutation.isPending}
-              >
-                {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
-              </Button>
+                rows={2}
+                className="input w-full"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-surface-700 mb-2">
+                Deactivation Criteria
+              </label>
+              <Textarea
+                value={editForm.deactivation_criteria}
+                onChange={(e) =>
+                  setEditForm((prev) => ({ ...prev, deactivation_criteria: e.target.value }))
+                }
+                rows={2}
+                className="input w-full"
+              />
             </div>
           </div>
+
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-2">Assumptions</label>
+            <Textarea
+              value={editForm.assumptions}
+              onChange={(e) => setEditForm((prev) => ({ ...prev, assumptions: e.target.value }))}
+              rows={2}
+              className="input w-full"
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-surface-700">
+            <Button variant="secondary" type="button" onClick={() => setShowEditModal(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={updateMutation.isPending}>
+              {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </div>
+        </form>
+      </Dialog>
+      {/* Delete Confirmation */}
+      <Dialog open={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)}>
+        <h3 className="text-lg font-semibold text-white mb-2">Delete BC/DR Plan</h3>
+        <p className="text-surface-600 mb-6">
+          Are you sure you want to delete "{plan.title}"? This action cannot be undone.
+        </p>
+        <div className="flex justify-end gap-3">
+          <Button variant="secondary" onClick={() => setShowDeleteConfirm(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="danger"
+            onClick={() => deleteMutation.mutate()}
+            disabled={deleteMutation.isPending}
+          >
+            {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+          </Button>
         </div>
-      )}
+      </Dialog>
     </div>
   );
 }

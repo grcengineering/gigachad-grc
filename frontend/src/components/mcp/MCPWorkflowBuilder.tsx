@@ -17,6 +17,7 @@ import { mcpApi } from '../../lib/api';
 import { Textarea } from '@/components/ui/Textarea';
 
 import { Button } from '@/components/ui/Button';
+import { Dialog } from '@/components/ui/Dialog';
 
 interface Workflow {
   id: string;
@@ -337,75 +338,73 @@ export default function MCPWorkflowBuilder() {
         </div>
       </div>
       {/* Execution Modal */}
-      {showExecutionModal && selectedWorkflowData && (
-        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-          <div className="bg-white dark:bg-surface-800 rounded-lg w-full max-w-md">
-            <div className="p-4 border-b border-gray-200 dark:border-surface-700 flex justify-between items-center">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Run {selectedWorkflowData.name}
-              </h2>
-              <button
-                onClick={() => {
-                  setShowExecutionModal(false);
-                  setExecutionInput({});
-                }}
-                className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-              >
-                ×
-              </button>
+      {selectedWorkflowData && (
+        <Dialog open={showExecutionModal} onClose={() => setShowExecutionModal(false)}>
+          <div className="p-4 border-b border-gray-200 dark:border-surface-700 flex justify-between items-center">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Run {selectedWorkflowData.name}
+            </h2>
+            <button
+              onClick={() => {
+                setShowExecutionModal(false);
+                setExecutionInput({});
+              }}
+              className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+            >
+              ×
+            </button>
+          </div>
+
+          <div className="p-4 space-y-4">
+            <p className="text-gray-600 dark:text-gray-400">{selectedWorkflowData.description}</p>
+
+            {/* Input fields would go here based on workflow definition */}
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Input Parameters (JSON)
+                </label>
+                <Textarea
+                  value={JSON.stringify(executionInput, null, 2)}
+                  onChange={(e) => {
+                    try {
+                      setExecutionInput(JSON.parse(e.target.value));
+                    } catch {
+                      // Invalid JSON, ignore
+                    }
+                  }}
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white font-mono text-sm"
+                  placeholder="{}"
+                />
+              </div>
             </div>
 
-            <div className="p-4 space-y-4">
-              <p className="text-gray-600 dark:text-gray-400">{selectedWorkflowData.description}</p>
-
-              {/* Input fields would go here based on workflow definition */}
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Input Parameters (JSON)
-                  </label>
-                  <Textarea
-                    value={JSON.stringify(executionInput, null, 2)}
-                    onChange={(e) => {
-                      try {
-                        setExecutionInput(JSON.parse(e.target.value));
-                      } catch {
-                        // Invalid JSON, ignore
-                      }
-                    }}
-                    rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white font-mono text-sm"
-                    placeholder="{}"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-4">
-                <Button onClick={() => setShowExecutionModal(false)} variant="secondary">
-                  Cancel
-                </Button>
-                <Button
-                  onClick={() =>
-                    executeMutation.mutate({
-                      workflowId: selectedWorkflowData.id,
-                      input: executionInput,
-                    })
-                  }
-                  disabled={executeMutation.isPending}
-                  className="flex items-center gap-2"
-                  variant="primary"
-                >
-                  {executeMutation.isPending ? (
-                    <ArrowPathIcon className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <PlayIcon className="w-5 h-5" />
-                  )}
-                  {executeMutation.isPending ? 'Starting...' : 'Start Execution'}
-                </Button>
-              </div>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button onClick={() => setShowExecutionModal(false)} variant="secondary">
+                Cancel
+              </Button>
+              <Button
+                onClick={() =>
+                  executeMutation.mutate({
+                    workflowId: selectedWorkflowData.id,
+                    input: executionInput,
+                  })
+                }
+                disabled={executeMutation.isPending}
+                className="flex items-center gap-2"
+                variant="primary"
+              >
+                {executeMutation.isPending ? (
+                  <ArrowPathIcon className="w-5 h-5 animate-spin" />
+                ) : (
+                  <PlayIcon className="w-5 h-5" />
+                )}
+                {executeMutation.isPending ? 'Starting...' : 'Start Execution'}
+              </Button>
             </div>
           </div>
-        </div>
+        </Dialog>
       )}
     </div>
   );

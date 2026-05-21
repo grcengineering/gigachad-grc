@@ -42,6 +42,7 @@ import { Input } from '@/components/ui/Input';
 import { SelectNative } from '@/components/ui/SelectNative';
 
 import { Badge } from '@/components/ui/Badge';
+import { Dialog } from '@/components/ui/Dialog';
 
 type TabType = 'details' | 'comments' | 'tasks' | 'history';
 
@@ -301,152 +302,141 @@ export default function ControlDetail() {
         </div>
       </div>
       {/* Edit Modal */}
-      {isEditing && (
-        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50 p-4">
-          <div className="card w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-            <div className="p-4 border-b border-surface-800 flex items-center justify-between sticky top-0 bg-surface-900">
-              <h2 className="text-lg font-semibold text-surface-100">Edit Control</h2>
-              <button
-                onClick={() => setIsEditing(false)}
-                className="p-1 hover:bg-surface-700 rounded"
-              >
-                <XMarkIcon className="w-5 h-5 text-surface-600" />
-              </button>
-            </div>
-            <div className="p-4 space-y-6">
-              {/* Control Details Section */}
+      <Dialog open={isEditing} onClose={() => setIsEditing(false)}>
+        <div className="p-4 border-b border-surface-800 flex items-center justify-between sticky top-0 bg-surface-900">
+          <h2 className="text-lg font-semibold text-surface-100">Edit Control</h2>
+          <button onClick={() => setIsEditing(false)} className="p-1 hover:bg-surface-700 rounded">
+            <XMarkIcon className="w-5 h-5 text-surface-600" />
+          </button>
+        </div>
+        <div className="p-4 space-y-6">
+          {/* Control Details Section */}
+          <div>
+            <h3 className="text-sm font-semibold text-surface-700 mb-3 uppercase tracking-wide">
+              Control Details
+            </h3>
+            <div className="space-y-4">
               <div>
-                <h3 className="text-sm font-semibold text-surface-700 mb-3 uppercase tracking-wide">
-                  Control Details
-                </h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className="label mb-1">Title</label>
-                    <Input
-                      type="text"
-                      value={editForm.title}
-                      onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                      className="input w-full"
-                    />
-                  </div>
-                  <div>
-                    <label className="label mb-1">Description</label>
-                    <Textarea
-                      value={editForm.description}
-                      onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                      rows={3}
-                      className="input w-full"
-                    />
-                  </div>
-                  <div>
-                    <label className="label mb-1">Tags (comma-separated)</label>
-                    <Input
-                      type="text"
-                      value={editForm.tags}
-                      onChange={(e) => setEditForm({ ...editForm, tags: e.target.value })}
-                      placeholder="e.g., authentication, encryption, monitoring"
-                      className="input w-full"
-                    />
-                  </div>
-                  <div>
-                    <label className="label mb-1">Implementation Guidance</label>
-                    <Textarea
-                      value={editForm.guidance}
-                      onChange={(e) => setEditForm({ ...editForm, guidance: e.target.value })}
-                      rows={3}
-                      className="input w-full"
-                    />
-                  </div>
-                </div>
+                <label className="label mb-1">Title</label>
+                <Input
+                  type="text"
+                  value={editForm.title}
+                  onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                  className="input w-full"
+                />
               </div>
-
-              {/* Implementation Details Section */}
-              {control.implementation && (
-                <div className="border-t border-surface-800 pt-6">
-                  <h3 className="text-sm font-semibold text-surface-700 mb-3 uppercase tracking-wide">
-                    Implementation Details
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="label mb-1">Owner</label>
-                      <SelectNative
-                        value={implForm.ownerId}
-                        onChange={(e) => setImplForm({ ...implForm, ownerId: e.target.value })}
-                        className="input w-full"
-                      >
-                        <option value="">Unassigned</option>
-                        {users?.map((user: any) => (
-                          <option key={user.id} value={user.id}>
-                            {user.displayName} ({user.role})
-                          </option>
-                        ))}
-                      </SelectNative>
-                    </div>
-                    <div>
-                      <label className="label mb-1">Testing Frequency</label>
-                      <SelectNative
-                        value={implForm.testingFrequency}
-                        onChange={(e) =>
-                          setImplForm({ ...implForm, testingFrequency: e.target.value })
-                        }
-                        className="input w-full"
-                      >
-                        {FREQUENCY_OPTIONS.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </SelectNative>
-                    </div>
-                    <div>
-                      <label className="label mb-1">Effectiveness Score (0-100)</label>
-                      <Input
-                        type="number"
-                        min="0"
-                        max="100"
-                        value={implForm.effectivenessScore}
-                        onChange={(e) =>
-                          setImplForm({ ...implForm, effectivenessScore: e.target.value })
-                        }
-                        placeholder="Not rated"
-                        className="input w-full"
-                      />
-                      <p className="text-xs text-surface-500 mt-1">
-                        How effective is this control at mitigating risk?
-                      </p>
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="label mb-1">Implementation Notes</label>
-                      <Textarea
-                        value={implForm.implementationNotes}
-                        onChange={(e) =>
-                          setImplForm({ ...implForm, implementationNotes: e.target.value })
-                        }
-                        rows={3}
-                        placeholder="Notes about how this control is implemented..."
-                        className="input w-full"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="p-4 border-t border-surface-800 flex justify-end gap-3 sticky bottom-0 bg-surface-900">
-              <Button variant="secondary" onClick={() => setIsEditing(false)}>
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSave}
-                isLoading={
-                  updateControlMutation.isPending || updateImplementationMutation.isPending
-                }
-              >
-                Save Changes
-              </Button>
+              <div>
+                <label className="label mb-1">Description</label>
+                <Textarea
+                  value={editForm.description}
+                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                  rows={3}
+                  className="input w-full"
+                />
+              </div>
+              <div>
+                <label className="label mb-1">Tags (comma-separated)</label>
+                <Input
+                  type="text"
+                  value={editForm.tags}
+                  onChange={(e) => setEditForm({ ...editForm, tags: e.target.value })}
+                  placeholder="e.g., authentication, encryption, monitoring"
+                  className="input w-full"
+                />
+              </div>
+              <div>
+                <label className="label mb-1">Implementation Guidance</label>
+                <Textarea
+                  value={editForm.guidance}
+                  onChange={(e) => setEditForm({ ...editForm, guidance: e.target.value })}
+                  rows={3}
+                  className="input w-full"
+                />
+              </div>
             </div>
           </div>
+
+          {/* Implementation Details Section */}
+          {control.implementation && (
+            <div className="border-t border-surface-800 pt-6">
+              <h3 className="text-sm font-semibold text-surface-700 mb-3 uppercase tracking-wide">
+                Implementation Details
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="label mb-1">Owner</label>
+                  <SelectNative
+                    value={implForm.ownerId}
+                    onChange={(e) => setImplForm({ ...implForm, ownerId: e.target.value })}
+                    className="input w-full"
+                  >
+                    <option value="">Unassigned</option>
+                    {users?.map((user: any) => (
+                      <option key={user.id} value={user.id}>
+                        {user.displayName} ({user.role})
+                      </option>
+                    ))}
+                  </SelectNative>
+                </div>
+                <div>
+                  <label className="label mb-1">Testing Frequency</label>
+                  <SelectNative
+                    value={implForm.testingFrequency}
+                    onChange={(e) => setImplForm({ ...implForm, testingFrequency: e.target.value })}
+                    className="input w-full"
+                  >
+                    {FREQUENCY_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </SelectNative>
+                </div>
+                <div>
+                  <label className="label mb-1">Effectiveness Score (0-100)</label>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={implForm.effectivenessScore}
+                    onChange={(e) =>
+                      setImplForm({ ...implForm, effectivenessScore: e.target.value })
+                    }
+                    placeholder="Not rated"
+                    className="input w-full"
+                  />
+                  <p className="text-xs text-surface-500 mt-1">
+                    How effective is this control at mitigating risk?
+                  </p>
+                </div>
+                <div className="md:col-span-2">
+                  <label className="label mb-1">Implementation Notes</label>
+                  <Textarea
+                    value={implForm.implementationNotes}
+                    onChange={(e) =>
+                      setImplForm({ ...implForm, implementationNotes: e.target.value })
+                    }
+                    rows={3}
+                    placeholder="Notes about how this control is implemented..."
+                    className="input w-full"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
-      )}
+        <div className="p-4 border-t border-surface-800 flex justify-end gap-3 sticky bottom-0 bg-surface-900">
+          <Button variant="secondary" onClick={() => setIsEditing(false)}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSave}
+            isLoading={updateControlMutation.isPending || updateImplementationMutation.isPending}
+          >
+            Save Changes
+          </Button>
+        </div>
+      </Dialog>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main content */}
         <div className="lg:col-span-2 space-y-6">
@@ -1054,44 +1044,38 @@ export default function ControlDetail() {
         />
       )}
       {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-          <div className="bg-surface-900 border border-surface-800 rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold text-surface-100 mb-2">Delete Control</h3>
-            <p className="text-surface-600 mb-6">
-              Are you sure you want to delete "{control?.title}"? This action cannot be undone.
-            </p>
-            <div className="flex justify-end gap-2">
-              <Button variant="secondary" onClick={() => setShowDeleteConfirm(false)}>
-                Cancel
-              </Button>
-              <Button
-                variant="danger"
-                onClick={async () => {
-                  try {
-                    await controlsApi.delete(id!);
-                    toast.success('Control deleted successfully');
-                    navigate('/controls');
-                  } catch (error: any) {
-                    console.error('Error deleting control:', {
-                      message: error?.message,
-                      status: error?.response?.status,
-                      data: error?.response?.data,
-                    });
-                    const message =
-                      error?.response?.data?.message ||
-                      error?.message ||
-                      'Failed to delete control';
-                    toast.error(Array.isArray(message) ? message.join(', ') : message);
-                  }
-                }}
-              >
-                Delete
-              </Button>
-            </div>
-          </div>
+      <Dialog open={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)}>
+        <h3 className="text-lg font-semibold text-surface-100 mb-2">Delete Control</h3>
+        <p className="text-surface-600 mb-6">
+          Are you sure you want to delete "{control?.title}"? This action cannot be undone.
+        </p>
+        <div className="flex justify-end gap-2">
+          <Button variant="secondary" onClick={() => setShowDeleteConfirm(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="danger"
+            onClick={async () => {
+              try {
+                await controlsApi.delete(id!);
+                toast.success('Control deleted successfully');
+                navigate('/controls');
+              } catch (error: any) {
+                console.error('Error deleting control:', {
+                  message: error?.message,
+                  status: error?.response?.status,
+                  data: error?.response?.data,
+                });
+                const message =
+                  error?.response?.data?.message || error?.message || 'Failed to delete control';
+                toast.error(Array.isArray(message) ? message.join(', ') : message);
+              }
+            }}
+          >
+            Delete
+          </Button>
         </div>
-      )}
+      </Dialog>
     </div>
   );
 }
@@ -1144,88 +1128,85 @@ function LinkPolicyModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center">
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative bg-surface-900 border border-surface-800 rounded-xl w-full max-w-lg mx-4 p-6 max-h-[80vh] flex flex-col">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-surface-100">Link Policies to Control</h2>
-          <button onClick={onClose} className="text-surface-600 hover:text-surface-100">
-            <XMarkIcon className="w-5 h-5" />
-          </button>
-        </div>
-
-        <p className="text-sm text-surface-600 mb-4">
-          Select policies to link as evidence for this control:
-        </p>
-
-        <div className="relative mb-4">
-          <Input
-            type="text"
-            placeholder="Search policies..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="input pl-10"
-          />
-          <DocumentTextIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-500" />
-        </div>
-
-        <div className="flex-1 overflow-y-auto space-y-2 min-h-[200px] max-h-[300px]">
-          {isLoadingPolicies ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin w-6 h-6 border-2 border-surface-700 rounded-full border-t-brand-500"></div>
-              <span className="ml-2 text-surface-600">Searching...</span>
-            </div>
-          ) : availablePolicies.length === 0 ? (
-            <p className="text-surface-500 text-center py-8">
-              {search ? `No policies found for "${search}"` : 'All policies are already linked'}
-            </p>
-          ) : (
-            availablePolicies.map((policy: any) => (
-              <label
-                key={policy.id}
-                className={clsx(
-                  'flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors',
-                  selectedPolicyIds.includes(policy.id)
-                    ? 'bg-brand-500/20 border border-brand-500/50'
-                    : 'bg-surface-800 hover:bg-surface-700'
-                )}
-              >
-                <input
-                  type="checkbox"
-                  checked={selectedPolicyIds.includes(policy.id)}
-                  onChange={() => togglePolicy(policy.id)}
-                  className="rounded border-surface-600"
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-surface-200 truncate">{policy.title}</p>
-                  <p className="text-xs text-surface-500 capitalize">
-                    {policy.category?.replace(/_/g, ' ')} • v{policy.version} • {policy.status}
-                  </p>
-                </div>
-              </label>
-            ))
-          )}
-        </div>
-
-        {selectedPolicyIds.length > 0 && (
-          <p className="text-sm text-surface-600 mt-3">
-            {selectedPolicyIds.length} policy(ies) selected
-          </p>
-        )}
-
-        <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-surface-800">
-          <Button variant="secondary" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button
-            onClick={() => linkMutation.mutate()}
-            disabled={selectedPolicyIds.length === 0}
-            isLoading={linkMutation.isPending}
-          >
-            Link Policies
-          </Button>
-        </div>
+    <Dialog open onClose={onClose}>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold text-surface-100">Link Policies to Control</h2>
+        <button onClick={onClose} className="text-surface-600 hover:text-surface-100">
+          <XMarkIcon className="w-5 h-5" />
+        </button>
       </div>
-    </div>
+
+      <p className="text-sm text-surface-600 mb-4">
+        Select policies to link as evidence for this control:
+      </p>
+
+      <div className="relative mb-4">
+        <Input
+          type="text"
+          placeholder="Search policies..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="input pl-10"
+        />
+        <DocumentTextIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-500" />
+      </div>
+
+      <div className="flex-1 overflow-y-auto space-y-2 min-h-[200px] max-h-[300px]">
+        {isLoadingPolicies ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin w-6 h-6 border-2 border-surface-700 rounded-full border-t-brand-500"></div>
+            <span className="ml-2 text-surface-600">Searching...</span>
+          </div>
+        ) : availablePolicies.length === 0 ? (
+          <p className="text-surface-500 text-center py-8">
+            {search ? `No policies found for "${search}"` : 'All policies are already linked'}
+          </p>
+        ) : (
+          availablePolicies.map((policy: any) => (
+            <label
+              key={policy.id}
+              className={clsx(
+                'flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors',
+                selectedPolicyIds.includes(policy.id)
+                  ? 'bg-brand-500/20 border border-brand-500/50'
+                  : 'bg-surface-800 hover:bg-surface-700'
+              )}
+            >
+              <input
+                type="checkbox"
+                checked={selectedPolicyIds.includes(policy.id)}
+                onChange={() => togglePolicy(policy.id)}
+                className="rounded border-surface-600"
+              />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-surface-200 truncate">{policy.title}</p>
+                <p className="text-xs text-surface-500 capitalize">
+                  {policy.category?.replace(/_/g, ' ')} • v{policy.version} • {policy.status}
+                </p>
+              </div>
+            </label>
+          ))
+        )}
+      </div>
+
+      {selectedPolicyIds.length > 0 && (
+        <p className="text-sm text-surface-600 mt-3">
+          {selectedPolicyIds.length} policy(ies) selected
+        </p>
+      )}
+
+      <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-surface-800">
+        <Button variant="secondary" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button
+          onClick={() => linkMutation.mutate()}
+          disabled={selectedPolicyIds.length === 0}
+          isLoading={linkMutation.isPending}
+        >
+          Link Policies
+        </Button>
+      </div>
+    </Dialog>
   );
 }

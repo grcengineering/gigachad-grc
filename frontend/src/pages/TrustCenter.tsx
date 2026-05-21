@@ -21,6 +21,7 @@ import {
 import { Textarea } from '@/components/ui/Textarea';
 
 import { Input } from '@/components/ui/Input';
+import { Dialog } from '@/components/ui/Dialog';
 
 type SectionType = 'overview' | 'certifications' | 'controls' | 'policies' | 'updates' | 'contact';
 
@@ -446,87 +447,85 @@ function ContentModal({ section, content, onSave, onClose }: ContentModalProps) 
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm grid place-items-center z-50 p-4">
-      <div className="bg-gray-50 dark:bg-surface-900 border border-gray-200 dark:border-surface-800 rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <h2 className="text-2xl font-bold text-gray-800 dark:text-surface-100 mb-4">
-          {content ? 'Edit Content' : 'Add New Content'}
-        </h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <Dialog open onClose={onClose}>
+      <h2 className="text-2xl font-bold text-gray-800 dark:text-surface-100 mb-4">
+        {content ? 'Edit Content' : 'Add New Content'}
+      </h2>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-500 dark:text-surface-600 mb-1">
+            Title
+          </label>
+          <Input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+            className="w-full px-3 py-2 bg-white dark:bg-surface-800 border border-gray-200 dark:border-surface-700 rounded-lg text-gray-800 dark:text-surface-100 focus:outline-none focus:border-brand-500"
+            placeholder="Enter title..."
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-500 dark:text-surface-600 mb-1">
+            Content
+          </label>
+          <Textarea
+            value={contentText}
+            onChange={(e) => setContentText(e.target.value)}
+            required
+            rows={8}
+            className="w-full px-3 py-2 bg-white dark:bg-surface-800 border border-gray-200 dark:border-surface-700 rounded-lg text-gray-800 dark:text-surface-100 focus:outline-none focus:border-brand-500"
+            placeholder="Enter content..."
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-500 dark:text-surface-600 mb-1">
-              Title
+              Display Order
             </label>
             <Input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              required
+              type="number"
+              value={order}
+              onChange={(e) => setOrder(parseInt(e.target.value))}
               className="w-full px-3 py-2 bg-white dark:bg-surface-800 border border-gray-200 dark:border-surface-700 rounded-lg text-gray-800 dark:text-surface-100 focus:outline-none focus:border-brand-500"
-              placeholder="Enter title..."
             />
+            <p className="text-xs text-surface-500 mt-1">Lower numbers appear first</p>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-500 dark:text-surface-600 mb-1">
-              Content
-            </label>
-            <Textarea
-              value={contentText}
-              onChange={(e) => setContentText(e.target.value)}
-              required
-              rows={8}
-              className="w-full px-3 py-2 bg-white dark:bg-surface-800 border border-gray-200 dark:border-surface-700 rounded-lg text-gray-800 dark:text-surface-100 focus:outline-none focus:border-brand-500"
-              placeholder="Enter content..."
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-500 dark:text-surface-600 mb-1">
-                Display Order
-              </label>
-              <Input
-                type="number"
-                value={order}
-                onChange={(e) => setOrder(parseInt(e.target.value))}
-                className="w-full px-3 py-2 bg-white dark:bg-surface-800 border border-gray-200 dark:border-surface-700 rounded-lg text-gray-800 dark:text-surface-100 focus:outline-none focus:border-brand-500"
+          <div className="flex items-end pb-6">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isPublished}
+                onChange={(e) => setIsPublished(e.target.checked)}
+                className="w-4 h-4 bg-white dark:bg-surface-800 border-gray-200 dark:border-surface-700 rounded text-brand-600 focus:ring-brand-500"
               />
-              <p className="text-xs text-surface-500 mt-1">Lower numbers appear first</p>
-            </div>
-
-            <div className="flex items-end pb-6">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={isPublished}
-                  onChange={(e) => setIsPublished(e.target.checked)}
-                  className="w-4 h-4 bg-white dark:bg-surface-800 border-gray-200 dark:border-surface-700 rounded text-brand-600 focus:ring-brand-500"
-                />
-                <span className="text-sm text-gray-600 dark:text-surface-700">
-                  Publish immediately
-                </span>
-              </label>
-            </div>
+              <span className="text-sm text-gray-600 dark:text-surface-700">
+                Publish immediately
+              </span>
+            </label>
           </div>
+        </div>
 
-          <div className="flex justify-end gap-2 pt-4 border-t border-gray-200 dark:border-surface-800">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 bg-white dark:bg-surface-800 text-gray-800 dark:text-surface-100 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-100 dark:bg-surface-700 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-brand-600 text-gray-900 dark:text-white rounded-lg hover:bg-brand-700 transition-colors"
-            >
-              {content ? 'Update' : 'Create'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div className="flex justify-end gap-2 pt-4 border-t border-gray-200 dark:border-surface-800">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 bg-white dark:bg-surface-800 text-gray-800 dark:text-surface-100 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-100 dark:bg-surface-700 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="px-4 py-2 bg-brand-600 text-gray-900 dark:text-white rounded-lg hover:bg-brand-700 transition-colors"
+          >
+            {content ? 'Update' : 'Create'}
+          </button>
+        </div>
+      </form>
+    </Dialog>
   );
 }
 
@@ -543,99 +542,97 @@ function PreviewModal({ config, contents, onClose }: PreviewModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/75 grid place-items-center z-50 p-4">
-      <div className="bg-white rounded-lg w-full max-w-5xl max-h-[90vh] overflow-y-auto relative">
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="sticky top-4 right-4 float-right z-10 p-2 bg-gray-800 text-gray-900 dark:text-white rounded-full hover:bg-gray-700 transition-colors m-4"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </button>
+    <Dialog open onClose={onClose}>
+      {/* Close Button */}
+      <button
+        onClick={onClose}
+        className="sticky top-4 right-4 float-right z-10 p-2 bg-gray-800 text-gray-900 dark:text-white rounded-full hover:bg-gray-700 transition-colors m-4"
+      >
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M6 18L18 6M6 6l12 12"
+          />
+        </svg>
+      </button>
 
-        {/* Preview Badge */}
-        <div className="sticky top-0 left-0 right-0 bg-yellow-500 text-yellow-900 px-4 py-2 text-center font-semibold z-10">
-          PREVIEW - This is how your trust center will appear to visitors
-        </div>
-
-        {/* Trust Center Preview */}
-        <div className="p-8" style={{ color: '#1f2937' }}>
-          {/* Hero */}
-          <div className="text-center mb-12">
-            {config.logoUrl && (
-              <img src={config.logoUrl} alt={config.companyName} className="h-12 mx-auto mb-4" />
-            )}
-            <h1
-              className="text-4xl font-bold mb-3"
-              style={{ color: config.primaryColor || '#6366f1' }}
-            >
-              {config.companyName} Trust Center
-            </h1>
-            {config.description && (
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto">{config.description}</p>
-            )}
-          </div>
-
-          {/* Sections */}
-          {['overview', 'certifications', 'controls', 'policies', 'updates', 'contact'].map(
-            (section) => {
-              const sectionContents = getSectionContents(section);
-              if (sectionContents.length === 0) return null;
-
-              const sectionTitles: Record<string, string> = {
-                overview: 'Overview',
-                certifications: 'Certifications & Compliance',
-                controls: 'Security Controls',
-                policies: 'Policies & Documentation',
-                updates: 'Security Updates',
-                contact: 'Contact Us',
-              };
-
-              return (
-                <section key={section} className="mb-10">
-                  <h2
-                    className="text-2xl font-bold mb-4"
-                    style={{ color: config.primaryColor || '#6366f1' }}
-                  >
-                    {sectionTitles[section]}
-                  </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {sectionContents.map((content) => (
-                      <div key={content.id} className="bg-gray-50 p-5 rounded-lg">
-                        <h3 className="text-lg font-semibold mb-2">{content.title}</h3>
-                        <p className="text-gray-600">{content.content}</p>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              );
-            }
-          )}
-
-          {/* Empty State */}
-          {publishedContents.length === 0 && (
-            <div className="text-center py-16">
-              <GlobeAltIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-500 mb-2">No Published Content</h3>
-              <p className="text-gray-400">Add and publish content to see it here</p>
-            </div>
-          )}
-
-          {/* Footer */}
-          <footer className="text-center pt-8 mt-12 border-t border-gray-200">
-            <p className="text-gray-400 text-sm">
-              © {new Date().getFullYear()} {config.companyName}. All rights reserved.
-            </p>
-          </footer>
-        </div>
+      {/* Preview Badge */}
+      <div className="sticky top-0 left-0 right-0 bg-yellow-500 text-yellow-900 px-4 py-2 text-center font-semibold z-10">
+        PREVIEW - This is how your trust center will appear to visitors
       </div>
-    </div>
+
+      {/* Trust Center Preview */}
+      <div className="p-8" style={{ color: '#1f2937' }}>
+        {/* Hero */}
+        <div className="text-center mb-12">
+          {config.logoUrl && (
+            <img src={config.logoUrl} alt={config.companyName} className="h-12 mx-auto mb-4" />
+          )}
+          <h1
+            className="text-4xl font-bold mb-3"
+            style={{ color: config.primaryColor || '#6366f1' }}
+          >
+            {config.companyName} Trust Center
+          </h1>
+          {config.description && (
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">{config.description}</p>
+          )}
+        </div>
+
+        {/* Sections */}
+        {['overview', 'certifications', 'controls', 'policies', 'updates', 'contact'].map(
+          (section) => {
+            const sectionContents = getSectionContents(section);
+            if (sectionContents.length === 0) return null;
+
+            const sectionTitles: Record<string, string> = {
+              overview: 'Overview',
+              certifications: 'Certifications & Compliance',
+              controls: 'Security Controls',
+              policies: 'Policies & Documentation',
+              updates: 'Security Updates',
+              contact: 'Contact Us',
+            };
+
+            return (
+              <section key={section} className="mb-10">
+                <h2
+                  className="text-2xl font-bold mb-4"
+                  style={{ color: config.primaryColor || '#6366f1' }}
+                >
+                  {sectionTitles[section]}
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {sectionContents.map((content) => (
+                    <div key={content.id} className="bg-gray-50 p-5 rounded-lg">
+                      <h3 className="text-lg font-semibold mb-2">{content.title}</h3>
+                      <p className="text-gray-600">{content.content}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            );
+          }
+        )}
+
+        {/* Empty State */}
+        {publishedContents.length === 0 && (
+          <div className="text-center py-16">
+            <GlobeAltIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-500 mb-2">No Published Content</h3>
+            <p className="text-gray-400">Add and publish content to see it here</p>
+          </div>
+        )}
+
+        {/* Footer */}
+        <footer className="text-center pt-8 mt-12 border-t border-gray-200">
+          <p className="text-gray-400 text-sm">
+            © {new Date().getFullYear()} {config.companyName}. All rights reserved.
+          </p>
+        </footer>
+      </div>
+    </Dialog>
   );
 }

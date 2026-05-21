@@ -15,6 +15,7 @@ import toast from 'react-hot-toast';
 import { Input } from '@/components/ui/Input';
 
 import { SelectNative } from '@/components/ui/SelectNative';
+import { Dialog } from '@/components/ui/Dialog';
 
 interface User {
   id: string;
@@ -326,85 +327,88 @@ export default function UserManagement() {
         </table>
       </div>
       {/* Groups Modal */}
-      {showGroupsModal && selectedUser && (
-        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-          <div className="bg-surface-800 rounded-lg w-full max-w-lg mx-4 max-h-[80vh] overflow-hidden">
-            <div className="p-4 border-b border-surface-700 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-white">
-                Manage Groups - {selectedUser.displayName}
-              </h2>
-              <button
-                onClick={() => {
-                  setShowGroupsModal(false);
-                  setSelectedUser(null);
-                }}
-                className="p-1 text-surface-600 hover:text-white"
-              >
-                <XMarkIcon className="w-5 h-5" />
-              </button>
+      {selectedUser && (
+        <Dialog
+          open={showGroupsModal}
+          onClose={() => {
+            setShowGroupsModal(false);
+            setSelectedUser(null);
+          }}
+        >
+          <div className="p-4 border-b border-surface-700 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-white">
+              Manage Groups - {selectedUser.displayName}
+            </h2>
+            <button
+              onClick={() => {
+                setShowGroupsModal(false);
+                setSelectedUser(null);
+              }}
+              className="p-1 text-surface-600 hover:text-white"
+            >
+              <XMarkIcon className="w-5 h-5" />
+            </button>
+          </div>
+          <div className="p-4 space-y-4 overflow-y-auto max-h-[60vh]">
+            <div className="text-surface-600 text-sm">
+              Select permission groups for this user. Groups provide the initial set of permissions.
             </div>
-            <div className="p-4 space-y-4 overflow-y-auto max-h-[60vh]">
-              <div className="text-surface-600 text-sm">
-                Select permission groups for this user. Groups provide the initial set of
-                permissions.
-              </div>
-              <div className="space-y-2">
-                {groups.map((group) => {
-                  const isMember = selectedUser.groups?.some((g) => g.id === group.id) || false;
-                  return (
-                    <div
-                      key={group.id}
-                      className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                        isMember
-                          ? 'bg-brand-500/20 border-brand-500'
-                          : 'bg-surface-700 border-surface-600 hover:border-surface-500'
-                      }`}
-                      onClick={() => {
-                        if (isMember) {
-                          removeFromGroupMutation.mutate({
-                            userId: selectedUser.id,
-                            groupId: group.id,
-                          });
-                          setSelectedUser({
-                            ...selectedUser,
-                            groups: (selectedUser.groups || []).filter((g) => g.id !== group.id),
-                          });
-                        } else {
-                          addToGroupMutation.mutate({
-                            userId: selectedUser.id,
-                            groupId: group.id,
-                          });
-                          setSelectedUser({
-                            ...selectedUser,
-                            groups: [
-                              ...(selectedUser.groups || []),
-                              { id: group.id, name: group.name },
-                            ],
-                          });
-                        }
-                      }}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="text-white font-medium flex items-center gap-2">
-                            {group.name}
-                            {group.isSystem && (
-                              <span className="text-xs bg-surface-600 text-surface-700 px-1.5 py-0.5 rounded">
-                                System
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-surface-600 text-sm">{group.description}</div>
+            <div className="space-y-2">
+              {groups.map((group) => {
+                const isMember = selectedUser.groups?.some((g) => g.id === group.id) || false;
+                return (
+                  <div
+                    key={group.id}
+                    className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                      isMember
+                        ? 'bg-brand-500/20 border-brand-500'
+                        : 'bg-surface-700 border-surface-600 hover:border-surface-500'
+                    }`}
+                    onClick={() => {
+                      if (isMember) {
+                        removeFromGroupMutation.mutate({
+                          userId: selectedUser.id,
+                          groupId: group.id,
+                        });
+                        setSelectedUser({
+                          ...selectedUser,
+                          groups: (selectedUser.groups || []).filter((g) => g.id !== group.id),
+                        });
+                      } else {
+                        addToGroupMutation.mutate({
+                          userId: selectedUser.id,
+                          groupId: group.id,
+                        });
+                        setSelectedUser({
+                          ...selectedUser,
+                          groups: [
+                            ...(selectedUser.groups || []),
+                            { id: group.id, name: group.name },
+                          ],
+                        });
+                      }
+                    }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-white font-medium flex items-center gap-2">
+                          {group.name}
+                          {group.isSystem && (
+                            <span className="text-xs bg-surface-600 text-surface-700 px-1.5 py-0.5 rounded">
+                              System
+                            </span>
+                          )}
                         </div>
-                        {isMember && <CheckIcon className="w-5 h-5 text-brand-400" />}
+                        <div className="text-surface-600 text-sm">{group.description}</div>
                       </div>
+                      {isMember && <CheckIcon className="w-5 h-5 text-brand-400" />}
                     </div>
-                  );
-                })}
-              </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
-        </div>
+        </Dialog>
       )}
       {/* Permissions Modal */}
       {showPermissionsModal && selectedUser && (
@@ -427,117 +431,112 @@ function PermissionsModal({ user, onClose }: { user: User; onClose: () => void }
   });
 
   return (
-    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-      <div className="bg-surface-800 rounded-lg w-full max-w-2xl mx-4 max-h-[80vh] overflow-hidden">
-        <div className="p-4 border-b border-surface-700 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-white">Permissions - {user.displayName}</h2>
-          <button onClick={onClose} className="p-1 text-surface-600 hover:text-white">
-            <XMarkIcon className="w-5 h-5" />
-          </button>
-        </div>
-        <div className="p-4 overflow-y-auto max-h-[60vh]">
-          {isLoading ? (
-            <div className="text-center text-surface-600 py-8">Loading permissions...</div>
-          ) : (
-            <div className="space-y-6">
-              {/* Groups */}
-              <div>
-                <h3 className="text-sm font-medium text-surface-700 mb-2">Groups</h3>
-                <div className="flex flex-wrap gap-2">
-                  {permissionsData?.groups?.length === 0 ? (
-                    <span className="text-surface-500">No groups assigned</span>
-                  ) : (
-                    permissionsData?.groups?.map((group: any) => (
-                      <span
-                        key={group.id}
-                        className="px-3 py-1 bg-surface-700 rounded-full text-sm text-white"
-                      >
-                        {group.name}
-                      </span>
-                    ))
-                  )}
-                </div>
+    <Dialog open onClose={onClose}>
+      <div className="p-4 border-b border-surface-700 flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-white">Permissions - {user.displayName}</h2>
+        <button onClick={onClose} className="p-1 text-surface-600 hover:text-white">
+          <XMarkIcon className="w-5 h-5" />
+        </button>
+      </div>
+      <div className="p-4 overflow-y-auto max-h-[60vh]">
+        {isLoading ? (
+          <div className="text-center text-surface-600 py-8">Loading permissions...</div>
+        ) : (
+          <div className="space-y-6">
+            {/* Groups */}
+            <div>
+              <h3 className="text-sm font-medium text-surface-700 mb-2">Groups</h3>
+              <div className="flex flex-wrap gap-2">
+                {permissionsData?.groups?.length === 0 ? (
+                  <span className="text-surface-500">No groups assigned</span>
+                ) : (
+                  permissionsData?.groups?.map((group: any) => (
+                    <span
+                      key={group.id}
+                      className="px-3 py-1 bg-surface-700 rounded-full text-sm text-white"
+                    >
+                      {group.name}
+                    </span>
+                  ))
+                )}
               </div>
+            </div>
 
-              {/* Effective Permissions */}
-              <div>
-                <h3 className="text-sm font-medium text-surface-700 mb-2">Effective Permissions</h3>
-                <div className="space-y-2">
-                  {permissionsData?.effectivePermissions?.length === 0 ? (
-                    <span className="text-surface-500">No permissions</span>
-                  ) : (
-                    permissionsData?.effectivePermissions?.map((perm: any, idx: number) => (
-                      <div key={idx} className="bg-surface-700 rounded-lg p-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-white font-medium capitalize">
-                            {perm.resource.replace('_', ' ')}
-                          </span>
-                          <span
-                            className={`text-xs px-2 py-0.5 rounded ${
-                              perm.source === 'group'
-                                ? 'bg-blue-500/20 text-blue-600'
-                                : 'bg-yellow-500/20 text-yellow-600'
-                            }`}
-                          >
-                            {perm.source === 'group' ? `From: ${perm.groupName}` : 'Override'}
-                          </span>
-                        </div>
-                        <div className="flex flex-wrap gap-1">
-                          {perm.actions.map((action: string) => (
-                            <span
-                              key={action}
-                              className="px-2 py-0.5 bg-surface-600 rounded text-xs text-surface-200"
-                            >
-                              {action}
-                            </span>
-                          ))}
-                        </div>
-                        {perm.scope && (
-                          <div className="mt-2 text-xs text-surface-600">
-                            Scope: {perm.scope.ownership || 'all'}
-                            {perm.scope.tags?.length > 0 &&
-                              ` | Tags: ${perm.scope.tags.join(', ')}`}
-                            {perm.scope.categories?.length > 0 &&
-                              ` | Categories: ${perm.scope.categories.join(', ')}`}
-                          </div>
-                        )}
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-
-              {/* Overrides */}
-              {(permissionsData?.overrides?.length ?? 0) > 0 && (
-                <div>
-                  <h3 className="text-sm font-medium text-surface-700 mb-2">
-                    Permission Overrides
-                  </h3>
-                  <div className="space-y-1">
-                    {permissionsData?.overrides?.map((override: any, idx: number) => (
-                      <div
-                        key={idx}
-                        className="flex items-center justify-between bg-surface-700 rounded px-3 py-2"
-                      >
-                        <span className="text-white">{override.permission}</span>
+            {/* Effective Permissions */}
+            <div>
+              <h3 className="text-sm font-medium text-surface-700 mb-2">Effective Permissions</h3>
+              <div className="space-y-2">
+                {permissionsData?.effectivePermissions?.length === 0 ? (
+                  <span className="text-surface-500">No permissions</span>
+                ) : (
+                  permissionsData?.effectivePermissions?.map((perm: any, idx: number) => (
+                    <div key={idx} className="bg-surface-700 rounded-lg p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-white font-medium capitalize">
+                          {perm.resource.replace('_', ' ')}
+                        </span>
                         <span
                           className={`text-xs px-2 py-0.5 rounded ${
-                            override.granted
-                              ? 'bg-emerald-500/20 text-emerald-600'
-                              : 'bg-red-500/20 text-red-600'
+                            perm.source === 'group'
+                              ? 'bg-blue-500/20 text-blue-600'
+                              : 'bg-yellow-500/20 text-yellow-600'
                           }`}
                         >
-                          {override.granted ? 'Granted' : 'Denied'}
+                          {perm.source === 'group' ? `From: ${perm.groupName}` : 'Override'}
                         </span>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+                      <div className="flex flex-wrap gap-1">
+                        {perm.actions.map((action: string) => (
+                          <span
+                            key={action}
+                            className="px-2 py-0.5 bg-surface-600 rounded text-xs text-surface-200"
+                          >
+                            {action}
+                          </span>
+                        ))}
+                      </div>
+                      {perm.scope && (
+                        <div className="mt-2 text-xs text-surface-600">
+                          Scope: {perm.scope.ownership || 'all'}
+                          {perm.scope.tags?.length > 0 && ` | Tags: ${perm.scope.tags.join(', ')}`}
+                          {perm.scope.categories?.length > 0 &&
+                            ` | Categories: ${perm.scope.categories.join(', ')}`}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
-          )}
-        </div>
+
+            {/* Overrides */}
+            {(permissionsData?.overrides?.length ?? 0) > 0 && (
+              <div>
+                <h3 className="text-sm font-medium text-surface-700 mb-2">Permission Overrides</h3>
+                <div className="space-y-1">
+                  {permissionsData?.overrides?.map((override: any, idx: number) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between bg-surface-700 rounded px-3 py-2"
+                    >
+                      <span className="text-white">{override.permission}</span>
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded ${
+                          override.granted
+                            ? 'bg-emerald-500/20 text-emerald-600'
+                            : 'bg-red-500/20 text-red-600'
+                        }`}
+                      >
+                        {override.granted ? 'Granted' : 'Denied'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
-    </div>
+    </Dialog>
   );
 }

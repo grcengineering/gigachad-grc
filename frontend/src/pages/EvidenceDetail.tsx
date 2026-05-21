@@ -75,6 +75,7 @@ import { SkeletonDetailHeader, SkeletonDetailSection } from '@/components/Skelet
 import { Textarea } from '@/components/ui/Textarea';
 
 import { Badge } from '@/components/ui/Badge';
+import { Dialog } from '@/components/ui/Dialog';
 
 type TabType = 'details' | 'history';
 
@@ -540,48 +541,45 @@ export default function EvidenceDetail() {
         </div>
       </div>
       {/* Review Modal */}
-      {isReviewing && (
-        <div className="fixed inset-0 z-50 grid place-items-center">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setIsReviewing(false)} />
-          <div className="relative bg-surface-900 border border-surface-800 rounded-xl w-full max-w-md mx-4 p-6">
-            <h2 className="text-lg font-semibold text-surface-100 mb-4">Review Evidence</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="label">Notes (optional)</label>
-                <Textarea
-                  value={reviewNotes}
-                  onChange={(e) => setReviewNotes(e.target.value)}
-                  className="input mt-1"
-                  rows={3}
-                  placeholder="Add review notes..."
-                />
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 mt-6">
-              <Button variant="secondary" onClick={() => setIsReviewing(false)}>
-                Cancel
-              </Button>
-              <Button
-                variant="danger"
-                onClick={() => reviewMutation.mutate({ status: 'rejected', notes: reviewNotes })}
-                isLoading={reviewMutation.isPending}
-              >
-                Reject
-              </Button>
-              <Button
-                onClick={() => reviewMutation.mutate({ status: 'approved', notes: reviewNotes })}
-                isLoading={reviewMutation.isPending}
-              >
-                Approve
-              </Button>
-            </div>
+      <Dialog open={isReviewing} onClose={() => setIsReviewing(false)}>
+        <h2 className="text-lg font-semibold text-surface-100 mb-4">Review Evidence</h2>
+        <div className="space-y-4">
+          <div>
+            <label className="label">Notes (optional)</label>
+            <Textarea
+              value={reviewNotes}
+              onChange={(e) => setReviewNotes(e.target.value)}
+              className="input mt-1"
+              rows={3}
+              placeholder="Add review notes..."
+            />
           </div>
         </div>
-      )}
-      {/* Image Lightbox Modal */}
+        <div className="flex justify-end gap-2 mt-6">
+          <Button variant="secondary" onClick={() => setIsReviewing(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="danger"
+            onClick={() => reviewMutation.mutate({ status: 'rejected', notes: reviewNotes })}
+            isLoading={reviewMutation.isPending}
+          >
+            Reject
+          </Button>
+          <Button
+            onClick={() => reviewMutation.mutate({ status: 'approved', notes: reviewNotes })}
+            isLoading={reviewMutation.isPending}
+          >
+            Approve
+          </Button>
+        </div>
+      </Dialog>
+      {/* Image Lightbox — fullscreen image viewer, intentionally not a
+          <Dialog> because the image needs edge-to-edge rendering without
+          a card panel. */}
       {isLightboxOpen && isImage && (
         <div
-          className="fixed inset-0 z-50 grid place-items-center bg-black/90"
+          className="fixed inset-0 z-50 bg-black/90 flex justify-center items-center"
           onClick={() => setIsLightboxOpen(false)}
         >
           {/* Close button */}

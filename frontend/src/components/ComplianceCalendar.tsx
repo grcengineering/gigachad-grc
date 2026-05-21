@@ -31,6 +31,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { Input } from '@/components/ui/Input';
 
 import { SelectNative } from '@/components/ui/SelectNative';
+import { Dialog } from '@/components/ui/Dialog';
 
 // View mode types
 type ViewMode = 'month' | 'week' | 'list';
@@ -678,85 +679,79 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
         </div>
       </div>
       {/* Create Event Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-          <div className="bg-surface-900 rounded-lg p-6 w-full max-w-md">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white">Create Event</h3>
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="text-surface-600 hover:text-surface-200"
-              >
-                <XMarkIcon className="w-5 h-5" />
-              </button>
-            </div>
-            <form onSubmit={handleCreateEvent} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-1">Title</label>
-                <Input
-                  type="text"
-                  value={newEventTitle}
-                  onChange={(e) => setNewEventTitle(e.target.value)}
-                  className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-white placeholder-surface-500 focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-                  placeholder="Event title"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-1">
-                  Description
-                </label>
-                <Textarea
-                  value={newEventDescription}
-                  onChange={(e) => setNewEventDescription(e.target.value)}
-                  className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-white placeholder-surface-500 focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-                  placeholder="Optional description"
-                  rows={2}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-1">Date</label>
-                <Input
-                  type="date"
-                  value={newEventDate}
-                  onChange={(e) => setNewEventDate(e.target.value)}
-                  className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-1">Priority</label>
-                <SelectNative
-                  value={newEventPriority}
-                  onChange={(e) => setNewEventPriority(e.target.value)}
-                  className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-                >
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                  <option value="critical">Critical</option>
-                </SelectNative>
-              </div>
-              <div className="flex justify-end gap-2 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 text-surface-600 hover:text-surface-200"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={createEventMutation.isPending || !newEventTitle.trim() || !newEventDate}
-                  className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 disabled:opacity-50"
-                >
-                  {createEventMutation.isPending ? 'Creating...' : 'Create Event'}
-                </button>
-              </div>
-            </form>
-          </div>
+      <Dialog open={showCreateModal} onClose={() => setShowCreateModal(false)}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-white">Create Event</h3>
+          <button
+            onClick={() => setShowCreateModal(false)}
+            className="text-surface-600 hover:text-surface-200"
+          >
+            <XMarkIcon className="w-5 h-5" />
+          </button>
         </div>
-      )}
+        <form onSubmit={handleCreateEvent} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-1">Title</label>
+            <Input
+              type="text"
+              value={newEventTitle}
+              onChange={(e) => setNewEventTitle(e.target.value)}
+              className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-white placeholder-surface-500 focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+              placeholder="Event title"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-1">Description</label>
+            <Textarea
+              value={newEventDescription}
+              onChange={(e) => setNewEventDescription(e.target.value)}
+              className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-white placeholder-surface-500 focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+              placeholder="Optional description"
+              rows={2}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-1">Date</label>
+            <Input
+              type="date"
+              value={newEventDate}
+              onChange={(e) => setNewEventDate(e.target.value)}
+              className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-1">Priority</label>
+            <SelectNative
+              value={newEventPriority}
+              onChange={(e) => setNewEventPriority(e.target.value)}
+              className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+            >
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+              <option value="critical">Critical</option>
+            </SelectNative>
+          </div>
+          <div className="flex justify-end gap-2 pt-4">
+            <button
+              type="button"
+              onClick={() => setShowCreateModal(false)}
+              className="px-4 py-2 text-surface-600 hover:text-surface-200"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={createEventMutation.isPending || !newEventTitle.trim() || !newEventDate}
+              className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 disabled:opacity-50"
+            >
+              {createEventMutation.isPending ? 'Creating...' : 'Create Event'}
+            </button>
+          </div>
+        </form>
+      </Dialog>
     </div>
   );
 }

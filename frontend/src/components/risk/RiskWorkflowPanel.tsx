@@ -27,6 +27,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { Input } from '@/components/ui/Input';
 
 import { SelectNative } from '@/components/ui/SelectNative';
+import { Dialog } from '@/components/ui/Dialog';
 
 // Workflow Status Constants (used for validation/reference)
 const _INTAKE_STATUSES = [
@@ -870,59 +871,54 @@ function ValidateRiskModal({
   });
 
   return (
-    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-      <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-md">
-        <div className="p-4 border-b border-surface-700 flex justify-between items-center">
-          <h3 className="text-lg font-medium text-white">
-            {approve ? 'Validate Risk' : 'Reject Risk'}
-          </h3>
-          <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
-            <X className="w-5 h-5 text-surface-600" />
-          </button>
-        </div>
-        <div className="p-4 space-y-4">
-          {approve && (
-            <UserPicker
-              label="Risk Assessor"
-              selectedUserId={riskAssessorId}
-              onSelect={setRiskAssessorId}
-              allowUnassign={true}
-              description="Optionally assign who will perform the risk assessment"
-            />
-          )}
-          <div>
-            <label className="block text-sm text-surface-600 mb-2">
-              {approve ? 'Notes (optional)' : 'Reason for rejection *'}
-            </label>
-            <Textarea
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              required={!approve}
-              rows={3}
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-              placeholder={approve ? 'Add any notes...' : 'Explain why this is not a valid risk...'}
-            />
-          </div>
-        </div>
-        <div className="p-4 border-t border-surface-700 flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => mutation.mutate()}
-            disabled={mutation.isPending || (!approve && !reason)}
-            className={`px-4 py-2 text-white rounded-lg disabled:opacity-50 ${
-              approve ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-red-500 hover:bg-red-600'
-            }`}
-          >
-            {mutation.isPending ? 'Processing...' : approve ? 'Validate' : 'Reject'}
-          </button>
+    <Dialog open onClose={onClose}>
+      <div className="p-4 border-b border-surface-700 flex justify-between items-center">
+        <h3 className="text-lg font-medium text-white">
+          {approve ? 'Validate Risk' : 'Reject Risk'}
+        </h3>
+        <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
+          <X className="w-5 h-5 text-surface-600" />
+        </button>
+      </div>
+      <div className="p-4 space-y-4">
+        {approve && (
+          <UserPicker
+            label="Risk Assessor"
+            selectedUserId={riskAssessorId}
+            onSelect={setRiskAssessorId}
+            allowUnassign={true}
+            description="Optionally assign who will perform the risk assessment"
+          />
+        )}
+        <div>
+          <label className="block text-sm text-surface-600 mb-2">
+            {approve ? 'Notes (optional)' : 'Reason for rejection *'}
+          </label>
+          <Textarea
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            required={!approve}
+            rows={3}
+            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            placeholder={approve ? 'Add any notes...' : 'Explain why this is not a valid risk...'}
+          />
         </div>
       </div>
-    </div>
+      <div className="p-4 border-t border-surface-700 flex justify-end gap-3">
+        <button onClick={onClose} className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg">
+          Cancel
+        </button>
+        <button
+          onClick={() => mutation.mutate()}
+          disabled={mutation.isPending || (!approve && !reason)}
+          className={`px-4 py-2 text-white rounded-lg disabled:opacity-50 ${
+            approve ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-red-500 hover:bg-red-600'
+          }`}
+        >
+          {mutation.isPending ? 'Processing...' : approve ? 'Validate' : 'Reject'}
+        </button>
+      </div>
+    </Dialog>
   );
 }
 
@@ -948,40 +944,35 @@ function StartAssessmentModal({
   });
 
   return (
-    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-      <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-md">
-        <div className="p-4 border-b border-surface-700 flex justify-between items-center">
-          <h3 className="text-lg font-medium text-white">Start Risk Assessment</h3>
-          <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
-            <X className="w-5 h-5 text-surface-600" />
-          </button>
-        </div>
-        <div className="p-4 space-y-4">
-          <UserPicker
-            label="Risk Assessor"
-            selectedUserId={riskAssessorId}
-            onSelect={setRiskAssessorId}
-            required={true}
-            description="The SME who will analyze and assess this risk"
-          />
-        </div>
-        <div className="p-4 border-t border-surface-700 flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => mutation.mutate()}
-            disabled={mutation.isPending || !riskAssessorId}
-            className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 disabled:opacity-50"
-          >
-            {mutation.isPending ? 'Starting...' : 'Start Assessment'}
-          </button>
-        </div>
+    <Dialog open onClose={onClose}>
+      <div className="p-4 border-b border-surface-700 flex justify-between items-center">
+        <h3 className="text-lg font-medium text-white">Start Risk Assessment</h3>
+        <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
+          <X className="w-5 h-5 text-surface-600" />
+        </button>
       </div>
-    </div>
+      <div className="p-4 space-y-4">
+        <UserPicker
+          label="Risk Assessor"
+          selectedUserId={riskAssessorId}
+          onSelect={setRiskAssessorId}
+          required={true}
+          description="The SME who will analyze and assess this risk"
+        />
+      </div>
+      <div className="p-4 border-t border-surface-700 flex justify-end gap-3">
+        <button onClick={onClose} className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg">
+          Cancel
+        </button>
+        <button
+          onClick={() => mutation.mutate()}
+          disabled={mutation.isPending || !riskAssessorId}
+          className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 disabled:opacity-50"
+        >
+          {mutation.isPending ? 'Starting...' : 'Start Assessment'}
+        </button>
+      </div>
+    </Dialog>
   );
 }
 
@@ -1029,195 +1020,182 @@ function SubmitAssessmentModal({
   });
 
   return (
-    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-      <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="p-4 border-b border-surface-700 flex justify-between items-center sticky top-0 bg-surface-800">
-          <h3 className="text-lg font-medium text-white">Risk Assessment Form</h3>
-          <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
-            <X className="w-5 h-5 text-surface-600" />
-          </button>
+    <Dialog open onClose={onClose}>
+      <div className="p-4 border-b border-surface-700 flex justify-between items-center sticky top-0 bg-surface-800">
+        <h3 className="text-lg font-medium text-white">Risk Assessment Form</h3>
+        <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
+          <X className="w-5 h-5 text-surface-600" />
+        </button>
+      </div>
+      <div className="p-4 space-y-4">
+        <div>
+          <label className="block text-sm text-surface-600 mb-2">Threat Description *</label>
+          <Textarea
+            value={formData.threatDescription}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, threatDescription: e.target.value }))
+            }
+            required
+            rows={3}
+            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            placeholder="Describe the threat scenario..."
+          />
         </div>
-        <div className="p-4 space-y-4">
+
+        <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm text-surface-600 mb-2">Threat Description *</label>
-            <Textarea
-              value={formData.threatDescription}
+            <label className="block text-sm text-surface-600 mb-2">Affected Assets</label>
+            <Input
+              type="text"
+              value={formData.affectedAssets}
+              onChange={(e) => setFormData((prev) => ({ ...prev, affectedAssets: e.target.value }))}
+              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              placeholder="Comma-separated list"
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-surface-600 mb-2">Existing Controls</label>
+            <Input
+              type="text"
+              value={formData.existingControls}
               onChange={(e) =>
-                setFormData((prev) => ({ ...prev, threatDescription: e.target.value }))
+                setFormData((prev) => ({ ...prev, existingControls: e.target.value }))
+              }
+              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              placeholder="Comma-separated list"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm text-surface-600 mb-2">Vulnerabilities</label>
+          <Textarea
+            value={formData.vulnerabilities}
+            onChange={(e) => setFormData((prev) => ({ ...prev, vulnerabilities: e.target.value }))}
+            rows={2}
+            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            placeholder="Describe any vulnerabilities..."
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm text-surface-600 mb-2">Likelihood Score *</label>
+            <SelectNative
+              value={formData.likelihoodScore}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, likelihoodScore: e.target.value }))
+              }
+              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            >
+              <option value="rare">Rare</option>
+              <option value="unlikely">Unlikely</option>
+              <option value="possible">Possible</option>
+              <option value="likely">Likely</option>
+              <option value="almost_certain">Almost Certain</option>
+            </SelectNative>
+          </div>
+          <div>
+            <label className="block text-sm text-surface-600 mb-2">Impact Score *</label>
+            <SelectNative
+              value={formData.impactScore}
+              onChange={(e) => setFormData((prev) => ({ ...prev, impactScore: e.target.value }))}
+              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            >
+              <option value="negligible">Negligible</option>
+              <option value="minor">Minor</option>
+              <option value="moderate">Moderate</option>
+              <option value="major">Major</option>
+              <option value="severe">Severe</option>
+            </SelectNative>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm text-surface-600 mb-2">Likelihood Rationale *</label>
+            <Textarea
+              value={formData.likelihoodRationale}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, likelihoodRationale: e.target.value }))
               }
               required
-              rows={3}
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-              placeholder="Describe the threat scenario..."
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm text-surface-600 mb-2">Affected Assets</label>
-              <Input
-                type="text"
-                value={formData.affectedAssets}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, affectedAssets: e.target.value }))
-                }
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-                placeholder="Comma-separated list"
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-surface-600 mb-2">Existing Controls</label>
-              <Input
-                type="text"
-                value={formData.existingControls}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, existingControls: e.target.value }))
-                }
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-                placeholder="Comma-separated list"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm text-surface-600 mb-2">Vulnerabilities</label>
-            <Textarea
-              value={formData.vulnerabilities}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, vulnerabilities: e.target.value }))
-              }
               rows={2}
               className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-              placeholder="Describe any vulnerabilities..."
+              placeholder="Why this likelihood score?"
             />
           </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm text-surface-600 mb-2">Likelihood Score *</label>
-              <SelectNative
-                value={formData.likelihoodScore}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, likelihoodScore: e.target.value }))
-                }
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-              >
-                <option value="rare">Rare</option>
-                <option value="unlikely">Unlikely</option>
-                <option value="possible">Possible</option>
-                <option value="likely">Likely</option>
-                <option value="almost_certain">Almost Certain</option>
-              </SelectNative>
-            </div>
-            <div>
-              <label className="block text-sm text-surface-600 mb-2">Impact Score *</label>
-              <SelectNative
-                value={formData.impactScore}
-                onChange={(e) => setFormData((prev) => ({ ...prev, impactScore: e.target.value }))}
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-              >
-                <option value="negligible">Negligible</option>
-                <option value="minor">Minor</option>
-                <option value="moderate">Moderate</option>
-                <option value="major">Major</option>
-                <option value="severe">Severe</option>
-              </SelectNative>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm text-surface-600 mb-2">Likelihood Rationale *</label>
-              <Textarea
-                value={formData.likelihoodRationale}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, likelihoodRationale: e.target.value }))
-                }
-                required
-                rows={2}
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-                placeholder="Why this likelihood score?"
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-surface-600 mb-2">Impact Rationale *</label>
-              <Textarea
-                value={formData.impactRationale}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, impactRationale: e.target.value }))
-                }
-                required
-                rows={2}
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-                placeholder="Why this impact score?"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <UserPicker
-              label="Recommended Risk Owner"
-              selectedUserId={formData.recommendedOwnerId}
-              onSelect={(id) => setFormData((prev) => ({ ...prev, recommendedOwnerId: id }))}
-              required={true}
-              description="Who should own this risk going forward"
-            />
-            <div>
-              <label className="block text-sm text-surface-600 mb-2">
-                Treatment Recommendation
-              </label>
-              <SelectNative
-                value={formData.treatmentRecommendation}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, treatmentRecommendation: e.target.value }))
-                }
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-              >
-                <option value="">Select...</option>
-                <option value="mitigate">Mitigate</option>
-                <option value="accept">Accept</option>
-                <option value="transfer">Transfer</option>
-                <option value="avoid">Avoid</option>
-              </SelectNative>
-            </div>
-          </div>
-
           <div>
-            <label className="block text-sm text-surface-600 mb-2">Assessment Notes</label>
+            <label className="block text-sm text-surface-600 mb-2">Impact Rationale *</label>
             <Textarea
-              value={formData.assessmentNotes}
+              value={formData.impactRationale}
               onChange={(e) =>
-                setFormData((prev) => ({ ...prev, assessmentNotes: e.target.value }))
+                setFormData((prev) => ({ ...prev, impactRationale: e.target.value }))
               }
+              required
               rows={2}
               className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-              placeholder="Any additional notes..."
+              placeholder="Why this impact score?"
             />
           </div>
         </div>
-        <div className="p-4 border-t border-surface-700 flex justify-end gap-3 sticky bottom-0 bg-surface-800">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => mutation.mutate()}
-            disabled={
-              mutation.isPending ||
-              !formData.threatDescription ||
-              !formData.likelihoodRationale ||
-              !formData.impactRationale ||
-              !formData.recommendedOwnerId
-            }
-            className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 disabled:opacity-50"
-          >
-            {mutation.isPending ? 'Submitting...' : 'Submit Assessment'}
-          </button>
+
+        <div className="grid grid-cols-2 gap-4">
+          <UserPicker
+            label="Recommended Risk Owner"
+            selectedUserId={formData.recommendedOwnerId}
+            onSelect={(id) => setFormData((prev) => ({ ...prev, recommendedOwnerId: id }))}
+            required={true}
+            description="Who should own this risk going forward"
+          />
+          <div>
+            <label className="block text-sm text-surface-600 mb-2">Treatment Recommendation</label>
+            <SelectNative
+              value={formData.treatmentRecommendation}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, treatmentRecommendation: e.target.value }))
+              }
+              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            >
+              <option value="">Select...</option>
+              <option value="mitigate">Mitigate</option>
+              <option value="accept">Accept</option>
+              <option value="transfer">Transfer</option>
+              <option value="avoid">Avoid</option>
+            </SelectNative>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm text-surface-600 mb-2">Assessment Notes</label>
+          <Textarea
+            value={formData.assessmentNotes}
+            onChange={(e) => setFormData((prev) => ({ ...prev, assessmentNotes: e.target.value }))}
+            rows={2}
+            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            placeholder="Any additional notes..."
+          />
         </div>
       </div>
-    </div>
+      <div className="p-4 border-t border-surface-700 flex justify-end gap-3 sticky bottom-0 bg-surface-800">
+        <button onClick={onClose} className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg">
+          Cancel
+        </button>
+        <button
+          onClick={() => mutation.mutate()}
+          disabled={
+            mutation.isPending ||
+            !formData.threatDescription ||
+            !formData.likelihoodRationale ||
+            !formData.impactRationale ||
+            !formData.recommendedOwnerId
+          }
+          className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 disabled:opacity-50"
+        >
+          {mutation.isPending ? 'Submitting...' : 'Submit Assessment'}
+        </button>
+      </div>
+    </Dialog>
   );
 }
 
@@ -1250,61 +1228,56 @@ function ReviewAssessmentModal({
   });
 
   return (
-    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-      <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-md">
-        <div className="p-4 border-b border-surface-700 flex justify-between items-center">
-          <h3 className="text-lg font-medium text-white">
-            {approve ? 'Approve Assessment' : 'Request Revision'}
-          </h3>
-          <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
-            <X className="w-5 h-5 text-surface-600" />
-          </button>
-        </div>
-        <div className="p-4 space-y-4">
-          {approve ? (
-            <div>
-              <label className="block text-sm text-surface-600 mb-2">Notes (optional)</label>
-              <Textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={3}
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-                placeholder="Add any notes..."
-              />
-            </div>
-          ) : (
-            <div>
-              <label className="block text-sm text-surface-600 mb-2">Reason for Revision *</label>
-              <Textarea
-                value={declinedReason}
-                onChange={(e) => setDeclinedReason(e.target.value)}
-                required
-                rows={3}
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-                placeholder="Explain what needs to be revised..."
-              />
-            </div>
-          )}
-        </div>
-        <div className="p-4 border-t border-surface-700 flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => mutation.mutate()}
-            disabled={mutation.isPending || (!approve && !declinedReason)}
-            className={`px-4 py-2 text-white rounded-lg disabled:opacity-50 ${
-              approve ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-amber-500 hover:bg-amber-600'
-            }`}
-          >
-            {mutation.isPending ? 'Processing...' : approve ? 'Approve' : 'Request Revision'}
-          </button>
-        </div>
+    <Dialog open onClose={onClose}>
+      <div className="p-4 border-b border-surface-700 flex justify-between items-center">
+        <h3 className="text-lg font-medium text-white">
+          {approve ? 'Approve Assessment' : 'Request Revision'}
+        </h3>
+        <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
+          <X className="w-5 h-5 text-surface-600" />
+        </button>
       </div>
-    </div>
+      <div className="p-4 space-y-4">
+        {approve ? (
+          <div>
+            <label className="block text-sm text-surface-600 mb-2">Notes (optional)</label>
+            <Textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={3}
+              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              placeholder="Add any notes..."
+            />
+          </div>
+        ) : (
+          <div>
+            <label className="block text-sm text-surface-600 mb-2">Reason for Revision *</label>
+            <Textarea
+              value={declinedReason}
+              onChange={(e) => setDeclinedReason(e.target.value)}
+              required
+              rows={3}
+              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              placeholder="Explain what needs to be revised..."
+            />
+          </div>
+        )}
+      </div>
+      <div className="p-4 border-t border-surface-700 flex justify-end gap-3">
+        <button onClick={onClose} className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg">
+          Cancel
+        </button>
+        <button
+          onClick={() => mutation.mutate()}
+          disabled={mutation.isPending || (!approve && !declinedReason)}
+          className={`px-4 py-2 text-white rounded-lg disabled:opacity-50 ${
+            approve ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-amber-500 hover:bg-amber-600'
+          }`}
+        >
+          {mutation.isPending ? 'Processing...' : approve ? 'Approve' : 'Request Revision'}
+        </button>
+      </div>
+    </Dialog>
   );
 }
 
@@ -1339,84 +1312,77 @@ function CompleteRevisionModal({
   });
 
   return (
-    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-      <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="p-4 border-b border-surface-700 flex justify-between items-center">
-          <h3 className="text-lg font-medium text-white">Complete Revision</h3>
-          <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
-            <X className="w-5 h-5 text-surface-600" />
-          </button>
-        </div>
-        <div className="p-4 space-y-4">
-          <p className="text-surface-600 text-sm">
-            Update the fields that need revision. Leave blank to keep existing values.
-          </p>
+    <Dialog open onClose={onClose}>
+      <div className="p-4 border-b border-surface-700 flex justify-between items-center">
+        <h3 className="text-lg font-medium text-white">Complete Revision</h3>
+        <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
+          <X className="w-5 h-5 text-surface-600" />
+        </button>
+      </div>
+      <div className="p-4 space-y-4">
+        <p className="text-surface-600 text-sm">
+          Update the fields that need revision. Leave blank to keep existing values.
+        </p>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm text-surface-600 mb-2">Likelihood Score</label>
-              <SelectNative
-                value={formData.likelihoodScore}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, likelihoodScore: e.target.value }))
-                }
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-              >
-                <option value="">Keep existing</option>
-                <option value="rare">Rare</option>
-                <option value="unlikely">Unlikely</option>
-                <option value="possible">Possible</option>
-                <option value="likely">Likely</option>
-                <option value="almost_certain">Almost Certain</option>
-              </SelectNative>
-            </div>
-            <div>
-              <label className="block text-sm text-surface-600 mb-2">Impact Score</label>
-              <SelectNative
-                value={formData.impactScore}
-                onChange={(e) => setFormData((prev) => ({ ...prev, impactScore: e.target.value }))}
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-              >
-                <option value="">Keep existing</option>
-                <option value="negligible">Negligible</option>
-                <option value="minor">Minor</option>
-                <option value="moderate">Moderate</option>
-                <option value="major">Major</option>
-                <option value="severe">Severe</option>
-              </SelectNative>
-            </div>
-          </div>
-
+        <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm text-surface-600 mb-2">Assessment Notes</label>
-            <Textarea
-              value={formData.assessmentNotes}
+            <label className="block text-sm text-surface-600 mb-2">Likelihood Score</label>
+            <SelectNative
+              value={formData.likelihoodScore}
               onChange={(e) =>
-                setFormData((prev) => ({ ...prev, assessmentNotes: e.target.value }))
+                setFormData((prev) => ({ ...prev, likelihoodScore: e.target.value }))
               }
-              rows={3}
               className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-              placeholder="Updated notes..."
-            />
+            >
+              <option value="">Keep existing</option>
+              <option value="rare">Rare</option>
+              <option value="unlikely">Unlikely</option>
+              <option value="possible">Possible</option>
+              <option value="likely">Likely</option>
+              <option value="almost_certain">Almost Certain</option>
+            </SelectNative>
+          </div>
+          <div>
+            <label className="block text-sm text-surface-600 mb-2">Impact Score</label>
+            <SelectNative
+              value={formData.impactScore}
+              onChange={(e) => setFormData((prev) => ({ ...prev, impactScore: e.target.value }))}
+              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            >
+              <option value="">Keep existing</option>
+              <option value="negligible">Negligible</option>
+              <option value="minor">Minor</option>
+              <option value="moderate">Moderate</option>
+              <option value="major">Major</option>
+              <option value="severe">Severe</option>
+            </SelectNative>
           </div>
         </div>
-        <div className="p-4 border-t border-surface-700 flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => mutation.mutate()}
-            disabled={mutation.isPending}
-            className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 disabled:opacity-50"
-          >
-            {mutation.isPending ? 'Submitting...' : 'Complete Revision'}
-          </button>
+
+        <div>
+          <label className="block text-sm text-surface-600 mb-2">Assessment Notes</label>
+          <Textarea
+            value={formData.assessmentNotes}
+            onChange={(e) => setFormData((prev) => ({ ...prev, assessmentNotes: e.target.value }))}
+            rows={3}
+            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            placeholder="Updated notes..."
+          />
         </div>
       </div>
-    </div>
+      <div className="p-4 border-t border-surface-700 flex justify-end gap-3">
+        <button onClick={onClose} className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg">
+          Cancel
+        </button>
+        <button
+          onClick={() => mutation.mutate()}
+          disabled={mutation.isPending}
+          className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 disabled:opacity-50"
+        >
+          {mutation.isPending ? 'Submitting...' : 'Complete Revision'}
+        </button>
+      </div>
+    </Dialog>
   );
 }
 
@@ -1467,182 +1433,171 @@ function TreatmentDecisionModal({
   });
 
   return (
-    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-      <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="p-4 border-b border-surface-700 flex justify-between items-center">
-          <h3 className="text-lg font-medium text-white">Treatment Decision</h3>
-          <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
-            <X className="w-5 h-5 text-surface-600" />
-          </button>
+    <Dialog open onClose={onClose}>
+      <div className="p-4 border-b border-surface-700 flex justify-between items-center">
+        <h3 className="text-lg font-medium text-white">Treatment Decision</h3>
+        <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
+          <X className="w-5 h-5 text-surface-600" />
+        </button>
+      </div>
+      <div className="p-4 space-y-4">
+        <div>
+          <label className="block text-sm text-surface-600 mb-2">Treatment Strategy *</label>
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              { value: 'mitigate', label: 'Mitigate', desc: 'Implement controls' },
+              { value: 'accept', label: 'Accept', desc: 'Accept the risk' },
+              { value: 'transfer', label: 'Transfer', desc: 'Insurance/3rd party' },
+              { value: 'avoid', label: 'Avoid', desc: 'Eliminate risk' },
+            ].map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setFormData((prev) => ({ ...prev, decision: opt.value as any }))}
+                className={`p-3 rounded-lg text-left ${
+                  formData.decision === opt.value
+                    ? 'bg-brand-500/20 border border-brand-500'
+                    : 'bg-surface-700 border border-surface-600'
+                }`}
+              >
+                <p className="text-white font-medium">{opt.label}</p>
+                <p className="text-surface-600 text-xs">{opt.desc}</p>
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="p-4 space-y-4">
-          <div>
-            <label className="block text-sm text-surface-600 mb-2">Treatment Strategy *</label>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { value: 'mitigate', label: 'Mitigate', desc: 'Implement controls' },
-                { value: 'accept', label: 'Accept', desc: 'Accept the risk' },
-                { value: 'transfer', label: 'Transfer', desc: 'Insurance/3rd party' },
-                { value: 'avoid', label: 'Avoid', desc: 'Eliminate risk' },
-              ].map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setFormData((prev) => ({ ...prev, decision: opt.value as any }))}
-                  className={`p-3 rounded-lg text-left ${
-                    formData.decision === opt.value
-                      ? 'bg-brand-500/20 border border-brand-500'
-                      : 'bg-surface-700 border border-surface-600'
-                  }`}
-                >
-                  <p className="text-white font-medium">{opt.label}</p>
-                  <p className="text-surface-600 text-xs">{opt.desc}</p>
-                </button>
-              ))}
-            </div>
+
+        {needsExecutiveApproval && (
+          <div className="p-3 bg-amber-500/20 rounded-lg border border-amber-500/30">
+            <p className="text-amber-600 text-sm">
+              ⚠️ This decision requires Executive Approval due to the risk level.
+            </p>
           </div>
+        )}
 
-          {needsExecutiveApproval && (
-            <div className="p-3 bg-amber-500/20 rounded-lg border border-amber-500/30">
-              <p className="text-amber-600 text-sm">
-                ⚠️ This decision requires Executive Approval due to the risk level.
-              </p>
-            </div>
-          )}
+        <div>
+          <label className="block text-sm text-surface-600 mb-2">Justification *</label>
+          <Textarea
+            value={formData.justification}
+            onChange={(e) => setFormData((prev) => ({ ...prev, justification: e.target.value }))}
+            required
+            rows={3}
+            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            placeholder="Explain why this treatment strategy..."
+          />
+        </div>
 
-          <div>
-            <label className="block text-sm text-surface-600 mb-2">Justification *</label>
-            <Textarea
-              value={formData.justification}
-              onChange={(e) => setFormData((prev) => ({ ...prev, justification: e.target.value }))}
-              required
-              rows={3}
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-              placeholder="Explain why this treatment strategy..."
-            />
-          </div>
-
-          {/* Mitigation fields */}
-          {formData.decision === 'mitigate' && (
-            <>
-              <div>
-                <label className="block text-sm text-surface-600 mb-2">
-                  Mitigation Description
-                </label>
-                <Textarea
-                  value={formData.mitigationDescription}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, mitigationDescription: e.target.value }))
-                  }
-                  rows={2}
-                  className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-                  placeholder="Describe the mitigation plan..."
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-surface-600 mb-2">Target Date</label>
-                <Input
-                  type="date"
-                  value={formData.mitigationTargetDate}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, mitigationTargetDate: e.target.value }))
-                  }
-                  className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-                />
-              </div>
-            </>
-          )}
-
-          {/* Transfer fields */}
-          {formData.decision === 'transfer' && (
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm text-surface-600 mb-2">Transfer To</label>
-                <Input
-                  type="text"
-                  value={formData.transferTo}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, transferTo: e.target.value }))}
-                  className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-                  placeholder="Insurance provider..."
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-surface-600 mb-2">Cost ($)</label>
-                <Input
-                  type="number"
-                  value={formData.transferCost}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, transferCost: e.target.value }))
-                  }
-                  className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-                  placeholder="0"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Avoid fields */}
-          {formData.decision === 'avoid' && (
+        {/* Mitigation fields */}
+        {formData.decision === 'mitigate' && (
+          <>
             <div>
-              <label className="block text-sm text-surface-600 mb-2">Avoidance Strategy</label>
+              <label className="block text-sm text-surface-600 mb-2">Mitigation Description</label>
               <Textarea
-                value={formData.avoidStrategy}
+                value={formData.mitigationDescription}
                 onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, avoidStrategy: e.target.value }))
+                  setFormData((prev) => ({ ...prev, mitigationDescription: e.target.value }))
                 }
                 rows={2}
                 className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-                placeholder="How will the risk be avoided..."
+                placeholder="Describe the mitigation plan..."
               />
             </div>
-          )}
+            <div>
+              <label className="block text-sm text-surface-600 mb-2">Target Date</label>
+              <Input
+                type="date"
+                value={formData.mitigationTargetDate}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, mitigationTargetDate: e.target.value }))
+                }
+                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              />
+            </div>
+          </>
+        )}
 
-          {/* Accept fields */}
-          {formData.decision === 'accept' && (
-            <>
-              <div>
-                <label className="block text-sm text-surface-600 mb-2">Acceptance Rationale</label>
-                <Textarea
-                  value={formData.acceptanceRationale}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, acceptanceRationale: e.target.value }))
-                  }
-                  rows={2}
-                  className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-                  placeholder="Why is accepting appropriate..."
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-surface-600 mb-2">Acceptance Expires</label>
-                <Input
-                  type="date"
-                  value={formData.acceptanceExpiresAt}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, acceptanceExpiresAt: e.target.value }))
-                  }
-                  className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-                />
-              </div>
-            </>
-          )}
-        </div>
-        <div className="p-4 border-t border-surface-700 flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => mutation.mutate()}
-            disabled={mutation.isPending || !formData.justification}
-            className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 disabled:opacity-50"
-          >
-            {mutation.isPending ? 'Submitting...' : 'Submit Decision'}
-          </button>
-        </div>
+        {/* Transfer fields */}
+        {formData.decision === 'transfer' && (
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm text-surface-600 mb-2">Transfer To</label>
+              <Input
+                type="text"
+                value={formData.transferTo}
+                onChange={(e) => setFormData((prev) => ({ ...prev, transferTo: e.target.value }))}
+                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+                placeholder="Insurance provider..."
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-surface-600 mb-2">Cost ($)</label>
+              <Input
+                type="number"
+                value={formData.transferCost}
+                onChange={(e) => setFormData((prev) => ({ ...prev, transferCost: e.target.value }))}
+                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+                placeholder="0"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Avoid fields */}
+        {formData.decision === 'avoid' && (
+          <div>
+            <label className="block text-sm text-surface-600 mb-2">Avoidance Strategy</label>
+            <Textarea
+              value={formData.avoidStrategy}
+              onChange={(e) => setFormData((prev) => ({ ...prev, avoidStrategy: e.target.value }))}
+              rows={2}
+              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              placeholder="How will the risk be avoided..."
+            />
+          </div>
+        )}
+
+        {/* Accept fields */}
+        {formData.decision === 'accept' && (
+          <>
+            <div>
+              <label className="block text-sm text-surface-600 mb-2">Acceptance Rationale</label>
+              <Textarea
+                value={formData.acceptanceRationale}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, acceptanceRationale: e.target.value }))
+                }
+                rows={2}
+                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+                placeholder="Why is accepting appropriate..."
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-surface-600 mb-2">Acceptance Expires</label>
+              <Input
+                type="date"
+                value={formData.acceptanceExpiresAt}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, acceptanceExpiresAt: e.target.value }))
+                }
+                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              />
+            </div>
+          </>
+        )}
       </div>
-    </div>
+      <div className="p-4 border-t border-surface-700 flex justify-end gap-3">
+        <button onClick={onClose} className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg">
+          Cancel
+        </button>
+        <button
+          onClick={() => mutation.mutate()}
+          disabled={mutation.isPending || !formData.justification}
+          className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 disabled:opacity-50"
+        >
+          {mutation.isPending ? 'Submitting...' : 'Submit Decision'}
+        </button>
+      </div>
+    </Dialog>
   );
 }
 
@@ -1668,43 +1623,38 @@ function AssignApproverModal({
   });
 
   return (
-    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-      <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-md">
-        <div className="p-4 border-b border-surface-700 flex justify-between items-center">
-          <h3 className="text-lg font-medium text-white">Assign Executive Approver</h3>
-          <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
-            <X className="w-5 h-5 text-surface-600" />
-          </button>
-        </div>
-        <div className="p-4 space-y-4">
-          <p className="text-surface-600 text-sm">
-            Identify the department lead or executive who should approve this treatment decision.
-          </p>
-          <UserPicker
-            label="Executive Approver"
-            selectedUserId={executiveApproverId}
-            onSelect={setExecutiveApproverId}
-            required={true}
-            description="The executive who will approve this treatment decision"
-          />
-        </div>
-        <div className="p-4 border-t border-surface-700 flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => mutation.mutate()}
-            disabled={mutation.isPending || !executiveApproverId}
-            className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 disabled:opacity-50"
-          >
-            {mutation.isPending ? 'Assigning...' : 'Assign Approver'}
-          </button>
-        </div>
+    <Dialog open onClose={onClose}>
+      <div className="p-4 border-b border-surface-700 flex justify-between items-center">
+        <h3 className="text-lg font-medium text-white">Assign Executive Approver</h3>
+        <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
+          <X className="w-5 h-5 text-surface-600" />
+        </button>
       </div>
-    </div>
+      <div className="p-4 space-y-4">
+        <p className="text-surface-600 text-sm">
+          Identify the department lead or executive who should approve this treatment decision.
+        </p>
+        <UserPicker
+          label="Executive Approver"
+          selectedUserId={executiveApproverId}
+          onSelect={setExecutiveApproverId}
+          required={true}
+          description="The executive who will approve this treatment decision"
+        />
+      </div>
+      <div className="p-4 border-t border-surface-700 flex justify-end gap-3">
+        <button onClick={onClose} className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg">
+          Cancel
+        </button>
+        <button
+          onClick={() => mutation.mutate()}
+          disabled={mutation.isPending || !executiveApproverId}
+          className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 disabled:opacity-50"
+        >
+          {mutation.isPending ? 'Assigning...' : 'Assign Approver'}
+        </button>
+      </div>
+    </Dialog>
   );
 }
 
@@ -1737,61 +1687,56 @@ function ExecutiveApprovalModal({
   });
 
   return (
-    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-      <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-md">
-        <div className="p-4 border-b border-surface-700 flex justify-between items-center">
-          <h3 className="text-lg font-medium text-white">
-            {approve ? 'Approve Treatment' : 'Deny Treatment'}
-          </h3>
-          <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
-            <X className="w-5 h-5 text-surface-600" />
-          </button>
-        </div>
-        <div className="p-4 space-y-4">
-          {approve ? (
-            <div>
-              <label className="block text-sm text-surface-600 mb-2">Notes (optional)</label>
-              <Textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={3}
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-                placeholder="Add any notes..."
-              />
-            </div>
-          ) : (
-            <div>
-              <label className="block text-sm text-surface-600 mb-2">Reason for Denial *</label>
-              <Textarea
-                value={deniedReason}
-                onChange={(e) => setDeniedReason(e.target.value)}
-                required
-                rows={3}
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-                placeholder="Explain why this decision is denied..."
-              />
-            </div>
-          )}
-        </div>
-        <div className="p-4 border-t border-surface-700 flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => mutation.mutate()}
-            disabled={mutation.isPending || (!approve && !deniedReason)}
-            className={`px-4 py-2 text-white rounded-lg disabled:opacity-50 ${
-              approve ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-red-500 hover:bg-red-600'
-            }`}
-          >
-            {mutation.isPending ? 'Processing...' : approve ? 'Approve' : 'Deny'}
-          </button>
-        </div>
+    <Dialog open onClose={onClose}>
+      <div className="p-4 border-b border-surface-700 flex justify-between items-center">
+        <h3 className="text-lg font-medium text-white">
+          {approve ? 'Approve Treatment' : 'Deny Treatment'}
+        </h3>
+        <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
+          <X className="w-5 h-5 text-surface-600" />
+        </button>
       </div>
-    </div>
+      <div className="p-4 space-y-4">
+        {approve ? (
+          <div>
+            <label className="block text-sm text-surface-600 mb-2">Notes (optional)</label>
+            <Textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={3}
+              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              placeholder="Add any notes..."
+            />
+          </div>
+        ) : (
+          <div>
+            <label className="block text-sm text-surface-600 mb-2">Reason for Denial *</label>
+            <Textarea
+              value={deniedReason}
+              onChange={(e) => setDeniedReason(e.target.value)}
+              required
+              rows={3}
+              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              placeholder="Explain why this decision is denied..."
+            />
+          </div>
+        )}
+      </div>
+      <div className="p-4 border-t border-surface-700 flex justify-end gap-3">
+        <button onClick={onClose} className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg">
+          Cancel
+        </button>
+        <button
+          onClick={() => mutation.mutate()}
+          disabled={mutation.isPending || (!approve && !deniedReason)}
+          className={`px-4 py-2 text-white rounded-lg disabled:opacity-50 ${
+            approve ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-red-500 hover:bg-red-600'
+          }`}
+        >
+          {mutation.isPending ? 'Processing...' : approve ? 'Approve' : 'Deny'}
+        </button>
+      </div>
+    </Dialog>
   );
 }
 
@@ -1837,159 +1782,151 @@ function MitigationUpdateModal({
   });
 
   return (
-    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-      <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="p-4 border-b border-surface-700 flex justify-between items-center">
-          <h3 className="text-lg font-medium text-white">Update Mitigation Status</h3>
-          <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
-            <X className="w-5 h-5 text-surface-600" />
-          </button>
+    <Dialog open onClose={onClose}>
+      <div className="p-4 border-b border-surface-700 flex justify-between items-center">
+        <h3 className="text-lg font-medium text-white">Update Mitigation Status</h3>
+        <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
+          <X className="w-5 h-5 text-surface-600" />
+        </button>
+      </div>
+      <div className="p-4 space-y-4">
+        <div>
+          <label className="block text-sm text-surface-600 mb-2">Status *</label>
+          <SelectNative
+            value={formData.status}
+            onChange={(e) => setFormData((prev) => ({ ...prev, status: e.target.value }))}
+            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+          >
+            <option value="on_track">On Track</option>
+            <option value="delayed">Delayed</option>
+            <option value="cancelled">Cancelled</option>
+            <option value="done">Done</option>
+          </SelectNative>
         </div>
-        <div className="p-4 space-y-4">
-          <div>
-            <label className="block text-sm text-surface-600 mb-2">Status *</label>
-            <SelectNative
-              value={formData.status}
-              onChange={(e) => setFormData((prev) => ({ ...prev, status: e.target.value }))}
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-            >
-              <option value="on_track">On Track</option>
-              <option value="delayed">Delayed</option>
-              <option value="cancelled">Cancelled</option>
-              <option value="done">Done</option>
-            </SelectNative>
-          </div>
 
-          <div>
-            <label className="block text-sm text-surface-600 mb-2">
-              Progress: {formData.progress}%
-            </label>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={formData.progress}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, progress: parseInt(e.target.value) }))
-              }
-              className="w-full"
-            />
-          </div>
+        <div>
+          <label className="block text-sm text-surface-600 mb-2">
+            Progress: {formData.progress}%
+          </label>
+          <input
+            type="range"
+            min="0"
+            max="100"
+            value={formData.progress}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, progress: parseInt(e.target.value) }))
+            }
+            className="w-full"
+          />
+        </div>
 
-          <div>
-            <label className="block text-sm text-surface-600 mb-2">Notes</label>
-            <Textarea
-              value={formData.notes}
-              onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
-              rows={2}
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-              placeholder="Update notes..."
-            />
-          </div>
+        <div>
+          <label className="block text-sm text-surface-600 mb-2">Notes</label>
+          <Textarea
+            value={formData.notes}
+            onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
+            rows={2}
+            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            placeholder="Update notes..."
+          />
+        </div>
 
-          {formData.status === 'delayed' && (
-            <>
-              <div>
-                <label className="block text-sm text-surface-600 mb-2">New Target Date</label>
-                <Input
-                  type="date"
-                  value={formData.newTargetDate}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, newTargetDate: e.target.value }))
-                  }
-                  className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-surface-600 mb-2">Delay Reason</label>
-                <Textarea
-                  value={formData.delayReason}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, delayReason: e.target.value }))
-                  }
-                  rows={2}
-                  className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-                  placeholder="Why is it delayed..."
-                />
-              </div>
-            </>
-          )}
-
-          {formData.status === 'cancelled' && (
+        {formData.status === 'delayed' && (
+          <>
             <div>
-              <label className="block text-sm text-surface-600 mb-2">Cancellation Reason *</label>
-              <Textarea
-                value={formData.cancellationReason}
+              <label className="block text-sm text-surface-600 mb-2">New Target Date</label>
+              <Input
+                type="date"
+                value={formData.newTargetDate}
                 onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, cancellationReason: e.target.value }))
+                  setFormData((prev) => ({ ...prev, newTargetDate: e.target.value }))
                 }
-                required
-                rows={2}
                 className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-                placeholder="Why is mitigation cancelled..."
               />
             </div>
-          )}
-
-          {formData.status === 'done' && (
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm text-surface-600 mb-2">Residual Likelihood</label>
-                <SelectNative
-                  value={formData.residualLikelihood}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, residualLikelihood: e.target.value }))
-                  }
-                  className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-                >
-                  <option value="">Select...</option>
-                  <option value="rare">Rare</option>
-                  <option value="unlikely">Unlikely</option>
-                  <option value="possible">Possible</option>
-                  <option value="likely">Likely</option>
-                  <option value="almost_certain">Almost Certain</option>
-                </SelectNative>
-              </div>
-              <div>
-                <label className="block text-sm text-surface-600 mb-2">Residual Impact</label>
-                <SelectNative
-                  value={formData.residualImpact}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, residualImpact: e.target.value }))
-                  }
-                  className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-                >
-                  <option value="">Select...</option>
-                  <option value="negligible">Negligible</option>
-                  <option value="minor">Minor</option>
-                  <option value="moderate">Moderate</option>
-                  <option value="major">Major</option>
-                  <option value="severe">Severe</option>
-                </SelectNative>
-              </div>
+            <div>
+              <label className="block text-sm text-surface-600 mb-2">Delay Reason</label>
+              <Textarea
+                value={formData.delayReason}
+                onChange={(e) => setFormData((prev) => ({ ...prev, delayReason: e.target.value }))}
+                rows={2}
+                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+                placeholder="Why is it delayed..."
+              />
             </div>
-          )}
-        </div>
-        <div className="p-4 border-t border-surface-700 flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => mutation.mutate()}
-            disabled={
-              mutation.isPending ||
-              (formData.status === 'cancelled' && !formData.cancellationReason)
-            }
-            className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 disabled:opacity-50"
-          >
-            {mutation.isPending ? 'Updating...' : 'Update Status'}
-          </button>
-        </div>
+          </>
+        )}
+
+        {formData.status === 'cancelled' && (
+          <div>
+            <label className="block text-sm text-surface-600 mb-2">Cancellation Reason *</label>
+            <Textarea
+              value={formData.cancellationReason}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, cancellationReason: e.target.value }))
+              }
+              required
+              rows={2}
+              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              placeholder="Why is mitigation cancelled..."
+            />
+          </div>
+        )}
+
+        {formData.status === 'done' && (
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm text-surface-600 mb-2">Residual Likelihood</label>
+              <SelectNative
+                value={formData.residualLikelihood}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, residualLikelihood: e.target.value }))
+                }
+                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              >
+                <option value="">Select...</option>
+                <option value="rare">Rare</option>
+                <option value="unlikely">Unlikely</option>
+                <option value="possible">Possible</option>
+                <option value="likely">Likely</option>
+                <option value="almost_certain">Almost Certain</option>
+              </SelectNative>
+            </div>
+            <div>
+              <label className="block text-sm text-surface-600 mb-2">Residual Impact</label>
+              <SelectNative
+                value={formData.residualImpact}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, residualImpact: e.target.value }))
+                }
+                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              >
+                <option value="">Select...</option>
+                <option value="negligible">Negligible</option>
+                <option value="minor">Minor</option>
+                <option value="moderate">Moderate</option>
+                <option value="major">Major</option>
+                <option value="severe">Severe</option>
+              </SelectNative>
+            </div>
+          </div>
+        )}
       </div>
-    </div>
+      <div className="p-4 border-t border-surface-700 flex justify-end gap-3">
+        <button onClick={onClose} className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg">
+          Cancel
+        </button>
+        <button
+          onClick={() => mutation.mutate()}
+          disabled={
+            mutation.isPending || (formData.status === 'cancelled' && !formData.cancellationReason)
+          }
+          className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 disabled:opacity-50"
+        >
+          {mutation.isPending ? 'Updating...' : 'Update Status'}
+        </button>
+      </div>
+    </Dialog>
   );
 }
 
@@ -2050,33 +1987,62 @@ function AssignRoleModal({
   });
 
   return (
-    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-      <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-md">
-        <div className="p-4 border-b border-surface-700 flex justify-between items-center">
-          <h3 className="text-lg font-medium text-white">Assign {roleLabel}</h3>
-          <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
-            <X className="w-5 h-5 text-surface-600" />
-          </button>
+    <Dialog open onClose={onClose}>
+      <div className="p-4 border-b border-surface-700 flex justify-between items-center">
+        <h3 className="text-lg font-medium text-white">Assign {roleLabel}</h3>
+        <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
+          <X className="w-5 h-5 text-surface-600" />
+        </button>
+      </div>
+      <div className="p-4 space-y-4">
+        {/* Search Input */}
+        <div>
+          <label className="block text-sm text-surface-600 mb-2">Search Users</label>
+          <Input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by name or email..."
+            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+          />
         </div>
-        <div className="p-4 space-y-4">
-          {/* Search Input */}
-          <div>
-            <label className="block text-sm text-surface-600 mb-2">Search Users</label>
-            <Input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by name or email..."
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-            />
-          </div>
 
-          {/* User List */}
-          <div className="max-h-60 overflow-y-auto space-y-2">
-            {/* Option to unassign */}
+        {/* User List */}
+        <div className="max-h-60 overflow-y-auto space-y-2">
+          {/* Option to unassign */}
+          <label
+            className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer ${
+              userId === ''
+                ? 'bg-brand-500/20 border border-brand-500'
+                : 'bg-surface-700 hover:bg-surface-600'
+            }`}
+          >
+            <input
+              type="radio"
+              name="user"
+              value=""
+              checked={userId === ''}
+              onChange={() => setUserId('')}
+              className="sr-only"
+            />
+            <div className="w-8 h-8 rounded-full bg-surface-600 flex items-center justify-center">
+              <User className="w-4 h-4 text-surface-600" />
+            </div>
+            <div>
+              <p className="text-white">Unassigned</p>
+              <p className="text-sm text-surface-600">Remove assignment</p>
+            </div>
+          </label>
+
+          {filteredUsers.length === 0 && search && (
+            <p className="text-center text-surface-500 py-4">No users found</p>
+          )}
+
+          {filteredUsers.map((user: any) => (
             <label
+              key={user.id}
               className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer ${
-                userId === ''
+                userId === user.id
                   ? 'bg-brand-500/20 border border-brand-500'
                   : 'bg-surface-700 hover:bg-surface-600'
               }`}
@@ -2084,88 +2050,54 @@ function AssignRoleModal({
               <input
                 type="radio"
                 name="user"
-                value=""
-                checked={userId === ''}
-                onChange={() => setUserId('')}
+                value={user.id}
+                checked={userId === user.id}
+                onChange={(e) => setUserId(e.target.value)}
                 className="sr-only"
               />
-              <div className="w-8 h-8 rounded-full bg-surface-600 flex items-center justify-center">
-                <User className="w-4 h-4 text-surface-600" />
+              <div className="w-8 h-8 rounded-full bg-brand-500 flex items-center justify-center text-white text-sm font-medium">
+                {(user.firstName?.[0] || user.email?.[0] || '?').toUpperCase()}
               </div>
-              <div>
-                <p className="text-white">Unassigned</p>
-                <p className="text-sm text-surface-600">Remove assignment</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-white truncate">
+                  {user.firstName && user.lastName
+                    ? `${user.firstName} ${user.lastName}`
+                    : user.email}
+                </p>
+                <p className="text-sm text-surface-600 truncate">{user.email}</p>
               </div>
             </label>
+          ))}
 
-            {filteredUsers.length === 0 && search && (
-              <p className="text-center text-surface-500 py-4">No users found</p>
-            )}
-
-            {filteredUsers.map((user: any) => (
-              <label
-                key={user.id}
-                className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer ${
-                  userId === user.id
-                    ? 'bg-brand-500/20 border border-brand-500'
-                    : 'bg-surface-700 hover:bg-surface-600'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="user"
-                  value={user.id}
-                  checked={userId === user.id}
-                  onChange={(e) => setUserId(e.target.value)}
-                  className="sr-only"
-                />
-                <div className="w-8 h-8 rounded-full bg-brand-500 flex items-center justify-center text-white text-sm font-medium">
-                  {(user.firstName?.[0] || user.email?.[0] || '?').toUpperCase()}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-white truncate">
-                    {user.firstName && user.lastName
-                      ? `${user.firstName} ${user.lastName}`
-                      : user.email}
-                  </p>
-                  <p className="text-sm text-surface-600 truncate">{user.email}</p>
-                </div>
+          {/* Manual ID input if no users found */}
+          {users.length === 0 && (
+            <div>
+              <label className="block text-sm text-surface-600 mb-2">
+                Or enter User ID directly:
               </label>
-            ))}
-
-            {/* Manual ID input if no users found */}
-            {users.length === 0 && (
-              <div>
-                <label className="block text-sm text-surface-600 mb-2">
-                  Or enter User ID directly:
-                </label>
-                <Input
-                  type="text"
-                  value={userId}
-                  onChange={(e) => setUserId(e.target.value)}
-                  placeholder="Enter user ID..."
-                  className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-                />
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="p-4 border-t border-surface-700 flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => mutation.mutate()}
-            disabled={mutation.isPending}
-            className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 disabled:opacity-50"
-          >
-            {mutation.isPending ? 'Saving...' : 'Assign'}
-          </button>
+              <Input
+                type="text"
+                value={userId}
+                onChange={(e) => setUserId(e.target.value)}
+                placeholder="Enter user ID..."
+                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              />
+            </div>
+          )}
         </div>
       </div>
-    </div>
+      <div className="p-4 border-t border-surface-700 flex justify-end gap-3">
+        <button onClick={onClose} className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg">
+          Cancel
+        </button>
+        <button
+          onClick={() => mutation.mutate()}
+          disabled={mutation.isPending}
+          className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 disabled:opacity-50"
+        >
+          {mutation.isPending ? 'Saving...' : 'Assign'}
+        </button>
+      </div>
+    </Dialog>
   );
 }

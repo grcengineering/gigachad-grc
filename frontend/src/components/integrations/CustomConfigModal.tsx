@@ -8,6 +8,7 @@ import VisualConfigBuilder from './VisualConfigBuilder';
 import CodeEditor from './CodeEditor';
 
 import { Button } from '@/components/ui/Button';
+import { Dialog } from '@/components/ui/Dialog';
 
 interface Props {
   integrationId: string;
@@ -276,128 +277,123 @@ export default function CustomConfigModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center p-4">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/70" onClick={onClose} />
-      {/* Modal */}
-      <div className="relative bg-surface-900 rounded-xl w-full max-w-5xl h-[85vh] flex flex-col shadow-2xl">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-surface-700">
-          <div>
-            <h2 className="text-lg font-semibold text-surface-100">Configure Custom Integration</h2>
-            <p className="text-sm text-surface-600">{integrationName}</p>
-          </div>
-          <div className="flex items-center gap-3">
-            {config.lastTestAt && (
-              <div className="text-xs text-surface-500">
-                Last test: {new Date(config.lastTestAt).toLocaleString()}
-                <span
-                  className={clsx(
-                    'ml-2 px-1.5 py-0.5 rounded',
-                    config.lastTestStatus === 'success'
-                      ? 'bg-green-500/20 text-green-600'
-                      : 'bg-red-500/20 text-red-600'
-                  )}
-                >
-                  {config.lastTestStatus}
-                </span>
-              </div>
-            )}
-            <button onClick={onClose} className="p-2 text-surface-600 hover:text-surface-200">
-              <XMarkIcon className="w-5 h-5" />
-            </button>
-          </div>
+    <Dialog open onClose={onClose}>
+      {/* Header */}
+      <div className="flex items-center justify-between px-6 py-4 border-b border-surface-700">
+        <div>
+          <h2 className="text-lg font-semibold text-surface-100">Configure Custom Integration</h2>
+          <p className="text-sm text-surface-600">{integrationName}</p>
         </div>
-
-        {/* Tabs */}
-        <div className="flex border-b border-surface-700">
-          <button
-            onClick={() => handleTabChange('visual')}
-            className={clsx(
-              'flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 transition-colors',
-              activeTab === 'visual'
-                ? 'border-brand-500 text-brand-400'
-                : 'border-transparent text-surface-600 hover:text-surface-200'
-            )}
-          >
-            <Cog6ToothIcon className="w-4 h-4" />
-            Visual Builder
-          </button>
-          <button
-            onClick={() => handleTabChange('code')}
-            className={clsx(
-              'flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 transition-colors',
-              activeTab === 'code'
-                ? 'border-brand-500 text-brand-400'
-                : 'border-transparent text-surface-600 hover:text-surface-200'
-            )}
-          >
-            <CodeBracketIcon className="w-4 h-4" />
-            Code Editor
-          </button>
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 min-h-0 overflow-hidden">
-          {isLoading ? (
-            <div className="flex items-center justify-center h-full text-surface-500">
-              Loading configuration...
+        <div className="flex items-center gap-3">
+          {config.lastTestAt && (
+            <div className="text-xs text-surface-500">
+              Last test: {new Date(config.lastTestAt).toLocaleString()}
+              <span
+                className={clsx(
+                  'ml-2 px-1.5 py-0.5 rounded',
+                  config.lastTestStatus === 'success'
+                    ? 'bg-green-500/20 text-green-600'
+                    : 'bg-red-500/20 text-red-600'
+                )}
+              >
+                {config.lastTestStatus}
+              </span>
             </div>
-          ) : activeTab === 'visual' ? (
-            <div className="h-full overflow-auto p-6">
-              <VisualConfigBuilder
-                config={{
-                  baseUrl: config.baseUrl,
-                  endpoints: config.endpoints,
-                  authType: config.authType,
-                  authConfig: config.authConfig,
-                }}
-                onChange={(visualConfig) =>
-                  handleConfigChange({
-                    baseUrl: visualConfig.baseUrl,
-                    endpoints: visualConfig.endpoints,
-                    authType: visualConfig.authType,
-                    authConfig: visualConfig.authConfig,
-                  })
-                }
-                onTest={handleTest}
-                isTestLoading={testMutation.isPending}
-              />
-            </div>
-          ) : (
-            <CodeEditor
-              code={config.customCode}
-              onChange={(customCode) => handleConfigChange({ customCode })}
-              onValidate={handleValidateCode}
-              onTest={() => handleTest()}
-              isTestLoading={testMutation.isPending}
-              testResult={testResult || undefined}
-            />
           )}
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-surface-700 bg-surface-800/50">
-          <div className="flex items-center gap-2">
-            {hasChanges && <span className="text-xs text-yellow-600">• Unsaved changes</span>}
-          </div>
-          <div className="flex items-center gap-3">
-            <Button onClick={onClose} variant="secondary">
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSave}
-              disabled={saveMutation.isPending || !hasChanges}
-              variant="secondary"
-            >
-              {saveMutation.isPending ? 'Saving...' : 'Save'}
-            </Button>
-            <Button onClick={handleSync} disabled={syncMutation.isPending} variant="primary">
-              {syncMutation.isPending ? 'Syncing...' : 'Save & Sync'}
-            </Button>
-          </div>
+          <button onClick={onClose} className="p-2 text-surface-600 hover:text-surface-200">
+            <XMarkIcon className="w-5 h-5" />
+          </button>
         </div>
       </div>
-    </div>
+
+      {/* Tabs */}
+      <div className="flex border-b border-surface-700">
+        <button
+          onClick={() => handleTabChange('visual')}
+          className={clsx(
+            'flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 transition-colors',
+            activeTab === 'visual'
+              ? 'border-brand-500 text-brand-400'
+              : 'border-transparent text-surface-600 hover:text-surface-200'
+          )}
+        >
+          <Cog6ToothIcon className="w-4 h-4" />
+          Visual Builder
+        </button>
+        <button
+          onClick={() => handleTabChange('code')}
+          className={clsx(
+            'flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 transition-colors',
+            activeTab === 'code'
+              ? 'border-brand-500 text-brand-400'
+              : 'border-transparent text-surface-600 hover:text-surface-200'
+          )}
+        >
+          <CodeBracketIcon className="w-4 h-4" />
+          Code Editor
+        </button>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 min-h-0 overflow-hidden">
+        {isLoading ? (
+          <div className="flex items-center justify-center h-full text-surface-500">
+            Loading configuration...
+          </div>
+        ) : activeTab === 'visual' ? (
+          <div className="h-full overflow-auto p-6">
+            <VisualConfigBuilder
+              config={{
+                baseUrl: config.baseUrl,
+                endpoints: config.endpoints,
+                authType: config.authType,
+                authConfig: config.authConfig,
+              }}
+              onChange={(visualConfig) =>
+                handleConfigChange({
+                  baseUrl: visualConfig.baseUrl,
+                  endpoints: visualConfig.endpoints,
+                  authType: visualConfig.authType,
+                  authConfig: visualConfig.authConfig,
+                })
+              }
+              onTest={handleTest}
+              isTestLoading={testMutation.isPending}
+            />
+          </div>
+        ) : (
+          <CodeEditor
+            code={config.customCode}
+            onChange={(customCode) => handleConfigChange({ customCode })}
+            onValidate={handleValidateCode}
+            onTest={() => handleTest()}
+            isTestLoading={testMutation.isPending}
+            testResult={testResult || undefined}
+          />
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="flex items-center justify-between px-6 py-4 border-t border-surface-700 bg-surface-800/50">
+        <div className="flex items-center gap-2">
+          {hasChanges && <span className="text-xs text-yellow-600">• Unsaved changes</span>}
+        </div>
+        <div className="flex items-center gap-3">
+          <Button onClick={onClose} variant="secondary">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSave}
+            disabled={saveMutation.isPending || !hasChanges}
+            variant="secondary"
+          >
+            {saveMutation.isPending ? 'Saving...' : 'Save'}
+          </Button>
+          <Button onClick={handleSync} disabled={syncMutation.isPending} variant="primary">
+            {syncMutation.isPending ? 'Syncing...' : 'Save & Sync'}
+          </Button>
+        </div>
+      </div>
+    </Dialog>
   );
 }

@@ -22,6 +22,7 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 
 import { Badge } from '@/components/ui/Badge';
+import { Dialog } from '@/components/ui/Dialog';
 
 export default function CustomDashboards() {
   const queryClient = useQueryClient();
@@ -242,53 +243,49 @@ export default function CustomDashboards() {
         </div>
       )}
       {/* Create Dashboard Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-          <div className="bg-surface-900 rounded-lg shadow-xl w-full max-w-md p-6">
-            <h2 className="text-lg font-semibold text-surface-100 mb-4">Create New Dashboard</h2>
-            <form onSubmit={handleCreate}>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-surface-700 mb-2">
-                    Dashboard Name
-                  </label>
-                  <Input
-                    type="text"
-                    value={newDashboardName}
-                    onChange={(e) => setNewDashboardName(e.target.value)}
-                    className="input w-full"
-                    placeholder="My Custom Dashboard"
-                    autoFocus
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-surface-700 mb-2">
-                    Description (optional)
-                  </label>
-                  <Textarea
-                    value={newDashboardDescription}
-                    onChange={(e) => setNewDashboardDescription(e.target.value)}
-                    className="input w-full h-20"
-                    placeholder="Dashboard for tracking..."
-                  />
-                </div>
-              </div>
-              <div className="flex items-center justify-end gap-3 mt-6">
-                <Button type="button" onClick={() => setShowCreateModal(false)} variant="ghost">
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={!newDashboardName.trim() || createMutation.isPending}
-                  variant="primary"
-                >
-                  {createMutation.isPending ? 'Creating...' : 'Create'}
-                </Button>
-              </div>
-            </form>
+      <Dialog open={showCreateModal} onClose={() => setShowCreateModal(false)}>
+        <h2 className="text-lg font-semibold text-surface-100 mb-4">Create New Dashboard</h2>
+        <form onSubmit={handleCreate}>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-surface-700 mb-2">
+                Dashboard Name
+              </label>
+              <Input
+                type="text"
+                value={newDashboardName}
+                onChange={(e) => setNewDashboardName(e.target.value)}
+                className="input w-full"
+                placeholder="My Custom Dashboard"
+                autoFocus
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-surface-700 mb-2">
+                Description (optional)
+              </label>
+              <Textarea
+                value={newDashboardDescription}
+                onChange={(e) => setNewDashboardDescription(e.target.value)}
+                className="input w-full h-20"
+                placeholder="Dashboard for tracking..."
+              />
+            </div>
           </div>
-        </div>
-      )}
+          <div className="flex items-center justify-end gap-3 mt-6">
+            <Button type="button" onClick={() => setShowCreateModal(false)} variant="ghost">
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={!newDashboardName.trim() || createMutation.isPending}
+              variant="primary"
+            >
+              {createMutation.isPending ? 'Creating...' : 'Create'}
+            </Button>
+          </div>
+        </form>
+      </Dialog>
       {/* Template Gallery Modal */}
       {showTemplateGallery && (
         <TemplateGallery

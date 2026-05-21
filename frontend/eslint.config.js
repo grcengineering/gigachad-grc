@@ -24,14 +24,22 @@ const designSystemRules = [
     message:
       'Do not use legacy `.badge-*` CSS classes. Use <Badge variant="..."> from @/components/ui.',
   },
-  // 3. Hand-rolled centered-modal pattern (fixed inset-0 + flex centering — the
-  //    classic ad-hoc modal). Bare `fixed inset-0` for layout chrome / scroll
-  //    containers / HUI-Dialog-backed primitives is allowed.
+  // 3. Hand-rolled centered-modal pattern. Catches both:
+  //    - `fixed inset-0 ... flex ... items-center ... justify-center` (classic)
+  //    - `fixed inset-0 ... grid place-items-center` (the codemod-era shortcut)
+  //    Bare `fixed inset-0` for layout chrome / scroll containers /
+  //    HUI-Dialog-backed primitives is still allowed.
   {
     selector:
       'JSXAttribute[name.name="className"] Literal[value=/\\bfixed\\s+inset-0\\b.*\\bflex\\b.*\\bitems-center\\b.*\\bjustify-center\\b/]',
     message:
       'Do not hand-roll centered modal overlays. Use <Dialog open={...} onClose={...}> from @/components/ui.',
+  },
+  {
+    selector:
+      'JSXAttribute[name.name="className"] Literal[value=/\\bfixed\\s+inset-0\\b.*\\bgrid\\s+place-items-center\\b/]',
+    message:
+      'Do not hand-roll centered modal overlays with `grid place-items-center`. Use <Dialog open={...} onClose={...}> from @/components/ui.',
   },
   // 4. Faint text colors on the light cream background
   {

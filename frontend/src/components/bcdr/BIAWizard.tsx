@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import {
-  XMarkIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   CheckCircleIcon,
@@ -11,13 +10,11 @@ import {
   DocumentCheckIcon,
 } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/Button';
+import { Dialog } from '@/components/ui/Dialog';
 import { api } from '@/lib/api';
 import clsx from 'clsx';
-
 import { Textarea } from '@/components/ui/Textarea';
-
 import { Input } from '@/components/ui/Input';
-
 import { SelectNative } from '@/components/ui/SelectNative';
 
 // ============================================
@@ -665,24 +662,23 @@ export function BIAWizard({
   // ============================================
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
-      <div className="bg-slate-800 rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-cyan-500/20 rounded-lg">
-              <ClipboardDocumentListIcon className="h-6 w-6 text-cyan-600" />
-            </div>
-            <div>
-              <h2 className="text-xl font-semibold text-white">Business Impact Analysis Wizard</h2>
-              <p className="text-sm text-slate-400">Step {currentStep} of 5</p>
-            </div>
+    <Dialog
+      open
+      onClose={onClose}
+      size="xl"
+      title={
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-brand-100 rounded-lg">
+            <ClipboardDocumentListIcon className="h-6 w-6 text-brand-700" />
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-slate-700 rounded-lg transition-colors">
-            <XMarkIcon className="h-5 w-5 text-slate-400" />
-          </button>
+          <div>
+            <span>Business Impact Analysis Wizard</span>
+            <p className="text-small text-surface-600 font-normal">Step {currentStep} of 5</p>
+          </div>
         </div>
-
+      }
+    >
+      <div className="flex flex-col max-h-[80vh]">
         {/* Progress Steps */}
         <div className="px-6 py-4 border-b border-slate-700">
           <div className="flex items-center justify-between">
@@ -748,13 +744,18 @@ export function BIAWizard({
               <ChevronRightIcon className="h-4 w-4 ml-1" />
             </Button>
           ) : (
-            <Button variant="primary" onClick={handleSubmit} disabled={isSubmitting}>
-              {isSubmitting ? 'Creating...' : 'Create Process'}
+            <Button
+              variant="primary"
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              isLoading={isSubmitting}
+            >
+              Create Process
               <CheckCircleIcon className="h-4 w-4 ml-1" />
             </Button>
           )}
         </div>
       </div>
-    </div>
+    </Dialog>
   );
 }

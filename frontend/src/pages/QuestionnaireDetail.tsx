@@ -22,6 +22,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { Input } from '@/components/ui/Input';
 
 import { SelectNative } from '@/components/ui/SelectNative';
+import { Dialog } from '@/components/ui/Dialog';
 
 interface Questionnaire {
   id: string;
@@ -522,152 +523,135 @@ export default function QuestionnaireDetail() {
         />
       ) : null}
       {/* Edit Modal */}
-      {showEditModal && (
-        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-          <div className="bg-surface-900 border border-surface-800 rounded-lg p-6 max-w-2xl w-full mx-4">
-            <h3 className="text-lg font-semibold text-surface-100 mb-4">
-              Edit Questionnaire Details
-            </h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-surface-600 mb-1">Title</label>
-                <Input
-                  type="text"
-                  value={editForm.title}
-                  onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                  className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-surface-600 mb-1">
-                    Requester Name
-                  </label>
-                  <Input
-                    type="text"
-                    value={editForm.requesterName}
-                    onChange={(e) => setEditForm({ ...editForm, requesterName: e.target.value })}
-                    className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-surface-600 mb-1">
-                    Requester Email
-                  </label>
-                  <Input
-                    type="email"
-                    value={editForm.requesterEmail}
-                    onChange={(e) => setEditForm({ ...editForm, requesterEmail: e.target.value })}
-                    className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-surface-600 mb-1">Company</label>
-                  <Input
-                    type="text"
-                    value={editForm.company}
-                    onChange={(e) => setEditForm({ ...editForm, company: e.target.value })}
-                    className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-surface-600 mb-1">
-                    Priority
-                  </label>
-                  <SelectNative
-                    value={editForm.priority}
-                    onChange={(e) => setEditForm({ ...editForm, priority: e.target.value })}
-                    className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
-                  >
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                  </SelectNative>
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-surface-600 mb-1">Due Date</label>
-                <Input
-                  type="date"
-                  value={editForm.dueDate}
-                  onChange={(e) => setEditForm({ ...editForm, dueDate: e.target.value })}
-                  className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-surface-600 mb-1">
-                  Description
-                </label>
-                <Textarea
-                  value={editForm.description}
-                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                  rows={3}
-                  className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
-                />
-              </div>
+      <Dialog open={showEditModal} onClose={() => setShowEditModal(false)}>
+        <h3 className="text-lg font-semibold text-surface-100 mb-4">Edit Questionnaire Details</h3>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-surface-600 mb-1">Title</label>
+            <Input
+              type="text"
+              value={editForm.title}
+              onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+              className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-surface-600 mb-1">
+                Requester Name
+              </label>
+              <Input
+                type="text"
+                value={editForm.requesterName}
+                onChange={(e) => setEditForm({ ...editForm, requesterName: e.target.value })}
+                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+              />
             </div>
-            <div className="flex justify-end gap-2 mt-6">
-              <Button variant="secondary" onClick={() => setShowEditModal(false)}>
-                Cancel
-              </Button>
-              <Button
-                onClick={async () => {
-                  try {
-                    await questionnairesApi.update(id!, {
-                      ...editForm,
-                      dueDate: editForm.dueDate
-                        ? new Date(editForm.dueDate).toISOString()
-                        : undefined,
-                    });
-                    toast.success('Questionnaire updated successfully');
-                    setShowEditModal(false);
-                    fetchQuestionnaire();
-                  } catch (error) {
-                    console.error('Error updating questionnaire:', error);
-                    toast.error('Failed to update questionnaire');
-                  }
-                }}
-              >
-                Save Changes
-              </Button>
+            <div>
+              <label className="block text-sm font-medium text-surface-600 mb-1">
+                Requester Email
+              </label>
+              <Input
+                type="email"
+                value={editForm.requesterEmail}
+                onChange={(e) => setEditForm({ ...editForm, requesterEmail: e.target.value })}
+                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+              />
             </div>
           </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-surface-600 mb-1">Company</label>
+              <Input
+                type="text"
+                value={editForm.company}
+                onChange={(e) => setEditForm({ ...editForm, company: e.target.value })}
+                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-surface-600 mb-1">Priority</label>
+              <SelectNative
+                value={editForm.priority}
+                onChange={(e) => setEditForm({ ...editForm, priority: e.target.value })}
+                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+              >
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </SelectNative>
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-surface-600 mb-1">Due Date</label>
+            <Input
+              type="date"
+              value={editForm.dueDate}
+              onChange={(e) => setEditForm({ ...editForm, dueDate: e.target.value })}
+              className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-surface-600 mb-1">Description</label>
+            <Textarea
+              value={editForm.description}
+              onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+              rows={3}
+              className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+            />
+          </div>
         </div>
-      )}
+        <div className="flex justify-end gap-2 mt-6">
+          <Button variant="secondary" onClick={() => setShowEditModal(false)}>
+            Cancel
+          </Button>
+          <Button
+            onClick={async () => {
+              try {
+                await questionnairesApi.update(id!, {
+                  ...editForm,
+                  dueDate: editForm.dueDate ? new Date(editForm.dueDate).toISOString() : undefined,
+                });
+                toast.success('Questionnaire updated successfully');
+                setShowEditModal(false);
+                fetchQuestionnaire();
+              } catch (error) {
+                console.error('Error updating questionnaire:', error);
+                toast.error('Failed to update questionnaire');
+              }
+            }}
+          >
+            Save Changes
+          </Button>
+        </div>
+      </Dialog>
       {/* Delete Confirmation */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-          <div className="bg-surface-900 border border-surface-800 rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold text-surface-100 mb-2">Delete Questionnaire</h3>
-            <p className="text-surface-600 mb-6">
-              Are you sure you want to delete "{questionnaire?.title}"? This action cannot be
-              undone.
-            </p>
-            <div className="flex justify-end gap-2">
-              <Button variant="secondary" onClick={() => setShowDeleteConfirm(false)}>
-                Cancel
-              </Button>
-              <Button
-                variant="danger"
-                onClick={async () => {
-                  try {
-                    await questionnairesApi.delete(id!);
-                    toast.success('Questionnaire deleted successfully');
-                    navigate('/questionnaires');
-                  } catch (error) {
-                    console.error('Error deleting questionnaire:', error);
-                    toast.error('Failed to delete questionnaire');
-                  }
-                }}
-              >
-                Delete
-              </Button>
-            </div>
-          </div>
+      <Dialog open={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)}>
+        <h3 className="text-lg font-semibold text-surface-100 mb-2">Delete Questionnaire</h3>
+        <p className="text-surface-600 mb-6">
+          Are you sure you want to delete "{questionnaire?.title}"? This action cannot be undone.
+        </p>
+        <div className="flex justify-end gap-2">
+          <Button variant="secondary" onClick={() => setShowDeleteConfirm(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="danger"
+            onClick={async () => {
+              try {
+                await questionnairesApi.delete(id!);
+                toast.success('Questionnaire deleted successfully');
+                navigate('/questionnaires');
+              } catch (error) {
+                console.error('Error deleting questionnaire:', error);
+                toast.error('Failed to delete questionnaire');
+              }
+            }}
+          >
+            Delete
+          </Button>
         </div>
-      )}
+      </Dialog>
     </div>
   );
 }

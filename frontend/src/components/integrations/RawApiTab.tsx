@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/Input';
 import { SelectNative } from '@/components/ui/SelectNative';
 
 import { Button } from '@/components/ui/Button';
+import { Dialog } from '@/components/ui/Dialog';
 
 interface RawRequest {
   id: string;
@@ -582,34 +583,27 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
         </div>
       )}
       {/* Parse Modal */}
-      {showParseModal && (
-        <div className="fixed inset-0 z-[60] grid place-items-center">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setShowParseModal(false)} />
-          <div className="relative bg-surface-900 border border-surface-800 rounded-xl w-full max-w-2xl mx-4 p-6">
-            <h3 className="text-lg font-semibold text-surface-100 mb-4">
-              Paste cURL or HTTP Request
-            </h3>
-            <p className="text-sm text-surface-600 mb-4">
-              Paste a cURL command or raw HTTP request and we'll parse it for you.
-            </p>
-            <Textarea
-              value={parseInput}
-              onChange={(e) => setParseInput(e.target.value)}
-              placeholder={CURL_EXAMPLE}
-              rows={10}
-              className="input w-full font-mono text-sm mb-4"
-            />
-            <div className="flex justify-end gap-3">
-              <Button onClick={() => setShowParseModal(false)} variant="secondary">
-                Cancel
-              </Button>
-              <Button onClick={parseCurlOrHttp} disabled={!parseInput.trim()} variant="primary">
-                Parse & Add
-              </Button>
-            </div>
-          </div>
+      <Dialog open={showParseModal} onClose={() => setShowParseModal(false)}>
+        <h3 className="text-lg font-semibold text-surface-100 mb-4">Paste cURL or HTTP Request</h3>
+        <p className="text-sm text-surface-600 mb-4">
+          Paste a cURL command or raw HTTP request and we'll parse it for you.
+        </p>
+        <Textarea
+          value={parseInput}
+          onChange={(e) => setParseInput(e.target.value)}
+          placeholder={CURL_EXAMPLE}
+          rows={10}
+          className="input w-full font-mono text-sm mb-4"
+        />
+        <div className="flex justify-end gap-3">
+          <Button onClick={() => setShowParseModal(false)} variant="secondary">
+            Cancel
+          </Button>
+          <Button onClick={parseCurlOrHttp} disabled={!parseInput.trim()} variant="primary">
+            Parse & Add
+          </Button>
         </div>
-      )}
+      </Dialog>
     </div>
   );
 }

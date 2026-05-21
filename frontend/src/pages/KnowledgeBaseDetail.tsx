@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { Input } from '@/components/ui/Input';
 
 import { SelectNative } from '@/components/ui/SelectNative';
+import { Dialog } from '@/components/ui/Dialog';
 
 interface KnowledgeEntry {
   id: string;
@@ -402,34 +403,28 @@ export default function KnowledgeBaseDetail() {
           )}
         </div>
       ) : null}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-          <div className="bg-surface-900 border border-surface-800 rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold text-surface-100 mb-2">
-              Delete Knowledge Base Entry
-            </h3>
-            <p className="text-surface-600 mb-6">
-              Are you sure you want to delete "{entry?.title}"? This action cannot be undone.
-            </p>
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="secondary"
-                onClick={() => setShowDeleteConfirm(false)}
-                disabled={deleteMutation.isPending}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="danger"
-                onClick={() => deleteMutation.mutate()}
-                isLoading={deleteMutation.isPending}
-              >
-                Delete
-              </Button>
-            </div>
-          </div>
+      <Dialog open={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)}>
+        <h3 className="text-lg font-semibold text-surface-100 mb-2">Delete Knowledge Base Entry</h3>
+        <p className="text-surface-600 mb-6">
+          Are you sure you want to delete "{entry?.title}"? This action cannot be undone.
+        </p>
+        <div className="flex justify-end gap-2">
+          <Button
+            variant="secondary"
+            onClick={() => setShowDeleteConfirm(false)}
+            disabled={deleteMutation.isPending}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="danger"
+            onClick={() => deleteMutation.mutate()}
+            isLoading={deleteMutation.isPending}
+          >
+            Delete
+          </Button>
         </div>
-      )}
+      </Dialog>
     </div>
   );
 }

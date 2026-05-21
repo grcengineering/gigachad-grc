@@ -24,6 +24,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { Input } from '@/components/ui/Input';
 
 import { SelectNative } from '@/components/ui/SelectNative';
+import { Dialog } from '@/components/ui/Dialog';
 
 const CATEGORIES = [
   { value: 'security', label: 'Security', color: 'bg-red-500/20 text-red-600' },
@@ -453,111 +454,109 @@ function TemplateModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50 p-4">
-      <div className="bg-surface-900 border border-surface-700 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-surface-900 border-b border-surface-700 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-surface-100">
-            {template ? 'Edit Template' : 'Create Template'}
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-2 text-surface-600 hover:text-surface-200 rounded-lg hover:bg-surface-800"
-          >
-            <XMarkIcon className="w-5 h-5" />
-          </button>
+    <Dialog open onClose={onClose}>
+      <div className="sticky top-0 bg-surface-900 border-b border-surface-700 px-6 py-4 flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-surface-100">
+          {template ? 'Edit Template' : 'Create Template'}
+        </h2>
+        <button
+          onClick={onClose}
+          className="p-2 text-surface-600 hover:text-surface-200 rounded-lg hover:bg-surface-800"
+        >
+          <XMarkIcon className="w-5 h-5" />
+        </button>
+      </div>
+
+      <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <div>
+          <label className="block text-sm font-medium text-surface-600 mb-1">
+            Title <span className="text-red-600">*</span>
+          </label>
+          <Input
+            type="text"
+            required
+            value={formData.title}
+            onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
+            className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+            placeholder="e.g., SOC 2 Compliance Response"
+          />
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-surface-600 mb-1">
-              Title <span className="text-red-600">*</span>
-            </label>
-            <Input
-              type="text"
-              required
-              value={formData.title}
-              onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
-              className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
-              placeholder="e.g., SOC 2 Compliance Response"
-            />
-          </div>
+        <div>
+          <label className="block text-sm font-medium text-surface-600 mb-1">Category</label>
+          <SelectNative
+            value={formData.category}
+            onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value }))}
+            className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+          >
+            <option value="">Select category...</option>
+            {CATEGORIES.map((cat) => (
+              <option key={cat.value} value={cat.value}>
+                {cat.label}
+              </option>
+            ))}
+          </SelectNative>
+        </div>
 
-          <div>
-            <label className="block text-sm font-medium text-surface-600 mb-1">Category</label>
-            <SelectNative
-              value={formData.category}
-              onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value }))}
-              className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
-            >
-              <option value="">Select category...</option>
-              {CATEGORIES.map((cat) => (
-                <option key={cat.value} value={cat.value}>
-                  {cat.label}
-                </option>
-              ))}
-            </SelectNative>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-surface-600 mb-1">
-              Content <span className="text-red-600">*</span>
-            </label>
-            <p className="text-xs text-surface-500 mb-2">
-              Use {'{{variable_name}}'} for placeholders that will be replaced when using the
-              template.
-            </p>
-            <Textarea
-              required
-              value={formData.content}
-              onChange={(e) => setFormData((prev) => ({ ...prev, content: e.target.value }))}
-              rows={8}
-              className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500 font-mono text-sm"
-              placeholder="Enter template content...
+        <div>
+          <label className="block text-sm font-medium text-surface-600 mb-1">
+            Content <span className="text-red-600">*</span>
+          </label>
+          <p className="text-xs text-surface-500 mb-2">
+            Use {'{{variable_name}}'} for placeholders that will be replaced when using the
+            template.
+          </p>
+          <Textarea
+            required
+            value={formData.content}
+            onChange={(e) => setFormData((prev) => ({ ...prev, content: e.target.value }))}
+            rows={8}
+            className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500 font-mono text-sm"
+            placeholder="Enter template content...
 
 Example:
 {{company_name}} maintains SOC 2 Type II compliance. Our last audit was completed on {{audit_date}} by {{auditor_name}}."
-            />
-          </div>
+          />
+        </div>
 
-          {detectedVariables.length > 0 && (
-            <div className="p-3 bg-brand-500/10 border border-brand-500/30 rounded-lg">
-              <label className="block text-sm font-medium text-brand-400 mb-2">
-                Detected Variables ({detectedVariables.length})
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {detectedVariables.map((v, i) => (
-                  <span
-                    key={i}
-                    className="px-2 py-1 bg-brand-500/20 text-brand-300 text-xs rounded font-mono"
-                  >
-                    {`{{${v}}}`}
-                  </span>
-                ))}
-              </div>
+        {detectedVariables.length > 0 && (
+          <div className="p-3 bg-brand-500/10 border border-brand-500/30 rounded-lg">
+            <label className="block text-sm font-medium text-brand-400 mb-2">
+              Detected Variables ({detectedVariables.length})
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {detectedVariables.map((v, i) => (
+                <span
+                  key={i}
+                  className="px-2 py-1 bg-brand-500/20 text-brand-300 text-xs rounded font-mono"
+                >
+                  {`{{${v}}}`}
+                </span>
+              ))}
             </div>
-          )}
-
-          <div>
-            <label className="block text-sm font-medium text-surface-600 mb-1">Tags</label>
-            <Input
-              type="text"
-              value={formData.tags}
-              onChange={(e) => setFormData((prev) => ({ ...prev, tags: e.target.value }))}
-              className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
-              placeholder="encryption, data-protection, audit (comma-separated)"
-            />
           </div>
+        )}
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-surface-700">
-            <Button variant="secondary" type="button" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" isLoading={isLoading}>
-              {template ? 'Save Changes' : 'Create Template'}
-            </Button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div>
+          <label className="block text-sm font-medium text-surface-600 mb-1">Tags</label>
+          <Input
+            type="text"
+            value={formData.tags}
+            onChange={(e) => setFormData((prev) => ({ ...prev, tags: e.target.value }))}
+            className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+            placeholder="encryption, data-protection, audit (comma-separated)"
+          />
+        </div>
+
+        <div className="flex justify-end gap-3 pt-4 border-t border-surface-700">
+          <Button variant="secondary" type="button" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" isLoading={isLoading}>
+            {template ? 'Save Changes' : 'Create Template'}
+          </Button>
+        </div>
+      </form>
+    </Dialog>
   );
 }

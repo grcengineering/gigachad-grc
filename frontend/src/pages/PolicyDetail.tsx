@@ -31,6 +31,7 @@ import { Input } from '@/components/ui/Input';
 import { SelectNative } from '@/components/ui/SelectNative';
 
 import { Badge } from '@/components/ui/Badge';
+import { Dialog } from '@/components/ui/Dialog';
 
 type TabType = 'status' | 'history';
 
@@ -630,74 +631,71 @@ export default function PolicyDetail() {
         />
       )}
       {/* Status Change Modal */}
-      {statusChangeModal.isOpen && statusChangeModal.targetStatus && (
-        <div className="fixed inset-0 z-50 grid place-items-center">
-          <div
-            className="absolute inset-0 bg-black/60"
-            onClick={() => {
-              setStatusChangeModal({ isOpen: false, targetStatus: null });
-              setStatusChangeNotes('');
-            }}
-          />
-          <div className="relative bg-surface-900 border border-surface-800 rounded-xl w-full max-w-md mx-4 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-surface-100">Change Status</h2>
-              <button
-                onClick={() => {
-                  setStatusChangeModal({ isOpen: false, targetStatus: null });
-                  setStatusChangeNotes('');
-                }}
-                className="text-surface-600 hover:text-surface-100"
-              >
-                <XMarkIcon className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="mb-4">
-              <p className="text-surface-700">
-                Move this policy from{' '}
-                <span className={clsx('', statusConfig.color)}>{statusConfig.label}</span> to{' '}
-                <span className={clsx('', STATUS_CONFIG[statusChangeModal.targetStatus]?.color)}>
-                  {STATUS_CONFIG[statusChangeModal.targetStatus]?.label}
-                </span>
-              </p>
-            </div>
-
-            <div className="mb-4">
-              <label className="label">Notes (optional)</label>
-              <Textarea
-                value={statusChangeNotes}
-                onChange={(e) => setStatusChangeNotes(e.target.value)}
-                className="input mt-1"
-                rows={3}
-                placeholder="Add notes about this status change..."
-              />
-            </div>
-
-            <div className="flex justify-end gap-3">
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  setStatusChangeModal({ isOpen: false, targetStatus: null });
-                  setStatusChangeNotes('');
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={() =>
-                  updateStatusMutation.mutate({
-                    status: statusChangeModal.targetStatus!,
-                    notes: statusChangeNotes || undefined,
-                  })
-                }
-                isLoading={updateStatusMutation.isPending}
-              >
-                Confirm
-              </Button>
-            </div>
+      {statusChangeModal.targetStatus && (
+        <Dialog
+          open={statusChangeModal.isOpen}
+          onClose={() => {
+            setStatusChangeModal({ isOpen: false, targetStatus: null });
+            setStatusChangeNotes('');
+          }}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-surface-100">Change Status</h2>
+            <button
+              onClick={() => {
+                setStatusChangeModal({ isOpen: false, targetStatus: null });
+                setStatusChangeNotes('');
+              }}
+              className="text-surface-600 hover:text-surface-100"
+            >
+              <XMarkIcon className="w-5 h-5" />
+            </button>
           </div>
-        </div>
+
+          <div className="mb-4">
+            <p className="text-surface-700">
+              Move this policy from{' '}
+              <span className={clsx('', statusConfig.color)}>{statusConfig.label}</span> to{' '}
+              <span className={clsx('', STATUS_CONFIG[statusChangeModal.targetStatus]?.color)}>
+                {STATUS_CONFIG[statusChangeModal.targetStatus]?.label}
+              </span>
+            </p>
+          </div>
+
+          <div className="mb-4">
+            <label className="label">Notes (optional)</label>
+            <Textarea
+              value={statusChangeNotes}
+              onChange={(e) => setStatusChangeNotes(e.target.value)}
+              className="input mt-1"
+              rows={3}
+              placeholder="Add notes about this status change..."
+            />
+          </div>
+
+          <div className="flex justify-end gap-3">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setStatusChangeModal({ isOpen: false, targetStatus: null });
+                setStatusChangeNotes('');
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() =>
+                updateStatusMutation.mutate({
+                  status: statusChangeModal.targetStatus!,
+                  notes: statusChangeNotes || undefined,
+                })
+              }
+              isLoading={updateStatusMutation.isPending}
+            >
+              Confirm
+            </Button>
+          </div>
+        </Dialog>
       )}
     </div>
   );
@@ -737,65 +735,62 @@ function NewVersionModal({
   });
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center">
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative bg-surface-900 border border-surface-800 rounded-xl w-full max-w-md mx-4 p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold text-surface-100">Upload New Version</h2>
-          <button onClick={onClose} className="text-surface-600 hover:text-surface-100">
-            <XMarkIcon className="w-5 h-5" />
-          </button>
+    <Dialog open onClose={onClose}>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-lg font-semibold text-surface-100">Upload New Version</h2>
+        <button onClick={onClose} className="text-surface-600 hover:text-surface-100">
+          <XMarkIcon className="w-5 h-5" />
+        </button>
+      </div>
+
+      <div className="space-y-4">
+        <div>
+          <label className="label">File *</label>
+          <input
+            type="file"
+            onChange={(e) => setFile(e.target.files?.[0] || null)}
+            className="input mt-1"
+            accept=".pdf,.doc,.docx,.txt"
+          />
         </div>
 
-        <div className="space-y-4">
-          <div>
-            <label className="label">File *</label>
-            <input
-              type="file"
-              onChange={(e) => setFile(e.target.files?.[0] || null)}
-              className="input mt-1"
-              accept=".pdf,.doc,.docx,.txt"
-            />
-          </div>
-
-          <div>
-            <label className="label">Version Number *</label>
-            <Input
-              type="text"
-              value={versionNumber}
-              onChange={(e) => setVersionNumber(e.target.value)}
-              className="input mt-1"
-              placeholder="e.g., 2.0"
-            />
-            <p className="text-xs text-surface-500 mt-1">Current: v{currentVersion}</p>
-          </div>
-
-          <div>
-            <label className="label">Change Notes</label>
-            <Textarea
-              value={changeNotes}
-              onChange={(e) => setChangeNotes(e.target.value)}
-              className="input mt-1"
-              rows={3}
-              placeholder="What changed in this version?"
-            />
-          </div>
+        <div>
+          <label className="label">Version Number *</label>
+          <Input
+            type="text"
+            value={versionNumber}
+            onChange={(e) => setVersionNumber(e.target.value)}
+            className="input mt-1"
+            placeholder="e.g., 2.0"
+          />
+          <p className="text-xs text-surface-500 mt-1">Current: v{currentVersion}</p>
         </div>
 
-        <div className="flex justify-end gap-3 mt-6">
-          <Button variant="secondary" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button
-            onClick={() => uploadMutation.mutate()}
-            disabled={!file || !versionNumber}
-            isLoading={uploadMutation.isPending}
-          >
-            Upload Version
-          </Button>
+        <div>
+          <label className="label">Change Notes</label>
+          <Textarea
+            value={changeNotes}
+            onChange={(e) => setChangeNotes(e.target.value)}
+            className="input mt-1"
+            rows={3}
+            placeholder="What changed in this version?"
+          />
         </div>
       </div>
-    </div>
+
+      <div className="flex justify-end gap-3 mt-6">
+        <Button variant="secondary" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button
+          onClick={() => uploadMutation.mutate()}
+          disabled={!file || !versionNumber}
+          isLoading={uploadMutation.isPending}
+        >
+          Upload Version
+        </Button>
+      </div>
+    </Dialog>
   );
 }
 
@@ -841,82 +836,79 @@ function LinkControlModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center">
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative bg-surface-900 border border-surface-800 rounded-xl w-full max-w-lg mx-4 p-6 max-h-[80vh] flex flex-col">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-surface-100">Link Policy to Controls</h2>
-          <button onClick={onClose} className="text-surface-600 hover:text-surface-100">
-            <XMarkIcon className="w-5 h-5" />
-          </button>
-        </div>
-
-        <p className="text-sm text-surface-600 mb-4">
-          Select controls to link this policy as evidence:
-        </p>
-
-        <div className="relative mb-4">
-          <Input
-            type="text"
-            placeholder="Search controls..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="input pl-10"
-          />
-          <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-500" />
-        </div>
-
-        <div className="flex-1 overflow-y-auto space-y-2 min-h-[200px] max-h-[300px]">
-          {availableControls.length === 0 ? (
-            <p className="text-surface-500 text-center py-8">
-              {search ? 'No controls found' : 'All controls are already linked'}
-            </p>
-          ) : (
-            availableControls.map((control: any) => (
-              <label
-                key={control.id}
-                className={clsx(
-                  'flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors',
-                  selectedControlIds.includes(control.id)
-                    ? 'bg-brand-500/20 border border-brand-500/50'
-                    : 'bg-surface-800 hover:bg-surface-700'
-                )}
-              >
-                <input
-                  type="checkbox"
-                  checked={selectedControlIds.includes(control.id)}
-                  onChange={() => toggleControl(control.id)}
-                  className="rounded border-surface-600"
-                />
-                <div>
-                  <p className="font-mono text-sm text-brand-400">{control.controlId}</p>
-                  <p className="text-sm text-surface-200">{control.title}</p>
-                </div>
-              </label>
-            ))
-          )}
-        </div>
-
-        {selectedControlIds.length > 0 && (
-          <p className="text-sm text-surface-600 mt-3">
-            {selectedControlIds.length} control(s) selected
-          </p>
-        )}
-
-        <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-surface-800">
-          <Button variant="secondary" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button
-            onClick={() => linkMutation.mutate()}
-            disabled={selectedControlIds.length === 0}
-            isLoading={linkMutation.isPending}
-          >
-            Link to Controls
-          </Button>
-        </div>
+    <Dialog open onClose={onClose}>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold text-surface-100">Link Policy to Controls</h2>
+        <button onClick={onClose} className="text-surface-600 hover:text-surface-100">
+          <XMarkIcon className="w-5 h-5" />
+        </button>
       </div>
-    </div>
+
+      <p className="text-sm text-surface-600 mb-4">
+        Select controls to link this policy as evidence:
+      </p>
+
+      <div className="relative mb-4">
+        <Input
+          type="text"
+          placeholder="Search controls..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="input pl-10"
+        />
+        <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-500" />
+      </div>
+
+      <div className="flex-1 overflow-y-auto space-y-2 min-h-[200px] max-h-[300px]">
+        {availableControls.length === 0 ? (
+          <p className="text-surface-500 text-center py-8">
+            {search ? 'No controls found' : 'All controls are already linked'}
+          </p>
+        ) : (
+          availableControls.map((control: any) => (
+            <label
+              key={control.id}
+              className={clsx(
+                'flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors',
+                selectedControlIds.includes(control.id)
+                  ? 'bg-brand-500/20 border border-brand-500/50'
+                  : 'bg-surface-800 hover:bg-surface-700'
+              )}
+            >
+              <input
+                type="checkbox"
+                checked={selectedControlIds.includes(control.id)}
+                onChange={() => toggleControl(control.id)}
+                className="rounded border-surface-600"
+              />
+              <div>
+                <p className="font-mono text-sm text-brand-400">{control.controlId}</p>
+                <p className="text-sm text-surface-200">{control.title}</p>
+              </div>
+            </label>
+          ))
+        )}
+      </div>
+
+      {selectedControlIds.length > 0 && (
+        <p className="text-sm text-surface-600 mt-3">
+          {selectedControlIds.length} control(s) selected
+        </p>
+      )}
+
+      <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-surface-800">
+        <Button variant="secondary" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button
+          onClick={() => linkMutation.mutate()}
+          disabled={selectedControlIds.length === 0}
+          isLoading={linkMutation.isPending}
+        >
+          Link to Controls
+        </Button>
+      </div>
+    </Dialog>
   );
 }
 
@@ -965,100 +957,97 @@ function EditPolicyModal({
   });
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center">
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative bg-surface-900 border border-surface-800 rounded-xl w-full max-w-lg mx-4 p-6 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold text-surface-100">Edit Policy</h2>
-          <button onClick={onClose} className="text-surface-600 hover:text-surface-100">
-            <XMarkIcon className="w-5 h-5" />
-          </button>
+    <Dialog open onClose={onClose}>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-lg font-semibold text-surface-100">Edit Policy</h2>
+        <button onClick={onClose} className="text-surface-600 hover:text-surface-100">
+          <XMarkIcon className="w-5 h-5" />
+        </button>
+      </div>
+
+      <div className="space-y-4">
+        <div>
+          <label className="label">Title *</label>
+          <Input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="input mt-1"
+            required
+          />
         </div>
 
-        <div className="space-y-4">
-          <div>
-            <label className="label">Title *</label>
-            <Input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="input mt-1"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="label">Description</label>
-            <Textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="input mt-1"
-              rows={2}
-            />
-          </div>
-
-          <div>
-            <label className="label">Category *</label>
-            <SelectNative
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="input mt-1"
-            >
-              {CATEGORY_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </SelectNative>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="label">Effective Date</label>
-              <Input
-                type="date"
-                value={effectiveDate}
-                onChange={(e) => setEffectiveDate(e.target.value)}
-                className="input mt-1"
-              />
-            </div>
-            <div>
-              <label className="label">Next Review Due</label>
-              <Input
-                type="date"
-                value={nextReviewDue}
-                onChange={(e) => setNextReviewDue(e.target.value)}
-                className="input mt-1"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="label">Tags (comma-separated)</label>
-            <Input
-              type="text"
-              value={tags}
-              onChange={(e) => setTags(e.target.value)}
-              className="input mt-1"
-              placeholder="e.g., security, compliance, annual"
-            />
-          </div>
+        <div>
+          <label className="label">Description</label>
+          <Textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="input mt-1"
+            rows={2}
+          />
         </div>
 
-        <div className="flex justify-end gap-3 mt-6">
-          <Button variant="secondary" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button
-            onClick={() => updateMutation.mutate()}
-            disabled={!title || !category}
-            isLoading={updateMutation.isPending}
+        <div>
+          <label className="label">Category *</label>
+          <SelectNative
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="input mt-1"
           >
-            Save Changes
-          </Button>
+            {CATEGORY_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </SelectNative>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="label">Effective Date</label>
+            <Input
+              type="date"
+              value={effectiveDate}
+              onChange={(e) => setEffectiveDate(e.target.value)}
+              className="input mt-1"
+            />
+          </div>
+          <div>
+            <label className="label">Next Review Due</label>
+            <Input
+              type="date"
+              value={nextReviewDue}
+              onChange={(e) => setNextReviewDue(e.target.value)}
+              className="input mt-1"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="label">Tags (comma-separated)</label>
+          <Input
+            type="text"
+            value={tags}
+            onChange={(e) => setTags(e.target.value)}
+            className="input mt-1"
+            placeholder="e.g., security, compliance, annual"
+          />
         </div>
       </div>
-    </div>
+
+      <div className="flex justify-end gap-3 mt-6">
+        <Button variant="secondary" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button
+          onClick={() => updateMutation.mutate()}
+          disabled={!title || !category}
+          isLoading={updateMutation.isPending}
+        >
+          Save Changes
+        </Button>
+      </div>
+    </Dialog>
   );
 }
 

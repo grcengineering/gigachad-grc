@@ -27,6 +27,7 @@ import toast from 'react-hot-toast';
 import { Input } from '@/components/ui/Input';
 
 import { SelectNative } from '@/components/ui/SelectNative';
+import { Dialog } from '@/components/ui/Dialog';
 
 interface AssetListResponse {
   assets: Asset[];
@@ -483,113 +484,111 @@ function CreateAssetModal({
   isPending: boolean;
 }) {
   return (
-    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-      <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-lg">
-        <div className="p-4 border-b border-surface-700 flex justify-between items-center">
-          <h3 className="text-lg font-medium text-white">Add Manual Asset</h3>
-          <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
-            <X className="w-5 h-5 text-surface-600" />
-          </button>
-        </div>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            onSubmit();
-          }}
-          className="p-4 space-y-4"
-        >
-          <div>
-            <label className="block text-sm text-surface-600 mb-2">Name *</label>
-            <Input
-              type="text"
-              value={asset.name}
-              onChange={(e) => onChange({ ...asset, name: e.target.value })}
-              required
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-              placeholder="e.g., Production Server 1"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm text-surface-600 mb-2">Type *</label>
-              <SelectNative
-                value={asset.type}
-                onChange={(e) => onChange({ ...asset, type: e.target.value })}
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-              >
-                {ASSET_TYPES.map((type) => (
-                  <option key={type.value} value={type.value}>
-                    {type.label}
-                  </option>
-                ))}
-              </SelectNative>
-            </div>
-            <div>
-              <label className="block text-sm text-surface-600 mb-2">Criticality</label>
-              <SelectNative
-                value={asset.criticality}
-                onChange={(e) => onChange({ ...asset, criticality: e.target.value })}
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-              >
-                {CRITICALITY_LEVELS.map((level) => (
-                  <option key={level.value} value={level.value}>
-                    {level.label}
-                  </option>
-                ))}
-              </SelectNative>
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm text-surface-600 mb-2">Category</label>
-            <Input
-              type="text"
-              value={asset.category}
-              onChange={(e) => onChange({ ...asset, category: e.target.value })}
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-              placeholder="e.g., Web Server, Database"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm text-surface-600 mb-2">Owner</label>
-              <Input
-                type="text"
-                value={asset.owner}
-                onChange={(e) => onChange({ ...asset, owner: e.target.value })}
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-surface-600 mb-2">Department</label>
-              <Input
-                type="text"
-                value={asset.department}
-                onChange={(e) => onChange({ ...asset, department: e.target.value })}
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-              />
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm text-surface-600 mb-2">Location</label>
-            <Input
-              type="text"
-              value={asset.location}
-              onChange={(e) => onChange({ ...asset, location: e.target.value })}
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-              placeholder="e.g., AWS us-east-1, Office HQ"
-            />
-          </div>
-          <div className="flex justify-end gap-3 pt-2">
-            <Button variant="secondary" type="button" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" isLoading={isPending}>
-              Create Asset
-            </Button>
-          </div>
-        </form>
+    <Dialog open onClose={onClose}>
+      <div className="p-4 border-b border-surface-700 flex justify-between items-center">
+        <h3 className="text-lg font-medium text-white">Add Manual Asset</h3>
+        <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
+          <X className="w-5 h-5 text-surface-600" />
+        </button>
       </div>
-    </div>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          onSubmit();
+        }}
+        className="p-4 space-y-4"
+      >
+        <div>
+          <label className="block text-sm text-surface-600 mb-2">Name *</label>
+          <Input
+            type="text"
+            value={asset.name}
+            onChange={(e) => onChange({ ...asset, name: e.target.value })}
+            required
+            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            placeholder="e.g., Production Server 1"
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm text-surface-600 mb-2">Type *</label>
+            <SelectNative
+              value={asset.type}
+              onChange={(e) => onChange({ ...asset, type: e.target.value })}
+              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            >
+              {ASSET_TYPES.map((type) => (
+                <option key={type.value} value={type.value}>
+                  {type.label}
+                </option>
+              ))}
+            </SelectNative>
+          </div>
+          <div>
+            <label className="block text-sm text-surface-600 mb-2">Criticality</label>
+            <SelectNative
+              value={asset.criticality}
+              onChange={(e) => onChange({ ...asset, criticality: e.target.value })}
+              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            >
+              {CRITICALITY_LEVELS.map((level) => (
+                <option key={level.value} value={level.value}>
+                  {level.label}
+                </option>
+              ))}
+            </SelectNative>
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm text-surface-600 mb-2">Category</label>
+          <Input
+            type="text"
+            value={asset.category}
+            onChange={(e) => onChange({ ...asset, category: e.target.value })}
+            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            placeholder="e.g., Web Server, Database"
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm text-surface-600 mb-2">Owner</label>
+            <Input
+              type="text"
+              value={asset.owner}
+              onChange={(e) => onChange({ ...asset, owner: e.target.value })}
+              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-surface-600 mb-2">Department</label>
+            <Input
+              type="text"
+              value={asset.department}
+              onChange={(e) => onChange({ ...asset, department: e.target.value })}
+              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            />
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm text-surface-600 mb-2">Location</label>
+          <Input
+            type="text"
+            value={asset.location}
+            onChange={(e) => onChange({ ...asset, location: e.target.value })}
+            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            placeholder="e.g., AWS us-east-1, Office HQ"
+          />
+        </div>
+        <div className="flex justify-end gap-3 pt-2">
+          <Button variant="secondary" type="button" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" isLoading={isPending}>
+            Create Asset
+          </Button>
+        </div>
+      </form>
+    </Dialog>
   );
 }
 
@@ -621,109 +620,102 @@ function SyncAssetModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
   });
 
   return (
-    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-      <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-lg">
-        <div className="p-4 border-b border-surface-700 flex justify-between items-center">
-          <h3 className="text-lg font-medium text-white">Sync Assets from Integration</h3>
-          <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
-            <X className="w-5 h-5 text-surface-600" />
-          </button>
-        </div>
-        <div className="p-4 space-y-4">
-          {syncResult ? (
-            <div className="space-y-4">
-              <div
-                className={`p-4 rounded-lg ${syncResult.itemsFailed === 0 ? 'bg-emerald-500/20' : 'bg-amber-500/20'}`}
-              >
-                <h4
-                  className={`font-medium ${syncResult.itemsFailed === 0 ? 'text-emerald-600' : 'text-amber-600'}`}
-                >
-                  Sync Complete
-                </h4>
-                <div className="mt-2 space-y-1 text-sm">
-                  <p className="text-surface-700">Items processed: {syncResult.itemsProcessed}</p>
-                  <p className="text-surface-700">
-                    Items created/updated: {syncResult.itemsCreated}
-                  </p>
-                  <p className="text-surface-700">Items failed: {syncResult.itemsFailed}</p>
-                  <p className="text-surface-700">Duration: {syncResult.duration}ms</p>
-                </div>
-                {syncResult.errors?.length > 0 && (
-                  <div className="mt-3">
-                    <p className="text-red-600 text-sm font-medium">Errors:</p>
-                    <ul className="text-red-700 text-sm mt-1 list-disc list-inside">
-                      {syncResult.errors.slice(0, 5).map((err: string, i: number) => (
-                        <li key={i}>{err}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-              <div className="flex justify-end">
-                <button
-                  onClick={onSuccess}
-                  className="px-4 py-2 bg-brand-500 text-white rounded-lg"
-                >
-                  Done
-                </button>
-              </div>
-            </div>
-          ) : (
-            <>
-              <div>
-                <label className="block text-sm text-surface-600 mb-2">Select Integration</label>
-                {integrations?.length === 0 ? (
-                  <p className="text-surface-500 py-4">
-                    No integrations available for asset sync. Configure a Jamf integration first.
-                  </p>
-                ) : (
-                  <div className="space-y-2">
-                    {integrations?.map((integration: any) => (
-                      <label
-                        key={integration.id}
-                        className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer ${
-                          selectedIntegration === integration.id
-                            ? 'bg-brand-500/20 border border-brand-500'
-                            : 'bg-surface-700 border border-surface-600 hover:bg-surface-600'
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="integration"
-                          value={integration.id}
-                          checked={selectedIntegration === integration.id}
-                          onChange={(e) => setSelectedIntegration(e.target.value)}
-                          className="sr-only"
-                        />
-                        <div>
-                          <p className="text-white font-medium">{integration.name}</p>
-                          <p className="text-surface-600 text-sm capitalize">{integration.type}</p>
-                        </div>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="flex justify-end gap-3 pt-2">
-                <button
-                  onClick={onClose}
-                  className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => syncMutation.mutate()}
-                  disabled={!selectedIntegration || syncMutation.isPending}
-                  className="px-4 py-2 bg-brand-500 text-white rounded-lg disabled:opacity-50 flex items-center gap-2"
-                >
-                  {syncMutation.isPending && <RefreshCw className="w-4 h-4 animate-spin" />}
-                  {syncMutation.isPending ? 'Syncing...' : 'Start Sync'}
-                </button>
-              </div>
-            </>
-          )}
-        </div>
+    <Dialog open onClose={onClose}>
+      <div className="p-4 border-b border-surface-700 flex justify-between items-center">
+        <h3 className="text-lg font-medium text-white">Sync Assets from Integration</h3>
+        <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
+          <X className="w-5 h-5 text-surface-600" />
+        </button>
       </div>
-    </div>
+      <div className="p-4 space-y-4">
+        {syncResult ? (
+          <div className="space-y-4">
+            <div
+              className={`p-4 rounded-lg ${syncResult.itemsFailed === 0 ? 'bg-emerald-500/20' : 'bg-amber-500/20'}`}
+            >
+              <h4
+                className={`font-medium ${syncResult.itemsFailed === 0 ? 'text-emerald-600' : 'text-amber-600'}`}
+              >
+                Sync Complete
+              </h4>
+              <div className="mt-2 space-y-1 text-sm">
+                <p className="text-surface-700">Items processed: {syncResult.itemsProcessed}</p>
+                <p className="text-surface-700">Items created/updated: {syncResult.itemsCreated}</p>
+                <p className="text-surface-700">Items failed: {syncResult.itemsFailed}</p>
+                <p className="text-surface-700">Duration: {syncResult.duration}ms</p>
+              </div>
+              {syncResult.errors?.length > 0 && (
+                <div className="mt-3">
+                  <p className="text-red-600 text-sm font-medium">Errors:</p>
+                  <ul className="text-red-700 text-sm mt-1 list-disc list-inside">
+                    {syncResult.errors.slice(0, 5).map((err: string, i: number) => (
+                      <li key={i}>{err}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+            <div className="flex justify-end">
+              <button onClick={onSuccess} className="px-4 py-2 bg-brand-500 text-white rounded-lg">
+                Done
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div>
+              <label className="block text-sm text-surface-600 mb-2">Select Integration</label>
+              {integrations?.length === 0 ? (
+                <p className="text-surface-500 py-4">
+                  No integrations available for asset sync. Configure a Jamf integration first.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {integrations?.map((integration: any) => (
+                    <label
+                      key={integration.id}
+                      className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer ${
+                        selectedIntegration === integration.id
+                          ? 'bg-brand-500/20 border border-brand-500'
+                          : 'bg-surface-700 border border-surface-600 hover:bg-surface-600'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="integration"
+                        value={integration.id}
+                        checked={selectedIntegration === integration.id}
+                        onChange={(e) => setSelectedIntegration(e.target.value)}
+                        className="sr-only"
+                      />
+                      <div>
+                        <p className="text-white font-medium">{integration.name}</p>
+                        <p className="text-surface-600 text-sm capitalize">{integration.type}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                onClick={onClose}
+                className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => syncMutation.mutate()}
+                disabled={!selectedIntegration || syncMutation.isPending}
+                className="px-4 py-2 bg-brand-500 text-white rounded-lg disabled:opacity-50 flex items-center gap-2"
+              >
+                {syncMutation.isPending && <RefreshCw className="w-4 h-4 animate-spin" />}
+                {syncMutation.isPending ? 'Syncing...' : 'Start Sync'}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </Dialog>
   );
 }

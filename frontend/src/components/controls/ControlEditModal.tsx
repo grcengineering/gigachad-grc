@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { Input } from '@/components/ui/Input';
 
 import { Button } from '@/components/ui/Button';
+import { Dialog } from '@/components/ui/Dialog';
 
 interface ControlEditModalProps {
   control: {
@@ -61,72 +62,70 @@ export default function ControlEditModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-      <div className="bg-surface-800 rounded-xl border border-surface-700 p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold text-white">Edit Control</h2>
-          <button onClick={onClose} className="text-surface-600 hover:text-white">
-            <XMarkIcon className="w-5 h-5" />
-          </button>
+    <Dialog open onClose={onClose}>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-lg font-semibold text-white">Edit Control</h2>
+        <button onClick={onClose} className="text-surface-600 hover:text-white">
+          <XMarkIcon className="w-5 h-5" />
+        </button>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-surface-700 mb-1">Title</label>
+          <Input
+            type="text"
+            value={form.title}
+            onChange={(e) => setForm({ ...form, title: e.target.value })}
+            className="input w-full"
+            required
+          />
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-surface-700 mb-1">Title</label>
-            <Input
-              type="text"
-              value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
-              className="input w-full"
-              required
-            />
-          </div>
+        <div>
+          <label className="block text-sm font-medium text-surface-700 mb-1">Description</label>
+          <Textarea
+            value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+            rows={4}
+            className="input w-full"
+          />
+        </div>
 
-          <div>
-            <label className="block text-sm font-medium text-surface-700 mb-1">Description</label>
-            <Textarea
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-              rows={4}
-              className="input w-full"
-            />
-          </div>
+        <div>
+          <label className="block text-sm font-medium text-surface-700 mb-1">
+            Implementation Guidance
+          </label>
+          <Textarea
+            value={form.guidance}
+            onChange={(e) => setForm({ ...form, guidance: e.target.value })}
+            rows={4}
+            className="input w-full"
+            placeholder="Provide detailed implementation guidance..."
+          />
+        </div>
 
-          <div>
-            <label className="block text-sm font-medium text-surface-700 mb-1">
-              Implementation Guidance
-            </label>
-            <Textarea
-              value={form.guidance}
-              onChange={(e) => setForm({ ...form, guidance: e.target.value })}
-              rows={4}
-              className="input w-full"
-              placeholder="Provide detailed implementation guidance..."
-            />
-          </div>
+        <div>
+          <label className="block text-sm font-medium text-surface-700 mb-1">Tags</label>
+          <Input
+            type="text"
+            value={form.tags}
+            onChange={(e) => setForm({ ...form, tags: e.target.value })}
+            className="input w-full"
+            placeholder="e.g., security, compliance, access-control"
+          />
+          <p className="text-xs text-surface-500 mt-1">Comma-separated list of tags</p>
+        </div>
 
-          <div>
-            <label className="block text-sm font-medium text-surface-700 mb-1">Tags</label>
-            <Input
-              type="text"
-              value={form.tags}
-              onChange={(e) => setForm({ ...form, tags: e.target.value })}
-              className="input w-full"
-              placeholder="e.g., security, compliance, access-control"
-            />
-            <p className="text-xs text-surface-500 mt-1">Comma-separated list of tags</p>
-          </div>
-
-          <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" onClick={onClose} variant="secondary">
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isPending} variant="primary">
-              {isPending ? 'Saving...' : 'Save Changes'}
-            </Button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div className="flex justify-end gap-3 pt-4">
+          <Button type="button" onClick={onClose} variant="secondary">
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isPending} variant="primary">
+            {isPending ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </div>
+      </form>
+    </Dialog>
   );
 }

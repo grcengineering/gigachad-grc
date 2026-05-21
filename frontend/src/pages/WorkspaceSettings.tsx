@@ -16,6 +16,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { Input } from '@/components/ui/Input';
 
 import { SelectNative } from '@/components/ui/SelectNative';
+import { Dialog } from '@/components/ui/Dialog';
 
 const WORKSPACE_ROLES = [
   { value: 'owner', label: 'Owner', description: 'Full control of workspace' },
@@ -79,68 +80,64 @@ function AddMemberModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
-      <div className="bg-surface-800 rounded-lg shadow-xl w-full max-w-md p-6">
-        <h3 className="text-lg font-semibold text-foreground mb-4">Add Member</h3>
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1">
-                Select User *
-              </label>
-              <SelectNative
-                value={selectedUserId}
-                onChange={(e) => setSelectedUserId(e.target.value)}
-                className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-brand-500"
-                required
-              >
-                <option value="">Select a user...</option>
-                {availableUsers.map((user: any) => (
-                  <option key={user.id} value={user.id}>
-                    {user.displayName || user.email} ({user.email})
-                  </option>
-                ))}
-              </SelectNative>
-              {availableUsers.length === 0 && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  All organization members are already in this workspace.
-                </p>
-              )}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1">Role</label>
-              <SelectNative
-                value={selectedRole}
-                onChange={(e) => setSelectedRole(e.target.value)}
-                className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-brand-500"
-              >
-                {WORKSPACE_ROLES.map((role) => (
-                  <option key={role.value} value={role.value}>
-                    {role.label} - {role.description}
-                  </option>
-                ))}
-              </SelectNative>
-            </div>
-          </div>
-          <div className="mt-6 flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground"
+    <Dialog open onClose={onClose}>
+      <h3 className="text-lg font-semibold text-foreground mb-4">Add Member</h3>
+      <form onSubmit={handleSubmit}>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1">Select User *</label>
+            <SelectNative
+              value={selectedUserId}
+              onChange={(e) => setSelectedUserId(e.target.value)}
+              className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-brand-500"
+              required
             >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={!selectedUserId || isAdding}
-              className="px-4 py-2 text-sm bg-brand-600 text-white rounded-lg hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isAdding ? 'Adding...' : 'Add Member'}
-            </button>
+              <option value="">Select a user...</option>
+              {availableUsers.map((user: any) => (
+                <option key={user.id} value={user.id}>
+                  {user.displayName || user.email} ({user.email})
+                </option>
+              ))}
+            </SelectNative>
+            {availableUsers.length === 0 && (
+              <p className="text-sm text-muted-foreground mt-1">
+                All organization members are already in this workspace.
+              </p>
+            )}
           </div>
-        </form>
-      </div>
-    </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1">Role</label>
+            <SelectNative
+              value={selectedRole}
+              onChange={(e) => setSelectedRole(e.target.value)}
+              className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-brand-500"
+            >
+              {WORKSPACE_ROLES.map((role) => (
+                <option key={role.value} value={role.value}>
+                  {role.label} - {role.description}
+                </option>
+              ))}
+            </SelectNative>
+          </div>
+        </div>
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={!selectedUserId || isAdding}
+            className="px-4 py-2 text-sm bg-brand-600 text-white rounded-lg hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isAdding ? 'Adding...' : 'Add Member'}
+          </button>
+        </div>
+      </form>
+    </Dialog>
   );
 }
 
@@ -401,35 +398,31 @@ export default function WorkspaceSettings() {
         onSuccess={() => refetch()}
       />
       {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
-          <div className="bg-surface-800 rounded-lg shadow-xl w-full max-w-md p-6">
-            <h3 className="text-lg font-semibold text-foreground mb-4">Archive Workspace?</h3>
-            <p className="text-muted-foreground mb-6">
-              Are you sure you want to archive <strong>{workspace.name}</strong>? This workspace
-              will be hidden but data will be preserved.
-            </p>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  deleteMutation.mutate();
-                  setShowDeleteConfirm(false);
-                }}
-                disabled={deleteMutation.isPending}
-                className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
-              >
-                {deleteMutation.isPending ? 'Archiving...' : 'Archive Workspace'}
-              </button>
-            </div>
-          </div>
+      <Dialog open={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)}>
+        <h3 className="text-lg font-semibold text-foreground mb-4">Archive Workspace?</h3>
+        <p className="text-muted-foreground mb-6">
+          Are you sure you want to archive <strong>{workspace.name}</strong>? This workspace will be
+          hidden but data will be preserved.
+        </p>
+        <div className="flex justify-end gap-3">
+          <button
+            onClick={() => setShowDeleteConfirm(false)}
+            className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => {
+              deleteMutation.mutate();
+              setShowDeleteConfirm(false);
+            }}
+            disabled={deleteMutation.isPending}
+            className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+          >
+            {deleteMutation.isPending ? 'Archiving...' : 'Archive Workspace'}
+          </button>
         </div>
-      )}
+      </Dialog>
     </div>
   );
 }
