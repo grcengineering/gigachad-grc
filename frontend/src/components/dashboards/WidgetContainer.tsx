@@ -44,25 +44,25 @@ export default function WidgetContainer({
   return (
     <div
       className={clsx(
-        'h-full w-full bg-surface-900 border border-surface-700 rounded-lg overflow-hidden flex flex-col',
+        'h-full w-full bg-white border border-surface-200 rounded-lg overflow-hidden flex flex-col',
         isEditing && 'ring-2 ring-brand-500/30'
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-surface-700 bg-surface-800/50">
+      <div className="flex items-center justify-between px-4 py-2 border-b border-surface-200 bg-white/50">
         <div className="flex items-center gap-2">
           {isEditing && (
-            <div className="widget-drag-handle cursor-move p-1 hover:bg-surface-700 rounded">
+            <div className="widget-drag-handle cursor-move p-1 hover:bg-surface-200 rounded">
               <Bars3Icon className="w-4 h-4 text-surface-600" />
             </div>
           )}
-          <h3 className="text-sm font-medium text-surface-200 truncate">{widget.title}</h3>
+          <h3 className="text-sm font-medium text-surface-800 truncate">{widget.title}</h3>
         </div>
         <div className="flex items-center gap-1">
           {widgetDef?.requiresDataSource && (
             <button
               onClick={handleRefresh}
-              className="p-1 hover:bg-surface-700 rounded text-surface-600 hover:text-surface-200 transition-colors"
+              className="p-1 hover:bg-surface-200 rounded text-surface-600 hover:text-surface-800 transition-colors"
               title="Refresh data"
             >
               <ArrowPathIcon className={clsx('w-4 h-4', isLoading && 'animate-spin')} />
@@ -72,7 +72,7 @@ export default function WidgetContainer({
             <>
               <button
                 onClick={onEdit}
-                className="p-1 hover:bg-surface-700 rounded text-surface-600 hover:text-surface-200 transition-colors"
+                className="p-1 hover:bg-surface-200 rounded text-surface-600 hover:text-surface-800 transition-colors"
                 title="Edit widget"
               >
                 <PencilIcon className="w-4 h-4" />
@@ -97,7 +97,7 @@ export default function WidgetContainer({
           </div>
         ) : isLoading && widgetDef?.requiresDataSource ? (
           <div className="flex items-center justify-center h-full">
-            <div className="animate-spin w-6 h-6 border-2 border-surface-600 rounded-full border-t-brand-500" />
+            <div className="animate-spin w-6 h-6 border-2 border-surface-300 rounded-full border-t-brand-500" />
           </div>
         ) : (
           <WidgetRenderer widget={widget} data={data?.data || []} />

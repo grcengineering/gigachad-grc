@@ -87,7 +87,7 @@ export default function BusinessProcesses() {
       <div className="p-6">
         <div className="card p-8 text-center">
           <ExclamationCircleIcon className="w-12 h-12 mx-auto mb-4 text-red-600" />
-          <h2 className="text-lg font-semibold text-surface-100 mb-2">
+          <h2 className="text-lg font-semibold text-surface-900 mb-2">
             Failed to load Business Processes
           </h2>
           <p className="text-surface-600 mb-4">
@@ -106,7 +106,7 @@ export default function BusinessProcesses() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-surface-100">Business Processes</h1>
+          <h1 className="text-2xl font-bold text-surface-900">Business Processes</h1>
           <p className="text-surface-600 mt-1">
             Manage critical business processes and their impact analysis
           </p>
@@ -166,7 +166,7 @@ export default function BusinessProcesses() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-surface-800/50">
+              <thead className="bg-white/50">
                 <tr>
                   <th className="text-left p-4 text-surface-700 font-medium">Process</th>
                   <th className="text-left p-4 text-surface-700 font-medium">Criticality</th>
@@ -177,13 +177,13 @@ export default function BusinessProcesses() {
                   <th className="text-left p-4 text-surface-700 font-medium">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-surface-700">
+              <tbody className="divide-y divide-surface-200">
                 {processes.map((process: BusinessProcess) => (
-                  <tr key={process.id} className="hover:bg-surface-800/30 transition-colors">
+                  <tr key={process.id} className="hover:bg-white/30 transition-colors">
                     <td className="p-4">
                       <Link
                         to={`/bcdr/processes/${process.id}`}
-                        className="text-surface-100 font-medium hover:text-brand-400 transition-colors"
+                        className="text-surface-900 font-medium hover:text-brand-400 transition-colors"
                       >
                         {process.name}
                       </Link>
@@ -253,7 +253,7 @@ export default function BusinessProcesses() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between p-4 border-t border-surface-700">
+          <div className="flex items-center justify-between p-4 border-t border-surface-200">
             <Button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}

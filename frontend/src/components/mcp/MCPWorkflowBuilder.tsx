@@ -143,8 +143,8 @@ export default function MCPWorkflowBuilder() {
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Workflows List */}
-        <div className="lg:col-span-1 bg-white dark:bg-surface-800 rounded-lg border border-gray-200 dark:border-surface-700">
-          <div className="p-4 border-b border-gray-200 dark:border-surface-700">
+        <div className="lg:col-span-1 bg-white dark:bg-white rounded-lg border border-gray-200 dark:border-surface-200">
+          <div className="p-4 border-b border-gray-200 dark:border-surface-200">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
               Available Workflows
             </h2>
@@ -155,7 +155,7 @@ export default function MCPWorkflowBuilder() {
               <ArrowPathIcon className="w-8 h-8 animate-spin mx-auto text-gray-400" />
             </div>
           ) : (
-            <div className="divide-y divide-gray-200 dark:divide-surface-700">
+            <div className="divide-y divide-gray-200 dark:divide-surface-200">
               {workflows.map((workflow) => (
                 <div
                   key={workflow.id}
@@ -163,7 +163,7 @@ export default function MCPWorkflowBuilder() {
                   className={`p-4 cursor-pointer transition-colors ${
                     selectedWorkflow === workflow.id
                       ? 'bg-brand-50 dark:bg-brand-900/20'
-                      : 'hover:bg-gray-50 dark:hover:bg-surface-700/50'
+                      : 'hover:bg-gray-50 dark:hover:bg-surface-200/50'
                   }`}
                 >
                   <div className="flex items-center justify-between">
@@ -172,7 +172,7 @@ export default function MCPWorkflowBuilder() {
                         className={`p-2 rounded-lg ${
                           selectedWorkflow === workflow.id
                             ? 'bg-brand-100 dark:bg-brand-900/30'
-                            : 'bg-gray-100 dark:bg-surface-700'
+                            : 'bg-gray-100 dark:bg-surface-200'
                         }`}
                       >
                         {getTriggerIcon(workflow.trigger.type)}
@@ -198,8 +198,8 @@ export default function MCPWorkflowBuilder() {
         <div className="lg:col-span-2 space-y-6">
           {/* Workflow Details */}
           {selectedWorkflowData ? (
-            <div className="bg-white dark:bg-surface-800 rounded-lg border border-gray-200 dark:border-surface-700">
-              <div className="p-4 border-b border-gray-200 dark:border-surface-700 flex justify-between items-center">
+            <div className="bg-white dark:bg-white rounded-lg border border-gray-200 dark:border-surface-200">
+              <div className="p-4 border-b border-gray-200 dark:border-surface-200 flex justify-between items-center">
                 <div>
                   <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                     {selectedWorkflowData.name}
@@ -222,7 +222,7 @@ export default function MCPWorkflowBuilder() {
 
               <div className="p-4">
                 <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div className="p-3 bg-gray-50 dark:bg-surface-700 rounded-lg">
+                  <div className="p-3 bg-gray-50 dark:bg-surface-200 rounded-lg">
                     <p className="text-sm text-gray-500 dark:text-gray-400">Trigger Type</p>
                     <p className="font-medium text-gray-900 dark:text-white capitalize">
                       {selectedWorkflowData.trigger.type}
@@ -238,7 +238,7 @@ export default function MCPWorkflowBuilder() {
                       </p>
                     )}
                   </div>
-                  <div className="p-3 bg-gray-50 dark:bg-surface-700 rounded-lg">
+                  <div className="p-3 bg-gray-50 dark:bg-surface-200 rounded-lg">
                     <p className="text-sm text-gray-500 dark:text-gray-400">Total Steps</p>
                     <p className="font-medium text-gray-900 dark:text-white">
                       {selectedWorkflowData.stepCount}
@@ -248,7 +248,7 @@ export default function MCPWorkflowBuilder() {
               </div>
             </div>
           ) : (
-            <div className="bg-white dark:bg-surface-800 rounded-lg border border-gray-200 dark:border-surface-700 p-8 text-center">
+            <div className="bg-white dark:bg-white rounded-lg border border-gray-200 dark:border-surface-200 p-8 text-center">
               <BoltIcon className="w-12 h-12 mx-auto text-gray-400" />
               <p className="mt-2 text-gray-600 dark:text-gray-400">
                 Select a workflow to view details
@@ -257,8 +257,8 @@ export default function MCPWorkflowBuilder() {
           )}
 
           {/* Recent Executions */}
-          <div className="bg-white dark:bg-surface-800 rounded-lg border border-gray-200 dark:border-surface-700">
-            <div className="p-4 border-b border-gray-200 dark:border-surface-700">
+          <div className="bg-white dark:bg-white rounded-lg border border-gray-200 dark:border-surface-200">
+            <div className="p-4 border-b border-gray-200 dark:border-surface-200">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                 Recent Executions
               </h2>
@@ -270,7 +270,7 @@ export default function MCPWorkflowBuilder() {
                 <p className="mt-2 text-gray-600 dark:text-gray-400">No executions yet</p>
               </div>
             ) : (
-              <div className="divide-y divide-gray-200 dark:divide-surface-700">
+              <div className="divide-y divide-gray-200 dark:divide-surface-200">
                 {executions
                   .filter((e) => !selectedWorkflow || e.workflowId === selectedWorkflow)
                   .slice(0, 10)
@@ -340,7 +340,7 @@ export default function MCPWorkflowBuilder() {
       {/* Execution Modal */}
       {selectedWorkflowData && (
         <Dialog open={showExecutionModal} onClose={() => setShowExecutionModal(false)}>
-          <div className="p-4 border-b border-gray-200 dark:border-surface-700 flex justify-between items-center">
+          <div className="p-4 border-b border-gray-200 dark:border-surface-200 flex justify-between items-center">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
               Run {selectedWorkflowData.name}
             </h2>
@@ -374,7 +374,7 @@ export default function MCPWorkflowBuilder() {
                     }
                   }}
                   rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white font-mono text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-surface-300 rounded-lg bg-white dark:bg-surface-200 text-gray-900 dark:text-white font-mono text-sm"
                   placeholder="{}"
                 />
               </div>

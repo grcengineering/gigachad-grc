@@ -111,7 +111,7 @@ export default function ControlImplementationCard({
   };
 
   return (
-    <div className="bg-surface-800 rounded-lg border border-surface-700 p-6">
+    <div className="bg-white rounded-lg border border-surface-200 p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-medium text-white">Implementation Status</h3>
         {!isEditing && (
@@ -132,7 +132,7 @@ export default function ControlImplementationCard({
               className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
                 implementation?.status === option.value
                   ? `${option.color} text-white`
-                  : 'bg-surface-700 text-surface-700 hover:bg-surface-600'
+                  : 'bg-surface-200 text-surface-700 hover:bg-surface-600'
               }`}
             >
               {option.label}
@@ -217,17 +217,17 @@ export default function ControlImplementationCard({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-xs text-surface-600">Owner</p>
-              <p className="text-surface-100">{getUserName(implementation?.owner)}</p>
+              <p className="text-surface-900">{getUserName(implementation?.owner)}</p>
             </div>
             <div>
               <p className="text-xs text-surface-600">Testing Frequency</p>
-              <p className="text-surface-100 capitalize">
+              <p className="text-surface-900 capitalize">
                 {implementation?.testingFrequency?.replace('_', ' ') || 'Not set'}
               </p>
             </div>
             <div>
               <p className="text-xs text-surface-600">Effectiveness</p>
-              <p className="text-surface-100">
+              <p className="text-surface-900">
                 {implementation?.effectivenessScore !== undefined
                   ? `${implementation.effectivenessScore}%`
                   : 'Not assessed'}
@@ -235,7 +235,7 @@ export default function ControlImplementationCard({
             </div>
             <div>
               <p className="text-xs text-surface-600">Last Tested</p>
-              <p className="text-surface-100">{formatDate(implementation?.lastTestedAt)}</p>
+              <p className="text-surface-900">{formatDate(implementation?.lastTestedAt)}</p>
             </div>
           </div>
 
@@ -249,7 +249,7 @@ export default function ControlImplementationCard({
           {implementation?.implementationNotes && (
             <div>
               <p className="text-xs text-surface-600 mb-1">Notes</p>
-              <p className="text-surface-200 text-sm">{implementation.implementationNotes}</p>
+              <p className="text-surface-800 text-sm">{implementation.implementationNotes}</p>
             </div>
           )}
         </div>

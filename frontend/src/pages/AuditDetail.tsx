@@ -222,7 +222,7 @@ export default function AuditDetail() {
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate('/audits')}
-            className="p-2 hover:bg-surface-700 rounded-lg text-surface-600 hover:text-white transition-colors"
+            className="p-2 hover:bg-surface-200 rounded-lg text-surface-600 hover:text-white transition-colors"
           >
             <ArrowLeftIcon className="w-5 h-5" />
           </button>
@@ -285,13 +285,13 @@ export default function AuditDetail() {
       </div>
       {/* Status and Key Info */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-surface-800 rounded-lg border border-surface-700 p-4">
+        <div className="bg-white rounded-lg border border-surface-200 p-4">
           <p className="text-surface-600 text-sm mb-1">Status</p>
           {isEditing ? (
             <SelectNative
               value={editForm.status}
               onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
-              className="w-full bg-surface-700 border border-surface-600 rounded-md px-3 py-2 text-white"
+              className="w-full bg-surface-200 border border-surface-300 rounded-md px-3 py-2 text-white"
             >
               {Object.entries(STATUS_CONFIG).map(([value, { label }]) => (
                 <option key={value} value={value}>
@@ -311,19 +311,19 @@ export default function AuditDetail() {
             </span>
           )}
         </div>
-        <div className="bg-surface-800 rounded-lg border border-surface-700 p-4">
+        <div className="bg-white rounded-lg border border-surface-200 p-4">
           <p className="text-surface-600 text-sm mb-1">Start Date</p>
           <p className="text-white font-medium">
             {audit?.plannedStartDate ? new Date(audit.plannedStartDate).toLocaleDateString() : '—'}
           </p>
         </div>
-        <div className="bg-surface-800 rounded-lg border border-surface-700 p-4">
+        <div className="bg-white rounded-lg border border-surface-200 p-4">
           <p className="text-surface-600 text-sm mb-1">End Date</p>
           <p className="text-white font-medium">
             {audit?.plannedEndDate ? new Date(audit.plannedEndDate).toLocaleDateString() : '—'}
           </p>
         </div>
-        <div className="bg-surface-800 rounded-lg border border-surface-700 p-4">
+        <div className="bg-white rounded-lg border border-surface-200 p-4">
           <p className="text-surface-600 text-sm mb-1">Findings</p>
           <p className="text-white font-medium">
             {audit?._count?.findings || findingsArray.length}
@@ -332,14 +332,14 @@ export default function AuditDetail() {
       </div>
       {/* Description */}
       {(audit?.description || isEditing) && (
-        <div className="bg-surface-800 rounded-lg border border-surface-700 p-6">
+        <div className="bg-white rounded-lg border border-surface-200 p-6">
           <h2 className="text-lg font-semibold text-white mb-4">Description</h2>
           {isEditing ? (
             <Textarea
               value={editForm.description || ''}
               onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
               rows={4}
-              className="w-full bg-surface-700 border border-surface-600 rounded-md px-3 py-2 text-white"
+              className="w-full bg-surface-200 border border-surface-300 rounded-md px-3 py-2 text-white"
               placeholder="Audit description..."
             />
           ) : (
@@ -350,7 +350,7 @@ export default function AuditDetail() {
       {/* Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Findings */}
-        <div className="bg-surface-800 rounded-lg border border-surface-700 p-6">
+        <div className="bg-white rounded-lg border border-surface-200 p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-white">Findings</h2>
             <Link
@@ -370,7 +370,7 @@ export default function AuditDetail() {
               {findingsArray.slice(0, 5).map((finding) => (
                 <div
                   key={finding.id}
-                  className="flex items-center justify-between p-3 bg-surface-700/50 rounded-lg"
+                  className="flex items-center justify-between p-3 bg-surface-200/50 rounded-lg"
                 >
                   <div>
                     <p className="text-white font-medium">{finding.title}</p>
@@ -397,7 +397,7 @@ export default function AuditDetail() {
         </div>
 
         {/* Requests */}
-        <div className="bg-surface-800 rounded-lg border border-surface-700 p-6">
+        <div className="bg-white rounded-lg border border-surface-200 p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-white">Evidence Requests</h2>
             <Link
@@ -417,7 +417,7 @@ export default function AuditDetail() {
               {requestsArray.slice(0, 5).map((request) => (
                 <div
                   key={request.id}
-                  className="flex items-center justify-between p-3 bg-surface-700/50 rounded-lg"
+                  className="flex items-center justify-between p-3 bg-surface-200/50 rounded-lg"
                 >
                   <div>
                     <p className="text-white font-medium">{request.title}</p>
@@ -444,24 +444,24 @@ export default function AuditDetail() {
       {/* Stats Grid - only show for existing audits */}
       {!isNewAudit && audit && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-surface-800 rounded-lg border border-surface-700 p-4 text-center">
+          <div className="bg-white rounded-lg border border-surface-200 p-4 text-center">
             <ClipboardDocumentListIcon className="w-8 h-8 mx-auto mb-2 text-blue-600" />
             <p className="text-2xl font-bold text-white">
               {audit._count?.requests || requestsArray.length}
             </p>
             <p className="text-surface-600 text-sm">Requests</p>
           </div>
-          <div className="bg-surface-800 rounded-lg border border-surface-700 p-4 text-center">
+          <div className="bg-white rounded-lg border border-surface-200 p-4 text-center">
             <DocumentTextIcon className="w-8 h-8 mx-auto mb-2 text-purple-600" />
             <p className="text-2xl font-bold text-white">{audit._count?.evidence || 0}</p>
             <p className="text-surface-600 text-sm">Evidence</p>
           </div>
-          <div className="bg-surface-800 rounded-lg border border-surface-700 p-4 text-center">
+          <div className="bg-white rounded-lg border border-surface-200 p-4 text-center">
             <CheckCircleIcon className="w-8 h-8 mx-auto mb-2 text-green-600" />
             <p className="text-2xl font-bold text-white">{audit._count?.testResults || 0}</p>
             <p className="text-surface-600 text-sm">Tests</p>
           </div>
-          <div className="bg-surface-800 rounded-lg border border-surface-700 p-4 text-center">
+          <div className="bg-white rounded-lg border border-surface-200 p-4 text-center">
             <ExclamationTriangleIcon className="w-8 h-8 mx-auto mb-2 text-orange-600" />
             <p className="text-2xl font-bold text-white">
               {audit._count?.findings || findingsArray.length}

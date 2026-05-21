@@ -125,9 +125,9 @@ export default function IntegrationConfigModal({
     <Dialog open onClose={onClose} size="xl">
       <div className="flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-surface-800">
+        <div className="flex items-center justify-between p-6 border-b border-surface-200">
           <div>
-            <h2 className="text-lg font-semibold text-surface-100">Configure {typeMeta.name}</h2>
+            <h2 className="text-lg font-semibold text-surface-900">Configure {typeMeta.name}</h2>
             <p className="text-sm text-surface-600 mt-1">
               {existingIntegration
                 ? 'Update your integration settings'
@@ -137,12 +137,12 @@ export default function IntegrationConfigModal({
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-surface-800">
+        <div className="flex border-b border-surface-200">
           <button
             onClick={() => setActiveTab('quick')}
             className={clsx(
               'flex-1 px-4 py-3 text-sm font-medium transition-colors relative',
-              activeTab === 'quick' ? 'text-brand-400' : 'text-surface-600 hover:text-surface-200'
+              activeTab === 'quick' ? 'text-brand-400' : 'text-surface-600 hover:text-surface-800'
             )}
           >
             Quick Setup
@@ -157,7 +157,7 @@ export default function IntegrationConfigModal({
               'flex-1 px-4 py-3 text-sm font-medium transition-colors relative',
               activeTab === 'advanced'
                 ? 'text-brand-400'
-                : 'text-surface-600 hover:text-surface-200'
+                : 'text-surface-600 hover:text-surface-800'
             )}
           >
             Advanced Builder
@@ -172,7 +172,7 @@ export default function IntegrationConfigModal({
             onClick={() => setActiveTab('raw')}
             className={clsx(
               'flex-1 px-4 py-3 text-sm font-medium transition-colors relative',
-              activeTab === 'raw' ? 'text-brand-400' : 'text-surface-600 hover:text-surface-200'
+              activeTab === 'raw' ? 'text-brand-400' : 'text-surface-600 hover:text-surface-800'
             )}
           >
             Raw API
@@ -201,7 +201,7 @@ export default function IntegrationConfigModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between p-6 border-t border-surface-800 bg-surface-900">
+        <div className="flex items-center justify-between p-6 border-t border-surface-200 bg-white">
           <div className="text-sm text-surface-500">
             {activeTab === 'quick' &&
               `${quickSetupConfig.evidenceTypes.length} evidence types selected`}

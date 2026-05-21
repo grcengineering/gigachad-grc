@@ -101,7 +101,7 @@ export function ModuleSettings() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-surface-100">Module Configuration</h2>
+          <h2 className="text-lg font-semibold text-surface-900">Module Configuration</h2>
           <p className="text-surface-600 text-sm mt-1">
             Enable or disable modules for this organization. Deployment defaults act as a baseline;
             changes here apply at the organization level.
@@ -113,7 +113,7 @@ export function ModuleSettings() {
       </div>
 
       <div className="card p-4 space-y-4">
-        <h3 className="text-sm font-semibold text-surface-200 mb-2">Presets</h3>
+        <h3 className="text-sm font-semibold text-surface-800 mb-2">Presets</h3>
         <div className="flex flex-wrap gap-2">
           {MODULE_PRESETS.map((preset) => (
             <button
@@ -123,7 +123,7 @@ export function ModuleSettings() {
               className={`px-3 py-1.5 rounded-full text-xs border ${
                 selectedPreset?.id === preset.id
                   ? 'bg-brand-500 text-white border-brand-500'
-                  : 'bg-surface-900 text-surface-700 border-surface-700 hover:bg-surface-800'
+                  : 'bg-white text-surface-700 border-surface-200 hover:bg-white'
               }`}
             >
               {preset.name}
@@ -141,7 +141,7 @@ export function ModuleSettings() {
               className={`card p-4 flex items-start gap-3 cursor-pointer border ${
                 checked
                   ? 'border-brand-500 bg-brand-500/10'
-                  : 'border-surface-800 hover:border-surface-600'
+                  : 'border-surface-200 hover:border-surface-300'
               }`}
             >
               <input
@@ -152,9 +152,9 @@ export function ModuleSettings() {
               />
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-surface-100">{mod.name}</span>
+                  <span className="text-sm font-semibold text-surface-900">{mod.name}</span>
                   {!checked && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-surface-800 text-surface-600">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-white text-surface-600">
                       Disabled
                     </span>
                   )}

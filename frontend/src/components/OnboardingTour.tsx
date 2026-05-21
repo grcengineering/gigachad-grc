@@ -212,9 +212,9 @@ export function OnboardingTour({ isOpen, onClose, onComplete }: OnboardingTourPr
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="w-full max-w-lg transform overflow-hidden rounded-2xl bg-gradient-to-br from-surface-800 to-surface-900 border border-surface-700 shadow-2xl transition-all">
+              <Dialog.Panel className="w-full max-w-lg transform overflow-hidden rounded-2xl bg-gradient-to-br from-surface-800 to-surface-900 border border-surface-200 shadow-2xl transition-all">
                 {/* Progress Bar */}
-                <div className="h-1 bg-surface-700">
+                <div className="h-1 bg-surface-200">
                   <div
                     className="h-full bg-gradient-to-r from-brand-500 to-brand-400 transition-all duration-300"
                     style={{ width: `${progress}%` }}
@@ -248,7 +248,7 @@ export function OnboardingTour({ isOpen, onClose, onComplete }: OnboardingTourPr
 
                   {/* Tips */}
                   {step.tips && step.tips.length > 0 && (
-                    <div className="bg-surface-800/50 rounded-xl p-4 mb-6 text-left">
+                    <div className="bg-white/50 rounded-xl p-4 mb-6 text-left">
                       <p className="text-xs font-semibold text-surface-600 uppercase tracking-wider mb-3">
                         Pro Tips
                       </p>
@@ -291,7 +291,7 @@ export function OnboardingTour({ isOpen, onClose, onComplete }: OnboardingTourPr
                 </div>
 
                 {/* Footer */}
-                <div className="flex items-center justify-between px-8 py-4 border-t border-surface-700 bg-surface-800/50">
+                <div className="flex items-center justify-between px-8 py-4 border-t border-surface-200 bg-white/50">
                   <button
                     onClick={handlePrev}
                     disabled={isFirst}
@@ -299,7 +299,7 @@ export function OnboardingTour({ isOpen, onClose, onComplete }: OnboardingTourPr
                       'px-4 py-2 text-sm font-medium rounded-lg transition-colors',
                       isFirst
                         ? 'text-surface-600 cursor-not-allowed'
-                        : 'text-surface-700 hover:text-white hover:bg-surface-700'
+                        : 'text-surface-700 hover:text-white hover:bg-surface-200'
                     )}
                   >
                     Previous
@@ -390,7 +390,7 @@ export function WelcomeBanner({
           </button>
           <button
             onClick={onDismiss}
-            className="p-1.5 rounded-lg hover:bg-surface-700 text-surface-600 hover:text-white transition-colors"
+            className="p-1.5 rounded-lg hover:bg-surface-200 text-surface-600 hover:text-white transition-colors"
           >
             <XMarkIcon className="w-4 h-4" />
           </button>

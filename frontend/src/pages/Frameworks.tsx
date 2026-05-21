@@ -69,7 +69,7 @@ export default function Frameworks() {
       <div className="space-y-6 animate-fade-in">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-surface-100">Frameworks</h1>
+            <h1 className="text-2xl font-bold text-surface-900">Frameworks</h1>
             <p className="text-surface-600 mt-1">
               Track your compliance readiness across regulatory frameworks
             </p>
@@ -85,7 +85,7 @@ export default function Frameworks() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-surface-100">Frameworks</h1>
+          <h1 className="text-2xl font-bold text-surface-900">Frameworks</h1>
           <p className="text-surface-600 mt-1">
             Track your compliance readiness across regulatory frameworks
           </p>
@@ -111,7 +111,7 @@ export default function Frameworks() {
       ) : (
         <div className="card flex flex-col items-center justify-center py-16">
           <CubeIcon className="w-16 h-16 mb-4 text-surface-500" />
-          <h3 className="text-lg font-medium text-surface-200 mb-2">No frameworks yet</h3>
+          <h3 className="text-lg font-medium text-surface-800 mb-2">No frameworks yet</h3>
           <p className="text-surface-600 text-center mb-6 max-w-md">
             Get started by creating your first compliance framework.
           </p>
@@ -127,10 +127,10 @@ export default function Frameworks() {
       {/* Create Framework Modal */}
       <Dialog open={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)}>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-surface-100">Create Framework</h2>
+          <h2 className="text-xl font-bold text-surface-900">Create Framework</h2>
           <button
             onClick={() => setIsCreateModalOpen(false)}
-            className="text-surface-600 hover:text-surface-200"
+            className="text-surface-600 hover:text-surface-800"
           >
             <XMarkIcon className="w-6 h-6" />
           </button>
@@ -203,7 +203,7 @@ export default function Frameworks() {
       {/* Delete Confirmation Modal */}
       {deleteConfirm && (
         <Dialog open onClose={() => setDeleteConfirm(null)}>
-          <h3 className="text-lg font-semibold text-surface-100 mb-2">Delete Framework</h3>
+          <h3 className="text-lg font-semibold text-surface-900 mb-2">Delete Framework</h3>
           <p className="text-surface-600 mb-6">
             Are you sure you want to delete "{deleteConfirm.name}"? This will also delete all
             requirements and mappings associated with this framework. This action cannot be undone.
@@ -247,7 +247,7 @@ function FrameworkCard({
   return (
     <Link
       to={`/frameworks/${framework.id}`}
-      className="card p-6 hover:border-surface-700 transition-colors group relative"
+      className="card p-6 hover:border-surface-200 transition-colors group relative"
     >
       {/* Delete Button */}
       <button
@@ -264,7 +264,7 @@ function FrameworkCard({
             <CubeIcon className="w-6 h-6 text-brand-400" />
           </div>
           <div>
-            <h3 className="font-semibold text-surface-100 group-hover:text-brand-400 transition-colors">
+            <h3 className="font-semibold text-surface-900 group-hover:text-brand-400 transition-colors">
               {framework.name}
             </h3>
             <p className="text-xs text-surface-500">Version {framework.version}</p>
@@ -286,21 +286,21 @@ function FrameworkCard({
         </div>
       </div>
       {/* Stats */}
-      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-surface-800">
+      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-surface-200">
         <div>
           <p className="text-xs text-surface-500">Requirements</p>
-          <p className="text-sm font-medium text-surface-200">{framework.requirementCount || 0}</p>
+          <p className="text-sm font-medium text-surface-800">{framework.requirementCount || 0}</p>
         </div>
         <div>
           <p className="text-xs text-surface-500">Mapped Controls</p>
-          <p className="text-sm font-medium text-surface-200">
+          <p className="text-sm font-medium text-surface-800">
             {framework.mappedControlCount || 0}
           </p>
         </div>
       </div>
       {/* Last Assessment */}
       {framework.lastAssessment && (
-        <div className="mt-4 pt-4 border-t border-surface-800">
+        <div className="mt-4 pt-4 border-t border-surface-200">
           <p className="text-xs text-surface-500">
             Last assessed: {new Date(framework.lastAssessment.createdAt).toLocaleDateString()}
           </p>

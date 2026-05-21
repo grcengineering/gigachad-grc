@@ -41,7 +41,7 @@ const statusColors: Record<string, string> = {
   approved: 'bg-blue-500/20 text-blue-600',
   published: 'bg-green-500/20 text-green-600',
   needs_review: 'bg-yellow-500/20 text-yellow-600',
-  archived: 'bg-surface-700 text-surface-600',
+  archived: 'bg-surface-200 text-surface-600',
 };
 
 const categoryIcons: Record<string, string> = {
@@ -106,7 +106,7 @@ export default function Runbooks() {
       <div className="p-6">
         <div className="card p-8 text-center">
           <ExclamationCircleIcon className="w-12 h-12 mx-auto mb-4 text-red-600" />
-          <h2 className="text-lg font-semibold text-surface-100 mb-2">Failed to load Runbooks</h2>
+          <h2 className="text-lg font-semibold text-surface-900 mb-2">Failed to load Runbooks</h2>
           <p className="text-surface-600 mb-4">
             {(error as Error).message || 'An unexpected error occurred'}
           </p>
@@ -123,7 +123,7 @@ export default function Runbooks() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-surface-100">Runbooks</h1>
+          <h1 className="text-2xl font-bold text-surface-900">Runbooks</h1>
           <p className="text-surface-600 mt-1">
             Step-by-step recovery procedures for systems and processes
           </p>
@@ -138,15 +138,15 @@ export default function Runbooks() {
         <div className="card p-4">
           <p className="text-surface-600 text-sm">Total Runbooks</p>
           {statsLoading ? (
-            <div className="h-8 w-16 bg-surface-700 rounded animate-pulse mt-1"></div>
+            <div className="h-8 w-16 bg-surface-200 rounded animate-pulse mt-1"></div>
           ) : (
-            <p className="text-2xl font-bold text-surface-100">{stats?.total || 0}</p>
+            <p className="text-2xl font-bold text-surface-900">{stats?.total || 0}</p>
           )}
         </div>
         <div className="card p-4">
           <p className="text-surface-600 text-sm">Published</p>
           {statsLoading ? (
-            <div className="h-8 w-16 bg-surface-700 rounded animate-pulse mt-1"></div>
+            <div className="h-8 w-16 bg-surface-200 rounded animate-pulse mt-1"></div>
           ) : (
             <p className="text-2xl font-bold text-green-600">{stats?.published_count || 0}</p>
           )}
@@ -154,7 +154,7 @@ export default function Runbooks() {
         <div className="card p-4">
           <p className="text-surface-600 text-sm">Drafts</p>
           {statsLoading ? (
-            <div className="h-8 w-16 bg-surface-700 rounded animate-pulse mt-1"></div>
+            <div className="h-8 w-16 bg-surface-200 rounded animate-pulse mt-1"></div>
           ) : (
             <p className="text-2xl font-bold text-surface-700">{stats?.draft_count || 0}</p>
           )}
@@ -162,7 +162,7 @@ export default function Runbooks() {
         <div className="card p-4">
           <p className="text-surface-600 text-sm">Needs Review</p>
           {statsLoading ? (
-            <div className="h-8 w-16 bg-surface-700 rounded animate-pulse mt-1"></div>
+            <div className="h-8 w-16 bg-surface-200 rounded animate-pulse mt-1"></div>
           ) : (
             <p className="text-2xl font-bold text-yellow-600">{stats?.needs_review_count || 0}</p>
           )}
@@ -221,9 +221,9 @@ export default function Runbooks() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3].map((i) => (
             <div key={i} className="card p-6 animate-pulse">
-              <div className="h-6 bg-surface-700 rounded w-3/4 mb-4"></div>
-              <div className="h-4 bg-surface-700 rounded w-1/2 mb-2"></div>
-              <div className="h-4 bg-surface-700 rounded w-2/3"></div>
+              <div className="h-6 bg-surface-200 rounded w-3/4 mb-4"></div>
+              <div className="h-4 bg-surface-200 rounded w-1/2 mb-2"></div>
+              <div className="h-4 bg-surface-200 rounded w-2/3"></div>
             </div>
           ))}
         </div>
@@ -261,7 +261,7 @@ export default function Runbooks() {
                 <span className="text-surface-600 text-xs">v{runbook.version}</span>
               </div>
 
-              <h3 className="text-lg font-semibold text-surface-100 mb-1">{runbook.title}</h3>
+              <h3 className="text-lg font-semibold text-surface-900 mb-1">{runbook.title}</h3>
               <p className="text-surface-600 text-sm mb-3">{runbook.runbook_id}</p>
 
               {runbook.description && (

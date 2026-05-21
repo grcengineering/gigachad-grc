@@ -73,28 +73,28 @@ export default function WidgetConfigModal({ widget, onSave, onClose }: WidgetCon
   return (
     <Dialog open onClose={onClose}>
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-surface-700">
+      <div className="flex items-center justify-between p-4 border-b border-surface-200">
         <div>
-          <h2 className="text-lg font-semibold text-surface-100">Configure Widget</h2>
+          <h2 className="text-lg font-semibold text-surface-900">Configure Widget</h2>
           <p className="text-sm text-surface-600">{widgetDef?.name}</p>
         </div>
         <button
           onClick={onClose}
-          className="p-1 hover:bg-surface-700 rounded text-surface-600 hover:text-surface-200"
+          className="p-1 hover:bg-surface-200 rounded text-surface-600 hover:text-surface-800"
         >
           <XMarkIcon className="w-5 h-5" />
         </button>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-surface-700">
+      <div className="flex border-b border-surface-200">
         <button
           onClick={() => setActiveTab('data')}
           className={clsx(
             'px-4 py-2 text-sm font-medium transition-colors',
             activeTab === 'data'
               ? 'text-brand-400 border-b-2 border-brand-400'
-              : 'text-surface-600 hover:text-surface-200'
+              : 'text-surface-600 hover:text-surface-800'
           )}
         >
           Data Source
@@ -105,7 +105,7 @@ export default function WidgetConfigModal({ widget, onSave, onClose }: WidgetCon
             'px-4 py-2 text-sm font-medium transition-colors',
             activeTab === 'appearance'
               ? 'text-brand-400 border-b-2 border-brand-400'
-              : 'text-surface-600 hover:text-surface-200'
+              : 'text-surface-600 hover:text-surface-800'
           )}
         >
           Appearance
@@ -218,7 +218,7 @@ export default function WidgetConfigModal({ widget, onSave, onClose }: WidgetCon
 
             {/* Preview Results */}
             {previewData && (
-              <div className="bg-surface-800 rounded-lg p-4">
+              <div className="bg-white rounded-lg p-4">
                 <h4 className="text-sm font-medium text-surface-700 mb-2">
                   Preview ({previewData.length} results)
                 </h4>
@@ -240,7 +240,7 @@ export default function WidgetConfigModal({ widget, onSave, onClose }: WidgetCon
                   id="showLegend"
                   checked={config.showLegend || false}
                   onChange={(e) => setConfig({ ...config, showLegend: e.target.checked })}
-                  className="w-4 h-4 rounded border-surface-600 bg-surface-800 text-brand-500 focus:ring-brand-500"
+                  className="w-4 h-4 rounded border-surface-300 bg-white text-brand-500 focus:ring-brand-500"
                 />
                 <label htmlFor="showLegend" className="text-sm text-surface-700">
                   Show Legend
@@ -256,7 +256,7 @@ export default function WidgetConfigModal({ widget, onSave, onClose }: WidgetCon
                   id="showValues"
                   checked={config.showValues || false}
                   onChange={(e) => setConfig({ ...config, showValues: e.target.checked })}
-                  className="w-4 h-4 rounded border-surface-600 bg-surface-800 text-brand-500 focus:ring-brand-500"
+                  className="w-4 h-4 rounded border-surface-300 bg-white text-brand-500 focus:ring-brand-500"
                 />
                 <label htmlFor="showValues" className="text-sm text-surface-700">
                   Show Values on Chart
@@ -401,7 +401,7 @@ export default function WidgetConfigModal({ widget, onSave, onClose }: WidgetCon
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-end gap-3 p-4 border-t border-surface-700">
+      <div className="flex items-center justify-end gap-3 p-4 border-t border-surface-200">
         <Button onClick={onClose} variant="ghost">
           Cancel
         </Button>

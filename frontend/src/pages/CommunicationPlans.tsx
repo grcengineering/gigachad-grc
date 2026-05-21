@@ -104,7 +104,7 @@ export default function CommunicationPlans() {
       <div className="p-6">
         <div className="card p-8 text-center">
           <ExclamationCircleIcon className="w-12 h-12 mx-auto mb-4 text-red-600" />
-          <h2 className="text-lg font-semibold text-surface-100 mb-2">
+          <h2 className="text-lg font-semibold text-surface-900 mb-2">
             Failed to load Communication Plans
           </h2>
           <p className="text-surface-600 mb-4">
@@ -123,7 +123,7 @@ export default function CommunicationPlans() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-surface-100">Communication Plans</h1>
+          <h1 className="text-2xl font-bold text-surface-900">Communication Plans</h1>
           <p className="text-surface-600 mt-1">
             Emergency contact lists and communication protocols
           </p>
@@ -206,7 +206,7 @@ export default function CommunicationPlans() {
                       L{level}
                     </div>
                     <div>
-                      <h2 className="text-lg font-semibold text-surface-100">
+                      <h2 className="text-lg font-semibold text-surface-900">
                         Level {level} Contacts
                       </h2>
                       <p className="text-surface-600 text-sm">
@@ -223,11 +223,11 @@ export default function CommunicationPlans() {
                     {(contacts as EscalationContact[]).map((contact) => (
                       <div
                         key={contact.id}
-                        className="p-4 rounded-lg bg-surface-800/50 border border-surface-700"
+                        className="p-4 rounded-lg bg-white/50 border border-surface-200"
                       >
                         <div className="flex items-start justify-between mb-2">
                           <div>
-                            <h3 className="text-surface-100 font-medium">{contact.name}</h3>
+                            <h3 className="text-surface-900 font-medium">{contact.name}</h3>
                             {contact.title && (
                               <p className="text-surface-600 text-sm">{contact.title}</p>
                             )}
@@ -264,7 +264,7 @@ export default function CommunicationPlans() {
                         </div>
 
                         {contact.role_in_plan && (
-                          <p className="text-surface-500 text-xs mt-2 pt-2 border-t border-surface-700">
+                          <p className="text-surface-500 text-xs mt-2 pt-2 border-t border-surface-200">
                             Role: {contact.role_in_plan}
                           </p>
                         )}
@@ -293,9 +293,9 @@ export default function CommunicationPlans() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[1, 2, 3].map((i) => (
                 <div key={i} className="card p-6 animate-pulse">
-                  <div className="h-6 bg-surface-700 rounded w-3/4 mb-4"></div>
-                  <div className="h-4 bg-surface-700 rounded w-1/2 mb-2"></div>
-                  <div className="h-4 bg-surface-700 rounded w-2/3"></div>
+                  <div className="h-6 bg-surface-200 rounded w-3/4 mb-4"></div>
+                  <div className="h-4 bg-surface-200 rounded w-1/2 mb-2"></div>
+                  <div className="h-4 bg-surface-200 rounded w-2/3"></div>
                 </div>
               ))}
             </div>
@@ -332,12 +332,12 @@ export default function CommunicationPlans() {
                         {plan.is_active ? 'Active' : 'Inactive'}
                       </span>
                     </div>
-                    <span className="px-2 py-0.5 rounded bg-surface-700 text-surface-700 text-xs">
+                    <span className="px-2 py-0.5 rounded bg-surface-200 text-surface-700 text-xs">
                       {planTypeLabels[plan.plan_type] || plan.plan_type}
                     </span>
                   </div>
 
-                  <h3 className="text-lg font-semibold text-surface-100 mb-1">{plan.name}</h3>
+                  <h3 className="text-lg font-semibold text-surface-900 mb-1">{plan.name}</h3>
 
                   {plan.description && (
                     <p className="text-surface-600 text-sm mb-4 line-clamp-2">{plan.description}</p>

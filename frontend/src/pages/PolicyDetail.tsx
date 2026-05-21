@@ -163,18 +163,18 @@ export default function PolicyDetail() {
       <div>
         <Link
           to="/policies"
-          className="inline-flex items-center text-sm text-surface-600 hover:text-surface-100 mb-4"
+          className="inline-flex items-center text-sm text-surface-600 hover:text-surface-900 mb-4"
         >
           <ArrowLeftIcon className="w-4 h-4 mr-1" />
           Back to Policies
         </Link>
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-4">
-            <div className="p-3 bg-surface-800 rounded-xl">
+            <div className="p-3 bg-white rounded-xl">
               <DocumentTextIcon className="w-8 h-8 text-brand-400" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-surface-100">{policy.title}</h1>
+              <h1 className="text-2xl font-bold text-surface-900">{policy.title}</h1>
               <p className="text-surface-600 mt-1">{policy.description || 'No description'}</p>
               <div className="flex items-center gap-3 mt-3">
                 <span className={clsx('', statusConfig.color)}>{statusConfig.label}</span>
@@ -221,8 +221,8 @@ export default function PolicyDetail() {
         <div className="lg:col-span-2 space-y-6">
           {/* Preview */}
           <div className="card p-6">
-            <h2 className="text-lg font-semibold text-surface-100 mb-4">Preview</h2>
-            <div className="border border-surface-800 rounded-lg overflow-hidden bg-surface-950">
+            <h2 className="text-lg font-semibold text-surface-900 mb-4">Preview</h2>
+            <div className="border border-surface-200 rounded-lg overflow-hidden bg-surface-50">
               {previewError ? (
                 <div className="flex flex-col items-center justify-center py-16 text-surface-500">
                   <DocumentTextIcon className="w-16 h-16 mb-4" />
@@ -265,7 +265,7 @@ export default function PolicyDetail() {
 
           {/* Version History */}
           <div className="card p-6">
-            <h2 className="text-lg font-semibold text-surface-100 mb-4">Version History</h2>
+            <h2 className="text-lg font-semibold text-surface-900 mb-4">Version History</h2>
             {(policy?.versions?.length ?? 0) > 0 ? (
               <div className="space-y-3">
                 {policy?.versions?.map((version: any, index: number) => (
@@ -273,12 +273,12 @@ export default function PolicyDetail() {
                     key={version.id}
                     className={clsx(
                       'flex items-center justify-between p-3 rounded-lg',
-                      index === 0 ? 'bg-brand-500/10 border border-brand-500/30' : 'bg-surface-800'
+                      index === 0 ? 'bg-brand-500/10 border border-brand-500/30' : 'bg-white'
                     )}
                   >
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-surface-200">v{version.version}</span>
+                        <span className="font-mono text-surface-800">v{version.version}</span>
                         {index === 0 && (
                           <Badge className="text-xs" variant="info">
                             Current
@@ -303,7 +303,7 @@ export default function PolicyDetail() {
           {/* History Tabs */}
           <div className="card overflow-hidden">
             {/* Tab Navigation */}
-            <div className="border-b border-surface-700 px-4">
+            <div className="border-b border-surface-200 px-4">
               <nav className="flex gap-6" aria-label="History Tabs">
                 <button
                   onClick={() => setActiveTab('status')}
@@ -311,7 +311,7 @@ export default function PolicyDetail() {
                     'py-3 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2',
                     activeTab === 'status'
                       ? 'border-brand-500 text-brand-400'
-                      : 'border-transparent text-surface-600 hover:text-surface-200 hover:border-surface-600'
+                      : 'border-transparent text-surface-600 hover:text-surface-800 hover:border-surface-300'
                   )}
                 >
                   <ChatBubbleLeftRightIcon className="w-4 h-4" />
@@ -323,7 +323,7 @@ export default function PolicyDetail() {
                     'py-3 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2',
                     activeTab === 'history'
                       ? 'border-brand-500 text-brand-400'
-                      : 'border-transparent text-surface-600 hover:text-surface-200 hover:border-surface-600'
+                      : 'border-transparent text-surface-600 hover:text-surface-800 hover:border-surface-300'
                   )}
                 >
                   <ClockIcon className="w-4 h-4" />
@@ -342,7 +342,7 @@ export default function PolicyDetail() {
                   {(policy?.statusHistory?.length ?? 0) > 0 ? (
                     <div className="relative">
                       {/* Timeline line */}
-                      <div className="absolute left-4 top-2 bottom-2 w-0.5 bg-surface-700" />
+                      <div className="absolute left-4 top-2 bottom-2 w-0.5 bg-surface-200" />
 
                       <div className="space-y-4">
                         {policy?.statusHistory?.map((entry: any, index: number) => (
@@ -381,7 +381,7 @@ export default function PolicyDetail() {
                               </div>
 
                               <div className="mt-2 text-sm">
-                                <span className="text-surface-200 font-medium">
+                                <span className="text-surface-800 font-medium">
                                   {entry.changedByName || entry.changedBy?.displayName || 'Unknown'}
                                 </span>
                                 <span className="text-surface-500 ml-2">
@@ -411,7 +411,7 @@ export default function PolicyDetail() {
           {/* Linked Controls (Policy as Evidence) */}
           <div className="card p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-surface-100">Linked Controls</h2>
+              <h2 className="text-lg font-semibold text-surface-900">Linked Controls</h2>
               {canEdit && (
                 <Button
                   onClick={() => setIsLinkControlOpen(true)}
@@ -431,7 +431,7 @@ export default function PolicyDetail() {
                 {policy?.controlLinks?.map((link: any) => (
                   <div
                     key={link.id}
-                    className="flex items-center justify-between p-3 bg-surface-800 rounded-lg group"
+                    className="flex items-center justify-between p-3 bg-white rounded-lg group"
                   >
                     <Link
                       to={`/controls/${link.control?.id}`}
@@ -442,7 +442,7 @@ export default function PolicyDetail() {
                         <p className="font-mono text-sm text-brand-400">
                           {link.control?.controlId}
                         </p>
-                        <p className="text-sm text-surface-200">{link.control?.title}</p>
+                        <p className="text-sm text-surface-800">{link.control?.title}</p>
                       </div>
                     </Link>
                     {canEdit && (
@@ -468,7 +468,7 @@ export default function PolicyDetail() {
           {/* Status Actions */}
           {canEdit && statusConfig.next && statusConfig.next.length > 0 && (
             <div className="card p-6">
-              <h3 className="text-sm font-semibold text-surface-100 mb-4">Workflow Actions</h3>
+              <h3 className="text-sm font-semibold text-surface-900 mb-4">Workflow Actions</h3>
               <div className="space-y-2">
                 {statusConfig.next.map((nextStatus) => {
                   const nextConfig = STATUS_CONFIG[nextStatus];
@@ -492,13 +492,13 @@ export default function PolicyDetail() {
 
           {/* Details */}
           <div className="card p-6">
-            <h3 className="text-sm font-semibold text-surface-100 mb-4">Details</h3>
+            <h3 className="text-sm font-semibold text-surface-900 mb-4">Details</h3>
             <dl className="space-y-4">
               <div className="flex items-start gap-3">
                 <UserIcon className="w-5 h-5 text-surface-500 mt-0.5" />
                 <div>
                   <dt className="text-xs text-surface-500">Owner</dt>
-                  <dd className="text-sm text-surface-200">
+                  <dd className="text-sm text-surface-800">
                     {policy.owner?.displayName || 'Unassigned'}
                   </dd>
                 </div>
@@ -507,7 +507,7 @@ export default function PolicyDetail() {
                 <CalendarIcon className="w-5 h-5 text-surface-500 mt-0.5" />
                 <div>
                   <dt className="text-xs text-surface-500">Effective Date</dt>
-                  <dd className="text-sm text-surface-200">
+                  <dd className="text-sm text-surface-800">
                     {policy.effectiveDate
                       ? new Date(policy.effectiveDate).toLocaleDateString()
                       : 'Not set'}
@@ -523,7 +523,7 @@ export default function PolicyDetail() {
                       'text-sm',
                       policy.nextReviewDue && new Date(policy.nextReviewDue) < new Date()
                         ? 'text-red-600'
-                        : 'text-surface-200'
+                        : 'text-surface-800'
                     )}
                   >
                     {policy.nextReviewDue
@@ -552,23 +552,23 @@ export default function PolicyDetail() {
 
           {/* File Info */}
           <div className="card p-6">
-            <h3 className="text-sm font-semibold text-surface-100 mb-4">File Information</h3>
+            <h3 className="text-sm font-semibold text-surface-900 mb-4">File Information</h3>
             <dl className="space-y-3 text-sm">
               <div className="flex justify-between">
                 <dt className="text-surface-500">Filename</dt>
-                <dd className="text-surface-200 truncate ml-2">{policy.filename}</dd>
+                <dd className="text-surface-800 truncate ml-2">{policy.filename}</dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-surface-500">Type</dt>
-                <dd className="text-surface-200">{policy.mimeType}</dd>
+                <dd className="text-surface-800">{policy.mimeType}</dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-surface-500">Size</dt>
-                <dd className="text-surface-200">{formatFileSize(policy.size)}</dd>
+                <dd className="text-surface-800">{formatFileSize(policy.size)}</dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-surface-500">Uploaded</dt>
-                <dd className="text-surface-200">
+                <dd className="text-surface-800">
                   {new Date(policy.createdAt).toLocaleDateString()}
                 </dd>
               </div>
@@ -640,13 +640,13 @@ export default function PolicyDetail() {
           }}
         >
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-surface-100">Change Status</h2>
+            <h2 className="text-lg font-semibold text-surface-900">Change Status</h2>
             <button
               onClick={() => {
                 setStatusChangeModal({ isOpen: false, targetStatus: null });
                 setStatusChangeNotes('');
               }}
-              className="text-surface-600 hover:text-surface-100"
+              className="text-surface-600 hover:text-surface-900"
             >
               <XMarkIcon className="w-5 h-5" />
             </button>
@@ -737,8 +737,8 @@ function NewVersionModal({
   return (
     <Dialog open onClose={onClose}>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-semibold text-surface-100">Upload New Version</h2>
-        <button onClick={onClose} className="text-surface-600 hover:text-surface-100">
+        <h2 className="text-lg font-semibold text-surface-900">Upload New Version</h2>
+        <button onClick={onClose} className="text-surface-600 hover:text-surface-900">
           <XMarkIcon className="w-5 h-5" />
         </button>
       </div>
@@ -838,8 +838,8 @@ function LinkControlModal({
   return (
     <Dialog open onClose={onClose}>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-surface-100">Link Policy to Controls</h2>
-        <button onClick={onClose} className="text-surface-600 hover:text-surface-100">
+        <h2 className="text-lg font-semibold text-surface-900">Link Policy to Controls</h2>
+        <button onClick={onClose} className="text-surface-600 hover:text-surface-900">
           <XMarkIcon className="w-5 h-5" />
         </button>
       </div>
@@ -872,18 +872,18 @@ function LinkControlModal({
                 'flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors',
                 selectedControlIds.includes(control.id)
                   ? 'bg-brand-500/20 border border-brand-500/50'
-                  : 'bg-surface-800 hover:bg-surface-700'
+                  : 'bg-white hover:bg-surface-200'
               )}
             >
               <input
                 type="checkbox"
                 checked={selectedControlIds.includes(control.id)}
                 onChange={() => toggleControl(control.id)}
-                className="rounded border-surface-600"
+                className="rounded border-surface-300"
               />
               <div>
                 <p className="font-mono text-sm text-brand-400">{control.controlId}</p>
-                <p className="text-sm text-surface-200">{control.title}</p>
+                <p className="text-sm text-surface-800">{control.title}</p>
               </div>
             </label>
           ))
@@ -896,7 +896,7 @@ function LinkControlModal({
         </p>
       )}
 
-      <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-surface-800">
+      <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-surface-200">
         <Button variant="secondary" onClick={onClose}>
           Cancel
         </Button>
@@ -959,8 +959,8 @@ function EditPolicyModal({
   return (
     <Dialog open onClose={onClose}>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-semibold text-surface-100">Edit Policy</h2>
-        <button onClick={onClose} className="text-surface-600 hover:text-surface-100">
+        <h2 className="text-lg font-semibold text-surface-900">Edit Policy</h2>
+        <button onClick={onClose} className="text-surface-600 hover:text-surface-900">
           <XMarkIcon className="w-5 h-5" />
         </button>
       </div>

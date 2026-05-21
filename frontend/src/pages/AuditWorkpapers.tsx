@@ -185,7 +185,7 @@ export default function AuditWorkpapers() {
         {Object.entries(statusConfig).map(([status, config]) => {
           const count = workpapers.filter((w) => w.status === status).length;
           return (
-            <div key={status} className="bg-surface-800 rounded-lg p-4 border border-surface-700">
+            <div key={status} className="bg-white rounded-lg p-4 border border-surface-200">
               <div className="flex items-center gap-2">
                 <config.icon className={clsx('h-5 w-5', config.color)} />
                 <span className="text-surface-600 text-sm">{config.label}</span>
@@ -199,13 +199,13 @@ export default function AuditWorkpapers() {
       {isLoading ? (
         <div className="animate-pulse space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-surface-800 rounded-lg h-20" />
+            <div key={i} className="bg-white rounded-lg h-20" />
           ))}
         </div>
       ) : (
-        <div className="bg-surface-800 rounded-lg border border-surface-700 overflow-hidden">
+        <div className="bg-white rounded-lg border border-surface-200 overflow-hidden">
           <table className="w-full">
-            <thead className="bg-surface-900">
+            <thead className="bg-white">
               <tr>
                 <th className="text-left px-4 py-3 text-sm font-medium text-surface-600">Number</th>
                 <th className="text-left px-4 py-3 text-sm font-medium text-surface-600">Title</th>
@@ -222,11 +222,11 @@ export default function AuditWorkpapers() {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-surface-700">
+            <tbody className="divide-y divide-surface-200">
               {workpapers.map((wp) => {
                 const config = statusConfig[wp.status];
                 return (
-                  <tr key={wp.id} className="hover:bg-surface-700/50">
+                  <tr key={wp.id} className="hover:bg-surface-200/50">
                     <td className="px-4 py-3">
                       <span className="font-mono text-sm text-brand-400">{wp.workpaperNumber}</span>
                     </td>
@@ -309,7 +309,7 @@ export default function AuditWorkpapers() {
           <h2 className="text-xl font-semibold text-white">Create Workpaper</h2>
           <button
             onClick={() => setShowCreateModal(false)}
-            className="p-1 hover:bg-surface-700 rounded"
+            className="p-1 hover:bg-surface-200 rounded"
           >
             <XMarkIcon className="h-5 w-5 text-surface-600" />
           </button>
@@ -322,7 +322,7 @@ export default function AuditWorkpapers() {
               type="text"
               value={createForm.title}
               onChange={(e) => setCreateForm((prev) => ({ ...prev, title: e.target.value }))}
-              className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
               placeholder="Workpaper title"
             />
           </div>
@@ -334,7 +334,7 @@ export default function AuditWorkpapers() {
               onChange={(e) =>
                 setCreateForm((prev) => ({ ...prev, workpaperType: e.target.value }))
               }
-              className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
             >
               <option value="procedure">Procedure</option>
               <option value="walkthrough">Walkthrough</option>
@@ -349,7 +349,7 @@ export default function AuditWorkpapers() {
             <Textarea
               value={createForm.content}
               onChange={(e) => setCreateForm((prev) => ({ ...prev, content: e.target.value }))}
-              className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white h-32"
+              className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white h-32"
               placeholder="Workpaper content..."
             />
           </div>

@@ -190,7 +190,7 @@ export default function RiskConfiguration() {
               }
             }}
             disabled={resetMutation.isPending}
-            className="px-4 py-2 bg-gray-100 dark:bg-surface-700 text-gray-700 dark:text-surface-700 rounded-lg hover:bg-gray-200 dark:hover:bg-surface-600 flex items-center gap-2"
+            className="px-4 py-2 bg-gray-100 dark:bg-surface-200 text-gray-700 dark:text-surface-700 rounded-lg hover:bg-gray-200 dark:hover:bg-surface-600 flex items-center gap-2"
           >
             <ArrowPathIcon className="w-4 h-4" />
             Reset to Defaults
@@ -199,7 +199,7 @@ export default function RiskConfiguration() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b border-gray-200 dark:border-surface-700 pb-px">
+      <div className="flex gap-2 border-b border-gray-200 dark:border-surface-200 pb-px">
         {tabs.map((tab) => (
           <button
             key={tab.key}
@@ -217,7 +217,7 @@ export default function RiskConfiguration() {
       </div>
 
       {/* Tab Content */}
-      <div className="bg-white dark:bg-surface-800 rounded-xl border border-gray-200 dark:border-surface-700 p-6">
+      <div className="bg-white dark:bg-white rounded-xl border border-gray-200 dark:border-surface-200 p-6">
         {activeTab === 'scoring' && config && (
           <ScoringMethodology config={config} onUpdate={(data) => updateMutation.mutate(data)} />
         )}
@@ -369,7 +369,7 @@ function ScoringMethodology({
             className={`p-4 rounded-lg border cursor-pointer transition-all ${
               methodology === 'qualitative'
                 ? 'border-brand-500 bg-brand-500/10 ring-2 ring-brand-500'
-                : 'border-gray-200 dark:border-surface-700 bg-gray-50 dark:bg-surface-700/50 hover:border-brand-500/50'
+                : 'border-gray-200 dark:border-surface-200 bg-gray-50 dark:bg-surface-200/50 hover:border-brand-500/50'
             }`}
           >
             <input
@@ -413,7 +413,7 @@ function ScoringMethodology({
             className={`p-4 rounded-lg border cursor-pointer transition-all ${
               methodology === 'quantitative'
                 ? 'border-brand-500 bg-brand-500/10 ring-2 ring-brand-500'
-                : 'border-gray-200 dark:border-surface-700 bg-gray-50 dark:bg-surface-700/50 hover:border-brand-500/50'
+                : 'border-gray-200 dark:border-surface-200 bg-gray-50 dark:bg-surface-200/50 hover:border-brand-500/50'
             }`}
           >
             <input
@@ -467,7 +467,7 @@ function ScoringMethodology({
             className={`p-4 rounded-lg border cursor-pointer transition-all ${
               methodology === 'hybrid'
                 ? 'border-brand-500 bg-brand-500/10 ring-2 ring-brand-500'
-                : 'border-gray-200 dark:border-surface-700 bg-gray-50 dark:bg-surface-700/50 hover:border-brand-500/50'
+                : 'border-gray-200 dark:border-surface-200 bg-gray-50 dark:bg-surface-200/50 hover:border-brand-500/50'
             }`}
           >
             <input
@@ -520,7 +520,7 @@ function ScoringMethodology({
 
       {/* Methodology Details Panel */}
       {showMethodologyDetails && currentMethodology && (
-        <div className="p-6 bg-gray-50 dark:bg-surface-700/30 rounded-xl border border-gray-200 dark:border-surface-700">
+        <div className="p-6 bg-gray-50 dark:bg-surface-200/30 rounded-xl border border-gray-200 dark:border-surface-200">
           <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
             {currentMethodology.title}
           </h4>
@@ -529,7 +529,7 @@ function ScoringMethodology({
           </p>
 
           {/* Formula */}
-          <div className="mb-6 p-4 bg-gray-900 dark:bg-surface-900 rounded-lg">
+          <div className="mb-6 p-4 bg-gray-900 dark:bg-white rounded-lg">
             <p className="text-xs text-gray-400 mb-2 uppercase tracking-wider">Formula</p>
             <pre className="text-emerald-600 font-mono text-sm whitespace-pre-wrap">
               {currentMethodology.formula}
@@ -590,7 +590,7 @@ function ScoringMethodology({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 pt-6 border-t border-gray-200 dark:border-surface-700">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 pt-6 border-t border-gray-200 dark:border-surface-200">
             {/* Best For */}
             <div>
               <h5 className="text-sm font-medium text-blue-600 mb-3 flex items-center gap-2">
@@ -664,11 +664,11 @@ function ScoringMethodology({
             calculation.
           </p>
           <div className="grid grid-cols-2 gap-4 text-sm">
-            <div className="p-3 bg-surface-800/50 rounded-lg">
+            <div className="p-3 bg-white/50 rounded-lg">
               <p className="text-gray-500 dark:text-surface-600">Currency</p>
               <p className="text-gray-900 dark:text-white font-medium">USD ($)</p>
             </div>
-            <div className="p-3 bg-surface-800/50 rounded-lg">
+            <div className="p-3 bg-white/50 rounded-lg">
               <p className="text-gray-500 dark:text-surface-600">Analysis Period</p>
               <p className="text-gray-900 dark:text-white font-medium">Annual (12 months)</p>
             </div>
@@ -689,7 +689,7 @@ function ScoringMethodology({
             {config.likelihoodScale.map((level) => (
               <div
                 key={level.value}
-                className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-50 dark:bg-surface-700/50 rounded-lg"
+                className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-50 dark:bg-surface-200/50 rounded-lg"
               >
                 <span className="w-6 h-6 rounded bg-gray-200 dark:bg-surface-600 flex items-center justify-center text-gray-900 dark:text-gray-900 dark:text-white text-sm font-medium">
                   {level.weight}
@@ -714,7 +714,7 @@ function ScoringMethodology({
             {config.impactScale.map((level) => (
               <div
                 key={level.value}
-                className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-50 dark:bg-surface-700/50 rounded-lg"
+                className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-50 dark:bg-surface-200/50 rounded-lg"
               >
                 <span className="w-6 h-6 rounded bg-gray-200 dark:bg-surface-600 flex items-center justify-center text-gray-900 dark:text-gray-900 dark:text-white text-sm font-medium">
                   {level.weight}
@@ -827,7 +827,7 @@ function RiskCategories({
         {categories.map((cat) => (
           <div
             key={cat.id}
-            className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-50 dark:bg-surface-700/50 rounded-lg"
+            className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-50 dark:bg-surface-200/50 rounded-lg"
           >
             <div className="w-4 h-4 rounded" style={{ backgroundColor: cat.color }} />
             <div className="flex-1">
@@ -847,7 +847,7 @@ function RiskCategories({
           </div>
         ))}
       </div>
-      <div className="pt-4 border-t border-surface-700">
+      <div className="pt-4 border-t border-surface-200">
         <h4 className="text-gray-900 dark:text-white font-medium mb-3">Add Category</h4>
         <div className="flex gap-4">
           <Input
@@ -855,14 +855,14 @@ function RiskCategories({
             placeholder="Category name"
             value={newCategory.name ?? ''}
             onChange={(e) => setNewCategory((prev) => ({ ...prev, name: e.target.value }))}
-            className="flex-1 px-4 py-2 bg-gray-50 dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white"
+            className="flex-1 px-4 py-2 bg-gray-50 dark:bg-surface-200 border border-gray-300 dark:border-surface-300 rounded-lg text-gray-900 dark:text-white"
           />
           <Input
             type="text"
             placeholder="Description"
             value={newCategory.description ?? ''}
             onChange={(e) => setNewCategory((prev) => ({ ...prev, description: e.target.value }))}
-            className="flex-1 px-4 py-2 bg-gray-50 dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white"
+            className="flex-1 px-4 py-2 bg-gray-50 dark:bg-surface-200 border border-gray-300 dark:border-surface-300 rounded-lg text-gray-900 dark:text-white"
           />
           <input
             type="color"
@@ -914,7 +914,7 @@ function WorkflowSettingsTab({
       <div className="space-y-4">
         <h4 className="text-gray-900 dark:text-white font-medium">Assessment Workflow</h4>
 
-        <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-surface-700/50 rounded-lg">
+        <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-surface-200/50 rounded-lg">
           <div>
             <p className="text-gray-900 dark:text-white">Require Formal Assessment</p>
             <p className="text-gray-500 dark:text-surface-600 text-sm">
@@ -925,11 +925,11 @@ function WorkflowSettingsTab({
             type="checkbox"
             checked={settings.requireAssessment ?? true}
             onChange={(e) => handleChange('requireAssessment', e.target.checked)}
-            className="rounded border-surface-600"
+            className="rounded border-surface-300"
           />
         </label>
 
-        <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-surface-700/50 rounded-lg">
+        <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-surface-200/50 rounded-lg">
           <div>
             <p className="text-gray-900 dark:text-white">Require GRC Review</p>
             <p className="text-gray-500 dark:text-surface-600 text-sm">
@@ -940,11 +940,11 @@ function WorkflowSettingsTab({
             type="checkbox"
             checked={settings.requireGrcReview ?? true}
             onChange={(e) => handleChange('requireGrcReview', e.target.checked)}
-            className="rounded border-surface-600"
+            className="rounded border-surface-300"
           />
         </label>
 
-        <div className="p-4 bg-gray-50 dark:bg-surface-700/50 rounded-lg">
+        <div className="p-4 bg-gray-50 dark:bg-surface-200/50 rounded-lg">
           <div className="flex items-center justify-between mb-2">
             <p className="text-gray-900 dark:text-white">Executive Approval Threshold</p>
           </div>
@@ -954,7 +954,7 @@ function WorkflowSettingsTab({
           <SelectNative
             value={settings.executiveApprovalThreshold ?? 'high'}
             onChange={(e) => handleChange('executiveApprovalThreshold', e.target.value)}
-            className="w-full px-4 py-2 bg-gray-50 dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white"
+            className="w-full px-4 py-2 bg-gray-50 dark:bg-surface-200 border border-gray-300 dark:border-surface-300 rounded-lg text-gray-900 dark:text-white"
           >
             <option value="critical">Critical only</option>
             <option value="high">High and above</option>
@@ -963,15 +963,15 @@ function WorkflowSettingsTab({
           </SelectNative>
         </div>
       </div>
-      <div className="space-y-4 pt-4 border-t border-surface-700">
+      <div className="space-y-4 pt-4 border-t border-surface-200">
         <h4 className="text-gray-900 dark:text-white font-medium">Review Settings</h4>
 
-        <div className="p-4 bg-gray-50 dark:bg-surface-700/50 rounded-lg">
+        <div className="p-4 bg-gray-50 dark:bg-surface-200/50 rounded-lg">
           <p className="text-gray-900 dark:text-white mb-2">Default Review Frequency</p>
           <SelectNative
             value={settings.defaultReviewFrequency ?? 'quarterly'}
             onChange={(e) => handleChange('defaultReviewFrequency', e.target.value)}
-            className="w-full px-4 py-2 bg-gray-50 dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white"
+            className="w-full px-4 py-2 bg-gray-50 dark:bg-surface-200 border border-gray-300 dark:border-surface-300 rounded-lg text-gray-900 dark:text-white"
           >
             <option value="monthly">Monthly</option>
             <option value="quarterly">Quarterly</option>
@@ -980,10 +980,10 @@ function WorkflowSettingsTab({
           </SelectNative>
         </div>
       </div>
-      <div className="space-y-4 pt-4 border-t border-surface-700">
+      <div className="space-y-4 pt-4 border-t border-surface-200">
         <h4 className="text-gray-900 dark:text-white font-medium">Notifications</h4>
 
-        <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-surface-700/50 rounded-lg">
+        <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-surface-200/50 rounded-lg">
           <div>
             <p className="text-gray-900 dark:text-white">Notify on Status Change</p>
             <p className="text-gray-500 dark:text-surface-600 text-sm">
@@ -994,11 +994,11 @@ function WorkflowSettingsTab({
             type="checkbox"
             checked={settings.notifyOnStatusChange ?? true}
             onChange={(e) => handleChange('notifyOnStatusChange', e.target.checked)}
-            className="rounded border-surface-600"
+            className="rounded border-surface-300"
           />
         </label>
 
-        <div className="p-4 bg-gray-50 dark:bg-surface-700/50 rounded-lg">
+        <div className="p-4 bg-gray-50 dark:bg-surface-200/50 rounded-lg">
           <div className="flex items-center justify-between mb-2">
             <p className="text-gray-900 dark:text-white">Due Date Reminder</p>
           </div>
@@ -1011,7 +1011,7 @@ function WorkflowSettingsTab({
             onChange={(e) => handleChange('dueDateReminderDays', parseInt(e.target.value))}
             min="1"
             max="30"
-            className="w-full px-4 py-2 bg-gray-50 dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white"
+            className="w-full px-4 py-2 bg-gray-50 dark:bg-surface-200 border border-gray-300 dark:border-surface-300 rounded-lg text-gray-900 dark:text-white"
           />
         </div>
       </div>
@@ -1110,7 +1110,7 @@ function SLASettingsTab({
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="p-4 bg-gray-50 dark:bg-surface-700/50 rounded-lg">
+          <div className="p-4 bg-gray-50 dark:bg-surface-200/50 rounded-lg">
             <label className="block text-gray-900 dark:text-white text-sm font-medium mb-2">
               Intake → Assessment Start
             </label>
@@ -1123,7 +1123,7 @@ function SLASettingsTab({
                 value={settings.intakeToAssessment}
                 onChange={(e) => handleChange('intakeToAssessment', parseInt(e.target.value) || 0)}
                 min="1"
-                className="w-24 px-3 py-2 bg-white dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white text-sm"
+                className="w-24 px-3 py-2 bg-white dark:bg-surface-200 border border-gray-300 dark:border-surface-300 rounded-lg text-gray-900 dark:text-white text-sm"
               />
               <span className="text-gray-500 dark:text-surface-600 text-sm">hours</span>
               <span className="text-gray-400 dark:text-surface-500 text-xs ml-auto">
@@ -1132,7 +1132,7 @@ function SLASettingsTab({
             </div>
           </div>
 
-          <div className="p-4 bg-gray-50 dark:bg-surface-700/50 rounded-lg">
+          <div className="p-4 bg-gray-50 dark:bg-surface-200/50 rounded-lg">
             <label className="block text-gray-900 dark:text-white text-sm font-medium mb-2">
               Assessment Duration
             </label>
@@ -1145,7 +1145,7 @@ function SLASettingsTab({
                 value={settings.assessmentDuration}
                 onChange={(e) => handleChange('assessmentDuration', parseInt(e.target.value) || 0)}
                 min="1"
-                className="w-24 px-3 py-2 bg-white dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white text-sm"
+                className="w-24 px-3 py-2 bg-white dark:bg-surface-200 border border-gray-300 dark:border-surface-300 rounded-lg text-gray-900 dark:text-white text-sm"
               />
               <span className="text-gray-500 dark:text-surface-600 text-sm">hours</span>
               <span className="text-gray-400 dark:text-surface-500 text-xs ml-auto">
@@ -1154,7 +1154,7 @@ function SLASettingsTab({
             </div>
           </div>
 
-          <div className="p-4 bg-gray-50 dark:bg-surface-700/50 rounded-lg">
+          <div className="p-4 bg-gray-50 dark:bg-surface-200/50 rounded-lg">
             <label className="block text-gray-900 dark:text-white text-sm font-medium mb-2">
               GRC Review Duration
             </label>
@@ -1167,7 +1167,7 @@ function SLASettingsTab({
                 value={settings.grcReviewDuration}
                 onChange={(e) => handleChange('grcReviewDuration', parseInt(e.target.value) || 0)}
                 min="1"
-                className="w-24 px-3 py-2 bg-white dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white text-sm"
+                className="w-24 px-3 py-2 bg-white dark:bg-surface-200 border border-gray-300 dark:border-surface-300 rounded-lg text-gray-900 dark:text-white text-sm"
               />
               <span className="text-gray-500 dark:text-surface-600 text-sm">hours</span>
               <span className="text-gray-400 dark:text-surface-500 text-xs ml-auto">
@@ -1176,7 +1176,7 @@ function SLASettingsTab({
             </div>
           </div>
 
-          <div className="p-4 bg-gray-50 dark:bg-surface-700/50 rounded-lg">
+          <div className="p-4 bg-gray-50 dark:bg-surface-200/50 rounded-lg">
             <label className="block text-gray-900 dark:text-white text-sm font-medium mb-2">
               Treatment Decision
             </label>
@@ -1191,7 +1191,7 @@ function SLASettingsTab({
                   handleChange('treatmentDecisionDuration', parseInt(e.target.value) || 0)
                 }
                 min="1"
-                className="w-24 px-3 py-2 bg-white dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white text-sm"
+                className="w-24 px-3 py-2 bg-white dark:bg-surface-200 border border-gray-300 dark:border-surface-300 rounded-lg text-gray-900 dark:text-white text-sm"
               />
               <span className="text-gray-500 dark:text-surface-600 text-sm">hours</span>
               <span className="text-gray-400 dark:text-surface-500 text-xs ml-auto">
@@ -1200,7 +1200,7 @@ function SLASettingsTab({
             </div>
           </div>
 
-          <div className="p-4 bg-gray-50 dark:bg-surface-700/50 rounded-lg">
+          <div className="p-4 bg-gray-50 dark:bg-surface-200/50 rounded-lg">
             <label className="block text-gray-900 dark:text-white text-sm font-medium mb-2">
               Executive Approval
             </label>
@@ -1215,7 +1215,7 @@ function SLASettingsTab({
                   handleChange('executiveApprovalDuration', parseInt(e.target.value) || 0)
                 }
                 min="1"
-                className="w-24 px-3 py-2 bg-white dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white text-sm"
+                className="w-24 px-3 py-2 bg-white dark:bg-surface-200 border border-gray-300 dark:border-surface-300 rounded-lg text-gray-900 dark:text-white text-sm"
               />
               <span className="text-gray-500 dark:text-surface-600 text-sm">hours</span>
               <span className="text-gray-400 dark:text-surface-500 text-xs ml-auto">
@@ -1226,7 +1226,7 @@ function SLASettingsTab({
         </div>
       </div>
       {/* Mitigation SLAs by Risk Level */}
-      <div className="space-y-4 pt-6 border-t border-gray-200 dark:border-surface-700">
+      <div className="space-y-4 pt-6 border-t border-gray-200 dark:border-surface-200">
         <h4 className="text-gray-900 dark:text-white font-medium flex items-center gap-2">
           <ExclamationTriangleIcon className="w-5 h-5 text-amber-600" />
           Mitigation SLAs by Risk Level
@@ -1246,7 +1246,7 @@ function SLASettingsTab({
                   handleMitigationSLAChange('critical', parseInt(e.target.value) || 0)
                 }
                 min="1"
-                className="w-20 px-3 py-2 bg-white dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white text-sm"
+                className="w-20 px-3 py-2 bg-white dark:bg-surface-200 border border-gray-300 dark:border-surface-300 rounded-lg text-gray-900 dark:text-white text-sm"
               />
               <span className="text-gray-500 dark:text-surface-600 text-sm">days</span>
             </div>
@@ -1260,7 +1260,7 @@ function SLASettingsTab({
                 value={settings.mitigationSLA.high}
                 onChange={(e) => handleMitigationSLAChange('high', parseInt(e.target.value) || 0)}
                 min="1"
-                className="w-20 px-3 py-2 bg-white dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white text-sm"
+                className="w-20 px-3 py-2 bg-white dark:bg-surface-200 border border-gray-300 dark:border-surface-300 rounded-lg text-gray-900 dark:text-white text-sm"
               />
               <span className="text-gray-500 dark:text-surface-600 text-sm">days</span>
             </div>
@@ -1274,7 +1274,7 @@ function SLASettingsTab({
                 value={settings.mitigationSLA.medium}
                 onChange={(e) => handleMitigationSLAChange('medium', parseInt(e.target.value) || 0)}
                 min="1"
-                className="w-20 px-3 py-2 bg-white dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white text-sm"
+                className="w-20 px-3 py-2 bg-white dark:bg-surface-200 border border-gray-300 dark:border-surface-300 rounded-lg text-gray-900 dark:text-white text-sm"
               />
               <span className="text-gray-500 dark:text-surface-600 text-sm">days</span>
             </div>
@@ -1288,7 +1288,7 @@ function SLASettingsTab({
                 value={settings.mitigationSLA.low}
                 onChange={(e) => handleMitigationSLAChange('low', parseInt(e.target.value) || 0)}
                 min="1"
-                className="w-20 px-3 py-2 bg-white dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white text-sm"
+                className="w-20 px-3 py-2 bg-white dark:bg-surface-200 border border-gray-300 dark:border-surface-300 rounded-lg text-gray-900 dark:text-white text-sm"
               />
               <span className="text-gray-500 dark:text-surface-600 text-sm">days</span>
             </div>
@@ -1296,7 +1296,7 @@ function SLASettingsTab({
         </div>
       </div>
       {/* Review Cycle SLAs by Risk Level */}
-      <div className="space-y-4 pt-6 border-t border-gray-200 dark:border-surface-700">
+      <div className="space-y-4 pt-6 border-t border-gray-200 dark:border-surface-200">
         <h4 className="text-gray-900 dark:text-white font-medium flex items-center gap-2">
           <ArrowPathIcon className="w-5 h-5 text-blue-600" />
           Review Cycle SLAs by Risk Level
@@ -1316,7 +1316,7 @@ function SLASettingsTab({
                   handleReviewCycleSLAChange('critical', parseInt(e.target.value) || 0)
                 }
                 min="1"
-                className="w-20 px-3 py-2 bg-white dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white text-sm"
+                className="w-20 px-3 py-2 bg-white dark:bg-surface-200 border border-gray-300 dark:border-surface-300 rounded-lg text-gray-900 dark:text-white text-sm"
               />
               <span className="text-gray-500 dark:text-surface-600 text-sm">days</span>
             </div>
@@ -1330,7 +1330,7 @@ function SLASettingsTab({
                 value={settings.reviewCycleSLA.high}
                 onChange={(e) => handleReviewCycleSLAChange('high', parseInt(e.target.value) || 0)}
                 min="1"
-                className="w-20 px-3 py-2 bg-white dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white text-sm"
+                className="w-20 px-3 py-2 bg-white dark:bg-surface-200 border border-gray-300 dark:border-surface-300 rounded-lg text-gray-900 dark:text-white text-sm"
               />
               <span className="text-gray-500 dark:text-surface-600 text-sm">days</span>
             </div>
@@ -1346,7 +1346,7 @@ function SLASettingsTab({
                   handleReviewCycleSLAChange('medium', parseInt(e.target.value) || 0)
                 }
                 min="1"
-                className="w-20 px-3 py-2 bg-white dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white text-sm"
+                className="w-20 px-3 py-2 bg-white dark:bg-surface-200 border border-gray-300 dark:border-surface-300 rounded-lg text-gray-900 dark:text-white text-sm"
               />
               <span className="text-gray-500 dark:text-surface-600 text-sm">days</span>
             </div>
@@ -1360,7 +1360,7 @@ function SLASettingsTab({
                 value={settings.reviewCycleSLA.low}
                 onChange={(e) => handleReviewCycleSLAChange('low', parseInt(e.target.value) || 0)}
                 min="1"
-                className="w-20 px-3 py-2 bg-white dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white text-sm"
+                className="w-20 px-3 py-2 bg-white dark:bg-surface-200 border border-gray-300 dark:border-surface-300 rounded-lg text-gray-900 dark:text-white text-sm"
               />
               <span className="text-gray-500 dark:text-surface-600 text-sm">days</span>
             </div>
@@ -1368,7 +1368,7 @@ function SLASettingsTab({
         </div>
       </div>
       {/* Escalation Settings */}
-      <div className="space-y-4 pt-6 border-t border-gray-200 dark:border-surface-700">
+      <div className="space-y-4 pt-6 border-t border-gray-200 dark:border-surface-200">
         <h4 className="text-gray-900 dark:text-white font-medium flex items-center gap-2">
           <BellAlertIcon className="w-5 h-5 text-purple-600" />
           Escalation & Breach Handling
@@ -1378,7 +1378,7 @@ function SLASettingsTab({
         </p>
 
         <div className="space-y-4">
-          <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-surface-700/50 rounded-lg">
+          <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-surface-200/50 rounded-lg">
             <div>
               <p className="text-gray-900 dark:text-white">Enable Escalation Warnings</p>
               <p className="text-gray-500 dark:text-surface-600 text-sm">
@@ -1389,12 +1389,12 @@ function SLASettingsTab({
               type="checkbox"
               checked={settings.escalationEnabled}
               onChange={(e) => handleChange('escalationEnabled', e.target.checked)}
-              className="rounded border-surface-600"
+              className="rounded border-surface-300"
             />
           </label>
 
           {settings.escalationEnabled && (
-            <div className="p-4 bg-gray-50 dark:bg-surface-700/50 rounded-lg ml-4 border-l-2 border-purple-500">
+            <div className="p-4 bg-gray-50 dark:bg-surface-200/50 rounded-lg ml-4 border-l-2 border-purple-500">
               <label className="block text-gray-900 dark:text-white text-sm font-medium mb-2">
                 Escalation Threshold
               </label>
@@ -1410,7 +1410,7 @@ function SLASettingsTab({
                   }
                   min="50"
                   max="99"
-                  className="w-20 px-3 py-2 bg-white dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white text-sm"
+                  className="w-20 px-3 py-2 bg-white dark:bg-surface-200 border border-gray-300 dark:border-surface-300 rounded-lg text-gray-900 dark:text-white text-sm"
                 />
                 <span className="text-gray-500 dark:text-surface-600 text-sm">%</span>
                 <span className="text-gray-400 dark:text-surface-500 text-xs">
@@ -1421,7 +1421,7 @@ function SLASettingsTab({
             </div>
           )}
 
-          <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-surface-700/50 rounded-lg">
+          <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-surface-200/50 rounded-lg">
             <div>
               <p className="text-gray-900 dark:text-white">Auto-Escalate on Breach</p>
               <p className="text-gray-500 dark:text-surface-600 text-sm">
@@ -1432,11 +1432,11 @@ function SLASettingsTab({
               type="checkbox"
               checked={settings.autoEscalateOnBreach}
               onChange={(e) => handleChange('autoEscalateOnBreach', e.target.checked)}
-              className="rounded border-surface-600"
+              className="rounded border-surface-300"
             />
           </label>
 
-          <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-surface-700/50 rounded-lg">
+          <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-surface-200/50 rounded-lg">
             <div>
               <p className="text-gray-900 dark:text-white">Breach Notifications</p>
               <p className="text-gray-500 dark:text-surface-600 text-sm">
@@ -1447,11 +1447,11 @@ function SLASettingsTab({
               type="checkbox"
               checked={settings.breachNotificationEnabled}
               onChange={(e) => handleChange('breachNotificationEnabled', e.target.checked)}
-              className="rounded border-surface-600"
+              className="rounded border-surface-300"
             />
           </label>
 
-          <div className="p-4 bg-gray-50 dark:bg-surface-700/50 rounded-lg">
+          <div className="p-4 bg-gray-50 dark:bg-surface-200/50 rounded-lg">
             <label className="block text-gray-900 dark:text-white text-sm font-medium mb-2">
               Breach Grace Period
             </label>
@@ -1466,7 +1466,7 @@ function SLASettingsTab({
                   handleChange('breachGracePeriodHours', parseInt(e.target.value) || 0)
                 }
                 min="0"
-                className="w-20 px-3 py-2 bg-white dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white text-sm"
+                className="w-20 px-3 py-2 bg-white dark:bg-surface-200 border border-gray-300 dark:border-surface-300 rounded-lg text-gray-900 dark:text-white text-sm"
               />
               <span className="text-gray-500 dark:text-surface-600 text-sm">hours</span>
             </div>
@@ -1549,7 +1549,7 @@ function RiskAppetiteTab({
       </div>
       <div className="space-y-4">
         {appetite.map((item) => (
-          <div key={item.category} className="p-4 bg-gray-50 dark:bg-surface-700/50 rounded-lg">
+          <div key={item.category} className="p-4 bg-gray-50 dark:bg-surface-200/50 rounded-lg">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
                 <div className={`w-3 h-3 rounded-full ${getLevelColor(item.level)}`} />
@@ -1558,7 +1558,7 @@ function RiskAppetiteTab({
               <SelectNative
                 value={item.level}
                 onChange={(e) => handleLevelChange(item.category, e.target.value)}
-                className="px-3 py-1 bg-gray-50 dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white text-sm"
+                className="px-3 py-1 bg-gray-50 dark:bg-surface-200 border border-gray-300 dark:border-surface-300 rounded-lg text-gray-900 dark:text-white text-sm"
               >
                 <option value="low">Low Appetite</option>
                 <option value="medium">Medium Appetite</option>
@@ -1569,7 +1569,7 @@ function RiskAppetiteTab({
           </div>
         ))}
       </div>
-      <div className="p-4 bg-gray-50 dark:bg-surface-700/50 rounded-lg">
+      <div className="p-4 bg-gray-50 dark:bg-surface-200/50 rounded-lg">
         <h4 className="text-gray-900 dark:text-white font-medium mb-3">Appetite Legend</h4>
         <div className="flex gap-6">
           <div className="flex items-center gap-2">

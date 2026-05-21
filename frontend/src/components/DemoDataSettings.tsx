@@ -324,7 +324,7 @@ export default function DemoDataSettings() {
 
 function DataCard({ label, count }: { label: string; count: number }) {
   return (
-    <div className="p-3 bg-surface-800/50 rounded-lg">
+    <div className="p-3 bg-white/50 rounded-lg">
       <p className="text-lg font-semibold text-foreground">{count}</p>
       <p className="text-xs text-muted-foreground">{label}</p>
     </div>

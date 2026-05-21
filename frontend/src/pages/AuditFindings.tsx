@@ -252,22 +252,22 @@ export default function AuditFindings() {
       {/* Stats Cards */}
       {statsData && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-surface-800 rounded-lg p-4 border border-surface-700">
+          <div className="bg-white rounded-lg p-4 border border-surface-200">
             <p className="text-surface-600 text-sm">Total Findings</p>
             <p className="text-2xl font-bold text-white mt-1">{statsData.total}</p>
           </div>
-          <div className="bg-surface-800 rounded-lg p-4 border border-surface-700">
+          <div className="bg-white rounded-lg p-4 border border-surface-200">
             <p className="text-surface-600 text-sm">Overdue</p>
             <p className="text-2xl font-bold text-red-600 mt-1">{statsData.overdue}</p>
           </div>
-          <div className="bg-surface-800 rounded-lg p-4 border border-surface-700">
+          <div className="bg-white rounded-lg p-4 border border-surface-200">
             <p className="text-surface-600 text-sm">Critical/High</p>
             <p className="text-2xl font-bold text-orange-600 mt-1">
               {(statsData.bySeverity.find((s) => s.severity === 'critical')?.count || 0) +
                 (statsData.bySeverity.find((s) => s.severity === 'high')?.count || 0)}
             </p>
           </div>
-          <div className="bg-surface-800 rounded-lg p-4 border border-surface-700">
+          <div className="bg-white rounded-lg p-4 border border-surface-200">
             <p className="text-surface-600 text-sm">Open</p>
             <p className="text-2xl font-bold text-yellow-600 mt-1">
               {statsData.byStatus.find((s) => s.status === 'open')?.count || 0}
@@ -325,13 +325,13 @@ export default function AuditFindings() {
         )}
       </div>
       {showFilters && (
-        <div className="bg-surface-800 rounded-lg p-4 border border-surface-700 grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white rounded-lg p-4 border border-surface-200 grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-medium text-surface-700 mb-1">Audit</label>
             <SelectNative
               value={filters.auditId}
               onChange={(e) => setFilter('auditId', e.target.value)}
-              className="w-full bg-surface-700 border border-surface-600 rounded-md px-3 py-2 text-white"
+              className="w-full bg-surface-200 border border-surface-300 rounded-md px-3 py-2 text-white"
             >
               <option value="">All Audits</option>
               {(audits as { id: string; name: string }[])?.map((audit) => (
@@ -346,7 +346,7 @@ export default function AuditFindings() {
             <SelectNative
               value={filters.status}
               onChange={(e) => setFilter('status', e.target.value)}
-              className="w-full bg-surface-700 border border-surface-600 rounded-md px-3 py-2 text-white"
+              className="w-full bg-surface-200 border border-surface-300 rounded-md px-3 py-2 text-white"
             >
               <option value="">All Statuses</option>
               {STATUS_OPTIONS.map((s) => (
@@ -361,7 +361,7 @@ export default function AuditFindings() {
             <SelectNative
               value={filters.severity}
               onChange={(e) => setFilter('severity', e.target.value)}
-              className="w-full bg-surface-700 border border-surface-600 rounded-md px-3 py-2 text-white"
+              className="w-full bg-surface-200 border border-surface-300 rounded-md px-3 py-2 text-white"
             >
               <option value="">All Severities</option>
               {Object.entries(SEVERITY_CONFIG).map(([value, { label }]) => (
@@ -376,7 +376,7 @@ export default function AuditFindings() {
             <SelectNative
               value={filters.category}
               onChange={(e) => setFilter('category', e.target.value)}
-              className="w-full bg-surface-700 border border-surface-600 rounded-md px-3 py-2 text-white"
+              className="w-full bg-surface-200 border border-surface-300 rounded-md px-3 py-2 text-white"
             >
               <option value="">All Categories</option>
               {CATEGORY_OPTIONS.map((c) => (
@@ -402,9 +402,9 @@ export default function AuditFindings() {
           }}
         />
       ) : (
-        <div className="bg-surface-800 rounded-lg border border-surface-700 overflow-hidden">
+        <div className="bg-white rounded-lg border border-surface-200 overflow-hidden">
           <table className="w-full">
-            <thead className="bg-surface-700">
+            <thead className="bg-surface-200">
               <tr>
                 <th className="w-10 px-4 py-3">
                   <SelectCheckbox
@@ -428,7 +428,7 @@ export default function AuditFindings() {
                 <th className="w-10"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-surface-700">
+            <tbody className="divide-y divide-surface-200">
               {findingsData.map((finding) => {
                 const severity = SEVERITY_CONFIG[finding.severity] || SEVERITY_CONFIG.medium;
                 const status = STATUS_CONFIG[finding.status] || STATUS_CONFIG.open;
@@ -441,7 +441,7 @@ export default function AuditFindings() {
                 return (
                   <tr
                     key={finding.id}
-                    className="hover:bg-surface-700/50 cursor-pointer"
+                    className="hover:bg-surface-200/50 cursor-pointer"
                     onClick={() => setEditingFinding(finding)}
                   >
                     <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
@@ -607,7 +607,7 @@ function FindingForm({ finding, audits, users, onSubmit, onDelete, isLoading }: 
             value={formData.auditId}
             onChange={(e) => setFormData({ ...formData, auditId: e.target.value })}
             required
-            className="w-full bg-surface-700 border border-surface-600 rounded-md px-3 py-2 text-white"
+            className="w-full bg-surface-200 border border-surface-300 rounded-md px-3 py-2 text-white"
           >
             <option value="">Select Audit</option>
             {audits?.map((audit) => (
@@ -627,7 +627,7 @@ function FindingForm({ finding, audits, users, onSubmit, onDelete, isLoading }: 
             value={formData.title}
             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
             required
-            className="w-full bg-surface-700 border border-surface-600 rounded-md px-3 py-2 text-white"
+            className="w-full bg-surface-200 border border-surface-300 rounded-md px-3 py-2 text-white"
             placeholder="Finding title"
           />
         </div>
@@ -641,7 +641,7 @@ function FindingForm({ finding, audits, users, onSubmit, onDelete, isLoading }: 
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             required
             rows={3}
-            className="w-full bg-surface-700 border border-surface-600 rounded-md px-3 py-2 text-white"
+            className="w-full bg-surface-200 border border-surface-300 rounded-md px-3 py-2 text-white"
             placeholder="Detailed description of the finding"
           />
         </div>
@@ -651,7 +651,7 @@ function FindingForm({ finding, audits, users, onSubmit, onDelete, isLoading }: 
           <SelectNative
             value={formData.category}
             onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-            className="w-full bg-surface-700 border border-surface-600 rounded-md px-3 py-2 text-white"
+            className="w-full bg-surface-200 border border-surface-300 rounded-md px-3 py-2 text-white"
           >
             {CATEGORY_OPTIONS.map((c) => (
               <option key={c.value} value={c.value}>
@@ -666,7 +666,7 @@ function FindingForm({ finding, audits, users, onSubmit, onDelete, isLoading }: 
           <SelectNative
             value={formData.severity}
             onChange={(e) => setFormData({ ...formData, severity: e.target.value })}
-            className="w-full bg-surface-700 border border-surface-600 rounded-md px-3 py-2 text-white"
+            className="w-full bg-surface-200 border border-surface-300 rounded-md px-3 py-2 text-white"
           >
             {Object.entries(SEVERITY_CONFIG).map(([value, { label }]) => (
               <option key={value} value={value}>
@@ -682,7 +682,7 @@ function FindingForm({ finding, audits, users, onSubmit, onDelete, isLoading }: 
             <SelectNative
               value={formData.status}
               onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-              className="w-full bg-surface-700 border border-surface-600 rounded-md px-3 py-2 text-white"
+              className="w-full bg-surface-200 border border-surface-300 rounded-md px-3 py-2 text-white"
             >
               {STATUS_OPTIONS.map((s) => (
                 <option key={s.value} value={s.value}>
@@ -699,7 +699,7 @@ function FindingForm({ finding, audits, users, onSubmit, onDelete, isLoading }: 
             type="date"
             value={formData.targetDate}
             onChange={(e) => setFormData({ ...formData, targetDate: e.target.value })}
-            className="w-full bg-surface-700 border border-surface-600 rounded-md px-3 py-2 text-white"
+            className="w-full bg-surface-200 border border-surface-300 rounded-md px-3 py-2 text-white"
           />
         </div>
 
@@ -710,7 +710,7 @@ function FindingForm({ finding, audits, users, onSubmit, onDelete, isLoading }: 
           <SelectNative
             value={formData.remediationOwner}
             onChange={(e) => setFormData({ ...formData, remediationOwner: e.target.value })}
-            className="w-full bg-surface-700 border border-surface-600 rounded-md px-3 py-2 text-white"
+            className="w-full bg-surface-200 border border-surface-300 rounded-md px-3 py-2 text-white"
           >
             <option value="">Select Owner</option>
             {users?.map((user) => (
@@ -727,7 +727,7 @@ function FindingForm({ finding, audits, users, onSubmit, onDelete, isLoading }: 
             value={formData.rootCause}
             onChange={(e) => setFormData({ ...formData, rootCause: e.target.value })}
             rows={2}
-            className="w-full bg-surface-700 border border-surface-600 rounded-md px-3 py-2 text-white"
+            className="w-full bg-surface-200 border border-surface-300 rounded-md px-3 py-2 text-white"
             placeholder="Root cause analysis"
           />
         </div>
@@ -738,7 +738,7 @@ function FindingForm({ finding, audits, users, onSubmit, onDelete, isLoading }: 
             value={formData.impact}
             onChange={(e) => setFormData({ ...formData, impact: e.target.value })}
             rows={2}
-            className="w-full bg-surface-700 border border-surface-600 rounded-md px-3 py-2 text-white"
+            className="w-full bg-surface-200 border border-surface-300 rounded-md px-3 py-2 text-white"
             placeholder="Business impact of this finding"
           />
         </div>
@@ -749,7 +749,7 @@ function FindingForm({ finding, audits, users, onSubmit, onDelete, isLoading }: 
             value={formData.recommendation}
             onChange={(e) => setFormData({ ...formData, recommendation: e.target.value })}
             rows={2}
-            className="w-full bg-surface-700 border border-surface-600 rounded-md px-3 py-2 text-white"
+            className="w-full bg-surface-200 border border-surface-300 rounded-md px-3 py-2 text-white"
             placeholder="Recommended remediation steps"
           />
         </div>
@@ -762,7 +762,7 @@ function FindingForm({ finding, audits, users, onSubmit, onDelete, isLoading }: 
             value={formData.remediationPlan}
             onChange={(e) => setFormData({ ...formData, remediationPlan: e.target.value })}
             rows={2}
-            className="w-full bg-surface-700 border border-surface-600 rounded-md px-3 py-2 text-white"
+            className="w-full bg-surface-200 border border-surface-300 rounded-md px-3 py-2 text-white"
             placeholder="Detailed remediation plan"
           />
         </div>
@@ -776,13 +776,13 @@ function FindingForm({ finding, audits, users, onSubmit, onDelete, isLoading }: 
               value={formData.managementResponse}
               onChange={(e) => setFormData({ ...formData, managementResponse: e.target.value })}
               rows={2}
-              className="w-full bg-surface-700 border border-surface-600 rounded-md px-3 py-2 text-white"
+              className="w-full bg-surface-200 border border-surface-300 rounded-md px-3 py-2 text-white"
               placeholder="Management's response to this finding"
             />
           </div>
         )}
       </div>
-      <div className="flex justify-between pt-4 border-t border-surface-700">
+      <div className="flex justify-between pt-4 border-t border-surface-200">
         {onDelete && (
           <Button type="button" variant="danger" onClick={onDelete}>
             Delete Finding

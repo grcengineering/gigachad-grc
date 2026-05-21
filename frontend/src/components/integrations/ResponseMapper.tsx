@@ -117,7 +117,7 @@ export default function ResponseMapper({
   return (
     <div className="space-y-6">
       {/* Instructions */}
-      <div className="p-4 bg-surface-800/50 rounded-lg border border-surface-700">
+      <div className="p-4 bg-white/50 rounded-lg border border-surface-200">
         <div className="flex items-start gap-2">
           <InformationCircleIcon className="w-5 h-5 text-brand-400 flex-shrink-0 mt-0.5" />
           <div className="text-sm text-surface-600">
@@ -138,12 +138,12 @@ export default function ResponseMapper({
           {showSuggestions ? 'Hide suggestions' : 'Show common field suggestions'}
         </button>
         {showSuggestions && (
-          <div className="flex flex-wrap gap-2 p-3 bg-surface-800/30 rounded-lg">
+          <div className="flex flex-wrap gap-2 p-3 bg-white/30 rounded-lg">
             {SUGGESTED_FIELDS.map(({ field, description }) => (
               <button
                 key={field}
                 onClick={() => addSuggestedField(field)}
-                className="px-2 py-1 text-xs bg-surface-700 hover:bg-surface-600 rounded border border-surface-600 hover:border-surface-500 transition-colors"
+                className="px-2 py-1 text-xs bg-surface-200 hover:bg-surface-600 rounded border border-surface-300 hover:border-surface-500 transition-colors"
                 title={description}
               >
                 {field}
@@ -179,10 +179,7 @@ export default function ResponseMapper({
       {/* Mapping List */}
       <div className="space-y-3">
         {mappings.map((mapping) => (
-          <div
-            key={mapping.id}
-            className="p-4 bg-surface-800/50 rounded-lg border border-surface-700"
-          >
+          <div key={mapping.id} className="p-4 bg-white/50 rounded-lg border border-surface-200">
             <div className="flex items-start gap-4">
               <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Source Path */}
@@ -262,7 +259,7 @@ export default function ResponseMapper({
               {/* Delete Button */}
               <button
                 onClick={() => deleteMapping(mapping.id)}
-                className="p-2 text-surface-600 hover:text-red-600 hover:bg-surface-800 rounded-lg transition-colors"
+                className="p-2 text-surface-600 hover:text-red-600 hover:bg-white rounded-lg transition-colors"
               >
                 <TrashIcon className="w-4 h-4" />
               </button>
@@ -270,7 +267,7 @@ export default function ResponseMapper({
 
             {/* Preview */}
             {mapping.sourcePath && mapping.targetField && (
-              <div className="mt-3 pt-3 border-t border-surface-700 text-xs text-surface-500">
+              <div className="mt-3 pt-3 border-t border-surface-200 text-xs text-surface-500">
                 <code className="text-brand-400">{mapping.sourcePath}</code>
                 {' → '}
                 <code className="text-green-600">{mapping.targetField}</code>
@@ -283,7 +280,7 @@ export default function ResponseMapper({
         ))}
 
         {mappings.length === 0 && (
-          <div className="text-center py-8 text-surface-500 bg-surface-800/30 rounded-lg border border-dashed border-surface-700">
+          <div className="text-center py-8 text-surface-500 bg-white/30 rounded-lg border border-dashed border-surface-200">
             No field mappings configured. Add mappings to extract data from API responses.
           </div>
         )}
@@ -291,7 +288,7 @@ export default function ResponseMapper({
       {/* Add Button */}
       <button
         onClick={addMapping}
-        className="w-full p-3 rounded-lg border border-dashed border-surface-700 hover:border-surface-500 text-surface-600 hover:text-surface-200 transition-colors flex items-center justify-center gap-2"
+        className="w-full p-3 rounded-lg border border-dashed border-surface-200 hover:border-surface-500 text-surface-600 hover:text-surface-800 transition-colors flex items-center justify-center gap-2"
       >
         <PlusIcon className="w-4 h-4" />
         Add Field Mapping

@@ -7,7 +7,7 @@ import { AlertTriangle } from 'lucide-react';
 // Loading state for chart widgets
 function ChartLoading() {
   return (
-    <div className="flex items-center justify-center h-full animate-pulse bg-surface-700/30 rounded-lg">
+    <div className="flex items-center justify-center h-full animate-pulse bg-surface-200/30 rounded-lg">
       <div className="text-surface-500 text-sm">Loading chart...</div>
     </div>
   );
@@ -349,7 +349,7 @@ function TableWidget({ data, config }: { data: any[]; config: any }) {
     <div className="overflow-auto h-full">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-surface-700">
+          <tr className="border-b border-surface-200">
             {columns.map((col: any) => (
               <th
                 key={col.field}
@@ -363,7 +363,7 @@ function TableWidget({ data, config }: { data: any[]; config: any }) {
         </thead>
         <tbody>
           {displayData.map((row, i) => (
-            <tr key={i} className="border-b border-surface-800 hover:bg-surface-800/50">
+            <tr key={i} className="border-b border-surface-200 hover:bg-white/50">
               {columns.map((col: any) => (
                 <td key={col.field} className="py-2 px-3 text-surface-600">
                   {formatValue(row[col.field])}
@@ -411,9 +411,9 @@ function ProgressWidget({ data, config }: { data: any[]; config: any }) {
         <span className="text-surface-600 text-sm">
           {value} / {target}
         </span>
-        <span className="text-surface-200 font-medium">{percentage}%</span>
+        <span className="text-surface-800 font-medium">{percentage}%</span>
       </div>
-      <div className="w-full h-3 bg-surface-800 rounded-full overflow-hidden">
+      <div className="w-full h-3 bg-white rounded-full overflow-hidden">
         <div
           className="h-full rounded-full transition-all duration-500"
           style={{ width: `${percentage}%`, backgroundColor: color }}
@@ -438,9 +438,9 @@ function ListWidget({ data, config: _config }: { data: any[]; config: any }) {
         return (
           <div
             key={i}
-            className="flex items-center justify-between p-2 bg-surface-800/50 rounded hover:bg-surface-800"
+            className="flex items-center justify-between p-2 bg-white/50 rounded hover:bg-white"
           >
-            <span className="text-surface-200 truncate">{formatValue(displayFields[0]?.[1])}</span>
+            <span className="text-surface-800 truncate">{formatValue(displayFields[0]?.[1])}</span>
             {displayFields[1] && (
               <span className="text-surface-600 text-sm">{formatValue(displayFields[1][1])}</span>
             )}
@@ -481,7 +481,7 @@ function GaugeWidget({ data, config }: { data: any[]; config: any }) {
     <div className="flex flex-col items-center justify-center h-full">
       <div className="relative w-32 h-16 overflow-hidden">
         <div
-          className="absolute inset-0 border-8 border-surface-700 rounded-t-full"
+          className="absolute inset-0 border-8 border-surface-200 rounded-t-full"
           style={{ borderBottomWidth: 0 }}
         />
         <div
@@ -493,7 +493,7 @@ function GaugeWidget({ data, config }: { data: any[]; config: any }) {
           }}
         />
       </div>
-      <div className="text-2xl font-bold text-surface-100 mt-2">{value}%</div>
+      <div className="text-2xl font-bold text-surface-900 mt-2">{value}%</div>
     </div>
   );
 }

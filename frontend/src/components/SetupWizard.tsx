@@ -194,7 +194,7 @@ export function SetupWizard({ onClose }: { onClose: () => void }) {
             <span className="text-foreground/60">Setup Progress</span>
             <span className="text-foreground font-medium">{progress}%</span>
           </div>
-          <div className="h-2 bg-surface-700 rounded-full overflow-hidden">
+          <div className="h-2 bg-surface-200 rounded-full overflow-hidden">
             <div
               className={`h-full transition-all duration-500 ${
                 progress === 100 ? 'bg-green-500' : 'bg-primary'
@@ -227,7 +227,7 @@ export function SetupWizard({ onClose }: { onClose: () => void }) {
                           ? 'bg-green-500/20 text-green-600'
                           : isActive
                             ? 'bg-primary/20 text-primary'
-                            : 'bg-surface-700 text-foreground/40'
+                            : 'bg-surface-200 text-foreground/40'
                       }`}
                     >
                       {isCompleted ? (
@@ -286,7 +286,7 @@ export function SetupWizard({ onClose }: { onClose: () => void }) {
 
                 {currentStepData.status !== 'completed' && (
                   <>
-                    <div className="bg-surface-700/50 rounded-lg p-4 mb-4">
+                    <div className="bg-surface-200/50 rounded-lg p-4 mb-4">
                       <h4 className="text-sm font-medium text-foreground mb-3">Instructions</h4>
                       <ol className="space-y-2">
                         {currentStepData.instructions.map((instruction, i) => (
@@ -299,7 +299,7 @@ export function SetupWizard({ onClose }: { onClose: () => void }) {
                     </div>
 
                     {currentStepData.commands && currentStepData.commands.length > 0 && (
-                      <div className="bg-surface-900 rounded-lg p-4">
+                      <div className="bg-white rounded-lg p-4">
                         <h4 className="text-sm font-medium text-foreground mb-3">Commands</h4>
                         <div className="space-y-2">
                           {currentStepData.commands.map((command, i) => (

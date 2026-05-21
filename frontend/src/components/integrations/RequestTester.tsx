@@ -202,7 +202,7 @@ export default function RequestTester({
       </div>
       {/* Request Preview */}
       {selectedEndpoint && baseUrl && (
-        <div className="p-4 bg-surface-800/50 rounded-lg border border-surface-700">
+        <div className="p-4 bg-white/50 rounded-lg border border-surface-200">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs text-surface-500 uppercase font-medium">Request Preview</span>
           </div>
@@ -241,7 +241,7 @@ export default function RequestTester({
         className={clsx(
           'w-full py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors',
           isTesting
-            ? 'bg-surface-700 text-surface-600 cursor-wait'
+            ? 'bg-surface-200 text-surface-600 cursor-wait'
             : 'bg-brand-500 hover:bg-brand-600 text-white'
         )}
       >
@@ -299,7 +299,7 @@ export default function RequestTester({
               {testResult.data && (
                 <button
                   onClick={copyResponse}
-                  className="flex items-center gap-1 hover:text-surface-200 transition-colors"
+                  className="flex items-center gap-1 hover:text-surface-800 transition-colors"
                 >
                   <DocumentDuplicateIcon className="w-4 h-4" />
                   Copy
@@ -317,10 +317,10 @@ export default function RequestTester({
 
           {/* Response Headers */}
           {testResult.success && Object.keys(testResult.headers).length > 0 && (
-            <div className="border-t border-surface-800">
+            <div className="border-t border-surface-200">
               <button
                 onClick={() => setShowHeaders(!showHeaders)}
-                className="w-full flex items-center gap-2 p-3 text-sm text-surface-600 hover:text-surface-200 transition-colors"
+                className="w-full flex items-center gap-2 p-3 text-sm text-surface-600 hover:text-surface-800 transition-colors"
               >
                 {showHeaders ? (
                   <ChevronDownIcon className="w-4 h-4" />
@@ -331,7 +331,7 @@ export default function RequestTester({
               </button>
               {showHeaders && (
                 <div className="px-4 pb-3">
-                  <div className="p-3 bg-surface-800/50 rounded font-mono text-xs space-y-1">
+                  <div className="p-3 bg-white/50 rounded font-mono text-xs space-y-1">
                     {Object.entries(testResult.headers).map(([key, value]) => (
                       <div key={key}>
                         <span className="text-surface-500">{key}:</span>{' '}
@@ -346,10 +346,10 @@ export default function RequestTester({
 
           {/* Response Body */}
           {testResult.data && (
-            <div className="border-t border-surface-800">
+            <div className="border-t border-surface-200">
               <button
                 onClick={() => setShowRawResponse(!showRawResponse)}
-                className="w-full flex items-center gap-2 p-3 text-sm text-surface-600 hover:text-surface-200 transition-colors"
+                className="w-full flex items-center gap-2 p-3 text-sm text-surface-600 hover:text-surface-800 transition-colors"
               >
                 {showRawResponse ? (
                   <ChevronDownIcon className="w-4 h-4" />
@@ -360,7 +360,7 @@ export default function RequestTester({
               </button>
               {showRawResponse && (
                 <div className="px-4 pb-4">
-                  <pre className="p-4 bg-surface-900 rounded-lg overflow-x-auto text-xs font-mono text-surface-700 max-h-96">
+                  <pre className="p-4 bg-white rounded-lg overflow-x-auto text-xs font-mono text-surface-700 max-h-96">
                     {JSON.stringify(testResult.data, null, 2)}
                   </pre>
                 </div>

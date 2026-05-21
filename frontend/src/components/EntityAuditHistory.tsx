@@ -259,7 +259,7 @@ function ChangesDiff({
         {changedFields.map(({ field, oldValue, newValue }) => (
           <div
             key={field}
-            className="flex flex-col gap-1 p-2 rounded-lg bg-surface-800/50 border border-surface-700"
+            className="flex flex-col gap-1 p-2 rounded-lg bg-white/50 border border-surface-200"
           >
             <span className="text-xs text-surface-600 font-medium">
               {FIELD_LABELS[field] || field}
@@ -306,7 +306,7 @@ function AuditLogItem({ entry }: { entry: AuditLogEntry }) {
   return (
     <div className="relative pl-8 pb-6 last:pb-0">
       {/* Timeline line */}
-      <div className="absolute left-[11px] top-6 bottom-0 w-px bg-surface-700 last:hidden" />
+      <div className="absolute left-[11px] top-6 bottom-0 w-px bg-surface-200 last:hidden" />
       {/* Timeline dot */}
       <div
         className={clsx(
@@ -321,8 +321,8 @@ function AuditLogItem({ entry }: { entry: AuditLogEntry }) {
       {/* Content */}
       <div
         className={clsx(
-          'bg-surface-800 rounded-lg border border-surface-700 overflow-hidden',
-          hasChanges && 'cursor-pointer hover:border-surface-600 transition-colors'
+          'bg-white rounded-lg border border-surface-200 overflow-hidden',
+          hasChanges && 'cursor-pointer hover:border-surface-300 transition-colors'
         )}
         onClick={() => hasChanges && setIsExpanded(!isExpanded)}
       >
@@ -362,7 +362,7 @@ function AuditLogItem({ entry }: { entry: AuditLogEntry }) {
             {/* Expand button */}
             {hasChanges && (
               <button
-                className="p-1 rounded hover:bg-surface-700 text-surface-600 hover:text-surface-200 transition-colors"
+                className="p-1 rounded hover:bg-surface-200 text-surface-600 hover:text-surface-800 transition-colors"
                 onClick={(e) => {
                   e.stopPropagation();
                   setIsExpanded(!isExpanded);
@@ -426,7 +426,7 @@ export function EntityAuditHistory({ entityType, entityId, limit = 50 }: EntityA
         <div className="flex items-center gap-3">
           <h3 className="text-lg font-semibold text-white">Change History</h3>
           {entries.length > 0 && (
-            <span className="text-xs text-surface-500 bg-surface-800 px-2 py-0.5 rounded-full">
+            <span className="text-xs text-surface-500 bg-white px-2 py-0.5 rounded-full">
               {entries.length} {entries.length === 1 ? 'entry' : 'entries'}
             </span>
           )}
@@ -438,7 +438,7 @@ export function EntityAuditHistory({ entityType, entityId, limit = 50 }: EntityA
             <SelectNative
               value={filterAction}
               onChange={(e) => setFilterAction(e.target.value)}
-              className="text-xs bg-surface-800 border border-surface-700 rounded-md text-surface-700 py-1.5 px-2"
+              className="text-xs bg-white border border-surface-200 rounded-md text-surface-700 py-1.5 px-2"
             >
               <option value="all">All Actions</option>
               {uniqueActions.map((action) => (
@@ -453,7 +453,7 @@ export function EntityAuditHistory({ entityType, entityId, limit = 50 }: EntityA
           <button
             onClick={() => refetch()}
             className={clsx(
-              'p-1.5 rounded-md hover:bg-surface-700 text-surface-600 hover:text-white transition-colors',
+              'p-1.5 rounded-md hover:bg-surface-200 text-surface-600 hover:text-white transition-colors',
               isRefetching && 'animate-spin'
             )}
             title="Refresh"
@@ -467,16 +467,16 @@ export function EntityAuditHistory({ entityType, entityId, limit = 50 }: EntityA
         <div className="space-y-4">
           {Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="relative pl-8 pb-6">
-              <div className="absolute left-0 w-6 h-6 rounded-full bg-surface-700 animate-pulse" />
-              <div className="bg-surface-800 rounded-lg border border-surface-700 p-4 animate-pulse">
-                <div className="h-4 bg-surface-700 rounded w-1/3 mb-2" />
-                <div className="h-3 bg-surface-700 rounded w-2/3" />
+              <div className="absolute left-0 w-6 h-6 rounded-full bg-surface-200 animate-pulse" />
+              <div className="bg-white rounded-lg border border-surface-200 p-4 animate-pulse">
+                <div className="h-4 bg-surface-200 rounded w-1/3 mb-2" />
+                <div className="h-3 bg-surface-200 rounded w-2/3" />
               </div>
             </div>
           ))}
         </div>
       ) : filteredEntries.length === 0 ? (
-        <div className="text-center py-12 bg-surface-800/50 rounded-lg border border-surface-700">
+        <div className="text-center py-12 bg-white/50 rounded-lg border border-surface-200">
           <ClockIcon className="w-10 h-10 mx-auto text-surface-600 mb-3" />
           <p className="text-surface-600">No history recorded yet</p>
           <p className="text-surface-500 text-sm mt-1">Changes will appear here as they are made</p>

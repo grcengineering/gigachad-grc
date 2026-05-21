@@ -314,19 +314,19 @@ export default function Employees() {
           <span>Sort by:</span>
           <button
             onClick={() => handleSort('lastName')}
-            className={`px-2 py-1 rounded ${sortBy === 'lastName' ? 'bg-surface-700 text-foreground' : ''}`}
+            className={`px-2 py-1 rounded ${sortBy === 'lastName' ? 'bg-surface-200 text-foreground' : ''}`}
           >
             Name {sortBy === 'lastName' && (sortOrder === 'asc' ? '↑' : '↓')}
           </button>
           <button
             onClick={() => handleSort('complianceScore')}
-            className={`px-2 py-1 rounded ${sortBy === 'complianceScore' ? 'bg-surface-700 text-foreground' : ''}`}
+            className={`px-2 py-1 rounded ${sortBy === 'complianceScore' ? 'bg-surface-200 text-foreground' : ''}`}
           >
             Score {sortBy === 'complianceScore' && (sortOrder === 'asc' ? '↑' : '↓')}
           </button>
           <button
             onClick={() => handleSort('department')}
-            className={`px-2 py-1 rounded ${sortBy === 'department' ? 'bg-surface-700 text-foreground' : ''}`}
+            className={`px-2 py-1 rounded ${sortBy === 'department' ? 'bg-surface-200 text-foreground' : ''}`}
           >
             Dept {sortBy === 'department' && (sortOrder === 'asc' ? '↑' : '↓')}
           </button>
@@ -336,7 +336,7 @@ export default function Employees() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-border bg-surface-800/50">
+              <tr className="border-b border-border bg-white/50">
                 <th className="text-left p-4 font-medium text-muted-foreground">Employee</th>
                 <th className="text-left p-4 font-medium text-muted-foreground">Department</th>
                 <th className="text-center p-4 font-medium text-muted-foreground">Score</th>
@@ -364,10 +364,10 @@ export default function Employees() {
                 </tr>
               ) : (
                 employees.map((employee) => (
-                  <tr key={employee.id} className="border-b border-border hover:bg-surface-800/30">
+                  <tr key={employee.id} className="border-b border-border hover:bg-white/30">
                     <td className="p-4">
                       <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-surface-700 flex items-center justify-center">
+                        <div className="h-10 w-10 rounded-full bg-surface-200 flex items-center justify-center">
                           <UserIcon className="h-5 w-5 text-muted-foreground" />
                         </div>
                         <div>

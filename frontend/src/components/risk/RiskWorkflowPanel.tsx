@@ -324,11 +324,11 @@ export default function RiskWorkflowPanel({ risk, onUpdate }: RiskWorkflowPanelP
   const actions = getAvailableActions();
 
   return (
-    <div className="bg-surface-800 rounded-xl border border-surface-700 overflow-hidden">
+    <div className="bg-white rounded-xl border border-surface-200 overflow-hidden">
       {/* Header */}
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full p-4 flex items-center justify-between hover:bg-surface-700/50 transition-colors"
+        className="w-full p-4 flex items-center justify-between hover:bg-surface-200/50 transition-colors"
       >
         <div className="flex items-center gap-3">
           <div className={`p-2 rounded-lg ${statusInfo.color}`}>
@@ -347,9 +347,9 @@ export default function RiskWorkflowPanel({ risk, onUpdate }: RiskWorkflowPanelP
       </button>
 
       {expanded && (
-        <div className="border-t border-surface-700">
+        <div className="border-t border-surface-200">
           {/* Workflow Progress */}
-          <div className="p-4 border-b border-surface-700">
+          <div className="p-4 border-b border-surface-200">
             <h4 className="text-sm font-medium text-surface-600 mb-3">Workflow Progress</h4>
             <WorkflowProgressBar
               stage={stage}
@@ -383,7 +383,7 @@ export default function RiskWorkflowPanel({ risk, onUpdate }: RiskWorkflowPanelP
           )}
 
           {/* Role Assignments */}
-          <div className="p-4 border-t border-surface-700">
+          <div className="p-4 border-t border-surface-200">
             <h4 className="text-sm font-medium text-surface-600 mb-3">Assigned Roles</h4>
             <div className="grid grid-cols-2 gap-3">
               <RoleCard
@@ -622,7 +622,7 @@ function WorkflowProgressBar({
                   ? 'bg-emerald-500 text-white'
                   : getStageState(s.key) === 'active'
                     ? 'bg-brand-500 text-white'
-                    : 'bg-surface-700 text-surface-600'
+                    : 'bg-surface-200 text-surface-600'
               }`}
             >
               {getStageState(s.key) === 'complete' ? (
@@ -670,8 +670,8 @@ function RoleCard({
 }) {
   return (
     <div
-      className={`p-2 bg-surface-700/50 rounded-lg flex items-center justify-between ${
-        editable ? 'hover:bg-surface-700 cursor-pointer' : ''
+      className={`p-2 bg-surface-200/50 rounded-lg flex items-center justify-between ${
+        editable ? 'hover:bg-surface-200 cursor-pointer' : ''
       }`}
       onClick={editable ? onEdit : undefined}
     >
@@ -738,7 +738,7 @@ function UserPicker({
       <button
         type="button"
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-left flex items-center justify-between hover:bg-surface-600 transition-colors"
+        className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-left flex items-center justify-between hover:bg-surface-600 transition-colors"
       >
         {selectedUser ? (
           <div className="flex items-center gap-3">
@@ -761,15 +761,15 @@ function UserPicker({
       {description && <p className="text-xs text-surface-500 mt-1">{description}</p>}
       {/* Expandable user list */}
       {isExpanded && (
-        <div className="mt-2 border border-surface-600 rounded-lg bg-surface-750 overflow-hidden">
+        <div className="mt-2 border border-surface-300 rounded-lg bg-surface-750 overflow-hidden">
           {/* Search */}
-          <div className="p-2 border-b border-surface-600">
+          <div className="p-2 border-b border-surface-300">
             <Input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by name or email..."
-              className="w-full px-3 py-1.5 bg-surface-700 border border-surface-600 rounded text-white text-sm"
+              className="w-full px-3 py-1.5 bg-surface-200 border border-surface-300 rounded text-white text-sm"
             />
           </div>
 
@@ -831,7 +831,7 @@ function UserPicker({
                   value={selectedUserId}
                   onChange={(e) => onSelect(e.target.value)}
                   placeholder="Enter user ID manually..."
-                  className="w-full px-3 py-1.5 bg-surface-700 border border-surface-600 rounded text-white text-sm"
+                  className="w-full px-3 py-1.5 bg-surface-200 border border-surface-300 rounded text-white text-sm"
                 />
               </div>
             )}
@@ -872,11 +872,11 @@ function ValidateRiskModal({
 
   return (
     <Dialog open onClose={onClose}>
-      <div className="p-4 border-b border-surface-700 flex justify-between items-center">
+      <div className="p-4 border-b border-surface-200 flex justify-between items-center">
         <h3 className="text-lg font-medium text-white">
           {approve ? 'Validate Risk' : 'Reject Risk'}
         </h3>
-        <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
+        <button onClick={onClose} className="p-1 hover:bg-surface-200 rounded">
           <X className="w-5 h-5 text-surface-600" />
         </button>
       </div>
@@ -899,13 +899,13 @@ function ValidateRiskModal({
             onChange={(e) => setReason(e.target.value)}
             required={!approve}
             rows={3}
-            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
             placeholder={approve ? 'Add any notes...' : 'Explain why this is not a valid risk...'}
           />
         </div>
       </div>
-      <div className="p-4 border-t border-surface-700 flex justify-end gap-3">
-        <button onClick={onClose} className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg">
+      <div className="p-4 border-t border-surface-200 flex justify-end gap-3">
+        <button onClick={onClose} className="px-4 py-2 bg-surface-200 text-surface-700 rounded-lg">
           Cancel
         </button>
         <button
@@ -945,9 +945,9 @@ function StartAssessmentModal({
 
   return (
     <Dialog open onClose={onClose}>
-      <div className="p-4 border-b border-surface-700 flex justify-between items-center">
+      <div className="p-4 border-b border-surface-200 flex justify-between items-center">
         <h3 className="text-lg font-medium text-white">Start Risk Assessment</h3>
-        <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
+        <button onClick={onClose} className="p-1 hover:bg-surface-200 rounded">
           <X className="w-5 h-5 text-surface-600" />
         </button>
       </div>
@@ -960,8 +960,8 @@ function StartAssessmentModal({
           description="The SME who will analyze and assess this risk"
         />
       </div>
-      <div className="p-4 border-t border-surface-700 flex justify-end gap-3">
-        <button onClick={onClose} className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg">
+      <div className="p-4 border-t border-surface-200 flex justify-end gap-3">
+        <button onClick={onClose} className="px-4 py-2 bg-surface-200 text-surface-700 rounded-lg">
           Cancel
         </button>
         <button
@@ -1021,9 +1021,9 @@ function SubmitAssessmentModal({
 
   return (
     <Dialog open onClose={onClose}>
-      <div className="p-4 border-b border-surface-700 flex justify-between items-center sticky top-0 bg-surface-800">
+      <div className="p-4 border-b border-surface-200 flex justify-between items-center sticky top-0 bg-white">
         <h3 className="text-lg font-medium text-white">Risk Assessment Form</h3>
-        <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
+        <button onClick={onClose} className="p-1 hover:bg-surface-200 rounded">
           <X className="w-5 h-5 text-surface-600" />
         </button>
       </div>
@@ -1037,7 +1037,7 @@ function SubmitAssessmentModal({
             }
             required
             rows={3}
-            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
             placeholder="Describe the threat scenario..."
           />
         </div>
@@ -1049,7 +1049,7 @@ function SubmitAssessmentModal({
               type="text"
               value={formData.affectedAssets}
               onChange={(e) => setFormData((prev) => ({ ...prev, affectedAssets: e.target.value }))}
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
               placeholder="Comma-separated list"
             />
           </div>
@@ -1061,7 +1061,7 @@ function SubmitAssessmentModal({
               onChange={(e) =>
                 setFormData((prev) => ({ ...prev, existingControls: e.target.value }))
               }
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
               placeholder="Comma-separated list"
             />
           </div>
@@ -1073,7 +1073,7 @@ function SubmitAssessmentModal({
             value={formData.vulnerabilities}
             onChange={(e) => setFormData((prev) => ({ ...prev, vulnerabilities: e.target.value }))}
             rows={2}
-            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
             placeholder="Describe any vulnerabilities..."
           />
         </div>
@@ -1086,7 +1086,7 @@ function SubmitAssessmentModal({
               onChange={(e) =>
                 setFormData((prev) => ({ ...prev, likelihoodScore: e.target.value }))
               }
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
             >
               <option value="rare">Rare</option>
               <option value="unlikely">Unlikely</option>
@@ -1100,7 +1100,7 @@ function SubmitAssessmentModal({
             <SelectNative
               value={formData.impactScore}
               onChange={(e) => setFormData((prev) => ({ ...prev, impactScore: e.target.value }))}
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
             >
               <option value="negligible">Negligible</option>
               <option value="minor">Minor</option>
@@ -1121,7 +1121,7 @@ function SubmitAssessmentModal({
               }
               required
               rows={2}
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
               placeholder="Why this likelihood score?"
             />
           </div>
@@ -1134,7 +1134,7 @@ function SubmitAssessmentModal({
               }
               required
               rows={2}
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
               placeholder="Why this impact score?"
             />
           </div>
@@ -1155,7 +1155,7 @@ function SubmitAssessmentModal({
               onChange={(e) =>
                 setFormData((prev) => ({ ...prev, treatmentRecommendation: e.target.value }))
               }
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
             >
               <option value="">Select...</option>
               <option value="mitigate">Mitigate</option>
@@ -1172,13 +1172,13 @@ function SubmitAssessmentModal({
             value={formData.assessmentNotes}
             onChange={(e) => setFormData((prev) => ({ ...prev, assessmentNotes: e.target.value }))}
             rows={2}
-            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
             placeholder="Any additional notes..."
           />
         </div>
       </div>
-      <div className="p-4 border-t border-surface-700 flex justify-end gap-3 sticky bottom-0 bg-surface-800">
-        <button onClick={onClose} className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg">
+      <div className="p-4 border-t border-surface-200 flex justify-end gap-3 sticky bottom-0 bg-white">
+        <button onClick={onClose} className="px-4 py-2 bg-surface-200 text-surface-700 rounded-lg">
           Cancel
         </button>
         <button
@@ -1229,11 +1229,11 @@ function ReviewAssessmentModal({
 
   return (
     <Dialog open onClose={onClose}>
-      <div className="p-4 border-b border-surface-700 flex justify-between items-center">
+      <div className="p-4 border-b border-surface-200 flex justify-between items-center">
         <h3 className="text-lg font-medium text-white">
           {approve ? 'Approve Assessment' : 'Request Revision'}
         </h3>
-        <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
+        <button onClick={onClose} className="p-1 hover:bg-surface-200 rounded">
           <X className="w-5 h-5 text-surface-600" />
         </button>
       </div>
@@ -1245,7 +1245,7 @@ function ReviewAssessmentModal({
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
               placeholder="Add any notes..."
             />
           </div>
@@ -1257,14 +1257,14 @@ function ReviewAssessmentModal({
               onChange={(e) => setDeclinedReason(e.target.value)}
               required
               rows={3}
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
               placeholder="Explain what needs to be revised..."
             />
           </div>
         )}
       </div>
-      <div className="p-4 border-t border-surface-700 flex justify-end gap-3">
-        <button onClick={onClose} className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg">
+      <div className="p-4 border-t border-surface-200 flex justify-end gap-3">
+        <button onClick={onClose} className="px-4 py-2 bg-surface-200 text-surface-700 rounded-lg">
           Cancel
         </button>
         <button
@@ -1313,9 +1313,9 @@ function CompleteRevisionModal({
 
   return (
     <Dialog open onClose={onClose}>
-      <div className="p-4 border-b border-surface-700 flex justify-between items-center">
+      <div className="p-4 border-b border-surface-200 flex justify-between items-center">
         <h3 className="text-lg font-medium text-white">Complete Revision</h3>
-        <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
+        <button onClick={onClose} className="p-1 hover:bg-surface-200 rounded">
           <X className="w-5 h-5 text-surface-600" />
         </button>
       </div>
@@ -1332,7 +1332,7 @@ function CompleteRevisionModal({
               onChange={(e) =>
                 setFormData((prev) => ({ ...prev, likelihoodScore: e.target.value }))
               }
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
             >
               <option value="">Keep existing</option>
               <option value="rare">Rare</option>
@@ -1347,7 +1347,7 @@ function CompleteRevisionModal({
             <SelectNative
               value={formData.impactScore}
               onChange={(e) => setFormData((prev) => ({ ...prev, impactScore: e.target.value }))}
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
             >
               <option value="">Keep existing</option>
               <option value="negligible">Negligible</option>
@@ -1365,13 +1365,13 @@ function CompleteRevisionModal({
             value={formData.assessmentNotes}
             onChange={(e) => setFormData((prev) => ({ ...prev, assessmentNotes: e.target.value }))}
             rows={3}
-            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
             placeholder="Updated notes..."
           />
         </div>
       </div>
-      <div className="p-4 border-t border-surface-700 flex justify-end gap-3">
-        <button onClick={onClose} className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg">
+      <div className="p-4 border-t border-surface-200 flex justify-end gap-3">
+        <button onClick={onClose} className="px-4 py-2 bg-surface-200 text-surface-700 rounded-lg">
           Cancel
         </button>
         <button
@@ -1434,9 +1434,9 @@ function TreatmentDecisionModal({
 
   return (
     <Dialog open onClose={onClose}>
-      <div className="p-4 border-b border-surface-700 flex justify-between items-center">
+      <div className="p-4 border-b border-surface-200 flex justify-between items-center">
         <h3 className="text-lg font-medium text-white">Treatment Decision</h3>
-        <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
+        <button onClick={onClose} className="p-1 hover:bg-surface-200 rounded">
           <X className="w-5 h-5 text-surface-600" />
         </button>
       </div>
@@ -1457,7 +1457,7 @@ function TreatmentDecisionModal({
                 className={`p-3 rounded-lg text-left ${
                   formData.decision === opt.value
                     ? 'bg-brand-500/20 border border-brand-500'
-                    : 'bg-surface-700 border border-surface-600'
+                    : 'bg-surface-200 border border-surface-300'
                 }`}
               >
                 <p className="text-white font-medium">{opt.label}</p>
@@ -1482,7 +1482,7 @@ function TreatmentDecisionModal({
             onChange={(e) => setFormData((prev) => ({ ...prev, justification: e.target.value }))}
             required
             rows={3}
-            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
             placeholder="Explain why this treatment strategy..."
           />
         </div>
@@ -1498,7 +1498,7 @@ function TreatmentDecisionModal({
                   setFormData((prev) => ({ ...prev, mitigationDescription: e.target.value }))
                 }
                 rows={2}
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+                className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
                 placeholder="Describe the mitigation plan..."
               />
             </div>
@@ -1510,7 +1510,7 @@ function TreatmentDecisionModal({
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, mitigationTargetDate: e.target.value }))
                 }
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+                className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
               />
             </div>
           </>
@@ -1525,7 +1525,7 @@ function TreatmentDecisionModal({
                 type="text"
                 value={formData.transferTo}
                 onChange={(e) => setFormData((prev) => ({ ...prev, transferTo: e.target.value }))}
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+                className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
                 placeholder="Insurance provider..."
               />
             </div>
@@ -1535,7 +1535,7 @@ function TreatmentDecisionModal({
                 type="number"
                 value={formData.transferCost}
                 onChange={(e) => setFormData((prev) => ({ ...prev, transferCost: e.target.value }))}
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+                className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
                 placeholder="0"
               />
             </div>
@@ -1550,7 +1550,7 @@ function TreatmentDecisionModal({
               value={formData.avoidStrategy}
               onChange={(e) => setFormData((prev) => ({ ...prev, avoidStrategy: e.target.value }))}
               rows={2}
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
               placeholder="How will the risk be avoided..."
             />
           </div>
@@ -1567,7 +1567,7 @@ function TreatmentDecisionModal({
                   setFormData((prev) => ({ ...prev, acceptanceRationale: e.target.value }))
                 }
                 rows={2}
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+                className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
                 placeholder="Why is accepting appropriate..."
               />
             </div>
@@ -1579,14 +1579,14 @@ function TreatmentDecisionModal({
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, acceptanceExpiresAt: e.target.value }))
                 }
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+                className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
               />
             </div>
           </>
         )}
       </div>
-      <div className="p-4 border-t border-surface-700 flex justify-end gap-3">
-        <button onClick={onClose} className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg">
+      <div className="p-4 border-t border-surface-200 flex justify-end gap-3">
+        <button onClick={onClose} className="px-4 py-2 bg-surface-200 text-surface-700 rounded-lg">
           Cancel
         </button>
         <button
@@ -1624,9 +1624,9 @@ function AssignApproverModal({
 
   return (
     <Dialog open onClose={onClose}>
-      <div className="p-4 border-b border-surface-700 flex justify-between items-center">
+      <div className="p-4 border-b border-surface-200 flex justify-between items-center">
         <h3 className="text-lg font-medium text-white">Assign Executive Approver</h3>
-        <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
+        <button onClick={onClose} className="p-1 hover:bg-surface-200 rounded">
           <X className="w-5 h-5 text-surface-600" />
         </button>
       </div>
@@ -1642,8 +1642,8 @@ function AssignApproverModal({
           description="The executive who will approve this treatment decision"
         />
       </div>
-      <div className="p-4 border-t border-surface-700 flex justify-end gap-3">
-        <button onClick={onClose} className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg">
+      <div className="p-4 border-t border-surface-200 flex justify-end gap-3">
+        <button onClick={onClose} className="px-4 py-2 bg-surface-200 text-surface-700 rounded-lg">
           Cancel
         </button>
         <button
@@ -1688,11 +1688,11 @@ function ExecutiveApprovalModal({
 
   return (
     <Dialog open onClose={onClose}>
-      <div className="p-4 border-b border-surface-700 flex justify-between items-center">
+      <div className="p-4 border-b border-surface-200 flex justify-between items-center">
         <h3 className="text-lg font-medium text-white">
           {approve ? 'Approve Treatment' : 'Deny Treatment'}
         </h3>
-        <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
+        <button onClick={onClose} className="p-1 hover:bg-surface-200 rounded">
           <X className="w-5 h-5 text-surface-600" />
         </button>
       </div>
@@ -1704,7 +1704,7 @@ function ExecutiveApprovalModal({
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
               placeholder="Add any notes..."
             />
           </div>
@@ -1716,14 +1716,14 @@ function ExecutiveApprovalModal({
               onChange={(e) => setDeniedReason(e.target.value)}
               required
               rows={3}
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
               placeholder="Explain why this decision is denied..."
             />
           </div>
         )}
       </div>
-      <div className="p-4 border-t border-surface-700 flex justify-end gap-3">
-        <button onClick={onClose} className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg">
+      <div className="p-4 border-t border-surface-200 flex justify-end gap-3">
+        <button onClick={onClose} className="px-4 py-2 bg-surface-200 text-surface-700 rounded-lg">
           Cancel
         </button>
         <button
@@ -1783,9 +1783,9 @@ function MitigationUpdateModal({
 
   return (
     <Dialog open onClose={onClose}>
-      <div className="p-4 border-b border-surface-700 flex justify-between items-center">
+      <div className="p-4 border-b border-surface-200 flex justify-between items-center">
         <h3 className="text-lg font-medium text-white">Update Mitigation Status</h3>
-        <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
+        <button onClick={onClose} className="p-1 hover:bg-surface-200 rounded">
           <X className="w-5 h-5 text-surface-600" />
         </button>
       </div>
@@ -1795,7 +1795,7 @@ function MitigationUpdateModal({
           <SelectNative
             value={formData.status}
             onChange={(e) => setFormData((prev) => ({ ...prev, status: e.target.value }))}
-            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
           >
             <option value="on_track">On Track</option>
             <option value="delayed">Delayed</option>
@@ -1826,7 +1826,7 @@ function MitigationUpdateModal({
             value={formData.notes}
             onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
             rows={2}
-            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
             placeholder="Update notes..."
           />
         </div>
@@ -1841,7 +1841,7 @@ function MitigationUpdateModal({
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, newTargetDate: e.target.value }))
                 }
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+                className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
               />
             </div>
             <div>
@@ -1850,7 +1850,7 @@ function MitigationUpdateModal({
                 value={formData.delayReason}
                 onChange={(e) => setFormData((prev) => ({ ...prev, delayReason: e.target.value }))}
                 rows={2}
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+                className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
                 placeholder="Why is it delayed..."
               />
             </div>
@@ -1867,7 +1867,7 @@ function MitigationUpdateModal({
               }
               required
               rows={2}
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
               placeholder="Why is mitigation cancelled..."
             />
           </div>
@@ -1882,7 +1882,7 @@ function MitigationUpdateModal({
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, residualLikelihood: e.target.value }))
                 }
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+                className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
               >
                 <option value="">Select...</option>
                 <option value="rare">Rare</option>
@@ -1899,7 +1899,7 @@ function MitigationUpdateModal({
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, residualImpact: e.target.value }))
                 }
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+                className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
               >
                 <option value="">Select...</option>
                 <option value="negligible">Negligible</option>
@@ -1912,8 +1912,8 @@ function MitigationUpdateModal({
           </div>
         )}
       </div>
-      <div className="p-4 border-t border-surface-700 flex justify-end gap-3">
-        <button onClick={onClose} className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg">
+      <div className="p-4 border-t border-surface-200 flex justify-end gap-3">
+        <button onClick={onClose} className="px-4 py-2 bg-surface-200 text-surface-700 rounded-lg">
           Cancel
         </button>
         <button
@@ -1988,9 +1988,9 @@ function AssignRoleModal({
 
   return (
     <Dialog open onClose={onClose}>
-      <div className="p-4 border-b border-surface-700 flex justify-between items-center">
+      <div className="p-4 border-b border-surface-200 flex justify-between items-center">
         <h3 className="text-lg font-medium text-white">Assign {roleLabel}</h3>
-        <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
+        <button onClick={onClose} className="p-1 hover:bg-surface-200 rounded">
           <X className="w-5 h-5 text-surface-600" />
         </button>
       </div>
@@ -2003,7 +2003,7 @@ function AssignRoleModal({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by name or email..."
-            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
           />
         </div>
 
@@ -2014,7 +2014,7 @@ function AssignRoleModal({
             className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer ${
               userId === ''
                 ? 'bg-brand-500/20 border border-brand-500'
-                : 'bg-surface-700 hover:bg-surface-600'
+                : 'bg-surface-200 hover:bg-surface-600'
             }`}
           >
             <input
@@ -2044,7 +2044,7 @@ function AssignRoleModal({
               className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer ${
                 userId === user.id
                   ? 'bg-brand-500/20 border border-brand-500'
-                  : 'bg-surface-700 hover:bg-surface-600'
+                  : 'bg-surface-200 hover:bg-surface-600'
               }`}
             >
               <input
@@ -2080,14 +2080,14 @@ function AssignRoleModal({
                 value={userId}
                 onChange={(e) => setUserId(e.target.value)}
                 placeholder="Enter user ID..."
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+                className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
               />
             </div>
           )}
         </div>
       </div>
-      <div className="p-4 border-t border-surface-700 flex justify-end gap-3">
-        <button onClick={onClose} className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg">
+      <div className="p-4 border-t border-surface-200 flex justify-end gap-3">
+        <button onClick={onClose} className="px-4 py-2 bg-surface-200 text-surface-700 rounded-lg">
           Cancel
         </button>
         <button

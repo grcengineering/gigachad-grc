@@ -163,16 +163,16 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" onClick={handleClose} />
 
         {/* Modal */}
-        <div className="relative w-full max-w-2xl bg-surface-900 rounded-xl shadow-2xl border border-surface-700">
+        <div className="relative w-full max-w-2xl bg-white rounded-xl shadow-2xl border border-surface-200">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-surface-700">
+          <div className="flex items-center justify-between p-6 border-b border-surface-200">
             <div>
-              <h2 className="text-xl font-semibold text-surface-100">Bulk Upload Controls</h2>
+              <h2 className="text-xl font-semibold text-surface-900">Bulk Upload Controls</h2>
               <p className="text-sm text-surface-600 mt-1">Import controls from CSV or JSON file</p>
             </div>
             <button
               onClick={handleClose}
-              className="p-2 text-surface-600 hover:text-surface-200 hover:bg-surface-800 rounded-lg transition-colors"
+              className="p-2 text-surface-600 hover:text-surface-800 hover:bg-white rounded-lg transition-colors"
             >
               <XMarkIcon className="w-5 h-5" />
             </button>
@@ -190,7 +190,7 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
                     <ExclamationTriangleIcon className="w-8 h-8 text-yellow-600" />
                   )}
                   <div>
-                    <h3 className="text-lg font-medium text-surface-100">Upload Complete</h3>
+                    <h3 className="text-lg font-medium text-surface-900">Upload Complete</h3>
                     <p className="text-surface-600">
                       Processed {result.total || result.created + result.updated + result.skipped}{' '}
                       controls
@@ -199,19 +199,19 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
                 </div>
 
                 <div className="grid grid-cols-4 gap-4">
-                  <div className="bg-surface-800 rounded-lg p-4 text-center">
+                  <div className="bg-white rounded-lg p-4 text-center">
                     <div className="text-2xl font-bold text-green-600">{result.created}</div>
                     <div className="text-sm text-surface-600">Created</div>
                   </div>
-                  <div className="bg-surface-800 rounded-lg p-4 text-center">
+                  <div className="bg-white rounded-lg p-4 text-center">
                     <div className="text-2xl font-bold text-blue-600">{result.updated}</div>
                     <div className="text-sm text-surface-600">Updated</div>
                   </div>
-                  <div className="bg-surface-800 rounded-lg p-4 text-center">
+                  <div className="bg-white rounded-lg p-4 text-center">
                     <div className="text-2xl font-bold text-surface-600">{result.skipped}</div>
                     <div className="text-sm text-surface-600">Skipped</div>
                   </div>
-                  <div className="bg-surface-800 rounded-lg p-4 text-center">
+                  <div className="bg-white rounded-lg p-4 text-center">
                     <div className="text-2xl font-bold text-red-600">
                       {result.errors?.length || 0}
                     </div>
@@ -249,7 +249,7 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
                       'flex-1 py-2 px-4 rounded-lg border transition-colors',
                       uploadMode === 'csv'
                         ? 'bg-brand-600 border-brand-500 text-white'
-                        : 'bg-surface-800 border-surface-700 text-surface-700 hover:border-surface-600'
+                        : 'bg-white border-surface-200 text-surface-700 hover:border-surface-300'
                     )}
                   >
                     CSV Format
@@ -260,7 +260,7 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
                       'flex-1 py-2 px-4 rounded-lg border transition-colors',
                       uploadMode === 'json'
                         ? 'bg-brand-600 border-brand-500 text-white'
-                        : 'bg-surface-800 border-surface-700 text-surface-700 hover:border-surface-600'
+                        : 'bg-white border-surface-200 text-surface-700 hover:border-surface-300'
                     )}
                   >
                     JSON Format
@@ -275,7 +275,7 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
                       ? 'border-brand-500 bg-brand-500/10'
                       : fileContent
                         ? 'border-green-500 bg-green-500/10'
-                        : 'border-surface-700 hover:border-surface-600'
+                        : 'border-surface-200 hover:border-surface-300'
                   )}
                   onDragEnter={handleDrag}
                   onDragLeave={handleDrag}
@@ -293,7 +293,7 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
                   {fileContent ? (
                     <div className="space-y-2">
                       <DocumentTextIcon className="w-12 h-12 mx-auto text-green-600" />
-                      <p className="text-surface-100 font-medium">{fileName}</p>
+                      <p className="text-surface-900 font-medium">{fileName}</p>
                       <p className="text-surface-600 text-sm">
                         {fileContent.split('\n').length} lines loaded
                       </p>
@@ -334,7 +334,7 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
                         setSkipExisting(e.target.checked);
                         if (e.target.checked) setUpdateExisting(false);
                       }}
-                      className="w-4 h-4 rounded border-surface-600 bg-surface-800 text-brand-500 focus:ring-brand-500"
+                      className="w-4 h-4 rounded border-surface-300 bg-white text-brand-500 focus:ring-brand-500"
                     />
                     <span className="text-surface-700">Skip existing controls</span>
                   </label>
@@ -346,17 +346,17 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
                         setUpdateExisting(e.target.checked);
                         if (e.target.checked) setSkipExisting(false);
                       }}
-                      className="w-4 h-4 rounded border-surface-600 bg-surface-800 text-brand-500 focus:ring-brand-500"
+                      className="w-4 h-4 rounded border-surface-300 bg-white text-brand-500 focus:ring-brand-500"
                     />
                     <span className="text-surface-700">Update existing controls</span>
                   </label>
                 </div>
 
                 {/* Template download */}
-                <div className="bg-surface-800 rounded-lg p-4">
+                <div className="bg-white rounded-lg p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="font-medium text-surface-200">Need a template?</h4>
+                      <h4 className="font-medium text-surface-800">Need a template?</h4>
                       <p className="text-sm text-surface-600">
                         Download our CSV template with example data
                       </p>
@@ -388,7 +388,7 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
 
           {/* Footer */}
           {!result && (
-            <div className="flex items-center justify-end gap-3 p-6 border-t border-surface-700">
+            <div className="flex items-center justify-end gap-3 p-6 border-t border-surface-200">
               <Button onClick={handleClose} variant="secondary">
                 Cancel
               </Button>

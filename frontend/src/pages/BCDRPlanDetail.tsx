@@ -77,7 +77,7 @@ const STATUS_OPTIONS = [
   { value: 'in_review', label: 'In Review', color: 'bg-yellow-500/20 text-yellow-600' },
   { value: 'approved', label: 'Approved', color: 'bg-blue-500/20 text-blue-600' },
   { value: 'published', label: 'Published', color: 'bg-green-500/20 text-green-600' },
-  { value: 'archived', label: 'Archived', color: 'bg-surface-700 text-surface-600' },
+  { value: 'archived', label: 'Archived', color: 'bg-surface-200 text-surface-600' },
 ];
 
 const PLAN_TYPES = [
@@ -234,7 +234,7 @@ export default function BCDRPlanDetail() {
       <div className="p-6">
         <div className="card p-8 text-center">
           <ExclamationCircleIcon className="w-12 h-12 mx-auto mb-4 text-red-600" />
-          <h2 className="text-lg font-semibold text-surface-100 mb-2">BC/DR Plan Not Found</h2>
+          <h2 className="text-lg font-semibold text-surface-900 mb-2">BC/DR Plan Not Found</h2>
           <p className="text-surface-600 mb-4">The requested plan could not be loaded.</p>
           <Button onClick={() => navigate('/bcdr/plans')}>Back to Plans</Button>
         </div>
@@ -249,12 +249,12 @@ export default function BCDRPlanDetail() {
         <div className="flex items-start gap-4">
           <button
             onClick={() => navigate('/bcdr/plans')}
-            className="p-2 hover:bg-surface-700 rounded-lg text-surface-600 mt-1"
+            className="p-2 hover:bg-surface-200 rounded-lg text-surface-600 mt-1"
           >
             <ArrowLeftIcon className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-surface-100">Create New BC/DR Plan</h1>
+            <h1 className="text-2xl font-bold text-surface-900">Create New BC/DR Plan</h1>
             <p className="text-surface-600">Fill out the form below to create a new plan</p>
           </div>
         </div>
@@ -335,7 +335,7 @@ export default function BCDRPlanDetail() {
         <div className="flex items-start gap-4">
           <button
             onClick={() => navigate('/bcdr/plans')}
-            className="p-2 hover:bg-surface-700 rounded-lg text-surface-600 mt-1"
+            className="p-2 hover:bg-surface-200 rounded-lg text-surface-600 mt-1"
           >
             <ArrowLeftIcon className="w-5 h-5" />
           </button>
@@ -343,7 +343,7 @@ export default function BCDRPlanDetail() {
             <div className="flex items-center gap-3 mb-2">
               <DocumentTextIcon className="w-8 h-8 text-brand-400" />
               <div>
-                <h1 className="text-2xl font-bold text-surface-100">{plan.title}</h1>
+                <h1 className="text-2xl font-bold text-surface-900">{plan.title}</h1>
                 <p className="text-surface-600 text-sm">
                   {plan.plan_id} • v{plan.version}
                 </p>
@@ -355,7 +355,7 @@ export default function BCDRPlanDetail() {
               >
                 {statusConfig.label}
               </span>
-              <span className="px-3 py-1 rounded-full text-sm font-medium bg-surface-700 text-surface-700">
+              <span className="px-3 py-1 rounded-full text-sm font-medium bg-surface-200 text-surface-700">
                 {getPlanTypeLabel(plan.plan_type)}
               </span>
             </div>
@@ -373,7 +373,7 @@ export default function BCDRPlanDetail() {
         </div>
       </div>
       {/* Tabs */}
-      <div className="border-b border-surface-700">
+      <div className="border-b border-surface-200">
         <nav className="flex gap-6">
           {(['overview', 'processes', 'tests', 'controls'] as const).map((tab) => (
             <button
@@ -383,7 +383,7 @@ export default function BCDRPlanDetail() {
                 'pb-3 px-1 text-sm font-medium border-b-2 transition-colors capitalize',
                 activeTab === tab
                   ? 'border-brand-500 text-brand-400'
-                  : 'border-transparent text-surface-600 hover:text-surface-200'
+                  : 'border-transparent text-surface-600 hover:text-surface-800'
               )}
             >
               {tab}
@@ -396,27 +396,27 @@ export default function BCDRPlanDetail() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
             <div className="card p-6">
-              <h3 className="text-lg font-semibold text-surface-100 mb-4">Description</h3>
+              <h3 className="text-lg font-semibold text-surface-900 mb-4">Description</h3>
               <p className="text-surface-700">{plan.description || 'No description provided.'}</p>
             </div>
 
             {plan.objectives && (
               <div className="card p-6">
-                <h3 className="text-lg font-semibold text-surface-100 mb-4">Objectives</h3>
+                <h3 className="text-lg font-semibold text-surface-900 mb-4">Objectives</h3>
                 <p className="text-surface-700 whitespace-pre-wrap">{plan.objectives}</p>
               </div>
             )}
 
             {plan.scope && (
               <div className="card p-6">
-                <h3 className="text-lg font-semibold text-surface-100 mb-4">Scope</h3>
+                <h3 className="text-lg font-semibold text-surface-900 mb-4">Scope</h3>
                 <p className="text-surface-700 whitespace-pre-wrap">{plan.scope}</p>
               </div>
             )}
 
             {(plan.activation_criteria || plan.deactivation_criteria) && (
               <div className="card p-6">
-                <h3 className="text-lg font-semibold text-surface-100 mb-4">Activation Criteria</h3>
+                <h3 className="text-lg font-semibold text-surface-900 mb-4">Activation Criteria</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {plan.activation_criteria && (
                     <div>
@@ -440,7 +440,7 @@ export default function BCDRPlanDetail() {
 
             {plan.assumptions && (
               <div className="card p-6">
-                <h3 className="text-lg font-semibold text-surface-100 mb-4">Assumptions</h3>
+                <h3 className="text-lg font-semibold text-surface-900 mb-4">Assumptions</h3>
                 <p className="text-surface-700 whitespace-pre-wrap">{plan.assumptions}</p>
               </div>
             )}
@@ -448,21 +448,21 @@ export default function BCDRPlanDetail() {
 
           <div className="space-y-6">
             <div className="card p-6">
-              <h3 className="text-lg font-semibold text-surface-100 mb-4">Details</h3>
+              <h3 className="text-lg font-semibold text-surface-900 mb-4">Details</h3>
               <div className="space-y-4">
                 <div>
                   <p className="text-surface-600 text-sm">Owner</p>
-                  <p className="text-surface-100">{plan.owner_name || '-'}</p>
+                  <p className="text-surface-900">{plan.owner_name || '-'}</p>
                 </div>
                 <div>
                   <p className="text-surface-600 text-sm">Effective Date</p>
-                  <p className="text-surface-100">
+                  <p className="text-surface-900">
                     {plan.effective_date ? new Date(plan.effective_date).toLocaleDateString() : '-'}
                   </p>
                 </div>
                 <div>
                   <p className="text-surface-600 text-sm">Next Review</p>
-                  <p className="text-surface-100">
+                  <p className="text-surface-900">
                     {plan.next_review_due
                       ? new Date(plan.next_review_due).toLocaleDateString()
                       : '-'}
@@ -470,7 +470,7 @@ export default function BCDRPlanDetail() {
                 </div>
                 <div>
                   <p className="text-surface-600 text-sm">Last Reviewed</p>
-                  <p className="text-surface-100">
+                  <p className="text-surface-900">
                     {plan.last_reviewed_at
                       ? new Date(plan.last_reviewed_at).toLocaleDateString()
                       : 'Never'}
@@ -480,23 +480,23 @@ export default function BCDRPlanDetail() {
             </div>
 
             <div className="card p-6">
-              <h3 className="text-lg font-semibold text-surface-100 mb-4">Statistics</h3>
+              <h3 className="text-lg font-semibold text-surface-900 mb-4">Statistics</h3>
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-surface-600">In-Scope Processes</span>
-                  <span className="text-surface-100">{plan.in_scope_processes?.length || 0}</span>
+                  <span className="text-surface-900">{plan.in_scope_processes?.length || 0}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-surface-600">DR Tests</span>
-                  <span className="text-surface-100">{plan.dr_tests?.length || 0}</span>
+                  <span className="text-surface-900">{plan.dr_tests?.length || 0}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-surface-600">Linked Controls</span>
-                  <span className="text-surface-100">{plan.linked_controls?.length || 0}</span>
+                  <span className="text-surface-900">{plan.linked_controls?.length || 0}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-surface-600">Communication Plans</span>
-                  <span className="text-surface-100">{plan.communication_plans?.length || 0}</span>
+                  <span className="text-surface-900">{plan.communication_plans?.length || 0}</span>
                 </div>
               </div>
             </div>
@@ -505,7 +505,7 @@ export default function BCDRPlanDetail() {
       )}
       {activeTab === 'processes' && (
         <div className="card p-6">
-          <h3 className="text-lg font-semibold text-surface-100 mb-4">
+          <h3 className="text-lg font-semibold text-surface-900 mb-4">
             In-Scope Business Processes
           </h3>
           {plan.in_scope_processes && plan.in_scope_processes.length > 0 ? (
@@ -514,16 +514,16 @@ export default function BCDRPlanDetail() {
                 <Link
                   key={process.id}
                   to={`/bcdr/processes/${process.id}`}
-                  className="flex items-center justify-between p-4 rounded-lg bg-surface-800/50 hover:bg-surface-700/50 transition-colors"
+                  className="flex items-center justify-between p-4 rounded-lg bg-white/50 hover:bg-surface-200/50 transition-colors"
                 >
                   <div className="flex items-center gap-3">
                     <ShieldExclamationIcon className="w-5 h-5 text-surface-600" />
                     <div>
-                      <p className="text-surface-100 font-medium">{process.name}</p>
+                      <p className="text-surface-900 font-medium">{process.name}</p>
                       <p className="text-surface-600 text-sm">{process.process_id}</p>
                     </div>
                   </div>
-                  <span className="px-2 py-1 rounded text-xs font-medium bg-surface-700 text-surface-700 capitalize">
+                  <span className="px-2 py-1 rounded text-xs font-medium bg-surface-200 text-surface-700 capitalize">
                     {process.criticality_tier?.replace('_', ' ')}
                   </span>
                 </Link>
@@ -537,7 +537,7 @@ export default function BCDRPlanDetail() {
       {activeTab === 'tests' && (
         <div className="card p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-surface-100">DR Tests</h3>
+            <h3 className="text-lg font-semibold text-surface-900">DR Tests</h3>
             <Link
               to="/bcdr/tests/new"
               className="inline-flex items-center rounded-md border border-surface-300 bg-white px-3 h-8 text-small font-medium !text-surface-900 hover:bg-surface-100 transition-colors"
@@ -551,7 +551,7 @@ export default function BCDRPlanDetail() {
                 <Link
                   key={test.id}
                   to={`/bcdr/tests/${test.id}`}
-                  className="flex items-center justify-between p-4 rounded-lg bg-surface-800/50 hover:bg-surface-700/50 transition-colors"
+                  className="flex items-center justify-between p-4 rounded-lg bg-white/50 hover:bg-surface-200/50 transition-colors"
                 >
                   <div className="flex items-center gap-3">
                     {test.result === 'passed' ? (
@@ -562,7 +562,7 @@ export default function BCDRPlanDetail() {
                       <CalendarIcon className="w-5 h-5 text-surface-600" />
                     )}
                     <div>
-                      <p className="text-surface-100 font-medium">{test.name}</p>
+                      <p className="text-surface-900 font-medium">{test.name}</p>
                       <p className="text-surface-600 text-sm">
                         {test.scheduled_date
                           ? new Date(test.scheduled_date).toLocaleDateString()
@@ -577,7 +577,7 @@ export default function BCDRPlanDetail() {
                         ? 'bg-green-500/20 text-green-600'
                         : test.status === 'in_progress'
                           ? 'bg-yellow-500/20 text-yellow-600'
-                          : 'bg-surface-700 text-surface-700'
+                          : 'bg-surface-200 text-surface-700'
                     )}
                   >
                     {test.status?.replace('_', ' ')}
@@ -592,17 +592,17 @@ export default function BCDRPlanDetail() {
       )}
       {activeTab === 'controls' && (
         <div className="card p-6">
-          <h3 className="text-lg font-semibold text-surface-100 mb-4">Linked Controls</h3>
+          <h3 className="text-lg font-semibold text-surface-900 mb-4">Linked Controls</h3>
           {plan.linked_controls && plan.linked_controls.length > 0 ? (
             <div className="space-y-2">
               {plan.linked_controls.map((control) => (
                 <Link
                   key={control.id}
                   to={`/controls/${control.id}`}
-                  className="flex items-center justify-between p-4 rounded-lg bg-surface-800/50 hover:bg-surface-700/50 transition-colors"
+                  className="flex items-center justify-between p-4 rounded-lg bg-white/50 hover:bg-surface-200/50 transition-colors"
                 >
                   <div>
-                    <p className="text-surface-100 font-medium">{control.title}</p>
+                    <p className="text-surface-900 font-medium">{control.title}</p>
                     <p className="text-surface-600 text-sm">{control.control_id}</p>
                   </div>
                 </Link>
@@ -615,11 +615,11 @@ export default function BCDRPlanDetail() {
       )}
       {/* Edit Modal */}
       <Dialog open={showEditModal} onClose={() => setShowEditModal(false)}>
-        <div className="p-6 border-b border-surface-700 flex items-center justify-between">
+        <div className="p-6 border-b border-surface-200 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-white">Edit BC/DR Plan</h2>
           <button
             onClick={() => setShowEditModal(false)}
-            className="p-2 hover:bg-surface-700 rounded-lg text-surface-600"
+            className="p-2 hover:bg-surface-200 rounded-lg text-surface-600"
           >
             <XMarkIcon className="w-5 h-5" />
           </button>
@@ -747,7 +747,7 @@ export default function BCDRPlanDetail() {
             />
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-surface-700">
+          <div className="flex justify-end gap-3 pt-4 border-t border-surface-200">
             <Button variant="secondary" type="button" onClick={() => setShowEditModal(false)}>
               Cancel
             </Button>

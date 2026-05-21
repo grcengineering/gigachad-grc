@@ -72,7 +72,7 @@ export function QuickActions({ className }: QuickActionsProps) {
   ];
 
   return (
-    <div className={clsx('bg-surface-800 rounded-xl border border-surface-700 p-4', className)}>
+    <div className={clsx('bg-white rounded-xl border border-surface-200 p-4', className)}>
       <h3 className="font-medium text-white mb-4 flex items-center gap-2">
         <PlusIcon className="w-5 h-5 text-brand-400" />
         Quick Actions
@@ -85,7 +85,7 @@ export function QuickActions({ className }: QuickActionsProps) {
             className={clsx(
               'flex flex-col items-center p-3 rounded-lg transition-all',
               action.color,
-              'border border-transparent hover:border-surface-600'
+              'border border-transparent hover:border-surface-300'
             )}
           >
             <action.icon className="w-6 h-6 mb-2" />
@@ -138,12 +138,12 @@ export function QuickActionsBar() {
   ];
 
   return (
-    <div className="flex items-center gap-2 bg-surface-800/50 rounded-lg p-1">
+    <div className="flex items-center gap-2 bg-white/50 rounded-lg p-1">
       {actions.map((action) => (
         <button
           key={action.id}
           onClick={action.action}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-md text-surface-600 hover:text-white hover:bg-surface-700 transition-colors"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-md text-surface-600 hover:text-white hover:bg-surface-200 transition-colors"
           title={action.label}
         >
           <action.icon className="w-4 h-4" />

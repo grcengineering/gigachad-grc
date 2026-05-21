@@ -23,12 +23,12 @@ export default function DisabledModulePage({ moduleId }: DisabledModulePageProps
     <div className="min-h-[60vh] flex items-center justify-center p-6">
       <div className="max-w-lg w-full text-center">
         {/* Icon */}
-        <div className="mx-auto w-20 h-20 rounded-full bg-surface-800 flex items-center justify-center mb-6">
+        <div className="mx-auto w-20 h-20 rounded-full bg-white flex items-center justify-center mb-6">
           <LockClosedIcon className="w-10 h-10 text-surface-600" />
         </div>
 
         {/* Title */}
-        <h1 className="text-2xl font-bold text-surface-100 mb-2">Module Not Enabled</h1>
+        <h1 className="text-2xl font-bold text-surface-900 mb-2">Module Not Enabled</h1>
 
         {/* Module Name */}
         {moduleDefinition && <p className="text-lg text-brand-400 mb-4">{moduleDefinition.name}</p>}
@@ -41,8 +41,8 @@ export default function DisabledModulePage({ moduleId }: DisabledModulePageProps
         </p>
 
         {/* How to Enable */}
-        <div className="bg-surface-800/50 rounded-lg p-4 mb-6 text-left">
-          <h3 className="text-sm font-semibold text-surface-200 mb-2 flex items-center gap-2">
+        <div className="bg-white/50 rounded-lg p-4 mb-6 text-left">
+          <h3 className="text-sm font-semibold text-surface-800 mb-2 flex items-center gap-2">
             <Cog6ToothIcon className="w-4 h-4" />
             How to Enable This Module
           </h3>
@@ -51,7 +51,7 @@ export default function DisabledModulePage({ moduleId }: DisabledModulePageProps
               To enable this module, an administrator needs to update the environment configuration:
             </p>
             {moduleDefinition && (
-              <code className="block bg-surface-900 px-3 py-2 rounded text-xs text-green-600 font-mono">
+              <code className="block bg-white px-3 py-2 rounded text-xs text-green-600 font-mono">
                 {moduleDefinition.envVar}=true
               </code>
             )}

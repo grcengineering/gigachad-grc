@@ -112,7 +112,7 @@ export default function DRTests() {
       <div className="p-6">
         <div className="card p-8 text-center">
           <ExclamationCircleIcon className="w-12 h-12 mx-auto mb-4 text-red-600" />
-          <h2 className="text-lg font-semibold text-surface-100 mb-2">Failed to load DR Tests</h2>
+          <h2 className="text-lg font-semibold text-surface-900 mb-2">Failed to load DR Tests</h2>
           <p className="text-surface-600 mb-4">
             {(error as Error).message || 'An unexpected error occurred'}
           </p>
@@ -129,7 +129,7 @@ export default function DRTests() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-surface-100">DR Tests</h1>
+          <h1 className="text-2xl font-bold text-surface-900">DR Tests</h1>
           <p className="text-surface-600 mt-1">Schedule and track disaster recovery tests</p>
         </div>
         <Link to="/bcdr/tests/new" className="">
@@ -142,15 +142,15 @@ export default function DRTests() {
         <div className="card p-4">
           <p className="text-surface-600 text-sm">Total Tests</p>
           {statsLoading ? (
-            <div className="h-8 w-16 bg-surface-700 rounded animate-pulse mt-1"></div>
+            <div className="h-8 w-16 bg-surface-200 rounded animate-pulse mt-1"></div>
           ) : (
-            <p className="text-2xl font-bold text-surface-100">{stats?.total || 0}</p>
+            <p className="text-2xl font-bold text-surface-900">{stats?.total || 0}</p>
           )}
         </div>
         <div className="card p-4">
           <p className="text-surface-600 text-sm">Pass Rate</p>
           {statsLoading ? (
-            <div className="h-8 w-16 bg-surface-700 rounded animate-pulse mt-1"></div>
+            <div className="h-8 w-16 bg-surface-200 rounded animate-pulse mt-1"></div>
           ) : (
             <p className="text-2xl font-bold text-green-600">{passRate}%</p>
           )}
@@ -158,7 +158,7 @@ export default function DRTests() {
         <div className="card p-4">
           <p className="text-surface-600 text-sm">Open Findings</p>
           {statsLoading ? (
-            <div className="h-8 w-16 bg-surface-700 rounded animate-pulse mt-1"></div>
+            <div className="h-8 w-16 bg-surface-200 rounded animate-pulse mt-1"></div>
           ) : (
             <p className="text-2xl font-bold text-yellow-600">{stats?.openFindingsCount || 0}</p>
           )}
@@ -166,9 +166,9 @@ export default function DRTests() {
         <div className="card p-4">
           <p className="text-surface-600 text-sm">Avg Recovery Time</p>
           {statsLoading ? (
-            <div className="h-8 w-16 bg-surface-700 rounded animate-pulse mt-1"></div>
+            <div className="h-8 w-16 bg-surface-200 rounded animate-pulse mt-1"></div>
           ) : (
-            <p className="text-2xl font-bold text-surface-100">
+            <p className="text-2xl font-bold text-surface-900">
               {stats?.avg_recovery_time ? `${Math.round(Number(stats.avg_recovery_time))}m` : 'N/A'}
             </p>
           )}
@@ -240,7 +240,7 @@ export default function DRTests() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-surface-800/50">
+              <thead className="bg-white/50">
                 <tr>
                   <th className="text-left p-4 text-surface-700 font-medium">Test</th>
                   <th className="text-left p-4 text-surface-700 font-medium">Type</th>
@@ -251,16 +251,16 @@ export default function DRTests() {
                   <th className="text-left p-4 text-surface-700 font-medium">Coordinator</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-surface-700">
+              <tbody className="divide-y divide-surface-200">
                 {tests.map((test: DRTest) => {
                   const ResultIcon = test.result ? resultColors[test.result]?.icon : null;
 
                   return (
-                    <tr key={test.id} className="hover:bg-surface-800/30 transition-colors">
+                    <tr key={test.id} className="hover:bg-white/30 transition-colors">
                       <td className="p-4">
                         <Link
                           to={`/bcdr/tests/${test.id}`}
-                          className="text-surface-100 font-medium hover:text-brand-400 transition-colors"
+                          className="text-surface-900 font-medium hover:text-brand-400 transition-colors"
                         >
                           {test.name}
                         </Link>
@@ -330,7 +330,7 @@ export default function DRTests() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between p-4 border-t border-surface-700">
+          <div className="flex items-center justify-between p-4 border-t border-surface-200">
             <Button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}

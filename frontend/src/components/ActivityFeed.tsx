@@ -143,19 +143,19 @@ export function ActivityFeed({
 
   if (isLoading) {
     return (
-      <div className={clsx('bg-surface-800 rounded-xl border border-surface-700', className)}>
+      <div className={clsx('bg-white rounded-xl border border-surface-200', className)}>
         {showHeader && (
-          <div className="px-4 py-3 border-b border-surface-700">
-            <div className="h-5 bg-surface-700 rounded w-32 animate-pulse" />
+          <div className="px-4 py-3 border-b border-surface-200">
+            <div className="h-5 bg-surface-200 rounded w-32 animate-pulse" />
           </div>
         )}
         <div className="p-4 space-y-4">
           {Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="flex items-start gap-3 animate-pulse">
-              <div className="w-8 h-8 rounded-lg bg-surface-700" />
+              <div className="w-8 h-8 rounded-lg bg-surface-200" />
               <div className="flex-1 space-y-2">
-                <div className="h-4 bg-surface-700 rounded w-3/4" />
-                <div className="h-3 bg-surface-700 rounded w-1/2" />
+                <div className="h-4 bg-surface-200 rounded w-3/4" />
+                <div className="h-3 bg-surface-200 rounded w-1/2" />
               </div>
             </div>
           ))}
@@ -165,16 +165,16 @@ export function ActivityFeed({
   }
 
   return (
-    <div className={clsx('bg-surface-800 rounded-xl border border-surface-700', className)}>
+    <div className={clsx('bg-white rounded-xl border border-surface-200', className)}>
       {showHeader && (
-        <div className="px-4 py-3 border-b border-surface-700 flex items-center justify-between">
+        <div className="px-4 py-3 border-b border-surface-200 flex items-center justify-between">
           <h3 className="font-medium text-white">Recent Activity</h3>
           <div className="flex items-center gap-2">
             {!entityType && (
               <SelectNative
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
-                className="text-xs bg-surface-700 border-surface-600 rounded-md text-surface-700 py-1 px-2"
+                className="text-xs bg-surface-200 border-surface-300 rounded-md text-surface-700 py-1 px-2"
               >
                 <option value="all">All Types</option>
                 <option value="control">Controls</option>
@@ -187,7 +187,7 @@ export function ActivityFeed({
             <button
               onClick={() => refetch()}
               className={clsx(
-                'p-1.5 rounded-md hover:bg-surface-700 text-surface-600 hover:text-white transition-colors',
+                'p-1.5 rounded-md hover:bg-surface-200 text-surface-600 hover:text-white transition-colors',
                 isRefetching && 'animate-spin'
               )}
             >
@@ -205,7 +205,7 @@ export function ActivityFeed({
           </p>
         </div>
       ) : (
-        <div className={clsx('divide-y divide-surface-700', compact ? '' : 'p-2')}>
+        <div className={clsx('divide-y divide-surface-200', compact ? '' : 'p-2')}>
           {activities.map((activity) => {
             const ActionIcon = getActionIcon(activity.action);
             const EntityIcon = getEntityIcon(activity.entityType);
@@ -216,7 +216,7 @@ export function ActivityFeed({
               <div
                 key={activity.id}
                 className={clsx(
-                  'flex items-start gap-3 hover:bg-surface-700/50 transition-colors',
+                  'flex items-start gap-3 hover:bg-surface-200/50 transition-colors',
                   compact ? 'py-2 px-3' : 'p-3 rounded-lg'
                 )}
               >
@@ -267,7 +267,7 @@ export function ActivityFeed({
         </div>
       )}
       {activities.length > 0 && showHeader && (
-        <div className="px-4 py-3 border-t border-surface-700">
+        <div className="px-4 py-3 border-t border-surface-200">
           <Link to="/audit-log" className="text-sm text-brand-400 hover:text-brand-300 font-medium">
             View all activity →
           </Link>
@@ -279,7 +279,7 @@ export function ActivityFeed({
 
 // Compact version for sidebars
 export function CompactActivityFeed({ limit = 5 }: { limit?: number }) {
-  return <ActivityFeed limit={limit} compact showHeader className="bg-surface-800/50" />;
+  return <ActivityFeed limit={limit} compact showHeader className="bg-white/50" />;
 }
 
 export default ActivityFeed;

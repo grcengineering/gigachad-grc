@@ -120,7 +120,7 @@ export default function AnswerTemplates() {
 
   const getCategoryStyle = (category?: string) => {
     const cat = CATEGORIES.find((c) => c.value === category);
-    return cat?.color || 'bg-surface-700 text-surface-700';
+    return cat?.color || 'bg-surface-200 text-surface-700';
   };
 
   if (!organizationId) {
@@ -138,7 +138,7 @@ export default function AnswerTemplates() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-surface-100">Answer Templates</h1>
+          <h1 className="text-3xl font-bold text-surface-900">Answer Templates</h1>
           <p className="mt-1 text-surface-600">
             Create and manage reusable answer templates for questionnaires
           </p>
@@ -162,14 +162,14 @@ export default function AnswerTemplates() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search templates..."
-            className="w-full pl-10 pr-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+            className="w-full pl-10 pr-4 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
           />
         </div>
 
         <SelectNative
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
-          className="px-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+          className="px-4 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
         >
           <option value="">All Categories</option>
           {CATEGORIES.map((cat) => (
@@ -184,7 +184,7 @@ export default function AnswerTemplates() {
             type="checkbox"
             checked={showArchived}
             onChange={(e) => setShowArchived(e.target.checked)}
-            className="rounded border-surface-600 text-brand-500"
+            className="rounded border-surface-300 text-brand-500"
           />
           Show Archived
         </label>
@@ -195,11 +195,11 @@ export default function AnswerTemplates() {
           Array.from({ length: 6 }).map((_, i) => (
             <div
               key={i}
-              className="bg-surface-900 border border-surface-800 rounded-xl p-5 animate-pulse"
+              className="bg-white border border-surface-200 rounded-xl p-5 animate-pulse"
             >
-              <div className="h-5 bg-surface-700 rounded w-3/4 mb-3" />
-              <div className="h-16 bg-surface-800 rounded mb-3" />
-              <div className="h-4 bg-surface-700 rounded w-1/2" />
+              <div className="h-5 bg-surface-200 rounded w-3/4 mb-3" />
+              <div className="h-16 bg-white rounded mb-3" />
+              <div className="h-4 bg-surface-200 rounded w-1/2" />
             </div>
           ))
         ) : templates?.length === 0 ? (
@@ -215,15 +215,15 @@ export default function AnswerTemplates() {
             <div
               key={template.id}
               className={clsx(
-                'bg-surface-900 border rounded-xl p-5 cursor-pointer transition-all hover:border-surface-600',
+                'bg-white border rounded-xl p-5 cursor-pointer transition-all hover:border-surface-300',
                 selectedTemplate?.id === template.id
                   ? 'border-brand-500 ring-2 ring-brand-500/20'
-                  : 'border-surface-800'
+                  : 'border-surface-200'
               )}
               onClick={() => setSelectedTemplate(template)}
             >
               <div className="flex items-start justify-between mb-3">
-                <h3 className="font-semibold text-surface-100 truncate flex-1">{template.title}</h3>
+                <h3 className="font-semibold text-surface-900 truncate flex-1">{template.title}</h3>
                 <span
                   className={clsx(
                     'px-2 py-0.5 text-xs rounded-full ml-2',
@@ -264,12 +264,12 @@ export default function AnswerTemplates() {
       </div>
       {/* Template Detail Panel */}
       {selectedTemplate && (
-        <div className="fixed inset-y-0 right-0 w-full max-w-lg bg-surface-900 border-l border-surface-700 shadow-xl z-40 overflow-y-auto">
-          <div className="sticky top-0 bg-surface-900 border-b border-surface-700 px-6 py-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-surface-100">Template Details</h2>
+        <div className="fixed inset-y-0 right-0 w-full max-w-lg bg-white border-l border-surface-200 shadow-xl z-40 overflow-y-auto">
+          <div className="sticky top-0 bg-white border-b border-surface-200 px-6 py-4 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-surface-900">Template Details</h2>
             <button
               onClick={() => setSelectedTemplate(null)}
-              className="p-2 text-surface-600 hover:text-surface-200 rounded-lg hover:bg-surface-800"
+              className="p-2 text-surface-600 hover:text-surface-800 rounded-lg hover:bg-white"
             >
               <XMarkIcon className="w-5 h-5" />
             </button>
@@ -278,7 +278,7 @@ export default function AnswerTemplates() {
           <div className="p-6 space-y-6">
             <div>
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-xl font-semibold text-surface-100">{selectedTemplate.title}</h3>
+                <h3 className="text-xl font-semibold text-surface-900">{selectedTemplate.title}</h3>
                 <span
                   className={clsx(
                     'px-2 py-1 text-xs rounded-full',
@@ -292,7 +292,7 @@ export default function AnswerTemplates() {
 
             <div>
               <label className="block text-sm font-medium text-surface-600 mb-2">Content</label>
-              <div className="bg-surface-800 rounded-lg p-4 text-sm text-surface-200 whitespace-pre-wrap font-mono">
+              <div className="bg-white rounded-lg p-4 text-sm text-surface-800 whitespace-pre-wrap font-mono">
                 {selectedTemplate.content}
               </div>
             </div>
@@ -322,7 +322,7 @@ export default function AnswerTemplates() {
                   {selectedTemplate.tags.map((tag, i) => (
                     <span
                       key={i}
-                      className="px-2 py-1 bg-surface-700 text-surface-700 text-xs rounded"
+                      className="px-2 py-1 bg-surface-200 text-surface-700 text-xs rounded"
                     >
                       {tag}
                     </span>
@@ -334,11 +334,11 @@ export default function AnswerTemplates() {
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <label className="text-surface-500">Usage Count</label>
-                <p className="text-surface-200">{selectedTemplate.usageCount}</p>
+                <p className="text-surface-800">{selectedTemplate.usageCount}</p>
               </div>
               <div>
                 <label className="text-surface-500">Last Used</label>
-                <p className="text-surface-200">
+                <p className="text-surface-800">
                   {selectedTemplate.lastUsedAt
                     ? new Date(selectedTemplate.lastUsedAt).toLocaleDateString()
                     : 'Never'}
@@ -346,7 +346,7 @@ export default function AnswerTemplates() {
               </div>
             </div>
 
-            <div className="flex gap-2 pt-4 border-t border-surface-700">
+            <div className="flex gap-2 pt-4 border-t border-surface-200">
               <Button
                 variant="outline"
                 onClick={() => {
@@ -455,13 +455,13 @@ function TemplateModal({
 
   return (
     <Dialog open onClose={onClose}>
-      <div className="sticky top-0 bg-surface-900 border-b border-surface-700 px-6 py-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-surface-100">
+      <div className="sticky top-0 bg-white border-b border-surface-200 px-6 py-4 flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-surface-900">
           {template ? 'Edit Template' : 'Create Template'}
         </h2>
         <button
           onClick={onClose}
-          className="p-2 text-surface-600 hover:text-surface-200 rounded-lg hover:bg-surface-800"
+          className="p-2 text-surface-600 hover:text-surface-800 rounded-lg hover:bg-white"
         >
           <XMarkIcon className="w-5 h-5" />
         </button>
@@ -477,7 +477,7 @@ function TemplateModal({
             required
             value={formData.title}
             onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
-            className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+            className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
             placeholder="e.g., SOC 2 Compliance Response"
           />
         </div>
@@ -487,7 +487,7 @@ function TemplateModal({
           <SelectNative
             value={formData.category}
             onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value }))}
-            className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+            className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
           >
             <option value="">Select category...</option>
             {CATEGORIES.map((cat) => (
@@ -511,7 +511,7 @@ function TemplateModal({
             value={formData.content}
             onChange={(e) => setFormData((prev) => ({ ...prev, content: e.target.value }))}
             rows={8}
-            className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500 font-mono text-sm"
+            className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 font-mono text-sm"
             placeholder="Enter template content...
 
 Example:
@@ -543,12 +543,12 @@ Example:
             type="text"
             value={formData.tags}
             onChange={(e) => setFormData((prev) => ({ ...prev, tags: e.target.value }))}
-            className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+            className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
             placeholder="encryption, data-protection, audit (comma-separated)"
           />
         </div>
 
-        <div className="flex justify-end gap-3 pt-4 border-t border-surface-700">
+        <div className="flex justify-end gap-3 pt-4 border-t border-surface-200">
           <Button variant="secondary" type="button" onClick={onClose}>
             Cancel
           </Button>

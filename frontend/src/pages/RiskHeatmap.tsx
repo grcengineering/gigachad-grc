@@ -58,7 +58,7 @@ function getCellColor(likelihoodIdx: number, impactIdx: number): string {
     case 'low':
       return 'bg-emerald-500/40 hover:bg-emerald-500/60';
     default:
-      return 'bg-surface-700 hover:bg-surface-600';
+      return 'bg-surface-200 hover:bg-surface-600';
   }
 }
 
@@ -232,7 +232,7 @@ export default function RiskHeatmap() {
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate('/risks')}
-            className="p-2 hover:bg-surface-700 rounded-lg text-surface-600"
+            className="p-2 hover:bg-surface-200 rounded-lg text-surface-600"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -260,10 +260,10 @@ export default function RiskHeatmap() {
           </button>
 
           {showExportMenu && !isExporting && (
-            <div className="absolute right-0 mt-2 w-48 bg-surface-800 border border-surface-700 rounded-lg shadow-xl z-10">
+            <div className="absolute right-0 mt-2 w-48 bg-white border border-surface-200 rounded-lg shadow-xl z-10">
               <button
                 onClick={exportToPNG}
-                className="w-full flex items-center gap-3 px-4 py-3 text-left text-surface-700 hover:bg-surface-700 transition-colors"
+                className="w-full flex items-center gap-3 px-4 py-3 text-left text-surface-700 hover:bg-surface-200 transition-colors"
               >
                 <FileImage className="w-4 h-4" />
                 <div>
@@ -273,7 +273,7 @@ export default function RiskHeatmap() {
               </button>
               <button
                 onClick={exportToPDF}
-                className="w-full flex items-center gap-3 px-4 py-3 text-left text-surface-700 hover:bg-surface-700 transition-colors border-t border-surface-700"
+                className="w-full flex items-center gap-3 px-4 py-3 text-left text-surface-700 hover:bg-surface-200 transition-colors border-t border-surface-200"
               >
                 <FileText className="w-4 h-4" />
                 <div>
@@ -288,7 +288,7 @@ export default function RiskHeatmap() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Heatmap Grid */}
-        <div className="lg:col-span-2 bg-surface-800 rounded-xl border border-surface-700 p-6">
+        <div className="lg:col-span-2 bg-white rounded-xl border border-surface-200 p-6">
           {isLoading ? (
             <div className="flex items-center justify-center h-96">
               <div className="text-surface-600">Loading heatmap...</div>
@@ -385,7 +385,7 @@ export default function RiskHeatmap() {
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Selected Cell Details */}
-          <div className="bg-surface-800 rounded-xl border border-surface-700 p-6">
+          <div className="bg-white rounded-xl border border-surface-200 p-6">
             <h3 className="text-lg font-medium text-white mb-4">
               {selectedCell ? 'Selected Risks' : 'Click a Cell'}
             </h3>
@@ -410,7 +410,7 @@ export default function RiskHeatmap() {
                     <button
                       key={risk.id}
                       onClick={() => navigate(`/risks/${risk.id}`)}
-                      className="w-full p-3 bg-surface-700 rounded-lg text-left hover:bg-surface-600 transition-colors"
+                      className="w-full p-3 bg-surface-200 rounded-lg text-left hover:bg-surface-600 transition-colors"
                     >
                       <span className="text-brand-400 font-mono text-sm">{risk.riskId}</span>
                       <p className="text-white mt-1">{risk.title}</p>
@@ -428,7 +428,7 @@ export default function RiskHeatmap() {
 
           {/* Stats */}
           {dashboard && (
-            <div className="bg-surface-800 rounded-xl border border-surface-700 p-6">
+            <div className="bg-white rounded-xl border border-surface-200 p-6">
               <h3 className="text-lg font-medium text-white mb-4">Risk Distribution</h3>
               <div className="space-y-3">
                 {dashboard.byRiskLevel?.map((level: any) => {
@@ -450,7 +450,7 @@ export default function RiskHeatmap() {
                           {level.count} ({percentage}%)
                         </span>
                       </div>
-                      <div className="h-2 bg-surface-700 rounded-full overflow-hidden">
+                      <div className="h-2 bg-surface-200 rounded-full overflow-hidden">
                         <div
                           className={`h-full ${levelColors[level.level] || 'bg-surface-500'}`}
                           style={{ width: `${percentage}%` }}
@@ -465,13 +465,13 @@ export default function RiskHeatmap() {
 
           {/* Category Distribution */}
           {dashboard && (
-            <div className="bg-surface-800 rounded-xl border border-surface-700 p-6">
+            <div className="bg-white rounded-xl border border-surface-200 p-6">
               <h3 className="text-lg font-medium text-white mb-4">By Category</h3>
               <div className="space-y-2">
                 {dashboard.byCategory?.map((cat: any) => (
                   <div
                     key={cat.category}
-                    className="flex justify-between items-center p-2 bg-surface-700 rounded"
+                    className="flex justify-between items-center p-2 bg-surface-200 rounded"
                   >
                     <span className="text-surface-700 capitalize">{cat.category}</span>
                     <span className="text-white font-medium">{cat.count}</span>

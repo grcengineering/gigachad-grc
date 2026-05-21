@@ -83,7 +83,7 @@ export default function PermissionGroups() {
         <div className="flex gap-2">
           <button
             onClick={() => seedMutation.mutate()}
-            className="px-4 py-2 bg-surface-700 text-white rounded-lg hover:bg-surface-600 transition-colors"
+            className="px-4 py-2 bg-surface-200 text-white rounded-lg hover:bg-surface-600 transition-colors"
           >
             Seed Defaults
           </button>
@@ -117,7 +117,7 @@ export default function PermissionGroups() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {groups?.map((group: PermissionGroup) => (
-            <div key={group.id} className="bg-surface-800 rounded-lg border border-surface-700 p-5">
+            <div key={group.id} className="bg-white rounded-lg border border-surface-200 p-5">
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <div className="flex items-center gap-2">
@@ -133,14 +133,14 @@ export default function PermissionGroups() {
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => setShowMembersModal(group)}
-                    className="p-2 text-surface-600 hover:text-white hover:bg-surface-700 rounded-lg"
+                    className="p-2 text-surface-600 hover:text-white hover:bg-surface-200 rounded-lg"
                     title="View Members"
                   >
                     <UserGroupIcon className="w-5 h-5" />
                   </button>
                   <button
                     onClick={() => setEditingGroup(group)}
-                    className="p-2 text-surface-600 hover:text-white hover:bg-surface-700 rounded-lg"
+                    className="p-2 text-surface-600 hover:text-white hover:bg-surface-200 rounded-lg"
                     title="Edit Group"
                   >
                     <PencilSquareIcon className="w-5 h-5" />
@@ -152,7 +152,7 @@ export default function PermissionGroups() {
                           deleteMutation.mutate(group.id);
                         }
                       }}
-                      className="p-2 text-surface-600 hover:text-red-600 hover:bg-surface-700 rounded-lg"
+                      className="p-2 text-surface-600 hover:text-red-600 hover:bg-surface-200 rounded-lg"
                       title="Delete Group"
                     >
                       <TrashIcon className="w-5 h-5" />
@@ -168,7 +168,7 @@ export default function PermissionGroups() {
                   {group.permissions.slice(0, 6).map((perm, idx) => (
                     <span
                       key={idx}
-                      className="px-2 py-1 bg-surface-700 rounded text-xs text-surface-200"
+                      className="px-2 py-1 bg-surface-200 rounded text-xs text-surface-800"
                     >
                       {perm.resource}: {perm.actions.length} actions
                     </span>
@@ -181,7 +181,7 @@ export default function PermissionGroups() {
                 </div>
               </div>
 
-              <div className="mt-4 pt-4 border-t border-surface-700 flex items-center justify-between text-sm text-surface-600">
+              <div className="mt-4 pt-4 border-t border-surface-200 flex items-center justify-between text-sm text-surface-600">
                 <span>
                   {group.memberCount} member{group.memberCount !== 1 ? 's' : ''}
                 </span>
@@ -287,7 +287,7 @@ function PermissionGroupModal({
 
   return (
     <Dialog open onClose={onClose}>
-      <div className="p-4 border-b border-surface-700 flex items-center justify-between">
+      <div className="p-4 border-b border-surface-200 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-white">
           {group ? 'Edit Permission Group' : 'Create Permission Group'}
         </h2>
@@ -305,7 +305,7 @@ function PermissionGroupModal({
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full bg-surface-900 border border-surface-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="w-full bg-white border border-surface-300 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
               placeholder="e.g., Compliance Manager"
             />
           </div>
@@ -315,7 +315,7 @@ function PermissionGroupModal({
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full bg-surface-900 border border-surface-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="w-full bg-white border border-surface-300 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
               placeholder="Brief description of this role"
             />
           </div>
@@ -324,10 +324,10 @@ function PermissionGroupModal({
         {/* Permission Matrix */}
         <div>
           <label className="block text-sm text-surface-600 mb-3">Permission Matrix</label>
-          <div className="bg-surface-900 rounded-lg border border-surface-700 overflow-hidden">
+          <div className="bg-white rounded-lg border border-surface-200 overflow-hidden">
             <table className="w-full">
               <thead>
-                <tr className="bg-surface-800">
+                <tr className="bg-white">
                   <th className="text-left text-surface-600 font-medium px-4 py-3 w-48">
                     Resource
                   </th>
@@ -344,12 +344,12 @@ function PermissionGroupModal({
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-surface-700">
+              <tbody className="divide-y divide-surface-200">
                 {RESOURCES.map((resource) => {
                   const currentActions = permissions[resource.id] || [];
                   const allSelected = currentActions.length === ACTIONS.length;
                   return (
-                    <tr key={resource.id} className="hover:bg-surface-800/50">
+                    <tr key={resource.id} className="hover:bg-white/50">
                       <td className="px-4 py-3">
                         <div className="text-white text-sm font-medium">{resource.label}</div>
                         <div className="text-surface-500 text-xs">{resource.description}</div>
@@ -361,7 +361,7 @@ function PermissionGroupModal({
                             className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${
                               currentActions.includes(action)
                                 ? 'bg-brand-500 border-brand-500'
-                                : 'border-surface-600 hover:border-surface-500'
+                                : 'border-surface-300 hover:border-surface-500'
                             }`}
                           >
                             {currentActions.includes(action) && (
@@ -376,7 +376,7 @@ function PermissionGroupModal({
                           className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${
                             allSelected
                               ? 'bg-emerald-500 border-emerald-500'
-                              : 'border-surface-600 hover:border-surface-500'
+                              : 'border-surface-300 hover:border-surface-500'
                           }`}
                         >
                           {allSelected && <CheckIcon className="w-4 h-4 text-white" />}
@@ -391,10 +391,10 @@ function PermissionGroupModal({
         </div>
       </div>
 
-      <div className="p-4 border-t border-surface-700 flex justify-end gap-3">
+      <div className="p-4 border-t border-surface-200 flex justify-end gap-3">
         <button
           onClick={onClose}
-          className="px-4 py-2 bg-surface-700 text-white rounded-lg hover:bg-surface-600 transition-colors"
+          className="px-4 py-2 bg-surface-200 text-white rounded-lg hover:bg-surface-600 transition-colors"
         >
           Cancel
         </button>
@@ -418,7 +418,7 @@ function GroupMembersModal({ group, onClose }: { group: PermissionGroup; onClose
 
   return (
     <Dialog open onClose={onClose}>
-      <div className="p-4 border-b border-surface-700 flex items-center justify-between">
+      <div className="p-4 border-b border-surface-200 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-white">Members of {group.name}</h2>
         <button onClick={onClose} className="p-1 text-surface-600 hover:text-white">
           <XMarkIcon className="w-5 h-5" />
@@ -434,7 +434,7 @@ function GroupMembersModal({ group, onClose }: { group: PermissionGroup; onClose
             {members?.map((member: any) => (
               <div
                 key={member.id}
-                className="flex items-center gap-3 p-3 bg-surface-700 rounded-lg"
+                className="flex items-center gap-3 p-3 bg-surface-200 rounded-lg"
               >
                 <div className="w-10 h-10 rounded-full bg-brand-500/20 flex items-center justify-center text-brand-400 font-medium">
                   {member.displayName.charAt(0).toUpperCase()}

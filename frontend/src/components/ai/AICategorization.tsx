@@ -102,7 +102,7 @@ export default function AICategorization({
             <div className="text-xs text-surface-600">Suggested Category</div>
             <button
               onClick={() => handleSelectCategory(result.suggestedCategory)}
-              className="w-full flex items-center justify-between p-2 bg-surface-800/50 hover:bg-surface-800 rounded-lg transition-colors group"
+              className="w-full flex items-center justify-between p-2 bg-white/50 hover:bg-white rounded-lg transition-colors group"
             >
               <div className="flex items-center gap-2">
                 <span className="text-white font-medium">{result.suggestedCategory}</span>
@@ -129,7 +129,7 @@ export default function AICategorization({
                   <button
                     key={i}
                     onClick={() => handleSelectCategory(alt.category)}
-                    className="w-full flex items-center justify-between p-2 bg-surface-800/30 hover:bg-surface-800/50 rounded-lg transition-colors text-sm group"
+                    className="w-full flex items-center justify-between p-2 bg-white/30 hover:bg-white/50 rounded-lg transition-colors text-sm group"
                   >
                     <span className="text-surface-700">{alt.category}</span>
                     <div className="flex items-center gap-2">

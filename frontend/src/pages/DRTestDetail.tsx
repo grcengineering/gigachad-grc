@@ -266,7 +266,7 @@ export default function DRTestDetail() {
       <div className="p-6">
         <div className="card p-8 text-center">
           <ExclamationCircleIcon className="w-12 h-12 mx-auto mb-4 text-red-600" />
-          <h2 className="text-lg font-semibold text-surface-100 mb-2">DR Test Not Found</h2>
+          <h2 className="text-lg font-semibold text-surface-900 mb-2">DR Test Not Found</h2>
           <p className="text-surface-600 mb-4">The requested test could not be loaded.</p>
           <Button onClick={() => navigate('/bcdr/tests')}>Back to Tests</Button>
         </div>
@@ -281,12 +281,12 @@ export default function DRTestDetail() {
         <div className="flex items-start gap-4">
           <button
             onClick={() => navigate('/bcdr/tests')}
-            className="p-2 hover:bg-surface-700 rounded-lg text-surface-600 mt-1"
+            className="p-2 hover:bg-surface-200 rounded-lg text-surface-600 mt-1"
           >
             <ArrowLeftIcon className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-surface-100">Schedule New DR Test</h1>
+            <h1 className="text-2xl font-bold text-surface-900">Schedule New DR Test</h1>
             <p className="text-surface-600 mt-1">Create a new disaster recovery test</p>
           </div>
         </div>
@@ -304,7 +304,7 @@ export default function DRTestDetail() {
                 type="text"
                 value={editForm.name}
                 onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-surface-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-surface-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
                 placeholder="e.g., Q1 2026 Disaster Recovery Test"
                 required
               />
@@ -316,7 +316,7 @@ export default function DRTestDetail() {
                 <SelectNative
                   value={editForm.test_type}
                   onChange={(e) => setEditForm({ ...editForm, test_type: e.target.value })}
-                  className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-surface-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-surface-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
                 >
                   {TEST_TYPES.map((type) => (
                     <option key={type.value} value={type.value}>
@@ -333,7 +333,7 @@ export default function DRTestDetail() {
                   type="date"
                   value={editForm.scheduled_date}
                   onChange={(e) => setEditForm({ ...editForm, scheduled_date: e.target.value })}
-                  className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-surface-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-surface-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
             </div>
@@ -344,7 +344,7 @@ export default function DRTestDetail() {
                 value={editForm.description}
                 onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
                 rows={3}
-                className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-surface-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-surface-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
                 placeholder="Describe the test purpose and scope..."
               />
             </div>
@@ -355,7 +355,7 @@ export default function DRTestDetail() {
                 value={editForm.objectives}
                 onChange={(e) => setEditForm({ ...editForm, objectives: e.target.value })}
                 rows={2}
-                className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-surface-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-surface-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
                 placeholder="What are the key objectives of this test?"
               />
             </div>
@@ -366,7 +366,7 @@ export default function DRTestDetail() {
                 value={editForm.scope}
                 onChange={(e) => setEditForm({ ...editForm, scope: e.target.value })}
                 rows={2}
-                className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-surface-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-surface-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
                 placeholder="Define the scope and systems involved..."
               />
             </div>
@@ -403,7 +403,7 @@ export default function DRTestDetail() {
         <div className="flex items-start gap-4">
           <button
             onClick={() => navigate('/bcdr/tests')}
-            className="p-2 hover:bg-surface-700 rounded-lg text-surface-600 mt-1"
+            className="p-2 hover:bg-surface-200 rounded-lg text-surface-600 mt-1"
           >
             <ArrowLeftIcon className="w-5 h-5" />
           </button>
@@ -411,7 +411,7 @@ export default function DRTestDetail() {
             <div className="flex items-center gap-3 mb-2">
               <BeakerIcon className="w-8 h-8 text-purple-600" />
               <div>
-                <h1 className="text-2xl font-bold text-surface-100">{test.name}</h1>
+                <h1 className="text-2xl font-bold text-surface-900">{test.name}</h1>
                 <p className="text-surface-600 text-sm">{test.test_id}</p>
               </div>
             </div>
@@ -427,7 +427,7 @@ export default function DRTestDetail() {
                   {resultConfig.label}
                 </span>
               )}
-              <span className="px-3 py-1 rounded-full text-sm font-medium bg-surface-700 text-surface-700">
+              <span className="px-3 py-1 rounded-full text-sm font-medium bg-surface-200 text-surface-700">
                 {getTestTypeLabel(test.test_type)}
               </span>
             </div>
@@ -451,7 +451,7 @@ export default function DRTestDetail() {
         </div>
       </div>
       {/* Tabs */}
-      <div className="border-b border-surface-700">
+      <div className="border-b border-surface-200">
         <nav className="flex gap-6">
           {(['overview', 'findings', 'participants'] as const).map((tab) => (
             <button
@@ -461,7 +461,7 @@ export default function DRTestDetail() {
                 'pb-3 px-1 text-sm font-medium border-b-2 transition-colors capitalize',
                 activeTab === tab
                   ? 'border-brand-500 text-brand-400'
-                  : 'border-transparent text-surface-600 hover:text-surface-200'
+                  : 'border-transparent text-surface-600 hover:text-surface-800'
               )}
             >
               {tab}
@@ -479,21 +479,21 @@ export default function DRTestDetail() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
             <div className="card p-6">
-              <h3 className="text-lg font-semibold text-surface-100 mb-4">Description</h3>
+              <h3 className="text-lg font-semibold text-surface-900 mb-4">Description</h3>
               <p className="text-surface-700">{test.description || 'No description provided.'}</p>
             </div>
 
             {/* Recovery Metrics */}
             <div className="card p-6">
-              <h3 className="text-lg font-semibold text-surface-100 mb-4">Recovery Metrics</h3>
+              <h3 className="text-lg font-semibold text-surface-900 mb-4">Recovery Metrics</h3>
               <div className="grid grid-cols-3 gap-4">
-                <div className="p-4 rounded-lg bg-surface-800/50">
+                <div className="p-4 rounded-lg bg-white/50">
                   <p className="text-surface-600 text-sm">Target RTO</p>
-                  <p className="text-2xl font-bold text-surface-100">
+                  <p className="text-2xl font-bold text-surface-900">
                     {test.target_rto_minutes ? `${test.target_rto_minutes}m` : 'N/A'}
                   </p>
                 </div>
-                <div className="p-4 rounded-lg bg-surface-800/50">
+                <div className="p-4 rounded-lg bg-white/50">
                   <p className="text-surface-600 text-sm">Actual Recovery Time</p>
                   <p
                     className={clsx(
@@ -502,7 +502,7 @@ export default function DRTestDetail() {
                         ? 'text-green-600'
                         : rtoMet === false
                           ? 'text-red-600'
-                          : 'text-surface-100'
+                          : 'text-surface-900'
                     )}
                   >
                     {test.actual_recovery_time_minutes
@@ -510,7 +510,7 @@ export default function DRTestDetail() {
                       : 'N/A'}
                   </p>
                 </div>
-                <div className="p-4 rounded-lg bg-surface-800/50">
+                <div className="p-4 rounded-lg bg-white/50">
                   <p className="text-surface-600 text-sm">RTO Met</p>
                   <p
                     className={clsx(
@@ -519,7 +519,7 @@ export default function DRTestDetail() {
                         ? 'text-green-600'
                         : rtoMet === false
                           ? 'text-red-600'
-                          : 'text-surface-100'
+                          : 'text-surface-900'
                     )}
                   >
                     {rtoMet === null ? 'N/A' : rtoMet ? 'Yes' : 'No'}
@@ -530,14 +530,14 @@ export default function DRTestDetail() {
 
             {test.objectives && (
               <div className="card p-6">
-                <h3 className="text-lg font-semibold text-surface-100 mb-4">Objectives</h3>
+                <h3 className="text-lg font-semibold text-surface-900 mb-4">Objectives</h3>
                 <p className="text-surface-700 whitespace-pre-wrap">{test.objectives}</p>
               </div>
             )}
 
             {test.lessons_learned && (
               <div className="card p-6">
-                <h3 className="text-lg font-semibold text-surface-100 mb-4">Lessons Learned</h3>
+                <h3 className="text-lg font-semibold text-surface-900 mb-4">Lessons Learned</h3>
                 <p className="text-surface-700 whitespace-pre-wrap">{test.lessons_learned}</p>
               </div>
             )}
@@ -545,11 +545,11 @@ export default function DRTestDetail() {
 
           <div className="space-y-6">
             <div className="card p-6">
-              <h3 className="text-lg font-semibold text-surface-100 mb-4">Details</h3>
+              <h3 className="text-lg font-semibold text-surface-900 mb-4">Details</h3>
               <div className="space-y-4">
                 <div>
                   <p className="text-surface-600 text-sm">Coordinator</p>
-                  <p className="text-surface-100">{test.coordinator_name || '-'}</p>
+                  <p className="text-surface-900">{test.coordinator_name || '-'}</p>
                 </div>
                 {test.plan_title && (
                   <div>
@@ -564,14 +564,14 @@ export default function DRTestDetail() {
                 )}
                 <div>
                   <p className="text-surface-600 text-sm">Scheduled Date</p>
-                  <p className="text-surface-100">
+                  <p className="text-surface-900">
                     {test.scheduled_date ? new Date(test.scheduled_date).toLocaleString() : '-'}
                   </p>
                 </div>
                 {test.actual_start_at && (
                   <div>
                     <p className="text-surface-600 text-sm">Actual Start</p>
-                    <p className="text-surface-100">
+                    <p className="text-surface-900">
                       {new Date(test.actual_start_at).toLocaleString()}
                     </p>
                   </div>
@@ -579,7 +579,7 @@ export default function DRTestDetail() {
                 {test.actual_end_at && (
                   <div>
                     <p className="text-surface-600 text-sm">Actual End</p>
-                    <p className="text-surface-100">
+                    <p className="text-surface-900">
                       {new Date(test.actual_end_at).toLocaleString()}
                     </p>
                   </div>
@@ -588,13 +588,13 @@ export default function DRTestDetail() {
             </div>
 
             <div className="card p-6">
-              <h3 className="text-lg font-semibold text-surface-100 mb-4">Statistics</h3>
+              <h3 className="text-lg font-semibold text-surface-900 mb-4">Statistics</h3>
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-surface-600">Findings</span>
                   <span
                     className={clsx(
-                      test.findings?.length > 0 ? 'text-yellow-600' : 'text-surface-100'
+                      test.findings?.length > 0 ? 'text-yellow-600' : 'text-surface-900'
                     )}
                   >
                     {test.findings?.length || 0}
@@ -602,7 +602,7 @@ export default function DRTestDetail() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-surface-600">Participants</span>
-                  <span className="text-surface-100">{test.participants?.length || 0}</span>
+                  <span className="text-surface-900">{test.participants?.length || 0}</span>
                 </div>
               </div>
             </div>
@@ -612,7 +612,7 @@ export default function DRTestDetail() {
       {activeTab === 'findings' && (
         <div className="card p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-surface-100">Test Findings</h3>
+            <h3 className="text-lg font-semibold text-surface-900">Test Findings</h3>
             <Button variant="secondary" size="sm">
               <PlusIcon className="w-4 h-4 mr-2" />
               Add Finding
@@ -623,15 +623,15 @@ export default function DRTestDetail() {
               {test.findings.map((finding) => (
                 <div
                   key={finding.id}
-                  className="p-4 rounded-lg bg-surface-800/50 border border-surface-700"
+                  className="p-4 rounded-lg bg-white/50 border border-surface-200"
                 >
                   <div className="flex items-start justify-between mb-2">
-                    <h4 className="text-surface-100 font-medium">{finding.title}</h4>
+                    <h4 className="text-surface-900 font-medium">{finding.title}</h4>
                     <div className="flex items-center gap-2">
                       <span
                         className={clsx(
                           'px-2 py-0.5 rounded text-xs font-medium capitalize',
-                          SEVERITY_COLORS[finding.severity] || 'bg-surface-700 text-surface-700'
+                          SEVERITY_COLORS[finding.severity] || 'bg-surface-200 text-surface-700'
                         )}
                       >
                         {finding.severity}
@@ -643,7 +643,7 @@ export default function DRTestDetail() {
                             ? 'bg-green-500/20 text-green-600'
                             : finding.remediation_status === 'in_progress'
                               ? 'bg-yellow-500/20 text-yellow-600'
-                              : 'bg-surface-700 text-surface-700'
+                              : 'bg-surface-200 text-surface-700'
                         )}
                       >
                         {finding.remediation_status?.replace('_', ' ')}
@@ -676,7 +676,7 @@ export default function DRTestDetail() {
       {activeTab === 'participants' && (
         <div className="card p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-surface-100">Test Participants</h3>
+            <h3 className="text-lg font-semibold text-surface-900">Test Participants</h3>
             <Button variant="secondary" size="sm">
               <PlusIcon className="w-4 h-4 mr-2" />
               Add Participant
@@ -687,14 +687,14 @@ export default function DRTestDetail() {
               {test.participants.map((participant) => (
                 <div
                   key={participant.id}
-                  className="flex items-center justify-between p-4 rounded-lg bg-surface-800/50"
+                  className="flex items-center justify-between p-4 rounded-lg bg-white/50"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-surface-700 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-full bg-surface-200 flex items-center justify-center">
                       <UserIcon className="w-5 h-5 text-surface-600" />
                     </div>
                     <div>
-                      <p className="text-surface-100 font-medium">{participant.user_name}</p>
+                      <p className="text-surface-900 font-medium">{participant.user_name}</p>
                       <p className="text-surface-600 text-sm">{participant.role}</p>
                     </div>
                   </div>
@@ -703,7 +703,7 @@ export default function DRTestDetail() {
                       'px-2 py-1 rounded text-xs font-medium',
                       participant.attended
                         ? 'bg-green-500/20 text-green-600'
-                        : 'bg-surface-700 text-surface-600'
+                        : 'bg-surface-200 text-surface-600'
                     )}
                   >
                     {participant.attended ? 'Attended' : 'Not Attended'}
@@ -718,11 +718,11 @@ export default function DRTestDetail() {
       )}
       {/* Edit Modal */}
       <Dialog open={showEditModal} onClose={() => setShowEditModal(false)}>
-        <div className="p-6 border-b border-surface-700 flex items-center justify-between">
+        <div className="p-6 border-b border-surface-200 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-white">Edit DR Test</h2>
           <button
             onClick={() => setShowEditModal(false)}
-            className="p-2 hover:bg-surface-700 rounded-lg text-surface-600"
+            className="p-2 hover:bg-surface-200 rounded-lg text-surface-600"
           >
             <XMarkIcon className="w-5 h-5" />
           </button>
@@ -807,7 +807,7 @@ export default function DRTestDetail() {
             />
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-surface-700">
+          <div className="flex justify-end gap-3 pt-4 border-t border-surface-200">
             <Button variant="secondary" type="button" onClick={() => setShowEditModal(false)}>
               Cancel
             </Button>
@@ -819,11 +819,11 @@ export default function DRTestDetail() {
       </Dialog>
       {/* Complete Test Modal */}
       <Dialog open={showCompleteModal} onClose={() => setShowCompleteModal(false)}>
-        <div className="p-6 border-b border-surface-700 flex items-center justify-between">
+        <div className="p-6 border-b border-surface-200 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-white">Complete DR Test</h2>
           <button
             onClick={() => setShowCompleteModal(false)}
-            className="p-2 hover:bg-surface-700 rounded-lg text-surface-600"
+            className="p-2 hover:bg-surface-200 rounded-lg text-surface-600"
           >
             <XMarkIcon className="w-5 h-5" />
           </button>
@@ -884,7 +884,7 @@ export default function DRTestDetail() {
             />
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-surface-700">
+          <div className="flex justify-end gap-3 pt-4 border-t border-surface-200">
             <Button variant="secondary" type="button" onClick={() => setShowCompleteModal(false)}>
               Cancel
             </Button>

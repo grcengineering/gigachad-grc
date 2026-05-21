@@ -166,7 +166,7 @@ export default function GlobalSearch() {
             setIsOpen(true);
           }}
           onFocus={() => setIsOpen(true)}
-          className="w-full pl-10 pr-10 py-2 bg-surface-800 border border-surface-700 rounded-lg text-sm text-surface-100 placeholder-surface-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+          className="w-full pl-10 pr-10 py-2 bg-white border border-surface-200 rounded-lg text-sm text-surface-900 placeholder-surface-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
         />
         {query && (
           <button
@@ -174,7 +174,7 @@ export default function GlobalSearch() {
               setQuery('');
               setSelectedIndex(0);
             }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-surface-600 hover:text-surface-100"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-surface-600 hover:text-surface-900"
           >
             <XMarkIcon className="w-5 h-5" />
           </button>
@@ -182,10 +182,10 @@ export default function GlobalSearch() {
       </div>
       {/* Results dropdown */}
       {isOpen && query.length >= 2 && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-surface-900 border border-surface-800 rounded-lg shadow-xl max-h-96 overflow-y-auto z-50">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-surface-200 rounded-lg shadow-xl max-h-96 overflow-y-auto z-50">
           {isLoading ? (
             <div className="p-4 text-center text-surface-600">
-              <div className="animate-spin w-5 h-5 border-2 border-surface-700 border-t-brand-500 rounded-full mx-auto"></div>
+              <div className="animate-spin w-5 h-5 border-2 border-surface-200 border-t-brand-500 rounded-full mx-auto"></div>
             </div>
           ) : results.length === 0 ? (
             <div className="p-4 text-center text-surface-600">No results found for "{query}"</div>
@@ -202,14 +202,14 @@ export default function GlobalSearch() {
                     className={clsx(
                       'w-full px-4 py-3 flex items-center gap-3 text-left transition-colors',
                       isSelected
-                        ? 'bg-brand-500/20 text-surface-100'
-                        : 'text-surface-700 hover:bg-surface-800'
+                        ? 'bg-brand-500/20 text-surface-900'
+                        : 'text-surface-700 hover:bg-white'
                     )}
                   >
                     <div
                       className={clsx(
                         'p-2 rounded-lg',
-                        isSelected ? 'bg-brand-500/30' : 'bg-surface-800'
+                        isSelected ? 'bg-brand-500/30' : 'bg-white'
                       )}
                     >
                       <Icon className="w-4 h-4" />
@@ -222,7 +222,7 @@ export default function GlobalSearch() {
                             'text-xs px-2 py-0.5 rounded',
                             isSelected
                               ? 'bg-brand-500/30 text-brand-300'
-                              : 'bg-surface-800 text-surface-500'
+                              : 'bg-white text-surface-500'
                           )}
                         >
                           {SEARCH_LABELS[result.type]}

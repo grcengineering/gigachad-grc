@@ -115,12 +115,12 @@ export function ActionItemsWidget({
 
   if (isLoading) {
     return (
-      <div className="bg-surface-800 border border-surface-700 rounded-xl p-6">
+      <div className="bg-white border border-surface-200 rounded-xl p-6">
         <div className="animate-pulse space-y-4">
-          <div className="h-6 bg-surface-700 rounded w-1/3" />
+          <div className="h-6 bg-surface-200 rounded w-1/3" />
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-16 bg-surface-700 rounded" />
+              <div key={i} className="h-16 bg-surface-200 rounded" />
             ))}
           </div>
         </div>
@@ -129,11 +129,11 @@ export function ActionItemsWidget({
   }
 
   return (
-    <div className="bg-surface-800 border border-surface-700 rounded-xl">
+    <div className="bg-white border border-surface-200 rounded-xl">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-surface-700">
+      <div className="flex items-center justify-between p-4 border-b border-surface-200">
         <div>
-          <h3 className="text-lg font-semibold text-surface-100">Action Items</h3>
+          <h3 className="text-lg font-semibold text-surface-900">Action Items</h3>
           {pendingCount > 0 && (
             <p className="text-sm text-surface-600">
               {pendingCount} pending task{pendingCount !== 1 ? 's' : ''}
@@ -152,7 +152,7 @@ export function ActionItemsWidget({
       </div>
 
       {/* Tasks list */}
-      <div className="divide-y divide-surface-700">
+      <div className="divide-y divide-surface-200">
         {displayedTasks.length === 0 ? (
           <div className="p-8 text-center">
             <CheckCircleIcon className="h-12 w-12 text-green-500 mx-auto mb-3" />
@@ -166,7 +166,7 @@ export function ActionItemsWidget({
             const isDueSoon = task.dueDate && getDaysUntilDue(task.dueDate) <= 3 && !isOverdue;
 
             return (
-              <div key={task.id} className="p-4 hover:bg-surface-700/50 transition-colors">
+              <div key={task.id} className="p-4 hover:bg-surface-200/50 transition-colors">
                 <div className="flex items-start gap-3">
                   {/* Checkbox / Status */}
                   <button
@@ -195,7 +195,7 @@ export function ActionItemsWidget({
                           ${
                             task.status === 'completed'
                               ? 'text-surface-600 line-through'
-                              : 'text-surface-100 hover:text-blue-600'
+                              : 'text-surface-900 hover:text-blue-600'
                           }
                         `}
                       >
@@ -245,7 +245,7 @@ export function ActionItemsWidget({
 
       {/* Show more link if there are more tasks */}
       {tasks && tasks.length > limit && (
-        <div className="p-4 border-t border-surface-700">
+        <div className="p-4 border-t border-surface-200">
           <button
             onClick={() => navigate('/tasks')}
             className="text-sm text-blue-600 hover:text-blue-700 w-full text-center"

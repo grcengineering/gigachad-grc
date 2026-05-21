@@ -119,12 +119,12 @@ export default function ControlNew() {
       <div>
         <Link
           to="/controls"
-          className="inline-flex items-center text-sm text-surface-600 hover:text-surface-100 mb-4"
+          className="inline-flex items-center text-sm text-surface-600 hover:text-surface-900 mb-4"
         >
           <ArrowLeftIcon className="w-4 h-4 mr-1" />
           Back to Controls
         </Link>
-        <h1 className="text-2xl font-bold text-surface-100">Create New Control</h1>
+        <h1 className="text-2xl font-bold text-surface-900">Create New Control</h1>
         <p className="text-surface-600 mt-1">Add a new control to your compliance program</p>
       </div>
       {/* Form */}
@@ -218,7 +218,7 @@ export default function ControlNew() {
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-surface-700">
+        <div className="flex items-center justify-end gap-3 pt-4 border-t border-surface-200">
           <Button type="button" variant="secondary" onClick={() => navigate('/controls')}>
             Cancel
           </Button>

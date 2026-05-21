@@ -41,11 +41,11 @@ export function VendorReviewsDueWidget({ className }: VendorReviewsDueWidgetProp
     return (
       <div className={clsx('card p-6', className)}>
         <div className="animate-pulse space-y-4">
-          <div className="h-6 bg-surface-700 rounded w-1/3"></div>
+          <div className="h-6 bg-surface-200 rounded w-1/3"></div>
           <div className="space-y-3">
-            <div className="h-12 bg-surface-700 rounded"></div>
-            <div className="h-12 bg-surface-700 rounded"></div>
-            <div className="h-12 bg-surface-700 rounded"></div>
+            <div className="h-12 bg-surface-200 rounded"></div>
+            <div className="h-12 bg-surface-200 rounded"></div>
+            <div className="h-12 bg-surface-200 rounded"></div>
           </div>
         </div>
       </div>
@@ -79,7 +79,7 @@ export function VendorReviewsDueWidget({ className }: VendorReviewsDueWidgetProp
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <CalendarDaysIcon className="w-5 h-5 text-brand-400" />
-          <h2 className="text-lg font-semibold text-surface-100">Vendor Reviews Due</h2>
+          <h2 className="text-lg font-semibold text-surface-900">Vendor Reviews Due</h2>
         </div>
         <Link
           to="/vendors"
@@ -94,7 +94,7 @@ export function VendorReviewsDueWidget({ className }: VendorReviewsDueWidgetProp
         <div
           className={clsx(
             'p-3 rounded-lg text-center',
-            summary.overdueCount > 0 ? 'bg-red-500/10 border border-red-500/30' : 'bg-surface-800'
+            summary.overdueCount > 0 ? 'bg-red-500/10 border border-red-500/30' : 'bg-white'
           )}
         >
           <p
@@ -112,7 +112,7 @@ export function VendorReviewsDueWidget({ className }: VendorReviewsDueWidgetProp
             'p-3 rounded-lg text-center',
             summary.dueThisWeekCount > 0
               ? 'bg-orange-500/10 border border-orange-500/30'
-              : 'bg-surface-800'
+              : 'bg-white'
           )}
         >
           <p
@@ -130,7 +130,7 @@ export function VendorReviewsDueWidget({ className }: VendorReviewsDueWidgetProp
             'p-3 rounded-lg text-center',
             summary.dueThisMonthCount > 0
               ? 'bg-yellow-500/10 border border-yellow-500/30'
-              : 'bg-surface-800'
+              : 'bg-white'
           )}
         >
           <p
@@ -188,7 +188,7 @@ export function VendorReviewsDueWidget({ className }: VendorReviewsDueWidgetProp
 
       {/* Footer */}
       {summary.upcomingCount > 0 && (
-        <div className="mt-4 pt-3 border-t border-surface-700 text-center">
+        <div className="mt-4 pt-3 border-t border-surface-200 text-center">
           <p className="text-xs text-surface-600">
             {summary.upcomingCount} reviews scheduled in the next 90 days
           </p>
@@ -222,19 +222,19 @@ function ReviewItem({ vendor, status, statusText }: ReviewItemProps) {
   return (
     <Link
       to={`/vendors/${vendor.id}`}
-      className="flex items-center justify-between p-3 bg-surface-800/50 hover:bg-surface-700 rounded-lg transition-colors group"
+      className="flex items-center justify-between p-3 bg-white/50 hover:bg-surface-200 rounded-lg transition-colors group"
     >
       <div className="flex items-center gap-3 min-w-0">
         <Icon className={clsx('w-4 h-4 flex-shrink-0', statusColors[status])} />
         <div className="min-w-0">
-          <p className="text-sm font-medium text-surface-100 truncate group-hover:text-brand-400 transition-colors">
+          <p className="text-sm font-medium text-surface-900 truncate group-hover:text-brand-400 transition-colors">
             {vendor.name}
           </p>
           <div className="flex items-center gap-2 mt-0.5">
             <span
               className={clsx(
                 'text-xs px-1.5 py-0.5 rounded',
-                TIER_COLORS[vendor.tier] || 'bg-surface-700 text-surface-600'
+                TIER_COLORS[vendor.tier] || 'bg-surface-200 text-surface-600'
               )}
             >
               {TIER_LABELS[vendor.tier] || vendor.tier}

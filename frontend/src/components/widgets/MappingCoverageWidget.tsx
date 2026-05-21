@@ -48,7 +48,7 @@ export function MappingCoverageWidget({ frameworkId, className }: MappingCoverag
       >
         <div className="flex items-center gap-2 mb-4">
           <LinkIcon className="w-5 h-5 text-brand-400" />
-          <h2 className="text-lg font-semibold text-surface-100">Mapping Coverage</h2>
+          <h2 className="text-lg font-semibold text-surface-900">Mapping Coverage</h2>
         </div>
         <div className="flex items-center justify-center py-8">
           <ArrowPathIcon className="w-6 h-6 text-surface-500 animate-spin" aria-hidden="true" />
@@ -63,7 +63,7 @@ export function MappingCoverageWidget({ frameworkId, className }: MappingCoverag
       <div role="region" aria-label={regionLabel} className={clsx('card p-6', className)}>
         <div className="flex items-center gap-2 mb-4">
           <LinkIcon className="w-5 h-5 text-brand-400" />
-          <h2 className="text-lg font-semibold text-surface-100">Mapping Coverage</h2>
+          <h2 className="text-lg font-semibold text-surface-900">Mapping Coverage</h2>
         </div>
         <div
           role="alert"
@@ -102,7 +102,7 @@ export function MappingCoverageWidget({ frameworkId, className }: MappingCoverag
     <div role="region" aria-label={regionLabel} className={clsx('card p-6', className)}>
       <div className="flex items-center gap-2 mb-4">
         <LinkIcon className="w-5 h-5 text-brand-400" />
-        <h2 className="text-lg font-semibold text-surface-100">Mapping Coverage</h2>
+        <h2 className="text-lg font-semibold text-surface-900">Mapping Coverage</h2>
       </div>
 
       {isZeroState ? (

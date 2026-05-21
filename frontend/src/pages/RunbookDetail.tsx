@@ -62,7 +62,7 @@ const STATUS_OPTIONS = [
   { value: 'approved', label: 'Approved', color: 'bg-blue-500/20 text-blue-600' },
   { value: 'published', label: 'Published', color: 'bg-green-500/20 text-green-600' },
   { value: 'needs_review', label: 'Needs Review', color: 'bg-yellow-500/20 text-yellow-600' },
-  { value: 'archived', label: 'Archived', color: 'bg-surface-700 text-surface-600' },
+  { value: 'archived', label: 'Archived', color: 'bg-surface-200 text-surface-600' },
 ];
 
 const CATEGORY_OPTIONS = [
@@ -217,7 +217,7 @@ export default function RunbookDetail() {
       <div className="p-6">
         <div className="card p-8 text-center">
           <ExclamationCircleIcon className="w-12 h-12 mx-auto mb-4 text-red-600" />
-          <h2 className="text-lg font-semibold text-surface-100 mb-2">Runbook Not Found</h2>
+          <h2 className="text-lg font-semibold text-surface-900 mb-2">Runbook Not Found</h2>
           <p className="text-surface-600 mb-4">The requested runbook could not be loaded.</p>
           <Button onClick={() => navigate('/bcdr/runbooks')}>Back to Runbooks</Button>
         </div>
@@ -232,12 +232,12 @@ export default function RunbookDetail() {
         <div className="flex items-start gap-4">
           <button
             onClick={() => navigate('/bcdr/runbooks')}
-            className="p-2 hover:bg-surface-700 rounded-lg text-surface-600 mt-1"
+            className="p-2 hover:bg-surface-200 rounded-lg text-surface-600 mt-1"
           >
             <ArrowLeftIcon className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-surface-100">Create New Runbook</h1>
+            <h1 className="text-2xl font-bold text-surface-900">Create New Runbook</h1>
             <p className="text-surface-600">Define step-by-step recovery procedures</p>
           </div>
         </div>
@@ -373,7 +373,7 @@ export default function RunbookDetail() {
               />
             </div>
 
-            <div className="flex justify-end gap-3 pt-4 border-t border-surface-700">
+            <div className="flex justify-end gap-3 pt-4 border-t border-surface-200">
               <Button type="button" variant="secondary" onClick={() => navigate('/bcdr/runbooks')}>
                 Cancel
               </Button>
@@ -397,14 +397,14 @@ export default function RunbookDetail() {
       <div className="flex items-start gap-4">
         <button
           onClick={() => navigate('/bcdr/runbooks')}
-          className="p-2 hover:bg-surface-700 rounded-lg text-surface-600 mt-1"
+          className="p-2 hover:bg-surface-200 rounded-lg text-surface-600 mt-1"
         >
           <ArrowLeftIcon className="w-5 h-5" />
         </button>
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-2">
             <span className="text-2xl">{categoryConfig.icon}</span>
-            <h1 className="text-2xl font-bold text-surface-100">{runbook!.title}</h1>
+            <h1 className="text-2xl font-bold text-surface-900">{runbook!.title}</h1>
             <span
               className={clsx('px-3 py-1 rounded-full text-sm font-medium', statusConfig.color)}
             >
@@ -432,7 +432,7 @@ export default function RunbookDetail() {
         <div className="lg:col-span-2 space-y-6">
           {/* Description */}
           <div className="card p-6">
-            <h2 className="text-lg font-semibold text-surface-100 mb-4">Description</h2>
+            <h2 className="text-lg font-semibold text-surface-900 mb-4">Description</h2>
             <p className="text-surface-700 whitespace-pre-wrap">
               {runbook!.description || 'No description provided'}
             </p>
@@ -441,7 +441,7 @@ export default function RunbookDetail() {
           {/* Prerequisites */}
           {runbook!.prerequisites && (
             <div className="card p-6">
-              <h2 className="text-lg font-semibold text-surface-100 mb-4">Prerequisites</h2>
+              <h2 className="text-lg font-semibold text-surface-900 mb-4">Prerequisites</h2>
               <p className="text-surface-700 whitespace-pre-wrap">{runbook!.prerequisites}</p>
             </div>
           )}
@@ -449,18 +449,18 @@ export default function RunbookDetail() {
           {/* Steps */}
           <div className="card p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-surface-100">Steps</h2>
+              <h2 className="text-lg font-semibold text-surface-900">Steps</h2>
               <span className="text-surface-600 text-sm">{runbook!.steps?.length || 0} steps</span>
             </div>
             {runbook!.steps && runbook!.steps.length > 0 ? (
               <div className="space-y-4">
                 {runbook!.steps.map((step, index) => (
-                  <div key={step.id} className="flex gap-4 p-4 bg-surface-800 rounded-lg">
+                  <div key={step.id} className="flex gap-4 p-4 bg-white rounded-lg">
                     <div className="flex-shrink-0 w-8 h-8 bg-brand-500/20 text-brand-400 rounded-full flex items-center justify-center font-semibold">
                       {index + 1}
                     </div>
                     <div className="flex-1">
-                      <h4 className="font-medium text-surface-100">{step.title}</h4>
+                      <h4 className="font-medium text-surface-900">{step.title}</h4>
                       <p className="text-surface-600 text-sm mt-1">{step.description}</p>
                       {step.role_responsible && (
                         <p className="text-surface-500 text-xs mt-2">
@@ -487,7 +487,7 @@ export default function RunbookDetail() {
           {/* Rollback Procedure */}
           {runbook!.rollback_procedure && (
             <div className="card p-6 border-l-4 border-yellow-500">
-              <h2 className="text-lg font-semibold text-surface-100 mb-4">Rollback Procedure</h2>
+              <h2 className="text-lg font-semibold text-surface-900 mb-4">Rollback Procedure</h2>
               <p className="text-surface-700 whitespace-pre-wrap">{runbook!.rollback_procedure}</p>
             </div>
           )}
@@ -497,23 +497,23 @@ export default function RunbookDetail() {
         <div className="space-y-6">
           {/* Quick Info */}
           <div className="card p-6">
-            <h3 className="text-lg font-semibold text-surface-100 mb-4">Details</h3>
+            <h3 className="text-lg font-semibold text-surface-900 mb-4">Details</h3>
             <dl className="space-y-4">
               <div>
                 <dt className="text-surface-600 text-sm">Category</dt>
-                <dd className="text-surface-100 mt-1">
+                <dd className="text-surface-900 mt-1">
                   {categoryConfig.icon} {categoryConfig.label}
                 </dd>
               </div>
               {runbook!.system_name && (
                 <div>
                   <dt className="text-surface-600 text-sm">System</dt>
-                  <dd className="text-surface-100 mt-1">{runbook!.system_name}</dd>
+                  <dd className="text-surface-900 mt-1">{runbook!.system_name}</dd>
                 </div>
               )}
               <div>
                 <dt className="text-surface-600 text-sm">Estimated Duration</dt>
-                <dd className="text-surface-100 mt-1 flex items-center gap-1">
+                <dd className="text-surface-900 mt-1 flex items-center gap-1">
                   <ClockIcon className="w-4 h-4" />
                   {runbook!.estimated_duration_minutes || 0} minutes
                 </dd>
@@ -521,13 +521,13 @@ export default function RunbookDetail() {
               {runbook!.owner_name && (
                 <div>
                   <dt className="text-surface-600 text-sm">Owner</dt>
-                  <dd className="text-surface-100 mt-1">{runbook!.owner_name}</dd>
+                  <dd className="text-surface-900 mt-1">{runbook!.owner_name}</dd>
                 </div>
               )}
               {runbook!.process_name && (
                 <div>
                   <dt className="text-surface-600 text-sm">Business Process</dt>
-                  <dd className="text-surface-100 mt-1">{runbook!.process_name}</dd>
+                  <dd className="text-surface-900 mt-1">{runbook!.process_name}</dd>
                 </div>
               )}
             </dl>
@@ -536,7 +536,7 @@ export default function RunbookDetail() {
           {/* Post-Conditions */}
           {runbook!.post_conditions && (
             <div className="card p-6">
-              <h3 className="text-lg font-semibold text-surface-100 mb-4">Post-Conditions</h3>
+              <h3 className="text-lg font-semibold text-surface-900 mb-4">Post-Conditions</h3>
               <p className="text-surface-700 text-sm whitespace-pre-wrap">
                 {runbook!.post_conditions}
               </p>
@@ -547,10 +547,10 @@ export default function RunbookDetail() {
       {/* Edit Modal */}
       <Dialog open={showEditModal} onClose={() => setShowEditModal(false)}>
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-surface-100">Edit Runbook</h2>
+          <h2 className="text-xl font-bold text-surface-900">Edit Runbook</h2>
           <button
             onClick={() => setShowEditModal(false)}
-            className="p-2 hover:bg-surface-700 rounded-lg text-surface-600"
+            className="p-2 hover:bg-surface-200 rounded-lg text-surface-600"
           >
             <XMarkIcon className="w-5 h-5" />
           </button>
@@ -623,7 +623,7 @@ export default function RunbookDetail() {
       </Dialog>
       {/* Delete Confirmation */}
       <Dialog open={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)}>
-        <h2 className="text-xl font-bold text-surface-100 mb-4">Delete Runbook</h2>
+        <h2 className="text-xl font-bold text-surface-900 mb-4">Delete Runbook</h2>
         <p className="text-surface-600 mb-6">
           Are you sure you want to delete "{runbook!.title}"? This action cannot be undone.
         </p>

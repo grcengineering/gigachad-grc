@@ -401,7 +401,7 @@ export function MappingEditorModal({
           <button
             type="button"
             onClick={handleBack}
-            className="inline-flex items-center gap-1 text-sm text-surface-600 hover:text-surface-200"
+            className="inline-flex items-center gap-1 text-sm text-surface-600 hover:text-surface-800"
           >
             <ArrowLeftIcon className="h-4 w-4" aria-hidden="true" />
             Back
@@ -556,7 +556,7 @@ function SearchStage({
             onChange={(e) => onSelectFramework(e.target.value || undefined)}
             disabled={frameworksLoading}
             aria-label="Framework"
-            className="w-full rounded-lg bg-surface-700 border border-surface-600 text-surface-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className="w-full rounded-lg bg-surface-200 border border-surface-300 text-surface-900 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
           >
             <option value="">Select a framework…</option>
             {frameworks.map((fw) => (
@@ -583,7 +583,7 @@ function SearchStage({
                 ? 'Filter controls by ID or title…'
                 : 'Filter requirements by reference or title…'
             }
-            className="w-full rounded-lg bg-surface-700 border border-surface-600 text-surface-100 pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className="w-full rounded-lg bg-surface-200 border border-surface-300 text-surface-900 pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
         </div>
       </label>
@@ -624,7 +624,7 @@ function MultiSelectStage({
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Filter…"
-            className="w-full rounded-lg bg-surface-700 border border-surface-600 text-surface-100 pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className="w-full rounded-lg bg-surface-200 border border-surface-300 text-surface-900 pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
         </div>
       </label>
@@ -638,7 +638,7 @@ function MultiSelectStage({
           aria-label={
             mode === 'requirement-to-controls' ? 'Candidate controls' : 'Candidate requirements'
           }
-          className="max-h-72 overflow-y-auto space-y-1 border border-surface-700 rounded-lg p-2 bg-surface-900/40"
+          className="max-h-72 overflow-y-auto space-y-1 border border-surface-200 rounded-lg p-2 bg-white/40"
         >
           {candidates.map((c) => {
             const id = c.id;
@@ -655,17 +655,17 @@ function MultiSelectStage({
                     'flex items-start gap-3 rounded-md px-3 py-2 cursor-pointer',
                     checked
                       ? 'bg-brand-600/20 border border-brand-500/40'
-                      : 'hover:bg-surface-800 border border-transparent'
+                      : 'hover:bg-white border border-transparent'
                   )}
                 >
                   <input
                     type="checkbox"
                     checked={checked}
                     onChange={() => onToggle(id)}
-                    className="mt-1 h-4 w-4 rounded border-surface-600 bg-surface-800 text-brand-500 focus:ring-brand-500"
+                    className="mt-1 h-4 w-4 rounded border-surface-300 bg-white text-brand-500 focus:ring-brand-500"
                   />
                   <span className="flex-1">
-                    <span className="block font-mono text-sm text-surface-200">{primary}</span>
+                    <span className="block font-mono text-sm text-surface-800">{primary}</span>
                     <span className="block text-sm text-surface-600">{secondary}</span>
                   </span>
                 </label>
@@ -702,10 +702,10 @@ function PerRowFormStage({ rows, getLabel, onChange, disabled, isEditMode }: Per
         {rows.map((row) => (
           <li
             key={row.candidateId}
-            className="rounded-lg border border-surface-700 p-3 bg-surface-900/40"
+            className="rounded-lg border border-surface-200 p-3 bg-white/40"
           >
             {!isEditMode && (
-              <p className="text-sm font-medium text-surface-200 mb-2">
+              <p className="text-sm font-medium text-surface-800 mb-2">
                 {getLabel(row.candidateId)}
               </p>
             )}
@@ -723,7 +723,7 @@ function PerRowFormStage({ rows, getLabel, onChange, disabled, isEditMode }: Per
                   }
                   disabled={disabled}
                   aria-label={`Mapping type for ${getLabel(row.candidateId)}`}
-                  className="w-full rounded-lg bg-surface-700 border border-surface-600 text-surface-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50"
+                  className="w-full rounded-lg bg-surface-200 border border-surface-300 text-surface-900 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50"
                 >
                   <option value="primary">Primary</option>
                   <option value="supporting">Supporting</option>
@@ -738,7 +738,7 @@ function PerRowFormStage({ rows, getLabel, onChange, disabled, isEditMode }: Per
                   disabled={disabled}
                   aria-label={`Notes for ${getLabel(row.candidateId)}`}
                   placeholder="Optional"
-                  className="w-full rounded-lg bg-surface-700 border border-surface-600 text-surface-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50"
+                  className="w-full rounded-lg bg-surface-200 border border-surface-300 text-surface-900 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50"
                 />
               </label>
             </div>
@@ -768,12 +768,12 @@ function SuggestionsPanel({
   return (
     <section
       aria-label="AI mapping suggestions"
-      className="rounded-lg border border-surface-700 bg-surface-900/40 p-3 space-y-3"
+      className="rounded-lg border border-surface-200 bg-white/40 p-3 space-y-3"
     >
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <SparklesIcon className="h-4 w-4 text-brand-400" aria-hidden="true" />
-          <h3 className="text-sm font-medium text-surface-200">AI suggestions</h3>
+          <h3 className="text-sm font-medium text-surface-800">AI suggestions</h3>
         </div>
         <button
           type="button"
@@ -836,12 +836,12 @@ function SuggestionsPanel({
             return (
               <li
                 key={s.candidateId}
-                className="rounded-md border border-surface-700 bg-surface-900/60 p-2.5"
+                className="rounded-md border border-surface-200 bg-white/60 p-2.5"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-mono text-xs text-surface-200">
+                      <span className="font-mono text-xs text-surface-800">
                         {s.candidateReference}
                       </span>
                       <ConfidenceBadge value={s.confidence} />
@@ -854,7 +854,7 @@ function SuggestionsPanel({
                     onClick={() => onUse(s.candidateId)}
                     disabled={already}
                     aria-label={`Use suggestion ${s.candidateReference}`}
-                    className="shrink-0 rounded-md border border-surface-600 bg-surface-700 px-2 py-1 text-xs font-medium text-surface-100 hover:bg-surface-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="shrink-0 rounded-md border border-surface-300 bg-surface-200 px-2 py-1 text-xs font-medium text-surface-900 hover:bg-surface-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {already ? 'Added' : 'Use'}
                   </button>

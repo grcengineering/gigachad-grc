@@ -145,10 +145,10 @@ export function OnboardingWizard({ onDismiss }: OnboardingWizardProps) {
   }
 
   return (
-    <div className="bg-surface-800 border border-surface-700 rounded-xl p-6 mb-6">
+    <div className="bg-white border border-surface-200 rounded-xl p-6 mb-6">
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h2 className="text-xl font-semibold text-surface-100">Welcome to GigaChad GRC! 🚀</h2>
+          <h2 className="text-xl font-semibold text-surface-900">Welcome to GigaChad GRC! 🚀</h2>
           <p className="text-surface-600 mt-1">
             Complete these steps to set up your compliance program
           </p>
@@ -170,7 +170,7 @@ export function OnboardingWizard({ onDismiss }: OnboardingWizardProps) {
             {completedSteps}/{steps.length} complete
           </span>
         </div>
-        <div className="h-2 bg-surface-700 rounded-full overflow-hidden">
+        <div className="h-2 bg-surface-200 rounded-full overflow-hidden">
           <div
             className="h-full bg-blue-500 transition-all duration-500"
             style={{ width: `${progress}%` }}
@@ -194,14 +194,14 @@ export function OnboardingWizard({ onDismiss }: OnboardingWizardProps) {
                     ? 'bg-green-900/20 border-green-800'
                     : isNext
                       ? 'bg-blue-900/20 border-blue-700'
-                      : 'bg-surface-900 border-surface-700'
+                      : 'bg-white border-surface-200'
                 }
               `}
             >
               <div
                 className={`
                 p-2 rounded-lg
-                ${step.isComplete ? 'bg-green-800' : isNext ? 'bg-blue-800' : 'bg-surface-700'}
+                ${step.isComplete ? 'bg-green-800' : isNext ? 'bg-blue-800' : 'bg-surface-200'}
               `}
               >
                 {step.isComplete ? (
@@ -213,7 +213,7 @@ export function OnboardingWizard({ onDismiss }: OnboardingWizardProps) {
 
               <div className="flex-1">
                 <h4
-                  className={`font-medium ${step.isComplete ? 'text-green-600' : 'text-surface-100'}`}
+                  className={`font-medium ${step.isComplete ? 'text-green-600' : 'text-surface-900'}`}
                 >
                   {step.title}
                 </h4>
@@ -229,7 +229,7 @@ export function OnboardingWizard({ onDismiss }: OnboardingWizardProps) {
                     ${
                       isNext
                         ? 'bg-blue-600 text-white hover:bg-blue-700'
-                        : 'bg-surface-700 text-surface-700 hover:bg-surface-600'
+                        : 'bg-surface-200 text-surface-700 hover:bg-surface-600'
                     }
                   `}
                 >
@@ -247,7 +247,7 @@ export function OnboardingWizard({ onDismiss }: OnboardingWizardProps) {
       </div>
 
       {/* Help text */}
-      <div className="mt-6 pt-4 border-t border-surface-700">
+      <div className="mt-6 pt-4 border-t border-surface-200">
         <p className="text-surface-600 text-sm">
           Need help getting started?{' '}
           <button onClick={() => navigate('/help')} className="text-blue-600 hover:text-blue-700">

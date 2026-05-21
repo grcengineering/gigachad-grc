@@ -290,7 +290,7 @@ export default function ReportBuilder({ initialConfig, onSave, className }: Repo
   return (
     <div className={clsx('flex h-full', className)}>
       {/* Sidebar - Section Types */}
-      <div className="w-64 bg-surface-900 border-r border-surface-800 p-4 space-y-4">
+      <div className="w-64 bg-white border-r border-surface-200 p-4 space-y-4">
         <div>
           <h3 className="text-sm font-medium text-surface-600 mb-2">Add Section</h3>
           <div className="space-y-1">
@@ -298,7 +298,7 @@ export default function ReportBuilder({ initialConfig, onSave, className }: Repo
               <button
                 key={type}
                 onClick={() => addSection(type)}
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-surface-700 hover:text-white hover:bg-surface-800 rounded-lg transition-colors"
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-surface-700 hover:text-white hover:bg-white rounded-lg transition-colors"
               >
                 <Icon className="w-4 h-4" />
                 {label}
@@ -307,28 +307,28 @@ export default function ReportBuilder({ initialConfig, onSave, className }: Repo
           </div>
         </div>
 
-        <div className="border-t border-surface-800 pt-4">
+        <div className="border-t border-surface-200 pt-4">
           <h3 className="text-sm font-medium text-surface-600 mb-2">Report Settings</h3>
           <Input
             type="text"
             value={config.name}
             onChange={(e) => setConfig((prev) => ({ ...prev, name: e.target.value }))}
             placeholder="Report Name"
-            className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-white text-sm focus:outline-none focus:border-brand-500"
+            className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-white text-sm focus:outline-none focus:border-brand-500"
           />
           <Textarea
             value={config.description || ''}
             onChange={(e) => setConfig((prev) => ({ ...prev, description: e.target.value }))}
             placeholder="Description (optional)"
             rows={2}
-            className="w-full mt-2 px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-white text-sm focus:outline-none focus:border-brand-500 resize-none"
+            className="w-full mt-2 px-3 py-2 bg-white border border-surface-200 rounded-lg text-white text-sm focus:outline-none focus:border-brand-500 resize-none"
           />
         </div>
 
-        <div className="border-t border-surface-800 pt-4 space-y-2">
+        <div className="border-t border-surface-200 pt-4 space-y-2">
           <button
             onClick={() => setIsPreviewMode(!isPreviewMode)}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-surface-800 hover:bg-surface-700 text-white rounded-lg text-sm transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-white hover:bg-surface-200 text-white rounded-lg text-sm transition-colors"
           >
             <EyeIcon className="w-4 h-4" />
             {isPreviewMode ? 'Edit Mode' : 'Preview'}
@@ -353,14 +353,14 @@ export default function ReportBuilder({ initialConfig, onSave, className }: Repo
             <div className="flex items-center gap-2">
               <button
                 onClick={() => handleExport('pdf')}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-800 hover:bg-surface-700 text-white rounded-lg text-sm"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-surface-200 text-white rounded-lg text-sm"
               >
                 <ArrowDownTrayIcon className="w-4 h-4" />
                 PDF
               </button>
               <button
                 onClick={() => handleExport('xlsx')}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-800 hover:bg-surface-700 text-white rounded-lg text-sm"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-surface-200 text-white rounded-lg text-sm"
               >
                 <ArrowDownTrayIcon className="w-4 h-4" />
                 Excel
@@ -370,7 +370,7 @@ export default function ReportBuilder({ initialConfig, onSave, className }: Repo
 
           {/* Sections */}
           {config.sections.length === 0 ? (
-            <div className="text-center py-16 border-2 border-dashed border-surface-700 rounded-xl">
+            <div className="text-center py-16 border-2 border-dashed border-surface-200 rounded-xl">
               <SparklesIcon className="w-12 h-12 text-surface-600 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-surface-600 mb-2">
                 Start Building Your Report
@@ -459,7 +459,7 @@ function SectionEditor({
         'relative p-4 rounded-lg border transition-all cursor-pointer',
         isSelected
           ? 'border-brand-500 bg-brand-500/5'
-          : 'border-surface-700 hover:border-surface-600 bg-surface-800/50'
+          : 'border-surface-200 hover:border-surface-300 bg-white/50'
       )}
     >
       {/* Controls */}
@@ -521,7 +521,7 @@ function SectionEditor({
           </div>
           <div className="flex flex-wrap gap-1">
             {(section.fields || []).map((field) => (
-              <span key={field} className="px-2 py-0.5 bg-surface-700 rounded text-xs">
+              <span key={field} className="px-2 py-0.5 bg-surface-200 rounded text-xs">
                 {field}
               </span>
             ))}
@@ -547,7 +547,7 @@ function SectionEditor({
           </div>
         </div>
       )}
-      {section.type === 'divider' && <div className="border-t border-surface-600 my-2" />}
+      {section.type === 'divider' && <div className="border-t border-surface-300 my-2" />}
     </div>
   );
 }
@@ -566,12 +566,12 @@ function SectionPreview({ section }: { section: ReportSection }) {
   }
 
   if (section.type === 'divider') {
-    return <hr className="border-surface-700" />;
+    return <hr className="border-surface-200" />;
   }
 
   // Placeholder for dynamic content
   return (
-    <div className="p-4 bg-surface-800/50 rounded-lg border border-surface-700">
+    <div className="p-4 bg-white/50 rounded-lg border border-surface-200">
       <p className="text-sm text-surface-600">
         [Preview: {section.type} from {section.dataSource}]
       </p>
@@ -593,7 +593,7 @@ function SectionConfigPanel({ section, onUpdate, onClose }: SectionConfigPanelPr
   const showDataConfig = ['table', 'chart', 'summary'].includes(section.type);
 
   return (
-    <div className="w-80 bg-surface-900 border-l border-surface-800 p-4 overflow-y-auto">
+    <div className="w-80 bg-white border-l border-surface-200 p-4 overflow-y-auto">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-medium text-white">Section Settings</h3>
         <button onClick={onClose} className="text-surface-600 hover:text-white">
@@ -608,7 +608,7 @@ function SectionConfigPanel({ section, onUpdate, onClose }: SectionConfigPanelPr
               type="text"
               value={section.title || ''}
               onChange={(e) => onUpdate({ title: e.target.value })}
-              className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-white text-sm"
+              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-white text-sm"
             />
           </div>
         )}
@@ -620,7 +620,7 @@ function SectionConfigPanel({ section, onUpdate, onClose }: SectionConfigPanelPr
               value={section.content || ''}
               onChange={(e) => onUpdate({ content: e.target.value })}
               rows={5}
-              className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-white text-sm resize-none"
+              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-white text-sm resize-none"
             />
           </div>
         )}
@@ -632,7 +632,7 @@ function SectionConfigPanel({ section, onUpdate, onClose }: SectionConfigPanelPr
               <SelectNative
                 value={section.dataSource || 'controls'}
                 onChange={(e) => onUpdate({ dataSource: e.target.value as DataSource })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-white text-sm"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-white text-sm"
               >
                 {Object.entries(DATA_SOURCES).map(([key, { label }]) => (
                   <option key={key} value={key}>
@@ -658,7 +658,7 @@ function SectionConfigPanel({ section, onUpdate, onClose }: SectionConfigPanelPr
                             : fields.filter((f) => f !== field),
                         });
                       }}
-                      className="rounded border-surface-600 bg-surface-800 text-brand-500"
+                      className="rounded border-surface-300 bg-white text-brand-500"
                     />
                     <span className="text-surface-700">{field}</span>
                   </label>
@@ -672,7 +672,7 @@ function SectionConfigPanel({ section, onUpdate, onClose }: SectionConfigPanelPr
                 <SelectNative
                   value={section.chartType || 'bar'}
                   onChange={(e) => onUpdate({ chartType: e.target.value as ChartType })}
-                  className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-white text-sm"
+                  className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-white text-sm"
                 >
                   <option value="bar">Bar Chart</option>
                   <option value="pie">Pie Chart</option>
@@ -687,7 +687,7 @@ function SectionConfigPanel({ section, onUpdate, onClose }: SectionConfigPanelPr
               <SelectNative
                 value={section.groupBy || ''}
                 onChange={(e) => onUpdate({ groupBy: e.target.value || undefined })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-white text-sm"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-white text-sm"
               >
                 <option value="">No grouping</option>
                 {DATA_SOURCES[section.dataSource || 'controls'].fields.map((field) => (
@@ -704,7 +704,7 @@ function SectionConfigPanel({ section, onUpdate, onClose }: SectionConfigPanelPr
                 <SelectNative
                   value={section.sortBy || ''}
                   onChange={(e) => onUpdate({ sortBy: e.target.value || undefined })}
-                  className="flex-1 px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-white text-sm"
+                  className="flex-1 px-3 py-2 bg-white border border-surface-200 rounded-lg text-white text-sm"
                 >
                   <option value="">Default</option>
                   {DATA_SOURCES[section.dataSource || 'controls'].fields.map((field) => (
@@ -716,7 +716,7 @@ function SectionConfigPanel({ section, onUpdate, onClose }: SectionConfigPanelPr
                 <SelectNative
                   value={section.sortOrder || 'asc'}
                   onChange={(e) => onUpdate({ sortOrder: e.target.value as 'asc' | 'desc' })}
-                  className="w-20 px-2 py-2 bg-surface-800 border border-surface-700 rounded-lg text-white text-sm"
+                  className="w-20 px-2 py-2 bg-white border border-surface-200 rounded-lg text-white text-sm"
                 >
                   <option value="asc">↑</option>
                   <option value="desc">↓</option>

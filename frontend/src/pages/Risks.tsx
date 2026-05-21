@@ -461,7 +461,7 @@ export default function Risks() {
       {!dashboard ? (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <SkeletonStatCard key={i} className="bg-surface-800 border border-surface-700" />
+            <SkeletonStatCard key={i} className="bg-white border border-surface-200" />
           ))}
         </div>
       ) : (
@@ -469,10 +469,10 @@ export default function Risks() {
           <button
             onClick={() => setStatFilter(statFilter === 'all' ? 'all' : 'all')}
             className={clsx(
-              'bg-surface-800 rounded-xl border p-4 text-left transition-all',
+              'bg-white rounded-xl border p-4 text-left transition-all',
               statFilter === 'all'
                 ? 'border-brand-500 ring-2 ring-brand-500'
-                : 'border-surface-700 hover:bg-surface-700/50 cursor-pointer'
+                : 'border-surface-200 hover:bg-surface-200/50 cursor-pointer'
             )}
           >
             <div className="flex items-center gap-3">
@@ -491,10 +491,10 @@ export default function Risks() {
           <button
             onClick={() => setStatFilter(statFilter === 'open' ? 'all' : 'open')}
             className={clsx(
-              'bg-surface-800 rounded-xl border p-4 text-left transition-all',
+              'bg-white rounded-xl border p-4 text-left transition-all',
               statFilter === 'open'
                 ? 'border-red-500 ring-2 ring-red-500'
-                : 'border-surface-700 hover:bg-surface-700/50 cursor-pointer'
+                : 'border-surface-200 hover:bg-surface-200/50 cursor-pointer'
             )}
           >
             <div className="flex items-center gap-3">
@@ -513,10 +513,10 @@ export default function Risks() {
           <button
             onClick={() => setStatFilter(statFilter === 'reviews_due' ? 'all' : 'reviews_due')}
             className={clsx(
-              'bg-surface-800 rounded-xl border p-4 text-left transition-all',
+              'bg-white rounded-xl border p-4 text-left transition-all',
               statFilter === 'reviews_due'
                 ? 'border-amber-500 ring-2 ring-amber-500'
-                : 'border-surface-700 hover:bg-surface-700/50 cursor-pointer'
+                : 'border-surface-200 hover:bg-surface-200/50 cursor-pointer'
             )}
           >
             <div className="flex items-center gap-3">
@@ -537,10 +537,10 @@ export default function Risks() {
           <button
             onClick={() => setStatFilter(statFilter === 'mitigated' ? 'all' : 'mitigated')}
             className={clsx(
-              'bg-surface-800 rounded-xl border p-4 text-left transition-all',
+              'bg-white rounded-xl border p-4 text-left transition-all',
               statFilter === 'mitigated'
                 ? 'border-emerald-500 ring-2 ring-emerald-500'
-                : 'border-surface-700 hover:bg-surface-700/50 cursor-pointer'
+                : 'border-surface-200 hover:bg-surface-200/50 cursor-pointer'
             )}
           >
             <div className="flex items-center gap-3">
@@ -579,14 +579,14 @@ export default function Risks() {
           <span className="text-surface-500">({data?.total || 0} results)</span>
           <button
             onClick={() => setStatFilter('all')}
-            className="text-surface-600 hover:text-surface-100 ml-2"
+            className="text-surface-600 hover:text-surface-900 ml-2"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
       )}
       {/* Search and Filters */}
-      <div className="bg-surface-800 rounded-xl border border-surface-700 p-4">
+      <div className="bg-white rounded-xl border border-surface-200 p-4">
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Search */}
           <div className="flex-1 relative">
@@ -596,7 +596,7 @@ export default function Risks() {
               placeholder="Search risks..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white placeholder-surface-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="w-full pl-10 pr-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white placeholder-surface-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
@@ -605,7 +605,7 @@ export default function Risks() {
             <SelectNative
               value={filters.category}
               onChange={(e) => updateFilter('category', e.target.value)}
-              className="px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               <option value="">All Categories</option>
               {CATEGORIES.map((cat) => (
@@ -618,7 +618,7 @@ export default function Risks() {
             <SelectNative
               value={filters.status}
               onChange={(e) => updateFilter('status', e.target.value)}
-              className="px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               <option value="">All Statuses</option>
               {STATUSES.map((status) => (
@@ -631,7 +631,7 @@ export default function Risks() {
             <SelectNative
               value={filters.riskLevel}
               onChange={(e) => updateFilter('riskLevel', e.target.value)}
-              className="px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               <option value="">All Risk Levels</option>
               {RISK_LEVELS.map((level) => (
@@ -643,7 +643,7 @@ export default function Risks() {
 
             <button
               onClick={() => navigate('/risks/heatmap')}
-              className="px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-surface-700 hover:text-white hover:bg-surface-600 transition-colors flex items-center gap-2"
+              className="px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-surface-700 hover:text-white hover:bg-surface-600 transition-colors flex items-center gap-2"
             >
               <BarChart3 className="w-4 h-4" />
               Heatmap
@@ -652,7 +652,7 @@ export default function Risks() {
         </div>
       </div>
       {/* Risks Table */}
-      <div className="bg-surface-800 rounded-xl border border-surface-700 overflow-hidden">
+      <div className="bg-white rounded-xl border border-surface-200 overflow-hidden">
         {isLoading ? (
           <SkeletonTable rows={8} columns={8} className="border-none shadow-none" />
         ) : data?.risks.length === 0 ? (
@@ -664,7 +664,7 @@ export default function Risks() {
         ) : (
           <table className="w-full">
             <thead>
-              <tr className="border-b border-surface-700">
+              <tr className="border-b border-surface-200">
                 <th className="text-left px-4 py-3 text-sm font-medium text-surface-600">
                   Risk ID
                 </th>
@@ -693,7 +693,7 @@ export default function Risks() {
                   key={risk.id}
                   onClick={() => navigate(`/risks/${risk.id}`)}
                   onMouseEnter={() => prefetchRisk(risk.id)}
-                  className="border-b border-surface-700 hover:bg-surface-700/50 cursor-pointer transition-colors"
+                  className="border-b border-surface-200 hover:bg-surface-200/50 cursor-pointer transition-colors"
                 >
                   <td className="px-4 py-3">
                     <span className="text-brand-400 font-mono text-sm">{risk.riskId}</span>
@@ -750,7 +750,7 @@ export default function Risks() {
 
         {/* Pagination */}
         {data && data.total > 25 && (
-          <div className="px-4 py-3 border-t border-surface-700 flex items-center justify-between">
+          <div className="px-4 py-3 border-t border-surface-200 flex items-center justify-between">
             <p className="text-sm text-surface-600">
               Showing {(filters.page - 1) * 25 + 1} to {Math.min(filters.page * 25, data.total)} of{' '}
               {data.total} risks
@@ -759,14 +759,14 @@ export default function Risks() {
               <button
                 onClick={() => updateFilter('page', String(filters.page - 1))}
                 disabled={filters.page === 1}
-                className="px-3 py-1 bg-surface-700 rounded text-surface-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-surface-600"
+                className="px-3 py-1 bg-surface-200 rounded text-surface-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-surface-600"
               >
                 Previous
               </button>
               <button
                 onClick={() => updateFilter('page', String(filters.page + 1))}
                 disabled={filters.page * 25 >= data.total}
-                className="px-3 py-1 bg-surface-700 rounded text-surface-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-surface-600"
+                className="px-3 py-1 bg-surface-200 rounded text-surface-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-surface-600"
               >
                 Next
               </button>
@@ -776,11 +776,11 @@ export default function Risks() {
       </div>
       {/* Create Risk Modal */}
       <Dialog open={showCreateModal} onClose={() => setShowCreateModal(false)}>
-        <div className="p-6 border-b border-surface-700 flex items-center justify-between">
+        <div className="p-6 border-b border-surface-200 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-white">Create New Risk</h2>
           <button
             onClick={() => setShowCreateModal(false)}
-            className="p-2 hover:bg-surface-700 rounded-lg text-surface-600"
+            className="p-2 hover:bg-surface-200 rounded-lg text-surface-600"
           >
             <X className="w-5 h-5" />
           </button>
@@ -896,7 +896,7 @@ export default function Risks() {
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-surface-700">
+          <div className="flex justify-end gap-3 pt-4 border-t border-surface-200">
             <Button
               type="button"
               variant="secondary"

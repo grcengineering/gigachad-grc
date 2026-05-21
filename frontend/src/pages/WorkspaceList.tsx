@@ -66,7 +66,7 @@ function CreateWorkspaceModal({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g., Product A, Enterprise Edition"
-              className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand-500"
               required
             />
           </div>
@@ -79,7 +79,7 @@ function CreateWorkspaceModal({
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Brief description of this workspace..."
               rows={2}
-              className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+              className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
             />
           </div>
         </div>
@@ -181,7 +181,7 @@ export default function WorkspaceList() {
             compliance tracking, while sharing a common control library across your organization.
           </p>
 
-          <div className="bg-surface-800 rounded-lg p-6 text-left mb-8">
+          <div className="bg-white rounded-lg p-6 text-left mb-8">
             <h3 className="font-semibold text-foreground mb-4">What you get with workspaces:</h3>
             <ul className="space-y-3 text-sm text-muted-foreground">
               <li className="flex items-start gap-3">
@@ -238,25 +238,25 @@ export default function WorkspaceList() {
       {/* Org-level Stats */}
       {orgDashboard && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-surface-800 rounded-lg p-4 border border-surface-700">
+          <div className="bg-white rounded-lg p-4 border border-surface-200">
             <p className="text-sm text-muted-foreground">Total Workspaces</p>
             <p className="text-2xl font-bold text-foreground mt-1">
               {orgDashboard.workspaces?.length || 0}
             </p>
           </div>
-          <div className="bg-surface-800 rounded-lg p-4 border border-surface-700">
+          <div className="bg-white rounded-lg p-4 border border-surface-200">
             <p className="text-sm text-muted-foreground">Avg Compliance Score</p>
             <p className="text-2xl font-bold text-brand-400 mt-1">
               {orgDashboard.avgComplianceScore || 0}%
             </p>
           </div>
-          <div className="bg-surface-800 rounded-lg p-4 border border-surface-700">
+          <div className="bg-white rounded-lg p-4 border border-surface-200">
             <p className="text-sm text-muted-foreground">Total Controls</p>
             <p className="text-2xl font-bold text-foreground mt-1">
               {orgDashboard.totals?.controls || 0}
             </p>
           </div>
-          <div className="bg-surface-800 rounded-lg p-4 border border-surface-700">
+          <div className="bg-white rounded-lg p-4 border border-surface-200">
             <p className="text-sm text-muted-foreground">Total Risks</p>
             <p className="text-2xl font-bold text-foreground mt-1">
               {orgDashboard.totals?.risks || 0}
@@ -272,7 +272,7 @@ export default function WorkspaceList() {
           placeholder="Search workspaces..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand-500"
+          className="w-full pl-10 pr-4 py-2 bg-white border border-surface-200 rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand-500"
         />
       </div>
       {/* Workspaces Grid */}
@@ -282,10 +282,10 @@ export default function WorkspaceList() {
           return (
             <div
               key={workspace.id}
-              className={`bg-surface-800 rounded-lg p-5 border transition-all cursor-pointer hover:border-brand-500/50 ${
+              className={`bg-white rounded-lg p-5 border transition-all cursor-pointer hover:border-brand-500/50 ${
                 currentWorkspace?.id === workspace.id
                   ? 'border-brand-500 ring-1 ring-brand-500/30'
-                  : 'border-surface-700'
+                  : 'border-surface-200'
               }`}
               onClick={() => {
                 setCurrentWorkspace(workspace);
@@ -315,17 +315,17 @@ export default function WorkspaceList() {
 
               {/* Workspace Stats */}
               <div className="grid grid-cols-3 gap-2 mb-4 text-center">
-                <div className="bg-surface-700/50 rounded p-2">
+                <div className="bg-surface-200/50 rounded p-2">
                   <p className="text-xs text-muted-foreground">Controls</p>
                   <p className="text-sm font-medium text-foreground">
                     {stats?.stats?.controls || 0}
                   </p>
                 </div>
-                <div className="bg-surface-700/50 rounded p-2">
+                <div className="bg-surface-200/50 rounded p-2">
                   <p className="text-xs text-muted-foreground">Risks</p>
                   <p className="text-sm font-medium text-foreground">{stats?.stats?.risks || 0}</p>
                 </div>
-                <div className="bg-surface-700/50 rounded p-2">
+                <div className="bg-surface-200/50 rounded p-2">
                   <p className="text-xs text-muted-foreground">Score</p>
                   <p className="text-sm font-medium text-brand-400">
                     {stats?.complianceScore || 0}%
@@ -334,7 +334,7 @@ export default function WorkspaceList() {
               </div>
 
               {/* Actions */}
-              <div className="flex items-center justify-between pt-3 border-t border-surface-700">
+              <div className="flex items-center justify-between pt-3 border-t border-surface-200">
                 <span className="text-xs text-muted-foreground">
                   {workspace.memberCount || 0} members
                 </span>
@@ -344,7 +344,7 @@ export default function WorkspaceList() {
                       e.stopPropagation();
                       navigate(`/settings/workspaces/${workspace.id}`);
                     }}
-                    className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-surface-700 rounded"
+                    className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-surface-200 rounded"
                   >
                     <Cog6ToothIcon className="w-4 h-4" />
                   </button>

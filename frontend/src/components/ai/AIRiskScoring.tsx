@@ -123,7 +123,7 @@ export default function AIRiskScoring({
         <div className="p-4 space-y-4">
           {/* Scores */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-surface-800/50 rounded-lg p-3">
+            <div className="bg-white/50 rounded-lg p-3">
               <div className="text-xs text-surface-600 mb-1">Suggested Likelihood</div>
               <div className="flex items-center gap-2">
                 <div
@@ -141,7 +141,7 @@ export default function AIRiskScoring({
               <p className="text-xs text-surface-600 mt-2">{result.likelihoodRationale}</p>
             </div>
 
-            <div className="bg-surface-800/50 rounded-lg p-3">
+            <div className="bg-white/50 rounded-lg p-3">
               <div className="text-xs text-surface-600 mb-1">Suggested Impact</div>
               <div className="flex items-center gap-2">
                 <div
@@ -197,7 +197,7 @@ export default function AIRiskScoring({
                 {result.relatedRisks.map((risk, i) => (
                   <span
                     key={i}
-                    className="px-2 py-1 bg-surface-700/50 rounded text-xs text-surface-700"
+                    className="px-2 py-1 bg-surface-200/50 rounded text-xs text-surface-700"
                   >
                     {risk}
                   </span>

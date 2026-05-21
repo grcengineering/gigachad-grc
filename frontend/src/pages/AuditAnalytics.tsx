@@ -55,7 +55,7 @@ function StatCard({
   color?: string;
 }) {
   return (
-    <div className="bg-surface-800 rounded-lg p-6 border border-surface-700">
+    <div className="bg-white rounded-lg p-6 border border-surface-200">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-surface-600 text-sm">{title}</p>
@@ -63,7 +63,7 @@ function StatCard({
           {trend && <p className="text-sm text-surface-500 mt-1">{trend}</p>}
         </div>
         <div
-          className={`p-3 rounded-lg ${color ? 'bg-opacity-10' : 'bg-surface-700'}`}
+          className={`p-3 rounded-lg ${color ? 'bg-opacity-10' : 'bg-surface-200'}`}
           style={{ backgroundColor: color ? `${color}20` : undefined }}
         >
           <Icon className="h-6 w-6" style={{ color: color || '#9ca3af' }} />
@@ -139,7 +139,7 @@ export default function AuditAnalytics() {
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Findings by Severity */}
-        <div className="bg-surface-800 rounded-lg p-6 border border-surface-700">
+        <div className="bg-white rounded-lg p-6 border border-surface-200">
           <h3 className="text-lg font-semibold text-white mb-4">Findings by Severity</h3>
           <div className="h-64">
             <LazyRechartsWrapper height={256}>
@@ -179,7 +179,7 @@ export default function AuditAnalytics() {
         </div>
 
         {/* Findings Trend */}
-        <div className="bg-surface-800 rounded-lg p-6 border border-surface-700">
+        <div className="bg-white rounded-lg p-6 border border-surface-200">
           <h3 className="text-lg font-semibold text-white mb-4">Findings Trend</h3>
           <div className="h-64">
             <LazyRechartsWrapper height={256}>
@@ -211,7 +211,7 @@ export default function AuditAnalytics() {
       {/* Additional Metrics */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Avg Remediation Time */}
-        <div className="bg-surface-800 rounded-lg p-6 border border-surface-700">
+        <div className="bg-white rounded-lg p-6 border border-surface-200">
           <div className="flex items-center gap-3 mb-4">
             <ClockIcon className="h-6 w-6 text-brand-400" />
             <h3 className="text-lg font-semibold text-white">Avg Remediation Time</h3>
@@ -223,7 +223,7 @@ export default function AuditAnalytics() {
         </div>
 
         {/* Completion Rate */}
-        <div className="bg-surface-800 rounded-lg p-6 border border-surface-700">
+        <div className="bg-white rounded-lg p-6 border border-surface-200">
           <div className="flex items-center gap-3 mb-4">
             <CheckCircleIcon className="h-6 w-6 text-green-600" />
             <h3 className="text-lg font-semibold text-white">Audit Completion Rate</h3>
@@ -237,7 +237,7 @@ export default function AuditAnalytics() {
         </div>
 
         {/* Request Status */}
-        <div className="bg-surface-800 rounded-lg p-6 border border-surface-700">
+        <div className="bg-white rounded-lg p-6 border border-surface-200">
           <div className="flex items-center gap-3 mb-4">
             <DocumentMagnifyingGlassIcon className="h-6 w-6 text-blue-600" />
             <h3 className="text-lg font-semibold text-white">Request Completion</h3>
@@ -255,7 +255,7 @@ export default function AuditAnalytics() {
       </div>
 
       {/* Findings by Category */}
-      <div className="bg-surface-800 rounded-lg p-6 border border-surface-700">
+      <div className="bg-white rounded-lg p-6 border border-surface-200">
         <h3 className="text-lg font-semibold text-white mb-4">Findings by Category</h3>
         <div className="h-64">
           <LazyRechartsWrapper height={256}>

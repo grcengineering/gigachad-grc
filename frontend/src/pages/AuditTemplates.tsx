@@ -152,7 +152,7 @@ export default function AuditTemplates() {
         <SelectNative
           value={selectedType}
           onChange={(e) => setSelectedType(e.target.value)}
-          className="bg-surface-800 border border-surface-600 rounded-lg px-3 py-2 text-white"
+          className="bg-white border border-surface-300 rounded-lg px-3 py-2 text-white"
         >
           <option value="">All Types</option>
           {Object.entries(auditTypeLabels).map(([value, label]) => (
@@ -166,7 +166,7 @@ export default function AuditTemplates() {
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="animate-pulse bg-surface-800 rounded-lg p-6 h-48" />
+            <div key={i} className="animate-pulse bg-white rounded-lg p-6 h-48" />
           ))}
         </div>
       ) : (
@@ -174,7 +174,7 @@ export default function AuditTemplates() {
           {(templates as AuditTemplate[]).map((template) => (
             <div
               key={template.id}
-              className="bg-surface-800 rounded-lg p-6 border border-surface-700 hover:border-surface-500 transition-colors"
+              className="bg-white rounded-lg p-6 border border-surface-200 hover:border-surface-500 transition-colors"
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
@@ -197,11 +197,11 @@ export default function AuditTemplates() {
               </p>
 
               <div className="mt-4 flex flex-wrap gap-2 text-xs">
-                <span className="bg-surface-700 text-surface-700 px-2 py-1 rounded">
+                <span className="bg-surface-200 text-surface-700 px-2 py-1 rounded">
                   {auditTypeLabels[template.auditType] || template.auditType}
                 </span>
                 {template.framework && (
-                  <span className="bg-surface-700 text-surface-700 px-2 py-1 rounded">
+                  <span className="bg-surface-200 text-surface-700 px-2 py-1 rounded">
                     {template.framework}
                   </span>
                 )}
@@ -217,7 +217,7 @@ export default function AuditTemplates() {
                 </div>
               </div>
 
-              <div className="mt-4 pt-4 border-t border-surface-700 flex gap-2">
+              <div className="mt-4 pt-4 border-t border-surface-200 flex gap-2">
                 <Link to={`/audits/new?templateId=${template.id}`} className="flex-1">
                   <Button variant="primary" size="sm" className="w-full">
                     Use Template
@@ -262,7 +262,7 @@ export default function AuditTemplates() {
           <h2 className="text-xl font-semibold text-white">Create Audit Template</h2>
           <button
             onClick={() => setShowCreateModal(false)}
-            className="p-1 hover:bg-surface-700 rounded"
+            className="p-1 hover:bg-surface-200 rounded"
           >
             <XMarkIcon className="h-5 w-5 text-surface-600" />
           </button>
@@ -277,7 +277,7 @@ export default function AuditTemplates() {
               type="text"
               value={createForm.name}
               onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
-              className="w-full bg-surface-700 border border-surface-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="w-full bg-surface-200 border border-surface-300 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
               placeholder="e.g., SOC 2 Annual Audit"
             />
           </div>
@@ -288,7 +288,7 @@ export default function AuditTemplates() {
               value={createForm.description}
               onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
               rows={3}
-              className="w-full bg-surface-700 border border-surface-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="w-full bg-surface-200 border border-surface-300 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
               placeholder="Describe the purpose of this template..."
             />
           </div>
@@ -299,7 +299,7 @@ export default function AuditTemplates() {
               <SelectNative
                 value={createForm.auditType}
                 onChange={(e) => setCreateForm({ ...createForm, auditType: e.target.value })}
-                className="w-full bg-surface-700 border border-surface-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="w-full bg-surface-200 border border-surface-300 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
               >
                 {Object.entries(auditTypeLabels).map(([value, label]) => (
                   <option key={value} value={value}>
@@ -315,7 +315,7 @@ export default function AuditTemplates() {
                 type="text"
                 value={createForm.framework}
                 onChange={(e) => setCreateForm({ ...createForm, framework: e.target.value })}
-                className="w-full bg-surface-700 border border-surface-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="w-full bg-surface-200 border border-surface-300 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
                 placeholder="e.g., SOC 2, ISO 27001"
               />
             </div>

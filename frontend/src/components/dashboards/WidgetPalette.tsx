@@ -55,11 +55,11 @@ export default function WidgetPalette({ onSelect, onClose }: WidgetPaletteProps)
   return (
     <Dialog open onClose={onClose}>
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-surface-700">
-        <h2 className="text-lg font-semibold text-surface-100">Add Widget</h2>
+      <div className="flex items-center justify-between p-4 border-b border-surface-200">
+        <h2 className="text-lg font-semibold text-surface-900">Add Widget</h2>
         <button
           onClick={onClose}
-          className="p-1 hover:bg-surface-700 rounded text-surface-600 hover:text-surface-200"
+          className="p-1 hover:bg-surface-200 rounded text-surface-600 hover:text-surface-800"
         >
           <XMarkIcon className="w-5 h-5" />
         </button>
@@ -80,15 +80,15 @@ export default function WidgetPalette({ onSelect, onClose }: WidgetPaletteProps)
                     key={widget.type}
                     onClick={() => onSelect(widget.type)}
                     className={clsx(
-                      'flex flex-col items-center p-4 rounded-lg border border-surface-700',
-                      'bg-surface-800 hover:bg-surface-700 hover:border-brand-500/50',
+                      'flex flex-col items-center p-4 rounded-lg border border-surface-200',
+                      'bg-white hover:bg-surface-200 hover:border-brand-500/50',
                       'transition-all duration-200 text-left'
                     )}
                   >
-                    <div className="p-2 bg-surface-700 rounded-lg mb-2">
+                    <div className="p-2 bg-surface-200 rounded-lg mb-2">
                       <Icon className="w-6 h-6 text-brand-400" />
                     </div>
-                    <span className="text-sm font-medium text-surface-200">{widget.name}</span>
+                    <span className="text-sm font-medium text-surface-800">{widget.name}</span>
                     <span className="text-xs text-surface-500 text-center mt-1">
                       {widget.description}
                     </span>
@@ -104,7 +104,7 @@ export default function WidgetPalette({ onSelect, onClose }: WidgetPaletteProps)
       </div>
 
       {/* Footer */}
-      <div className="p-4 border-t border-surface-700 bg-surface-800/50">
+      <div className="p-4 border-t border-surface-200 bg-white/50">
         <p className="text-sm text-surface-500">
           Click a widget to add it to your dashboard. You can configure it after adding.
         </p>

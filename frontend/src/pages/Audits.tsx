@@ -83,7 +83,7 @@ export default function Audits() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-surface-100">Audits</h1>
+          <h1 className="text-2xl font-semibold text-surface-900">Audits</h1>
           <p className="text-surface-600 mt-1">Manage internal and external compliance audits</p>
         </div>
         <div className="flex gap-3">
@@ -111,14 +111,14 @@ export default function Audits() {
             placeholder="Search audits..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 placeholder-surface-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className="w-full pl-10 pr-4 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 placeholder-surface-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
         </div>
 
         <SelectNative
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:ring-2 focus:ring-brand-500"
+          className="px-4 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
         >
           <option value="">All Statuses</option>
           <option value="planning">Planning</option>
@@ -132,7 +132,7 @@ export default function Audits() {
         <SelectNative
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value)}
-          className="px-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:ring-2 focus:ring-brand-500"
+          className="px-4 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
         >
           <option value="">All Types</option>
           <option value="internal">Internal</option>
@@ -162,12 +162,12 @@ export default function Audits() {
             <Link
               key={audit.id}
               to={`/audits/${audit.id}`}
-              className="block bg-surface-800 border border-surface-700 rounded-lg p-6 hover:border-brand-500 transition-colors"
+              className="block bg-white border border-surface-200 rounded-lg p-6 hover:border-brand-500 transition-colors"
             >
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-lg font-semibold text-surface-100">{audit.name}</h3>
+                    <h3 className="text-lg font-semibold text-surface-900">{audit.name}</h3>
                     <span className="text-sm text-surface-500">#{audit.auditId}</span>
                     {audit.isExternal && (
                       <span className="px-2 py-1 bg-purple-600/20 text-purple-600 rounded text-xs font-medium">
@@ -190,29 +190,29 @@ export default function Audits() {
                 </span>
               </div>
 
-              <div className="grid grid-cols-4 gap-4 pt-4 border-t border-surface-700">
+              <div className="grid grid-cols-4 gap-4 pt-4 border-t border-surface-200">
                 <div>
                   <div className="text-sm text-surface-500 mb-1">Requests</div>
-                  <div className="text-lg font-semibold text-surface-100">
+                  <div className="text-lg font-semibold text-surface-900">
                     {audit._count.requests}
                   </div>
                 </div>
                 <div>
                   <div className="text-sm text-surface-500 mb-1">Evidence</div>
-                  <div className="text-lg font-semibold text-surface-100">
+                  <div className="text-lg font-semibold text-surface-900">
                     {audit._count.evidence}
                   </div>
                 </div>
                 <div>
                   <div className="text-sm text-surface-500 mb-1">Tests</div>
-                  <div className="text-lg font-semibold text-surface-100">
+                  <div className="text-lg font-semibold text-surface-900">
                     {audit._count.testResults}
                   </div>
                 </div>
                 <div>
                   <div className="text-sm text-surface-500 mb-1">Findings</div>
                   <div className="flex items-baseline gap-2">
-                    <div className="text-lg font-semibold text-surface-100">
+                    <div className="text-lg font-semibold text-surface-900">
                       {audit._count.findings}
                     </div>
                     {audit.criticalFindings > 0 && (

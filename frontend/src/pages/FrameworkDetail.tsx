@@ -211,14 +211,14 @@ export default function FrameworkDetail() {
       <div>
         <Link
           to="/frameworks"
-          className="inline-flex items-center text-sm text-surface-600 hover:text-surface-100 mb-4"
+          className="inline-flex items-center text-sm text-surface-600 hover:text-surface-900 mb-4"
         >
           <ArrowLeftIcon className="w-4 h-4 mr-1" />
           Back to Frameworks
         </Link>
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-surface-100">{framework.name}</h1>
+            <h1 className="text-2xl font-bold text-surface-900">{framework.name}</h1>
             <p className="text-surface-600 mt-1">{framework.description}</p>
           </div>
           <Badge className="text-sm uppercase" variant="info">
@@ -296,7 +296,7 @@ export default function FrameworkDetail() {
             )}
           </div>
           {statusFilter !== 'all' && (
-            <div className="flex items-center gap-2 text-sm mt-4 pt-4 border-t border-surface-800">
+            <div className="flex items-center gap-2 text-sm mt-4 pt-4 border-t border-surface-200">
               <span className="text-surface-600">Filtering by:</span>
               <span
                 className={clsx(
@@ -316,7 +316,7 @@ export default function FrameworkDetail() {
               </span>
               <button
                 onClick={() => setStatusFilter('all')}
-                className="text-surface-600 hover:text-surface-100 ml-2"
+                className="text-surface-600 hover:text-surface-900 ml-2"
               >
                 <XMarkIcon className="w-4 h-4" />
               </button>
@@ -356,9 +356,9 @@ export default function FrameworkDetail() {
       {/* Requirements Tree */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className={clsx('card', selectedReq ? 'lg:col-span-2' : 'lg:col-span-3')}>
-          <div className="p-4 border-b border-surface-800 flex items-center justify-between">
+          <div className="p-4 border-b border-surface-200 flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-surface-100">Requirements</h2>
+              <h2 className="text-lg font-semibold text-surface-900">Requirements</h2>
               <p className="text-sm text-surface-600 mt-1">
                 {requirements && requirements.length > 0
                   ? 'Click on any requirement to view details'
@@ -384,7 +384,7 @@ export default function FrameworkDetail() {
               </Button>
             </div>
           </div>
-          <div className="divide-y divide-surface-800 max-h-[600px] overflow-y-auto">
+          <div className="divide-y divide-surface-200 max-h-[600px] overflow-y-auto">
             {requirements && requirements.length > 0 ? (
               requirements.map((req: any) => (
                 <RequirementRow
@@ -426,10 +426,10 @@ export default function FrameworkDetail() {
       {/* Create Requirement Modal */}
       <Dialog open={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)}>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-surface-100">Add Requirement</h2>
+          <h2 className="text-xl font-bold text-surface-900">Add Requirement</h2>
           <button
             onClick={() => setIsCreateModalOpen(false)}
-            className="text-surface-600 hover:text-surface-200"
+            className="text-surface-600 hover:text-surface-800"
           >
             <XMarkIcon className="w-6 h-6" />
           </button>
@@ -525,13 +525,13 @@ export default function FrameworkDetail() {
       {/* Bulk Upload Modal */}
       <Dialog open={isUploadModalOpen} onClose={() => setIsUploadModalOpen(false)}>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-surface-100">Bulk Upload Requirements</h2>
+          <h2 className="text-xl font-bold text-surface-900">Bulk Upload Requirements</h2>
           <button
             onClick={() => {
               setIsUploadModalOpen(false);
               setSelectedFile(null);
             }}
-            className="text-surface-600 hover:text-surface-200"
+            className="text-surface-600 hover:text-surface-800"
           >
             <XMarkIcon className="w-6 h-6" />
           </button>
@@ -539,7 +539,7 @@ export default function FrameworkDetail() {
 
         <div className="space-y-4">
           {/* Instructions */}
-          <div className="p-4 bg-surface-800/50 rounded-lg border border-surface-700">
+          <div className="p-4 bg-white/50 rounded-lg border border-surface-200">
             <p className="text-sm text-surface-700 mb-2">
               Upload a CSV, Excel (.xlsx, .xls), or JSON file with the following columns:
             </p>
@@ -679,7 +679,7 @@ function StatusCard({
         'p-3 rounded-lg text-left transition-all w-full',
         config.bg,
         isActive
-          ? 'ring-2 ring-offset-1 ring-offset-surface-900'
+          ? 'ring-2 ring-offset-1 ring-offset-surface-50'
           : 'hover:opacity-80 cursor-pointer',
         isActive && status === 'compliant' && 'ring-green-400',
         isActive && status === 'partial' && 'ring-yellow-400',
@@ -762,8 +762,8 @@ function RequirementRow({
       <div
         className={clsx(
           'flex items-center gap-3 p-4 transition-colors cursor-pointer',
-          isSelected ? 'bg-brand-500/20 border-l-2 border-brand-500' : 'hover:bg-surface-800/50',
-          directlyMatchesFilter && !isSelected && 'bg-surface-700/30'
+          isSelected ? 'bg-brand-500/20 border-l-2 border-brand-500' : 'hover:bg-white/50',
+          directlyMatchesFilter && !isSelected && 'bg-surface-200/30'
         )}
         style={{ paddingLeft: `${level * 24 + 16}px` }}
         onClick={handleClick}
@@ -793,7 +793,7 @@ function RequirementRow({
         </span>
 
         <div className="flex-1 min-w-0">
-          <p className="text-sm text-surface-100 truncate">{requirement.title}</p>
+          <p className="text-sm text-surface-900 truncate">{requirement.title}</p>
           {!requirement.isCategory && requirement.mappings?.length > 0 && (
             <p className="text-xs text-surface-500 mt-1">
               {requirement.mappings.length} control(s) mapped
@@ -1000,9 +1000,9 @@ function RequirementDetailPanel({
 
   return (
     <div className="card lg:col-span-1 h-fit sticky top-4">
-      <div className="p-4 border-b border-surface-800 flex items-center justify-between">
-        <h3 className="font-semibold text-surface-100">Requirement Details</h3>
-        <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded transition-colors">
+      <div className="p-4 border-b border-surface-200 flex items-center justify-between">
+        <h3 className="font-semibold text-surface-900">Requirement Details</h3>
+        <button onClick={onClose} className="p-1 hover:bg-surface-200 rounded transition-colors">
           <XMarkIcon className="w-5 h-5 text-surface-600" />
         </button>
       </div>
@@ -1012,7 +1012,7 @@ function RequirementDetailPanel({
           <span className="font-mono text-sm text-brand-400 bg-brand-500/10 px-2 py-1 rounded">
             {requirement.reference}
           </span>
-          <h4 className="text-lg font-medium text-surface-100 mt-2">{requirement.title}</h4>
+          <h4 className="text-lg font-medium text-surface-900 mt-2">{requirement.title}</h4>
         </div>
 
         {/* Description */}
@@ -1027,7 +1027,7 @@ function RequirementDetailPanel({
 
         {/* Owner Assignment Section */}
         {!requirement.isCategory && (
-          <div className="border-t border-surface-800 pt-4">
+          <div className="border-t border-surface-200 pt-4">
             <div className="flex items-center justify-between mb-3">
               <p className="text-xs text-surface-500 uppercase tracking-wide">Assignment</p>
               {!isEditing ? (
@@ -1070,7 +1070,7 @@ function RequirementDetailPanel({
                   <SelectNative
                     value={selectedOwner}
                     onChange={(e) => setSelectedOwner(e.target.value)}
-                    className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-sm text-surface-100 focus:outline-none focus:border-brand-500"
+                    className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-sm text-surface-900 focus:outline-none focus:border-brand-500"
                   >
                     <option value="">Unassigned</option>
                     {users?.map((user: any) => (
@@ -1087,7 +1087,7 @@ function RequirementDetailPanel({
                   <SelectNative
                     value={priority}
                     onChange={(e) => setPriority(e.target.value)}
-                    className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-sm text-surface-100 focus:outline-none focus:border-brand-500"
+                    className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-sm text-surface-900 focus:outline-none focus:border-brand-500"
                   >
                     <option value="">Not Set</option>
                     <option value="high">High</option>
@@ -1103,7 +1103,7 @@ function RequirementDetailPanel({
                     type="date"
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
-                    className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-sm text-surface-100 focus:outline-none focus:border-brand-500"
+                    className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-sm text-surface-900 focus:outline-none focus:border-brand-500"
                   />
                 </div>
 
@@ -1115,14 +1115,14 @@ function RequirementDetailPanel({
                     onChange={(e) => setOwnerNotes(e.target.value)}
                     rows={3}
                     placeholder="Add notes about this requirement..."
-                    className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-sm text-surface-100 focus:outline-none focus:border-brand-500 resize-none"
+                    className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-sm text-surface-900 focus:outline-none focus:border-brand-500 resize-none"
                   />
                 </div>
               </div>
             ) : (
               <div className="space-y-2">
                 {/* Current Owner */}
-                <div className="flex items-center gap-2 p-2 bg-surface-800/50 rounded-lg">
+                <div className="flex items-center gap-2 p-2 bg-white/50 rounded-lg">
                   <UserIcon className="w-4 h-4 text-surface-500" />
                   <span className="text-sm text-surface-700">
                     {currentOwner?.displayName || 'Unassigned'}
@@ -1131,7 +1131,7 @@ function RequirementDetailPanel({
 
                 {/* Priority */}
                 {currentPriority && (
-                  <div className="flex items-center gap-2 p-2 bg-surface-800/50 rounded-lg">
+                  <div className="flex items-center gap-2 p-2 bg-white/50 rounded-lg">
                     <FlagIcon
                       className={clsx(
                         'w-4 h-4',
@@ -1150,7 +1150,7 @@ function RequirementDetailPanel({
 
                 {/* Due Date */}
                 {currentDueDate && (
-                  <div className="flex items-center gap-2 p-2 bg-surface-800/50 rounded-lg">
+                  <div className="flex items-center gap-2 p-2 bg-white/50 rounded-lg">
                     <CalendarIcon className="w-4 h-4 text-surface-500" />
                     <span className="text-sm text-surface-700">
                       Due: {new Date(currentDueDate).toLocaleDateString()}
@@ -1160,7 +1160,7 @@ function RequirementDetailPanel({
 
                 {/* Notes */}
                 {currentNotes && (
-                  <div className="p-2 bg-surface-800/50 rounded-lg">
+                  <div className="p-2 bg-white/50 rounded-lg">
                     <p className="text-xs text-surface-500 mb-1">Notes</p>
                     <p className="text-sm text-surface-700">{currentNotes}</p>
                   </div>
@@ -1172,7 +1172,7 @@ function RequirementDetailPanel({
 
         {/* Mapped Controls */}
         {!requirement.isCategory && (
-          <div className="border-t border-surface-800 pt-4">
+          <div className="border-t border-surface-200 pt-4">
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs text-surface-500 uppercase tracking-wide">
                 Mapped Controls ({mappings?.length || 0})
@@ -1190,7 +1190,7 @@ function RequirementDetailPanel({
             </div>
             {isLoading ? (
               <div className="flex items-center justify-center py-4">
-                <div className="animate-spin w-5 h-5 border-2 border-surface-700 rounded-full border-t-brand-500"></div>
+                <div className="animate-spin w-5 h-5 border-2 border-surface-200 rounded-full border-t-brand-500"></div>
               </div>
             ) : mappings && mappings.length > 0 ? (
               <div
@@ -1207,7 +1207,7 @@ function RequirementDetailPanel({
                     <div
                       key={mapping.id}
                       role="listitem"
-                      className="group relative bg-surface-800/50 rounded-lg hover:bg-surface-800 transition-colors"
+                      className="group relative bg-white/50 rounded-lg hover:bg-white transition-colors"
                     >
                       <div className="flex items-start gap-2 p-3">
                         <Link
@@ -1219,7 +1219,7 @@ function RequirementDetailPanel({
                             <p className="text-sm font-mono text-brand-400">
                               {mapping.control?.controlId}
                             </p>
-                            <p className="text-sm text-surface-200 truncate">
+                            <p className="text-sm text-surface-800 truncate">
                               {mapping.control?.title}
                             </p>
                             <span
@@ -1249,14 +1249,14 @@ function RequirementDetailPanel({
                                 setOpenMenuId(isMenuOpen ? null : mapping.id);
                                 setPendingDeleteId(null);
                               }}
-                              className="p-1 rounded hover:bg-surface-700 text-surface-600 hover:text-surface-200 opacity-60 group-hover:opacity-100 focus:opacity-100 focus:outline-none focus:ring-1 focus:ring-brand-500 transition-opacity"
+                              className="p-1 rounded hover:bg-surface-200 text-surface-600 hover:text-surface-800 opacity-60 group-hover:opacity-100 focus:opacity-100 focus:outline-none focus:ring-1 focus:ring-brand-500 transition-opacity"
                             >
                               <EllipsisVerticalIcon className="w-4 h-4" />
                             </button>
                             {isMenuOpen && (
                               <div
                                 role="menu"
-                                className="absolute right-0 top-7 z-10 min-w-[10rem] bg-surface-800 border border-surface-700 rounded-lg shadow-lg py-1"
+                                className="absolute right-0 top-7 z-10 min-w-[10rem] bg-white border border-surface-200 rounded-lg shadow-lg py-1"
                               >
                                 {canEditMappings && (
                                   <button
@@ -1268,7 +1268,7 @@ function RequirementDetailPanel({
                                       setOpenMenuId(null);
                                       handleOpenEditMapping(mapping.id);
                                     }}
-                                    className="block w-full text-left px-3 py-1.5 text-sm text-surface-200 hover:bg-surface-700"
+                                    className="block w-full text-left px-3 py-1.5 text-sm text-surface-800 hover:bg-surface-200"
                                   >
                                     Edit
                                   </button>
@@ -1283,7 +1283,7 @@ function RequirementDetailPanel({
                                       setOpenMenuId(null);
                                       handleOpenCopyMapping(mapping);
                                     }}
-                                    className="block w-full text-left px-3 py-1.5 text-sm text-surface-200 hover:bg-surface-700"
+                                    className="block w-full text-left px-3 py-1.5 text-sm text-surface-800 hover:bg-surface-200"
                                   >
                                     Copy to framework…
                                   </button>
@@ -1297,7 +1297,7 @@ function RequirementDetailPanel({
                                     setHistoryDrawerMappingId(mapping.id);
                                     setOpenMenuId(null);
                                   }}
-                                  className="flex items-center gap-2 w-full text-left px-3 py-1.5 text-sm text-surface-200 hover:bg-surface-700"
+                                  className="flex items-center gap-2 w-full text-left px-3 py-1.5 text-sm text-surface-800 hover:bg-surface-200"
                                 >
                                   <ClockIcon className="w-4 h-4" aria-hidden="true" />
                                   History
@@ -1312,7 +1312,7 @@ function RequirementDetailPanel({
                                       setOpenMenuId(null);
                                       setPendingDeleteId(mapping.id);
                                     }}
-                                    className="block w-full text-left px-3 py-1.5 text-sm text-red-600 hover:bg-surface-700"
+                                    className="block w-full text-left px-3 py-1.5 text-sm text-red-600 hover:bg-surface-200"
                                   >
                                     Delete
                                   </button>
@@ -1327,7 +1327,7 @@ function RequirementDetailPanel({
                           <div
                             role="alertdialog"
                             aria-label="Confirm mapping deletion"
-                            className="bg-surface-900/60 border border-red-500/30 rounded-md p-2 text-xs text-surface-200"
+                            className="bg-white/60 border border-red-500/30 rounded-md p-2 text-xs text-surface-800"
                           >
                             <p className="mb-2">Remove this mapping?</p>
                             <div className="flex justify-end gap-2">
@@ -1338,7 +1338,7 @@ function RequirementDetailPanel({
                                   e.stopPropagation();
                                   setPendingDeleteId(null);
                                 }}
-                                className="px-2 py-1 text-surface-700 hover:text-surface-100"
+                                className="px-2 py-1 text-surface-700 hover:text-surface-900"
                                 disabled={deleteMutation.isPending}
                               >
                                 Cancel
@@ -1443,10 +1443,10 @@ function RequirementDetailPanel({
         {/* Comments & Tasks for non-category requirements */}
         {!requirement.isCategory && (
           <>
-            <div className="border-t border-surface-800 pt-4">
+            <div className="border-t border-surface-200 pt-4">
               <CommentsPanel entityType="requirement" entityId={requirement.id} />
             </div>
-            <div className="border-t border-surface-800 pt-4">
+            <div className="border-t border-surface-200 pt-4">
               <TasksPanel entityType="requirement" entityId={requirement.id} />
             </div>
           </>
