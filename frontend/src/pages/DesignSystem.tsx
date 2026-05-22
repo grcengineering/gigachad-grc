@@ -1,5 +1,15 @@
 import { useState } from 'react';
-import { Search, Plus, Filter, MoreHorizontal, Mail, Trash2 } from 'lucide-react';
+import {
+  Search,
+  Plus,
+  Filter,
+  MoreHorizontal,
+  Mail,
+  Trash2,
+  Sun,
+  Moon,
+  Monitor,
+} from 'lucide-react';
 import {
   Button,
   Card,
@@ -33,6 +43,8 @@ import {
   type BadgeVariant,
   type ButtonVariant,
 } from '@/components/ui';
+import { useTheme, Theme } from '@/contexts/ThemeContext';
+import { cn } from '@/lib/cn';
 
 const BADGE_VARIANTS: BadgeVariant[] = ['neutral', 'success', 'warning', 'danger', 'info', 'brand'];
 const BUTTON_VARIANTS: ButtonVariant[] = [
@@ -175,6 +187,40 @@ const TRENDS = {
   down: [38, 34, 30, 29, 22, 19, 14, 11],
 };
 
+function ThemeToggle() {
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const opts: { id: Theme; label: string; Icon: typeof Sun }[] = [
+    { id: 'light', label: 'Light', Icon: Sun },
+    { id: 'dark', label: 'Dark', Icon: Moon },
+    { id: 'system', label: 'System', Icon: Monitor },
+  ];
+  return (
+    <div className="inline-flex items-center gap-1 rounded-md border border-surface-200 bg-white p-0.5 dark:bg-surface-900 dark:border-surface-800">
+      {opts.map(({ id, label, Icon }) => {
+        const active = theme === id;
+        return (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setTheme(id)}
+            title={`${label}${id === 'system' ? ` (currently ${resolvedTheme})` : ''}`}
+            aria-pressed={active}
+            className={cn(
+              'inline-flex items-center gap-1.5 px-2.5 h-7 rounded text-small font-medium transition-colors',
+              active
+                ? 'bg-brand-600 text-white dark:bg-brand-500'
+                : 'text-surface-700 hover:bg-surface-100 dark:text-surface-300 dark:hover:bg-surface-800'
+            )}
+          >
+            <Icon className="h-3.5 w-3.5" />
+            {label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function DesignSystem() {
   const [text, setText] = useState('');
   const [select1, setSelect1] = useState('medium');
@@ -187,7 +233,7 @@ export default function DesignSystem() {
     <div className="space-y-10 pb-16">
       <PageHeader
         title="Design System"
-        description="Tokens, primitives, and patterns. Every page on GigaChad GRC composes from this."
+        description="Tokens, primitives, and patterns. Every page on GigaChad GRC composes from this. Use the theme toggle to preview every primitive in light or dark mode."
         meta={
           <Badge variant="brand" size="sm">
             v1
@@ -195,6 +241,7 @@ export default function DesignSystem() {
         }
         actions={
           <>
+            <ThemeToggle />
             <Button variant="outline" leftIcon={<Filter className="h-4 w-4" />}>
               Filter
             </Button>

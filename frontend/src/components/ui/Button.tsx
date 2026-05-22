@@ -33,20 +33,20 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 // the merged class string. Forcing with ! pins the color.
 const variants: Record<ButtonVariant, string> = {
   primary:
-    'bg-brand-600 !text-white shadow-sm hover:bg-brand-500 active:bg-brand-700 focus-visible:ring-brand-500 disabled:hover:bg-brand-600',
+    'bg-brand-600 !text-white shadow-sm hover:bg-brand-500 active:bg-brand-700 focus-visible:ring-brand-500 disabled:hover:bg-brand-600 dark:bg-brand-500 dark:hover:bg-brand-400 dark:active:bg-brand-600 dark:disabled:hover:bg-brand-500',
   secondary:
-    'bg-surface-200 !text-surface-900 border border-surface-400 hover:bg-surface-300 focus-visible:ring-brand-500',
+    'bg-surface-200 !text-surface-900 border border-surface-400 hover:bg-surface-300 focus-visible:ring-brand-500 dark:bg-surface-800 dark:!text-surface-100 dark:border-surface-700 dark:hover:bg-surface-700',
   outline:
-    'border border-surface-400 bg-white !text-surface-900 hover:bg-surface-100 hover:border-surface-500 focus-visible:ring-brand-500',
+    'border border-surface-400 bg-white !text-surface-900 hover:bg-surface-100 hover:border-surface-500 focus-visible:ring-brand-500 dark:bg-transparent dark:!text-surface-200 dark:border-surface-700 dark:hover:bg-surface-800 dark:hover:border-surface-600',
   ghost:
-    'bg-transparent !text-surface-700 hover:bg-surface-100 hover:!text-surface-900 focus-visible:ring-brand-500',
+    'bg-transparent !text-surface-700 hover:bg-surface-100 hover:!text-surface-900 focus-visible:ring-brand-500 dark:!text-surface-300 dark:hover:bg-surface-800 dark:hover:!text-surface-100',
   danger:
-    'bg-red-600 !text-white shadow-sm hover:bg-red-500 active:bg-red-700 focus-visible:ring-red-500 disabled:hover:bg-red-600',
-  link: 'bg-transparent !text-brand-700 hover:!text-brand-800 underline-offset-4 hover:underline focus-visible:ring-brand-500',
+    'bg-red-600 !text-white shadow-sm hover:bg-red-500 active:bg-red-700 focus-visible:ring-red-500 disabled:hover:bg-red-600 dark:bg-red-500 dark:hover:bg-red-400',
+  link: 'bg-transparent !text-brand-700 hover:!text-brand-800 underline-offset-4 hover:underline focus-visible:ring-brand-500 dark:!text-brand-400 dark:hover:!text-brand-300',
   success:
-    'bg-emerald-600 !text-white shadow-sm hover:bg-emerald-500 active:bg-emerald-700 focus-visible:ring-emerald-500 disabled:hover:bg-emerald-600',
+    'bg-emerald-600 !text-white shadow-sm hover:bg-emerald-500 active:bg-emerald-700 focus-visible:ring-emerald-500 disabled:hover:bg-emerald-600 dark:bg-emerald-500 dark:hover:bg-emerald-400',
   warning:
-    'bg-amber-500 !text-white shadow-sm hover:bg-amber-400 active:bg-amber-600 focus-visible:ring-amber-500 disabled:hover:bg-amber-500',
+    'bg-amber-500 !text-white shadow-sm hover:bg-amber-400 active:bg-amber-600 focus-visible:ring-amber-500 disabled:hover:bg-amber-500 dark:bg-amber-400 dark:!text-surface-950 dark:hover:bg-amber-300',
 };
 
 const sizes: Record<ButtonSize, string> = {
@@ -83,7 +83,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         disabled={disabled || isBusy}
         className={cn(
           'inline-flex items-center justify-center font-medium transition-colors',
-          'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-50',
+          'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-50 dark:focus-visible:ring-offset-surface-950',
           'disabled:opacity-50 disabled:cursor-not-allowed',
           variants[variant],
           sizes[size],

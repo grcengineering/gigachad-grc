@@ -1,18 +1,18 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme, Theme } from '@/contexts/ThemeContext';
 import {
   UserIcon,
   BellIcon,
   ShieldCheckIcon,
   PaintBrushIcon,
   ComputerDesktopIcon,
+  SunIcon,
+  MoonIcon,
 } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
-
 import { Input } from '@/components/ui/Input';
-
 import { SelectNative } from '@/components/ui/SelectNative';
-
 import { Button } from '@/components/ui/Button';
 
 const TABS = [
@@ -402,24 +402,90 @@ function NotificationPreferences() {
 }
 
 function AppearanceSettings() {
+  const { theme, setTheme } = useTheme();
+
+  const themeOptions: {
+    id: Theme;
+    label: string;
+    description: string;
+    icon: typeof SunIcon;
+  }[] = [
+    { id: 'light', label: 'Light', description: 'Cream background with dark text', icon: SunIcon },
+    {
+      id: 'dark',
+      label: 'Dark',
+      description: 'Warm ink background with bright text',
+      icon: MoonIcon,
+    },
+    {
+      id: 'system',
+      label: 'System',
+      description: 'Follow your OS preference',
+      icon: ComputerDesktopIcon,
+    },
+  ];
+
   return (
     <div className="card p-6 space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-surface-900">Appearance</h2>
-        <p className="text-surface-600 text-sm mt-1">
+        <h2 className="text-lg font-semibold text-surface-900 dark:text-surface-100">Appearance</h2>
+        <p className="text-surface-600 dark:text-surface-400 text-sm mt-1">
           Customize how GigaChad GRC looks on your device
         </p>
       </div>
-      <div className="space-y-4">
-        <div>
-          <label className="label">Date Format</label>
-          <SelectNative className="input mt-1 max-w-xs">
-            <option value="YYYY-MM-DD">YYYY-MM-DD (2025-01-15)</option>
-            <option value="MM/DD/YYYY">MM/DD/YYYY (01/15/2025)</option>
-            <option value="DD/MM/YYYY">DD/MM/YYYY (15/01/2025)</option>
-            <option value="MMM DD, YYYY">MMM DD, YYYY (Jan 15, 2025)</option>
-          </SelectNative>
+
+      <div className="space-y-3">
+        <label className="label">Theme</label>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {themeOptions.map((option) => {
+            const selected = theme === option.id;
+            return (
+              <button
+                key={option.id}
+                onClick={() => setTheme(option.id)}
+                aria-pressed={selected}
+                className={clsx(
+                  'p-4 rounded-lg border-2 text-left transition-all',
+                  selected
+                    ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/15'
+                    : 'border-surface-200 hover:border-surface-300 bg-white dark:bg-surface-900 dark:border-surface-800 dark:hover:border-surface-700'
+                )}
+              >
+                <option.icon
+                  className={clsx(
+                    'w-7 h-7 mb-2',
+                    selected
+                      ? 'text-brand-700 dark:text-brand-300'
+                      : 'text-surface-600 dark:text-surface-400'
+                  )}
+                />
+                <div
+                  className={clsx(
+                    'font-medium',
+                    selected
+                      ? 'text-brand-800 dark:text-brand-200'
+                      : 'text-surface-900 dark:text-surface-100'
+                  )}
+                >
+                  {option.label}
+                </div>
+                <div className="text-surface-600 dark:text-surface-400 text-xs mt-0.5">
+                  {option.description}
+                </div>
+              </button>
+            );
+          })}
         </div>
+      </div>
+
+      <div>
+        <label className="label">Date Format</label>
+        <SelectNative className="input mt-1 max-w-xs">
+          <option value="YYYY-MM-DD">YYYY-MM-DD (2025-01-15)</option>
+          <option value="MM/DD/YYYY">MM/DD/YYYY (01/15/2025)</option>
+          <option value="DD/MM/YYYY">DD/MM/YYYY (15/01/2025)</option>
+          <option value="MMM DD, YYYY">MMM DD, YYYY (Jan 15, 2025)</option>
+        </SelectNative>
       </div>
     </div>
   );
