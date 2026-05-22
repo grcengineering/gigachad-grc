@@ -81,14 +81,17 @@ services:
           memory: 256M
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-grc} -d ${POSTGRES_DB:-gigachad_grc}']
+      # First boot runs every script under database/init/ (creates keycloak + infisical DBs,
+      # 26+ SQL files for soft-delete, BCDR, enums, indexes, etc.). On a slow / contended CI
+      # runner this can easily push past 30s. We've seen `docker compose up -d` exit non-zero
+      # with "dependency failed to start: grc-postgres is unhealthy" on PRs #320 and #321
+      # despite the previous 30s budget. Bumped headroom + retry total so the dependency wait
+      # has 60s of init grace + 80s of polling = ~140s total before compose gives up.
+      start_period: 60s
       interval: 10s
       timeout: 5s
-      retries: 5
-      # First boot runs every script under database/init/ (creates keycloak + infisical DBs,
-      # 26+ SQL files for soft-delete, BCDR, enums, indexes, etc.). On a slow CI runner this
-      # easily exceeds the default zero start_period and trips compose's dependency-wait
-      # before pg_isready can ever return 0. 30s leaves headroom for cold runners.
-      start_period: 30s
+      retries: 8
+      start_interval: 5s
 
   # ===========================================
   # Cache & Message Queue - Redis (Docker Hardened Image)

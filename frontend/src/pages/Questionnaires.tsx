@@ -39,7 +39,7 @@ export default function Questionnaires() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-surface-100">Security Questionnaires</h1>
+            <h1 className="text-3xl font-bold text-surface-900">Security Questionnaires</h1>
             <p className="mt-1 text-surface-600">
               Respond to incoming customer security questionnaires
             </p>
@@ -55,7 +55,7 @@ export default function Questionnaires() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-surface-100">Security Questionnaires</h1>
+          <h1 className="text-3xl font-bold text-surface-900">Security Questionnaires</h1>
           <p className="mt-1 text-surface-600">
             Respond to incoming customer security questionnaires
           </p>
@@ -77,7 +77,7 @@ export default function Questionnaires() {
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               filter === status
                 ? 'bg-brand-600 text-white'
-                : 'bg-surface-800 text-surface-700 hover:bg-surface-700'
+                : 'bg-white text-surface-700 hover:bg-surface-200'
             }`}
           >
             {status === 'all'
@@ -100,9 +100,9 @@ export default function Questionnaires() {
           }}
         />
       ) : (
-        <div className="bg-surface-900 border border-surface-800 rounded-lg overflow-hidden">
+        <div className="bg-white border border-surface-200 rounded-lg overflow-hidden">
           <table className="w-full">
-            <thead className="bg-surface-800 border-b border-surface-700">
+            <thead className="bg-white border-b border-surface-200">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-surface-600 uppercase tracking-wider">
                   Customer Request
@@ -124,18 +124,18 @@ export default function Questionnaires() {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-surface-800">
+            <tbody className="divide-y divide-surface-200">
               {(questionnaires as any[]).map((questionnaire) => {
                 const completion = getCompletionPercentage(questionnaire.questions);
                 return (
                   <tr
                     key={questionnaire.id}
                     onClick={() => navigate(`/questionnaires/${questionnaire.id}`)}
-                    className="hover:bg-surface-800 cursor-pointer transition-colors"
+                    className="hover:bg-white cursor-pointer transition-colors"
                   >
                     <td className="px-6 py-4">
                       <div>
-                        <div className="text-sm font-medium text-surface-100">
+                        <div className="text-sm font-medium text-surface-900">
                           {questionnaire.title}
                         </div>
                         <div className="text-sm text-surface-500">
@@ -177,7 +177,7 @@ export default function Questionnaires() {
                               ? 'bg-blue-500/20 text-blue-600'
                               : questionnaire.status === 'pending'
                                 ? 'bg-yellow-500/20 text-yellow-600'
-                                : 'bg-surface-700 text-surface-600'
+                                : 'bg-surface-200 text-surface-600'
                         }`}
                       >
                         {questionnaire.status.replace('_', ' ')}
@@ -185,8 +185,8 @@ export default function Questionnaires() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-surface-100">{completion}%</span>
-                        <div className="w-24 h-2 bg-surface-700 rounded-full overflow-hidden">
+                        <span className="text-sm font-medium text-surface-900">{completion}%</span>
+                        <div className="w-24 h-2 bg-surface-200 rounded-full overflow-hidden">
                           <div
                             className={`h-full ${
                               completion === 100

@@ -33,7 +33,7 @@ export default function Assessments() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-surface-100">Vendor Assessments</h1>
+            <h1 className="text-3xl font-bold text-surface-900">Vendor Assessments</h1>
             <p className="mt-1 text-surface-600">Track and manage vendor risk assessments</p>
           </div>
         </div>
@@ -47,7 +47,7 @@ export default function Assessments() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-surface-100">Vendor Assessments</h1>
+          <h1 className="text-3xl font-bold text-surface-900">Vendor Assessments</h1>
           <p className="mt-1 text-surface-600">Track and manage vendor risk assessments</p>
         </div>
         <Button
@@ -60,7 +60,7 @@ export default function Assessments() {
 
       {/* Assessments List */}
       {assessments.length === 0 ? (
-        <div className="bg-surface-900 border border-surface-800 rounded-lg p-12 text-center">
+        <div className="bg-white border border-surface-200 rounded-lg p-12 text-center">
           <DocumentCheckIcon className="w-12 h-12 text-surface-600 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-surface-700 mb-2">No assessments yet</h3>
           <p className="text-surface-500 mb-6">
@@ -74,9 +74,9 @@ export default function Assessments() {
           </Button>
         </div>
       ) : (
-        <div className="bg-surface-900 border border-surface-800 rounded-lg overflow-hidden">
+        <div className="bg-white border border-surface-200 rounded-lg overflow-hidden">
           <table className="w-full">
-            <thead className="bg-surface-800 border-b border-surface-700">
+            <thead className="bg-white border-b border-surface-200">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-surface-600 uppercase tracking-wider">
                   Vendor
@@ -95,14 +95,14 @@ export default function Assessments() {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-surface-800">
+            <tbody className="divide-y divide-surface-200">
               {assessments.map((assessment) => (
                 <tr
                   key={assessment.id}
                   onClick={() => navigate(`/assessments/${assessment.id}`)}
-                  className="hover:bg-surface-800 cursor-pointer transition-colors"
+                  className="hover:bg-white cursor-pointer transition-colors"
                 >
-                  <td className="px-6 py-4 text-sm font-medium text-surface-100">
+                  <td className="px-6 py-4 text-sm font-medium text-surface-900">
                     {assessment.vendor?.name}
                   </td>
                   <td className="px-6 py-4 text-sm text-surface-700 capitalize">
@@ -117,7 +117,7 @@ export default function Assessments() {
                             ? 'bg-blue-500/20 text-blue-600'
                             : assessment.status === 'pending'
                               ? 'bg-yellow-500/20 text-yellow-600'
-                              : 'bg-surface-700 text-surface-600'
+                              : 'bg-surface-200 text-surface-600'
                       }`}
                     >
                       {assessment.status.replace('_', ' ')}
@@ -126,10 +126,10 @@ export default function Assessments() {
                   <td className="px-6 py-4">
                     {assessment.overallScore !== null && assessment.overallScore !== undefined ? (
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-surface-100">
+                        <span className="text-sm font-medium text-surface-900">
                           {assessment.overallScore}
                         </span>
-                        <div className="w-16 h-2 bg-surface-700 rounded-full overflow-hidden">
+                        <div className="w-16 h-2 bg-surface-200 rounded-full overflow-hidden">
                           <div
                             className={`h-full ${
                               assessment.overallScore >= 80

@@ -60,7 +60,7 @@ export function ProductionReadiness() {
 
   if (loading) {
     return (
-      <div className="bg-surface-800 rounded-xl p-6">
+      <div className="bg-white rounded-xl p-6">
         <div className="flex items-center justify-center py-8">
           <ArrowPathIcon className="h-6 w-6 animate-spin text-primary" />
           <span className="ml-2 text-foreground/60">Analyzing system...</span>
@@ -71,7 +71,7 @@ export function ProductionReadiness() {
 
   if (error || !data) {
     return (
-      <div className="bg-surface-800 rounded-xl p-6">
+      <div className="bg-white rounded-xl p-6">
         <div className="text-center py-8">
           <ExclamationTriangleIcon className="h-12 w-12 mx-auto text-yellow-500 mb-3" />
           <p className="text-foreground/60">{error || 'Unable to load data'}</p>
@@ -93,7 +93,7 @@ export function ProductionReadiness() {
     data.score >= 80 ? 'bg-green-500/20' : data.score >= 60 ? 'bg-yellow-500/20' : 'bg-red-500/20';
 
   return (
-    <div className="bg-surface-800 rounded-xl overflow-hidden">
+    <div className="bg-white rounded-xl overflow-hidden">
       {/* Header with score */}
       <div className="p-6 border-b border-white/10">
         <div className="flex items-center justify-between">

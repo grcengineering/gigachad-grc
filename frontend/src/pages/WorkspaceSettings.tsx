@@ -89,7 +89,7 @@ function AddMemberModal({
             <SelectNative
               value={selectedUserId}
               onChange={(e) => setSelectedUserId(e.target.value)}
-              className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-brand-500"
               required
             >
               <option value="">Select a user...</option>
@@ -110,7 +110,7 @@ function AddMemberModal({
             <SelectNative
               value={selectedRole}
               onChange={(e) => setSelectedRole(e.target.value)}
-              className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               {WORKSPACE_ROLES.map((role) => (
                 <option key={role.value} value={role.value}>
@@ -250,7 +250,7 @@ export default function WorkspaceSettings() {
       <div className="flex items-center gap-4 mb-6">
         <button
           onClick={() => navigate('/settings/workspaces')}
-          className="p-2 text-muted-foreground hover:text-foreground hover:bg-surface-800 rounded-lg"
+          className="p-2 text-muted-foreground hover:text-foreground hover:bg-white rounded-lg"
         >
           <ArrowLeftIcon className="w-5 h-5" />
         </button>
@@ -260,7 +260,7 @@ export default function WorkspaceSettings() {
         </div>
       </div>
       {/* Basic Information */}
-      <section className="bg-surface-800 rounded-lg p-6 border border-surface-700 mb-6">
+      <section className="bg-white rounded-lg p-6 border border-surface-200 mb-6">
         <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
           <BuildingOfficeIcon className="w-5 h-5" />
           Basic Information
@@ -274,7 +274,7 @@ export default function WorkspaceSettings() {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
           <div>
@@ -283,7 +283,7 @@ export default function WorkspaceSettings() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+              className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
             />
           </div>
           <div>
@@ -292,7 +292,7 @@ export default function WorkspaceSettings() {
               type="text"
               value={workspace.slug}
               disabled
-              className="w-full px-3 py-2 bg-surface-700/50 border border-surface-600 rounded-lg text-muted-foreground cursor-not-allowed"
+              className="w-full px-3 py-2 bg-surface-200/50 border border-surface-300 rounded-lg text-muted-foreground cursor-not-allowed"
             />
             <p className="text-xs text-muted-foreground mt-1">
               The slug cannot be changed after creation.
@@ -310,7 +310,7 @@ export default function WorkspaceSettings() {
         </div>
       </section>
       {/* Members */}
-      <section className="bg-surface-800 rounded-lg p-6 border border-surface-700 mb-6">
+      <section className="bg-white rounded-lg p-6 border border-surface-200 mb-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-foreground">Members</h2>
           <button
@@ -326,7 +326,7 @@ export default function WorkspaceSettings() {
           {workspace.members?.map((member: WorkspaceMember) => (
             <div
               key={member.id}
-              className="flex items-center justify-between p-3 bg-surface-700/50 rounded-lg"
+              className="flex items-center justify-between p-3 bg-surface-200/50 rounded-lg"
             >
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full bg-brand-600 flex items-center justify-center text-white text-sm font-medium">
@@ -345,7 +345,7 @@ export default function WorkspaceSettings() {
                   onChange={(e) =>
                     updateMemberMutation.mutate({ userId: member.userId, role: e.target.value })
                   }
-                  className="px-2 py-1 text-sm bg-surface-700 border border-surface-600 rounded text-foreground focus:outline-none"
+                  className="px-2 py-1 text-sm bg-surface-200 border border-surface-300 rounded text-foreground focus:outline-none"
                 >
                   {WORKSPACE_ROLES.map((role) => (
                     <option key={role.value} value={role.value}>

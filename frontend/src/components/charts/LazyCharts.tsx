@@ -9,8 +9,8 @@ import React, { Suspense } from 'react';
 // Loading placeholder for charts
 function ChartLoading({ height = 200 }: { height?: number }) {
   return (
-    <div 
-      className="animate-pulse bg-surface-700/30 rounded-lg flex items-center justify-center"
+    <div
+      className="animate-pulse bg-surface-200/30 rounded-lg flex items-center justify-center"
       style={{ height }}
     >
       <div className="text-surface-500 text-sm">Loading chart...</div>
@@ -87,17 +87,17 @@ export function LazyPieChart({
 
 function LazyPieChartInner(props: LazyPieChartProps) {
   const { data, height, innerRadius, outerRadius, showLabel, showLegend, labelFormatter } = props;
-  
+
   const [recharts, setRecharts] = React.useState<typeof import('recharts') | null>(null);
-  
+
   React.useEffect(() => {
     import('recharts').then(setRecharts);
   }, []);
-  
+
   if (!recharts) return <ChartLoading height={height} />;
-  
+
   const { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } = recharts;
-  
+
   return (
     <ResponsiveContainer width="100%" height={height}>
       <PieChart>
@@ -108,12 +108,12 @@ function LazyPieChartInner(props: LazyPieChartProps) {
           innerRadius={innerRadius}
           outerRadius={outerRadius}
           dataKey="value"
-          label={showLabel ? (labelFormatter || (({ name, value }) => `${name}: ${value}`)) : false}
+          label={showLabel ? labelFormatter || (({ name, value }) => `${name}: ${value}`) : false}
         >
           {data.map((entry, index) => (
-            <Cell 
-              key={`cell-${index}`} 
-              fill={entry.color || CHART_COLORS[index % CHART_COLORS.length]} 
+            <Cell
+              key={`cell-${index}`}
+              fill={entry.color || CHART_COLORS[index % CHART_COLORS.length]}
             />
           ))}
         </Pie>
@@ -149,28 +149,28 @@ export function LazyBarChart({
 
 function LazyBarChartInner(props: LazyBarChartProps) {
   const { data, dataKey, xAxisKey, height, barColor, showGrid } = props;
-  
+
   const [recharts, setRecharts] = React.useState<typeof import('recharts') | null>(null);
-  
+
   React.useEffect(() => {
     import('recharts').then(setRecharts);
   }, []);
-  
+
   if (!recharts) return <ChartLoading height={height} />;
-  
+
   const { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } = recharts;
-  
+
   return (
     <ResponsiveContainer width="100%" height={height}>
       <BarChart data={data}>
         {showGrid && <CartesianGrid strokeDasharray="3 3" stroke="#374151" />}
         <XAxis dataKey={xAxisKey} tick={{ fill: '#9ca3af', fontSize: 12 }} />
         <YAxis tick={{ fill: '#9ca3af', fontSize: 12 }} />
-        <Tooltip 
-          contentStyle={{ 
+        <Tooltip
+          contentStyle={{
             backgroundColor: '#1f2937',
             border: '1px solid #374151',
-            borderRadius: '0.5rem'
+            borderRadius: '0.5rem',
           }}
         />
         <Bar dataKey={dataKey} fill={barColor} radius={[4, 4, 0, 0]} />
@@ -206,34 +206,35 @@ export function LazyLineChart({
 
 function LazyLineChartInner(props: LazyLineChartProps) {
   const { data, dataKey, xAxisKey, height, lineColor, showGrid, showArea } = props;
-  
+
   const [recharts, setRecharts] = React.useState<typeof import('recharts') | null>(null);
-  
+
   React.useEffect(() => {
     import('recharts').then(setRecharts);
   }, []);
-  
+
   if (!recharts) return <ChartLoading height={height} />;
-  
-  const { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Area } = recharts;
-  
+
+  const { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Area } =
+    recharts;
+
   return (
     <ResponsiveContainer width="100%" height={height}>
       <LineChart data={data}>
         {showGrid && <CartesianGrid strokeDasharray="3 3" stroke="#374151" />}
         <XAxis dataKey={xAxisKey} tick={{ fill: '#9ca3af', fontSize: 12 }} />
         <YAxis tick={{ fill: '#9ca3af', fontSize: 12 }} />
-        <Tooltip 
-          contentStyle={{ 
+        <Tooltip
+          contentStyle={{
             backgroundColor: '#1f2937',
             border: '1px solid #374151',
-            borderRadius: '0.5rem'
+            borderRadius: '0.5rem',
           }}
         />
         {showArea && <Area type="monotone" dataKey={dataKey} fill={lineColor} fillOpacity={0.1} />}
-        <Line 
-          type="monotone" 
-          dataKey={dataKey} 
+        <Line
+          type="monotone"
+          dataKey={dataKey}
           stroke={lineColor}
           strokeWidth={2}
           dot={{ fill: lineColor }}
@@ -262,32 +263,31 @@ export default {
  */
 export function useRecharts() {
   const [recharts, setRecharts] = React.useState<typeof import('recharts') | null>(null);
-  
+
   React.useEffect(() => {
     import('recharts').then(setRecharts);
   }, []);
-  
+
   return recharts;
 }
 
 /**
  * Wrapper component that lazily loads Recharts and renders children only when loaded
  */
-export function LazyRechartsWrapper({ 
-  children, 
+export function LazyRechartsWrapper({
+  children,
   height = 200,
   fallback,
-}: { 
+}: {
   children: (recharts: typeof import('recharts')) => React.ReactNode;
   height?: number;
   fallback?: React.ReactNode;
 }) {
   const recharts = useRecharts();
-  
+
   if (!recharts) {
     return fallback || <ChartLoading height={height} />;
   }
-  
+
   return <>{children(recharts)}</>;
 }
-

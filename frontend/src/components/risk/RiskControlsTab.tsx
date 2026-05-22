@@ -81,7 +81,7 @@ function RiskControlsTab({
           {controls.map((control) => (
             <div
               key={control.id}
-              className="flex items-center justify-between p-4 bg-surface-900 rounded-lg border border-surface-700"
+              className="flex items-center justify-between p-4 bg-white rounded-lg border border-surface-200"
             >
               <div className="flex items-center gap-4">
                 <Target className="w-5 h-5 text-surface-600" />

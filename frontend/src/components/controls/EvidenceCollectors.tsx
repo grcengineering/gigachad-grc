@@ -104,7 +104,7 @@ export default function EvidenceCollectors({ controlId, implementationId }: Prop
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-surface-100">Evidence Collectors</h3>
+          <h3 className="text-lg font-semibold text-surface-900">Evidence Collectors</h3>
           <p className="text-sm text-surface-600">
             Configure API endpoints to automatically collect evidence for this control
           </p>
@@ -116,7 +116,7 @@ export default function EvidenceCollectors({ controlId, implementationId }: Prop
       </div>
       {/* Collectors List */}
       {collectors?.length === 0 ? (
-        <div className="text-center py-8 border border-dashed border-surface-700 rounded-lg">
+        <div className="text-center py-8 border border-dashed border-surface-200 rounded-lg">
           <Cog6ToothIcon className="w-10 h-10 mx-auto text-surface-600 mb-3" />
           <p className="text-surface-600 mb-3">No evidence collectors configured</p>
           <Button onClick={handleCreateNew} className="text-sm" variant="secondary">
@@ -201,17 +201,17 @@ function CollectorCard({
   const statusColor = lastStatus ? statusConfig[lastStatus]?.color : 'text-surface-600';
 
   return (
-    <div className="border border-surface-700 rounded-lg overflow-hidden">
+    <div className="border border-surface-200 rounded-lg overflow-hidden">
       {/* Header */}
       <div
-        className="flex items-center justify-between p-4 bg-surface-800/50 cursor-pointer"
+        className="flex items-center justify-between p-4 bg-white/50 cursor-pointer"
         onClick={onToggle}
       >
         <div className="flex items-center gap-3">
           <div
             className={clsx(
               'p-2 rounded-lg',
-              collector.mode === 'integration' ? 'bg-brand-500/20' : 'bg-surface-700'
+              collector.mode === 'integration' ? 'bg-brand-500/20' : 'bg-surface-200'
             )}
           >
             {collector.mode === 'integration' ? (
@@ -221,12 +221,12 @@ function CollectorCard({
             )}
           </div>
           <div>
-            <h4 className="font-medium text-surface-100">{collector.name}</h4>
+            <h4 className="font-medium text-surface-900">{collector.name}</h4>
             <div className="flex items-center gap-2 text-xs text-surface-500">
               <span className="uppercase">{collector.method}</span>
               <span>{collector.endpoint || '/'}</span>
               {collector.scheduleEnabled && (
-                <span className="px-1.5 py-0.5 bg-surface-700 rounded">
+                <span className="px-1.5 py-0.5 bg-surface-200 rounded">
                   <ClockIcon className="w-3 h-3 inline mr-1" />
                   {collector.scheduleFrequency}
                 </span>
@@ -258,7 +258,7 @@ function CollectorCard({
             <button
               onClick={onRun}
               disabled={isRunning}
-              className="p-1.5 text-surface-600 hover:text-green-600 hover:bg-surface-700 rounded transition-colors"
+              className="p-1.5 text-surface-600 hover:text-green-600 hover:bg-surface-200 rounded transition-colors"
               title="Run now"
             >
               {isRunning ? (
@@ -269,14 +269,14 @@ function CollectorCard({
             </button>
             <button
               onClick={onEdit}
-              className="p-1.5 text-surface-600 hover:text-surface-200 hover:bg-surface-700 rounded transition-colors"
+              className="p-1.5 text-surface-600 hover:text-surface-800 hover:bg-surface-200 rounded transition-colors"
               title="Edit"
             >
               <PencilIcon className="w-4 h-4" />
             </button>
             <button
               onClick={onDelete}
-              className="p-1.5 text-surface-600 hover:text-red-600 hover:bg-surface-700 rounded transition-colors"
+              className="p-1.5 text-surface-600 hover:text-red-600 hover:bg-surface-200 rounded transition-colors"
               title="Delete"
             >
               <TrashIcon className="w-4 h-4" />
@@ -294,7 +294,7 @@ function CollectorCard({
 
       {/* Expanded Content */}
       {isExpanded && (
-        <div className="p-4 border-t border-surface-700 space-y-4">
+        <div className="p-4 border-t border-surface-200 space-y-4">
           {/* Description */}
           {collector.description && (
             <p className="text-sm text-surface-600">{collector.description}</p>
@@ -329,7 +329,7 @@ function CollectorCard({
 
           {/* Schedule Info */}
           {collector.scheduleEnabled && (
-            <div className="p-3 bg-surface-800/50 rounded-lg">
+            <div className="p-3 bg-white/50 rounded-lg">
               <div className="flex items-center gap-2 text-sm">
                 <ClockIcon className="w-4 h-4 text-surface-500" />
                 <span className="text-surface-700">
@@ -355,7 +355,7 @@ function CollectorCard({
                   return (
                     <div
                       key={run.id}
-                      className="flex items-center justify-between p-2 bg-surface-800/30 rounded text-xs"
+                      className="flex items-center justify-between p-2 bg-white/30 rounded text-xs"
                     >
                       <div className="flex items-center gap-2">
                         <RunIcon className={clsx('w-4 h-4', statusConfig[runStatus]?.color)} />

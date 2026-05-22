@@ -157,27 +157,27 @@ export function KnowledgeBaseSearchPanel({
   return (
     <div
       className={clsx(
-        'bg-surface-900 border border-surface-700 rounded-xl shadow-xl overflow-hidden',
+        'bg-white border border-surface-200 rounded-xl shadow-xl overflow-hidden',
         className
       )}
     >
       {/* Header */}
-      <div className="bg-surface-800 px-4 py-3 flex items-center justify-between border-b border-surface-700">
+      <div className="bg-white px-4 py-3 flex items-center justify-between border-b border-surface-200">
         <div className="flex items-center gap-2">
           <BookOpenIcon className="w-5 h-5 text-brand-400" />
-          <h3 className="font-semibold text-surface-100">Knowledge Base</h3>
+          <h3 className="font-semibold text-surface-900">Knowledge Base</h3>
         </div>
         {onClose && (
           <button
             onClick={onClose}
-            className="p-1 text-surface-600 hover:text-surface-200 rounded transition-colors"
+            className="p-1 text-surface-600 hover:text-surface-800 rounded transition-colors"
           >
             <XMarkIcon className="w-5 h-5" />
           </button>
         )}
       </div>
       {/* Search Input */}
-      <div className="p-3 border-b border-surface-700">
+      <div className="p-3 border-b border-surface-200">
         <div className="relative">
           <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-500" />
           <Input
@@ -185,7 +185,7 @@ export function KnowledgeBaseSearchPanel({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search knowledge base..."
-            className="w-full pl-9 pr-3 py-2 bg-surface-800 border border-surface-600 rounded-lg text-surface-100 text-sm focus:outline-none focus:border-brand-500 placeholder:text-surface-500"
+            className="w-full pl-9 pr-3 py-2 bg-white border border-surface-300 rounded-lg text-surface-900 text-sm focus:outline-none focus:border-brand-500 placeholder:text-surface-500"
           />
           {loading && (
             <ArrowPathIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-600 animate-spin" />
@@ -213,8 +213,8 @@ export function KnowledgeBaseSearchPanel({
           <div
             key={entry.id}
             className={clsx(
-              'border-b border-surface-700 last:border-b-0 transition-colors',
-              selectedEntry?.id === entry.id ? 'bg-brand-500/10' : 'hover:bg-surface-800'
+              'border-b border-surface-200 last:border-b-0 transition-colors',
+              selectedEntry?.id === entry.id ? 'bg-brand-500/10' : 'hover:bg-white'
             )}
           >
             <button
@@ -224,7 +224,7 @@ export function KnowledgeBaseSearchPanel({
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm font-medium text-surface-100 truncate">
+                    <span className="text-sm font-medium text-surface-900 truncate">
                       {entry.title}
                     </span>
                     {entry.status === 'approved' && (
@@ -241,7 +241,7 @@ export function KnowledgeBaseSearchPanel({
                   )}
                   <div className="flex items-center gap-2 text-xs text-surface-500">
                     {entry.category && (
-                      <span className="px-1.5 py-0.5 bg-surface-700 rounded">{entry.category}</span>
+                      <span className="px-1.5 py-0.5 bg-surface-200 rounded">{entry.category}</span>
                     )}
                     {entry.usageCount && entry.usageCount > 0 && (
                       <span className="flex items-center gap-1">
@@ -257,8 +257,8 @@ export function KnowledgeBaseSearchPanel({
             {/* Expanded View */}
             {selectedEntry?.id === entry.id && (
               <div className="px-3 pb-3 space-y-3">
-                <div className="bg-surface-800 rounded-lg p-3 border border-surface-600">
-                  <p className="text-sm text-surface-200 whitespace-pre-wrap">
+                <div className="bg-white rounded-lg p-3 border border-surface-300">
+                  <p className="text-sm text-surface-800 whitespace-pre-wrap">
                     {entry.answer || 'No answer content'}
                   </p>
                 </div>
@@ -269,7 +269,7 @@ export function KnowledgeBaseSearchPanel({
                     {entry.tags.map((tag, idx) => (
                       <span
                         key={idx}
-                        className="px-2 py-0.5 text-xs bg-surface-700 text-surface-700 rounded"
+                        className="px-2 py-0.5 text-xs bg-surface-200 text-surface-700 rounded"
                       >
                         {tag}
                       </span>
@@ -288,7 +288,7 @@ export function KnowledgeBaseSearchPanel({
                   </button>
                   <button
                     onClick={() => handleCopyAnswer(entry)}
-                    className="px-3 py-2 bg-surface-700 hover:bg-surface-600 text-surface-200 text-sm rounded-lg transition-colors"
+                    className="px-3 py-2 bg-surface-200 hover:bg-surface-600 text-surface-800 text-sm rounded-lg transition-colors"
                     title="Copy to clipboard"
                   >
                     <DocumentDuplicateIcon className="w-4 h-4" />
@@ -300,7 +300,7 @@ export function KnowledgeBaseSearchPanel({
         ))}
       </div>
       {/* Footer hint */}
-      <div className="px-4 py-2 bg-surface-800 border-t border-surface-700">
+      <div className="px-4 py-2 bg-white border-t border-surface-200">
         <p className="text-xs text-surface-500 text-center">
           Click an entry to preview, then "Use This Answer" to apply
         </p>

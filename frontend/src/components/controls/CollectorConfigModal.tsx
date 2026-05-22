@@ -230,16 +230,16 @@ export default function CollectorConfigModal({
   return (
     <Dialog open onClose={onClose}>
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-surface-700">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-surface-200">
         <div>
-          <h2 className="text-lg font-semibold text-surface-100">
+          <h2 className="text-lg font-semibold text-surface-900">
             {isEditing ? 'Edit Evidence Collector' : 'Create Evidence Collector'}
           </h2>
           <p className="text-sm text-surface-600">
             Configure an API endpoint to automatically collect evidence
           </p>
         </div>
-        <button onClick={onClose} className="p-2 text-surface-600 hover:text-surface-200">
+        <button onClick={onClose} className="p-2 text-surface-600 hover:text-surface-800">
           <XMarkIcon className="w-5 h-5" />
         </button>
       </div>
@@ -285,8 +285,8 @@ export default function CollectorConfigModal({
         </div>
 
         {/* Mode Selection */}
-        <div className="border border-surface-700 rounded-lg p-4">
-          <h3 className="text-sm font-medium text-surface-200 mb-3">Configuration Mode</h3>
+        <div className="border border-surface-200 rounded-lg p-4">
+          <h3 className="text-sm font-medium text-surface-800 mb-3">Configuration Mode</h3>
           <div className="flex gap-4">
             <label className="flex items-center gap-2 cursor-pointer">
               <input
@@ -353,8 +353,8 @@ export default function CollectorConfigModal({
         </div>
 
         {/* Endpoint Configuration */}
-        <div className="border border-surface-700 rounded-lg p-4 space-y-4">
-          <h3 className="text-sm font-medium text-surface-200">Endpoint Configuration</h3>
+        <div className="border border-surface-200 rounded-lg p-4 space-y-4">
+          <h3 className="text-sm font-medium text-surface-800">Endpoint Configuration</h3>
 
           <div className="flex gap-4">
             <div className="w-32">
@@ -421,8 +421,8 @@ export default function CollectorConfigModal({
 
         {/* Authentication (Standalone mode only) */}
         {mode === 'standalone' && (
-          <div className="border border-surface-700 rounded-lg p-4 space-y-4">
-            <h3 className="text-sm font-medium text-surface-200">Authentication</h3>
+          <div className="border border-surface-200 rounded-lg p-4 space-y-4">
+            <h3 className="text-sm font-medium text-surface-800">Authentication</h3>
 
             <div>
               <label className="label">Auth Type</label>
@@ -561,8 +561,8 @@ export default function CollectorConfigModal({
         )}
 
         {/* Evidence Configuration */}
-        <div className="border border-surface-700 rounded-lg p-4 space-y-4">
-          <h3 className="text-sm font-medium text-surface-200">Evidence Configuration</h3>
+        <div className="border border-surface-200 rounded-lg p-4 space-y-4">
+          <h3 className="text-sm font-medium text-surface-800">Evidence Configuration</h3>
 
           <div>
             <label className="label">Evidence Title Template</label>
@@ -619,15 +619,15 @@ export default function CollectorConfigModal({
         </div>
 
         {/* Schedule */}
-        <div className="border border-surface-700 rounded-lg p-4 space-y-4">
+        <div className="border border-surface-200 rounded-lg p-4 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium text-surface-200">Schedule</h3>
+            <h3 className="text-sm font-medium text-surface-800">Schedule</h3>
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 checked={scheduleEnabled}
                 onChange={(e) => setScheduleEnabled(e.target.checked)}
-                className="rounded border-surface-600 text-brand-500 focus:ring-brand-500"
+                className="rounded border-surface-300 text-brand-500 focus:ring-brand-500"
               />
               <span className="text-sm text-surface-700">Enable scheduled collection</span>
             </label>
@@ -677,7 +677,7 @@ export default function CollectorConfigModal({
                   {testResult.message}
                 </p>
                 {testResult.data && (
-                  <pre className="mt-2 p-2 bg-surface-900/50 rounded text-xs text-surface-600 overflow-auto max-h-32">
+                  <pre className="mt-2 p-2 bg-white/50 rounded text-xs text-surface-600 overflow-auto max-h-32">
                     {JSON.stringify(testResult.data, null, 2)}
                   </pre>
                 )}
@@ -688,7 +688,7 @@ export default function CollectorConfigModal({
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between px-6 py-4 border-t border-surface-700 bg-surface-800/50">
+      <div className="flex items-center justify-between px-6 py-4 border-t border-surface-200 bg-white/50">
         <div>
           {isEditing && (
             <Button

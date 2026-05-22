@@ -290,14 +290,14 @@ export default function Dashboard() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-surface-100">Dashboard</h1>
+            <h1 className="text-2xl font-bold text-surface-900">Dashboard</h1>
             <p className="text-surface-600 mt-1">Your compliance overview at a glance</p>
           </div>
           {/* Dashboard Selector Dropdown */}
           <div className="relative">
             <Button
               onClick={() => setShowDashboardSelector(!showDashboardSelector)}
-              className="flex items-center gap-1 text-surface-600 hover:text-surface-200"
+              className="flex items-center gap-1 text-surface-600 hover:text-surface-800"
               variant="ghost"
             >
               <Squares2X2Icon className="w-4 h-4" />
@@ -310,8 +310,8 @@ export default function Dashboard() {
                   className="fixed inset-0 z-10"
                   onClick={() => setShowDashboardSelector(false)}
                 />
-                <div className="absolute left-0 mt-2 w-64 bg-surface-800 border border-surface-700 rounded-lg shadow-xl z-20">
-                  <div className="p-3 border-b border-surface-700">
+                <div className="absolute left-0 mt-2 w-64 bg-white border border-surface-200 rounded-lg shadow-xl z-20">
+                  <div className="p-3 border-b border-surface-200">
                     <p className="text-sm font-medium text-surface-700">My Dashboards</p>
                   </div>
                   <div className="max-h-64 overflow-y-auto">
@@ -325,9 +325,9 @@ export default function Dashboard() {
                             navigate(`/dashboards`);
                             setShowDashboardSelector(false);
                           }}
-                          className="w-full text-left px-3 py-2 hover:bg-surface-700 flex items-center justify-between group"
+                          className="w-full text-left px-3 py-2 hover:bg-surface-200 flex items-center justify-between group"
                         >
-                          <span className="text-sm text-surface-700 group-hover:text-surface-100">
+                          <span className="text-sm text-surface-700 group-hover:text-surface-900">
                             {dashboard.name}
                           </span>
                           {dashboard.isDefault && (
@@ -337,7 +337,7 @@ export default function Dashboard() {
                       ))
                     )}
                   </div>
-                  <div className="p-2 border-t border-surface-700">
+                  <div className="p-2 border-t border-surface-200">
                     <Link
                       to="/dashboards"
                       onClick={() => setShowDashboardSelector(false)}
@@ -366,11 +366,11 @@ export default function Dashboard() {
       </div>
       {/* Dashboard Configuration Modal */}
       <Dialog open={showConfigModal} onClose={() => setShowConfigModal(false)}>
-        <div className="flex items-center justify-between p-4 border-b border-surface-700">
-          <h3 className="text-lg font-semibold text-surface-100">Customize Dashboard</h3>
+        <div className="flex items-center justify-between p-4 border-b border-surface-200">
+          <h3 className="text-lg font-semibold text-surface-900">Customize Dashboard</h3>
           <button
             onClick={() => setShowConfigModal(false)}
-            className="text-surface-600 hover:text-surface-100 transition-colors"
+            className="text-surface-600 hover:text-surface-900 transition-colors"
           >
             <XMarkIcon className="w-5 h-5" />
           </button>
@@ -386,8 +386,8 @@ export default function Dashboard() {
               className={clsx(
                 'w-full flex items-center justify-between p-3 rounded-lg border transition-all',
                 config.widgets[widget]
-                  ? 'bg-brand-500/10 border-brand-500/30 text-surface-100'
-                  : 'bg-surface-800 border-surface-700 text-surface-600'
+                  ? 'bg-brand-500/10 border-brand-500/30 text-surface-900'
+                  : 'bg-white border-surface-200 text-surface-600'
               )}
             >
               <span className="font-medium">{WIDGET_LABELS[widget]}</span>
@@ -399,10 +399,10 @@ export default function Dashboard() {
             </button>
           ))}
         </div>
-        <div className="flex items-center justify-between p-4 border-t border-surface-700">
+        <div className="flex items-center justify-between p-4 border-t border-surface-200">
           <button
             onClick={resetConfig}
-            className="text-sm text-surface-600 hover:text-surface-100 transition-colors"
+            className="text-sm text-surface-600 hover:text-surface-900 transition-colors"
           >
             Reset to Default
           </button>
@@ -477,7 +477,7 @@ export default function Dashboard() {
           {config.widgets.frameworkReadiness && (
             <div className="card p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-surface-100">Framework Readiness</h2>
+                <h2 className="text-lg font-semibold text-surface-900">Framework Readiness</h2>
                 <Link
                   to="/frameworks"
                   className="text-sm text-brand-400 hover:text-brand-300 flex items-center gap-1"
@@ -549,7 +549,7 @@ export default function Dashboard() {
           {config.widgets.controlStatus && (
             <div className="card p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-surface-100">Control Status</h2>
+                <h2 className="text-lg font-semibold text-surface-900">Control Status</h2>
                 <Link
                   to="/controls"
                   className="text-sm text-brand-400 hover:text-brand-300 flex items-center gap-1"
@@ -610,7 +610,7 @@ export default function Dashboard() {
           {/* Vendor Risk Summary */}
           <div className="card p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-surface-100">Vendor Risk Summary</h2>
+              <h2 className="text-lg font-semibold text-surface-900">Vendor Risk Summary</h2>
               <Link
                 to="/vendors"
                 className="text-sm text-brand-400 hover:text-brand-300 flex items-center gap-1"
@@ -624,7 +624,7 @@ export default function Dashboard() {
           {/* Risk Heat Map - Always show, with empty state if no risks */}
           <div className="card p-5 flex flex-col">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-semibold text-surface-100">Risk Heat Map</h2>
+              <h2 className="text-lg font-semibold text-surface-900">Risk Heat Map</h2>
               <Link
                 to="/risks"
                 className="text-sm text-brand-400 hover:text-brand-300 flex items-center gap-1"
@@ -639,9 +639,9 @@ export default function Dashboard() {
                     <CompactRiskHeatMap risks={risksData.risks as any[]} showCounts />
                   </div>
                 </div>
-                <div className="flex items-center justify-between mt-4 pt-3 border-t border-surface-700">
+                <div className="flex items-center justify-between mt-4 pt-3 border-t border-surface-200">
                   <p className="text-sm text-surface-600">
-                    <span className="font-semibold text-surface-200">{risksData.risks.length}</span>{' '}
+                    <span className="font-semibold text-surface-800">{risksData.risks.length}</span>{' '}
                     risks tracked
                   </p>
                   <div className="flex items-center gap-3 text-xs">
@@ -666,7 +666,7 @@ export default function Dashboard() {
               </>
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center min-h-[200px] text-center">
-                <div className="w-16 h-16 rounded-full bg-surface-700 flex items-center justify-center mb-4">
+                <div className="w-16 h-16 rounded-full bg-surface-200 flex items-center justify-center mb-4">
                   <ExclamationTriangleIcon className="w-8 h-8 text-surface-500" />
                 </div>
                 <p className="text-surface-600 text-sm mb-2">No risks registered yet</p>
@@ -688,7 +688,7 @@ export default function Dashboard() {
           {config.widgets.policyLifecycle && (
             <div className="card p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-surface-100">Policy Lifecycle</h2>
+                <h2 className="text-lg font-semibold text-surface-900">Policy Lifecycle</h2>
                 <Link
                   to="/policies"
                   className="text-sm text-brand-400 hover:text-brand-300 flex items-center gap-1"
@@ -745,7 +745,7 @@ export default function Dashboard() {
           {/* Controls by Category - Top 6 */}
           {config.widgets.controlsByCategory && (
             <div className="card p-6">
-              <h2 className="text-lg font-semibold text-surface-100 mb-4">Controls by Category</h2>
+              <h2 className="text-lg font-semibold text-surface-900 mb-4">Controls by Category</h2>
               <div className="space-y-3">
                 {Object.entries(safeSummary.controls?.byCategory || {})
                   .sort(([, a], [, b]) => (b as number) - (a as number))
@@ -762,7 +762,7 @@ export default function Dashboard() {
                           </span>
                           <span className="text-sm text-surface-700">{String(count)}</span>
                         </div>
-                        <div className="w-full h-1.5 bg-surface-800 rounded-full overflow-hidden">
+                        <div className="w-full h-1.5 bg-white rounded-full overflow-hidden">
                           <div
                             className="h-full bg-brand-500 rounded-full"
                             style={{ width: `${percentage}%` }}
@@ -823,7 +823,7 @@ const StatCard = memo(function StatCard({
     <div
       className={clsx(
         'stat-card h-full',
-        linkTo && 'hover:border-surface-600 cursor-pointer transition-colors'
+        linkTo && 'hover:border-surface-300 cursor-pointer transition-colors'
       )}
     >
       <div className="flex items-start justify-between">
@@ -890,7 +890,7 @@ const VendorRiskSummary = memo(function VendorRiskSummary({ data }: VendorRiskSu
   if (stats.total === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-8 text-center">
-        <div className="w-12 h-12 rounded-full bg-surface-700 flex items-center justify-center mb-3">
+        <div className="w-12 h-12 rounded-full bg-surface-200 flex items-center justify-center mb-3">
           <ExclamationTriangleIcon className="w-6 h-6 text-surface-500" />
         </div>
         <p className="text-surface-600 text-sm">No vendors configured yet</p>
@@ -905,15 +905,15 @@ const VendorRiskSummary = memo(function VendorRiskSummary({ data }: VendorRiskSu
     <div className="space-y-4">
       {/* Summary Stats */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="text-center p-3 bg-surface-800/50 rounded-lg">
-          <p className="text-2xl font-bold text-surface-100">{stats.total}</p>
+        <div className="text-center p-3 bg-white/50 rounded-lg">
+          <p className="text-2xl font-bold text-surface-900">{stats.total}</p>
           <p className="text-xs text-surface-600">Total Vendors</p>
         </div>
-        <div className="text-center p-3 bg-surface-800/50 rounded-lg">
+        <div className="text-center p-3 bg-white/50 rounded-lg">
           <p className="text-2xl font-bold text-green-600">{stats.active}</p>
           <p className="text-xs text-surface-600">Active</p>
         </div>
-        <div className="text-center p-3 bg-surface-800/50 rounded-lg">
+        <div className="text-center p-3 bg-white/50 rounded-lg">
           <p className="text-2xl font-bold text-yellow-600">{stats.pendingReview}</p>
           <p className="text-xs text-surface-600">Pending Review</p>
         </div>
@@ -922,7 +922,7 @@ const VendorRiskSummary = memo(function VendorRiskSummary({ data }: VendorRiskSu
       {/* Criticality Breakdown */}
       <div>
         <p className="text-sm text-surface-600 mb-2">By Criticality</p>
-        <div className="flex gap-1 h-3 rounded-full overflow-hidden bg-surface-800">
+        <div className="flex gap-1 h-3 rounded-full overflow-hidden bg-white">
           {criticialityData.map(
             (item) =>
               item.count > 0 && (
@@ -955,7 +955,7 @@ const VendorRiskSummary = memo(function VendorRiskSummary({ data }: VendorRiskSu
             <Link
               key={vendor.id}
               to={`/vendors/${vendor.id}`}
-              className="flex items-center justify-between p-2 bg-surface-800/50 rounded-lg hover:bg-surface-700 transition-colors"
+              className="flex items-center justify-between p-2 bg-white/50 rounded-lg hover:bg-surface-200 transition-colors"
             >
               <div className="flex items-center gap-2">
                 <div
@@ -970,7 +970,7 @@ const VendorRiskSummary = memo(function VendorRiskSummary({ data }: VendorRiskSu
                           : 'bg-green-500'
                   )}
                 />
-                <span className="text-sm text-surface-200 truncate max-w-[180px]">
+                <span className="text-sm text-surface-800 truncate max-w-[180px]">
                   {vendor.name}
                 </span>
               </div>

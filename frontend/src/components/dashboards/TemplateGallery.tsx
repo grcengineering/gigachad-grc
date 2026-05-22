@@ -52,7 +52,7 @@ export default function TemplateGallery({ onClose, onSelectTemplate }: TemplateG
       <div className="overflow-y-auto max-h-[60vh]">
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="animate-spin w-8 h-8 border-4 border-surface-700 rounded-full border-t-brand-500" />
+            <div className="animate-spin w-8 h-8 border-4 border-surface-200 rounded-full border-t-brand-500" />
           </div>
         ) : templates?.length === 0 ? (
           <div className="text-center py-12">
@@ -66,11 +66,11 @@ export default function TemplateGallery({ onClose, onSelectTemplate }: TemplateG
             {templates?.map((template: Dashboard) => (
               <div
                 key={template.id}
-                className="bg-surface-800 border border-surface-700 rounded-lg p-4 hover:border-brand-500/50 transition-colors"
+                className="bg-white border border-surface-200 rounded-lg p-4 hover:border-brand-500/50 transition-colors"
               >
                 <div className="flex items-start justify-between mb-3">
                   <div>
-                    <h3 className="font-medium text-surface-200">{template.name}</h3>
+                    <h3 className="font-medium text-surface-800">{template.name}</h3>
                     {template.description && (
                       <p className="text-sm text-surface-600 mt-1">{template.description}</p>
                     )}
@@ -83,12 +83,12 @@ export default function TemplateGallery({ onClose, onSelectTemplate }: TemplateG
                 </div>
 
                 {/* Widget preview */}
-                <div className="bg-surface-900 rounded p-3 mb-4">
+                <div className="bg-white rounded p-3 mb-4">
                   <div className="grid grid-cols-4 gap-1 h-20">
                     {template.widgets?.slice(0, 8).map((widget, i) => (
                       <div
                         key={widget.id || i}
-                        className="bg-surface-700 rounded"
+                        className="bg-surface-200 rounded"
                         style={{
                           gridColumn: `span ${Math.min(widget.position.w, 2)}`,
                           gridRow: `span ${Math.min(widget.position.h, 1)}`,

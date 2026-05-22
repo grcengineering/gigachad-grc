@@ -147,25 +147,25 @@ export default function UserManagement() {
       </div>
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-surface-800 rounded-lg p-4 border border-surface-700">
+        <div className="bg-white rounded-lg p-4 border border-surface-200">
           <div className="text-surface-600 text-sm">Total Users</div>
           <div className="text-2xl font-bold text-white mt-1">{statsData?.total || 0}</div>
         </div>
-        <div className="bg-surface-800 rounded-lg p-4 border border-surface-700">
+        <div className="bg-white rounded-lg p-4 border border-surface-200">
           <div className="text-surface-600 text-sm">Active Users</div>
           <div className="text-2xl font-bold text-emerald-600 mt-1">{statsData?.active || 0}</div>
         </div>
-        <div className="bg-surface-800 rounded-lg p-4 border border-surface-700">
+        <div className="bg-white rounded-lg p-4 border border-surface-200">
           <div className="text-surface-600 text-sm">Inactive Users</div>
           <div className="text-2xl font-bold text-red-600 mt-1">{statsData?.inactive || 0}</div>
         </div>
-        <div className="bg-surface-800 rounded-lg p-4 border border-surface-700">
+        <div className="bg-white rounded-lg p-4 border border-surface-200">
           <div className="text-surface-600 text-sm">Permission Groups</div>
           <div className="text-2xl font-bold text-brand-400 mt-1">{groups.length}</div>
         </div>
       </div>
       {/* Filters */}
-      <div className="bg-surface-800 rounded-lg p-4 border border-surface-700">
+      <div className="bg-white rounded-lg p-4 border border-surface-200">
         <div className="flex flex-wrap gap-4">
           <div className="flex-1 min-w-64">
             <div className="relative">
@@ -175,14 +175,14 @@ export default function UserManagement() {
                 placeholder="Search users by name or email..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full bg-surface-900 border border-surface-600 rounded-lg pl-10 pr-4 py-2 text-white placeholder:text-surface-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="w-full bg-white border border-surface-300 rounded-lg pl-10 pr-4 py-2 text-white placeholder:text-surface-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
             </div>
           </div>
           <SelectNative
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-surface-900 border border-surface-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className="bg-white border border-surface-300 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
           >
             <option value="">All Statuses</option>
             <option value="active">Active</option>
@@ -191,7 +191,7 @@ export default function UserManagement() {
           <SelectNative
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="bg-surface-900 border border-surface-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className="bg-white border border-surface-300 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
           >
             <option value="">All Roles</option>
             <option value="admin">Admin</option>
@@ -202,9 +202,9 @@ export default function UserManagement() {
         </div>
       </div>
       {/* Users Table */}
-      <div className="bg-surface-800 rounded-lg border border-surface-700 overflow-hidden">
+      <div className="bg-white rounded-lg border border-surface-200 overflow-hidden">
         <table className="w-full">
-          <thead className="bg-surface-900">
+          <thead className="bg-white">
             <tr>
               <th className="text-left text-surface-600 font-medium px-4 py-3">User</th>
               <th className="text-left text-surface-600 font-medium px-4 py-3">Role</th>
@@ -214,7 +214,7 @@ export default function UserManagement() {
               <th className="text-right text-surface-600 font-medium px-4 py-3">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-surface-700">
+          <tbody className="divide-y divide-surface-200">
             {usersLoading ? (
               <tr>
                 <td colSpan={6} className="px-4 py-8 text-center text-surface-600">
@@ -229,7 +229,7 @@ export default function UserManagement() {
               </tr>
             ) : (
               users.map((user: User) => (
-                <tr key={user.id} className="hover:bg-surface-700/50">
+                <tr key={user.id} className="hover:bg-surface-200/50">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-brand-500/20 flex items-center justify-center text-brand-400 font-medium">
@@ -256,7 +256,7 @@ export default function UserManagement() {
                         user.groups.slice(0, 2).map((group) => (
                           <span
                             key={group.id}
-                            className="px-2 py-0.5 bg-surface-600 rounded text-xs text-surface-200"
+                            className="px-2 py-0.5 bg-surface-600 rounded text-xs text-surface-800"
                           >
                             {group.name}
                           </span>
@@ -286,7 +286,7 @@ export default function UserManagement() {
                           setSelectedUser(user);
                           setShowGroupsModal(true);
                         }}
-                        className="p-2 text-surface-600 hover:text-white hover:bg-surface-700 rounded-lg transition-colors"
+                        className="p-2 text-surface-600 hover:text-white hover:bg-surface-200 rounded-lg transition-colors"
                         title="Manage Groups"
                       >
                         <UserGroupIcon className="w-5 h-5" />
@@ -296,7 +296,7 @@ export default function UserManagement() {
                           setSelectedUser(user);
                           setShowPermissionsModal(true);
                         }}
-                        className="p-2 text-surface-600 hover:text-white hover:bg-surface-700 rounded-lg transition-colors"
+                        className="p-2 text-surface-600 hover:text-white hover:bg-surface-200 rounded-lg transition-colors"
                         title="View Permissions"
                       >
                         <ShieldCheckIcon className="w-5 h-5" />
@@ -304,7 +304,7 @@ export default function UserManagement() {
                       {user.status === 'active' ? (
                         <button
                           onClick={() => deactivateMutation.mutate(user.id)}
-                          className="p-2 text-surface-600 hover:text-red-600 hover:bg-surface-700 rounded-lg transition-colors"
+                          className="p-2 text-surface-600 hover:text-red-600 hover:bg-surface-200 rounded-lg transition-colors"
                           title="Deactivate User"
                         >
                           <NoSymbolIcon className="w-5 h-5" />
@@ -312,7 +312,7 @@ export default function UserManagement() {
                       ) : (
                         <button
                           onClick={() => reactivateMutation.mutate(user.id)}
-                          className="p-2 text-surface-600 hover:text-emerald-600 hover:bg-surface-700 rounded-lg transition-colors"
+                          className="p-2 text-surface-600 hover:text-emerald-600 hover:bg-surface-200 rounded-lg transition-colors"
                           title="Reactivate User"
                         >
                           <CheckIcon className="w-5 h-5" />
@@ -335,7 +335,7 @@ export default function UserManagement() {
             setSelectedUser(null);
           }}
         >
-          <div className="p-4 border-b border-surface-700 flex items-center justify-between">
+          <div className="p-4 border-b border-surface-200 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-white">
               Manage Groups - {selectedUser.displayName}
             </h2>
@@ -362,7 +362,7 @@ export default function UserManagement() {
                     className={`p-3 rounded-lg border cursor-pointer transition-colors ${
                       isMember
                         ? 'bg-brand-500/20 border-brand-500'
-                        : 'bg-surface-700 border-surface-600 hover:border-surface-500'
+                        : 'bg-surface-200 border-surface-300 hover:border-surface-500'
                     }`}
                     onClick={() => {
                       if (isMember) {
@@ -432,7 +432,7 @@ function PermissionsModal({ user, onClose }: { user: User; onClose: () => void }
 
   return (
     <Dialog open onClose={onClose}>
-      <div className="p-4 border-b border-surface-700 flex items-center justify-between">
+      <div className="p-4 border-b border-surface-200 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-white">Permissions - {user.displayName}</h2>
         <button onClick={onClose} className="p-1 text-surface-600 hover:text-white">
           <XMarkIcon className="w-5 h-5" />
@@ -453,7 +453,7 @@ function PermissionsModal({ user, onClose }: { user: User; onClose: () => void }
                   permissionsData?.groups?.map((group: any) => (
                     <span
                       key={group.id}
-                      className="px-3 py-1 bg-surface-700 rounded-full text-sm text-white"
+                      className="px-3 py-1 bg-surface-200 rounded-full text-sm text-white"
                     >
                       {group.name}
                     </span>
@@ -470,7 +470,7 @@ function PermissionsModal({ user, onClose }: { user: User; onClose: () => void }
                   <span className="text-surface-500">No permissions</span>
                 ) : (
                   permissionsData?.effectivePermissions?.map((perm: any, idx: number) => (
-                    <div key={idx} className="bg-surface-700 rounded-lg p-3">
+                    <div key={idx} className="bg-surface-200 rounded-lg p-3">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-white font-medium capitalize">
                           {perm.resource.replace('_', ' ')}
@@ -489,7 +489,7 @@ function PermissionsModal({ user, onClose }: { user: User; onClose: () => void }
                         {perm.actions.map((action: string) => (
                           <span
                             key={action}
-                            className="px-2 py-0.5 bg-surface-600 rounded text-xs text-surface-200"
+                            className="px-2 py-0.5 bg-surface-600 rounded text-xs text-surface-800"
                           >
                             {action}
                           </span>
@@ -517,7 +517,7 @@ function PermissionsModal({ user, onClose }: { user: User; onClose: () => void }
                   {permissionsData?.overrides?.map((override: any, idx: number) => (
                     <div
                       key={idx}
-                      className="flex items-center justify-between bg-surface-700 rounded px-3 py-2"
+                      className="flex items-center justify-between bg-surface-200 rounded px-3 py-2"
                     >
                       <span className="text-white">{override.permission}</span>
                       <span

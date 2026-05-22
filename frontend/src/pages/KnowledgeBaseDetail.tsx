@@ -162,11 +162,11 @@ export default function KnowledgeBaseDetail() {
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate('/knowledge-base')}
-            className="p-2 text-surface-600 hover:text-surface-100 hover:bg-surface-800 rounded-lg transition-colors"
+            className="p-2 text-surface-600 hover:text-surface-900 hover:bg-white rounded-lg transition-colors"
           >
             <ArrowLeftIcon className="w-5 h-5" />
           </button>
-          <h1 className="text-3xl font-bold text-surface-100">
+          <h1 className="text-3xl font-bold text-surface-900">
             {id === 'new'
               ? 'New Knowledge Base Entry'
               : editing
@@ -194,7 +194,7 @@ export default function KnowledgeBaseDetail() {
         )}
       </div>
       {editing ? (
-        <div className="bg-surface-900 border border-surface-800 rounded-lg p-6 space-y-6">
+        <div className="bg-white border border-surface-200 rounded-lg p-6 space-y-6">
           <div>
             <label className="block text-sm font-medium text-surface-600 mb-1">
               Title <span className="text-red-600">*</span>
@@ -203,7 +203,7 @@ export default function KnowledgeBaseDetail() {
               type="text"
               value={formData.title}
               onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
-              className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
               placeholder="e.g., Data Encryption at Rest"
             />
           </div>
@@ -215,7 +215,7 @@ export default function KnowledgeBaseDetail() {
               <SelectNative
                 value={formData.category}
                 onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value }))}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
               >
                 {CATEGORIES.map((cat) => (
                   <option key={cat} value={cat}>
@@ -230,7 +230,7 @@ export default function KnowledgeBaseDetail() {
                 type="text"
                 value={formData.framework || ''}
                 onChange={(e) => setFormData((prev) => ({ ...prev, framework: e.target.value }))}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
                 placeholder="e.g., SOC2, ISO 27001"
               />
             </div>
@@ -241,7 +241,7 @@ export default function KnowledgeBaseDetail() {
               type="text"
               value={formData.question || ''}
               onChange={(e) => setFormData((prev) => ({ ...prev, question: e.target.value }))}
-              className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
               placeholder="e.g., Does your platform encrypt data at rest?"
             />
           </div>
@@ -253,7 +253,7 @@ export default function KnowledgeBaseDetail() {
               value={formData.answer}
               onChange={(e) => setFormData((prev) => ({ ...prev, answer: e.target.value }))}
               rows={6}
-              className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
               placeholder="Provide a detailed answer..."
             />
           </div>
@@ -270,7 +270,7 @@ export default function KnowledgeBaseDetail() {
                     handleAddTag();
                   }
                 }}
-                className="flex-1 px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+                className="flex-1 px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
                 placeholder="Add a tag and press Enter"
               />
               <button
@@ -286,7 +286,7 @@ export default function KnowledgeBaseDetail() {
                 {formData.tags.map((tag, index) => (
                   <span
                     key={index}
-                    className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-surface-700 text-surface-700 rounded"
+                    className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-surface-200 text-surface-700 rounded"
                   >
                     {tag}
                     <button
@@ -307,7 +307,7 @@ export default function KnowledgeBaseDetail() {
               <SelectNative
                 value={formData.status}
                 onChange={(e) => setFormData((prev) => ({ ...prev, status: e.target.value }))}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
               >
                 {STATUSES.map((status) => (
                   <option key={status} value={status}>
@@ -322,13 +322,13 @@ export default function KnowledgeBaseDetail() {
                   type="checkbox"
                   checked={formData.isPublic}
                   onChange={(e) => setFormData((prev) => ({ ...prev, isPublic: e.target.checked }))}
-                  className="w-4 h-4 rounded border-surface-700 bg-surface-800 text-brand-600 focus:ring-brand-500"
+                  className="w-4 h-4 rounded border-surface-200 bg-white text-brand-600 focus:ring-brand-500"
                 />
                 <span className="text-sm text-surface-700">Make publicly visible</span>
               </label>
             </div>
           </div>
-          <div className="flex justify-end gap-2 pt-4 border-t border-surface-800">
+          <div className="flex justify-end gap-2 pt-4 border-t border-surface-200">
             <Button
               variant="secondary"
               onClick={() => {
@@ -352,13 +352,13 @@ export default function KnowledgeBaseDetail() {
           </div>
         </div>
       ) : entry ? (
-        <div className="bg-surface-900 border border-surface-800 rounded-lg p-6 space-y-6">
+        <div className="bg-white border border-surface-200 rounded-lg p-6 space-y-6">
           <div className="flex items-center gap-2">
-            <span className="px-2 py-1 text-xs bg-surface-700 text-surface-700 rounded capitalize">
+            <span className="px-2 py-1 text-xs bg-surface-200 text-surface-700 rounded capitalize">
               {entry.category}
             </span>
             {entry.framework && (
-              <span className="px-2 py-1 text-xs bg-surface-700 text-surface-700 rounded">
+              <span className="px-2 py-1 text-xs bg-surface-200 text-surface-700 rounded">
                 {typeof entry.framework === 'string' ? entry.framework : entry.framework.name}
               </span>
             )}
@@ -371,7 +371,7 @@ export default function KnowledgeBaseDetail() {
               <span className="px-2 py-1 text-xs bg-blue-500/20 text-blue-600 rounded">Public</span>
             )}
             {entry.usageCount !== undefined && (
-              <span className="px-2 py-1 text-xs bg-surface-700 text-surface-600 rounded">
+              <span className="px-2 py-1 text-xs bg-surface-200 text-surface-600 rounded">
                 Used {entry.usageCount} times
               </span>
             )}
@@ -379,12 +379,12 @@ export default function KnowledgeBaseDetail() {
           {entry.question && (
             <div>
               <h3 className="text-sm font-medium text-surface-600 mb-2">Question</h3>
-              <p className="text-surface-100">{entry.question}</p>
+              <p className="text-surface-900">{entry.question}</p>
             </div>
           )}
           <div>
             <h3 className="text-sm font-medium text-surface-600 mb-2">Answer</h3>
-            <div className="text-surface-100 whitespace-pre-wrap">{entry.answer}</div>
+            <div className="text-surface-900 whitespace-pre-wrap">{entry.answer}</div>
           </div>
           {entry.tags && entry.tags.length > 0 && (
             <div>
@@ -393,7 +393,7 @@ export default function KnowledgeBaseDetail() {
                 {entry.tags.map((tag: string, index: number) => (
                   <span
                     key={index}
-                    className="px-2 py-1 text-xs bg-surface-700 text-surface-700 rounded"
+                    className="px-2 py-1 text-xs bg-surface-200 text-surface-700 rounded"
                   >
                     {tag}
                   </span>
@@ -404,7 +404,7 @@ export default function KnowledgeBaseDetail() {
         </div>
       ) : null}
       <Dialog open={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)}>
-        <h3 className="text-lg font-semibold text-surface-100 mb-2">Delete Knowledge Base Entry</h3>
+        <h3 className="text-lg font-semibold text-surface-900 mb-2">Delete Knowledge Base Entry</h3>
         <p className="text-surface-600 mb-6">
           Are you sure you want to delete "{entry?.title}"? This action cannot be undone.
         </p>

@@ -290,7 +290,7 @@ export default function TrainingAdmin() {
       )}
 
       {/* Tabs */}
-      <div className="border-b border-gray-200 dark:border-surface-700">
+      <div className="border-b border-gray-200 dark:border-surface-200">
         <nav className="flex gap-6">
           {tabs.map((tab) => (
             <button
@@ -393,7 +393,7 @@ function StatCard({
   };
 
   return (
-    <div className="bg-white dark:bg-surface-800 rounded-xl border border-gray-200 dark:border-surface-700 p-4">
+    <div className="bg-white dark:bg-white rounded-xl border border-gray-200 dark:border-surface-200 p-4">
       <div className="flex items-center gap-3">
         <div className={`p-2 rounded-lg ${colorClasses[color]}`}>
           <Icon className="w-5 h-5" />
@@ -467,7 +467,7 @@ function CampaignsTab({
       </div>
 
       {campaigns.length === 0 ? (
-        <div className="text-center py-12 bg-white dark:bg-surface-800 rounded-xl border border-gray-200 dark:border-surface-700">
+        <div className="text-center py-12 bg-white dark:bg-white rounded-xl border border-gray-200 dark:border-surface-200">
           <PlayIcon className="w-12 h-12 mx-auto text-gray-400 dark:text-surface-500" />
           <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-white">
             No campaigns yet
@@ -481,7 +481,7 @@ function CampaignsTab({
           {campaigns.map((campaign) => (
             <div
               key={campaign.id}
-              className="bg-white dark:bg-surface-800 rounded-xl border border-gray-200 dark:border-surface-700 p-5"
+              className="bg-white dark:bg-white rounded-xl border border-gray-200 dark:border-surface-200 p-5"
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1">
@@ -628,7 +628,7 @@ function ModulesTab({
         </div>
 
         {!allModules?.custom || allModules.custom.length === 0 ? (
-          <div className="text-center py-8 bg-white dark:bg-surface-800 rounded-xl border border-gray-200 dark:border-surface-700">
+          <div className="text-center py-8 bg-white dark:bg-white rounded-xl border border-gray-200 dark:border-surface-200">
             <DocumentArrowUpIcon className="w-10 h-10 mx-auto text-gray-400 dark:text-surface-500" />
             <p className="mt-3 text-gray-500 dark:text-surface-600">
               No custom modules yet. Click "Upload SCORM Package" to create custom training.
@@ -646,7 +646,7 @@ function ModulesTab({
             {allModules.custom.map((module) => (
               <div
                 key={module.id}
-                className="bg-white dark:bg-surface-800 rounded-xl border border-gray-200 dark:border-surface-700 p-4 hover:border-brand-500 hover:shadow-md transition-all"
+                className="bg-white dark:bg-white rounded-xl border border-gray-200 dark:border-surface-200 p-4 hover:border-brand-500 hover:shadow-md transition-all"
               >
                 <div
                   className="cursor-pointer"
@@ -682,7 +682,7 @@ function ModulesTab({
                   </div>
 
                   <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-surface-600 mb-3">
-                    <span className="px-2 py-0.5 bg-gray-100 dark:bg-surface-700 rounded">
+                    <span className="px-2 py-0.5 bg-gray-100 dark:bg-surface-200 rounded">
                       {module.category}
                     </span>
                     <span>{module.duration} min</span>
@@ -767,14 +767,14 @@ function ModulesTab({
                     isBuiltIn: true,
                   })
                 }
-                className="bg-white dark:bg-surface-800 rounded-xl border border-gray-200 dark:border-surface-700 p-4 cursor-pointer hover:border-brand-500 hover:shadow-md transition-all"
+                className="bg-white dark:bg-white rounded-xl border border-gray-200 dark:border-surface-200 p-4 cursor-pointer hover:border-brand-500 hover:shadow-md transition-all"
               >
                 <h4 className="font-medium text-gray-900 dark:text-white">{module.name}</h4>
                 <p className="text-sm text-gray-500 dark:text-surface-600 mt-1 line-clamp-2">
                   {details?.description || 'Click to view details'}
                 </p>
                 <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-surface-600 mt-3">
-                  <span className="px-2 py-0.5 bg-gray-100 dark:bg-surface-700 rounded">
+                  <span className="px-2 py-0.5 bg-gray-100 dark:bg-surface-200 rounded">
                     {module.category}
                   </span>
                   <span>{module.duration} min</span>
@@ -806,7 +806,7 @@ function StatsTab({ orgStats }: { orgStats: any }) {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white dark:bg-surface-800 rounded-xl border border-gray-200 dark:border-surface-700 p-6">
+      <div className="bg-white dark:bg-white rounded-xl border border-gray-200 dark:border-surface-200 p-6">
         <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
           Organization Training Statistics
         </h3>
@@ -944,14 +944,14 @@ function CampaignModal({
 
   return (
     <Dialog open onClose={onClose}>
-      <div className="p-6 border-b border-gray-200 dark:border-surface-700">
+      <div className="p-6 border-b border-gray-200 dark:border-surface-200">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
             {campaign ? 'Edit Campaign' : 'Create Campaign'}
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 dark:text-surface-600 dark:hover:text-surface-200"
+            className="text-gray-500 hover:text-gray-700 dark:text-surface-600 dark:hover:text-surface-800"
           >
             <XMarkIcon className="w-6 h-6" />
           </button>
@@ -968,7 +968,7 @@ function CampaignModal({
             type="text"
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-surface-300 rounded-lg bg-white dark:bg-surface-200 text-gray-900 dark:text-white"
             required
           />
         </div>
@@ -982,7 +982,7 @@ function CampaignModal({
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             rows={3}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-surface-300 rounded-lg bg-white dark:bg-surface-200 text-gray-900 dark:text-white"
           />
         </div>
 
@@ -991,7 +991,7 @@ function CampaignModal({
           <label className="block text-sm font-medium text-gray-700 dark:text-surface-700 mb-2">
             Select Modules
           </label>
-          <div className="grid gap-2 max-h-48 overflow-y-auto border border-gray-200 dark:border-surface-600 rounded-lg p-3">
+          <div className="grid gap-2 max-h-48 overflow-y-auto border border-gray-200 dark:border-surface-300 rounded-lg p-3">
             {allModulesList.map((module) => (
               <label key={module.id} className="flex items-center gap-3 cursor-pointer">
                 <input
@@ -1015,7 +1015,7 @@ function CampaignModal({
             Target Roles
           </label>
           <div className="flex flex-wrap gap-2">
-            <label className="flex items-center gap-2 cursor-pointer px-3 py-2 border border-gray-200 dark:border-surface-600 rounded-lg">
+            <label className="flex items-center gap-2 cursor-pointer px-3 py-2 border border-gray-200 dark:border-surface-300 rounded-lg">
               <input
                 type="checkbox"
                 checked={formData.targetGroups.includes('all')}
@@ -1027,7 +1027,7 @@ function CampaignModal({
             {ROLES.map((role) => (
               <label
                 key={role.id}
-                className="flex items-center gap-2 cursor-pointer px-3 py-2 border border-gray-200 dark:border-surface-600 rounded-lg"
+                className="flex items-center gap-2 cursor-pointer px-3 py-2 border border-gray-200 dark:border-surface-300 rounded-lg"
               >
                 <input
                   type="checkbox"
@@ -1052,7 +1052,7 @@ function CampaignModal({
               type="date"
               value={formData.startDate}
               onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-surface-300 rounded-lg bg-white dark:bg-surface-200 text-gray-900 dark:text-white"
               required
             />
           </div>
@@ -1064,7 +1064,7 @@ function CampaignModal({
               type="date"
               value={formData.endDate}
               onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-surface-300 rounded-lg bg-white dark:bg-surface-200 text-gray-900 dark:text-white"
             />
           </div>
         </div>
@@ -1081,7 +1081,7 @@ function CampaignModal({
         </label>
 
         {/* Actions */}
-        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-surface-700">
+        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-surface-200">
           <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>
@@ -1141,14 +1141,14 @@ function ModuleModal({ module, onClose }: { module: CustomModule | null; onClose
 
   return (
     <Dialog open onClose={onClose}>
-      <div className="p-6 border-b border-gray-200 dark:border-surface-700">
+      <div className="p-6 border-b border-gray-200 dark:border-surface-200">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
             {module ? 'Edit Module' : 'Create Module'}
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 dark:text-surface-600 dark:hover:text-surface-200"
+            className="text-gray-500 hover:text-gray-700 dark:text-surface-600 dark:hover:text-surface-800"
           >
             <XMarkIcon className="w-6 h-6" />
           </button>
@@ -1165,7 +1165,7 @@ function ModuleModal({ module, onClose }: { module: CustomModule | null; onClose
             type="text"
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-surface-300 rounded-lg bg-white dark:bg-surface-200 text-gray-900 dark:text-white"
             required
           />
         </div>
@@ -1179,7 +1179,7 @@ function ModuleModal({ module, onClose }: { module: CustomModule | null; onClose
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             rows={3}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-surface-300 rounded-lg bg-white dark:bg-surface-200 text-gray-900 dark:text-white"
           />
         </div>
 
@@ -1192,7 +1192,7 @@ function ModuleModal({ module, onClose }: { module: CustomModule | null; onClose
             <SelectNative
               value={formData.category}
               onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-surface-300 rounded-lg bg-white dark:bg-surface-200 text-gray-900 dark:text-white"
             >
               {CATEGORIES.map((cat) => (
                 <option key={cat.id} value={cat.id}>
@@ -1208,7 +1208,7 @@ function ModuleModal({ module, onClose }: { module: CustomModule | null; onClose
             <SelectNative
               value={formData.difficulty}
               onChange={(e) => setFormData({ ...formData, difficulty: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-surface-300 rounded-lg bg-white dark:bg-surface-200 text-gray-900 dark:text-white"
             >
               {DIFFICULTIES.map((diff) => (
                 <option key={diff.id} value={diff.id}>
@@ -1229,7 +1229,7 @@ function ModuleModal({ module, onClose }: { module: CustomModule | null; onClose
             value={formData.duration}
             onChange={(e) => setFormData({ ...formData, duration: parseInt(e.target.value) || 30 })}
             min={1}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-surface-300 rounded-lg bg-white dark:bg-surface-200 text-gray-900 dark:text-white"
           />
         </div>
 
@@ -1245,7 +1245,7 @@ function ModuleModal({ module, onClose }: { module: CustomModule | null; onClose
         </label>
 
         {/* Actions */}
-        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-surface-700">
+        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-surface-200">
           <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>
@@ -1296,14 +1296,14 @@ function UploadScormModal({ moduleId, onClose }: { moduleId: string; onClose: ()
 
   return (
     <Dialog open onClose={onClose}>
-      <div className="p-6 border-b border-gray-200 dark:border-surface-700">
+      <div className="p-6 border-b border-gray-200 dark:border-surface-200">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
             Upload SCORM Package
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 dark:text-surface-600 dark:hover:text-surface-200"
+            className="text-gray-500 hover:text-gray-700 dark:text-surface-600 dark:hover:text-surface-800"
           >
             <XMarkIcon className="w-6 h-6" />
           </button>
@@ -1323,7 +1323,7 @@ function UploadScormModal({ moduleId, onClose }: { moduleId: string; onClose: ()
           className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
             isDragging
               ? 'border-brand-500 bg-brand-500/5'
-              : 'border-gray-300 dark:border-surface-600 hover:border-brand-500'
+              : 'border-gray-300 dark:border-surface-300 hover:border-brand-500'
           }`}
         >
           <ArrowUpTrayIcon className="w-10 h-10 mx-auto text-gray-400 dark:text-surface-500" />
@@ -1341,7 +1341,7 @@ function UploadScormModal({ moduleId, onClose }: { moduleId: string; onClose: ()
 
         {/* Selected File */}
         {file && (
-          <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-surface-700 rounded-lg">
+          <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-surface-200 rounded-lg">
             <FolderIcon className="w-5 h-5 text-brand-500" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
@@ -1358,7 +1358,7 @@ function UploadScormModal({ moduleId, onClose }: { moduleId: string; onClose: ()
         )}
 
         {/* Actions */}
-        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-surface-700">
+        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-surface-200">
           <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>
@@ -1397,7 +1397,7 @@ function ModuleDetailModal({
 
   return (
     <Dialog open onClose={onClose}>
-      <div className="p-6 border-b border-gray-200 dark:border-surface-700">
+      <div className="p-6 border-b border-gray-200 dark:border-surface-200">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div
@@ -1416,7 +1416,7 @@ function ModuleDetailModal({
           </div>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 dark:text-surface-600 dark:hover:text-surface-200"
+            className="text-gray-500 hover:text-gray-700 dark:text-surface-600 dark:hover:text-surface-800"
           >
             <XMarkIcon className="w-6 h-6" />
           </button>
@@ -1426,13 +1426,13 @@ function ModuleDetailModal({
       <div className="p-6 space-y-5">
         {/* Module Info */}
         <div className="flex flex-wrap gap-3">
-          <span className="px-3 py-1 bg-gray-100 dark:bg-surface-700 rounded-full text-sm text-gray-700 dark:text-surface-700">
+          <span className="px-3 py-1 bg-gray-100 dark:bg-surface-200 rounded-full text-sm text-gray-700 dark:text-surface-700">
             {categoryLabel}
           </span>
-          <span className="px-3 py-1 bg-gray-100 dark:bg-surface-700 rounded-full text-sm text-gray-700 dark:text-surface-700">
+          <span className="px-3 py-1 bg-gray-100 dark:bg-surface-200 rounded-full text-sm text-gray-700 dark:text-surface-700">
             {module.duration} minutes
           </span>
-          <span className="px-3 py-1 bg-gray-100 dark:bg-surface-700 rounded-full text-sm text-gray-700 dark:text-surface-700 capitalize">
+          <span className="px-3 py-1 bg-gray-100 dark:bg-surface-200 rounded-full text-sm text-gray-700 dark:text-surface-700 capitalize">
             {difficultyLabel}
           </span>
         </div>
@@ -1465,7 +1465,7 @@ function ModuleDetailModal({
         )}
 
         {/* Close Button */}
-        <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-surface-700">
+        <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-surface-200">
           <Button onClick={onClose}>Close</Button>
         </div>
       </div>
@@ -1545,7 +1545,7 @@ function UploadNewScormModal({ onClose }: { onClose: () => void }) {
 
   return (
     <Dialog open onClose={onClose}>
-      <div className="p-6 border-b border-gray-200 dark:border-surface-700">
+      <div className="p-6 border-b border-gray-200 dark:border-surface-200">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
@@ -1559,7 +1559,7 @@ function UploadNewScormModal({ onClose }: { onClose: () => void }) {
           </div>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 dark:text-surface-600 dark:hover:text-surface-200"
+            className="text-gray-500 hover:text-gray-700 dark:text-surface-600 dark:hover:text-surface-800"
           >
             <XMarkIcon className="w-6 h-6" />
           </button>
@@ -1580,7 +1580,7 @@ function UploadNewScormModal({ onClose }: { onClose: () => void }) {
             className={`border-2 border-dashed rounded-lg p-12 text-center cursor-pointer transition-colors ${
               isDragging
                 ? 'border-brand-500 bg-brand-500/5'
-                : 'border-gray-300 dark:border-surface-600 hover:border-brand-500'
+                : 'border-gray-300 dark:border-surface-300 hover:border-brand-500'
             }`}
           >
             <ArrowUpTrayIcon className="w-12 h-12 mx-auto text-gray-400 dark:text-surface-500" />
@@ -1599,7 +1599,7 @@ function UploadNewScormModal({ onClose }: { onClose: () => void }) {
             />
           </div>
 
-          <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-surface-700">
+          <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-surface-200">
             <Button variant="secondary" onClick={onClose}>
               Cancel
             </Button>
@@ -1639,7 +1639,7 @@ function UploadNewScormModal({ onClose }: { onClose: () => void }) {
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-surface-300 rounded-lg bg-white dark:bg-surface-200 text-gray-900 dark:text-white"
               required
             />
           </div>
@@ -1654,7 +1654,7 @@ function UploadNewScormModal({ onClose }: { onClose: () => void }) {
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={3}
               placeholder="Describe what this training module covers..."
-              className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-surface-300 rounded-lg bg-white dark:bg-surface-200 text-gray-900 dark:text-white"
             />
           </div>
 
@@ -1667,7 +1667,7 @@ function UploadNewScormModal({ onClose }: { onClose: () => void }) {
               <SelectNative
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-surface-300 rounded-lg bg-white dark:bg-surface-200 text-gray-900 dark:text-white"
               >
                 {CATEGORIES.map((cat) => (
                   <option key={cat.id} value={cat.id}>
@@ -1683,7 +1683,7 @@ function UploadNewScormModal({ onClose }: { onClose: () => void }) {
               <SelectNative
                 value={formData.difficulty}
                 onChange={(e) => setFormData({ ...formData, difficulty: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-surface-300 rounded-lg bg-white dark:bg-surface-200 text-gray-900 dark:text-white"
               >
                 {DIFFICULTIES.map((diff) => (
                   <option key={diff.id} value={diff.id}>
@@ -1706,7 +1706,7 @@ function UploadNewScormModal({ onClose }: { onClose: () => void }) {
                 setFormData({ ...formData, duration: parseInt(e.target.value) || 30 })
               }
               min={1}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-surface-300 rounded-lg bg-white dark:bg-surface-200 text-gray-900 dark:text-white"
             />
           </div>
 
@@ -1724,7 +1724,7 @@ function UploadNewScormModal({ onClose }: { onClose: () => void }) {
           </label>
 
           {/* Actions */}
-          <div className="flex justify-between gap-3 pt-4 border-t border-gray-200 dark:border-surface-700">
+          <div className="flex justify-between gap-3 pt-4 border-t border-gray-200 dark:border-surface-200">
             <Button
               type="button"
               variant="ghost"

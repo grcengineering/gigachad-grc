@@ -234,22 +234,22 @@ export function AdvancedFilters({ fields, onApply, storageKey, className }: Adva
       {isOpen && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-          <div className="absolute right-0 mt-2 w-[480px] bg-surface-800 border border-surface-700 rounded-xl shadow-xl z-50 overflow-hidden">
+          <div className="absolute right-0 mt-2 w-[480px] bg-white border border-surface-200 rounded-xl shadow-xl z-50 overflow-hidden">
             {/* Header */}
-            <div className="p-4 border-b border-surface-700 flex items-center justify-between">
+            <div className="p-4 border-b border-surface-200 flex items-center justify-between">
               <h3 className="font-medium text-white">Advanced Filters</h3>
               <div className="flex items-center gap-2">
                 {conditions.length > 0 && (
                   <button
                     onClick={clearAll}
-                    className="text-sm text-surface-600 hover:text-surface-200"
+                    className="text-sm text-surface-600 hover:text-surface-800"
                   >
                     Clear all
                   </button>
                 )}
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="p-1 hover:bg-surface-700 rounded"
+                  className="p-1 hover:bg-surface-200 rounded"
                 >
                   <XMarkIcon className="w-5 h-5 text-surface-600" />
                 </button>
@@ -258,7 +258,7 @@ export function AdvancedFilters({ fields, onApply, storageKey, className }: Adva
 
             {/* Presets */}
             {presets.length > 0 && (
-              <div className="p-3 border-b border-surface-700 bg-surface-800/50">
+              <div className="p-3 border-b border-surface-200 bg-white/50">
                 <p className="text-xs text-surface-500 mb-2">Saved Filters</p>
                 <div className="flex flex-wrap gap-2">
                   {presets.map((preset) => (
@@ -268,7 +268,7 @@ export function AdvancedFilters({ fields, onApply, storageKey, className }: Adva
                         'group flex items-center gap-1 px-2 py-1 rounded-lg text-sm cursor-pointer',
                         activePresetId === preset.id
                           ? 'bg-brand-500/20 text-brand-400'
-                          : 'bg-surface-700 text-surface-700 hover:bg-surface-600'
+                          : 'bg-surface-200 text-surface-700 hover:bg-surface-600'
                       )}
                       onClick={() => loadPreset(preset)}
                     >
@@ -313,7 +313,7 @@ export function AdvancedFilters({ fields, onApply, storageKey, className }: Adva
 
               <button
                 onClick={addCondition}
-                className="flex items-center gap-2 px-3 py-2 text-sm text-brand-400 hover:text-brand-300 hover:bg-surface-700 rounded-lg w-full"
+                className="flex items-center gap-2 px-3 py-2 text-sm text-brand-400 hover:text-brand-300 hover:bg-surface-200 rounded-lg w-full"
               >
                 <PlusIcon className="w-4 h-4" />
                 Add Filter
@@ -321,7 +321,7 @@ export function AdvancedFilters({ fields, onApply, storageKey, className }: Adva
             </div>
 
             {/* Footer */}
-            <div className="p-4 border-t border-surface-700 flex items-center justify-between">
+            <div className="p-4 border-t border-surface-200 flex items-center justify-between">
               {showSavePreset ? (
                 <div className="flex items-center gap-2 flex-1">
                   <Input
@@ -329,7 +329,7 @@ export function AdvancedFilters({ fields, onApply, storageKey, className }: Adva
                     value={presetName}
                     onChange={(e) => setPresetName(e.target.value)}
                     placeholder="Filter name..."
-                    className="flex-1 px-3 py-1.5 bg-surface-700 border border-surface-600 rounded-lg text-sm text-white placeholder-surface-500"
+                    className="flex-1 px-3 py-1.5 bg-surface-200 border border-surface-300 rounded-lg text-sm text-white placeholder-surface-500"
                     autoFocus
                     onKeyDown={(e) => e.key === 'Enter' && savePreset()}
                   />
@@ -411,7 +411,7 @@ function FilterConditionRow({
         <SelectNative
           value={condition.field}
           onChange={(e) => handleFieldChange(e.target.value)}
-          className="flex-1 px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-sm text-white"
+          className="flex-1 px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-sm text-white"
         >
           {fields.map((f) => (
             <option key={f.key} value={f.key}>
@@ -424,7 +424,7 @@ function FilterConditionRow({
         <SelectNative
           value={condition.operator}
           onChange={(e) => onUpdate({ operator: e.target.value as FilterOperator, value: '' })}
-          className="w-36 px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-sm text-white"
+          className="w-36 px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-sm text-white"
         >
           {operators.map((op) => (
             <option key={op.value} value={op.value}>
@@ -446,7 +446,7 @@ function FilterConditionRow({
         {/* Remove Button */}
         <button
           onClick={onRemove}
-          className="p-2 hover:bg-surface-700 rounded-lg text-surface-600 hover:text-red-600"
+          className="p-2 hover:bg-surface-200 rounded-lg text-surface-600 hover:text-red-600"
         >
           <TrashIcon className="w-4 h-4" />
         </button>
@@ -475,7 +475,7 @@ function ValueInput({ field, operator, value, onChange }: ValueInputProps) {
       <SelectNative
         value={String(value || '')}
         onChange={(e) => onChange(e.target.value === 'true')}
-        className="flex-1 px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-sm text-white"
+        className="flex-1 px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-sm text-white"
       >
         <option value="">Select...</option>
         <option value="true">Yes</option>
@@ -491,7 +491,7 @@ function ValueInput({ field, operator, value, onChange }: ValueInputProps) {
       const selectedValues = Array.isArray(value) ? value : [];
       return (
         <div className="flex-1">
-          <div className="flex flex-wrap gap-1 p-2 bg-surface-700 border border-surface-600 rounded-lg min-h-[38px]">
+          <div className="flex flex-wrap gap-1 p-2 bg-surface-200 border border-surface-300 rounded-lg min-h-[38px]">
             {selectedValues.map((v) => {
               const opt = field.options?.find((o) => o.value === v);
               return (
@@ -536,7 +536,7 @@ function ValueInput({ field, operator, value, onChange }: ValueInputProps) {
         <SelectNative
           value={String(value || '')}
           onChange={(e) => onChange(e.target.value)}
-          className="flex-1 px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-sm text-white"
+          className="flex-1 px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-sm text-white"
         >
           <option value="">Select...</option>
           {field.options.map((o) => (
@@ -556,7 +556,7 @@ function ValueInput({ field, operator, value, onChange }: ValueInputProps) {
         type="date"
         value={String(value || '')}
         onChange={(e) => onChange(e.target.value)}
-        className="flex-1 px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-sm text-white"
+        className="flex-1 px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-sm text-white"
       />
     );
   }
@@ -569,7 +569,7 @@ function ValueInput({ field, operator, value, onChange }: ValueInputProps) {
         value={String(value || '')}
         onChange={(e) => onChange(e.target.value ? Number(e.target.value) : null)}
         placeholder="Enter value..."
-        className="flex-1 px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-sm text-white placeholder-surface-500"
+        className="flex-1 px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-sm text-white placeholder-surface-500"
       />
     );
   }
@@ -581,7 +581,7 @@ function ValueInput({ field, operator, value, onChange }: ValueInputProps) {
       value={String(value || '')}
       onChange={(e) => onChange(e.target.value)}
       placeholder="Enter value..."
-      className="flex-1 px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-sm text-white placeholder-surface-500"
+      className="flex-1 px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-sm text-white placeholder-surface-500"
     />
   );
 }

@@ -168,7 +168,7 @@ export function ScheduledReports({ className }: ScheduledReportsProps) {
           <div className="animate-spin h-8 w-8 border-2 border-indigo-500 border-t-transparent rounded-full"></div>
         </div>
       ) : reports.length === 0 ? (
-        <div className="text-center py-12 bg-surface-800 border border-surface-700 rounded-xl">
+        <div className="text-center py-12 bg-white border border-surface-200 rounded-xl">
           <ClockIcon className="w-12 h-12 mx-auto text-surface-600 mb-4" />
           <h3 className="text-lg font-medium text-surface-700 mb-2">No scheduled reports</h3>
           <p className="text-surface-500 mb-4">
@@ -231,8 +231,8 @@ function ReportCard({ report, onEdit, onDelete, onToggle, onRunNow }: ReportCard
   return (
     <div
       className={clsx(
-        'bg-surface-800 border rounded-xl p-4',
-        report.enabled ? 'border-surface-700' : 'border-surface-700/50 opacity-60'
+        'bg-white border rounded-xl p-4',
+        report.enabled ? 'border-surface-200' : 'border-surface-200/50 opacity-60'
       )}
     >
       <div className="flex items-start justify-between">
@@ -240,7 +240,7 @@ function ReportCard({ report, onEdit, onDelete, onToggle, onRunNow }: ReportCard
           <div
             className={clsx(
               'p-2 rounded-lg',
-              report.enabled ? 'bg-brand-500/20' : 'bg-surface-700'
+              report.enabled ? 'bg-brand-500/20' : 'bg-surface-200'
             )}
           >
             <DocumentChartBarIcon
@@ -248,7 +248,7 @@ function ReportCard({ report, onEdit, onDelete, onToggle, onRunNow }: ReportCard
             />
           </div>
           <div>
-            <h3 className="font-medium text-surface-100">{report.name}</h3>
+            <h3 className="font-medium text-surface-900">{report.name}</h3>
             <p className="text-sm text-surface-600 mt-1">
               {reportType?.label || report.reportType} • {report.format.toUpperCase()}
             </p>
@@ -285,7 +285,7 @@ function ReportCard({ report, onEdit, onDelete, onToggle, onRunNow }: ReportCard
               'p-2 rounded-lg transition-colors',
               report.enabled
                 ? 'bg-green-500/20 text-green-600 hover:bg-green-500/30'
-                : 'bg-surface-700 text-surface-500 hover:bg-surface-600'
+                : 'bg-surface-200 text-surface-500 hover:bg-surface-600'
             )}
             title={report.enabled ? 'Disable' : 'Enable'}
           >
@@ -295,12 +295,12 @@ function ReportCard({ report, onEdit, onDelete, onToggle, onRunNow }: ReportCard
               <PauseIcon className="w-5 h-5" />
             )}
           </button>
-          <button onClick={onEdit} className="p-2 hover:bg-surface-700 rounded-lg text-surface-600">
+          <button onClick={onEdit} className="p-2 hover:bg-surface-200 rounded-lg text-surface-600">
             <PencilIcon className="w-5 h-5" />
           </button>
           <button
             onClick={onDelete}
-            className="p-2 hover:bg-surface-700 rounded-lg text-surface-600 hover:text-red-600"
+            className="p-2 hover:bg-surface-200 rounded-lg text-surface-600 hover:text-red-600"
           >
             <TrashIcon className="w-5 h-5" />
           </button>
@@ -421,7 +421,7 @@ function ReportScheduleModal({ isOpen, onClose, report, onSave }: ReportSchedule
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             placeholder="Weekly Risk Summary"
-            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white placeholder-surface-500"
+            className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white placeholder-surface-500"
           />
         </div>
 
@@ -431,7 +431,7 @@ function ReportScheduleModal({ isOpen, onClose, report, onSave }: ReportSchedule
           <SelectNative
             value={formData.reportType}
             onChange={(e) => setFormData({ ...formData, reportType: e.target.value })}
-            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
           >
             {REPORT_TYPES.map((type) => (
               <option key={type.value} value={type.value}>
@@ -454,7 +454,7 @@ function ReportScheduleModal({ isOpen, onClose, report, onSave }: ReportSchedule
                   'px-4 py-2 rounded-lg text-sm',
                   formData.format === format
                     ? 'bg-brand-500 text-white'
-                    : 'bg-surface-700 text-surface-700 hover:bg-surface-600'
+                    : 'bg-surface-200 text-surface-700 hover:bg-surface-600'
                 )}
               >
                 {format.toUpperCase()}
@@ -469,7 +469,7 @@ function ReportScheduleModal({ isOpen, onClose, report, onSave }: ReportSchedule
           <SelectNative
             value={formData.frequency}
             onChange={(e) => setFormData({ ...formData, frequency: e.target.value as any })}
-            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
           >
             {FREQUENCY_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -486,7 +486,7 @@ function ReportScheduleModal({ isOpen, onClose, report, onSave }: ReportSchedule
             <SelectNative
               value={formData.dayOfWeek}
               onChange={(e) => setFormData({ ...formData, dayOfWeek: Number(e.target.value) })}
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
             >
               {DAYS_OF_WEEK.map((day) => (
                 <option key={day.value} value={day.value}>
@@ -503,7 +503,7 @@ function ReportScheduleModal({ isOpen, onClose, report, onSave }: ReportSchedule
             <SelectNative
               value={formData.dayOfMonth}
               onChange={(e) => setFormData({ ...formData, dayOfMonth: Number(e.target.value) })}
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
             >
               {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
                 <option key={day} value={day}>
@@ -525,7 +525,7 @@ function ReportScheduleModal({ isOpen, onClose, report, onSave }: ReportSchedule
             type="time"
             value={formData.time}
             onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
           />
         </div>
 
@@ -539,12 +539,12 @@ function ReportScheduleModal({ isOpen, onClose, report, onSave }: ReportSchedule
             value={formData.recipients}
             onChange={(e) => setFormData({ ...formData, recipients: e.target.value })}
             placeholder="john@example.com, jane@example.com"
-            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white placeholder-surface-500"
+            className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white placeholder-surface-500"
           />
         </div>
 
         {/* Actions */}
-        <div className="flex justify-end gap-3 pt-4 border-t border-surface-700">
+        <div className="flex justify-end gap-3 pt-4 border-t border-surface-200">
           <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>

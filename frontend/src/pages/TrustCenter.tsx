@@ -181,7 +181,7 @@ export default function TrustCenter() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-surface-100">
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-surface-900">
             Trust Center Content
           </h1>
           <p className="mt-1 text-gray-500 dark:text-surface-600">
@@ -191,14 +191,14 @@ export default function TrustCenter() {
         <div className="flex gap-2">
           <Link
             to="/trust-center/settings"
-            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-surface-800 text-gray-700 dark:text-surface-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-100 dark:bg-surface-700 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-white text-gray-700 dark:text-surface-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-100 dark:bg-surface-200 transition-colors"
           >
             <Cog6ToothIcon className="w-5 h-5" />
             Settings
           </Link>
           <button
             onClick={() => setShowPreview(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-surface-800 text-gray-700 dark:text-surface-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-100 dark:bg-surface-700 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-white text-gray-700 dark:text-surface-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-100 dark:bg-surface-200 transition-colors"
           >
             <EyeIcon className="w-5 h-5" />
             Preview
@@ -243,26 +243,26 @@ export default function TrustCenter() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-gray-50 dark:bg-surface-900 border border-gray-200 dark:border-surface-800 rounded-lg p-4">
-          <div className="text-2xl font-bold text-gray-800 dark:text-surface-100">
+        <div className="bg-gray-50 dark:bg-white border border-gray-200 dark:border-surface-200 rounded-lg p-4">
+          <div className="text-2xl font-bold text-gray-800 dark:text-surface-900">
             {contents.length}
           </div>
           <div className="text-sm text-gray-500 dark:text-surface-600">Total Content Items</div>
         </div>
-        <div className="bg-gray-50 dark:bg-surface-900 border border-gray-200 dark:border-surface-800 rounded-lg p-4">
+        <div className="bg-gray-50 dark:bg-white border border-gray-200 dark:border-surface-200 rounded-lg p-4">
           <div className="text-2xl font-bold text-green-600">{publishedCount}</div>
           <div className="text-sm text-gray-500 dark:text-surface-600">Published</div>
         </div>
-        <div className="bg-gray-50 dark:bg-surface-900 border border-gray-200 dark:border-surface-800 rounded-lg p-4">
+        <div className="bg-gray-50 dark:bg-white border border-gray-200 dark:border-surface-200 rounded-lg p-4">
           <div className="text-2xl font-bold text-amber-600 dark:text-yellow-600">{draftCount}</div>
           <div className="text-sm text-gray-500 dark:text-surface-600">Drafts</div>
         </div>
       </div>
 
       {/* Content Management */}
-      <div className="bg-gray-50 dark:bg-surface-900 border border-gray-200 dark:border-surface-800 rounded-lg overflow-hidden">
+      <div className="bg-gray-50 dark:bg-white border border-gray-200 dark:border-surface-200 rounded-lg overflow-hidden">
         {/* Section Tabs */}
-        <div className="border-b border-gray-200 dark:border-surface-800">
+        <div className="border-b border-gray-200 dark:border-surface-200">
           <nav className="flex overflow-x-auto">
             {sections.map((section) => {
               const Icon = section.icon;
@@ -274,14 +274,14 @@ export default function TrustCenter() {
                   onClick={() => setActiveSection(section.id)}
                   className={`flex items-center gap-2 px-5 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                     activeSection === section.id
-                      ? 'border-brand-500 text-brand-400 bg-white dark:bg-surface-800/50'
-                      : 'border-transparent text-gray-500 dark:text-surface-600 hover:text-gray-600 dark:text-surface-700 hover:bg-white dark:bg-surface-800/30'
+                      ? 'border-brand-500 text-brand-400 bg-white dark:bg-white/50'
+                      : 'border-transparent text-gray-500 dark:text-surface-600 hover:text-gray-600 dark:text-surface-700 hover:bg-white dark:bg-white/30'
                   }`}
                 >
                   <Icon className="w-5 h-5" />
                   {section.name}
                   {hasContent && (
-                    <span className="px-1.5 py-0.5 text-xs bg-gray-100 dark:bg-surface-700 text-gray-600 dark:text-surface-700 rounded">
+                    <span className="px-1.5 py-0.5 text-xs bg-gray-100 dark:bg-surface-200 text-gray-600 dark:text-surface-700 rounded">
                       {sectionContents.length}
                     </span>
                   )}
@@ -295,7 +295,7 @@ export default function TrustCenter() {
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-surface-100">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-surface-900">
                 {sections.find((s) => s.id === activeSection)?.name}
               </h3>
               <p className="text-sm text-gray-500 dark:text-surface-600">
@@ -317,7 +317,7 @@ export default function TrustCenter() {
           {/* Content List */}
           <div className="space-y-3">
             {getSectionContents(activeSection).length === 0 ? (
-              <div className="text-center py-16 bg-white dark:bg-surface-800/30 rounded-lg border-2 border-dashed border-gray-200 dark:border-surface-700">
+              <div className="text-center py-16 bg-white dark:bg-white/30 rounded-lg border-2 border-dashed border-gray-200 dark:border-surface-200">
                 <div className="text-surface-500 mb-4">
                   {(() => {
                     const Icon = sections.find((s) => s.id === activeSection)?.icon || GlobeAltIcon;
@@ -342,12 +342,12 @@ export default function TrustCenter() {
               getSectionContents(activeSection).map((content) => (
                 <div
                   key={content.id}
-                  className="bg-white dark:bg-surface-800 border border-gray-200 dark:border-surface-700 rounded-lg p-4"
+                  className="bg-white dark:bg-white border border-gray-200 dark:border-surface-200 rounded-lg p-4"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-2">
-                        <h4 className="text-gray-800 dark:text-surface-100 font-medium truncate">
+                        <h4 className="text-gray-800 dark:text-surface-900 font-medium truncate">
                           {content.title}
                         </h4>
                         {content.isPublished ? (
@@ -371,7 +371,7 @@ export default function TrustCenter() {
                         onClick={() => toggleContentPublish(content)}
                         className={`px-3 py-1.5 text-xs rounded transition-colors ${
                           content.isPublished
-                            ? 'bg-gray-100 dark:bg-surface-700 text-gray-700 dark:text-surface-200 hover:bg-gray-200 dark:hover:bg-surface-600'
+                            ? 'bg-gray-100 dark:bg-surface-200 text-gray-700 dark:text-surface-800 hover:bg-gray-200 dark:hover:bg-surface-600'
                             : 'bg-green-500/20 text-green-600 hover:bg-green-500/30'
                         }`}
                       >
@@ -382,7 +382,7 @@ export default function TrustCenter() {
                           setEditingContent(content);
                           setShowContentModal(true);
                         }}
-                        className="px-3 py-1.5 text-xs bg-gray-100 dark:bg-surface-700 text-gray-700 dark:text-surface-200 rounded hover:bg-gray-200 dark:hover:bg-surface-600 transition-colors"
+                        className="px-3 py-1.5 text-xs bg-gray-100 dark:bg-surface-200 text-gray-700 dark:text-surface-800 rounded hover:bg-gray-200 dark:hover:bg-surface-600 transition-colors"
                       >
                         Edit
                       </button>
@@ -448,7 +448,7 @@ function ContentModal({ section, content, onSave, onClose }: ContentModalProps) 
 
   return (
     <Dialog open onClose={onClose}>
-      <h2 className="text-2xl font-bold text-gray-800 dark:text-surface-100 mb-4">
+      <h2 className="text-2xl font-bold text-gray-800 dark:text-surface-900 mb-4">
         {content ? 'Edit Content' : 'Add New Content'}
       </h2>
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -461,7 +461,7 @@ function ContentModal({ section, content, onSave, onClose }: ContentModalProps) 
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
-            className="w-full px-3 py-2 bg-white dark:bg-surface-800 border border-gray-200 dark:border-surface-700 rounded-lg text-gray-800 dark:text-surface-100 focus:outline-none focus:border-brand-500"
+            className="w-full px-3 py-2 bg-white dark:bg-white border border-gray-200 dark:border-surface-200 rounded-lg text-gray-800 dark:text-surface-900 focus:outline-none focus:border-brand-500"
             placeholder="Enter title..."
           />
         </div>
@@ -475,7 +475,7 @@ function ContentModal({ section, content, onSave, onClose }: ContentModalProps) 
             onChange={(e) => setContentText(e.target.value)}
             required
             rows={8}
-            className="w-full px-3 py-2 bg-white dark:bg-surface-800 border border-gray-200 dark:border-surface-700 rounded-lg text-gray-800 dark:text-surface-100 focus:outline-none focus:border-brand-500"
+            className="w-full px-3 py-2 bg-white dark:bg-white border border-gray-200 dark:border-surface-200 rounded-lg text-gray-800 dark:text-surface-900 focus:outline-none focus:border-brand-500"
             placeholder="Enter content..."
           />
         </div>
@@ -489,7 +489,7 @@ function ContentModal({ section, content, onSave, onClose }: ContentModalProps) 
               type="number"
               value={order}
               onChange={(e) => setOrder(parseInt(e.target.value))}
-              className="w-full px-3 py-2 bg-white dark:bg-surface-800 border border-gray-200 dark:border-surface-700 rounded-lg text-gray-800 dark:text-surface-100 focus:outline-none focus:border-brand-500"
+              className="w-full px-3 py-2 bg-white dark:bg-white border border-gray-200 dark:border-surface-200 rounded-lg text-gray-800 dark:text-surface-900 focus:outline-none focus:border-brand-500"
             />
             <p className="text-xs text-surface-500 mt-1">Lower numbers appear first</p>
           </div>
@@ -500,7 +500,7 @@ function ContentModal({ section, content, onSave, onClose }: ContentModalProps) 
                 type="checkbox"
                 checked={isPublished}
                 onChange={(e) => setIsPublished(e.target.checked)}
-                className="w-4 h-4 bg-white dark:bg-surface-800 border-gray-200 dark:border-surface-700 rounded text-brand-600 focus:ring-brand-500"
+                className="w-4 h-4 bg-white dark:bg-white border-gray-200 dark:border-surface-200 rounded text-brand-600 focus:ring-brand-500"
               />
               <span className="text-sm text-gray-600 dark:text-surface-700">
                 Publish immediately
@@ -509,11 +509,11 @@ function ContentModal({ section, content, onSave, onClose }: ContentModalProps) 
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 pt-4 border-t border-gray-200 dark:border-surface-800">
+        <div className="flex justify-end gap-2 pt-4 border-t border-gray-200 dark:border-surface-200">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 bg-white dark:bg-surface-800 text-gray-800 dark:text-surface-100 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-100 dark:bg-surface-700 transition-colors"
+            className="px-4 py-2 bg-white dark:bg-white text-gray-800 dark:text-surface-900 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-100 dark:bg-surface-200 transition-colors"
           >
             Cancel
           </button>

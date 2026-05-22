@@ -268,14 +268,14 @@ export default function ControlDetail() {
         <div>
           <Link
             to={backUrl}
-            className="inline-flex items-center text-sm text-surface-600 hover:text-surface-100 mb-4"
+            className="inline-flex items-center text-sm text-surface-600 hover:text-surface-900 mb-4"
           >
             <ArrowLeftIcon className="w-4 h-4 mr-1" />
             Back to Controls
           </Link>
           <div className="flex items-center gap-3">
             <span className="font-mono text-brand-400 text-lg">{control.controlId}</span>
-            <h1 className="text-2xl font-bold text-surface-100">{control.title}</h1>
+            <h1 className="text-2xl font-bold text-surface-900">{control.title}</h1>
             <RealTimePresence entityType="control" entityId={control.id} />
           </div>
           <p className="text-surface-600 mt-2 max-w-2xl">{control.description}</p>
@@ -303,9 +303,9 @@ export default function ControlDetail() {
       </div>
       {/* Edit Modal */}
       <Dialog open={isEditing} onClose={() => setIsEditing(false)}>
-        <div className="p-4 border-b border-surface-800 flex items-center justify-between sticky top-0 bg-surface-900">
-          <h2 className="text-lg font-semibold text-surface-100">Edit Control</h2>
-          <button onClick={() => setIsEditing(false)} className="p-1 hover:bg-surface-700 rounded">
+        <div className="p-4 border-b border-surface-200 flex items-center justify-between sticky top-0 bg-white">
+          <h2 className="text-lg font-semibold text-surface-900">Edit Control</h2>
+          <button onClick={() => setIsEditing(false)} className="p-1 hover:bg-surface-200 rounded">
             <XMarkIcon className="w-5 h-5 text-surface-600" />
           </button>
         </div>
@@ -358,7 +358,7 @@ export default function ControlDetail() {
 
           {/* Implementation Details Section */}
           {control.implementation && (
-            <div className="border-t border-surface-800 pt-6">
+            <div className="border-t border-surface-200 pt-6">
               <h3 className="text-sm font-semibold text-surface-700 mb-3 uppercase tracking-wide">
                 Implementation Details
               </h3>
@@ -425,7 +425,7 @@ export default function ControlDetail() {
             </div>
           )}
         </div>
-        <div className="p-4 border-t border-surface-800 flex justify-end gap-3 sticky bottom-0 bg-surface-900">
+        <div className="p-4 border-t border-surface-200 flex justify-end gap-3 sticky bottom-0 bg-white">
           <Button variant="secondary" onClick={() => setIsEditing(false)}>
             Cancel
           </Button>
@@ -442,7 +442,7 @@ export default function ControlDetail() {
         <div className="lg:col-span-2 space-y-6">
           {/* Status Card */}
           <div className="card p-6">
-            <h2 className="text-lg font-semibold text-surface-100 mb-4">Implementation Status</h2>
+            <h2 className="text-lg font-semibold text-surface-900 mb-4">Implementation Status</h2>
             {implementation ? (
               <div className="space-y-4">
                 <div>
@@ -461,22 +461,22 @@ export default function ControlDetail() {
                   </SelectNative>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-surface-800">
+                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-surface-200">
                   <div>
                     <p className="text-sm text-surface-500">Owner</p>
-                    <p className="text-surface-200">
+                    <p className="text-surface-800">
                       {implementation.owner?.displayName || 'Unassigned'}
                     </p>
                   </div>
                   <div>
                     <p className="text-sm text-surface-500">Testing Frequency</p>
-                    <p className="text-surface-200 capitalize">
+                    <p className="text-surface-800 capitalize">
                       {implementation.testingFrequency?.replace('_', ' ') || 'Quarterly'}
                     </p>
                   </div>
                   <div>
                     <p className="text-sm text-surface-500">Last Tested</p>
-                    <p className="text-surface-200">
+                    <p className="text-surface-800">
                       {implementation?.lastTestDate
                         ? new Date(implementation.lastTestDate).toLocaleDateString()
                         : 'Never'}
@@ -484,7 +484,7 @@ export default function ControlDetail() {
                   </div>
                   <div>
                     <p className="text-sm text-surface-500">Effectiveness Score</p>
-                    <p className="text-surface-200">
+                    <p className="text-surface-800">
                       {implementation.effectivenessScore !== null
                         ? `${implementation.effectivenessScore}%`
                         : 'Not rated'}
@@ -493,7 +493,7 @@ export default function ControlDetail() {
                 </div>
 
                 {implementation.implementationNotes && (
-                  <div className="pt-4 border-t border-surface-800">
+                  <div className="pt-4 border-t border-surface-200">
                     <p className="text-sm text-surface-500 mb-2">Implementation Notes</p>
                     <p className="text-surface-700 text-sm">{implementation.implementationNotes}</p>
                   </div>
@@ -507,7 +507,7 @@ export default function ControlDetail() {
           {/* Evidence Card */}
           <div className="card p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-surface-100">Evidence</h2>
+              <h2 className="text-lg font-semibold text-surface-900">Evidence</h2>
               <Link to={`/evidence?controlId=${id}`} className="text-sm">
                 <LinkIcon className="w-4 h-4 mr-2" />
                 Link Evidence
@@ -518,7 +518,7 @@ export default function ControlDetail() {
                 {control?.evidenceLinks?.map((link: any) => (
                   <div
                     key={link.id}
-                    className="flex items-center justify-between p-3 bg-surface-800 rounded-lg group"
+                    className="flex items-center justify-between p-3 bg-white rounded-lg group"
                   >
                     <Link
                       to={`/evidence/${link.evidence.id}`}
@@ -526,7 +526,7 @@ export default function ControlDetail() {
                     >
                       <DocumentTextIcon className="w-5 h-5 text-surface-600" />
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-surface-200 hover:text-brand-400 truncate">
+                        <p className="text-sm font-medium text-surface-800 hover:text-brand-400 truncate">
                           {link.evidence.title}
                         </p>
                         <p className="text-xs text-surface-500">
@@ -569,7 +569,7 @@ export default function ControlDetail() {
           {/* Linked Policies Card */}
           <div className="card p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-surface-100">Linked Policies</h2>
+              <h2 className="text-lg font-semibold text-surface-900">Linked Policies</h2>
               {hasPermission('policies:write') && (
                 <Button
                   onClick={() => setIsLinkPolicyOpen(true)}
@@ -589,7 +589,7 @@ export default function ControlDetail() {
                 {control?.policyLinks?.map((link: any) => (
                   <div
                     key={link.id}
-                    className="flex items-center justify-between p-3 bg-surface-800 rounded-lg group"
+                    className="flex items-center justify-between p-3 bg-white rounded-lg group"
                   >
                     <Link
                       to={`/policies/${link.policy?.id}`}
@@ -597,7 +597,7 @@ export default function ControlDetail() {
                     >
                       <DocumentTextIcon className="w-5 h-5 text-brand-400" />
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-surface-200 truncate">
+                        <p className="text-sm font-medium text-surface-800 truncate">
                           {link.policy?.title}
                         </p>
                         <p className="text-xs text-surface-500 capitalize">
@@ -649,13 +649,13 @@ export default function ControlDetail() {
 
           {/* Test History Card */}
           <div className="card p-6">
-            <h2 className="text-lg font-semibold text-surface-100 mb-4">Test History</h2>
+            <h2 className="text-lg font-semibold text-surface-900 mb-4">Test History</h2>
             {(implementation?.tests?.length ?? 0) > 0 ? (
               <div className="space-y-3">
                 {implementation?.tests?.map((test: any) => (
                   <div
                     key={test.id}
-                    className="flex items-start justify-between p-3 bg-surface-800 rounded-lg"
+                    className="flex items-start justify-between p-3 bg-white rounded-lg"
                   >
                     <div>
                       <div className="flex items-center gap-2">
@@ -689,23 +689,23 @@ export default function ControlDetail() {
         <div className="space-y-6">
           {/* Details Card */}
           <div className="card p-6">
-            <h3 className="text-sm font-semibold text-surface-100 mb-4">Details</h3>
+            <h3 className="text-sm font-semibold text-surface-900 mb-4">Details</h3>
             <dl className="space-y-3">
               <div>
                 <dt className="text-xs text-surface-500">Category</dt>
-                <dd className="text-sm text-surface-200 capitalize mt-1">
+                <dd className="text-sm text-surface-800 capitalize mt-1">
                   {control.category.replace('_', ' ')}
                 </dd>
               </div>
               {(control as any)?.subcategory && (
                 <div>
                   <dt className="text-xs text-surface-500">Subcategory</dt>
-                  <dd className="text-sm text-surface-200 mt-1">{(control as any).subcategory}</dd>
+                  <dd className="text-sm text-surface-800 mt-1">{(control as any).subcategory}</dd>
                 </div>
               )}
               <div>
                 <dt className="text-xs text-surface-500">Type</dt>
-                <dd className="text-sm text-surface-200 mt-1">
+                <dd className="text-sm text-surface-800 mt-1">
                   {control.isCustom ? 'Custom' : 'System'}
                 </dd>
               </div>
@@ -729,7 +729,7 @@ export default function ControlDetail() {
           {/* Framework Mappings Card */}
           <div className="card p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-surface-100">Framework Mappings</h3>
+              <h3 className="text-sm font-semibold text-surface-900">Framework Mappings</h3>
               {canEditMappings && (
                 <button
                   type="button"
@@ -751,7 +751,7 @@ export default function ControlDetail() {
                     <div
                       key={mapping.id}
                       role="listitem"
-                      className="group relative p-2 bg-surface-800 rounded-lg"
+                      className="group relative p-2 bg-white rounded-lg"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
@@ -777,14 +777,14 @@ export default function ControlDetail() {
                               aria-haspopup="menu"
                               aria-expanded={isMenuOpen}
                               onClick={() => setMappingMenuOpenId(isMenuOpen ? null : mapping.id)}
-                              className="opacity-60 group-hover:opacity-100 focus:opacity-100 p-1 rounded hover:bg-surface-700 transition-opacity"
+                              className="opacity-60 group-hover:opacity-100 focus:opacity-100 p-1 rounded hover:bg-surface-200 transition-opacity"
                             >
                               <EllipsisVerticalIcon className="w-4 h-4 text-surface-600" />
                             </button>
                             {isMenuOpen && (
                               <div
                                 role="menu"
-                                className="absolute right-0 top-full mt-1 w-32 rounded-md border border-surface-700 bg-surface-900 shadow-lg z-10"
+                                className="absolute right-0 top-full mt-1 w-32 rounded-md border border-surface-200 bg-white shadow-lg z-10"
                               >
                                 {canEditMappings && (
                                   <button
@@ -799,7 +799,7 @@ export default function ControlDetail() {
                                         frameworkId: mapping.frameworkId,
                                       });
                                     }}
-                                    className="w-full text-left px-3 py-2 text-xs text-surface-200 hover:bg-surface-800 first:rounded-t-md"
+                                    className="w-full text-left px-3 py-2 text-xs text-surface-800 hover:bg-white first:rounded-t-md"
                                   >
                                     Edit
                                   </button>
@@ -820,7 +820,7 @@ export default function ControlDetail() {
                                         },
                                       });
                                     }}
-                                    className="w-full text-left px-3 py-2 text-xs text-surface-200 hover:bg-surface-800"
+                                    className="w-full text-left px-3 py-2 text-xs text-surface-800 hover:bg-white"
                                   >
                                     Copy to framework…
                                   </button>
@@ -832,7 +832,7 @@ export default function ControlDetail() {
                                     setMappingMenuOpenId(null);
                                     setHistoryDrawerMappingId(mapping.id);
                                   }}
-                                  className="flex items-center gap-2 w-full text-left px-3 py-2 text-xs text-surface-200 hover:bg-surface-800"
+                                  className="flex items-center gap-2 w-full text-left px-3 py-2 text-xs text-surface-800 hover:bg-white"
                                 >
                                   <ClockIcon className="w-3.5 h-3.5" aria-hidden="true" />
                                   History
@@ -845,7 +845,7 @@ export default function ControlDetail() {
                                       setMappingMenuOpenId(null);
                                       setMappingDeleteConfirmId(mapping.id);
                                     }}
-                                    className="w-full text-left px-3 py-2 text-xs text-red-600 hover:bg-surface-800 last:rounded-b-md"
+                                    className="w-full text-left px-3 py-2 text-xs text-red-600 hover:bg-white last:rounded-b-md"
                                   >
                                     Delete
                                   </button>
@@ -856,13 +856,13 @@ export default function ControlDetail() {
                         )}
                       </div>
                       {isConfirmingDelete && (
-                        <div className="mt-2 p-2 bg-surface-900 border border-surface-700 rounded">
+                        <div className="mt-2 p-2 bg-white border border-surface-200 rounded">
                           <p className="text-xs text-surface-700 mb-2">Delete this mapping?</p>
                           <div className="flex justify-end gap-2">
                             <button
                               type="button"
                               onClick={() => setMappingDeleteConfirmId(null)}
-                              className="text-xs px-2 py-1 text-surface-700 hover:text-surface-100"
+                              className="text-xs px-2 py-1 text-surface-700 hover:text-surface-900"
                             >
                               Cancel
                             </button>
@@ -972,7 +972,7 @@ export default function ControlDetail() {
           {/* Guidance Card */}
           {control.guidance && (
             <div className="card p-6">
-              <h3 className="text-sm font-semibold text-surface-100 mb-4">
+              <h3 className="text-sm font-semibold text-surface-900 mb-4">
                 Implementation Guidance
               </h3>
               <p className="text-sm text-surface-600">{control.guidance}</p>
@@ -983,7 +983,7 @@ export default function ControlDetail() {
       {/* Tabs Section */}
       <div className="card overflow-hidden">
         {/* Tab Navigation */}
-        <div className="border-b border-surface-700 px-4">
+        <div className="border-b border-surface-200 px-4">
           <nav className="flex gap-6" aria-label="Tabs">
             <button
               onClick={() => setActiveTab('comments')}
@@ -991,7 +991,7 @@ export default function ControlDetail() {
                 'py-3 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2',
                 activeTab === 'comments'
                   ? 'border-brand-500 text-brand-400'
-                  : 'border-transparent text-surface-600 hover:text-surface-200 hover:border-surface-600'
+                  : 'border-transparent text-surface-600 hover:text-surface-800 hover:border-surface-300'
               )}
             >
               <ChatBubbleLeftRightIcon className="w-4 h-4" />
@@ -1003,7 +1003,7 @@ export default function ControlDetail() {
                 'py-3 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2',
                 activeTab === 'tasks'
                   ? 'border-brand-500 text-brand-400'
-                  : 'border-transparent text-surface-600 hover:text-surface-200 hover:border-surface-600'
+                  : 'border-transparent text-surface-600 hover:text-surface-800 hover:border-surface-300'
               )}
             >
               <ClipboardDocumentCheckIcon className="w-4 h-4" />
@@ -1015,7 +1015,7 @@ export default function ControlDetail() {
                 'py-3 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2',
                 activeTab === 'history'
                   ? 'border-brand-500 text-brand-400'
-                  : 'border-transparent text-surface-600 hover:text-surface-200 hover:border-surface-600'
+                  : 'border-transparent text-surface-600 hover:text-surface-800 hover:border-surface-300'
               )}
             >
               <ClockIcon className="w-4 h-4" />
@@ -1045,7 +1045,7 @@ export default function ControlDetail() {
       )}
       {/* Delete Confirmation Modal */}
       <Dialog open={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)}>
-        <h3 className="text-lg font-semibold text-surface-100 mb-2">Delete Control</h3>
+        <h3 className="text-lg font-semibold text-surface-900 mb-2">Delete Control</h3>
         <p className="text-surface-600 mb-6">
           Are you sure you want to delete "{control?.title}"? This action cannot be undone.
         </p>
@@ -1130,8 +1130,8 @@ function LinkPolicyModal({
   return (
     <Dialog open onClose={onClose}>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-surface-100">Link Policies to Control</h2>
-        <button onClick={onClose} className="text-surface-600 hover:text-surface-100">
+        <h2 className="text-lg font-semibold text-surface-900">Link Policies to Control</h2>
+        <button onClick={onClose} className="text-surface-600 hover:text-surface-900">
           <XMarkIcon className="w-5 h-5" />
         </button>
       </div>
@@ -1154,7 +1154,7 @@ function LinkPolicyModal({
       <div className="flex-1 overflow-y-auto space-y-2 min-h-[200px] max-h-[300px]">
         {isLoadingPolicies ? (
           <div className="flex items-center justify-center py-8">
-            <div className="animate-spin w-6 h-6 border-2 border-surface-700 rounded-full border-t-brand-500"></div>
+            <div className="animate-spin w-6 h-6 border-2 border-surface-200 rounded-full border-t-brand-500"></div>
             <span className="ml-2 text-surface-600">Searching...</span>
           </div>
         ) : availablePolicies.length === 0 ? (
@@ -1169,17 +1169,17 @@ function LinkPolicyModal({
                 'flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors',
                 selectedPolicyIds.includes(policy.id)
                   ? 'bg-brand-500/20 border border-brand-500/50'
-                  : 'bg-surface-800 hover:bg-surface-700'
+                  : 'bg-white hover:bg-surface-200'
               )}
             >
               <input
                 type="checkbox"
                 checked={selectedPolicyIds.includes(policy.id)}
                 onChange={() => togglePolicy(policy.id)}
-                className="rounded border-surface-600"
+                className="rounded border-surface-300"
               />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-surface-200 truncate">{policy.title}</p>
+                <p className="text-sm font-medium text-surface-800 truncate">{policy.title}</p>
                 <p className="text-xs text-surface-500 capitalize">
                   {policy.category?.replace(/_/g, ' ')} • v{policy.version} • {policy.status}
                 </p>
@@ -1195,7 +1195,7 @@ function LinkPolicyModal({
         </p>
       )}
 
-      <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-surface-800">
+      <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-surface-200">
         <Button variant="secondary" onClick={onClose}>
           Cancel
         </Button>

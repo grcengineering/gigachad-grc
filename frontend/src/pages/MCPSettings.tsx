@@ -166,7 +166,7 @@ export default function MCPSettings() {
       </div>
       {/* Server Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-surface-800 rounded-lg p-4 border border-gray-200 dark:border-surface-700">
+        <div className="bg-white dark:bg-white rounded-lg p-4 border border-gray-200 dark:border-surface-200">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-brand-100 dark:bg-brand-900/30 rounded-lg">
               <CpuChipIcon className="w-6 h-6 text-brand-600 dark:text-brand-400" />
@@ -177,7 +177,7 @@ export default function MCPSettings() {
             </div>
           </div>
         </div>
-        <div className="bg-white dark:bg-surface-800 rounded-lg p-4 border border-gray-200 dark:border-surface-700">
+        <div className="bg-white dark:bg-white rounded-lg p-4 border border-gray-200 dark:border-surface-200">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
               <CheckCircleIcon className="w-6 h-6 text-green-600 dark:text-green-600" />
@@ -190,7 +190,7 @@ export default function MCPSettings() {
             </div>
           </div>
         </div>
-        <div className="bg-white dark:bg-surface-800 rounded-lg p-4 border border-gray-200 dark:border-surface-700">
+        <div className="bg-white dark:bg-white rounded-lg p-4 border border-gray-200 dark:border-surface-200">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
               <ExclamationCircleIcon className="w-6 h-6 text-red-600 dark:text-red-600" />
@@ -203,7 +203,7 @@ export default function MCPSettings() {
             </div>
           </div>
         </div>
-        <div className="bg-white dark:bg-surface-800 rounded-lg p-4 border border-gray-200 dark:border-surface-700">
+        <div className="bg-white dark:bg-white rounded-lg p-4 border border-gray-200 dark:border-surface-200">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
               <Cog6ToothIcon className="w-6 h-6 text-purple-600 dark:text-purple-600" />
@@ -218,8 +218,8 @@ export default function MCPSettings() {
         </div>
       </div>
       {/* Server List */}
-      <div className="bg-white dark:bg-surface-800 rounded-lg border border-gray-200 dark:border-surface-700">
-        <div className="p-4 border-b border-gray-200 dark:border-surface-700">
+      <div className="bg-white dark:bg-white rounded-lg border border-gray-200 dark:border-surface-200">
+        <div className="p-4 border-b border-gray-200 dark:border-surface-200">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
             Registered Servers
           </h2>
@@ -239,11 +239,11 @@ export default function MCPSettings() {
             </Button>
           </div>
         ) : (
-          <div className="divide-y divide-gray-200 dark:divide-surface-700">
+          <div className="divide-y divide-gray-200 dark:divide-surface-200">
             {servers.map((server) => (
               <div
                 key={server.id}
-                className="p-4 hover:bg-gray-50 dark:hover:bg-surface-700/50 cursor-pointer"
+                className="p-4 hover:bg-gray-50 dark:hover:bg-surface-200/50 cursor-pointer"
                 onClick={() => setSelectedServer(server)}
               >
                 <div className="flex items-center justify-between">
@@ -307,7 +307,7 @@ export default function MCPSettings() {
       </div>
       {/* Add Server Modal */}
       <Dialog open={showAddModal} onClose={() => setShowAddModal(false)}>
-        <div className="p-4 border-b border-gray-200 dark:border-surface-700 flex justify-between items-center">
+        <div className="p-4 border-b border-gray-200 dark:border-surface-200 flex justify-between items-center">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
             {selectedTemplate ? `Configure ${selectedTemplate.name}` : 'Add MCP Server'}
           </h2>
@@ -330,7 +330,7 @@ export default function MCPSettings() {
                 <div
                   key={template.id}
                   onClick={() => setSelectedTemplate(template)}
-                  className="p-4 border border-gray-200 dark:border-surface-700 rounded-lg hover:border-brand-500 dark:hover:border-brand-500 cursor-pointer transition-colors"
+                  className="p-4 border border-gray-200 dark:border-surface-200 rounded-lg hover:border-brand-500 dark:hover:border-brand-500 cursor-pointer transition-colors"
                 >
                   <h3 className="font-medium text-gray-900 dark:text-white">{template.name}</h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -340,7 +340,7 @@ export default function MCPSettings() {
                     {template.capabilities.map((cap) => (
                       <span
                         key={cap}
-                        className="px-2 py-0.5 text-xs bg-gray-100 dark:bg-surface-700 text-gray-600 dark:text-gray-400 rounded"
+                        className="px-2 py-0.5 text-xs bg-gray-100 dark:bg-surface-200 text-gray-600 dark:text-gray-400 rounded"
                       >
                         {cap}
                       </span>
@@ -376,7 +376,7 @@ export default function MCPSettings() {
                         type="password"
                         value={envVars[envVar] || ''}
                         onChange={(e) => setEnvVars({ ...envVars, [envVar]: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-surface-300 rounded-lg bg-white dark:bg-surface-200 text-gray-900 dark:text-white"
                         placeholder={`Enter ${envVar}`}
                       />
                     </div>
@@ -401,9 +401,9 @@ export default function MCPSettings() {
                       {selectedTemplate.configGroups.map((group) => (
                         <details
                           key={group.name}
-                          className="border border-gray-200 dark:border-surface-700 rounded-lg"
+                          className="border border-gray-200 dark:border-surface-200 rounded-lg"
                         >
-                          <summary className="px-4 py-3 cursor-pointer font-medium text-gray-900 dark:text-white bg-gray-50 dark:bg-surface-700/50 rounded-t-lg">
+                          <summary className="px-4 py-3 cursor-pointer font-medium text-gray-900 dark:text-white bg-gray-50 dark:bg-surface-200/50 rounded-t-lg">
                             {group.name}
                             {group.keys.some((k) => envVars[k]) && (
                               <span className="ml-2 text-xs text-green-600 dark:text-green-600">
@@ -438,7 +438,7 @@ export default function MCPSettings() {
                                     onChange={(e) =>
                                       setEnvVars({ ...envVars, [key]: e.target.value })
                                     }
-                                    className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
+                                    className="w-full px-3 py-2 border border-gray-300 dark:border-surface-300 rounded-lg bg-white dark:bg-surface-200 text-gray-900 dark:text-white"
                                     placeholder={envDef.description}
                                   />
                                 </div>
@@ -472,7 +472,7 @@ export default function MCPSettings() {
                             onChange={(e) =>
                               setEnvVars({ ...envVars, [envDef.key]: e.target.value })
                             }
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-700 text-gray-900 dark:text-white"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-surface-300 rounded-lg bg-white dark:bg-surface-200 text-gray-900 dark:text-white"
                             placeholder={envDef.description}
                           />
                         </div>
@@ -482,7 +482,7 @@ export default function MCPSettings() {
                 </div>
               )}
 
-              <div className="flex justify-end gap-2 pt-4 border-t border-gray-200 dark:border-surface-700">
+              <div className="flex justify-end gap-2 pt-4 border-t border-gray-200 dark:border-surface-200">
                 <Button onClick={() => setSelectedTemplate(null)} variant="secondary">
                   Back
                 </Button>
@@ -511,7 +511,7 @@ export default function MCPSettings() {
       {/* Server Details Modal */}
       {selectedServer && (
         <Dialog open onClose={() => setSelectedServer(null)}>
-          <div className="p-4 border-b border-gray-200 dark:border-surface-700 flex justify-between items-center">
+          <div className="p-4 border-b border-gray-200 dark:border-surface-200 flex justify-between items-center">
             <div className="flex items-center gap-3">
               {getStatusIcon(selectedServer.status)}
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -534,7 +534,7 @@ export default function MCPSettings() {
                 <CpuChipIcon className="w-5 h-5" />
                 Server Information
               </h3>
-              <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-surface-700/50 rounded-lg">
+              <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-surface-200/50 rounded-lg">
                 <div>
                   <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                     Server ID
@@ -603,7 +603,7 @@ export default function MCPSettings() {
                   (for audit purposes)
                 </span>
               </h3>
-              <div className="p-4 bg-gray-50 dark:bg-surface-700/50 rounded-lg space-y-4">
+              <div className="p-4 bg-gray-50 dark:bg-surface-200/50 rounded-lg space-y-4">
                 {/* Configured Integrations */}
                 <div>
                   <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
@@ -667,7 +667,7 @@ export default function MCPSettings() {
                 )}
 
                 {/* Credential Status - Masked for security */}
-                <div className="border-t border-gray-200 dark:border-surface-600 pt-4">
+                <div className="border-t border-gray-200 dark:border-surface-300 pt-4">
                   <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
                     Credential Configuration Status
                   </p>
@@ -695,7 +695,7 @@ export default function MCPSettings() {
                           className={`flex items-center gap-2 p-2 rounded text-sm ${
                             isConfigured
                               ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-600'
-                              : 'bg-gray-100 dark:bg-surface-700 text-gray-500 dark:text-gray-400'
+                              : 'bg-gray-100 dark:bg-surface-200 text-gray-500 dark:text-gray-400'
                           }`}
                         >
                           {isConfigured ? (
@@ -732,7 +732,7 @@ export default function MCPSettings() {
                       {selectedServer.capabilities.tools.map((tool) => (
                         <div
                           key={tool.name}
-                          className="p-3 bg-gray-50 dark:bg-surface-700 rounded-lg"
+                          className="p-3 bg-gray-50 dark:bg-surface-200 rounded-lg"
                         >
                           <p className="font-medium text-gray-900 dark:text-white">{tool.name}</p>
                           {tool.description && (
@@ -756,7 +756,7 @@ export default function MCPSettings() {
                       {selectedServer.capabilities.resources.map((resource) => (
                         <div
                           key={resource.uri}
-                          className="p-3 bg-gray-50 dark:bg-surface-700 rounded-lg"
+                          className="p-3 bg-gray-50 dark:bg-surface-200 rounded-lg"
                         >
                           <p className="font-medium text-gray-900 dark:text-white">
                             {resource.name}
@@ -780,7 +780,7 @@ export default function MCPSettings() {
                       {selectedServer.capabilities.prompts.map((prompt) => (
                         <div
                           key={prompt.name}
-                          className="p-3 bg-gray-50 dark:bg-surface-700 rounded-lg"
+                          className="p-3 bg-gray-50 dark:bg-surface-200 rounded-lg"
                         >
                           <p className="font-medium text-gray-900 dark:text-white">{prompt.name}</p>
                           {prompt.description && (
@@ -797,7 +797,7 @@ export default function MCPSettings() {
             )}
 
             {/* Audit Trail Footer */}
-            <div className="border-t border-gray-200 dark:border-surface-700 pt-4">
+            <div className="border-t border-gray-200 dark:border-surface-200 pt-4">
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 This configuration information is logged for audit purposes. Changes to server
                 configuration are tracked in the Audit Log.

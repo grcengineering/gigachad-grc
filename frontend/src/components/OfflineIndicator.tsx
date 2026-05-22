@@ -67,8 +67,8 @@ export default function OfflineIndicator({
 
       {/* Expanded Details */}
       {isExpanded && (
-        <div className="absolute right-0 top-full mt-2 w-72 bg-surface-900 border border-surface-700 rounded-xl shadow-xl z-50 overflow-hidden">
-          <div className="flex items-center justify-between p-3 border-b border-surface-800">
+        <div className="absolute right-0 top-full mt-2 w-72 bg-white border border-surface-200 rounded-xl shadow-xl z-50 overflow-hidden">
+          <div className="flex items-center justify-between p-3 border-b border-surface-200">
             <div className="flex items-center gap-2">
               {isOnline ? (
                 <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
@@ -105,7 +105,7 @@ export default function OfflineIndicator({
                   <span className="text-xs text-surface-600">Pending Changes</span>
                   <span className="text-xs font-medium text-yellow-600">{pendingCount}</span>
                 </div>
-                <div className="w-full bg-surface-800 rounded-full h-1">
+                <div className="w-full bg-white rounded-full h-1">
                   <div
                     className="bg-yellow-500 rounded-full h-1 transition-all"
                     style={{ width: `${Math.min(pendingCount * 10, 100)}%` }}
@@ -117,11 +117,11 @@ export default function OfflineIndicator({
             {/* Storage Stats */}
             {storageStats && (
               <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="p-2 bg-surface-800 rounded-lg">
+                <div className="p-2 bg-white rounded-lg">
                   <span className="text-surface-600">Cached Items</span>
                   <div className="font-medium text-white">{storageStats.cachedItems}</div>
                 </div>
-                <div className="p-2 bg-surface-800 rounded-lg">
+                <div className="p-2 bg-white rounded-lg">
                   <span className="text-surface-600">Storage Used</span>
                   <div className="font-medium text-white">{storageStats.estimatedSize}</div>
                 </div>
@@ -136,7 +136,7 @@ export default function OfflineIndicator({
                 className={clsx(
                   'w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all',
                   isSyncing
-                    ? 'bg-surface-700 text-surface-600 cursor-wait'
+                    ? 'bg-surface-200 text-surface-600 cursor-wait'
                     : 'bg-brand-500 hover:bg-brand-600 text-white'
                 )}
               >

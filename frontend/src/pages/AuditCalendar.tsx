@@ -32,7 +32,7 @@ const riskColors: Record<string, string> = {
 };
 
 const statusColors: Record<string, string> = {
-  planned: 'bg-surface-700 text-surface-700',
+  planned: 'bg-surface-200 text-surface-700',
   scheduled: 'bg-blue-500/20 text-blue-600',
   in_progress: 'bg-purple-500/20 text-purple-600',
   completed: 'bg-green-500/20 text-green-600',
@@ -114,7 +114,7 @@ export default function AuditCalendar() {
 
       {/* Capacity Overview */}
       {capacity && (
-        <div className="bg-surface-800 rounded-lg p-4 border border-surface-700">
+        <div className="bg-white rounded-lg p-4 border border-surface-200">
           <h3 className="text-sm font-medium text-surface-600 mb-2">
             {currentYear} Capacity Overview
           </h3>
@@ -129,7 +129,7 @@ export default function AuditCalendar() {
               );
             })}
           </div>
-          <div className="mt-3 pt-3 border-t border-surface-700 flex justify-between text-sm">
+          <div className="mt-3 pt-3 border-t border-surface-200 flex justify-between text-sm">
             <span className="text-surface-600">
               Total: <span className="text-white font-medium">{capacity.totalHours}h</span>
             </span>
@@ -142,15 +142,15 @@ export default function AuditCalendar() {
 
       {/* Calendar Grid */}
       {isLoading ? (
-        <div className="animate-pulse bg-surface-800 rounded-lg h-96" />
+        <div className="animate-pulse bg-white rounded-lg h-96" />
       ) : (
-        <div className="bg-surface-800 rounded-lg border border-surface-700 overflow-hidden">
+        <div className="bg-white rounded-lg border border-surface-200 overflow-hidden">
           {/* Year Headers */}
-          <div className="grid grid-cols-3 border-b border-surface-700">
+          <div className="grid grid-cols-3 border-b border-surface-200">
             {years.map((year) => (
               <div
                 key={year}
-                className="text-center py-3 text-lg font-semibold text-white border-r border-surface-700 last:border-r-0"
+                className="text-center py-3 text-lg font-semibold text-white border-r border-surface-200 last:border-r-0"
               >
                 {year}
               </div>
@@ -161,14 +161,14 @@ export default function AuditCalendar() {
           {[1, 2, 3, 4].map((quarter) => (
             <div
               key={quarter}
-              className="grid grid-cols-3 border-b border-surface-700 last:border-b-0"
+              className="grid grid-cols-3 border-b border-surface-200 last:border-b-0"
             >
               {years.map((year) => {
                 const entries = calendarData?.[year]?.[quarter] || [];
                 return (
                   <div
                     key={`${year}-${quarter}`}
-                    className="min-h-32 p-3 border-r border-surface-700 last:border-r-0"
+                    className="min-h-32 p-3 border-r border-surface-200 last:border-r-0"
                   >
                     <div className="text-xs font-medium text-surface-500 mb-2">Q{quarter}</div>
                     <div className="space-y-2">
@@ -178,7 +178,7 @@ export default function AuditCalendar() {
                           className={clsx(
                             'p-2 rounded-md border text-sm cursor-pointer hover:opacity-80 transition-opacity',
                             riskColors[entry.riskRating] ||
-                              'bg-surface-700 border-surface-600 text-surface-700'
+                              'bg-surface-200 border-surface-300 text-surface-700'
                           )}
                         >
                           <div className="flex items-center justify-between">

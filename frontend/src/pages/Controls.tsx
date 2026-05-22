@@ -251,7 +251,7 @@ export default function Controls() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-surface-100">Controls</h1>
+          <h1 className="text-2xl font-bold text-surface-900">Controls</h1>
           <p className="text-surface-600 mt-1">
             Manage your security controls and track implementation status
           </p>
@@ -421,7 +421,7 @@ export default function Controls() {
                         <Link
                           to={`/controls/${control.id}`}
                           state={{ from: currentUrl }}
-                          className="text-surface-100 hover:text-brand-400"
+                          className="text-surface-900 hover:text-brand-400"
                         >
                           {control.title}
                         </Link>

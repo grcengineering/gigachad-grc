@@ -284,7 +284,7 @@ export default function RiskDetail() {
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate('/risks')}
-            className="p-2 hover:bg-surface-700 rounded-lg text-surface-600"
+            className="p-2 hover:bg-surface-200 rounded-lg text-surface-600"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -304,7 +304,7 @@ export default function RiskDetail() {
           <button
             onClick={() => markReviewedMutation.mutate()}
             disabled={markReviewedMutation.isPending}
-            className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg hover:bg-surface-600 flex items-center gap-2"
+            className="px-4 py-2 bg-surface-200 text-surface-700 rounded-lg hover:bg-surface-600 flex items-center gap-2"
           >
             <CheckCircle className="w-4 h-4" />
             Mark Reviewed
@@ -318,7 +318,7 @@ export default function RiskDetail() {
           </button>
           <button
             onClick={() => setShowEditModal(true)}
-            className="p-2 hover:bg-surface-700 rounded-lg text-surface-600"
+            className="p-2 hover:bg-surface-200 rounded-lg text-surface-600"
           >
             <Edit2 className="w-5 h-5" />
           </button>
@@ -344,10 +344,10 @@ export default function RiskDetail() {
       {/* Risk Overview */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Info */}
-        <div className="lg:col-span-2 bg-surface-800 rounded-xl border border-surface-700 p-6 space-y-6">
+        <div className="lg:col-span-2 bg-white rounded-xl border border-surface-200 p-6 space-y-6">
           <div>
             <h3 className="text-sm font-medium text-surface-600 mb-2">Description</h3>
-            <p className="text-surface-200">{risk.description}</p>
+            <p className="text-surface-800">{risk.description}</p>
           </div>
 
           <div className="grid grid-cols-2 gap-6">
@@ -392,7 +392,7 @@ export default function RiskDetail() {
 
           {/* Treatment Info */}
           {risk.treatmentPlan && (
-            <div className="pt-4 border-t border-surface-700">
+            <div className="pt-4 border-t border-surface-200">
               <h3 className="text-sm font-medium text-surface-600 mb-2">Treatment Plan</h3>
               <div className="flex items-center gap-4">
                 <span className="px-3 py-1 bg-brand-500/20 text-brand-400 rounded capitalize">
@@ -415,7 +415,7 @@ export default function RiskDetail() {
         {/* Risk Scoring */}
         <div className="space-y-4">
           {/* Qualitative */}
-          <div className="bg-surface-800 rounded-xl border border-surface-700 p-6">
+          <div className="bg-white rounded-xl border border-surface-200 p-6">
             <h3 className="text-lg font-medium text-white mb-4">Risk Assessment</h3>
 
             <div className="space-y-4">
@@ -429,7 +429,7 @@ export default function RiskDetail() {
                 <span className="text-surface-600">Impact</span>
                 <span className="text-white capitalize">{risk.impact}</span>
               </div>
-              <div className="flex justify-between items-center pt-2 border-t border-surface-700">
+              <div className="flex justify-between items-center pt-2 border-t border-surface-200">
                 <span className="text-surface-600">Inherent Risk</span>
                 <div className="flex items-center gap-2">
                   <span
@@ -454,7 +454,7 @@ export default function RiskDetail() {
 
           {/* Quantitative */}
           {(risk.likelihoodPct !== undefined || risk.impactValue !== undefined) && (
-            <div className="bg-surface-800 rounded-xl border border-surface-700 p-6">
+            <div className="bg-white rounded-xl border border-surface-200 p-6">
               <h3 className="text-lg font-medium text-white mb-4">Quantitative Analysis</h3>
               <div className="space-y-4">
                 {risk.likelihoodPct !== undefined && (
@@ -476,7 +476,7 @@ export default function RiskDetail() {
                   </div>
                 )}
                 {risk.annualLossExp !== undefined && (
-                  <div className="flex justify-between items-center pt-2 border-t border-surface-700">
+                  <div className="flex justify-between items-center pt-2 border-t border-surface-200">
                     <span className="text-surface-600 flex items-center gap-2">
                       <TrendingUp className="w-4 h-4" />
                       Annual Loss Exp.
@@ -491,7 +491,7 @@ export default function RiskDetail() {
           )}
 
           {/* Quick Stats */}
-          <div className="bg-surface-800 rounded-xl border border-surface-700 p-6">
+          <div className="bg-white rounded-xl border border-surface-200 p-6">
             <h3 className="text-lg font-medium text-white mb-4">Linked Items</h3>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
@@ -521,9 +521,9 @@ export default function RiskDetail() {
       </div>
 
       {/* Tabs */}
-      <div className="bg-surface-800 rounded-xl border border-surface-700">
+      <div className="bg-white rounded-xl border border-surface-200">
         {/* Tab Headers */}
-        <div className="flex border-b border-surface-700">
+        <div className="flex border-b border-surface-200">
           {[
             {
               key: 'controls',
@@ -553,7 +553,7 @@ export default function RiskDetail() {
               <tab.icon className="w-4 h-4" />
               {tab.label}
               {tab.count !== null && (
-                <span className="px-2 py-0.5 bg-surface-700 rounded text-xs">{tab.count}</span>
+                <span className="px-2 py-0.5 bg-surface-200 rounded text-xs">{tab.count}</span>
               )}
             </button>
           ))}
@@ -583,7 +583,7 @@ export default function RiskDetail() {
                   {risk?.controls?.map((control) => (
                     <div
                       key={control.id}
-                      className="flex items-center justify-between p-4 bg-surface-700 rounded-lg"
+                      className="flex items-center justify-between p-4 bg-surface-200 rounded-lg"
                     >
                       <div className="flex items-center gap-4">
                         <div>
@@ -638,7 +638,7 @@ export default function RiskDetail() {
                   {risk?.assets?.map((asset) => (
                     <div
                       key={asset.id}
-                      className="flex items-center justify-between p-4 bg-surface-700 rounded-lg"
+                      className="flex items-center justify-between p-4 bg-surface-200 rounded-lg"
                     >
                       <div className="flex items-center gap-4">
                         <Server className="w-8 h-8 text-surface-600" />
@@ -682,7 +682,7 @@ export default function RiskDetail() {
               ) : (
                 <div className="space-y-3">
                   {risk?.scenarios?.map((scenario) => (
-                    <div key={scenario.id} className="p-4 bg-surface-700 rounded-lg">
+                    <div key={scenario.id} className="p-4 bg-surface-200 rounded-lg">
                       <div className="flex justify-between items-start">
                         <div>
                           <h4 className="text-white font-medium">{scenario.title}</h4>
@@ -825,9 +825,9 @@ function LinkControlModal({
 
   return (
     <Dialog open onClose={onClose}>
-      <div className="p-4 border-b border-surface-700 flex justify-between items-center">
+      <div className="p-4 border-b border-surface-200 flex justify-between items-center">
         <h3 className="text-lg font-medium text-white">Link Control</h3>
-        <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
+        <button onClick={onClose} className="p-1 hover:bg-surface-200 rounded">
           <X className="w-5 h-5 text-surface-600" />
         </button>
       </div>
@@ -837,7 +837,7 @@ function LinkControlModal({
           placeholder="Search controls..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+          className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
         />
         <div className="max-h-60 overflow-y-auto space-y-2">
           {availableControls.map((control) => (
@@ -846,7 +846,7 @@ function LinkControlModal({
               className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer ${
                 selectedControlId === control.id
                   ? 'bg-brand-500/20'
-                  : 'bg-surface-700 hover:bg-surface-600'
+                  : 'bg-surface-200 hover:bg-surface-600'
               }`}
             >
               <input
@@ -870,7 +870,7 @@ function LinkControlModal({
             <SelectNative
               value={effectiveness}
               onChange={(e) => setEffectiveness(e.target.value)}
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
             >
               <option value="none">None</option>
               <option value="partial">Partial</option>
@@ -879,8 +879,8 @@ function LinkControlModal({
           </div>
         )}
       </div>
-      <div className="p-4 border-t border-surface-700 flex justify-end gap-3">
-        <button onClick={onClose} className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg">
+      <div className="p-4 border-t border-surface-200 flex justify-end gap-3">
+        <button onClick={onClose} className="px-4 py-2 bg-surface-200 text-surface-700 rounded-lg">
           Cancel
         </button>
         <button
@@ -923,9 +923,9 @@ function LinkAssetModal({
 
   return (
     <Dialog open onClose={onClose}>
-      <div className="p-4 border-b border-surface-700 flex justify-between items-center">
+      <div className="p-4 border-b border-surface-200 flex justify-between items-center">
         <h3 className="text-lg font-medium text-white">Link Assets</h3>
-        <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
+        <button onClick={onClose} className="p-1 hover:bg-surface-200 rounded">
           <X className="w-5 h-5 text-surface-600" />
         </button>
       </div>
@@ -935,7 +935,7 @@ function LinkAssetModal({
           placeholder="Search assets..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+          className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
         />
         <div className="max-h-60 overflow-y-auto space-y-2">
           {availableAssets.length === 0 ? (
@@ -947,7 +947,7 @@ function LinkAssetModal({
                 className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer ${
                   selectedAssetIds.includes(asset.id)
                     ? 'bg-brand-500/20'
-                    : 'bg-surface-700 hover:bg-surface-600'
+                    : 'bg-surface-200 hover:bg-surface-600'
                 }`}
               >
                 <input
@@ -967,8 +967,8 @@ function LinkAssetModal({
           )}
         </div>
       </div>
-      <div className="p-4 border-t border-surface-700 flex justify-end gap-3">
-        <button onClick={onClose} className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg">
+      <div className="p-4 border-t border-surface-200 flex justify-end gap-3">
+        <button onClick={onClose} className="px-4 py-2 bg-surface-200 text-surface-700 rounded-lg">
           Cancel
         </button>
         <button
@@ -1004,9 +1004,9 @@ function TreatmentModal({
 
   return (
     <Dialog open onClose={onClose}>
-      <div className="p-4 border-b border-surface-700 flex justify-between items-center">
+      <div className="p-4 border-b border-surface-200 flex justify-between items-center">
         <h3 className="text-lg font-medium text-white">Treatment Plan</h3>
-        <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
+        <button onClick={onClose} className="p-1 hover:bg-surface-200 rounded">
           <X className="w-5 h-5 text-surface-600" />
         </button>
       </div>
@@ -1022,7 +1022,7 @@ function TreatmentModal({
                 className={`p-3 rounded-lg text-left ${
                   plan === tp.value
                     ? 'bg-brand-500/20 border border-brand-500'
-                    : 'bg-surface-700 border border-surface-600 hover:bg-surface-600'
+                    : 'bg-surface-200 border border-surface-300 hover:bg-surface-600'
                 }`}
               >
                 <p className="text-white font-medium">{tp.label}</p>
@@ -1037,7 +1037,7 @@ function TreatmentModal({
             type="date"
             value={dueDate}
             onChange={(e) => setDueDate(e.target.value)}
-            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
           />
         </div>
         <div>
@@ -1046,13 +1046,13 @@ function TreatmentModal({
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
-            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
             placeholder="Describe the treatment approach..."
           />
         </div>
       </div>
-      <div className="p-4 border-t border-surface-700 flex justify-end gap-3">
-        <button onClick={onClose} className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg">
+      <div className="p-4 border-t border-surface-200 flex justify-end gap-3">
+        <button onClick={onClose} className="px-4 py-2 bg-surface-200 text-surface-700 rounded-lg">
           Cancel
         </button>
         <button
@@ -1094,9 +1094,9 @@ function ScenarioModal({
 
   return (
     <Dialog open onClose={onClose}>
-      <div className="p-4 border-b border-surface-700 flex justify-between items-center">
+      <div className="p-4 border-b border-surface-200 flex justify-between items-center">
         <h3 className="text-lg font-medium text-white">Add Scenario</h3>
-        <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
+        <button onClick={onClose} className="p-1 hover:bg-surface-200 rounded">
           <X className="w-5 h-5 text-surface-600" />
         </button>
       </div>
@@ -1114,7 +1114,7 @@ function ScenarioModal({
             value={scenario.title}
             onChange={(e) => setScenario((prev) => ({ ...prev, title: e.target.value }))}
             required
-            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
             placeholder="e.g., Phishing attack on employees"
           />
         </div>
@@ -1125,7 +1125,7 @@ function ScenarioModal({
             onChange={(e) => setScenario((prev) => ({ ...prev, description: e.target.value }))}
             required
             rows={2}
-            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
           />
         </div>
         <div className="grid grid-cols-2 gap-4">
@@ -1134,7 +1134,7 @@ function ScenarioModal({
             <SelectNative
               value={scenario.threatActor}
               onChange={(e) => setScenario((prev) => ({ ...prev, threatActor: e.target.value }))}
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
             >
               <option value="">Select...</option>
               <option value="insider">Insider</option>
@@ -1148,7 +1148,7 @@ function ScenarioModal({
               type="text"
               value={scenario.attackVector}
               onChange={(e) => setScenario((prev) => ({ ...prev, attackVector: e.target.value }))}
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
               placeholder="e.g., Email, Network"
             />
           </div>
@@ -1159,7 +1159,7 @@ function ScenarioModal({
             <SelectNative
               value={scenario.likelihood}
               onChange={(e) => setScenario((prev) => ({ ...prev, likelihood: e.target.value }))}
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
             >
               {LIKELIHOODS.map((l) => (
                 <option key={l} value={l}>
@@ -1173,7 +1173,7 @@ function ScenarioModal({
             <SelectNative
               value={scenario.impact}
               onChange={(e) => setScenario((prev) => ({ ...prev, impact: e.target.value }))}
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
             >
               {IMPACTS.map((i) => (
                 <option key={i} value={i}>
@@ -1187,7 +1187,7 @@ function ScenarioModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg"
+            className="px-4 py-2 bg-surface-200 text-surface-700 rounded-lg"
           >
             Cancel
           </button>
@@ -1272,9 +1272,9 @@ function EditRiskModal({
 
   return (
     <Dialog open onClose={onClose}>
-      <div className="p-6 border-b border-surface-700 flex items-center justify-between">
+      <div className="p-6 border-b border-surface-200 flex items-center justify-between">
         <h2 className="text-xl font-semibold text-white">Edit Risk</h2>
-        <button onClick={onClose} className="p-2 hover:bg-surface-700 rounded-lg text-surface-600">
+        <button onClick={onClose} className="p-2 hover:bg-surface-200 rounded-lg text-surface-600">
           <X className="w-5 h-5" />
         </button>
       </div>
@@ -1294,7 +1294,7 @@ function EditRiskModal({
             value={formData.title}
             onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
             required
-            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white placeholder-surface-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white placeholder-surface-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
         </div>
 
@@ -1306,7 +1306,7 @@ function EditRiskModal({
             onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
             required
             rows={4}
-            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white placeholder-surface-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white placeholder-surface-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
         </div>
 
@@ -1317,7 +1317,7 @@ function EditRiskModal({
             <SelectNative
               value={formData.category}
               onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value }))}
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               {CATEGORIES.map((cat) => (
                 <option key={cat.value} value={cat.value}>
@@ -1331,7 +1331,7 @@ function EditRiskModal({
             <SelectNative
               value={formData.source}
               onChange={(e) => setFormData((prev) => ({ ...prev, source: e.target.value }))}
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               {SOURCES.map((src) => (
                 <option key={src.value} value={src.value}>
@@ -1352,7 +1352,7 @@ function EditRiskModal({
             onChange={(e) =>
               setFormData((prev) => ({ ...prev, initialSeverity: e.target.value as any }))
             }
-            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
           >
             {SEVERITIES.map((sev) => (
               <option key={sev.value} value={sev.value}>
@@ -1388,13 +1388,13 @@ function EditRiskModal({
               value={tagInput}
               onChange={(e) => setTagInput(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
-              className="flex-1 px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white placeholder-surface-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="flex-1 px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white placeholder-surface-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
               placeholder="Add tag..."
             />
             <button
               type="button"
               onClick={handleAddTag}
-              className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg hover:bg-surface-600"
+              className="px-4 py-2 bg-surface-200 text-surface-700 rounded-lg hover:bg-surface-600"
             >
               Add
             </button>
@@ -1402,11 +1402,11 @@ function EditRiskModal({
         </div>
 
         {/* Actions */}
-        <div className="flex justify-end gap-3 pt-4 border-t border-surface-700">
+        <div className="flex justify-end gap-3 pt-4 border-t border-surface-200">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg hover:bg-surface-600"
+            className="px-4 py-2 bg-surface-200 text-surface-700 rounded-lg hover:bg-surface-600"
           >
             Cancel
           </button>

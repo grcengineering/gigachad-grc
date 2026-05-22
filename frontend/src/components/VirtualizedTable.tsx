@@ -121,17 +121,17 @@ export function VirtualizedTable<T>({
   }
 
   return (
-    <div className={clsx('border border-surface-700 rounded-lg overflow-hidden', className)}>
+    <div className={clsx('border border-surface-200 rounded-lg overflow-hidden', className)}>
       {/* Header */}
       <div
         className={clsx(
-          'flex bg-surface-800 border-b border-surface-700',
+          'flex bg-white border-b border-surface-200',
           stickyHeader && 'sticky top-0 z-10'
         )}
         style={{ minHeight: rowHeight }}
       >
         {selectedIds && onSelectionChange && (
-          <div className="flex items-center justify-center w-12 px-3 border-r border-surface-700">
+          <div className="flex items-center justify-center w-12 px-3 border-r border-surface-200">
             <input
               type="checkbox"
               checked={allSelected}
@@ -139,7 +139,7 @@ export function VirtualizedTable<T>({
                 if (el) el.indeterminate = someSelected ?? false;
               }}
               onChange={(e) => handleSelectAll(e.target.checked)}
-              className="w-4 h-4 rounded border-surface-600 bg-surface-700 text-brand-500 focus:ring-brand-500 focus:ring-offset-0"
+              className="w-4 h-4 rounded border-surface-300 bg-surface-200 text-brand-500 focus:ring-brand-500 focus:ring-offset-0"
             />
           </div>
         )}
@@ -180,8 +180,8 @@ export function VirtualizedTable<T>({
                 key={rowKey}
                 data-index={virtualRow.index}
                 className={clsx(
-                  'flex absolute top-0 left-0 w-full border-b border-surface-800 transition-colors',
-                  onRowClick && 'cursor-pointer hover:bg-surface-800/50',
+                  'flex absolute top-0 left-0 w-full border-b border-surface-200 transition-colors',
+                  onRowClick && 'cursor-pointer hover:bg-white/50',
                   isSelected && 'bg-brand-500/10'
                 )}
                 style={{
@@ -192,14 +192,14 @@ export function VirtualizedTable<T>({
               >
                 {selectedIds && onSelectionChange && (
                   <div
-                    className="flex items-center justify-center w-12 px-3 border-r border-surface-800"
+                    className="flex items-center justify-center w-12 px-3 border-r border-surface-200"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <input
                       type="checkbox"
                       checked={isSelected}
                       onChange={(e) => handleRowSelect(rowKey, e.target.checked)}
-                      className="w-4 h-4 rounded border-surface-600 bg-surface-700 text-brand-500 focus:ring-brand-500 focus:ring-offset-0"
+                      className="w-4 h-4 rounded border-surface-300 bg-surface-200 text-brand-500 focus:ring-brand-500 focus:ring-offset-0"
                     />
                   </div>
                 )}
@@ -226,7 +226,7 @@ export function VirtualizedTable<T>({
       </div>
 
       {/* Footer with count */}
-      <div className="flex items-center justify-between px-4 py-2 bg-surface-800/50 border-t border-surface-700 text-xs text-muted-foreground">
+      <div className="flex items-center justify-between px-4 py-2 bg-white/50 border-t border-surface-200 text-xs text-muted-foreground">
         <span>
           {selectedIds && selectedIds.size > 0
             ? `${selectedIds.size} of ${data.length} selected`

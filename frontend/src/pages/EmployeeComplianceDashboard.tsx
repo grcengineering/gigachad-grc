@@ -105,11 +105,11 @@ function StatCard({
       <div className="card p-6 animate-pulse">
         <div className="flex items-center justify-between">
           <div className="space-y-2">
-            <div className="h-4 w-24 bg-surface-700 rounded" />
-            <div className="h-8 w-16 bg-surface-700 rounded" />
-            <div className="h-3 w-20 bg-surface-700 rounded" />
+            <div className="h-4 w-24 bg-surface-200 rounded" />
+            <div className="h-8 w-16 bg-surface-200 rounded" />
+            <div className="h-3 w-20 bg-surface-200 rounded" />
           </div>
-          <div className="p-3 rounded-lg bg-surface-700 h-12 w-12" />
+          <div className="p-3 rounded-lg bg-surface-200 h-12 w-12" />
         </div>
       </div>
     );
@@ -123,7 +123,7 @@ function StatCard({
           <p className={`text-3xl font-bold ${color}`}>{value}</p>
           {subtitle && <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>}
         </div>
-        <div className="p-3 rounded-lg bg-surface-700">
+        <div className="p-3 rounded-lg bg-surface-200">
           <Icon className={`h-6 w-6 ${color}`} />
         </div>
       </div>
@@ -146,7 +146,7 @@ function ScoreBar({
   return (
     <div className="flex items-center gap-3">
       <span className="text-sm text-muted-foreground w-24">{range}</span>
-      <div className="flex-1 h-6 bg-surface-700 rounded-full overflow-hidden">
+      <div className="flex-1 h-6 bg-surface-200 rounded-full overflow-hidden">
         <div
           className={`h-full ${color} rounded-full transition-all duration-500`}
           style={{ width: `${percentage}%` }}
@@ -172,7 +172,7 @@ function DataCoverageBar({
     <div className="flex items-center gap-3">
       <Icon className={`h-5 w-5 ${color}`} />
       <span className="text-sm text-muted-foreground w-32">{label}</span>
-      <div className="flex-1 h-2 bg-surface-700 rounded-full overflow-hidden">
+      <div className="flex-1 h-2 bg-surface-200 rounded-full overflow-hidden">
         <div
           className={`h-full ${percentage >= 90 ? 'bg-green-500' : percentage >= 70 ? 'bg-yellow-500' : 'bg-red-500'} rounded-full transition-all duration-500`}
           style={{ width: `${percentage}%` }}
@@ -429,7 +429,7 @@ export default function EmployeeComplianceDashboard() {
               {isLoading ? (
                 <div className="space-y-3">
                   {[1, 2, 3].map((i) => (
-                    <div key={i} className="h-6 bg-surface-700 rounded animate-pulse" />
+                    <div key={i} className="h-6 bg-surface-200 rounded animate-pulse" />
                   ))}
                 </div>
               ) : !hasData ? (
@@ -464,7 +464,7 @@ export default function EmployeeComplianceDashboard() {
               {isLoading ? (
                 <div className="space-y-3">
                   {[1, 2, 3, 4, 5].map((i) => (
-                    <div key={i} className="h-12 bg-surface-700 rounded animate-pulse" />
+                    <div key={i} className="h-12 bg-surface-200 rounded animate-pulse" />
                   ))}
                 </div>
               ) : totalIssues === 0 ? (
@@ -480,7 +480,7 @@ export default function EmployeeComplianceDashboard() {
                     .map((issue) => (
                       <div
                         key={issue.type}
-                        className="flex items-center justify-between p-3 bg-surface-700/50 rounded-lg hover:bg-surface-700 transition-colors"
+                        className="flex items-center justify-between p-3 bg-surface-200/50 rounded-lg hover:bg-surface-200 transition-colors"
                       >
                         <div className="flex items-center gap-3">
                           <issue.icon className={`h-5 w-5 ${issue.color}`} />
@@ -522,7 +522,7 @@ export default function EmployeeComplianceDashboard() {
                       {metrics.departmentStats.map((dept) => (
                         <tr
                           key={dept.department}
-                          className="border-b border-border hover:bg-surface-700/30 transition-colors"
+                          className="border-b border-border hover:bg-surface-200/30 transition-colors"
                         >
                           <td className="p-2">
                             <div className="flex items-center gap-2">
@@ -557,7 +557,7 @@ export default function EmployeeComplianceDashboard() {
               {isLoading ? (
                 <div className="space-y-4">
                   {[1, 2, 3, 4, 5].map((i) => (
-                    <div key={i} className="h-5 bg-surface-700 rounded animate-pulse" />
+                    <div key={i} className="h-5 bg-surface-200 rounded animate-pulse" />
                   ))}
                 </div>
               ) : (
@@ -649,7 +649,7 @@ export default function EmployeeComplianceDashboard() {
                       {metrics.upcomingDeadlines.overdueTrainings.slice(0, 5).map((item, i) => (
                         <div
                           key={i}
-                          className="text-sm p-2 bg-surface-700/30 rounded hover:bg-surface-700/50 transition-colors"
+                          className="text-sm p-2 bg-surface-200/30 rounded hover:bg-surface-200/50 transition-colors"
                         >
                           <p className="text-foreground font-medium">
                             {item.employeeName || item.employeeEmail}
@@ -694,7 +694,7 @@ export default function EmployeeComplianceDashboard() {
                         .map((item, i) => (
                           <div
                             key={i}
-                            className="text-sm p-2 bg-surface-700/30 rounded hover:bg-surface-700/50 transition-colors"
+                            className="text-sm p-2 bg-surface-200/30 rounded hover:bg-surface-200/50 transition-colors"
                           >
                             <p className="text-foreground font-medium">
                               {item.employeeName || item.employeeEmail}
@@ -737,7 +737,7 @@ export default function EmployeeComplianceDashboard() {
                       {metrics.upcomingDeadlines.pendingAttestations.slice(0, 5).map((item, i) => (
                         <div
                           key={i}
-                          className="text-sm p-2 bg-surface-700/30 rounded hover:bg-surface-700/50 transition-colors"
+                          className="text-sm p-2 bg-surface-200/30 rounded hover:bg-surface-200/50 transition-colors"
                         >
                           <p className="text-foreground font-medium">
                             {item.employeeName || item.employeeEmail}

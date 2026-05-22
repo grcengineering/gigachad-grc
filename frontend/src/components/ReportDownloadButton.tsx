@@ -139,7 +139,7 @@ export function ReportDownloadButton({
   // Menu variant with all report types
   return (
     <Menu as="div" className={`relative inline-block text-left ${className}`}>
-      <Menu.Button className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium bg-surface-700 text-surface-100 hover:bg-surface-600 transition-colors">
+      <Menu.Button className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium bg-surface-200 text-surface-900 hover:bg-surface-600 transition-colors">
         <DocumentChartBarIcon className="h-5 w-5" />
         Generate Report
       </Menu.Button>
@@ -153,7 +153,7 @@ export function ReportDownloadButton({
         leaveFrom="transform opacity-100 scale-100"
         leaveTo="transform opacity-0 scale-95"
       >
-        <Menu.Items className="absolute right-0 mt-2 w-72 origin-top-right rounded-lg bg-surface-800 border border-surface-700 shadow-lg focus:outline-none z-50">
+        <Menu.Items className="absolute right-0 mt-2 w-72 origin-top-right rounded-lg bg-white border border-surface-200 shadow-lg focus:outline-none z-50">
           <div className="p-2">
             <p className="px-3 py-2 text-xs font-medium text-surface-600 uppercase tracking-wider">
               Download Reports
@@ -171,7 +171,7 @@ export function ReportDownloadButton({
                       disabled={isDisabled || isDownloading}
                       className={`
                         w-full text-left px-3 py-2 rounded-md flex items-start gap-3
-                        ${active && !isDisabled ? 'bg-surface-700' : ''}
+                        ${active && !isDisabled ? 'bg-surface-200' : ''}
                         ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
                       `}
                     >
@@ -198,7 +198,7 @@ export function ReportDownloadButton({
                         )}
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-surface-100">{report.name}</p>
+                        <p className="text-sm font-medium text-surface-900">{report.name}</p>
                         <p className="text-xs text-surface-600">
                           {report.description}
                           {report.requiresFramework && !frameworkId && (

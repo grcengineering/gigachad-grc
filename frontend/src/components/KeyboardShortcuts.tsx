@@ -92,14 +92,14 @@ export function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShortcutsPro
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="w-full max-w-2xl transform overflow-hidden rounded-xl bg-surface-800 border border-surface-700 shadow-2xl transition-all">
-                <div className="flex items-center justify-between px-6 py-4 border-b border-surface-700">
+              <Dialog.Panel className="w-full max-w-2xl transform overflow-hidden rounded-xl bg-white border border-surface-200 shadow-2xl transition-all">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-surface-200">
                   <Dialog.Title className="text-lg font-semibold text-white">
                     Keyboard Shortcuts
                   </Dialog.Title>
                   <button
                     onClick={onClose}
-                    className="p-2 rounded-lg hover:bg-surface-700 text-surface-600 hover:text-white transition-colors"
+                    className="p-2 rounded-lg hover:bg-surface-200 text-surface-600 hover:text-white transition-colors"
                   >
                     <XMarkIcon className="w-5 h-5" />
                   </button>
@@ -121,7 +121,7 @@ export function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShortcutsPro
                                   {keyIdx > 0 && (
                                     <span className="text-surface-600 text-xs mx-0.5">+</span>
                                   )}
-                                  <kbd className="px-2 py-1 text-xs font-medium bg-surface-700 text-surface-700 rounded border border-surface-600">
+                                  <kbd className="px-2 py-1 text-xs font-medium bg-surface-200 text-surface-700 rounded border border-surface-300">
                                     {key}
                                   </kbd>
                                 </Fragment>
@@ -134,11 +134,11 @@ export function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShortcutsPro
                   ))}
                 </div>
 
-                <div className="px-6 py-4 bg-surface-900/50 border-t border-surface-700">
+                <div className="px-6 py-4 bg-white/50 border-t border-surface-200">
                   <p className="text-xs text-surface-500 text-center">
                     Press{' '}
-                    <kbd className="px-1.5 py-0.5 bg-surface-700 rounded text-surface-600">⌘</kbd> +{' '}
-                    <kbd className="px-1.5 py-0.5 bg-surface-700 rounded text-surface-600">/</kbd>{' '}
+                    <kbd className="px-1.5 py-0.5 bg-surface-200 rounded text-surface-600">⌘</kbd> +{' '}
+                    <kbd className="px-1.5 py-0.5 bg-surface-200 rounded text-surface-600">/</kbd>{' '}
                     to toggle this help
                   </p>
                 </div>

@@ -138,7 +138,7 @@ function DiffRows({ prev, current }: DiffRowsProps) {
         return (
           <div
             key={field}
-            className="flex flex-col gap-1 p-2 rounded-lg bg-surface-900/40 border border-surface-700"
+            className="flex flex-col gap-1 p-2 rounded-lg bg-white/40 border border-surface-200"
           >
             <span className="text-xs text-surface-600 font-medium">{FIELD_LABELS[field]}</span>
             <div className="flex items-center gap-2 text-sm flex-wrap">
@@ -217,7 +217,7 @@ function HistoryEntryItem({
       className="relative pl-8 pb-6 last:pb-0"
     >
       {/* Timeline line */}
-      <div className="absolute left-[11px] top-6 bottom-0 w-px bg-surface-700" aria-hidden="true" />
+      <div className="absolute left-[11px] top-6 bottom-0 w-px bg-surface-200" aria-hidden="true" />
       {/* Timeline dot */}
       <div
         className={clsx(
@@ -229,7 +229,7 @@ function HistoryEntryItem({
       >
         <Icon className={clsx('w-3.5 h-3.5', meta.text)} />
       </div>
-      <div className="bg-surface-800 rounded-lg border border-surface-700 p-3">
+      <div className="bg-white rounded-lg border border-surface-200 p-3">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
@@ -311,7 +311,7 @@ function HistoryEntryItem({
                 disabled={isRestoring}
                 aria-label="Restore reason"
                 placeholder="Why are you restoring this version?"
-                className="w-full rounded-md bg-surface-900 border border-surface-700 text-surface-100 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50"
+                className="w-full rounded-md bg-white border border-surface-200 text-surface-900 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50"
               />
             </label>
             <div className="flex justify-end gap-2">
@@ -322,7 +322,7 @@ function HistoryEntryItem({
                   setReason('');
                 }}
                 disabled={isRestoring}
-                className="text-xs px-2 py-1 text-surface-700 hover:text-surface-100 disabled:opacity-50"
+                className="text-xs px-2 py-1 text-surface-700 hover:text-surface-900 disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -345,10 +345,10 @@ function HistoryEntryItem({
 function SkeletonRow() {
   return (
     <div className="relative pl-8 pb-6" aria-hidden="true">
-      <div className="absolute left-0 top-0 w-6 h-6 rounded-full bg-surface-700 animate-pulse" />
-      <div className="bg-surface-800 rounded-lg border border-surface-700 p-4 animate-pulse">
-        <div className="h-4 bg-surface-700 rounded w-1/3 mb-2" />
-        <div className="h-3 bg-surface-700 rounded w-2/3" />
+      <div className="absolute left-0 top-0 w-6 h-6 rounded-full bg-surface-200 animate-pulse" />
+      <div className="bg-white rounded-lg border border-surface-200 p-4 animate-pulse">
+        <div className="h-4 bg-surface-200 rounded w-1/3 mb-2" />
+        <div className="h-3 bg-surface-200 rounded w-2/3" />
       </div>
     </div>
   );
@@ -422,7 +422,7 @@ export function MappingHistoryDrawer({
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="fixed inset-0 bg-surface-900 opacity-60" aria-hidden="true" />
+          <div className="fixed inset-0 bg-white opacity-60" aria-hidden="true" />
         </Transition.Child>
 
         <div className="fixed inset-0 overflow-hidden">
@@ -438,15 +438,15 @@ export function MappingHistoryDrawer({
                 leaveTo="translate-x-full"
               >
                 <Dialog.Panel
-                  className="pointer-events-auto w-screen max-w-xl h-full bg-surface-800 border-l border-surface-700 shadow-xl flex flex-col"
+                  className="pointer-events-auto w-screen max-w-xl h-full bg-white border-l border-surface-200 shadow-xl flex flex-col"
                   aria-labelledby="mapping-history-drawer-title"
                 >
-                  <header className="flex items-start justify-between p-4 border-b border-surface-700">
+                  <header className="flex items-start justify-between p-4 border-b border-surface-200">
                     <div>
                       <Dialog.Title
                         as="h2"
                         id="mapping-history-drawer-title"
-                        className="text-lg font-semibold text-surface-100"
+                        className="text-lg font-semibold text-surface-900"
                       >
                         Mapping change history
                       </Dialog.Title>
@@ -458,7 +458,7 @@ export function MappingHistoryDrawer({
                       type="button"
                       onClick={onClose}
                       aria-label="Close history drawer"
-                      className="rounded-lg p-1.5 text-surface-600 hover:bg-surface-700 hover:text-surface-200 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      className="rounded-lg p-1.5 text-surface-600 hover:bg-surface-200 hover:text-surface-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
                     >
                       <XMarkIcon className="h-5 w-5" aria-hidden="true" />
                     </button>
@@ -497,7 +497,7 @@ export function MappingHistoryDrawer({
                     )}
 
                     {!isLoading && !error && entries.length === 0 && (
-                      <div className="text-center py-12 bg-surface-900/40 rounded-lg border border-surface-700">
+                      <div className="text-center py-12 bg-white/40 rounded-lg border border-surface-200">
                         <ClockIcon
                           className="w-10 h-10 mx-auto text-surface-600 mb-3"
                           aria-hidden="true"

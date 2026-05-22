@@ -84,7 +84,7 @@ export default function RiskEditModal({
             type="text"
             value={formData.title}
             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            className="w-full bg-surface-900 border border-surface-700 rounded-lg px-3 py-2 text-white"
+            className="w-full bg-white border border-surface-200 rounded-lg px-3 py-2 text-white"
             required
           />
         </div>
@@ -94,7 +94,7 @@ export default function RiskEditModal({
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             rows={3}
-            className="w-full bg-surface-900 border border-surface-700 rounded-lg px-3 py-2 text-white"
+            className="w-full bg-white border border-surface-200 rounded-lg px-3 py-2 text-white"
           />
         </div>
         <div>
@@ -102,7 +102,7 @@ export default function RiskEditModal({
           <SelectNative
             value={formData.category}
             onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-            className="w-full bg-surface-900 border border-surface-700 rounded-lg px-3 py-2 text-white"
+            className="w-full bg-white border border-surface-200 rounded-lg px-3 py-2 text-white"
           >
             {RISK_CATEGORIES.map((cat) => (
               <option key={cat} value={cat}>
@@ -116,7 +116,7 @@ export default function RiskEditModal({
           <SelectNative
             value={formData.reviewFrequency}
             onChange={(e) => setFormData({ ...formData, reviewFrequency: e.target.value })}
-            className="w-full bg-surface-900 border border-surface-700 rounded-lg px-3 py-2 text-white"
+            className="w-full bg-white border border-surface-200 rounded-lg px-3 py-2 text-white"
           >
             {REVIEW_FREQUENCIES.map((freq) => (
               <option key={freq.value} value={freq.value}>

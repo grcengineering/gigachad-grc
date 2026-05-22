@@ -80,12 +80,12 @@ export default function EndpointBuilder({ endpoint, onChange, onDelete }: Endpoi
           type="text"
           value={endpoint.name}
           onChange={(e) => onChange({ name: e.target.value })}
-          className="text-lg font-semibold bg-transparent border-none text-surface-100 focus:outline-none focus:ring-0 p-0"
+          className="text-lg font-semibold bg-transparent border-none text-surface-900 focus:outline-none focus:ring-0 p-0"
           placeholder="Endpoint Name"
         />
         <button
           onClick={onDelete}
-          className="p-2 text-surface-600 hover:text-red-600 hover:bg-surface-800 rounded-lg transition-colors"
+          className="p-2 text-surface-600 hover:text-red-600 hover:bg-white rounded-lg transition-colors"
           title="Delete endpoint"
         >
           <TrashIcon className="w-5 h-5" />
@@ -154,7 +154,7 @@ export default function EndpointBuilder({ endpoint, onChange, onDelete }: Endpoi
               />
               <button
                 onClick={() => removeHeader(key)}
-                className="p-2 text-surface-600 hover:text-red-600 hover:bg-surface-800 rounded-lg transition-colors"
+                className="p-2 text-surface-600 hover:text-red-600 hover:bg-white rounded-lg transition-colors"
               >
                 <XMarkIcon className="w-4 h-4" />
               </button>
@@ -196,7 +196,7 @@ export default function EndpointBuilder({ endpoint, onChange, onDelete }: Endpoi
               />
               <button
                 onClick={() => removeQueryParam(key)}
-                className="p-2 text-surface-600 hover:text-red-600 hover:bg-surface-800 rounded-lg transition-colors"
+                className="p-2 text-surface-600 hover:text-red-600 hover:bg-white rounded-lg transition-colors"
               >
                 <XMarkIcon className="w-4 h-4" />
               </button>
@@ -229,7 +229,7 @@ export default function EndpointBuilder({ endpoint, onChange, onDelete }: Endpoi
             />
           )}
           {!showBodyEditor && endpoint.body && (
-            <pre className="p-3 bg-surface-800 rounded-lg text-xs text-surface-700 overflow-x-auto">
+            <pre className="p-3 bg-white rounded-lg text-xs text-surface-700 overflow-x-auto">
               {endpoint.body.slice(0, 200)}
               {endpoint.body.length > 200 && '...'}
             </pre>

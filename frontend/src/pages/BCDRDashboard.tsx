@@ -172,7 +172,7 @@ export default function BCDRDashboard() {
   if (isLoading) {
     return (
       <div className="p-6 space-y-6 animate-pulse">
-        <div className="h-8 bg-surface-700 rounded w-1/4"></div>
+        <div className="h-8 bg-surface-200 rounded w-1/4"></div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="card p-6 h-32"></div>
@@ -187,7 +187,7 @@ export default function BCDRDashboard() {
       <div className="p-6">
         <div className="card p-8 text-center">
           <ExclamationCircleIcon className="w-12 h-12 mx-auto mb-4 text-red-600" />
-          <h2 className="text-lg font-semibold text-surface-100 mb-2">
+          <h2 className="text-lg font-semibold text-surface-900 mb-2">
             Failed to load BC/DR Dashboard
           </h2>
           <p className="text-surface-600 mb-4">
@@ -255,7 +255,7 @@ export default function BCDRDashboard() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-surface-100">BC/DR Dashboard</h1>
+          <h1 className="text-2xl font-bold text-surface-900">BC/DR Dashboard</h1>
           <p className="text-surface-600 mt-1">Business Continuity & Disaster Recovery Overview</p>
         </div>
         <div className="flex gap-3">
@@ -275,7 +275,7 @@ export default function BCDRDashboard() {
       <div className="card p-6 bg-gradient-to-r from-brand-900/50 to-surface-800">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-surface-200">BC/DR Readiness Score</h2>
+            <h2 className="text-lg font-semibold text-surface-800">BC/DR Readiness Score</h2>
             <p className="text-surface-600 text-sm mt-1">
               Overall preparedness based on RTO coverage, plan coverage, and test success rate
             </p>
@@ -299,7 +299,7 @@ export default function BCDRDashboard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-surface-600">Business Processes</p>
-              <p className="text-3xl font-bold text-surface-100 mt-1">
+              <p className="text-3xl font-bold text-surface-900 mt-1">
                 {summary.processes?.total ?? 0}
               </p>
               <div className="flex items-center gap-2 mt-2 text-xs">
@@ -323,7 +323,7 @@ export default function BCDRDashboard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-surface-600">BC/DR Plans</p>
-              <p className="text-3xl font-bold text-surface-100 mt-1">
+              <p className="text-3xl font-bold text-surface-900 mt-1">
                 {summary.plans?.total ?? 0}
               </p>
               <div className="flex items-center gap-2 mt-2 text-xs">
@@ -341,7 +341,7 @@ export default function BCDRDashboard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-surface-600">DR Tests</p>
-              <p className="text-3xl font-bold text-surface-100 mt-1">
+              <p className="text-3xl font-bold text-surface-900 mt-1">
                 {summary.tests?.completed_count ?? 0}
               </p>
               <div className="flex items-center gap-2 mt-2 text-xs">
@@ -363,7 +363,7 @@ export default function BCDRDashboard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-surface-600">Runbooks</p>
-              <p className="text-3xl font-bold text-surface-100 mt-1">
+              <p className="text-3xl font-bold text-surface-900 mt-1">
                 {summary.runbooks?.total ?? 0}
               </p>
               <div className="flex items-center gap-2 mt-2 text-xs">
@@ -388,7 +388,7 @@ export default function BCDRDashboard() {
         {/* Upcoming Tests */}
         <div className="card p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-surface-100">Upcoming DR Tests</h2>
+            <h2 className="text-lg font-semibold text-surface-900">Upcoming DR Tests</h2>
             <Link to="/bcdr/tests" className="text-brand-400 text-sm hover:text-brand-300">
               View all →
             </Link>
@@ -399,10 +399,10 @@ export default function BCDRDashboard() {
                 <Link
                   key={test.id}
                   to={`/bcdr/tests/${test.id}`}
-                  className="flex items-center justify-between p-3 rounded-lg bg-surface-800/50 hover:bg-surface-700/50 transition-colors"
+                  className="flex items-center justify-between p-3 rounded-lg bg-white/50 hover:bg-surface-200/50 transition-colors"
                 >
                   <div>
-                    <p className="text-surface-100 font-medium">{test.name}</p>
+                    <p className="text-surface-900 font-medium">{test.name}</p>
                     <p className="text-surface-600 text-sm">{test.test_type}</p>
                   </div>
                   <div className="text-right">
@@ -430,7 +430,7 @@ export default function BCDRDashboard() {
         {/* Overdue Items */}
         <div className="card p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-surface-100">Overdue Items</h2>
+            <h2 className="text-lg font-semibold text-surface-900">Overdue Items</h2>
             {(summary.overdueItems?.totalOverdue ?? 0) > 0 && (
               <Badge variant="danger">{summary.overdueItems?.totalOverdue} items</Badge>
             )}
@@ -450,7 +450,7 @@ export default function BCDRDashboard() {
                 >
                   <DocumentTextIcon className="w-5 h-5 text-red-600 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-surface-100 truncate">{plan.title}</p>
+                    <p className="text-surface-900 truncate">{plan.title}</p>
                     <p className="text-red-600 text-xs">Review overdue</p>
                   </div>
                 </Link>
@@ -463,7 +463,7 @@ export default function BCDRDashboard() {
                 >
                   <ShieldExclamationIcon className="w-5 h-5 text-yellow-600 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-surface-100 truncate">{process.title}</p>
+                    <p className="text-surface-900 truncate">{process.title}</p>
                     <p className="text-yellow-600 text-xs">BIA review overdue</p>
                   </div>
                 </Link>
@@ -476,7 +476,7 @@ export default function BCDRDashboard() {
                 >
                   <XCircleIcon className="w-5 h-5 text-orange-600 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-surface-100 truncate">{finding.title}</p>
+                    <p className="text-surface-900 truncate">{finding.title}</p>
                     <p className="text-orange-600 text-xs">Remediation overdue</p>
                   </div>
                 </Link>
@@ -491,7 +491,7 @@ export default function BCDRDashboard() {
         {/* Pending Attestations */}
         <div className="card p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-surface-100 flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-surface-900 flex items-center gap-2">
               <ClipboardDocumentCheckIcon className="w-5 h-5 text-surface-600" />
               Pending Attestations
             </h2>
@@ -516,7 +516,7 @@ export default function BCDRDashboard() {
                 >
                   <ClipboardDocumentCheckIcon className="w-5 h-5 text-yellow-600 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-surface-100 truncate">{attestation.plan_title}</p>
+                    <p className="text-surface-900 truncate">{attestation.plan_title}</p>
                     <p className="text-yellow-600 text-xs capitalize">
                       {attestation.attestation_type?.replace('_', ' ')} attestation
                     </p>
@@ -538,7 +538,7 @@ export default function BCDRDashboard() {
         {/* Vendor Recovery Gaps */}
         <div className="card p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-surface-100 flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-surface-900 flex items-center gap-2">
               <BuildingOfficeIcon className="w-5 h-5 text-surface-600" />
               Vendor Recovery Gaps
             </h2>
@@ -561,7 +561,7 @@ export default function BCDRDashboard() {
                 >
                   <BuildingOfficeIcon className="w-5 h-5 text-red-600 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-surface-100 truncate">{gap.vendor_name}</p>
+                    <p className="text-surface-900 truncate">{gap.vendor_name}</p>
                     <p className="text-red-600 text-xs">
                       RTO gap: {gap.rto_gap_hours}h for {gap.process_name}
                     </p>
@@ -580,42 +580,42 @@ export default function BCDRDashboard() {
 
       {/* Quick Links */}
       <div className="card p-6">
-        <h2 className="text-lg font-semibold text-surface-100 mb-4">Quick Actions</h2>
+        <h2 className="text-lg font-semibold text-surface-900 mb-4">Quick Actions</h2>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <Link
             to="/bcdr/processes/new"
-            className="p-4 rounded-lg bg-surface-800/50 hover:bg-surface-700/50 transition-colors text-center"
+            className="p-4 rounded-lg bg-white/50 hover:bg-surface-200/50 transition-colors text-center"
           >
             <ShieldExclamationIcon className="w-8 h-8 mx-auto mb-2 text-brand-400" />
-            <span className="text-surface-200 text-sm">Add Process</span>
+            <span className="text-surface-800 text-sm">Add Process</span>
           </Link>
           <Link
             to="/bcdr/plans/new"
-            className="p-4 rounded-lg bg-surface-800/50 hover:bg-surface-700/50 transition-colors text-center"
+            className="p-4 rounded-lg bg-white/50 hover:bg-surface-200/50 transition-colors text-center"
           >
             <DocumentTextIcon className="w-8 h-8 mx-auto mb-2 text-blue-600" />
-            <span className="text-surface-200 text-sm">Create Plan</span>
+            <span className="text-surface-800 text-sm">Create Plan</span>
           </Link>
           <Link
             to="/bcdr/tests/new"
-            className="p-4 rounded-lg bg-surface-800/50 hover:bg-surface-700/50 transition-colors text-center"
+            className="p-4 rounded-lg bg-white/50 hover:bg-surface-200/50 transition-colors text-center"
           >
             <BeakerIcon className="w-8 h-8 mx-auto mb-2 text-purple-600" />
-            <span className="text-surface-200 text-sm">Schedule Test</span>
+            <span className="text-surface-800 text-sm">Schedule Test</span>
           </Link>
           <Link
             to="/bcdr/runbooks/new"
-            className="p-4 rounded-lg bg-surface-800/50 hover:bg-surface-700/50 transition-colors text-center"
+            className="p-4 rounded-lg bg-white/50 hover:bg-surface-200/50 transition-colors text-center"
           >
             <BookOpenIcon className="w-8 h-8 mx-auto mb-2 text-teal-600" />
-            <span className="text-surface-200 text-sm">Create Runbook</span>
+            <span className="text-surface-800 text-sm">Create Runbook</span>
           </Link>
           <Link
             to="/bcdr/recovery-teams"
-            className="p-4 rounded-lg bg-surface-800/50 hover:bg-surface-700/50 transition-colors text-center"
+            className="p-4 rounded-lg bg-white/50 hover:bg-surface-200/50 transition-colors text-center"
           >
             <UserGroupIcon className="w-8 h-8 mx-auto mb-2 text-green-600" />
-            <span className="text-surface-200 text-sm">Recovery Teams</span>
+            <span className="text-surface-800 text-sm">Recovery Teams</span>
           </Link>
         </div>
       </div>

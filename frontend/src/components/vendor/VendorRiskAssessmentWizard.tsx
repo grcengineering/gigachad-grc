@@ -193,7 +193,7 @@ function RadioOption({
         'w-full text-left p-3 rounded-lg border transition-colors',
         selected
           ? 'border-brand-500 bg-brand-500/10'
-          : 'border-surface-700 hover:border-surface-600 bg-surface-800/50'
+          : 'border-surface-200 hover:border-surface-300 bg-white/50'
       )}
     >
       <div className="flex items-start gap-3">
@@ -204,7 +204,7 @@ function RadioOption({
           )}
         />
         <div>
-          <p className={clsx('font-medium', selected ? 'text-surface-100' : 'text-surface-700')}>
+          <p className={clsx('font-medium', selected ? 'text-surface-900' : 'text-surface-700')}>
             {label}
             <span className="ml-2 text-xs text-surface-500">({value} pts)</span>
           </p>
@@ -228,7 +228,7 @@ function ScoreIndicator({
   return (
     <div className="flex items-center gap-2">
       <span className="text-sm text-surface-600 w-20">{label}</span>
-      <div className="flex-1 h-2 bg-surface-800 rounded-full overflow-hidden">
+      <div className="flex-1 h-2 bg-white rounded-full overflow-hidden">
         <div
           className={clsx(
             'h-full transition-all',
@@ -401,7 +401,7 @@ export function VendorRiskAssessmentWizard({
                 type="text"
                 value={state.title}
                 onChange={(e) => setState({ ...state, title: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
               />
             </div>
             <div>
@@ -410,7 +410,7 @@ export function VendorRiskAssessmentWizard({
                 value={state.description}
                 onChange={(e) => setState({ ...state, description: e.target.value })}
                 rows={3}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
                 placeholder="Describe the risk scenario in 1-2 sentences..."
               />
             </div>
@@ -422,7 +422,7 @@ export function VendorRiskAssessmentWizard({
                 type="text"
                 value={state.assessor}
                 onChange={(e) => setState({ ...state, assessor: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
               />
             </div>
           </div>
@@ -432,7 +432,7 @@ export function VendorRiskAssessmentWizard({
         return (
           <div className="space-y-6">
             <div>
-              <h4 className="font-medium text-surface-200 mb-3">
+              <h4 className="font-medium text-surface-800 mb-3">
                 What type of data does this vendor process?
               </h4>
               <div className="space-y-2">
@@ -449,7 +449,7 @@ export function VendorRiskAssessmentWizard({
               </div>
             </div>
             <div>
-              <h4 className="font-medium text-surface-200 mb-3">
+              <h4 className="font-medium text-surface-800 mb-3">
                 What is the vendor's role in your infrastructure?
               </h4>
               <div className="space-y-2">
@@ -472,7 +472,7 @@ export function VendorRiskAssessmentWizard({
         return (
           <div className="space-y-6">
             <div>
-              <h4 className="font-medium text-surface-200 mb-3">
+              <h4 className="font-medium text-surface-800 mb-3">
                 Who is the most likely threat actor?
               </h4>
               <div className="space-y-2">
@@ -489,7 +489,7 @@ export function VendorRiskAssessmentWizard({
               </div>
             </div>
             <div>
-              <h4 className="font-medium text-surface-200 mb-3">
+              <h4 className="font-medium text-surface-800 mb-3">
                 What is the primary threat objective?
               </h4>
               <div className="space-y-2">
@@ -512,7 +512,7 @@ export function VendorRiskAssessmentWizard({
         return (
           <div className="space-y-6">
             <div>
-              <h4 className="font-medium text-surface-200 mb-3">Threat Event Frequency</h4>
+              <h4 className="font-medium text-surface-800 mb-3">Threat Event Frequency</h4>
               <div className="space-y-2">
                 {LIKELIHOOD_FREQUENCY_OPTIONS.map((opt) => (
                   <RadioOption
@@ -527,7 +527,7 @@ export function VendorRiskAssessmentWizard({
               </div>
             </div>
             <div>
-              <h4 className="font-medium text-surface-200 mb-3">Threat Actor Capability</h4>
+              <h4 className="font-medium text-surface-800 mb-3">Threat Actor Capability</h4>
               <div className="space-y-2">
                 {LIKELIHOOD_CAPABILITY_OPTIONS.map((opt) => (
                   <RadioOption
@@ -542,7 +542,7 @@ export function VendorRiskAssessmentWizard({
               </div>
             </div>
             <div>
-              <h4 className="font-medium text-surface-200 mb-3">Control Strength</h4>
+              <h4 className="font-medium text-surface-800 mb-3">Control Strength</h4>
               <div className="space-y-2">
                 {LIKELIHOOD_CONTROL_OPTIONS.map((opt) => (
                   <RadioOption
@@ -564,7 +564,7 @@ export function VendorRiskAssessmentWizard({
           <div className="space-y-4">
             {Object.entries(IMPACT_OPTIONS).map(([key, options]) => (
               <div key={key}>
-                <h4 className="font-medium text-surface-200 mb-2 capitalize">{key} Impact</h4>
+                <h4 className="font-medium text-surface-800 mb-2 capitalize">{key} Impact</h4>
                 <SelectNative
                   value={
                     state[
@@ -579,7 +579,7 @@ export function VendorRiskAssessmentWizard({
                       ),
                     })
                   }
-                  className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+                  className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
                 >
                   {options.map((opt) => (
                     <option key={opt.value} value={opt.value}>
@@ -631,8 +631,8 @@ export function VendorRiskAssessmentWizard({
               <ScoreIndicator score={impactScore} maxScore={25} label="Impact" />
             </div>
 
-            <div className="p-4 bg-surface-800/50 rounded-lg">
-              <h4 className="font-medium text-surface-200 mb-2">Recommended Action</h4>
+            <div className="p-4 bg-white/50 rounded-lg">
+              <h4 className="font-medium text-surface-800 mb-2">Recommended Action</h4>
               <p className="text-surface-600">
                 {riskLevel === 'Critical'
                   ? 'Immediate action required - escalate to leadership'
@@ -657,18 +657,18 @@ export function VendorRiskAssessmentWizard({
     <Dialog open onClose={onClose} size="xl">
       <div className="flex flex-col max-h-[80vh]">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-surface-800">
+        <div className="flex items-center justify-between p-4 border-b border-surface-200">
           <div className="flex items-center gap-3">
             <ShieldExclamationIcon className="w-6 h-6 text-brand-400" />
             <div>
-              <h2 className="text-lg font-semibold text-surface-100">Vendor Risk Assessment</h2>
+              <h2 className="text-lg font-semibold text-surface-900">Vendor Risk Assessment</h2>
               <p className="text-sm text-surface-600">{vendorName}</p>
             </div>
           </div>
         </div>
 
         {/* Progress */}
-        <div className="px-4 py-3 border-b border-surface-800 bg-surface-800/30">
+        <div className="px-4 py-3 border-b border-surface-200 bg-white/30">
           <div className="flex items-center gap-2">
             {steps.map((_, i) => (
               <div key={i} className="flex items-center">
@@ -679,14 +679,14 @@ export function VendorRiskAssessmentWizard({
                       ? 'bg-brand-500 text-white'
                       : i === step
                         ? 'bg-brand-500/20 text-brand-400 border border-brand-500'
-                        : 'bg-surface-800 text-surface-500'
+                        : 'bg-white text-surface-500'
                   )}
                 >
                   {i < step ? <CheckCircleIcon className="w-5 h-5" /> : i + 1}
                 </div>
                 {i < steps.length - 1 && (
                   <div
-                    className={clsx('w-8 h-0.5 mx-1', i < step ? 'bg-brand-500' : 'bg-surface-700')}
+                    className={clsx('w-8 h-0.5 mx-1', i < step ? 'bg-brand-500' : 'bg-surface-200')}
                   />
                 )}
               </div>
@@ -699,7 +699,7 @@ export function VendorRiskAssessmentWizard({
         <div className="flex-1 overflow-y-auto p-6">{renderStep()}</div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between p-4 border-t border-surface-800">
+        <div className="flex items-center justify-between p-4 border-t border-surface-200">
           <Button
             variant="ghost"
             onClick={() => setStep(step - 1)}

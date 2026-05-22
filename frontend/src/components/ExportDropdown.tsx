@@ -118,12 +118,12 @@ export function ExportDropdown<T>({
       </Button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 bg-surface-800 border border-surface-700 rounded-lg shadow-xl z-50 overflow-hidden">
+        <div className="absolute right-0 mt-2 w-48 bg-white border border-surface-200 rounded-lg shadow-xl z-50 overflow-hidden">
           {formatOptions.map((option) => (
             <button
               key={option.value}
               onClick={() => handleExport(option.value)}
-              className="w-full px-4 py-2.5 text-left text-sm text-surface-200 hover:bg-surface-700 flex items-center gap-3 transition-colors"
+              className="w-full px-4 py-2.5 text-left text-sm text-surface-800 hover:bg-surface-200 flex items-center gap-3 transition-colors"
             >
               <span className="text-base">{option.icon}</span>
               {option.label}

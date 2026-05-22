@@ -89,7 +89,7 @@ function RequirementTree({
   };
 
   return (
-    <div className={clsx('space-y-1', level > 0 && 'ml-4 border-l border-surface-700 pl-3')}>
+    <div className={clsx('space-y-1', level > 0 && 'ml-4 border-l border-surface-200 pl-3')}>
       {requirements.map((req) => {
         const hasChildren = req.children && req.children.length > 0;
         const isExpanded = expanded.has(req.reference);
@@ -99,15 +99,13 @@ function RequirementTree({
             <div
               className={clsx(
                 'flex items-start gap-2 py-2 px-3 rounded-lg transition-colors',
-                req.isCategory
-                  ? 'bg-surface-800/50 hover:bg-surface-800'
-                  : 'hover:bg-surface-800/30'
+                req.isCategory ? 'bg-white/50 hover:bg-white' : 'hover:bg-white/30'
               )}
             >
               {hasChildren ? (
                 <button
                   onClick={() => toggleExpand(req.reference)}
-                  className="mt-0.5 text-surface-600 hover:text-surface-200"
+                  className="mt-0.5 text-surface-600 hover:text-surface-800"
                 >
                   {isExpanded ? (
                     <ChevronDownIcon className="w-4 h-4" />
@@ -125,7 +123,7 @@ function RequirementTree({
                       'text-xs font-mono px-1.5 py-0.5 rounded',
                       req.isCategory
                         ? 'bg-brand-500/20 text-brand-400'
-                        : 'bg-surface-700 text-surface-700'
+                        : 'bg-surface-200 text-surface-700'
                     )}
                   >
                     {req.reference}
@@ -133,7 +131,7 @@ function RequirementTree({
                   <span
                     className={clsx(
                       'font-medium truncate',
-                      req.isCategory ? 'text-surface-100' : 'text-surface-200'
+                      req.isCategory ? 'text-surface-900' : 'text-surface-800'
                     )}
                   >
                     {req.title}
@@ -166,7 +164,7 @@ function FrameworkPreviewModal({
   return (
     <Dialog open onClose={onClose}>
       {/* Header */}
-      <div className="flex items-center justify-between p-6 border-b border-surface-700">
+      <div className="flex items-center justify-between p-6 border-b border-surface-200">
         <div className="flex items-center gap-4">
           <div
             className={clsx(
@@ -177,7 +175,7 @@ function FrameworkPreviewModal({
             {categoryIcons[framework.category] || categoryIcons.security}
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-surface-100">{framework.name}</h2>
+            <h2 className="text-xl font-semibold text-surface-900">{framework.name}</h2>
             <p className="text-sm text-surface-600">
               {framework.source} • Version {framework.version}
             </p>
@@ -185,7 +183,7 @@ function FrameworkPreviewModal({
         </div>
         <button
           onClick={onClose}
-          className="p-2 text-surface-600 hover:text-surface-200 hover:bg-surface-800 rounded-lg transition-colors"
+          className="p-2 text-surface-600 hover:text-surface-800 hover:bg-white rounded-lg transition-colors"
         >
           <XCircleIcon className="w-6 h-6" />
         </button>
@@ -196,29 +194,29 @@ function FrameworkPreviewModal({
         <div className="mb-6">
           <p className="text-surface-700">{framework.description}</p>
           <div className="flex items-center gap-4 mt-4">
-            <div className="px-3 py-1.5 bg-surface-800 rounded-lg">
+            <div className="px-3 py-1.5 bg-white rounded-lg">
               <span className="text-sm text-surface-600">Requirements:</span>
-              <span className="ml-2 font-semibold text-surface-100">
+              <span className="ml-2 font-semibold text-surface-900">
                 {framework.requirementCount}
               </span>
             </div>
-            <div className="px-3 py-1.5 bg-surface-800 rounded-lg">
+            <div className="px-3 py-1.5 bg-white rounded-lg">
               <span className="text-sm text-surface-600">Categories:</span>
-              <span className="ml-2 font-semibold text-surface-100">{framework.categoryCount}</span>
+              <span className="ml-2 font-semibold text-surface-900">{framework.categoryCount}</span>
             </div>
           </div>
         </div>
 
         <div>
-          <h3 className="text-lg font-medium text-surface-100 mb-4">Requirements Structure</h3>
-          <div className="bg-surface-800/30 rounded-lg p-4 max-h-[400px] overflow-y-auto">
+          <h3 className="text-lg font-medium text-surface-900 mb-4">Requirements Structure</h3>
+          <div className="bg-white/30 rounded-lg p-4 max-h-[400px] overflow-y-auto">
             <RequirementTree requirements={framework.requirements} />
           </div>
         </div>
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-end gap-3 p-6 border-t border-surface-700">
+      <div className="flex items-center justify-end gap-3 p-6 border-t border-surface-200">
         <Button variant="secondary" onClick={onClose}>
           Cancel
         </Button>
@@ -250,10 +248,10 @@ function FrameworkCard({
   return (
     <div
       className={clsx(
-        'group bg-surface-800/50 border rounded-xl p-5 transition-all duration-200',
+        'group bg-white/50 border rounded-xl p-5 transition-all duration-200',
         framework.isActivated
           ? 'border-green-500/30 bg-green-500/5'
-          : 'border-surface-700 hover:border-surface-600 hover:bg-surface-800/70'
+          : 'border-surface-200 hover:border-surface-300 hover:bg-white/70'
       )}
     >
       <div className="flex items-start justify-between mb-4">
@@ -273,7 +271,7 @@ function FrameworkCard({
         )}
       </div>
 
-      <h3 className="text-lg font-semibold text-surface-100 mb-1">{framework.name}</h3>
+      <h3 className="text-lg font-semibold text-surface-900 mb-1">{framework.name}</h3>
       <p className="text-sm text-surface-600 mb-4 line-clamp-2">{framework.description}</p>
 
       <div className="flex items-center gap-3 text-sm text-surface-600 mb-4">
@@ -313,7 +311,7 @@ function FrameworkCard({
       </div>
 
       {framework.isActivated && framework.activatedFrameworkId && (
-        <div className="mt-4 pt-4 border-t border-surface-700">
+        <div className="mt-4 pt-4 border-t border-surface-200">
           <Link
             to={`/frameworks/${framework.activatedFrameworkId}`}
             className="text-sm text-brand-400 hover:text-brand-300 transition-colors"
@@ -429,7 +427,7 @@ export default function FrameworkLibrary() {
       <div className="space-y-6 animate-fade-in">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-surface-100">Framework Library</h1>
+            <h1 className="text-2xl font-bold text-surface-900">Framework Library</h1>
             <p className="text-surface-600 mt-1">
               Browse and activate compliance frameworks for your organization
             </p>
@@ -445,7 +443,7 @@ export default function FrameworkLibrary() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-surface-100">Framework Library</h1>
+          <h1 className="text-2xl font-bold text-surface-900">Framework Library</h1>
           <p className="text-surface-600 mt-1">
             Browse and activate compliance frameworks for your organization
           </p>
@@ -470,7 +468,7 @@ export default function FrameworkLibrary() {
             placeholder="Search frameworks..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 placeholder-surface-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500"
+            className="w-full pl-10 pr-4 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 placeholder-surface-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500"
           />
         </div>
 
@@ -479,7 +477,7 @@ export default function FrameworkLibrary() {
           <SelectNative
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:ring-2 focus:ring-brand-500/50"
+            className="px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:ring-2 focus:ring-brand-500/50"
           >
             <option value="all">All Categories</option>
             {categories.map((cat) => (
@@ -495,7 +493,7 @@ export default function FrameworkLibrary() {
             type="checkbox"
             checked={showActivatedOnly}
             onChange={(e) => setShowActivatedOnly(e.target.checked)}
-            className="w-4 h-4 rounded border-surface-600 bg-surface-800 text-brand-500 focus:ring-brand-500/50"
+            className="w-4 h-4 rounded border-surface-300 bg-white text-brand-500 focus:ring-brand-500/50"
           />
           <span className="text-sm text-surface-700">Show activated only</span>
         </label>
@@ -517,9 +515,9 @@ export default function FrameworkLibrary() {
           ))}
         </div>
       ) : (
-        <div className="text-center py-16 bg-surface-800/30 rounded-xl border border-surface-700">
+        <div className="text-center py-16 bg-white/30 rounded-xl border border-surface-200">
           <BookOpenIcon className="w-12 h-12 text-surface-500 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-surface-200 mb-2">No frameworks found</h3>
+          <h3 className="text-lg font-medium text-surface-800 mb-2">No frameworks found</h3>
           <p className="text-surface-600">
             {searchQuery || categoryFilter !== 'all'
               ? 'Try adjusting your search or filter criteria'

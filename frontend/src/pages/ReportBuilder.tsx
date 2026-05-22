@@ -168,7 +168,7 @@ export default function ReportBuilderPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowTemplates(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-surface-800 hover:bg-surface-700 text-white rounded-lg transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-surface-200 text-white rounded-lg transition-colors"
           >
             <FolderIcon className="w-4 h-4" />
             Templates
@@ -187,11 +187,11 @@ export default function ReportBuilderPage() {
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-40 bg-surface-800 rounded-xl animate-pulse" />
+            <div key={i} className="h-40 bg-white rounded-xl animate-pulse" />
           ))}
         </div>
       ) : reports.length === 0 ? (
-        <div className="text-center py-16 bg-surface-800/50 rounded-xl border border-surface-700">
+        <div className="text-center py-16 bg-white/50 rounded-xl border border-surface-200">
           <DocumentTextIcon className="w-12 h-12 text-surface-600 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-white mb-2">No Custom Reports Yet</h3>
           <p className="text-surface-600 mb-4">
@@ -200,7 +200,7 @@ export default function ReportBuilderPage() {
           <div className="flex items-center justify-center gap-3">
             <button
               onClick={() => setShowTemplates(true)}
-              className="px-4 py-2 bg-surface-700 hover:bg-surface-600 text-white rounded-lg transition-colors"
+              className="px-4 py-2 bg-surface-200 hover:bg-surface-600 text-white rounded-lg transition-colors"
             >
               Browse Templates
             </button>
@@ -217,7 +217,7 @@ export default function ReportBuilderPage() {
           {reports.map((report) => (
             <div
               key={report.id}
-              className="p-5 bg-surface-800 rounded-xl border border-surface-700 hover:border-surface-600 transition-colors group"
+              className="p-5 bg-white rounded-xl border border-surface-200 hover:border-surface-300 transition-colors group"
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="p-2 bg-brand-500/20 rounded-lg">
@@ -226,7 +226,7 @@ export default function ReportBuilderPage() {
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={() => navigate(`/reports/builder/${report.id}`)}
-                    className="p-1.5 text-surface-600 hover:text-white rounded-lg hover:bg-surface-700"
+                    className="p-1.5 text-surface-600 hover:text-white rounded-lg hover:bg-surface-200"
                     title="Edit"
                   >
                     <PencilIcon className="w-4 h-4" />
@@ -237,7 +237,7 @@ export default function ReportBuilderPage() {
                         deleteMutation.mutate(report.id!);
                       }
                     }}
-                    className="p-1.5 text-red-600 hover:text-red-700 rounded-lg hover:bg-surface-700"
+                    className="p-1.5 text-red-600 hover:text-red-700 rounded-lg hover:bg-surface-200"
                     title="Delete"
                   >
                     <TrashIcon className="w-4 h-4" />
@@ -280,7 +280,7 @@ export default function ReportBuilderPage() {
               <button
                 key={i}
                 onClick={() => createFromTemplate(template)}
-                className="p-4 text-left bg-surface-800 hover:bg-surface-700 rounded-lg border border-surface-700 hover:border-surface-600 transition-colors"
+                className="p-4 text-left bg-white hover:bg-surface-200 rounded-lg border border-surface-200 hover:border-surface-300 transition-colors"
               >
                 <h4 className="font-medium text-white mb-1">{template.name}</h4>
                 <p className="text-sm text-surface-600">{template.description}</p>

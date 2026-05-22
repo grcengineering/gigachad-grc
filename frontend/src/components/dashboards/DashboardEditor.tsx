@@ -208,7 +208,7 @@ export default function DashboardEditor({ dashboardId, onBack }: DashboardEditor
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="animate-spin w-8 h-8 border-4 border-surface-700 rounded-full border-t-brand-500" />
+        <div className="animate-spin w-8 h-8 border-4 border-surface-200 rounded-full border-t-brand-500" />
       </div>
     );
   }
@@ -231,13 +231,13 @@ export default function DashboardEditor({ dashboardId, onBack }: DashboardEditor
         <div className="flex items-center gap-4">
           <button
             onClick={onBack}
-            className="text-surface-600 hover:text-surface-200 transition-colors"
+            className="text-surface-600 hover:text-surface-800 transition-colors"
           >
             ← Back to dashboards
           </button>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold text-surface-100">{dashboard.name}</h1>
+              <h1 className="text-2xl font-bold text-surface-900">{dashboard.name}</h1>
               {dashboard.isDefault && (
                 <StarIconSolid className="w-5 h-5 text-yellow-600" title="Default dashboard" />
               )}
@@ -326,7 +326,7 @@ export default function DashboardEditor({ dashboardId, onBack }: DashboardEditor
           <div className="text-surface-500 mb-4">
             <Cog6ToothIcon className="w-12 h-12 mx-auto" />
           </div>
-          <h3 className="text-lg font-medium text-surface-200 mb-2">No widgets yet</h3>
+          <h3 className="text-lg font-medium text-surface-800 mb-2">No widgets yet</h3>
           <p className="text-surface-600 mb-4">Add widgets to customize your dashboard</p>
           <Button onClick={() => setShowPalette(true)} variant="primary">
             <PlusIcon className="w-4 h-4 mr-1" /> Add Widget

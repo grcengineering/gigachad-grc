@@ -552,7 +552,7 @@ export default function RiskReports() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Report Templates - Left Panel */}
         <div className="lg:col-span-4">
-          <div className="bg-white dark:bg-surface-800 rounded-xl border border-gray-200 dark:border-surface-700 p-5">
+          <div className="bg-white dark:bg-white rounded-xl border border-gray-200 dark:border-surface-200 p-5">
             <h2 className="text-base font-medium text-gray-900 dark:text-white mb-4">
               Report Templates
             </h2>
@@ -564,7 +564,7 @@ export default function RiskReports() {
                   className={`w-full p-3 rounded-lg border text-left transition-all ${
                     selectedReport === template.id
                       ? 'bg-brand-500/10 border-brand-500/50'
-                      : 'bg-gray-50 dark:bg-surface-700/50 border-gray-200 dark:border-surface-700 hover:border-gray-300 dark:hover:border-surface-600 hover:bg-gray-100 dark:hover:bg-surface-700'
+                      : 'bg-gray-50 dark:bg-surface-200/50 border-gray-200 dark:border-surface-200 hover:border-gray-300 dark:hover:border-surface-300 hover:bg-gray-100 dark:hover:bg-surface-200'
                   }`}
                 >
                   <div className="flex items-start gap-3">
@@ -609,7 +609,7 @@ export default function RiskReports() {
           {selectedReport && selectedTemplate ? (
             <>
               {/* Selected Report Header */}
-              <div className="bg-white dark:bg-surface-800 rounded-xl border border-gray-200 dark:border-surface-700 p-5">
+              <div className="bg-white dark:bg-white rounded-xl border border-gray-200 dark:border-surface-200 p-5">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="p-2.5 rounded-lg bg-brand-500/20">
                     <selectedTemplate.icon className="w-5 h-5 text-brand-500 dark:text-brand-400" />
@@ -635,7 +635,7 @@ export default function RiskReports() {
                       type="date"
                       value={dateRange.start}
                       onChange={(e) => setDateRange((prev) => ({ ...prev, start: e.target.value }))}
-                      className="w-full px-3 py-2 bg-gray-50 dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white text-sm"
+                      className="w-full px-3 py-2 bg-gray-50 dark:bg-surface-200 border border-gray-300 dark:border-surface-300 rounded-lg text-gray-900 dark:text-white text-sm"
                     />
                   </div>
                   <div>
@@ -647,7 +647,7 @@ export default function RiskReports() {
                       type="date"
                       value={dateRange.end}
                       onChange={(e) => setDateRange((prev) => ({ ...prev, end: e.target.value }))}
-                      className="w-full px-3 py-2 bg-gray-50 dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white text-sm"
+                      className="w-full px-3 py-2 bg-gray-50 dark:bg-surface-200 border border-gray-300 dark:border-surface-300 rounded-lg text-gray-900 dark:text-white text-sm"
                     />
                   </div>
                   <div>
@@ -660,7 +660,7 @@ export default function RiskReports() {
                       onChange={(e) =>
                         setFilters((prev) => ({ ...prev, category: e.target.value }))
                       }
-                      className="w-full px-3 py-2 bg-gray-50 dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white text-sm"
+                      className="w-full px-3 py-2 bg-gray-50 dark:bg-surface-200 border border-gray-300 dark:border-surface-300 rounded-lg text-gray-900 dark:text-white text-sm"
                     >
                       <option value="">All</option>
                       <option value="security">Security</option>
@@ -679,7 +679,7 @@ export default function RiskReports() {
                       onChange={(e) =>
                         setFilters((prev) => ({ ...prev, riskLevel: e.target.value }))
                       }
-                      className="w-full px-3 py-2 bg-gray-50 dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white text-sm"
+                      className="w-full px-3 py-2 bg-gray-50 dark:bg-surface-200 border border-gray-300 dark:border-surface-300 rounded-lg text-gray-900 dark:text-white text-sm"
                     >
                       <option value="">All</option>
                       <option value="critical">Critical</option>
@@ -695,7 +695,7 @@ export default function RiskReports() {
                     <SelectNative
                       value={filters.status}
                       onChange={(e) => setFilters((prev) => ({ ...prev, status: e.target.value }))}
-                      className="w-full px-3 py-2 bg-gray-50 dark:bg-surface-700 border border-gray-300 dark:border-surface-600 rounded-lg text-gray-900 dark:text-white text-sm"
+                      className="w-full px-3 py-2 bg-gray-50 dark:bg-surface-200 border border-gray-300 dark:border-surface-300 rounded-lg text-gray-900 dark:text-white text-sm"
                     >
                       <option value="">All</option>
                       <option value="open">Open</option>
@@ -707,7 +707,7 @@ export default function RiskReports() {
                 </div>
 
                 {/* Export Section */}
-                <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200 dark:border-surface-700">
+                <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200 dark:border-surface-200">
                   <div className="flex items-center gap-3">
                     <span className="text-xs text-gray-500 dark:text-surface-500">Format:</span>
                     <div className="flex gap-1">
@@ -718,7 +718,7 @@ export default function RiskReports() {
                           className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
                             exportFormat === format
                               ? 'bg-brand-500 text-white'
-                              : 'bg-gray-100 dark:bg-surface-700 text-gray-600 dark:text-surface-600 hover:bg-gray-200 dark:hover:bg-surface-600 hover:text-gray-700 dark:hover:text-surface-700'
+                              : 'bg-gray-100 dark:bg-surface-200 text-gray-600 dark:text-surface-600 hover:bg-gray-200 dark:hover:bg-surface-600 hover:text-gray-700 dark:hover:text-surface-700'
                           }`}
                         >
                           {format.toUpperCase()}
@@ -761,7 +761,7 @@ export default function RiskReports() {
               </div>
 
               {/* Preview */}
-              <div className="bg-white dark:bg-surface-800 rounded-xl border border-gray-200 dark:border-surface-700 p-5">
+              <div className="bg-white dark:bg-white rounded-xl border border-gray-200 dark:border-surface-200 p-5">
                 <h3 className="text-base font-medium text-gray-900 dark:text-white mb-4">
                   Preview
                 </h3>
@@ -798,7 +798,7 @@ export default function RiskReports() {
               </div>
             </>
           ) : (
-            <div className="bg-white dark:bg-surface-800 rounded-xl border border-gray-200 dark:border-surface-700 p-12 text-center">
+            <div className="bg-white dark:bg-white rounded-xl border border-gray-200 dark:border-surface-200 p-12 text-center">
               <DocumentChartBarIcon className="w-12 h-12 text-gray-400 dark:text-surface-600 mx-auto mb-4" />
               <p className="text-gray-600 dark:text-surface-600 text-lg font-medium">
                 Select a Report Template
@@ -823,25 +823,25 @@ function ExecutiveSummaryPreview({ data, risks }: { data: any; risks: Risk[] }) 
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-4 gap-3">
-        <div className="p-4 bg-gray-50 dark:bg-surface-700/50 rounded-lg text-center border border-gray-200 dark:border-surface-600/50">
+        <div className="p-4 bg-gray-50 dark:bg-surface-200/50 rounded-lg text-center border border-gray-200 dark:border-surface-300/50">
           <p className="text-2xl font-bold text-gray-900 dark:text-white">
             {data?.totalRisks || risks.length}
           </p>
           <p className="text-gray-500 dark:text-surface-600 text-xs mt-1">Total Risks</p>
         </div>
-        <div className="p-4 bg-gray-50 dark:bg-surface-700/50 rounded-lg text-center border border-gray-200 dark:border-surface-600/50">
+        <div className="p-4 bg-gray-50 dark:bg-surface-200/50 rounded-lg text-center border border-gray-200 dark:border-surface-300/50">
           <p className="text-2xl font-bold text-red-500 dark:text-red-600">
             {data?.openRisks || risks.filter((r) => r.status === 'open').length}
           </p>
           <p className="text-gray-500 dark:text-surface-600 text-xs mt-1">Open</p>
         </div>
-        <div className="p-4 bg-gray-50 dark:bg-surface-700/50 rounded-lg text-center border border-gray-200 dark:border-surface-600/50">
+        <div className="p-4 bg-gray-50 dark:bg-surface-200/50 rounded-lg text-center border border-gray-200 dark:border-surface-300/50">
           <p className="text-2xl font-bold text-amber-500 dark:text-amber-600">
             {data?.inTreatment || risks.filter((r) => r.status === 'in_treatment').length}
           </p>
           <p className="text-gray-500 dark:text-surface-600 text-xs mt-1">In Treatment</p>
         </div>
-        <div className="p-4 bg-gray-50 dark:bg-surface-700/50 rounded-lg text-center border border-gray-200 dark:border-surface-600/50">
+        <div className="p-4 bg-gray-50 dark:bg-surface-200/50 rounded-lg text-center border border-gray-200 dark:border-surface-300/50">
           <p className="text-2xl font-bold text-emerald-500 dark:text-emerald-600">
             {data?.mitigatedThisMonth || risks.filter((r) => r.status === 'mitigated').length}
           </p>
@@ -857,7 +857,7 @@ function ExecutiveSummaryPreview({ data, risks }: { data: any; risks: Risk[] }) 
             {topRisks.map((risk) => (
               <div
                 key={risk.id}
-                className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-surface-700/50"
+                className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-surface-200/50"
               >
                 <div className="flex items-center gap-3">
                   <span
@@ -886,7 +886,7 @@ function RiskRegisterPreview({ risks }: { risks: Risk[] }) {
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="text-left text-gray-500 dark:text-surface-600 border-b border-gray-200 dark:border-surface-700">
+          <tr className="text-left text-gray-500 dark:text-surface-600 border-b border-gray-200 dark:border-surface-200">
             <th className="pb-2 text-xs font-medium">Risk ID</th>
             <th className="pb-2 text-xs font-medium">Title</th>
             <th className="pb-2 text-xs font-medium">Category</th>
@@ -896,7 +896,7 @@ function RiskRegisterPreview({ risks }: { risks: Risk[] }) {
         </thead>
         <tbody>
           {risks.slice(0, 5).map((risk) => (
-            <tr key={risk.id} className="border-b border-gray-200 dark:border-surface-700/50">
+            <tr key={risk.id} className="border-b border-gray-200 dark:border-surface-200/50">
               <td className="py-2.5 text-brand-500 dark:text-brand-400 font-mono text-xs">
                 {risk.riskId}
               </td>
@@ -965,7 +965,7 @@ function RiskSummaryPreview({ data, risks }: { data: any; risks: Risk[] }) {
           {['critical', 'high', 'medium', 'low'].map((level) => (
             <div
               key={level}
-              className="p-3 bg-gray-50 dark:bg-surface-700/50 rounded-lg border border-gray-200 dark:border-surface-600/50"
+              className="p-3 bg-gray-50 dark:bg-surface-200/50 rounded-lg border border-gray-200 dark:border-surface-300/50"
             >
               <p className="text-xl font-bold text-gray-900 dark:text-white">
                 {levelCounts[level] ||
@@ -983,7 +983,7 @@ function RiskSummaryPreview({ data, risks }: { data: any; risks: Risk[] }) {
           {categories.slice(0, 4).map((cat) => (
             <div
               key={cat.category}
-              className="flex justify-between items-center py-1.5 border-b border-gray-200 dark:border-surface-700/50"
+              className="flex justify-between items-center py-1.5 border-b border-gray-200 dark:border-surface-200/50"
             >
               <span className="text-gray-600 dark:text-surface-700 capitalize text-sm">
                 {cat.category}
@@ -1013,25 +1013,25 @@ function TreatmentStatusPreview({ risks }: { risks: Risk[] }) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-4 gap-3">
-        <div className="p-3 bg-gray-50 dark:bg-surface-700/50 rounded-lg text-center border border-gray-200 dark:border-surface-600/50">
+        <div className="p-3 bg-gray-50 dark:bg-surface-200/50 rounded-lg text-center border border-gray-200 dark:border-surface-300/50">
           <p className="text-xl font-bold text-gray-900 dark:text-white">
             {treatmentCounts.mitigate}
           </p>
           <p className="text-gray-500 dark:text-surface-600 text-xs mt-1">Mitigating</p>
         </div>
-        <div className="p-3 bg-gray-50 dark:bg-surface-700/50 rounded-lg text-center border border-gray-200 dark:border-surface-600/50">
+        <div className="p-3 bg-gray-50 dark:bg-surface-200/50 rounded-lg text-center border border-gray-200 dark:border-surface-300/50">
           <p className="text-xl font-bold text-gray-900 dark:text-white">
             {treatmentCounts.accept}
           </p>
           <p className="text-gray-500 dark:text-surface-600 text-xs mt-1">Accepting</p>
         </div>
-        <div className="p-3 bg-gray-50 dark:bg-surface-700/50 rounded-lg text-center border border-gray-200 dark:border-surface-600/50">
+        <div className="p-3 bg-gray-50 dark:bg-surface-200/50 rounded-lg text-center border border-gray-200 dark:border-surface-300/50">
           <p className="text-xl font-bold text-gray-900 dark:text-white">
             {treatmentCounts.transfer}
           </p>
           <p className="text-gray-500 dark:text-surface-600 text-xs mt-1">Transferring</p>
         </div>
-        <div className="p-3 bg-gray-50 dark:bg-surface-700/50 rounded-lg text-center border border-gray-200 dark:border-surface-600/50">
+        <div className="p-3 bg-gray-50 dark:bg-surface-200/50 rounded-lg text-center border border-gray-200 dark:border-surface-300/50">
           <p className="text-xl font-bold text-gray-900 dark:text-white">{treatmentCounts.avoid}</p>
           <p className="text-gray-500 dark:text-surface-600 text-xs mt-1">Avoiding</p>
         </div>
@@ -1049,7 +1049,7 @@ function TreatmentStatusPreview({ risks }: { risks: Risk[] }) {
             .map((risk) => (
               <div
                 key={risk.id}
-                className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-surface-700/50"
+                className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-surface-200/50"
               >
                 <div>
                   <span className="text-gray-900 dark:text-white text-sm">{risk.title}</span>
@@ -1107,7 +1107,7 @@ function RiskTrendsPreview({ trendData }: { trendData: TrendDataPoint[] }) {
     <div className="space-y-5">
       {/* Trend Summary Cards */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="p-3 bg-gray-50 dark:bg-surface-700/50 rounded-lg border border-gray-200 dark:border-surface-600/50">
+        <div className="p-3 bg-gray-50 dark:bg-surface-200/50 rounded-lg border border-gray-200 dark:border-surface-300/50">
           <div className="flex items-center justify-between">
             <span className="text-gray-500 dark:text-surface-600 text-xs">Open Risks</span>
             {openChange !== 0 && (
@@ -1127,7 +1127,7 @@ function RiskTrendsPreview({ trendData }: { trendData: TrendDataPoint[] }) {
             {latestData.openRisks}
           </p>
         </div>
-        <div className="p-3 bg-gray-50 dark:bg-surface-700/50 rounded-lg border border-gray-200 dark:border-surface-600/50">
+        <div className="p-3 bg-gray-50 dark:bg-surface-200/50 rounded-lg border border-gray-200 dark:border-surface-300/50">
           <div className="flex items-center justify-between">
             <span className="text-gray-500 dark:text-surface-600 text-xs">Mitigated</span>
             {mitigatedChange !== 0 && (
@@ -1147,7 +1147,7 @@ function RiskTrendsPreview({ trendData }: { trendData: TrendDataPoint[] }) {
             {latestData.mitigatedRisks}
           </p>
         </div>
-        <div className="p-3 bg-gray-50 dark:bg-surface-700/50 rounded-lg border border-gray-200 dark:border-surface-600/50">
+        <div className="p-3 bg-gray-50 dark:bg-surface-200/50 rounded-lg border border-gray-200 dark:border-surface-300/50">
           <span className="text-gray-500 dark:text-surface-600 text-xs">Critical/High</span>
           <p className="text-xl font-bold text-red-500 dark:text-red-600 mt-1">
             {latestData.criticalHighRisks}
@@ -1156,7 +1156,7 @@ function RiskTrendsPreview({ trendData }: { trendData: TrendDataPoint[] }) {
       </div>
 
       {/* Chart */}
-      <div className="bg-gray-100/50 dark:bg-surface-700/30 rounded-lg p-4 border border-gray-200 dark:border-surface-600/30">
+      <div className="bg-gray-100/50 dark:bg-surface-200/30 rounded-lg p-4 border border-gray-200 dark:border-surface-300/30">
         <div className="flex items-end justify-between gap-2" style={{ height: chartHeight }}>
           {trendData.map((data, index) => {
             const openHeight = maxValue > 0 ? (data.openRisks / maxValue) * (chartHeight - 30) : 0;
@@ -1186,7 +1186,7 @@ function RiskTrendsPreview({ trendData }: { trendData: TrendDataPoint[] }) {
         </div>
 
         {/* Legend */}
-        <div className="flex items-center justify-center gap-4 mt-4 pt-3 border-t border-gray-200 dark:border-surface-700/50">
+        <div className="flex items-center justify-center gap-4 mt-4 pt-3 border-t border-gray-200 dark:border-surface-200/50">
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 bg-red-500/70 rounded" />
             <span className="text-xs text-gray-500 dark:text-surface-600">Open Risks</span>
@@ -1206,7 +1206,7 @@ function RiskTrendsPreview({ trendData }: { trendData: TrendDataPoint[] }) {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-gray-500 dark:text-surface-600 border-b border-gray-200 dark:border-surface-700">
+              <tr className="text-left text-gray-500 dark:text-surface-600 border-b border-gray-200 dark:border-surface-200">
                 <th className="pb-2 text-xs font-medium">Month</th>
                 <th className="pb-2 text-xs font-medium text-right">Total</th>
                 <th className="pb-2 text-xs font-medium text-right">Open</th>
@@ -1219,7 +1219,7 @@ function RiskTrendsPreview({ trendData }: { trendData: TrendDataPoint[] }) {
                 .slice()
                 .reverse()
                 .map((data, index) => (
-                  <tr key={index} className="border-b border-gray-200 dark:border-surface-700/50">
+                  <tr key={index} className="border-b border-gray-200 dark:border-surface-200/50">
                     <td className="py-2 text-gray-900 dark:text-white">{data.month}</td>
                     <td className="py-2 text-gray-600 dark:text-surface-700 text-right">
                       {data.totalRisks}

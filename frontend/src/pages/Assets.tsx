@@ -206,7 +206,7 @@ export default function Assets() {
       {/* Stats Cards */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-surface-800 rounded-xl border border-surface-700 p-4">
+          <div className="bg-white rounded-xl border border-surface-200 p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-brand-500/20 rounded-lg">
                 <Server className="w-5 h-5 text-brand-400" />
@@ -217,7 +217,7 @@ export default function Assets() {
               </div>
             </div>
           </div>
-          <div className="bg-surface-800 rounded-xl border border-surface-700 p-4">
+          <div className="bg-white rounded-xl border border-surface-200 p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-emerald-500/20 rounded-lg">
                 <CheckCircle className="w-5 h-5 text-emerald-600" />
@@ -230,7 +230,7 @@ export default function Assets() {
               </div>
             </div>
           </div>
-          <div className="bg-surface-800 rounded-xl border border-surface-700 p-4">
+          <div className="bg-white rounded-xl border border-surface-200 p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-red-500/20 rounded-lg">
                 <AlertTriangle className="w-5 h-5 text-red-600" />
@@ -243,7 +243,7 @@ export default function Assets() {
               </div>
             </div>
           </div>
-          <div className="bg-surface-800 rounded-xl border border-surface-700 p-4">
+          <div className="bg-white rounded-xl border border-surface-200 p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-amber-500/20 rounded-lg">
                 <RefreshCw className="w-5 h-5 text-amber-600" />
@@ -257,7 +257,7 @@ export default function Assets() {
         </div>
       )}
       {/* Search and Filters */}
-      <div className="bg-surface-800 rounded-xl border border-surface-700 p-4">
+      <div className="bg-white rounded-xl border border-surface-200 p-4">
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Search */}
           <div className="flex-1 relative">
@@ -267,7 +267,7 @@ export default function Assets() {
               placeholder="Search assets..."
               value={filters.search}
               onChange={(e) => updateFilter('search', e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white placeholder-surface-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="w-full pl-10 pr-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white placeholder-surface-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
@@ -276,7 +276,7 @@ export default function Assets() {
             <SelectNative
               value={filters.source}
               onChange={(e) => updateFilter('source', e.target.value)}
-              className="px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               <option value="">All Sources</option>
               {sources?.map((source: string) => (
@@ -289,7 +289,7 @@ export default function Assets() {
             <SelectNative
               value={filters.type}
               onChange={(e) => updateFilter('type', e.target.value)}
-              className="px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               <option value="">All Types</option>
               {ASSET_TYPES.map((type) => (
@@ -302,7 +302,7 @@ export default function Assets() {
             <SelectNative
               value={filters.criticality}
               onChange={(e) => updateFilter('criticality', e.target.value)}
-              className="px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               <option value="">All Criticality</option>
               {CRITICALITY_LEVELS.map((level) => (
@@ -315,7 +315,7 @@ export default function Assets() {
             <SelectNative
               value={filters.status}
               onChange={(e) => updateFilter('status', e.target.value)}
-              className="px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               <option value="">All Statuses</option>
               {STATUSES.map((status) => (
@@ -328,7 +328,7 @@ export default function Assets() {
         </div>
       </div>
       {/* Assets Table */}
-      <div className="bg-surface-800 rounded-xl border border-surface-700 overflow-hidden">
+      <div className="bg-white rounded-xl border border-surface-200 overflow-hidden">
         {isLoading ? (
           <SkeletonTable rows={10} columns={7} className="border-none" />
         ) : data?.assets.length === 0 ? (
@@ -342,7 +342,7 @@ export default function Assets() {
         ) : (
           <table className="w-full">
             <thead>
-              <tr className="border-b border-surface-700">
+              <tr className="border-b border-surface-200">
                 <th className="text-left px-4 py-3 text-sm font-medium text-surface-600">Asset</th>
                 <th className="text-left px-4 py-3 text-sm font-medium text-surface-600">Type</th>
                 <th className="text-left px-4 py-3 text-sm font-medium text-surface-600">Source</th>
@@ -363,7 +363,7 @@ export default function Assets() {
                 <tr
                   key={asset.id}
                   onClick={() => navigate(`/assets/${asset.id}`)}
-                  className="border-b border-surface-700 hover:bg-surface-700/50 cursor-pointer transition-colors"
+                  className="border-b border-surface-200 hover:bg-surface-200/50 cursor-pointer transition-colors"
                 >
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
@@ -421,7 +421,7 @@ export default function Assets() {
 
         {/* Pagination */}
         {data && data.total > 25 && (
-          <div className="px-4 py-3 border-t border-surface-700 flex items-center justify-between">
+          <div className="px-4 py-3 border-t border-surface-200 flex items-center justify-between">
             <p className="text-sm text-surface-600">
               Showing {(filters.page - 1) * 25 + 1} to {Math.min(filters.page * 25, data.total)} of{' '}
               {data.total} assets
@@ -430,14 +430,14 @@ export default function Assets() {
               <button
                 onClick={() => updateFilter('page', String(filters.page - 1))}
                 disabled={filters.page === 1}
-                className="px-3 py-1 bg-surface-700 rounded text-surface-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-surface-600"
+                className="px-3 py-1 bg-surface-200 rounded text-surface-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-surface-600"
               >
                 Previous
               </button>
               <button
                 onClick={() => updateFilter('page', String(filters.page + 1))}
                 disabled={filters.page * 25 >= data.total}
-                className="px-3 py-1 bg-surface-700 rounded text-surface-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-surface-600"
+                className="px-3 py-1 bg-surface-200 rounded text-surface-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-surface-600"
               >
                 Next
               </button>
@@ -485,9 +485,9 @@ function CreateAssetModal({
 }) {
   return (
     <Dialog open onClose={onClose}>
-      <div className="p-4 border-b border-surface-700 flex justify-between items-center">
+      <div className="p-4 border-b border-surface-200 flex justify-between items-center">
         <h3 className="text-lg font-medium text-white">Add Manual Asset</h3>
-        <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
+        <button onClick={onClose} className="p-1 hover:bg-surface-200 rounded">
           <X className="w-5 h-5 text-surface-600" />
         </button>
       </div>
@@ -505,7 +505,7 @@ function CreateAssetModal({
             value={asset.name}
             onChange={(e) => onChange({ ...asset, name: e.target.value })}
             required
-            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
             placeholder="e.g., Production Server 1"
           />
         </div>
@@ -515,7 +515,7 @@ function CreateAssetModal({
             <SelectNative
               value={asset.type}
               onChange={(e) => onChange({ ...asset, type: e.target.value })}
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
             >
               {ASSET_TYPES.map((type) => (
                 <option key={type.value} value={type.value}>
@@ -529,7 +529,7 @@ function CreateAssetModal({
             <SelectNative
               value={asset.criticality}
               onChange={(e) => onChange({ ...asset, criticality: e.target.value })}
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
             >
               {CRITICALITY_LEVELS.map((level) => (
                 <option key={level.value} value={level.value}>
@@ -545,7 +545,7 @@ function CreateAssetModal({
             type="text"
             value={asset.category}
             onChange={(e) => onChange({ ...asset, category: e.target.value })}
-            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
             placeholder="e.g., Web Server, Database"
           />
         </div>
@@ -556,7 +556,7 @@ function CreateAssetModal({
               type="text"
               value={asset.owner}
               onChange={(e) => onChange({ ...asset, owner: e.target.value })}
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
             />
           </div>
           <div>
@@ -565,7 +565,7 @@ function CreateAssetModal({
               type="text"
               value={asset.department}
               onChange={(e) => onChange({ ...asset, department: e.target.value })}
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
             />
           </div>
         </div>
@@ -575,7 +575,7 @@ function CreateAssetModal({
             type="text"
             value={asset.location}
             onChange={(e) => onChange({ ...asset, location: e.target.value })}
-            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
             placeholder="e.g., AWS us-east-1, Office HQ"
           />
         </div>
@@ -621,9 +621,9 @@ function SyncAssetModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
 
   return (
     <Dialog open onClose={onClose}>
-      <div className="p-4 border-b border-surface-700 flex justify-between items-center">
+      <div className="p-4 border-b border-surface-200 flex justify-between items-center">
         <h3 className="text-lg font-medium text-white">Sync Assets from Integration</h3>
-        <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
+        <button onClick={onClose} className="p-1 hover:bg-surface-200 rounded">
           <X className="w-5 h-5 text-surface-600" />
         </button>
       </div>
@@ -677,7 +677,7 @@ function SyncAssetModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
                       className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer ${
                         selectedIntegration === integration.id
                           ? 'bg-brand-500/20 border border-brand-500'
-                          : 'bg-surface-700 border border-surface-600 hover:bg-surface-600'
+                          : 'bg-surface-200 border border-surface-300 hover:bg-surface-600'
                       }`}
                     >
                       <input
@@ -700,7 +700,7 @@ function SyncAssetModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
             <div className="flex justify-end gap-3 pt-2">
               <button
                 onClick={onClose}
-                className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg"
+                className="px-4 py-2 bg-surface-200 text-surface-700 rounded-lg"
               >
                 Cancel
               </button>

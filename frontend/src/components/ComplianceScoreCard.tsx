@@ -42,8 +42,8 @@ export function ComplianceScoreCard({
     <div
       onClick={onClick}
       className={`
-        bg-surface-800 border border-surface-700 rounded-xl p-6
-        ${onClick ? 'cursor-pointer hover:border-surface-600 transition-colors' : ''}
+        bg-white border border-surface-200 rounded-xl p-6
+        ${onClick ? 'cursor-pointer hover:border-surface-300 transition-colors' : ''}
       `}
     >
       <div className="flex items-start justify-between mb-4">
@@ -67,13 +67,13 @@ export function ComplianceScoreCard({
             )}
           </div>
         </div>
-        <div className="p-3 bg-surface-700 rounded-lg">
+        <div className="p-3 bg-surface-200 rounded-lg">
           <ChartBarIcon className={`h-6 w-6 ${scoreColor}`} />
         </div>
       </div>
 
       {/* Progress bar */}
-      <div className="h-2 bg-surface-700 rounded-full overflow-hidden mb-3">
+      <div className="h-2 bg-surface-200 rounded-full overflow-hidden mb-3">
         <div
           className={`h-full ${progressColor} transition-all duration-500 ease-out`}
           style={{ width: `${score}%` }}

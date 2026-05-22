@@ -194,11 +194,11 @@ export function RiskHeatMap({
                     {/* Hover tooltip */}
                     {isHovered && cellRisks.length > 0 && (
                       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 pointer-events-none">
-                        <div className="bg-surface-900 border border-surface-700 rounded-lg shadow-xl p-3 min-w-[200px]">
+                        <div className="bg-white border border-surface-200 rounded-lg shadow-xl p-3 min-w-[200px]">
                           <p className="text-xs text-surface-600 mb-1">
                             {LIKELIHOOD_LABELS[likelihood]} × {IMPACT_LABELS[impact]}
                           </p>
-                          <p className="text-sm font-medium text-surface-100">
+                          <p className="text-sm font-medium text-surface-900">
                             {cellRisks.length} risk{cellRisks.length > 1 ? 's' : ''}
                           </p>
                         </div>
@@ -236,15 +236,15 @@ export function RiskHeatMap({
 
       {/* Selected Cell Details */}
       {selectedCell && risksByCell[selectedCell]?.length > 0 && (
-        <div className="bg-surface-800 border border-surface-700 rounded-lg p-4">
+        <div className="bg-white border border-surface-200 rounded-lg p-4">
           <div className="flex items-center justify-between mb-3">
-            <h4 className="font-medium text-surface-100">
+            <h4 className="font-medium text-surface-900">
               {LIKELIHOOD_LABELS[selectedCell.split('-')[0]]} ×{' '}
               {IMPACT_LABELS[selectedCell.split('-')[1]]}
             </h4>
             <button
               onClick={() => setSelectedCell(null)}
-              className="text-xs text-surface-600 hover:text-surface-200"
+              className="text-xs text-surface-600 hover:text-surface-800"
             >
               Close
             </button>
@@ -254,9 +254,9 @@ export function RiskHeatMap({
               <div
                 key={risk.id}
                 onClick={(e) => handleRiskClick(risk, e)}
-                className="p-2 bg-surface-700/50 hover:bg-surface-700 rounded-lg cursor-pointer transition-colors"
+                className="p-2 bg-surface-200/50 hover:bg-surface-200 rounded-lg cursor-pointer transition-colors"
               >
-                <p className="text-sm font-medium text-surface-100">{risk.title}</p>
+                <p className="text-sm font-medium text-surface-900">{risk.title}</p>
                 <p className="text-xs text-surface-600">
                   {risk.riskId} • {risk.category || 'Uncategorized'}
                 </p>
@@ -268,7 +268,7 @@ export function RiskHeatMap({
 
       {/* Legend */}
       {showLegend && (
-        <div className="flex items-center justify-between bg-surface-800/50 rounded-lg p-3">
+        <div className="flex items-center justify-between bg-white/50 rounded-lg p-3">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded bg-emerald-400" />
@@ -344,7 +344,7 @@ export function CompactRiskHeatMap({
                 key={key}
                 className={clsx(
                   'aspect-square rounded flex items-center justify-center text-xs font-medium transition-transform hover:scale-105',
-                  count > 0 ? RISK_DOT_COLORS[riskLevel] : 'bg-surface-700/50',
+                  count > 0 ? RISK_DOT_COLORS[riskLevel] : 'bg-surface-200/50',
                   count > 0 ? 'text-white/90' : 'text-surface-500'
                 )}
                 title={`${LIKELIHOOD_LABELS[likelihood]} × ${IMPACT_LABELS[impact]}: ${count} risks`}

@@ -7,7 +7,7 @@ export default function ComplianceCalendarPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-surface-100 flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-surface-900 flex items-center gap-3">
             <CalendarDaysIcon className="w-8 h-8 text-brand-500" />
             Compliance Calendar
           </h1>

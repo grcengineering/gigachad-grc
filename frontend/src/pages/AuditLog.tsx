@@ -177,7 +177,7 @@ export default function AuditLog() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-surface-100">Audit Log</h1>
+          <h1 className="text-2xl font-bold text-surface-900">Audit Log</h1>
           <p className="text-surface-600 mt-1">
             Track all actions and changes across your GRC platform
           </p>
@@ -197,13 +197,13 @@ export default function AuditLog() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="card p-4">
             <div className="text-sm text-surface-600">Total Events</div>
-            <div className="text-2xl font-bold text-surface-100 mt-1">
+            <div className="text-2xl font-bold text-surface-900 mt-1">
               {stats.totalLogs?.toLocaleString()}
             </div>
           </div>
           <div className="card p-4">
             <div className="text-sm text-surface-600">Top Action</div>
-            <div className="text-2xl font-bold text-surface-100 mt-1 capitalize">
+            <div className="text-2xl font-bold text-surface-900 mt-1 capitalize">
               {stats.actionBreakdown?.[0]?.action || '-'}
             </div>
             <div className="text-xs text-surface-500">
@@ -212,7 +212,7 @@ export default function AuditLog() {
           </div>
           <div className="card p-4">
             <div className="text-sm text-surface-600">Top Entity Type</div>
-            <div className="text-2xl font-bold text-surface-100 mt-1 capitalize">
+            <div className="text-2xl font-bold text-surface-900 mt-1 capitalize">
               {stats.entityTypeBreakdown?.[0]?.entityType || '-'}
             </div>
             <div className="text-xs text-surface-500">
@@ -221,7 +221,7 @@ export default function AuditLog() {
           </div>
           <div className="card p-4">
             <div className="text-sm text-surface-600">Active Users</div>
-            <div className="text-2xl font-bold text-surface-100 mt-1">
+            <div className="text-2xl font-bold text-surface-900 mt-1">
               {stats.topUsers?.length || 0}
             </div>
           </div>
@@ -268,7 +268,7 @@ export default function AuditLog() {
 
         {/* Expanded Filters */}
         {isFiltersOpen && (
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 pt-4 border-t border-surface-800">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 pt-4 border-t border-surface-200">
             {/* Entity Type */}
             <div>
               <label className="block text-sm text-surface-600 mb-1">Entity Type</label>
@@ -348,7 +348,7 @@ export default function AuditLog() {
               <div className="md:col-span-5 flex justify-end">
                 <button
                   onClick={clearFilters}
-                  className="text-sm text-surface-600 hover:text-surface-200 flex items-center gap-1"
+                  className="text-sm text-surface-600 hover:text-surface-800 flex items-center gap-1"
                 >
                   <XMarkIcon className="w-4 h-4" />
                   Clear all filters
@@ -363,7 +363,7 @@ export default function AuditLog() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-surface-800">
+              <tr className="border-b border-surface-200">
                 <th className="text-left text-sm font-medium text-surface-600 px-4 py-3">
                   Timestamp
                 </th>
@@ -423,7 +423,7 @@ export default function AuditLog() {
                 logs.map((log: any) => {
                   const actionConfig = ACTION_CONFIG[log.action] || {
                     color: 'text-surface-600',
-                    bg: 'bg-surface-800',
+                    bg: 'bg-white',
                   };
                   const EntityIcon = ENTITY_ICONS[log.entityType] || DocumentIcon;
                   const isExpanded = expandedRow === log.id;
@@ -431,12 +431,12 @@ export default function AuditLog() {
                   return (
                     <React.Fragment key={log.id}>
                       <tr
-                        className="border-b border-surface-800/50 hover:bg-surface-800/30 transition-colors cursor-pointer"
+                        className="border-b border-surface-200/50 hover:bg-white/30 transition-colors cursor-pointer"
                         onClick={() => setExpandedRow(isExpanded ? null : log.id)}
                       >
                         <td className="px-4 py-3">
                           <div
-                            className="text-sm text-surface-200"
+                            className="text-sm text-surface-800"
                             title={formatDate(log.timestamp)}
                           >
                             {formatRelativeTime(log.timestamp)}
@@ -444,11 +444,11 @@ export default function AuditLog() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 rounded-full bg-surface-700 flex items-center justify-center">
+                            <div className="w-7 h-7 rounded-full bg-surface-200 flex items-center justify-center">
                               <UserIcon className="w-4 h-4 text-surface-600" />
                             </div>
                             <div>
-                              <div className="text-sm text-surface-200">
+                              <div className="text-sm text-surface-800">
                                 {log.userName || 'System'}
                               </div>
                               {log.userEmail && (
@@ -505,7 +505,7 @@ export default function AuditLog() {
 
                       {/* Expanded Details */}
                       {isExpanded && (
-                        <tr className="bg-surface-800/20">
+                        <tr className="bg-white/20">
                           <td colSpan={6} className="px-4 py-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               {/* Left - Details */}
@@ -548,7 +548,7 @@ export default function AuditLog() {
                                     <h4 className="text-sm font-medium text-surface-700">
                                       Changes
                                     </h4>
-                                    <pre className="text-xs text-surface-600 bg-surface-900/50 p-3 rounded-lg overflow-auto max-h-[200px]">
+                                    <pre className="text-xs text-surface-600 bg-white/50 p-3 rounded-lg overflow-auto max-h-[200px]">
                                       {JSON.stringify(log.changes, null, 2)}
                                     </pre>
                                   </>
@@ -558,7 +558,7 @@ export default function AuditLog() {
                                     <h4 className="text-sm font-medium text-surface-700">
                                       Metadata
                                     </h4>
-                                    <pre className="text-xs text-surface-600 bg-surface-900/50 p-3 rounded-lg overflow-auto max-h-[200px]">
+                                    <pre className="text-xs text-surface-600 bg-white/50 p-3 rounded-lg overflow-auto max-h-[200px]">
                                       {JSON.stringify(log.metadata, null, 2)}
                                     </pre>
                                   </>
@@ -578,7 +578,7 @@ export default function AuditLog() {
 
         {/* Pagination */}
         {pagination.pages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-surface-800">
+          <div className="flex items-center justify-between px-4 py-3 border-t border-surface-200">
             <div className="text-sm text-surface-500">
               Showing {(pagination.page - 1) * pagination.limit + 1} to{' '}
               {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}

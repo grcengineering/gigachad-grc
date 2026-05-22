@@ -247,7 +247,7 @@ function NavSectionComponent({ section }: { section: NavSection }) {
           'flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300',
           hasActiveItem
             ? 'text-brand-400'
-            : 'text-surface-600 hover:bg-surface-800 hover:text-surface-100'
+            : 'text-surface-600 hover:bg-white hover:text-surface-900'
         )}
       >
         <div className="flex items-center gap-3">
@@ -263,7 +263,7 @@ function NavSectionComponent({ section }: { section: NavSection }) {
       </button>
 
       <div
-        className="ml-4 pl-4 border-l border-surface-800 overflow-hidden"
+        className="ml-4 pl-4 border-l border-surface-200 overflow-hidden"
         style={{
           display: 'grid',
           gridTemplateRows: isOpen ? '1fr' : '0fr',
@@ -290,7 +290,7 @@ function NavSectionComponent({ section }: { section: NavSection }) {
                     'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200',
                     isActive
                       ? 'bg-brand-600/20 text-brand-400 font-medium'
-                      : 'text-surface-600 hover:bg-surface-800 hover:text-surface-100'
+                      : 'text-surface-600 hover:bg-white hover:text-surface-900'
                   )}
                   style={{
                     transitionDelay: isOpen ? `${index * 30}ms` : '0ms',
@@ -330,7 +330,7 @@ export default function Layout() {
   const isDashboardActive = location.pathname === '/dashboard' || location.pathname === '/';
 
   return (
-    <div className="min-h-screen bg-surface-950">
+    <div className="min-h-screen bg-surface-50">
       {/* Skip to main content link for keyboard users */}
       <a
         href="#main-content"
@@ -352,15 +352,15 @@ export default function Layout() {
         role="navigation"
         aria-label="Main navigation"
         className={clsx(
-          'fixed inset-y-0 left-0 z-50 w-64 bg-surface-900 border-r border-surface-800 transform transition-transform duration-200 ease-in-out lg:translate-x-0',
+          'fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-surface-200 transform transition-transform duration-200 ease-in-out lg:translate-x-0',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex items-center gap-3 px-6 py-5 border-b border-surface-800">
+          <div className="flex items-center gap-3 px-6 py-5 border-b border-surface-200">
             <img src={branding.logoUrl} alt="Logo" className="w-8 h-8 object-contain" />
-            <span className="text-lg font-semibold text-surface-100">{branding.platformName}</span>
+            <span className="text-lg font-semibold text-surface-900">{branding.platformName}</span>
           </div>
 
           {/* Navigation */}
@@ -372,7 +372,7 @@ export default function Layout() {
                 'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
                 isDashboardActive
                   ? 'bg-brand-600/20 text-brand-400'
-                  : 'text-surface-600 hover:bg-surface-800 hover:text-surface-100'
+                  : 'text-surface-600 hover:bg-white hover:text-surface-900'
               )}
               onClick={() => setSidebarOpen(false)}
             >
@@ -388,7 +388,7 @@ export default function Layout() {
                   'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ml-2',
                   isActive
                     ? 'bg-brand-600/20 text-brand-400'
-                    : 'text-surface-600 hover:bg-surface-800 hover:text-surface-100'
+                    : 'text-surface-600 hover:bg-white hover:text-surface-900'
                 )
               }
               onClick={() => setSidebarOpen(false)}
@@ -398,7 +398,7 @@ export default function Layout() {
             </NavLink>
 
             {/* Divider */}
-            <div className="h-px bg-surface-800 my-2" />
+            <div className="h-px bg-white my-2" />
 
             {/* Collapsible Sections */}
             {navSections
@@ -419,15 +419,15 @@ export default function Layout() {
           </nav>
 
           {/* User section */}
-          <div className="p-4 border-t border-surface-800">
+          <div className="p-4 border-t border-surface-200">
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-8 h-8 rounded-full bg-surface-700 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-full bg-surface-200 flex items-center justify-center">
                 <span className="text-sm font-medium text-surface-700">
                   {user?.name?.charAt(0)?.toUpperCase() || 'U'}
                 </span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-surface-100 truncate">{user?.name}</p>
+                <p className="text-sm font-medium text-surface-900 truncate">{user?.name}</p>
                 <p className="text-xs text-surface-500 truncate capitalize">
                   {user?.role?.replace('_', ' ')}
                 </p>
@@ -435,7 +435,7 @@ export default function Layout() {
             </div>
             <button
               onClick={logout}
-              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-surface-600 hover:text-surface-100 hover:bg-surface-800 rounded-lg transition-colors"
+              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-surface-600 hover:text-surface-900 hover:bg-white rounded-lg transition-colors"
             >
               <ArrowRightOnRectangleIcon className="w-5 h-5" />
               Sign out
@@ -450,12 +450,12 @@ export default function Layout() {
         <header
           role="banner"
           aria-label="Site header"
-          className="sticky top-0 z-[60] bg-surface-900/80 backdrop-blur-sm border-b border-surface-800"
+          className="sticky top-0 z-[60] bg-white/80 backdrop-blur-sm border-b border-surface-200"
         >
           <div className="flex items-center justify-between gap-4 px-4 py-3 lg:px-6">
             <div className="flex items-center gap-2">
               <button
-                className="lg:hidden p-2 -ml-2 text-surface-600 hover:text-surface-100"
+                className="lg:hidden p-2 -ml-2 text-surface-600 hover:text-surface-900"
                 onClick={() => setSidebarOpen(true)}
               >
                 <Bars3Icon className="w-6 h-6" />
@@ -469,7 +469,7 @@ export default function Layout() {
               {/* Keyboard Shortcuts Button */}
               <button
                 onClick={() => setShowShortcuts(true)}
-                className="p-2 text-surface-600 hover:text-surface-100 hover:bg-surface-800 rounded-lg transition-colors"
+                className="p-2 text-surface-600 hover:text-surface-900 hover:bg-white rounded-lg transition-colors"
                 title="Keyboard Shortcuts (⌘/)"
               >
                 <CommandLineIcon className="w-5 h-5" />
@@ -478,7 +478,7 @@ export default function Layout() {
               {/* Help Center Link */}
               <NavLink
                 to="/help"
-                className="p-2 text-surface-600 hover:text-surface-100 hover:bg-surface-800 rounded-lg transition-colors"
+                className="p-2 text-surface-600 hover:text-surface-900 hover:bg-white rounded-lg transition-colors"
                 title="Help Center"
               >
                 <QuestionMarkCircleIcon className="w-5 h-5" />
@@ -486,7 +486,7 @@ export default function Layout() {
 
               <NavLink
                 to="/account"
-                className="p-2 text-surface-600 hover:text-surface-100 hover:bg-surface-800 rounded-lg transition-colors"
+                className="p-2 text-surface-600 hover:text-surface-900 hover:bg-white rounded-lg transition-colors"
                 title="Account Settings"
               >
                 <CogIcon className="w-5 h-5" />

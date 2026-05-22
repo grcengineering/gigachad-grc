@@ -48,15 +48,15 @@ export default function TrustAnalytics() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="h-8 bg-surface-700 rounded w-48 animate-pulse" />
+        <div className="h-8 bg-surface-200 rounded w-48 animate-pulse" />
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-32 bg-surface-800 rounded-xl animate-pulse" />
+            <div key={i} className="h-32 bg-white rounded-xl animate-pulse" />
           ))}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="h-80 bg-surface-800 rounded-xl animate-pulse" />
-          <div className="h-80 bg-surface-800 rounded-xl animate-pulse" />
+          <div className="h-80 bg-white rounded-xl animate-pulse" />
+          <div className="h-80 bg-white rounded-xl animate-pulse" />
         </div>
       </div>
     );
@@ -90,7 +90,7 @@ export default function TrustAnalytics() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-surface-100">Trust Analytics</h1>
+          <h1 className="text-3xl font-bold text-surface-900">Trust Analytics</h1>
           <p className="mt-1 text-surface-600">
             Insights into questionnaire performance and knowledge base usage
           </p>
@@ -131,8 +131,8 @@ export default function TrustAnalytics() {
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Questions by Status */}
-        <div className="bg-surface-900 border border-surface-800 rounded-xl p-6">
-          <h3 className="text-lg font-semibold text-surface-100 mb-4">Questions by Status</h3>
+        <div className="bg-white border border-surface-200 rounded-xl p-6">
+          <h3 className="text-lg font-semibold text-surface-900 mb-4">Questions by Status</h3>
           <LazyRechartsWrapper height={250}>
             {(Recharts) =>
               analytics?.questionsByStatus ? (
@@ -185,8 +185,8 @@ export default function TrustAnalytics() {
         </div>
 
         {/* Questionnaires by Priority */}
-        <div className="bg-surface-900 border border-surface-800 rounded-xl p-6">
-          <h3 className="text-lg font-semibold text-surface-100 mb-4">
+        <div className="bg-white border border-surface-200 rounded-xl p-6">
+          <h3 className="text-lg font-semibold text-surface-900 mb-4">
             Questionnaires by Priority
           </h3>
           <LazyRechartsWrapper height={250}>
@@ -231,10 +231,10 @@ export default function TrustAnalytics() {
       {/* Response Time & Completion Trend */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Average Response Time by Priority */}
-        <div className="bg-surface-900 border border-surface-800 rounded-xl p-6">
+        <div className="bg-white border border-surface-200 rounded-xl p-6">
           <div className="flex items-center gap-2 mb-4">
             <ClockIcon className="w-5 h-5 text-surface-600" />
-            <h3 className="text-lg font-semibold text-surface-100">Average Response Time</h3>
+            <h3 className="text-lg font-semibold text-surface-900">Average Response Time</h3>
           </div>
           <div className="space-y-4">
             {analytics?.responseTimeByPriority?.map((item: any) => (
@@ -244,10 +244,10 @@ export default function TrustAnalytics() {
                     className="w-3 h-3 rounded-full"
                     style={{ backgroundColor: PRIORITY_COLORS[item.priority] || '#6B7280' }}
                   />
-                  <span className="text-surface-200 capitalize">{item.priority}</span>
+                  <span className="text-surface-800 capitalize">{item.priority}</span>
                 </div>
                 <div className="text-right">
-                  <span className="text-surface-100 font-semibold">
+                  <span className="text-surface-900 font-semibold">
                     {formatHours(item.avgHours)}
                   </span>
                   <span className="text-xs text-surface-500 ml-2">({item.count} completed)</span>
@@ -258,10 +258,10 @@ export default function TrustAnalytics() {
         </div>
 
         {/* Completion Trend */}
-        <div className="bg-surface-900 border border-surface-800 rounded-xl p-6">
+        <div className="bg-white border border-surface-200 rounded-xl p-6">
           <div className="flex items-center gap-2 mb-4">
             <ArrowTrendingUpIcon className="w-5 h-5 text-surface-600" />
-            <h3 className="text-lg font-semibold text-surface-100">Completion Trend</h3>
+            <h3 className="text-lg font-semibold text-surface-900">Completion Trend</h3>
           </div>
           <LazyRechartsWrapper height={200}>
             {(Recharts) =>
@@ -313,23 +313,23 @@ export default function TrustAnalytics() {
       </div>
 
       {/* Top Knowledge Base Entries */}
-      <div className="bg-surface-900 border border-surface-800 rounded-xl p-6">
+      <div className="bg-white border border-surface-200 rounded-xl p-6">
         <div className="flex items-center gap-2 mb-4">
           <BookOpenIcon className="w-5 h-5 text-surface-600" />
-          <h3 className="text-lg font-semibold text-surface-100">
+          <h3 className="text-lg font-semibold text-surface-900">
             Most Used Knowledge Base Entries
           </h3>
         </div>
         {analytics?.topKbEntries && analytics.topKbEntries.length > 0 ? (
-          <div className="divide-y divide-surface-700">
+          <div className="divide-y divide-surface-200">
             {analytics.topKbEntries.map((entry: any, index: number) => (
               <div key={entry.id} className="flex items-center justify-between py-3">
                 <div className="flex items-center gap-3">
-                  <span className="w-6 h-6 flex items-center justify-center bg-surface-700 text-surface-600 text-sm font-bold rounded">
+                  <span className="w-6 h-6 flex items-center justify-center bg-surface-200 text-surface-600 text-sm font-bold rounded">
                     {index + 1}
                   </span>
                   <div>
-                    <p className="text-surface-100 font-medium">{entry.title}</p>
+                    <p className="text-surface-900 font-medium">{entry.title}</p>
                     {entry.category && (
                       <span className="text-xs text-surface-500 capitalize">{entry.category}</span>
                     )}
@@ -379,14 +379,14 @@ function StatCard({
   };
 
   return (
-    <div className="bg-surface-900 border border-surface-800 rounded-xl p-5">
+    <div className="bg-white border border-surface-200 rounded-xl p-5">
       <div className="flex items-center gap-3 mb-3">
         <div className={clsx('p-2 rounded-lg', colorClasses[color])}>
           <Icon className="w-5 h-5" />
         </div>
         <span className="text-sm text-surface-600">{title}</span>
       </div>
-      <p className="text-3xl font-bold text-surface-100">{value}</p>
+      <p className="text-3xl font-bold text-surface-900">{value}</p>
       {subtitle && <p className="text-xs text-surface-500 mt-1">{subtitle}</p>}
     </div>
   );

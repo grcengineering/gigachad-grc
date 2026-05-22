@@ -34,7 +34,7 @@ function DashboardEditToggle({
         <>
           <button
             onClick={onReset}
-            className="px-3 py-1.5 text-sm text-gray-600 dark:text-surface-600 hover:text-gray-800 dark:hover:text-surface-200 flex items-center gap-1"
+            className="px-3 py-1.5 text-sm text-gray-600 dark:text-surface-600 hover:text-gray-800 dark:hover:text-surface-800 flex items-center gap-1"
           >
             <ArrowPathIcon className="w-4 h-4" />
             Reset
@@ -48,7 +48,7 @@ function DashboardEditToggle({
           </button>
           <button
             onClick={onToggle}
-            className="px-3 py-1.5 text-sm bg-gray-200 dark:bg-surface-700 text-gray-700 dark:text-surface-700 rounded-lg hover:bg-gray-300 dark:hover:bg-surface-600"
+            className="px-3 py-1.5 text-sm bg-gray-200 dark:bg-surface-200 text-gray-700 dark:text-surface-700 rounded-lg hover:bg-gray-300 dark:hover:bg-surface-600"
           >
             Done
           </button>
@@ -56,7 +56,7 @@ function DashboardEditToggle({
       ) : (
         <button
           onClick={onToggle}
-          className="px-3 py-1.5 text-sm text-gray-600 dark:text-surface-600 hover:text-gray-800 dark:hover:text-surface-200 flex items-center gap-1"
+          className="px-3 py-1.5 text-sm text-gray-600 dark:text-surface-600 hover:text-gray-800 dark:hover:text-surface-800 flex items-center gap-1"
           title="Customize dashboard layout"
         >
           <Cog6ToothIcon className="w-4 h-4" />
@@ -405,7 +405,7 @@ export default function RiskDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Risk Level Distribution */}
           {activeConfig.riskLevelDistribution && (
-            <div className="bg-white dark:bg-surface-800 rounded-xl border border-gray-200 dark:border-surface-700 p-6">
+            <div className="bg-white dark:bg-white rounded-xl border border-gray-200 dark:border-surface-200 p-6">
               <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
                 Risk Level Distribution
               </h2>
@@ -435,7 +435,7 @@ export default function RiskDashboard() {
                         <span className="text-gray-600 dark:text-surface-700">{label}</span>
                         <span className="text-gray-900 dark:text-white font-medium">{count}</span>
                       </div>
-                      <div className="h-2 bg-gray-200 dark:bg-surface-700 rounded-full overflow-hidden">
+                      <div className="h-2 bg-gray-200 dark:bg-surface-200 rounded-full overflow-hidden">
                         <div
                           className={`h-full ${getRiskLevelColor(key === 'very_high' ? 'critical' : key)} transition-all duration-500`}
                           style={{ width: `${percentage}%` }}
@@ -450,7 +450,7 @@ export default function RiskDashboard() {
 
           {/* Risk by Category */}
           {activeConfig.risksByCategory && (
-            <div className="bg-white dark:bg-surface-800 rounded-xl border border-gray-200 dark:border-surface-700 p-6">
+            <div className="bg-white dark:bg-white rounded-xl border border-gray-200 dark:border-surface-200 p-6">
               <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
                 Risks by Category
               </h2>
@@ -460,7 +460,7 @@ export default function RiskDashboard() {
                     <span className="text-gray-600 dark:text-surface-700 capitalize">
                       {cat.category?.replace('_', ' ') || 'Uncategorized'}
                     </span>
-                    <span className="px-2 py-1 bg-gray-100 dark:bg-surface-700 rounded text-gray-900 dark:text-white text-sm font-medium">
+                    <span className="px-2 py-1 bg-gray-100 dark:bg-surface-200 rounded text-gray-900 dark:text-white text-sm font-medium">
                       {cat.count}
                     </span>
                   </div>
@@ -481,7 +481,7 @@ export default function RiskDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Recent Risks */}
           {activeConfig.recentRisks && (
-            <div className="lg:col-span-2 bg-white dark:bg-surface-800 rounded-xl border border-gray-200 dark:border-surface-700 p-6">
+            <div className="lg:col-span-2 bg-white dark:bg-white rounded-xl border border-gray-200 dark:border-surface-200 p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-medium text-gray-900 dark:text-white">Recent Risks</h2>
                 <Link
@@ -496,7 +496,7 @@ export default function RiskDashboard() {
                   <Link
                     key={risk.id}
                     to={`/risks/${risk.id}`}
-                    className="flex items-center gap-4 p-3 bg-gray-50 dark:bg-surface-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-surface-700 transition-colors"
+                    className="flex items-center gap-4 p-3 bg-gray-50 dark:bg-surface-200/50 rounded-lg hover:bg-gray-100 dark:hover:bg-surface-200 transition-colors"
                   >
                     <div
                       className={`w-2 h-2 rounded-full ${getRiskLevelColor(risk.inherentRisk)}`}
@@ -527,7 +527,7 @@ export default function RiskDashboard() {
 
           {/* Quick Actions */}
           {activeConfig.quickActions && (
-            <div className="bg-white dark:bg-surface-800 rounded-xl border border-gray-200 dark:border-surface-700 p-6">
+            <div className="bg-white dark:bg-white rounded-xl border border-gray-200 dark:border-surface-200 p-6">
               <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
                 Quick Actions
               </h2>
@@ -541,21 +541,21 @@ export default function RiskDashboard() {
                 </Link>
                 <Link
                   to="/risk-queue"
-                  className="flex items-center gap-3 p-3 bg-gray-100 dark:bg-surface-700 text-gray-700 dark:text-surface-700 rounded-lg hover:bg-gray-200 dark:hover:bg-surface-600 transition-colors"
+                  className="flex items-center gap-3 p-3 bg-gray-100 dark:bg-surface-200 text-gray-700 dark:text-surface-700 rounded-lg hover:bg-gray-200 dark:hover:bg-surface-600 transition-colors"
                 >
                   <ClockIcon className="w-5 h-5" />
                   <span>View My Queue</span>
                 </Link>
                 <Link
                   to="/risk-heatmap"
-                  className="flex items-center gap-3 p-3 bg-gray-100 dark:bg-surface-700 text-gray-700 dark:text-surface-700 rounded-lg hover:bg-gray-200 dark:hover:bg-surface-600 transition-colors"
+                  className="flex items-center gap-3 p-3 bg-gray-100 dark:bg-surface-200 text-gray-700 dark:text-surface-700 rounded-lg hover:bg-gray-200 dark:hover:bg-surface-600 transition-colors"
                 >
                   <ChartBarIcon className="w-5 h-5" />
                   <span>View Heatmap</span>
                 </Link>
                 <Link
                   to="/risk-reports"
-                  className="flex items-center gap-3 p-3 bg-gray-100 dark:bg-surface-700 text-gray-700 dark:text-surface-700 rounded-lg hover:bg-gray-200 dark:hover:bg-surface-600 transition-colors"
+                  className="flex items-center gap-3 p-3 bg-gray-100 dark:bg-surface-200 text-gray-700 dark:text-surface-700 rounded-lg hover:bg-gray-200 dark:hover:bg-surface-600 transition-colors"
                 >
                   <ArrowTrendingUpIcon className="w-5 h-5" />
                   <span>Generate Report</span>
@@ -568,7 +568,7 @@ export default function RiskDashboard() {
 
       {/* Risk Appetite Indicator */}
       {activeConfig.riskAppetite && (
-        <div className="bg-white dark:bg-surface-800 rounded-xl border border-gray-200 dark:border-surface-700 p-6">
+        <div className="bg-white dark:bg-white rounded-xl border border-gray-200 dark:border-surface-200 p-6">
           <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
             Risk Appetite Status
           </h2>
@@ -623,7 +623,7 @@ function MetricCard({
   trend?: number;
 }) {
   return (
-    <div className="bg-white dark:bg-surface-800 rounded-xl border border-gray-200 dark:border-surface-700 p-6">
+    <div className="bg-white dark:bg-white rounded-xl border border-gray-200 dark:border-surface-200 p-6">
       <div className="flex items-center gap-4">
         <div className={`p-3 rounded-lg ${bgColor}`}>
           <Icon className={`w-6 h-6 ${color}`} />

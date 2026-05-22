@@ -62,12 +62,15 @@ const designSystemRules = [
     message:
       'Hand-rolled colored pill. Use <Badge variant="..."> or <CategoryChip value="..."> from @/components/ui.',
   },
-  // 7. Card chrome on dark surface
+  // 7. Card chrome via bg-surface-100/200 base bg. Use bg-white instead.
+  //    The negative-lookbehind for `:` and `-` skips modifier prefixes
+  //    (`hover:bg-surface-200`, `border-surface-200`) so the rule fires
+  //    only on the base background token.
   {
     selector:
-      'JSXAttribute[name.name="className"] Literal[value=/\\bbg-surface-(100|200)\\b.*\\brounded(-md|-lg|-xl)\\b.*\\bborder\\b/]',
+      'JSXAttribute[name.name="className"] Literal[value=/(?<![:\\-])\\bbg-surface-(100|200)\\b.*\\brounded(-md|-lg|-xl)\\b.*\\bborder\\b/]',
     message:
-      'Card chrome on dark surface. Use <Card> or `bg-white border border-surface-200 rounded-lg`.',
+      'Card chrome via `bg-surface-100/200` is a design-system anti-pattern. Use <Card> or `bg-white border border-surface-200 rounded-lg`.',
   },
   // 8. Raw <input> for text-style inputs — use <Input> from @/components/ui
   {

@@ -101,7 +101,7 @@ export function SelectCheckbox({
         onChange={onChange}
         disabled={disabled}
         className={clsx(
-          'h-4 w-4 rounded bg-surface-700 border-surface-600',
+          'h-4 w-4 rounded bg-surface-200 border-surface-300',
           'text-brand-600 focus:ring-brand-500 focus:ring-offset-0',
           'disabled:opacity-50 disabled:cursor-not-allowed',
           'cursor-pointer'
@@ -164,16 +164,16 @@ export function BulkActionsBar({
 
   return (
     <>
-      <div className="sticky top-0 z-40 bg-surface-800 border border-surface-700 rounded-lg p-3 flex items-center justify-between shadow-lg animate-slide-down">
+      <div className="sticky top-0 z-40 bg-white border border-surface-200 rounded-lg p-3 flex items-center justify-between shadow-lg animate-slide-down">
         <div className="flex items-center gap-4">
           <button
             onClick={onClear}
-            className="p-1.5 hover:bg-surface-700 rounded-lg text-surface-600 transition-colors"
+            className="p-1.5 hover:bg-surface-200 rounded-lg text-surface-600 transition-colors"
             aria-label="Clear selection"
           >
             <XMarkIcon className="w-5 h-5" />
           </button>
-          <span className="text-surface-200 font-medium">
+          <span className="text-surface-800 font-medium">
             {selectedCount} of {totalCount} selected
           </span>
         </div>
@@ -259,7 +259,7 @@ export function StatusUpdateDropdown({
       {isOpen && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-          <div className="absolute right-0 mt-2 w-48 bg-surface-800 border border-surface-700 rounded-lg shadow-xl z-50 overflow-hidden">
+          <div className="absolute right-0 mt-2 w-48 bg-white border border-surface-200 rounded-lg shadow-xl z-50 overflow-hidden">
             {options.map((option) => (
               <button
                 key={option.value}
@@ -267,7 +267,7 @@ export function StatusUpdateDropdown({
                   onSelect(option.value);
                   setIsOpen(false);
                 }}
-                className="w-full px-4 py-2.5 text-left text-sm text-surface-200 hover:bg-surface-700 flex items-center gap-2 transition-colors"
+                className="w-full px-4 py-2.5 text-left text-sm text-surface-800 hover:bg-surface-200 flex items-center gap-2 transition-colors"
               >
                 {option.color && <span className={clsx('w-2 h-2 rounded-full', option.color)} />}
                 {option.label}

@@ -207,7 +207,7 @@ export function DashboardWidgets({ widgets, storageKey, className }: DashboardWi
 
       {/* Widget Visibility Panel (when customizing) */}
       {isCustomizing && (
-        <div className="mb-6 p-4 bg-surface-800 border border-surface-700 rounded-xl">
+        <div className="mb-6 p-4 bg-white border border-surface-200 rounded-xl">
           <h3 className="text-sm font-medium text-surface-700 mb-3">
             Widget Visibility ({layout.filter((w) => w.visible).length} of {layout.length} visible)
           </h3>
@@ -223,7 +223,7 @@ export function DashboardWidgets({ widgets, storageKey, className }: DashboardWi
                     'flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-all',
                     w.visible
                       ? 'bg-brand-500/20 text-brand-400 border border-brand-500/30'
-                      : 'bg-surface-700 text-surface-500 border border-surface-600'
+                      : 'bg-surface-200 text-surface-500 border border-surface-300'
                   )}
                 >
                   {w.visible ? (
@@ -257,8 +257,7 @@ export function DashboardWidgets({ widgets, storageKey, className }: DashboardWi
             className={clsx(
               'transition-all duration-200',
               isCustomizing && 'cursor-move',
-              dragOverWidget === id &&
-                'ring-2 ring-brand-500 ring-offset-2 ring-offset-surface-900',
+              dragOverWidget === id && 'ring-2 ring-brand-500 ring-offset-2 ring-offset-surface-50',
               draggedWidget === id && 'opacity-50'
             )}
           >
@@ -275,7 +274,7 @@ export function DashboardWidgets({ widgets, storageKey, className }: DashboardWi
 
       {/* Empty State */}
       {visibleWidgets.length === 0 && (
-        <div className="text-center py-12 bg-surface-800 border border-surface-700 rounded-xl">
+        <div className="text-center py-12 bg-white border border-surface-200 rounded-xl">
           <EyeSlashIcon className="w-12 h-12 mx-auto text-surface-600 mb-4" />
           <h3 className="text-lg font-medium text-surface-700 mb-2">No widgets visible</h3>
           <p className="text-surface-500 mb-4">Click "Customize" to enable some widgets</p>
@@ -313,13 +312,10 @@ interface WidgetCardProps {
 export function WidgetCard({ title, children, action, className }: WidgetCardProps) {
   return (
     <div
-      className={clsx(
-        'bg-surface-800 rounded-xl border border-surface-700 overflow-hidden',
-        className
-      )}
+      className={clsx('bg-white rounded-xl border border-surface-200 overflow-hidden', className)}
     >
-      <div className="p-4 border-b border-surface-700 flex items-center justify-between">
-        <h3 className="font-medium text-surface-100">{title}</h3>
+      <div className="p-4 border-b border-surface-200 flex items-center justify-between">
+        <h3 className="font-medium text-surface-900">{title}</h3>
         {action}
       </div>
       <div className="p-4">{children}</div>

@@ -30,7 +30,7 @@ export default function AccountSettings() {
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-surface-100">Account Settings</h1>
+        <h1 className="text-2xl font-bold text-surface-900">Account Settings</h1>
         <p className="text-surface-600 mt-1">Manage your personal preferences</p>
       </div>
 
@@ -46,7 +46,7 @@ export default function AccountSettings() {
                   'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
                   activeTab === tab.id
                     ? 'bg-brand-600/20 text-brand-400'
-                    : 'text-surface-600 hover:bg-surface-800 hover:text-surface-100'
+                    : 'text-surface-600 hover:bg-white hover:text-surface-900'
                 )}
               >
                 <tab.icon className="w-5 h-5" />
@@ -71,9 +71,9 @@ export default function AccountSettings() {
 function ProfileSettings({ user }: { user: any }) {
   return (
     <div className="card p-6 space-y-6">
-      <h2 className="text-lg font-semibold text-surface-100">Profile</h2>
+      <h2 className="text-lg font-semibold text-surface-900">Profile</h2>
       <div className="flex items-center gap-4">
-        <div className="w-16 h-16 rounded-full bg-surface-700 flex items-center justify-center">
+        <div className="w-16 h-16 rounded-full bg-surface-200 flex items-center justify-center">
           <span className="text-2xl font-medium text-surface-700">
             {user?.name?.charAt(0)?.toUpperCase() || 'U'}
           </span>
@@ -113,7 +113,7 @@ function ProfileSettings({ user }: { user: any }) {
           />
         </div>
       </div>
-      <div className="flex justify-end pt-4 border-t border-surface-800">
+      <div className="flex justify-end pt-4 border-t border-surface-200">
         <Button variant="primary">Save Changes</Button>
       </div>
     </div>
@@ -153,7 +153,7 @@ function NotificationPreferences() {
       {/* Risk Task Notifications - New Section */}
       <div className="card p-6 space-y-6">
         <div>
-          <h2 className="text-lg font-semibold text-surface-100">
+          <h2 className="text-lg font-semibold text-surface-900">
             Risk Workflow Task Notifications
           </h2>
           <p className="text-surface-600 text-sm mt-1">
@@ -166,9 +166,9 @@ function NotificationPreferences() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Email */}
-            <label className="flex flex-col p-4 bg-surface-800/50 rounded-lg cursor-pointer hover:bg-surface-800 border-2 transition-colors border-transparent has-[:checked]:border-brand-500">
+            <label className="flex flex-col p-4 bg-white/50 rounded-lg cursor-pointer hover:bg-white border-2 transition-colors border-transparent has-[:checked]:border-brand-500">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-surface-100 font-medium flex items-center gap-2">
+                <span className="text-surface-900 font-medium flex items-center gap-2">
                   <svg
                     className="w-5 h-5 text-surface-600"
                     fill="none"
@@ -188,16 +188,16 @@ function NotificationPreferences() {
                   type="checkbox"
                   checked={riskTaskPrefs.email}
                   onChange={() => toggleRiskTaskPref('email')}
-                  className="w-5 h-5 rounded border-surface-600 text-brand-500 focus:ring-brand-500"
+                  className="w-5 h-5 rounded border-surface-300 text-brand-500 focus:ring-brand-500"
                 />
               </div>
               <p className="text-surface-500 text-sm">Receive task notifications via email</p>
             </label>
 
             {/* In-App */}
-            <label className="flex flex-col p-4 bg-surface-800/50 rounded-lg cursor-pointer hover:bg-surface-800 border-2 transition-colors border-transparent has-[:checked]:border-brand-500">
+            <label className="flex flex-col p-4 bg-white/50 rounded-lg cursor-pointer hover:bg-white border-2 transition-colors border-transparent has-[:checked]:border-brand-500">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-surface-100 font-medium flex items-center gap-2">
+                <span className="text-surface-900 font-medium flex items-center gap-2">
                   <BellIcon className="w-5 h-5 text-surface-600" />
                   In-App
                 </span>
@@ -205,16 +205,16 @@ function NotificationPreferences() {
                   type="checkbox"
                   checked={riskTaskPrefs.inApp}
                   onChange={() => toggleRiskTaskPref('inApp')}
-                  className="w-5 h-5 rounded border-surface-600 text-brand-500 focus:ring-brand-500"
+                  className="w-5 h-5 rounded border-surface-300 text-brand-500 focus:ring-brand-500"
                 />
               </div>
               <p className="text-surface-500 text-sm">Show notifications in the app</p>
             </label>
 
             {/* Slack */}
-            <label className="flex flex-col p-4 bg-surface-800/50 rounded-lg cursor-pointer hover:bg-surface-800 border-2 transition-colors border-transparent has-[:checked]:border-brand-500">
+            <label className="flex flex-col p-4 bg-white/50 rounded-lg cursor-pointer hover:bg-white border-2 transition-colors border-transparent has-[:checked]:border-brand-500">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-surface-100 font-medium flex items-center gap-2">
+                <span className="text-surface-900 font-medium flex items-center gap-2">
                   <svg className="w-5 h-5 text-surface-600" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zM6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zM8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zM18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zM17.688 8.834a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312zM15.165 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zM15.165 17.688a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z" />
                   </svg>
@@ -224,7 +224,7 @@ function NotificationPreferences() {
                   type="checkbox"
                   checked={riskTaskPrefs.slack}
                   onChange={() => toggleRiskTaskPref('slack')}
-                  className="w-5 h-5 rounded border-surface-600 text-brand-500 focus:ring-brand-500"
+                  className="w-5 h-5 rounded border-surface-300 text-brand-500 focus:ring-brand-500"
                 />
               </div>
               <p className="text-surface-500 text-sm">Get notifications in Slack DMs</p>
@@ -233,7 +233,7 @@ function NotificationPreferences() {
 
           {/* Slack User ID - only shown when Slack is enabled */}
           {riskTaskPrefs.slack && (
-            <div className="p-4 bg-surface-800/30 rounded-lg border border-surface-700">
+            <div className="p-4 bg-white/30 rounded-lg border border-surface-200">
               <label className="label">Slack User ID</label>
               <Input
                 type="text"
@@ -268,7 +268,7 @@ function NotificationPreferences() {
                   'flex-1 min-w-[200px] p-3 rounded-lg cursor-pointer border-2 transition-colors',
                   riskTaskPrefs.digestMode === option.value
                     ? 'border-brand-500 bg-brand-500/10'
-                    : 'border-surface-700 bg-surface-800/50 hover:border-surface-600'
+                    : 'border-surface-200 bg-white/50 hover:border-surface-300'
                 )}
               >
                 <div className="flex items-center gap-2">
@@ -282,7 +282,7 @@ function NotificationPreferences() {
                     }
                     className="w-4 h-4 text-brand-500 focus:ring-brand-500"
                   />
-                  <span className="text-surface-100 font-medium">{option.label}</span>
+                  <span className="text-surface-900 font-medium">{option.label}</span>
                 </div>
                 <p className="text-surface-500 text-sm mt-1 ml-6">{option.desc}</p>
               </label>
@@ -290,13 +290,13 @@ function NotificationPreferences() {
           </div>
         </div>
 
-        <div className="flex justify-end pt-4 border-t border-surface-800">
+        <div className="flex justify-end pt-4 border-t border-surface-200">
           <Button variant="primary">Save Task Preferences</Button>
         </div>
       </div>
       {/* General Notifications */}
       <div className="card p-6 space-y-6">
-        <h2 className="text-lg font-semibold text-surface-100">General Notifications</h2>
+        <h2 className="text-lg font-semibold text-surface-900">General Notifications</h2>
         <p className="text-surface-600 text-sm">
           Choose how you want to be notified about other activity.
         </p>
@@ -305,22 +305,22 @@ function NotificationPreferences() {
           <h3 className="text-sm font-medium text-surface-700">Email Notifications</h3>
 
           <div className="space-y-3">
-            <label className="flex items-center justify-between p-3 bg-surface-800/50 rounded-lg cursor-pointer hover:bg-surface-800">
+            <label className="flex items-center justify-between p-3 bg-white/50 rounded-lg cursor-pointer hover:bg-white">
               <div>
-                <span className="text-surface-100 font-medium">Email Notifications</span>
+                <span className="text-surface-900 font-medium">Email Notifications</span>
                 <p className="text-surface-500 text-sm">Receive notifications via email</p>
               </div>
               <input
                 type="checkbox"
                 checked={preferences.emailNotifications}
                 onChange={() => togglePreference('emailNotifications')}
-                className="w-5 h-5 rounded border-surface-600 text-brand-500 focus:ring-brand-500"
+                className="w-5 h-5 rounded border-surface-300 text-brand-500 focus:ring-brand-500"
               />
             </label>
 
-            <label className="flex items-center justify-between p-3 bg-surface-800/50 rounded-lg cursor-pointer hover:bg-surface-800">
+            <label className="flex items-center justify-between p-3 bg-white/50 rounded-lg cursor-pointer hover:bg-white">
               <div>
-                <span className="text-surface-100 font-medium">Compliance Alerts</span>
+                <span className="text-surface-900 font-medium">Compliance Alerts</span>
                 <p className="text-surface-500 text-sm">
                   Get notified about compliance drift and issues
                 </p>
@@ -329,13 +329,13 @@ function NotificationPreferences() {
                 type="checkbox"
                 checked={preferences.complianceAlerts}
                 onChange={() => togglePreference('complianceAlerts')}
-                className="w-5 h-5 rounded border-surface-600 text-brand-500 focus:ring-brand-500"
+                className="w-5 h-5 rounded border-surface-300 text-brand-500 focus:ring-brand-500"
               />
             </label>
 
-            <label className="flex items-center justify-between p-3 bg-surface-800/50 rounded-lg cursor-pointer hover:bg-surface-800">
+            <label className="flex items-center justify-between p-3 bg-white/50 rounded-lg cursor-pointer hover:bg-white">
               <div>
-                <span className="text-surface-100 font-medium">Evidence Reminders</span>
+                <span className="text-surface-900 font-medium">Evidence Reminders</span>
                 <p className="text-surface-500 text-sm">
                   Reminders for expiring or missing evidence
                 </p>
@@ -344,13 +344,13 @@ function NotificationPreferences() {
                 type="checkbox"
                 checked={preferences.evidenceReminders}
                 onChange={() => togglePreference('evidenceReminders')}
-                className="w-5 h-5 rounded border-surface-600 text-brand-500 focus:ring-brand-500"
+                className="w-5 h-5 rounded border-surface-300 text-brand-500 focus:ring-brand-500"
               />
             </label>
 
-            <label className="flex items-center justify-between p-3 bg-surface-800/50 rounded-lg cursor-pointer hover:bg-surface-800">
+            <label className="flex items-center justify-between p-3 bg-white/50 rounded-lg cursor-pointer hover:bg-white">
               <div>
-                <span className="text-surface-100 font-medium">Risk Alerts</span>
+                <span className="text-surface-900 font-medium">Risk Alerts</span>
                 <p className="text-surface-500 text-sm">
                   Notifications about new or escalated risks
                 </p>
@@ -359,41 +359,41 @@ function NotificationPreferences() {
                 type="checkbox"
                 checked={preferences.riskAlerts}
                 onChange={() => togglePreference('riskAlerts')}
-                className="w-5 h-5 rounded border-surface-600 text-brand-500 focus:ring-brand-500"
+                className="w-5 h-5 rounded border-surface-300 text-brand-500 focus:ring-brand-500"
               />
             </label>
 
-            <label className="flex items-center justify-between p-3 bg-surface-800/50 rounded-lg cursor-pointer hover:bg-surface-800">
+            <label className="flex items-center justify-between p-3 bg-white/50 rounded-lg cursor-pointer hover:bg-white">
               <div>
-                <span className="text-surface-100 font-medium">Weekly Digest</span>
+                <span className="text-surface-900 font-medium">Weekly Digest</span>
                 <p className="text-surface-500 text-sm">Summary of activity sent weekly</p>
               </div>
               <input
                 type="checkbox"
                 checked={preferences.weeklyDigest}
                 onChange={() => togglePreference('weeklyDigest')}
-                className="w-5 h-5 rounded border-surface-600 text-brand-500 focus:ring-brand-500"
+                className="w-5 h-5 rounded border-surface-300 text-brand-500 focus:ring-brand-500"
               />
             </label>
           </div>
 
           <h3 className="text-sm font-medium text-surface-700 pt-4">In-App Notifications</h3>
 
-          <label className="flex items-center justify-between p-3 bg-surface-800/50 rounded-lg cursor-pointer hover:bg-surface-800">
+          <label className="flex items-center justify-between p-3 bg-white/50 rounded-lg cursor-pointer hover:bg-white">
             <div>
-              <span className="text-surface-100 font-medium">In-App Notifications</span>
+              <span className="text-surface-900 font-medium">In-App Notifications</span>
               <p className="text-surface-500 text-sm">Show notifications in the app</p>
             </div>
             <input
               type="checkbox"
               checked={preferences.inAppNotifications}
               onChange={() => togglePreference('inAppNotifications')}
-              className="w-5 h-5 rounded border-surface-600 text-brand-500 focus:ring-brand-500"
+              className="w-5 h-5 rounded border-surface-300 text-brand-500 focus:ring-brand-500"
             />
           </label>
         </div>
 
-        <div className="flex justify-end pt-4 border-t border-surface-800">
+        <div className="flex justify-end pt-4 border-t border-surface-200">
           <Button variant="primary">Save Preferences</Button>
         </div>
       </div>
@@ -429,7 +429,7 @@ function SecuritySettings() {
   return (
     <div className="space-y-6">
       <div className="card p-6 space-y-6">
-        <h2 className="text-lg font-semibold text-surface-100">Password</h2>
+        <h2 className="text-lg font-semibold text-surface-900">Password</h2>
 
         <div className="space-y-4">
           <div>
@@ -446,19 +446,19 @@ function SecuritySettings() {
           </div>
         </div>
 
-        <div className="flex justify-end pt-4 border-t border-surface-800">
+        <div className="flex justify-end pt-4 border-t border-surface-200">
           <Button variant="primary">Update Password</Button>
         </div>
       </div>
       <div className="card p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-surface-100">Two-Factor Authentication</h2>
+            <h2 className="text-lg font-semibold text-surface-900">Two-Factor Authentication</h2>
             <p className="text-surface-600 text-sm mt-1">
               Add an extra layer of security to your account
             </p>
           </div>
-          <span className="px-3 py-1 text-sm rounded-full bg-surface-700 text-surface-700">
+          <span className="px-3 py-1 text-sm rounded-full bg-surface-200 text-surface-700">
             Not enabled
           </span>
         </div>
@@ -469,15 +469,15 @@ function SecuritySettings() {
         </Button>
       </div>
       <div className="card p-6 space-y-6">
-        <h2 className="text-lg font-semibold text-surface-100">Active Sessions</h2>
+        <h2 className="text-lg font-semibold text-surface-900">Active Sessions</h2>
         <p className="text-surface-600 text-sm">Manage your active sessions across devices</p>
 
         <div className="space-y-3">
-          <div className="flex items-center justify-between p-3 bg-surface-800/50 rounded-lg">
+          <div className="flex items-center justify-between p-3 bg-white/50 rounded-lg">
             <div className="flex items-center gap-3">
               <ComputerDesktopIcon className="w-8 h-8 text-surface-600" />
               <div>
-                <p className="text-surface-100 font-medium">MacOS - Chrome</p>
+                <p className="text-surface-900 font-medium">MacOS - Chrome</p>
                 <p className="text-surface-500 text-sm">Current session • Last active now</p>
               </div>
             </div>
