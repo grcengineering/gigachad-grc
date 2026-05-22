@@ -49,6 +49,3 @@ CVE-2026-32630  # medium  - file-type 21.3.2 via overrides (PR #212)
 # ---------------------------------------------------------------------------
 # Application-level, intentionally not patched.
 # ---------------------------------------------------------------------------
-GHSA-w5hq-g745-h8pq  # medium - uuid v3/v5/v6 only; codebase exclusively uses uuid.v4().
-                     # uuid v14 removes CommonJS support and would break the
-                     # Node 20 + TS commonjs backend services.
