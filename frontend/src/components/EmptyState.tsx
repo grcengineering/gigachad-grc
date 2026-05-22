@@ -102,7 +102,9 @@ export function EmptyState({
     ) : undefined;
 
   return (
-    <div className={`bg-white border border-surface-200 rounded-lg ${className ?? ''}`}>
+    <div
+      className={`bg-white border border-surface-200 rounded-lg ${className ?? ''} dark:bg-surface-900`}
+    >
       <UIEmptyState
         icon={iconElement}
         title={title}

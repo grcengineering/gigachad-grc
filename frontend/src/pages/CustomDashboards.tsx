@@ -189,7 +189,7 @@ export default function CustomDashboards() {
               </div>
 
               {/* Mini preview */}
-              <div className="mt-3 bg-white rounded p-2">
+              <div className="mt-3 bg-white rounded p-2 dark:bg-surface-900">
                 <div className="grid grid-cols-6 gap-1 h-12">
                   {dashboard.widgets?.slice(0, 6).map((widget, i) => (
                     <div

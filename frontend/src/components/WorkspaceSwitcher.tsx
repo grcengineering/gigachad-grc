@@ -127,7 +127,7 @@ export function WorkspaceSwitcher() {
   return (
     <>
       <Menu as="div" className="relative">
-        <Menu.Button className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white hover:bg-surface-200 border border-surface-300 transition-colors text-sm text-foreground">
+        <Menu.Button className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white hover:bg-surface-200 border border-surface-300 transition-colors text-sm text-foreground dark:bg-surface-900">
           <BuildingOfficeIcon className="w-4 h-4 text-surface-700" />
           <span className="font-medium max-w-[160px] truncate">
             {currentWorkspace?.name || 'Select Workspace'}
@@ -144,7 +144,7 @@ export function WorkspaceSwitcher() {
           leaveFrom="transform opacity-100 scale-100"
           leaveTo="transform opacity-0 scale-95"
         >
-          <Menu.Items className="absolute left-0 mt-2 w-64 rounded-lg bg-white border border-surface-200 shadow-lg z-50 py-1 focus:outline-none">
+          <Menu.Items className="absolute left-0 mt-2 w-64 rounded-lg bg-white border border-surface-200 shadow-lg z-50 py-1 focus:outline-none dark:bg-surface-900">
             {/* Workspace List */}
             <div className="px-2 py-1">
               <p className="text-xs text-muted-foreground uppercase tracking-wider px-2 py-1">

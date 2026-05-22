@@ -92,7 +92,7 @@ export function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShortcutsPro
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="w-full max-w-2xl transform overflow-hidden rounded-xl bg-white border border-surface-200 shadow-2xl transition-all">
+              <Dialog.Panel className="w-full max-w-2xl transform overflow-hidden rounded-xl bg-white border border-surface-200 shadow-2xl transition-all dark:bg-surface-900">
                 <div className="flex items-center justify-between px-6 py-4 border-b border-surface-200">
                   <Dialog.Title className="text-lg font-semibold text-white">
                     Keyboard Shortcuts
@@ -134,7 +134,7 @@ export function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShortcutsPro
                   ))}
                 </div>
 
-                <div className="px-6 py-4 bg-white/50 border-t border-surface-200">
+                <div className="px-6 py-4 bg-white/50 border-t border-surface-200 dark:bg-surface-900/50">
                   <p className="text-xs text-surface-500 text-center">
                     Press{' '}
                     <kbd className="px-1.5 py-0.5 bg-surface-200 rounded text-surface-600">⌘</kbd> +{' '}

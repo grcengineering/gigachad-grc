@@ -80,7 +80,7 @@ export function SOC2AnalysisPanel({
 
   if (!analysis) {
     return (
-      <div className="bg-white/50 border border-surface-200 rounded-lg p-6">
+      <div className="bg-white/50 border border-surface-200 rounded-lg p-6 dark:bg-surface-900/50">
         <div className="flex items-center gap-3 mb-4">
           <SparklesIcon className="w-6 h-6 text-purple-600" />
           <div>
@@ -90,7 +90,7 @@ export function SOC2AnalysisPanel({
             </p>
           </div>
         </div>
-        <div className="bg-white/50 rounded-lg p-4 mb-4">
+        <div className="bg-white/50 rounded-lg p-4 mb-4 dark:bg-surface-900/50">
           <p className="text-sm text-surface-700 mb-3">AI analysis will extract:</p>
           <ul className="text-sm text-surface-600 space-y-2">
             <li className="flex items-center gap-2">
@@ -136,7 +136,7 @@ export function SOC2AnalysisPanel({
   return (
     <div className="space-y-4">
       {/* Analysis Header */}
-      <div className="bg-white/50 border border-surface-200 rounded-lg p-4">
+      <div className="bg-white/50 border border-surface-200 rounded-lg p-4 dark:bg-surface-900/50">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-purple-500/20 rounded-lg">
@@ -166,13 +166,13 @@ export function SOC2AnalysisPanel({
         </div>
 
         {/* Summary */}
-        <div className="mt-4 p-3 bg-white/50 rounded-lg">
+        <div className="mt-4 p-3 bg-white/50 rounded-lg dark:bg-surface-900/50">
           <p className="text-sm text-surface-700">{analysis.summary}</p>
         </div>
 
         {/* Key Stats */}
         <div className="grid grid-cols-4 gap-3 mt-4">
-          <div className="text-center p-2 bg-white/50 rounded-lg">
+          <div className="text-center p-2 bg-white/50 rounded-lg dark:bg-surface-900/50">
             <p
               className={clsx('text-xl font-bold', RISK_SCORE_COLORS[analysis.suggestedRiskScore])}
             >
@@ -181,7 +181,7 @@ export function SOC2AnalysisPanel({
             </p>
             <p className="text-xs text-surface-600">Risk Score</p>
           </div>
-          <div className="text-center p-2 bg-white/50 rounded-lg">
+          <div className="text-center p-2 bg-white/50 rounded-lg dark:bg-surface-900/50">
             <p
               className={clsx(
                 'text-xl font-bold',
@@ -192,11 +192,11 @@ export function SOC2AnalysisPanel({
             </p>
             <p className="text-xs text-surface-600">Exceptions</p>
           </div>
-          <div className="text-center p-2 bg-white/50 rounded-lg">
+          <div className="text-center p-2 bg-white/50 rounded-lg dark:bg-surface-900/50">
             <p className="text-xl font-bold text-yellow-600">{analysis.cuecs.length}</p>
             <p className="text-xs text-surface-600">CUECs</p>
           </div>
-          <div className="text-center p-2 bg-white/50 rounded-lg">
+          <div className="text-center p-2 bg-white/50 rounded-lg dark:bg-surface-900/50">
             <p className="text-xl font-bold text-blue-600">{analysis.controlGaps.length}</p>
             <p className="text-xs text-surface-600">Gaps</p>
           </div>
@@ -309,7 +309,7 @@ export function SOC2AnalysisPanel({
         >
           <div className="space-y-2">
             {analysis.subserviceOrganizations.map((org, idx) => (
-              <div key={idx} className="p-3 bg-white/50 rounded-lg">
+              <div key={idx} className="p-3 bg-white/50 rounded-lg dark:bg-surface-900/50">
                 <p className="font-medium text-surface-900">{org.name}</p>
                 <p className="text-sm text-surface-600 mt-1">{org.services}</p>
                 <p className="text-xs text-surface-500 mt-1">
@@ -356,7 +356,7 @@ function CollapsibleSection({
   children,
 }: CollapsibleSectionProps) {
   return (
-    <div className="bg-white/50 border border-surface-200 rounded-lg overflow-hidden">
+    <div className="bg-white/50 border border-surface-200 rounded-lg overflow-hidden dark:bg-surface-900/50">
       <button
         onClick={onToggle}
         className="w-full flex items-center justify-between p-4 hover:bg-surface-200/50 transition-colors"
@@ -416,7 +416,7 @@ function CUECCard({ cuec }: { cuec: CUEC }) {
   };
 
   return (
-    <div className="p-3 bg-white/50 rounded-lg">
+    <div className="p-3 bg-white/50 rounded-lg dark:bg-surface-900/50">
       <div className="flex items-start justify-between">
         <p className="text-sm text-surface-800 flex-1">{cuec.description}</p>
         <span
@@ -442,7 +442,7 @@ function GapCard({ gap }: { gap: ControlGap }) {
   };
 
   return (
-    <div className="p-3 bg-white/50 rounded-lg">
+    <div className="p-3 bg-white/50 rounded-lg dark:bg-surface-900/50">
       <div className="flex items-center justify-between mb-2">
         <span className="font-medium text-surface-900">{gap.area}</span>
         <span className={clsx('text-xs capitalize', priorityColors[gap.priority])}>

@@ -99,7 +99,9 @@ function RequirementTree({
             <div
               className={clsx(
                 'flex items-start gap-2 py-2 px-3 rounded-lg transition-colors',
-                req.isCategory ? 'bg-white/50 hover:bg-white' : 'hover:bg-white/30'
+                req.isCategory
+                  ? 'bg-white/50 dark:bg-surface-900/50 hover:bg-white dark:hover:bg-surface-800'
+                  : 'hover:bg-white/30 dark:hover:bg-surface-800/30'
               )}
             >
               {hasChildren ? (
@@ -183,7 +185,7 @@ function FrameworkPreviewModal({
         </div>
         <button
           onClick={onClose}
-          className="p-2 text-surface-600 hover:text-surface-800 hover:bg-white rounded-lg transition-colors"
+          className="p-2 text-surface-600 hover:text-surface-800 hover:bg-white rounded-lg transition-colors dark:bg-surface-900 dark:hover:bg-surface-800"
         >
           <XCircleIcon className="w-6 h-6" />
         </button>
@@ -194,13 +196,13 @@ function FrameworkPreviewModal({
         <div className="mb-6">
           <p className="text-surface-700">{framework.description}</p>
           <div className="flex items-center gap-4 mt-4">
-            <div className="px-3 py-1.5 bg-white rounded-lg">
+            <div className="px-3 py-1.5 bg-white rounded-lg dark:bg-surface-900">
               <span className="text-sm text-surface-600">Requirements:</span>
               <span className="ml-2 font-semibold text-surface-900">
                 {framework.requirementCount}
               </span>
             </div>
-            <div className="px-3 py-1.5 bg-white rounded-lg">
+            <div className="px-3 py-1.5 bg-white rounded-lg dark:bg-surface-900">
               <span className="text-sm text-surface-600">Categories:</span>
               <span className="ml-2 font-semibold text-surface-900">{framework.categoryCount}</span>
             </div>
@@ -209,7 +211,7 @@ function FrameworkPreviewModal({
 
         <div>
           <h3 className="text-lg font-medium text-surface-900 mb-4">Requirements Structure</h3>
-          <div className="bg-white/30 rounded-lg p-4 max-h-[400px] overflow-y-auto">
+          <div className="bg-white/30 rounded-lg p-4 max-h-[400px] overflow-y-auto dark:bg-surface-900/30">
             <RequirementTree requirements={framework.requirements} />
           </div>
         </div>
@@ -248,10 +250,10 @@ function FrameworkCard({
   return (
     <div
       className={clsx(
-        'group bg-white/50 border rounded-xl p-5 transition-all duration-200',
+        'group bg-white/50 border rounded-xl p-5 transition-all duration-200 dark:bg-surface-900/50',
         framework.isActivated
           ? 'border-green-500/30 bg-green-500/5'
-          : 'border-surface-200 hover:border-surface-300 hover:bg-white/70'
+          : 'border-surface-200 hover:border-surface-300 hover:bg-white/70 dark:bg-surface-900/70 dark:hover:bg-surface-800/70'
       )}
     >
       <div className="flex items-start justify-between mb-4">
@@ -468,7 +470,7 @@ export default function FrameworkLibrary() {
             placeholder="Search frameworks..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 placeholder-surface-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500"
+            className="w-full pl-10 pr-4 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 placeholder-surface-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 dark:bg-surface-900"
           />
         </div>
 
@@ -477,7 +479,7 @@ export default function FrameworkLibrary() {
           <SelectNative
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:ring-2 focus:ring-brand-500/50"
+            className="px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:ring-2 focus:ring-brand-500/50 dark:bg-surface-900"
           >
             <option value="all">All Categories</option>
             {categories.map((cat) => (
@@ -493,7 +495,7 @@ export default function FrameworkLibrary() {
             type="checkbox"
             checked={showActivatedOnly}
             onChange={(e) => setShowActivatedOnly(e.target.checked)}
-            className="w-4 h-4 rounded border-surface-300 bg-white text-brand-500 focus:ring-brand-500/50"
+            className="w-4 h-4 rounded border-surface-300 bg-white text-brand-500 focus:ring-brand-500/50 dark:bg-surface-900"
           />
           <span className="text-sm text-surface-700">Show activated only</span>
         </label>
@@ -515,7 +517,7 @@ export default function FrameworkLibrary() {
           ))}
         </div>
       ) : (
-        <div className="text-center py-16 bg-white/30 rounded-xl border border-surface-200">
+        <div className="text-center py-16 bg-white/30 rounded-xl border border-surface-200 dark:bg-surface-900/30">
           <BookOpenIcon className="w-12 h-12 text-surface-500 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-surface-800 mb-2">No frameworks found</h3>
           <p className="text-surface-600">

@@ -125,7 +125,7 @@ export default function MCPSettings() {
       case 'connecting':
         return <ArrowPathIcon className="w-5 h-5 text-yellow-500 animate-spin" />;
       default:
-        return <ClockIcon className="w-5 h-5 text-gray-500" />;
+        return <ClockIcon className="w-5 h-5 text-gray-500 dark:text-surface-400" />;
     }
   };
 
@@ -227,12 +227,12 @@ export default function MCPSettings() {
 
         {loadingServers ? (
           <div className="p-8 text-center">
-            <ArrowPathIcon className="w-8 h-8 animate-spin mx-auto text-gray-400" />
+            <ArrowPathIcon className="w-8 h-8 animate-spin mx-auto text-gray-400 dark:text-surface-500" />
             <p className="mt-2 text-gray-600 dark:text-gray-400">Loading servers...</p>
           </div>
         ) : servers.length === 0 ? (
           <div className="p-8 text-center">
-            <CpuChipIcon className="w-12 h-12 mx-auto text-gray-400" />
+            <CpuChipIcon className="w-12 h-12 mx-auto text-gray-400 dark:text-surface-500" />
             <p className="mt-2 text-gray-600 dark:text-gray-400">No servers configured</p>
             <Button onClick={() => setShowAddModal(true)} className="mt-4" variant="secondary">
               Add your first server
@@ -243,7 +243,7 @@ export default function MCPSettings() {
             {servers.map((server) => (
               <div
                 key={server.id}
-                className="p-4 hover:bg-gray-50 dark:hover:bg-surface-200/50 cursor-pointer"
+                className="p-4 hover:bg-gray-50 dark:hover:bg-surface-200/50 cursor-pointer dark:bg-surface-900"
                 onClick={() => setSelectedServer(server)}
               >
                 <div className="flex items-center justify-between">
@@ -265,7 +265,7 @@ export default function MCPSettings() {
                             e.stopPropagation();
                             disconnectMutation.mutate(server.id);
                           }}
-                          className="p-2 text-gray-500 hover:text-red-600 dark:hover:text-red-600"
+                          className="p-2 text-gray-500 hover:text-red-600 dark:hover:text-red-600 dark:text-surface-400"
                           title="Disconnect"
                         >
                           <StopIcon className="w-5 h-5" />
@@ -276,7 +276,7 @@ export default function MCPSettings() {
                             e.stopPropagation();
                             connectMutation.mutate(server.id);
                           }}
-                          className="p-2 text-gray-500 hover:text-green-600 dark:hover:text-green-600"
+                          className="p-2 text-gray-500 hover:text-green-600 dark:hover:text-green-600 dark:text-surface-400"
                           title="Connect"
                         >
                           <PlayIcon className="w-5 h-5" />
@@ -289,7 +289,7 @@ export default function MCPSettings() {
                             deleteMutation.mutate(server.id);
                           }
                         }}
-                        className="p-2 text-gray-500 hover:text-red-600 dark:hover:text-red-600"
+                        className="p-2 text-gray-500 hover:text-red-600 dark:hover:text-red-600 dark:text-surface-400"
                         title="Delete"
                       >
                         <TrashIcon className="w-5 h-5" />
@@ -317,7 +317,7 @@ export default function MCPSettings() {
               setSelectedTemplate(null);
               setEnvVars({});
             }}
-            className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+            className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 dark:text-surface-400"
           >
             ×
           </button>
@@ -521,7 +521,7 @@ export default function MCPSettings() {
             </div>
             <button
               onClick={() => setSelectedServer(null)}
-              className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+              className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 dark:text-surface-400"
             >
               ×
             </button>

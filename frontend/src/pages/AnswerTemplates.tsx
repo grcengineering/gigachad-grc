@@ -162,14 +162,14 @@ export default function AnswerTemplates() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search templates..."
-            className="w-full pl-10 pr-4 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+            className="w-full pl-10 pr-4 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
           />
         </div>
 
         <SelectNative
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
-          className="px-4 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+          className="px-4 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
         >
           <option value="">All Categories</option>
           {CATEGORIES.map((cat) => (
@@ -195,10 +195,10 @@ export default function AnswerTemplates() {
           Array.from({ length: 6 }).map((_, i) => (
             <div
               key={i}
-              className="bg-white border border-surface-200 rounded-xl p-5 animate-pulse"
+              className="bg-white border border-surface-200 rounded-xl p-5 animate-pulse dark:bg-surface-900"
             >
               <div className="h-5 bg-surface-200 rounded w-3/4 mb-3" />
-              <div className="h-16 bg-white rounded mb-3" />
+              <div className="h-16 bg-white rounded mb-3 dark:bg-surface-900" />
               <div className="h-4 bg-surface-200 rounded w-1/2" />
             </div>
           ))
@@ -215,7 +215,7 @@ export default function AnswerTemplates() {
             <div
               key={template.id}
               className={clsx(
-                'bg-white border rounded-xl p-5 cursor-pointer transition-all hover:border-surface-300',
+                'bg-white border rounded-xl p-5 cursor-pointer transition-all hover:border-surface-300 dark:bg-surface-900',
                 selectedTemplate?.id === template.id
                   ? 'border-brand-500 ring-2 ring-brand-500/20'
                   : 'border-surface-200'
@@ -264,12 +264,12 @@ export default function AnswerTemplates() {
       </div>
       {/* Template Detail Panel */}
       {selectedTemplate && (
-        <div className="fixed inset-y-0 right-0 w-full max-w-lg bg-white border-l border-surface-200 shadow-xl z-40 overflow-y-auto">
-          <div className="sticky top-0 bg-white border-b border-surface-200 px-6 py-4 flex items-center justify-between">
+        <div className="fixed inset-y-0 right-0 w-full max-w-lg bg-white border-l border-surface-200 shadow-xl z-40 overflow-y-auto dark:bg-surface-900">
+          <div className="sticky top-0 bg-white border-b border-surface-200 px-6 py-4 flex items-center justify-between dark:bg-surface-900">
             <h2 className="text-lg font-semibold text-surface-900">Template Details</h2>
             <button
               onClick={() => setSelectedTemplate(null)}
-              className="p-2 text-surface-600 hover:text-surface-800 rounded-lg hover:bg-white"
+              className="p-2 text-surface-600 hover:text-surface-800 rounded-lg hover:bg-white dark:bg-surface-900 dark:hover:bg-surface-800"
             >
               <XMarkIcon className="w-5 h-5" />
             </button>
@@ -292,7 +292,7 @@ export default function AnswerTemplates() {
 
             <div>
               <label className="block text-sm font-medium text-surface-600 mb-2">Content</label>
-              <div className="bg-white rounded-lg p-4 text-sm text-surface-800 whitespace-pre-wrap font-mono">
+              <div className="bg-white rounded-lg p-4 text-sm text-surface-800 whitespace-pre-wrap font-mono dark:bg-surface-900">
                 {selectedTemplate.content}
               </div>
             </div>
@@ -455,13 +455,13 @@ function TemplateModal({
 
   return (
     <Dialog open onClose={onClose}>
-      <div className="sticky top-0 bg-white border-b border-surface-200 px-6 py-4 flex items-center justify-between">
+      <div className="sticky top-0 bg-white border-b border-surface-200 px-6 py-4 flex items-center justify-between dark:bg-surface-900">
         <h2 className="text-lg font-semibold text-surface-900">
           {template ? 'Edit Template' : 'Create Template'}
         </h2>
         <button
           onClick={onClose}
-          className="p-2 text-surface-600 hover:text-surface-800 rounded-lg hover:bg-white"
+          className="p-2 text-surface-600 hover:text-surface-800 rounded-lg hover:bg-white dark:bg-surface-900 dark:hover:bg-surface-800"
         >
           <XMarkIcon className="w-5 h-5" />
         </button>
@@ -477,7 +477,7 @@ function TemplateModal({
             required
             value={formData.title}
             onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
-            className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+            className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
             placeholder="e.g., SOC 2 Compliance Response"
           />
         </div>
@@ -487,7 +487,7 @@ function TemplateModal({
           <SelectNative
             value={formData.category}
             onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value }))}
-            className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+            className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
           >
             <option value="">Select category...</option>
             {CATEGORIES.map((cat) => (
@@ -511,7 +511,7 @@ function TemplateModal({
             value={formData.content}
             onChange={(e) => setFormData((prev) => ({ ...prev, content: e.target.value }))}
             rows={8}
-            className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 font-mono text-sm"
+            className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 font-mono text-sm dark:bg-surface-900"
             placeholder="Enter template content...
 
 Example:
@@ -543,7 +543,7 @@ Example:
             type="text"
             value={formData.tags}
             onChange={(e) => setFormData((prev) => ({ ...prev, tags: e.target.value }))}
-            className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+            className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
             placeholder="encryption, data-protection, audit (comma-separated)"
           />
         </div>

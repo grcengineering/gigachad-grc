@@ -147,25 +147,25 @@ export default function UserManagement() {
       </div>
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg p-4 border border-surface-200">
+        <div className="bg-white rounded-lg p-4 border border-surface-200 dark:bg-surface-900">
           <div className="text-surface-600 text-sm">Total Users</div>
           <div className="text-2xl font-bold text-white mt-1">{statsData?.total || 0}</div>
         </div>
-        <div className="bg-white rounded-lg p-4 border border-surface-200">
+        <div className="bg-white rounded-lg p-4 border border-surface-200 dark:bg-surface-900">
           <div className="text-surface-600 text-sm">Active Users</div>
           <div className="text-2xl font-bold text-emerald-600 mt-1">{statsData?.active || 0}</div>
         </div>
-        <div className="bg-white rounded-lg p-4 border border-surface-200">
+        <div className="bg-white rounded-lg p-4 border border-surface-200 dark:bg-surface-900">
           <div className="text-surface-600 text-sm">Inactive Users</div>
           <div className="text-2xl font-bold text-red-600 mt-1">{statsData?.inactive || 0}</div>
         </div>
-        <div className="bg-white rounded-lg p-4 border border-surface-200">
+        <div className="bg-white rounded-lg p-4 border border-surface-200 dark:bg-surface-900">
           <div className="text-surface-600 text-sm">Permission Groups</div>
           <div className="text-2xl font-bold text-brand-400 mt-1">{groups.length}</div>
         </div>
       </div>
       {/* Filters */}
-      <div className="bg-white rounded-lg p-4 border border-surface-200">
+      <div className="bg-white rounded-lg p-4 border border-surface-200 dark:bg-surface-900">
         <div className="flex flex-wrap gap-4">
           <div className="flex-1 min-w-64">
             <div className="relative">
@@ -175,14 +175,14 @@ export default function UserManagement() {
                 placeholder="Search users by name or email..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full bg-white border border-surface-300 rounded-lg pl-10 pr-4 py-2 text-white placeholder:text-surface-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="w-full bg-white border border-surface-300 rounded-lg pl-10 pr-4 py-2 text-white placeholder:text-surface-500 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-surface-900"
               />
             </div>
           </div>
           <SelectNative
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-white border border-surface-300 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className="bg-white border border-surface-300 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-surface-900"
           >
             <option value="">All Statuses</option>
             <option value="active">Active</option>
@@ -191,7 +191,7 @@ export default function UserManagement() {
           <SelectNative
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="bg-white border border-surface-300 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className="bg-white border border-surface-300 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-surface-900"
           >
             <option value="">All Roles</option>
             <option value="admin">Admin</option>
@@ -202,9 +202,9 @@ export default function UserManagement() {
         </div>
       </div>
       {/* Users Table */}
-      <div className="bg-white rounded-lg border border-surface-200 overflow-hidden">
+      <div className="bg-white rounded-lg border border-surface-200 overflow-hidden dark:bg-surface-900">
         <table className="w-full">
-          <thead className="bg-white">
+          <thead className="bg-white dark:bg-surface-900">
             <tr>
               <th className="text-left text-surface-600 font-medium px-4 py-3">User</th>
               <th className="text-left text-surface-600 font-medium px-4 py-3">Role</th>

@@ -349,7 +349,7 @@ function EndpointCard({
     <div className="border border-surface-200 rounded-lg overflow-hidden">
       {/* Header */}
       <div
-        className="flex items-center justify-between px-4 py-3 bg-white/50 cursor-pointer"
+        className="flex items-center justify-between px-4 py-3 bg-white/50 cursor-pointer dark:bg-surface-900/50"
         onClick={onToggle}
       >
         <div className="flex items-center gap-3">
@@ -392,7 +392,7 @@ function EndpointCard({
       </div>
       {/* Expanded Content */}
       {isExpanded && (
-        <div className="p-4 space-y-4 bg-white/30">
+        <div className="p-4 space-y-4 bg-white/30 dark:bg-surface-900/30">
           {/* Name & Description */}
           <div className="grid grid-cols-2 gap-4">
             <div>

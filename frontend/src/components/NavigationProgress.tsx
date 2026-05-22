@@ -39,7 +39,7 @@ export default function NavigationProgress() {
   if (!visible) return null;
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-[60] h-1 bg-white/50">
+    <div className="fixed top-0 left-0 right-0 z-[60] h-1 bg-white/50 dark:bg-surface-900/50">
       <div
         className={clsx(
           'h-full bg-brand-500 transition-all duration-300 ease-out',

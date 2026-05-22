@@ -46,7 +46,7 @@ const STATUS_OPTIONS = [
   { value: 'not_started', label: 'Not Started', color: 'bg-surface-500' },
   { value: 'in_progress', label: 'In Progress', color: 'bg-amber-500' },
   { value: 'implemented', label: 'Implemented', color: 'bg-emerald-500' },
-  { value: 'not_applicable', label: 'Not Applicable', color: 'bg-gray-500' },
+  { value: 'not_applicable', label: 'Not Applicable', color: 'bg-gray-500 dark:bg-surface-500' },
 ];
 
 const FREQUENCY_OPTIONS = [
@@ -111,7 +111,7 @@ export default function ControlImplementationCard({
   };
 
   return (
-    <div className="bg-white rounded-lg border border-surface-200 p-6">
+    <div className="bg-white rounded-lg border border-surface-200 p-6 dark:bg-surface-900">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-medium text-white">Implementation Status</h3>
         {!isEditing && (

@@ -163,7 +163,7 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" onClick={handleClose} />
 
         {/* Modal */}
-        <div className="relative w-full max-w-2xl bg-white rounded-xl shadow-2xl border border-surface-200">
+        <div className="relative w-full max-w-2xl bg-white rounded-xl shadow-2xl border border-surface-200 dark:bg-surface-900">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-surface-200">
             <div>
@@ -172,7 +172,7 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
             </div>
             <button
               onClick={handleClose}
-              className="p-2 text-surface-600 hover:text-surface-800 hover:bg-white rounded-lg transition-colors"
+              className="p-2 text-surface-600 hover:text-surface-800 hover:bg-white rounded-lg transition-colors dark:bg-surface-900 dark:hover:bg-surface-800"
             >
               <XMarkIcon className="w-5 h-5" />
             </button>
@@ -199,19 +199,19 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
                 </div>
 
                 <div className="grid grid-cols-4 gap-4">
-                  <div className="bg-white rounded-lg p-4 text-center">
+                  <div className="bg-white rounded-lg p-4 text-center dark:bg-surface-900">
                     <div className="text-2xl font-bold text-green-600">{result.created}</div>
                     <div className="text-sm text-surface-600">Created</div>
                   </div>
-                  <div className="bg-white rounded-lg p-4 text-center">
+                  <div className="bg-white rounded-lg p-4 text-center dark:bg-surface-900">
                     <div className="text-2xl font-bold text-blue-600">{result.updated}</div>
                     <div className="text-sm text-surface-600">Updated</div>
                   </div>
-                  <div className="bg-white rounded-lg p-4 text-center">
+                  <div className="bg-white rounded-lg p-4 text-center dark:bg-surface-900">
                     <div className="text-2xl font-bold text-surface-600">{result.skipped}</div>
                     <div className="text-sm text-surface-600">Skipped</div>
                   </div>
-                  <div className="bg-white rounded-lg p-4 text-center">
+                  <div className="bg-white rounded-lg p-4 text-center dark:bg-surface-900">
                     <div className="text-2xl font-bold text-red-600">
                       {result.errors?.length || 0}
                     </div>
@@ -249,7 +249,7 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
                       'flex-1 py-2 px-4 rounded-lg border transition-colors',
                       uploadMode === 'csv'
                         ? 'bg-brand-600 border-brand-500 text-white'
-                        : 'bg-white border-surface-200 text-surface-700 hover:border-surface-300'
+                        : 'bg-white border-surface-200 text-surface-700 hover:border-surface-300 dark:bg-surface-900'
                     )}
                   >
                     CSV Format
@@ -260,7 +260,7 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
                       'flex-1 py-2 px-4 rounded-lg border transition-colors',
                       uploadMode === 'json'
                         ? 'bg-brand-600 border-brand-500 text-white'
-                        : 'bg-white border-surface-200 text-surface-700 hover:border-surface-300'
+                        : 'bg-white border-surface-200 text-surface-700 hover:border-surface-300 dark:bg-surface-900'
                     )}
                   >
                     JSON Format
@@ -334,7 +334,7 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
                         setSkipExisting(e.target.checked);
                         if (e.target.checked) setUpdateExisting(false);
                       }}
-                      className="w-4 h-4 rounded border-surface-300 bg-white text-brand-500 focus:ring-brand-500"
+                      className="w-4 h-4 rounded border-surface-300 bg-white text-brand-500 focus:ring-brand-500 dark:bg-surface-900"
                     />
                     <span className="text-surface-700">Skip existing controls</span>
                   </label>
@@ -346,14 +346,14 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
                         setUpdateExisting(e.target.checked);
                         if (e.target.checked) setSkipExisting(false);
                       }}
-                      className="w-4 h-4 rounded border-surface-300 bg-white text-brand-500 focus:ring-brand-500"
+                      className="w-4 h-4 rounded border-surface-300 bg-white text-brand-500 focus:ring-brand-500 dark:bg-surface-900"
                     />
                     <span className="text-surface-700">Update existing controls</span>
                   </label>
                 </div>
 
                 {/* Template download */}
-                <div className="bg-white rounded-lg p-4">
+                <div className="bg-white rounded-lg p-4 dark:bg-surface-900">
                   <div className="flex items-center justify-between">
                     <div>
                       <h4 className="font-medium text-surface-800">Need a template?</h4>

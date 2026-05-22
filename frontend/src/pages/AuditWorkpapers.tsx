@@ -185,7 +185,10 @@ export default function AuditWorkpapers() {
         {Object.entries(statusConfig).map(([status, config]) => {
           const count = workpapers.filter((w) => w.status === status).length;
           return (
-            <div key={status} className="bg-white rounded-lg p-4 border border-surface-200">
+            <div
+              key={status}
+              className="bg-white rounded-lg p-4 border border-surface-200 dark:bg-surface-900"
+            >
               <div className="flex items-center gap-2">
                 <config.icon className={clsx('h-5 w-5', config.color)} />
                 <span className="text-surface-600 text-sm">{config.label}</span>
@@ -199,13 +202,13 @@ export default function AuditWorkpapers() {
       {isLoading ? (
         <div className="animate-pulse space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-white rounded-lg h-20" />
+            <div key={i} className="bg-white rounded-lg h-20 dark:bg-surface-900" />
           ))}
         </div>
       ) : (
-        <div className="bg-white rounded-lg border border-surface-200 overflow-hidden">
+        <div className="bg-white rounded-lg border border-surface-200 overflow-hidden dark:bg-surface-900">
           <table className="w-full">
-            <thead className="bg-white">
+            <thead className="bg-white dark:bg-surface-900">
               <tr>
                 <th className="text-left px-4 py-3 text-sm font-medium text-surface-600">Number</th>
                 <th className="text-left px-4 py-3 text-sm font-medium text-surface-600">Title</th>

@@ -455,7 +455,10 @@ export default function RunbookDetail() {
             {runbook!.steps && runbook!.steps.length > 0 ? (
               <div className="space-y-4">
                 {runbook!.steps.map((step, index) => (
-                  <div key={step.id} className="flex gap-4 p-4 bg-white rounded-lg">
+                  <div
+                    key={step.id}
+                    className="flex gap-4 p-4 bg-white rounded-lg dark:bg-surface-900"
+                  >
                     <div className="flex-shrink-0 w-8 h-8 bg-brand-500/20 text-brand-400 rounded-full flex items-center justify-center font-semibold">
                       {index + 1}
                     </div>

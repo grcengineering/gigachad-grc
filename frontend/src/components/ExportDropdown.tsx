@@ -118,7 +118,7 @@ export function ExportDropdown<T>({
       </Button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 bg-white border border-surface-200 rounded-lg shadow-xl z-50 overflow-hidden">
+        <div className="absolute right-0 mt-2 w-48 bg-white border border-surface-200 rounded-lg shadow-xl z-50 overflow-hidden dark:bg-surface-900">
           {formatOptions.map((option) => (
             <button
               key={option.value}

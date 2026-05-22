@@ -322,21 +322,21 @@ export default function BusinessProcessDetail() {
             <div className="card p-6">
               <h3 className="text-lg font-semibold text-surface-900 mb-4">Recovery Objectives</h3>
               <div className="grid grid-cols-3 gap-4">
-                <div className="p-4 rounded-lg bg-white/50">
+                <div className="p-4 rounded-lg bg-white/50 dark:bg-surface-900/50">
                   <p className="text-surface-600 text-sm">RTO</p>
                   <p className="text-2xl font-bold text-surface-900">
                     {process.rto_hours || 'N/A'}h
                   </p>
                   <p className="text-surface-500 text-xs">Recovery Time Objective</p>
                 </div>
-                <div className="p-4 rounded-lg bg-white/50">
+                <div className="p-4 rounded-lg bg-white/50 dark:bg-surface-900/50">
                   <p className="text-surface-600 text-sm">RPO</p>
                   <p className="text-2xl font-bold text-surface-900">
                     {process.rpo_hours || 'N/A'}h
                   </p>
                   <p className="text-surface-500 text-xs">Recovery Point Objective</p>
                 </div>
-                <div className="p-4 rounded-lg bg-white/50">
+                <div className="p-4 rounded-lg bg-white/50 dark:bg-surface-900/50">
                   <p className="text-surface-600 text-sm">MTPD</p>
                   <p className="text-2xl font-bold text-surface-900">
                     {process.mtpd_hours || 'N/A'}h
@@ -463,7 +463,7 @@ export default function BusinessProcessDetail() {
                 <Link
                   key={dep.id}
                   to={`/bcdr/processes/${dep.dependent_process_id}`}
-                  className="flex items-center justify-between p-4 rounded-lg bg-white/50 hover:bg-surface-200/50 transition-colors"
+                  className="flex items-center justify-between p-4 rounded-lg bg-white/50 hover:bg-surface-200/50 transition-colors dark:bg-surface-900/50"
                 >
                   <div className="flex items-center gap-3">
                     <LinkIcon className="w-5 h-5 text-surface-600" />
@@ -489,7 +489,7 @@ export default function BusinessProcessDetail() {
                 <Link
                   key={asset.id}
                   to={`/assets/${asset.asset_id}`}
-                  className="flex items-center justify-between p-4 rounded-lg bg-white/50 hover:bg-surface-200/50 transition-colors"
+                  className="flex items-center justify-between p-4 rounded-lg bg-white/50 hover:bg-surface-200/50 transition-colors dark:bg-surface-900/50"
                 >
                   <div className="flex items-center gap-3">
                     <CubeIcon className="w-5 h-5 text-surface-600" />
@@ -515,7 +515,7 @@ export default function BusinessProcessDetail() {
                 <Link
                   key={plan.id}
                   to={`/bcdr/plans/${plan.id}`}
-                  className="flex items-center justify-between p-4 rounded-lg bg-white/50 hover:bg-surface-200/50 transition-colors"
+                  className="flex items-center justify-between p-4 rounded-lg bg-white/50 hover:bg-surface-200/50 transition-colors dark:bg-surface-900/50"
                 >
                   <div className="flex items-center gap-3">
                     <DocumentTextIcon className="w-5 h-5 text-surface-600" />

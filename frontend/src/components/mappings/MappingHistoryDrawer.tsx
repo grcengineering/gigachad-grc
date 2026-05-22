@@ -138,7 +138,7 @@ function DiffRows({ prev, current }: DiffRowsProps) {
         return (
           <div
             key={field}
-            className="flex flex-col gap-1 p-2 rounded-lg bg-white/40 border border-surface-200"
+            className="flex flex-col gap-1 p-2 rounded-lg bg-white/40 border border-surface-200 dark:bg-surface-900/40"
           >
             <span className="text-xs text-surface-600 font-medium">{FIELD_LABELS[field]}</span>
             <div className="flex items-center gap-2 text-sm flex-wrap">
@@ -229,7 +229,7 @@ function HistoryEntryItem({
       >
         <Icon className={clsx('w-3.5 h-3.5', meta.text)} />
       </div>
-      <div className="bg-white rounded-lg border border-surface-200 p-3">
+      <div className="bg-white rounded-lg border border-surface-200 p-3 dark:bg-surface-900">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
@@ -311,7 +311,7 @@ function HistoryEntryItem({
                 disabled={isRestoring}
                 aria-label="Restore reason"
                 placeholder="Why are you restoring this version?"
-                className="w-full rounded-md bg-white border border-surface-200 text-surface-900 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50"
+                className="w-full rounded-md bg-white border border-surface-200 text-surface-900 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 dark:bg-surface-900"
               />
             </label>
             <div className="flex justify-end gap-2">
@@ -346,7 +346,7 @@ function SkeletonRow() {
   return (
     <div className="relative pl-8 pb-6" aria-hidden="true">
       <div className="absolute left-0 top-0 w-6 h-6 rounded-full bg-surface-200 animate-pulse" />
-      <div className="bg-white rounded-lg border border-surface-200 p-4 animate-pulse">
+      <div className="bg-white rounded-lg border border-surface-200 p-4 animate-pulse dark:bg-surface-900">
         <div className="h-4 bg-surface-200 rounded w-1/3 mb-2" />
         <div className="h-3 bg-surface-200 rounded w-2/3" />
       </div>
@@ -422,7 +422,10 @@ export function MappingHistoryDrawer({
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="fixed inset-0 bg-white opacity-60" aria-hidden="true" />
+          <div
+            className="fixed inset-0 bg-white opacity-60 dark:bg-surface-900"
+            aria-hidden="true"
+          />
         </Transition.Child>
 
         <div className="fixed inset-0 overflow-hidden">
@@ -438,7 +441,7 @@ export function MappingHistoryDrawer({
                 leaveTo="translate-x-full"
               >
                 <Dialog.Panel
-                  className="pointer-events-auto w-screen max-w-xl h-full bg-white border-l border-surface-200 shadow-xl flex flex-col"
+                  className="pointer-events-auto w-screen max-w-xl h-full bg-white border-l border-surface-200 shadow-xl flex flex-col dark:bg-surface-900"
                   aria-labelledby="mapping-history-drawer-title"
                 >
                   <header className="flex items-start justify-between p-4 border-b border-surface-200">
@@ -497,7 +500,7 @@ export function MappingHistoryDrawer({
                     )}
 
                     {!isLoading && !error && entries.length === 0 && (
-                      <div className="text-center py-12 bg-white/40 rounded-lg border border-surface-200">
+                      <div className="text-center py-12 bg-white/40 rounded-lg border border-surface-200 dark:bg-surface-900/40">
                         <ClockIcon
                           className="w-10 h-10 mx-auto text-surface-600 mb-3"
                           aria-hidden="true"

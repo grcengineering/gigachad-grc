@@ -166,7 +166,7 @@ export default function BusinessProcesses() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-white/50">
+              <thead className="bg-white/50 dark:bg-surface-900/50">
                 <tr>
                   <th className="text-left p-4 text-surface-700 font-medium">Process</th>
                   <th className="text-left p-4 text-surface-700 font-medium">Criticality</th>
@@ -179,7 +179,10 @@ export default function BusinessProcesses() {
               </thead>
               <tbody className="divide-y divide-surface-200">
                 {processes.map((process: BusinessProcess) => (
-                  <tr key={process.id} className="hover:bg-white/30 transition-colors">
+                  <tr
+                    key={process.id}
+                    className="hover:bg-white/30 transition-colors dark:bg-surface-900/30 dark:hover:bg-surface-800/30"
+                  >
                     <td className="p-4">
                       <Link
                         to={`/bcdr/processes/${process.id}`}

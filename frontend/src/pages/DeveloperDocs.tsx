@@ -78,8 +78,8 @@ function CopyButton({ text }: { text: string }) {
 
 function CodeBlock({ code, language = 'bash' }: { code: string; language?: string }) {
   return (
-    <div className="relative bg-white rounded-lg overflow-hidden my-4">
-      <div className="absolute top-0 left-0 px-3 py-1 text-xs text-surface-500 bg-white rounded-br">
+    <div className="relative bg-white rounded-lg overflow-hidden my-4 dark:bg-surface-900">
+      <div className="absolute top-0 left-0 px-3 py-1 text-xs text-surface-500 bg-white rounded-br dark:bg-surface-900">
         {language}
       </div>
       <CopyButton text={code} />
@@ -101,7 +101,7 @@ function ApiDocs() {
           API requests require authentication via API key or JWT token.
         </p>
 
-        <div className="bg-white/50 border border-surface-200 rounded-lg p-4">
+        <div className="bg-white/50 border border-surface-200 rounded-lg p-4 dark:bg-surface-900/50">
           <h4 className="font-semibold text-surface-800 mb-2">Base URL</h4>
           <code className="text-brand-400">https://api.gigachad-grc.com/v1</code>
         </div>
@@ -121,7 +121,7 @@ function ApiDocs() {
         <h3 className="text-xl font-bold text-surface-900 mb-4">Common Endpoints</h3>
 
         <div className="space-y-4">
-          <div className="bg-white rounded-lg overflow-hidden">
+          <div className="bg-white rounded-lg overflow-hidden dark:bg-surface-900">
             <table className="w-full text-sm">
               <thead className="bg-surface-200">
                 <tr>
@@ -241,7 +241,7 @@ function ApiDocs() {
 
       <section>
         <h3 className="text-xl font-bold text-surface-900 mb-4">Rate Limits</h3>
-        <div className="bg-white rounded-lg overflow-hidden">
+        <div className="bg-white rounded-lg overflow-hidden dark:bg-surface-900">
           <table className="w-full text-sm">
             <thead className="bg-surface-200">
               <tr>
@@ -321,7 +321,7 @@ function ArchitectureDocs() {
           ].map((service) => (
             <div
               key={service.name}
-              className="bg-white/50 border border-surface-200 rounded-lg p-4"
+              className="bg-white/50 border border-surface-200 rounded-lg p-4 dark:bg-surface-900/50"
             >
               <h4 className="font-semibold text-surface-800">{service.name}</h4>
               <p className="text-surface-600 text-sm mt-1">{service.desc}</p>
@@ -333,7 +333,7 @@ function ArchitectureDocs() {
 
       <section>
         <h3 className="text-xl font-bold text-surface-900 mb-4">Technology Stack</h3>
-        <div className="bg-white rounded-lg overflow-hidden">
+        <div className="bg-white rounded-lg overflow-hidden dark:bg-surface-900">
           <table className="w-full text-sm">
             <thead className="bg-surface-200">
               <tr>
@@ -375,7 +375,7 @@ function ArchitectureDocs() {
 
       <section>
         <h3 className="text-xl font-bold text-surface-900 mb-4">Data Flow</h3>
-        <div className="bg-white/50 border border-surface-200 rounded-lg p-4">
+        <div className="bg-white/50 border border-surface-200 rounded-lg p-4 dark:bg-surface-900/50">
           <ol className="space-y-3 text-surface-700">
             <li className="flex gap-3">
               <span className="flex-shrink-0 w-6 h-6 bg-brand-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
@@ -460,7 +460,7 @@ function ConfigurationDocs() {
 
       <section>
         <h3 className="text-xl font-bold text-surface-900 mb-4">Required Environment Variables</h3>
-        <div className="bg-white rounded-lg overflow-hidden">
+        <div className="bg-white rounded-lg overflow-hidden dark:bg-surface-900">
           <table className="w-full text-sm">
             <thead className="bg-surface-200">
               <tr>
@@ -555,7 +555,7 @@ VITE_KEYCLOAK_CLIENT_ID=grc-frontend`}
 
       <section>
         <h3 className="text-xl font-bold text-surface-900 mb-4">Optional Configuration</h3>
-        <div className="bg-white rounded-lg overflow-hidden">
+        <div className="bg-white rounded-lg overflow-hidden dark:bg-surface-900">
           <table className="w-full text-sm">
             <thead className="bg-surface-200">
               <tr>
@@ -654,34 +654,55 @@ docker-compose logs -f`}
         <h3 className="text-xl font-bold text-surface-900 mb-4">Production Checklist</h3>
         <ul className="space-y-2 text-surface-700">
           <li className="flex gap-3">
-            <input type="checkbox" className="mt-1 w-4 h-4 bg-white border-surface-300 rounded" />
+            <input
+              type="checkbox"
+              className="mt-1 w-4 h-4 bg-white border-surface-300 rounded dark:bg-surface-900"
+            />
             <span>
               Generate unique ENCRYPTION_KEY using{' '}
               <code className="text-brand-400 text-sm">openssl rand -hex 32</code>
             </span>
           </li>
           <li className="flex gap-3">
-            <input type="checkbox" className="mt-1 w-4 h-4 bg-white border-surface-300 rounded" />
+            <input
+              type="checkbox"
+              className="mt-1 w-4 h-4 bg-white border-surface-300 rounded dark:bg-surface-900"
+            />
             <span>Configure SSL/TLS certificates (Let's Encrypt or custom)</span>
           </li>
           <li className="flex gap-3">
-            <input type="checkbox" className="mt-1 w-4 h-4 bg-white border-surface-300 rounded" />
+            <input
+              type="checkbox"
+              className="mt-1 w-4 h-4 bg-white border-surface-300 rounded dark:bg-surface-900"
+            />
             <span>Set up database backups (daily recommended)</span>
           </li>
           <li className="flex gap-3">
-            <input type="checkbox" className="mt-1 w-4 h-4 bg-white border-surface-300 rounded" />
+            <input
+              type="checkbox"
+              className="mt-1 w-4 h-4 bg-white border-surface-300 rounded dark:bg-surface-900"
+            />
             <span>Configure firewall rules (allow ports 80, 443)</span>
           </li>
           <li className="flex gap-3">
-            <input type="checkbox" className="mt-1 w-4 h-4 bg-white border-surface-300 rounded" />
+            <input
+              type="checkbox"
+              className="mt-1 w-4 h-4 bg-white border-surface-300 rounded dark:bg-surface-900"
+            />
             <span>Set up monitoring and alerting</span>
           </li>
           <li className="flex gap-3">
-            <input type="checkbox" className="mt-1 w-4 h-4 bg-white border-surface-300 rounded" />
+            <input
+              type="checkbox"
+              className="mt-1 w-4 h-4 bg-white border-surface-300 rounded dark:bg-surface-900"
+            />
             <span>Configure log aggregation</span>
           </li>
           <li className="flex gap-3">
-            <input type="checkbox" className="mt-1 w-4 h-4 bg-white border-surface-300 rounded" />
+            <input
+              type="checkbox"
+              className="mt-1 w-4 h-4 bg-white border-surface-300 rounded dark:bg-surface-900"
+            />
             <span>Test disaster recovery procedures</span>
           </li>
         </ul>
@@ -830,7 +851,7 @@ npm run format`}
 
       <section>
         <h3 className="text-xl font-bold text-surface-900 mb-4">Useful Commands</h3>
-        <div className="bg-white rounded-lg overflow-hidden">
+        <div className="bg-white rounded-lg overflow-hidden dark:bg-surface-900">
           <table className="w-full text-sm">
             <thead className="bg-surface-200">
               <tr>
@@ -925,7 +946,7 @@ export default function DeveloperDocs() {
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
                     isActive
                       ? 'bg-brand-600/20 text-brand-400 border border-brand-500/30'
-                      : 'text-surface-600 hover:bg-white hover:text-surface-800'
+                      : 'text-surface-600 hover:bg-white hover:text-surface-800 dark:bg-surface-900 dark:hover:bg-surface-800'
                   }`}
                 >
                   <Icon className="w-5 h-5" />
@@ -941,7 +962,7 @@ export default function DeveloperDocs() {
 
         {/* Main Content */}
         <main className="flex-1 min-w-0">
-          <div className="bg-white/30 border border-surface-200 rounded-xl p-6 lg:p-8">
+          <div className="bg-white/30 border border-surface-200 rounded-xl p-6 lg:p-8 dark:bg-surface-900/30">
             {currentSection && (
               <div className="flex items-center gap-3 mb-6 pb-6 border-b border-surface-200">
                 <div className="p-2 bg-brand-600/20 rounded-lg">

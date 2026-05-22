@@ -193,7 +193,7 @@ function RadioOption({
         'w-full text-left p-3 rounded-lg border transition-colors',
         selected
           ? 'border-brand-500 bg-brand-500/10'
-          : 'border-surface-200 hover:border-surface-300 bg-white/50'
+          : 'border-surface-200 hover:border-surface-300 bg-white/50 dark:bg-surface-900/50'
       )}
     >
       <div className="flex items-start gap-3">
@@ -228,7 +228,7 @@ function ScoreIndicator({
   return (
     <div className="flex items-center gap-2">
       <span className="text-sm text-surface-600 w-20">{label}</span>
-      <div className="flex-1 h-2 bg-white rounded-full overflow-hidden">
+      <div className="flex-1 h-2 bg-white rounded-full overflow-hidden dark:bg-surface-900">
         <div
           className={clsx(
             'h-full transition-all',
@@ -401,7 +401,7 @@ export function VendorRiskAssessmentWizard({
                 type="text"
                 value={state.title}
                 onChange={(e) => setState({ ...state, title: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
               />
             </div>
             <div>
@@ -410,7 +410,7 @@ export function VendorRiskAssessmentWizard({
                 value={state.description}
                 onChange={(e) => setState({ ...state, description: e.target.value })}
                 rows={3}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
                 placeholder="Describe the risk scenario in 1-2 sentences..."
               />
             </div>
@@ -422,7 +422,7 @@ export function VendorRiskAssessmentWizard({
                 type="text"
                 value={state.assessor}
                 onChange={(e) => setState({ ...state, assessor: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
               />
             </div>
           </div>
@@ -579,7 +579,7 @@ export function VendorRiskAssessmentWizard({
                       ),
                     })
                   }
-                  className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+                  className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
                 >
                   {options.map((opt) => (
                     <option key={opt.value} value={opt.value}>
@@ -631,7 +631,7 @@ export function VendorRiskAssessmentWizard({
               <ScoreIndicator score={impactScore} maxScore={25} label="Impact" />
             </div>
 
-            <div className="p-4 bg-white/50 rounded-lg">
+            <div className="p-4 bg-white/50 rounded-lg dark:bg-surface-900/50">
               <h4 className="font-medium text-surface-800 mb-2">Recommended Action</h4>
               <p className="text-surface-600">
                 {riskLevel === 'Critical'
@@ -668,7 +668,7 @@ export function VendorRiskAssessmentWizard({
         </div>
 
         {/* Progress */}
-        <div className="px-4 py-3 border-b border-surface-200 bg-white/30">
+        <div className="px-4 py-3 border-b border-surface-200 bg-white/30 dark:bg-surface-900/30">
           <div className="flex items-center gap-2">
             {steps.map((_, i) => (
               <div key={i} className="flex items-center">
@@ -679,7 +679,7 @@ export function VendorRiskAssessmentWizard({
                       ? 'bg-brand-500 text-white'
                       : i === step
                         ? 'bg-brand-500/20 text-brand-400 border border-brand-500'
-                        : 'bg-white text-surface-500'
+                        : 'bg-white text-surface-500 dark:bg-surface-900'
                   )}
                 >
                   {i < step ? <CheckCircleIcon className="w-5 h-5" /> : i + 1}

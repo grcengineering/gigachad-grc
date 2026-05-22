@@ -487,13 +487,13 @@ export default function DRTestDetail() {
             <div className="card p-6">
               <h3 className="text-lg font-semibold text-surface-900 mb-4">Recovery Metrics</h3>
               <div className="grid grid-cols-3 gap-4">
-                <div className="p-4 rounded-lg bg-white/50">
+                <div className="p-4 rounded-lg bg-white/50 dark:bg-surface-900/50">
                   <p className="text-surface-600 text-sm">Target RTO</p>
                   <p className="text-2xl font-bold text-surface-900">
                     {test.target_rto_minutes ? `${test.target_rto_minutes}m` : 'N/A'}
                   </p>
                 </div>
-                <div className="p-4 rounded-lg bg-white/50">
+                <div className="p-4 rounded-lg bg-white/50 dark:bg-surface-900/50">
                   <p className="text-surface-600 text-sm">Actual Recovery Time</p>
                   <p
                     className={clsx(
@@ -510,7 +510,7 @@ export default function DRTestDetail() {
                       : 'N/A'}
                   </p>
                 </div>
-                <div className="p-4 rounded-lg bg-white/50">
+                <div className="p-4 rounded-lg bg-white/50 dark:bg-surface-900/50">
                   <p className="text-surface-600 text-sm">RTO Met</p>
                   <p
                     className={clsx(
@@ -623,7 +623,7 @@ export default function DRTestDetail() {
               {test.findings.map((finding) => (
                 <div
                   key={finding.id}
-                  className="p-4 rounded-lg bg-white/50 border border-surface-200"
+                  className="p-4 rounded-lg bg-white/50 border border-surface-200 dark:bg-surface-900/50"
                 >
                   <div className="flex items-start justify-between mb-2">
                     <h4 className="text-surface-900 font-medium">{finding.title}</h4>
@@ -687,7 +687,7 @@ export default function DRTestDetail() {
               {test.participants.map((participant) => (
                 <div
                   key={participant.id}
-                  className="flex items-center justify-between p-4 rounded-lg bg-white/50"
+                  className="flex items-center justify-between p-4 rounded-lg bg-white/50 dark:bg-surface-900/50"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-surface-200 flex items-center justify-center">

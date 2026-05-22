@@ -108,7 +108,7 @@ export default function AISmartSearch({
           onChange={(e) => handleInputChange(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className="w-full pl-10 pr-24 py-3 bg-white border border-surface-200 rounded-xl text-white placeholder-surface-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all"
+          className="w-full pl-10 pr-24 py-3 bg-white border border-surface-200 rounded-xl text-white placeholder-surface-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all dark:bg-surface-900"
         />
 
         <div className="absolute inset-y-0 right-0 flex items-center gap-1 pr-2">
@@ -133,7 +133,7 @@ export default function AISmartSearch({
       </div>
       {/* Entity Filters */}
       {showFilters && (
-        <div className="flex flex-wrap gap-2 p-3 bg-white/50 rounded-lg border border-surface-200">
+        <div className="flex flex-wrap gap-2 p-3 bg-white/50 rounded-lg border border-surface-200 dark:bg-surface-900/50">
           <span className="text-xs text-surface-600 mr-2 self-center">Search in:</span>
           {ENTITY_OPTIONS.map((option) => (
             <button

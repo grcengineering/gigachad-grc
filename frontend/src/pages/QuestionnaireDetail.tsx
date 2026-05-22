@@ -280,7 +280,7 @@ export default function QuestionnaireDetail() {
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate('/questionnaires')}
-            className="p-2 text-surface-600 hover:text-surface-900 hover:bg-white rounded-lg transition-colors"
+            className="p-2 text-surface-600 hover:text-surface-900 hover:bg-white rounded-lg transition-colors dark:bg-surface-900 dark:hover:bg-surface-800"
           >
             <ArrowLeftIcon className="w-5 h-5" />
           </button>
@@ -319,7 +319,7 @@ export default function QuestionnaireDetail() {
       </div>
       {id === 'new' ? (
         <form onSubmit={handleSubmitNewQuestionnaire} className="space-y-6">
-          <div className="bg-white border border-surface-200 rounded-lg p-6 space-y-4">
+          <div className="bg-white border border-surface-200 rounded-lg p-6 space-y-4 dark:bg-surface-900">
             <h2 className="text-xl font-semibold text-surface-900">Customer Information</h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -332,7 +332,7 @@ export default function QuestionnaireDetail() {
                   required
                   value={formData.requesterName}
                   onChange={(e) => setFormData({ ...formData, requesterName: e.target.value })}
-                  className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+                  className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
                   placeholder="John Doe"
                 />
               </div>
@@ -346,7 +346,7 @@ export default function QuestionnaireDetail() {
                   required
                   value={formData.requesterEmail}
                   onChange={(e) => setFormData({ ...formData, requesterEmail: e.target.value })}
-                  className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+                  className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
                   placeholder="john@company.com"
                 />
               </div>
@@ -357,7 +357,7 @@ export default function QuestionnaireDetail() {
                   type="text"
                   value={formData.company}
                   onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                  className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+                  className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
                   placeholder="Acme Corp"
                 />
               </div>
@@ -371,7 +371,7 @@ export default function QuestionnaireDetail() {
                   required
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+                  className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
                   placeholder="Security Assessment 2025"
                 />
               </div>
@@ -381,7 +381,7 @@ export default function QuestionnaireDetail() {
                 <SelectNative
                   value={formData.priority}
                   onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-                  className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+                  className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
                 >
                   <option value="low">Low</option>
                   <option value="medium">Medium</option>
@@ -396,7 +396,7 @@ export default function QuestionnaireDetail() {
                   type="date"
                   value={formData.dueDate}
                   onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                  className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+                  className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
                 />
               </div>
             </div>
@@ -407,13 +407,13 @@ export default function QuestionnaireDetail() {
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows={2}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
                 placeholder="Additional context about this questionnaire..."
               />
             </div>
           </div>
 
-          <div className="bg-white border border-surface-200 rounded-lg p-6 space-y-4">
+          <div className="bg-white border border-surface-200 rounded-lg p-6 space-y-4 dark:bg-surface-900">
             <h2 className="text-xl font-semibold text-surface-900">
               Upload Questionnaire <span className="text-red-600">*</span>
             </h2>
@@ -449,7 +449,7 @@ export default function QuestionnaireDetail() {
               </div>
             ) : (
               <div className="space-y-3">
-                <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-surface-200">
+                <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-surface-200 dark:bg-surface-900">
                   <div className="flex items-center gap-3">
                     <DocumentArrowUpIcon className="w-6 h-6 text-green-600" />
                     <div>
@@ -532,7 +532,7 @@ export default function QuestionnaireDetail() {
               type="text"
               value={editForm.title}
               onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -544,7 +544,7 @@ export default function QuestionnaireDetail() {
                 type="text"
                 value={editForm.requesterName}
                 onChange={(e) => setEditForm({ ...editForm, requesterName: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
               />
             </div>
             <div>
@@ -555,7 +555,7 @@ export default function QuestionnaireDetail() {
                 type="email"
                 value={editForm.requesterEmail}
                 onChange={(e) => setEditForm({ ...editForm, requesterEmail: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
               />
             </div>
           </div>
@@ -566,7 +566,7 @@ export default function QuestionnaireDetail() {
                 type="text"
                 value={editForm.company}
                 onChange={(e) => setEditForm({ ...editForm, company: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
               />
             </div>
             <div>
@@ -574,7 +574,7 @@ export default function QuestionnaireDetail() {
               <SelectNative
                 value={editForm.priority}
                 onChange={(e) => setEditForm({ ...editForm, priority: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
               >
                 <option value="low">Low</option>
                 <option value="medium">Medium</option>
@@ -588,7 +588,7 @@ export default function QuestionnaireDetail() {
               type="date"
               value={editForm.dueDate}
               onChange={(e) => setEditForm({ ...editForm, dueDate: e.target.value })}
-              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
             />
           </div>
           <div>
@@ -597,7 +597,7 @@ export default function QuestionnaireDetail() {
               value={editForm.description}
               onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
               rows={3}
-              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
             />
           </div>
         </div>
@@ -717,7 +717,7 @@ function QuestionnaireWorkspace({
   return (
     <div className="space-y-4">
       {/* Progress Header */}
-      <div className="bg-white border border-surface-200 rounded-lg p-4">
+      <div className="bg-white border border-surface-200 rounded-lg p-4 dark:bg-surface-900">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-4">
             <div>
@@ -885,7 +885,7 @@ function QuestionAnswerCard({
   return (
     <div
       className={clsx(
-        'bg-white border rounded-lg transition-all cursor-pointer',
+        'bg-white border rounded-lg transition-all cursor-pointer dark:bg-surface-900',
         isActive
           ? 'border-brand-500 ring-2 ring-brand-500/20'
           : 'border-surface-200 hover:border-surface-300'
@@ -940,7 +940,7 @@ function QuestionAnswerCard({
               value={currentAnswer}
               onChange={(e) => onAnswerChange(e.target.value)}
               rows={5}
-              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 resize-y"
+              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 resize-y dark:bg-surface-900"
               placeholder="Enter your answer here, or use the Knowledge Base panel to find a pre-approved answer..."
             />
 

@@ -426,9 +426,9 @@ export default function ConfigIDE({ workspaceId }: Props) {
   }
 
   return (
-    <div className="flex h-[calc(100vh-200px)] border border-surface-200 rounded-lg overflow-hidden bg-white">
+    <div className="flex h-[calc(100vh-200px)] border border-surface-200 rounded-lg overflow-hidden bg-white dark:bg-surface-900">
       {/* File Explorer Sidebar */}
-      <div className="w-64 border-r border-surface-200 bg-white overflow-y-auto">
+      <div className="w-64 border-r border-surface-200 bg-white overflow-y-auto dark:bg-surface-900">
         <div className="p-4 border-b border-surface-200">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-semibold text-surface-800">Files</h3>
@@ -562,7 +562,7 @@ export default function ConfigIDE({ workspaceId }: Props) {
         {selectedFile ? (
           <>
             {/* Editor Header */}
-            <div className="h-12 border-b border-surface-200 bg-white flex items-center justify-between px-4">
+            <div className="h-12 border-b border-surface-200 bg-white flex items-center justify-between px-4 dark:bg-surface-900">
               <div className="flex items-center gap-2">
                 <DocumentTextIcon className="w-5 h-5 text-surface-600" />
                 <span className="text-sm font-medium text-surface-800">{selectedFile}</span>
@@ -656,7 +656,7 @@ export default function ConfigIDE({ workspaceId }: Props) {
 
             {/* Preview Panel */}
             {previewData && (
-              <div className="h-48 border-t border-surface-200 bg-white p-4 overflow-y-auto">
+              <div className="h-48 border-t border-surface-200 bg-white p-4 overflow-y-auto dark:bg-surface-900">
                 <div className="flex items-center gap-2 mb-2">
                   <EyeIcon className="w-5 h-5 text-brand-400" />
                   <h4 className="font-semibold text-surface-800">Preview Changes</h4>

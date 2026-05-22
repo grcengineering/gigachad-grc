@@ -189,7 +189,7 @@ export function MappingImportWizard({
           onClick={handleClose}
         />
 
-        <div className="relative w-full max-w-3xl bg-white rounded-xl shadow-2xl border border-surface-200">
+        <div className="relative w-full max-w-3xl bg-white rounded-xl shadow-2xl border border-surface-200 dark:bg-surface-900">
           <div className="flex items-center justify-between p-6 border-b border-surface-200">
             <div>
               <h2 className="text-xl font-semibold text-surface-900">Import mappings</h2>
@@ -203,7 +203,7 @@ export function MappingImportWizard({
               type="button"
               onClick={handleClose}
               aria-label="Close import wizard"
-              className="p-2 text-surface-600 hover:text-surface-800 hover:bg-white rounded-lg transition-colors"
+              className="p-2 text-surface-600 hover:text-surface-800 hover:bg-white rounded-lg transition-colors dark:bg-surface-900 dark:hover:bg-surface-800"
             >
               <XMarkIcon className="w-5 h-5" />
             </button>
@@ -319,7 +319,7 @@ function UploadStage({
 }: UploadStageProps) {
   return (
     <div className="space-y-4">
-      <div className="p-4 bg-white/50 rounded-lg border border-surface-200 text-sm text-surface-700">
+      <div className="p-4 bg-white/50 rounded-lg border border-surface-200 text-sm text-surface-700 dark:bg-surface-900/50">
         <p className="font-medium text-surface-800 mb-2">Required columns</p>
         <ul className="space-y-1 text-xs text-surface-600 list-disc list-inside">
           <li>
@@ -357,7 +357,7 @@ function UploadStage({
             id="mapping-import-framework"
             value={selectedFrameworkId}
             onChange={(e) => onFrameworkChange(e.target.value)}
-            className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-sm text-surface-900 focus:outline-none focus:border-brand-500"
+            className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-sm text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
           >
             <option value="">Select a framework…</option>
             {frameworks.map((fw) => (
@@ -441,7 +441,7 @@ function PreviewStage({ result }: { result: ImportResult }) {
 
       <div className="border border-surface-200 rounded-lg overflow-hidden">
         <table className="w-full text-sm" aria-label="Import preview rows">
-          <thead className="bg-white text-xs uppercase text-surface-600">
+          <thead className="bg-white text-xs uppercase text-surface-600 dark:bg-surface-900">
             <tr>
               <th className="px-3 py-2 text-left">Row</th>
               <th className="px-3 py-2 text-left">Framework</th>
@@ -465,7 +465,7 @@ function PreviewStage({ result }: { result: ImportResult }) {
                   key={row.row}
                   data-testid={`preview-row-${row.row}`}
                   data-status={row.status}
-                  className="hover:bg-white/40"
+                  className="hover:bg-white/40 dark:bg-surface-900/40 dark:hover:bg-surface-800/40"
                 >
                   <td className="px-3 py-2 font-mono text-surface-600">{row.row}</td>
                   <td className="px-3 py-2 text-surface-800">
@@ -548,7 +548,7 @@ function ResultStage({ result }: { result: ImportResult }) {
 
 function SummaryTile({ label, value, accent }: { label: string; value: number; accent: string }) {
   return (
-    <div className="bg-white rounded-lg p-4 text-center">
+    <div className="bg-white rounded-lg p-4 text-center dark:bg-surface-900">
       <div className={clsx('text-2xl font-bold', accent)}>{value}</div>
       <div className="text-sm text-surface-600">{label}</div>
     </div>

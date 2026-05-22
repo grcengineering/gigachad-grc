@@ -493,7 +493,7 @@ function CampaignsTab({
                       className={`px-2 py-0.5 rounded text-xs font-medium ${
                         campaign.isActive
                           ? 'bg-emerald-500/10 text-emerald-500'
-                          : 'bg-gray-500/10 text-gray-500'
+                          : 'bg-gray-500/10 text-gray-500 dark:bg-surface-500/10 dark:text-surface-400'
                       }`}
                     >
                       {campaign.isActive ? 'Active' : 'Inactive'}
@@ -674,7 +674,7 @@ function ModulesTab({
                       className={`px-2 py-0.5 rounded text-xs font-medium ${
                         module.isActive
                           ? 'bg-emerald-500/10 text-emerald-500'
-                          : 'bg-gray-500/10 text-gray-500'
+                          : 'bg-gray-500/10 text-gray-500 dark:bg-surface-500/10 dark:text-surface-400'
                       }`}
                     >
                       {module.isActive ? 'Active' : 'Inactive'}
@@ -798,8 +798,8 @@ function StatsTab({ orgStats }: { orgStats: any }) {
   if (!orgStats) {
     return (
       <div className="text-center py-12">
-        <ChartBarIcon className="w-12 h-12 mx-auto text-gray-400" />
-        <p className="mt-4 text-gray-500">Loading statistics...</p>
+        <ChartBarIcon className="w-12 h-12 mx-auto text-gray-400 dark:text-surface-500" />
+        <p className="mt-4 text-gray-500 dark:text-surface-400">Loading statistics...</p>
       </div>
     );
   }
@@ -998,11 +998,11 @@ function CampaignModal({
                   type="checkbox"
                   checked={formData.moduleIds.includes(module.id)}
                   onChange={() => toggleModule(module.id)}
-                  className="rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                  className="rounded border-gray-300 text-brand-500 focus:ring-brand-500 dark:border-surface-700"
                 />
                 <span className="text-sm text-gray-900 dark:text-white">{module.name}</span>
                 {'isBuiltIn' in module && module.isBuiltIn && (
-                  <span className="text-xs text-gray-400">(Built-in)</span>
+                  <span className="text-xs text-gray-400 dark:text-surface-500">(Built-in)</span>
                 )}
               </label>
             ))}
@@ -1020,7 +1020,7 @@ function CampaignModal({
                 type="checkbox"
                 checked={formData.targetGroups.includes('all')}
                 onChange={() => toggleRole('all')}
-                className="rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                className="rounded border-gray-300 text-brand-500 focus:ring-brand-500 dark:border-surface-700"
               />
               <span className="text-sm text-gray-900 dark:text-white">All Users</span>
             </label>
@@ -1034,7 +1034,7 @@ function CampaignModal({
                   checked={formData.targetGroups.includes(role.id)}
                   onChange={() => toggleRole(role.id)}
                   disabled={formData.targetGroups.includes('all')}
-                  className="rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                  className="rounded border-gray-300 text-brand-500 focus:ring-brand-500 dark:border-surface-700"
                 />
                 <span className="text-sm text-gray-900 dark:text-white">{role.label}</span>
               </label>
@@ -1075,7 +1075,7 @@ function CampaignModal({
             type="checkbox"
             checked={formData.isActive}
             onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-            className="rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+            className="rounded border-gray-300 text-brand-500 focus:ring-brand-500 dark:border-surface-700"
           />
           <span className="text-sm text-gray-900 dark:text-white">Campaign is active</span>
         </label>
@@ -1239,7 +1239,7 @@ function ModuleModal({ module, onClose }: { module: CustomModule | null; onClose
             type="checkbox"
             checked={formData.isActive}
             onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-            className="rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+            className="rounded border-gray-300 text-brand-500 focus:ring-brand-500 dark:border-surface-700"
           />
           <span className="text-sm text-gray-900 dark:text-white">Module is active</span>
         </label>
@@ -1351,7 +1351,10 @@ function UploadScormModal({ moduleId, onClose }: { moduleId: string; onClose: ()
                 {(file.size / 1024 / 1024).toFixed(2)} MB
               </p>
             </div>
-            <button onClick={() => setFile(null)} className="text-gray-400 hover:text-gray-600">
+            <button
+              onClick={() => setFile(null)}
+              className="text-gray-400 hover:text-gray-600 dark:text-surface-500"
+            >
               <XMarkIcon className="w-5 h-5" />
             </button>
           </div>
@@ -1716,7 +1719,7 @@ function UploadNewScormModal({ onClose }: { onClose: () => void }) {
               type="checkbox"
               checked={formData.isActive}
               onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-              className="rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+              className="rounded border-gray-300 text-brand-500 focus:ring-brand-500 dark:border-surface-700"
             />
             <span className="text-sm text-gray-900 dark:text-white">
               Module is active and available for campaigns

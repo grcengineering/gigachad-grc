@@ -60,7 +60,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="bg-white border border-surface-200 rounded-lg p-6 space-y-6">
+      <div className="bg-white border border-surface-200 rounded-lg p-6 space-y-6 dark:bg-surface-900">
         {/* Basic Information */}
         <div>
           <h3 className="text-lg font-medium text-surface-900 mb-4">Basic Information</h3>
@@ -70,7 +70,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
               <SelectNative
                 value={formData.vendorId}
                 onChange={(e) => setFormData({ ...formData, vendorId: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
                 required
               >
                 <option value="">Select a vendor...</option>
@@ -88,7 +88,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
               <SelectNative
                 value={formData.assessmentType}
                 onChange={(e) => setFormData({ ...formData, assessmentType: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
                 required
               >
                 <option value="initial_onboarding">Initial Onboarding</option>
@@ -103,7 +103,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
               <SelectNative
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
                 required
               >
                 <option value="pending">Pending</option>
@@ -119,7 +119,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
               <SelectNative
                 value={formData.inherentRiskScore || ''}
                 onChange={(e) => setFormData({ ...formData, inherentRiskScore: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
               >
                 <option value="">Select risk level...</option>
                 <option value="very_low">Very Low</option>
@@ -142,7 +142,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
                 type="date"
                 value={formData.dueDate || ''}
                 onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
               />
             </div>
             <div>
@@ -153,7 +153,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
                 type="date"
                 value={formData.completedAt || ''}
                 onChange={(e) => setFormData({ ...formData, completedAt: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
               />
             </div>
           </div>
@@ -175,7 +175,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
                 onChange={(e) =>
                   setFormData({ ...formData, overallScore: parseInt(e.target.value) || undefined })
                 }
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
               />
             </div>
             <div>
@@ -185,7 +185,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
               <SelectNative
                 value={formData.residualRiskScore || ''}
                 onChange={(e) => setFormData({ ...formData, residualRiskScore: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
               >
                 <option value="">Select risk level...</option>
                 <option value="very_low">Very Low</option>
@@ -202,7 +202,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
               <SelectNative
                 value={formData.securityRisk || ''}
                 onChange={(e) => setFormData({ ...formData, securityRisk: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
               >
                 <option value="">Select risk level...</option>
                 <option value="very_low">Very Low</option>
@@ -219,7 +219,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
               <SelectNative
                 value={formData.complianceRisk || ''}
                 onChange={(e) => setFormData({ ...formData, complianceRisk: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
               >
                 <option value="">Select risk level...</option>
                 <option value="very_low">Very Low</option>
@@ -236,7 +236,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
               <SelectNative
                 value={formData.operationalRisk || ''}
                 onChange={(e) => setFormData({ ...formData, operationalRisk: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
               >
                 <option value="">Select risk level...</option>
                 <option value="very_low">Very Low</option>
@@ -253,7 +253,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
               <SelectNative
                 value={formData.financialRisk || ''}
                 onChange={(e) => setFormData({ ...formData, financialRisk: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
               >
                 <option value="">Select risk level...</option>
                 <option value="very_low">Very Low</option>
@@ -275,7 +275,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
               <SelectNative
                 value={formData.outcome || ''}
                 onChange={(e) => setFormData({ ...formData, outcome: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
               >
                 <option value="">Select outcome...</option>
                 <option value="approved">Approved</option>
@@ -292,7 +292,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
                 type="text"
                 value={formData.outcomeNotes || ''}
                 onChange={(e) => setFormData({ ...formData, outcomeNotes: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
                 placeholder="Additional notes about the outcome..."
               />
             </div>
@@ -306,7 +306,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
             value={typeof formData.findings === 'string' ? formData.findings : ''}
             onChange={(e) => setFormData({ ...formData, findings: e.target.value })}
             rows={4}
-            className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+            className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
             placeholder="Document any findings, issues, or concerns discovered during the assessment..."
           />
         </div>
@@ -318,7 +318,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
             value={formData.recommendations || ''}
             onChange={(e) => setFormData({ ...formData, recommendations: e.target.value })}
             rows={4}
-            className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+            className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
             placeholder="Provide recommendations for improvement or remediation..."
           />
         </div>
@@ -354,7 +354,7 @@ function AssessmentView({
 }) {
   return (
     <div className="space-y-6">
-      <div className="bg-white border border-surface-200 rounded-lg p-6 space-y-6">
+      <div className="bg-white border border-surface-200 rounded-lg p-6 space-y-6 dark:bg-surface-900">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
@@ -366,13 +366,13 @@ function AssessmentView({
           <div className="flex items-center gap-2">
             <button
               onClick={onEdit}
-              className="p-2 text-surface-600 hover:text-surface-900 hover:bg-white rounded-lg transition-colors"
+              className="p-2 text-surface-600 hover:text-surface-900 hover:bg-white rounded-lg transition-colors dark:bg-surface-900 dark:hover:bg-surface-800"
             >
               <PencilIcon className="w-5 h-5" />
             </button>
             <button
               onClick={onDelete}
-              className="p-2 text-red-600 hover:text-red-700 hover:bg-white rounded-lg transition-colors"
+              className="p-2 text-red-600 hover:text-red-700 hover:bg-white rounded-lg transition-colors dark:bg-surface-900 dark:hover:bg-surface-800"
             >
               <TrashIcon className="w-5 h-5" />
             </button>
@@ -743,7 +743,7 @@ export default function AssessmentDetail() {
       <div className="flex items-center gap-4">
         <button
           onClick={() => navigate('/assessments')}
-          className="p-2 text-surface-600 hover:text-surface-900 hover:bg-white rounded-lg transition-colors"
+          className="p-2 text-surface-600 hover:text-surface-900 hover:bg-white rounded-lg transition-colors dark:bg-surface-900 dark:hover:bg-surface-800"
         >
           <ArrowLeftIcon className="w-5 h-5" />
         </button>

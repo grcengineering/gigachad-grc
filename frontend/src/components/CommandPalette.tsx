@@ -385,7 +385,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
             leaveFrom="opacity-100 scale-100"
             leaveTo="opacity-0 scale-95"
           >
-            <Dialog.Panel className="mx-auto max-w-2xl transform overflow-hidden rounded-xl bg-white border border-surface-200 shadow-2xl transition-all">
+            <Dialog.Panel className="mx-auto max-w-2xl transform overflow-hidden rounded-xl bg-white border border-surface-200 shadow-2xl transition-all dark:bg-surface-900">
               <Combobox onChange={handleSelect}>
                 {/* Search Input */}
                 <div className="relative">
@@ -414,7 +414,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                   >
                     {Object.entries(groupedCommands).map(([category, commands]) => (
                       <div key={category}>
-                        <div className="px-4 py-2 text-xs font-semibold text-surface-500 uppercase tracking-wider bg-white/50">
+                        <div className="px-4 py-2 text-xs font-semibold text-surface-500 uppercase tracking-wider bg-white/50 dark:bg-surface-900/50">
                           {categoryLabels[category] || category}
                         </div>
                         {commands.map((command) => (

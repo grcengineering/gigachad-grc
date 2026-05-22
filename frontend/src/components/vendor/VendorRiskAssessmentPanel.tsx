@@ -77,7 +77,7 @@ function ScoreBar({
   return (
     <div className="flex items-center gap-3">
       <span className="text-sm text-surface-600 w-24">{label}</span>
-      <div className="flex-1 h-2 bg-white rounded-full overflow-hidden">
+      <div className="flex-1 h-2 bg-white rounded-full overflow-hidden dark:bg-surface-900">
         <div className={clsx('h-full transition-all', color)} style={{ width: `${percentage}%` }} />
       </div>
       <span className="text-sm font-medium text-surface-700 w-12 text-right">
@@ -174,7 +174,7 @@ export function VendorRiskAssessmentPanel({
 
   if (loading) {
     return (
-      <div className="bg-white border border-surface-200 rounded-lg p-6">
+      <div className="bg-white border border-surface-200 rounded-lg p-6 dark:bg-surface-900">
         <div className="flex items-center gap-3 mb-4">
           <ShieldExclamationIcon className="w-5 h-5 text-brand-400" />
           <h3 className="text-lg font-medium text-surface-900">Risk Assessment</h3>
@@ -189,7 +189,7 @@ export function VendorRiskAssessmentPanel({
 
   if (error) {
     return (
-      <div className="bg-white border border-surface-200 rounded-lg p-6">
+      <div className="bg-white border border-surface-200 rounded-lg p-6 dark:bg-surface-900">
         <div className="flex items-center gap-3 mb-4">
           <ShieldExclamationIcon className="w-5 h-5 text-brand-400" />
           <h3 className="text-lg font-medium text-surface-900">Risk Assessment</h3>
@@ -207,7 +207,7 @@ export function VendorRiskAssessmentPanel({
 
   if (!latestAssessment) {
     return (
-      <div className="bg-white border border-surface-200 rounded-lg p-6">
+      <div className="bg-white border border-surface-200 rounded-lg p-6 dark:bg-surface-900">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <ShieldExclamationIcon className="w-5 h-5 text-brand-400" />
@@ -232,7 +232,7 @@ export function VendorRiskAssessmentPanel({
   }
 
   return (
-    <div className="bg-white border border-surface-200 rounded-lg p-6">
+    <div className="bg-white border border-surface-200 rounded-lg p-6 dark:bg-surface-900">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
@@ -319,7 +319,7 @@ export function VendorRiskAssessmentPanel({
       </div>
 
       {/* Recommended Action */}
-      <div className="p-3 bg-white/50 rounded-lg mb-6">
+      <div className="p-3 bg-white/50 rounded-lg mb-6 dark:bg-surface-900/50">
         <div className="flex items-start gap-2">
           <CheckCircleIcon className="w-5 h-5 text-brand-400 mt-0.5 flex-shrink-0" />
           <div>
@@ -331,7 +331,7 @@ export function VendorRiskAssessmentPanel({
 
       {/* Details Grid */}
       <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="p-3 bg-white/30 rounded-lg">
+        <div className="p-3 bg-white/30 rounded-lg dark:bg-surface-900/30">
           <h5 className="text-xs text-surface-500 uppercase tracking-wide mb-1">Likelihood</h5>
           <p className="text-lg font-semibold text-surface-800">
             {latestAssessment.likelihood.level}
@@ -342,7 +342,7 @@ export function VendorRiskAssessmentPanel({
             {latestAssessment.likelihood.controlStrength}
           </p>
         </div>
-        <div className="p-3 bg-white/30 rounded-lg">
+        <div className="p-3 bg-white/30 rounded-lg dark:bg-surface-900/30">
           <h5 className="text-xs text-surface-500 uppercase tracking-wide mb-1">Impact</h5>
           <p className="text-lg font-semibold text-surface-800">{latestAssessment.impact.level}</p>
           <p className="text-xs text-surface-600">Total: {latestAssessment.impact.total} points</p>
@@ -371,7 +371,7 @@ export function VendorRiskAssessmentPanel({
               {history.slice(1).map((assessment) => (
                 <div
                   key={assessment.id}
-                  className="flex items-center justify-between p-3 bg-white/30 rounded-lg"
+                  className="flex items-center justify-between p-3 bg-white/30 rounded-lg dark:bg-surface-900/30"
                 >
                   <div>
                     <p className="text-sm font-medium text-surface-700">{assessment.title}</p>

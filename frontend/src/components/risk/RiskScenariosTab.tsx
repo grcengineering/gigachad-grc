@@ -61,7 +61,10 @@ export default function RiskScenariosTab({
       ) : (
         <div className="space-y-3">
           {scenarios.map((scenario) => (
-            <div key={scenario.id} className="p-4 bg-white rounded-lg border border-surface-200">
+            <div
+              key={scenario.id}
+              className="p-4 bg-white rounded-lg border border-surface-200 dark:bg-surface-900"
+            >
               <div className="flex items-center justify-between mb-3">
                 <h4 className="text-white font-medium">{scenario.name}</h4>
                 <button

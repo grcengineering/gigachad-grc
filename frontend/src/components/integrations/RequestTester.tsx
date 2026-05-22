@@ -202,7 +202,7 @@ export default function RequestTester({
       </div>
       {/* Request Preview */}
       {selectedEndpoint && baseUrl && (
-        <div className="p-4 bg-white/50 rounded-lg border border-surface-200">
+        <div className="p-4 bg-white/50 rounded-lg border border-surface-200 dark:bg-surface-900/50">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs text-surface-500 uppercase font-medium">Request Preview</span>
           </div>
@@ -331,7 +331,7 @@ export default function RequestTester({
               </button>
               {showHeaders && (
                 <div className="px-4 pb-3">
-                  <div className="p-3 bg-white/50 rounded font-mono text-xs space-y-1">
+                  <div className="p-3 bg-white/50 rounded font-mono text-xs space-y-1 dark:bg-surface-900/50">
                     {Object.entries(testResult.headers).map(([key, value]) => (
                       <div key={key}>
                         <span className="text-surface-500">{key}:</span>{' '}
@@ -360,7 +360,7 @@ export default function RequestTester({
               </button>
               {showRawResponse && (
                 <div className="px-4 pb-4">
-                  <pre className="p-4 bg-white rounded-lg overflow-x-auto text-xs font-mono text-surface-700 max-h-96">
+                  <pre className="p-4 bg-white rounded-lg overflow-x-auto text-xs font-mono text-surface-700 max-h-96 dark:bg-surface-900">
                     {JSON.stringify(testResult.data, null, 2)}
                   </pre>
                 </div>

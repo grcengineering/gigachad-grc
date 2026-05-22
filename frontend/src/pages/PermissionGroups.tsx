@@ -117,7 +117,10 @@ export default function PermissionGroups() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {groups?.map((group: PermissionGroup) => (
-            <div key={group.id} className="bg-white rounded-lg border border-surface-200 p-5">
+            <div
+              key={group.id}
+              className="bg-white rounded-lg border border-surface-200 p-5 dark:bg-surface-900"
+            >
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <div className="flex items-center gap-2">
@@ -305,7 +308,7 @@ function PermissionGroupModal({
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full bg-white border border-surface-300 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="w-full bg-white border border-surface-300 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-surface-900"
               placeholder="e.g., Compliance Manager"
             />
           </div>
@@ -315,7 +318,7 @@ function PermissionGroupModal({
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full bg-white border border-surface-300 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="w-full bg-white border border-surface-300 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-surface-900"
               placeholder="Brief description of this role"
             />
           </div>
@@ -324,10 +327,10 @@ function PermissionGroupModal({
         {/* Permission Matrix */}
         <div>
           <label className="block text-sm text-surface-600 mb-3">Permission Matrix</label>
-          <div className="bg-white rounded-lg border border-surface-200 overflow-hidden">
+          <div className="bg-white rounded-lg border border-surface-200 overflow-hidden dark:bg-surface-900">
             <table className="w-full">
               <thead>
-                <tr className="bg-white">
+                <tr className="bg-white dark:bg-surface-900">
                   <th className="text-left text-surface-600 font-medium px-4 py-3 w-48">
                     Resource
                   </th>
@@ -349,7 +352,10 @@ function PermissionGroupModal({
                   const currentActions = permissions[resource.id] || [];
                   const allSelected = currentActions.length === ACTIONS.length;
                   return (
-                    <tr key={resource.id} className="hover:bg-white/50">
+                    <tr
+                      key={resource.id}
+                      className="hover:bg-white/50 dark:bg-surface-900/50 dark:hover:bg-surface-800/50"
+                    >
                       <td className="px-4 py-3">
                         <div className="text-white text-sm font-medium">{resource.label}</div>
                         <div className="text-surface-500 text-xs">{resource.description}</div>

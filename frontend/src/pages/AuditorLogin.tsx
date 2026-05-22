@@ -91,7 +91,7 @@ export default function AuditorLogin() {
         </div>
 
         {/* Login Card */}
-        <div className="bg-white/10 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 p-8">
+        <div className="bg-white/10 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 p-8 dark:bg-surface-900/10">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Error Message */}
             {displayError && (
@@ -119,7 +119,7 @@ export default function AuditorLogin() {
                   value={accessCode}
                   onChange={(e) => setAccessCode(e.target.value)}
                   placeholder="Enter your access code"
-                  className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white placeholder-purple-300/50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all pr-24"
+                  className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white placeholder-purple-300/50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all pr-24 dark:bg-surface-900/5"
                   autoComplete="off"
                   autoFocus
                 />

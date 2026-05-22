@@ -227,7 +227,7 @@ export default function EvidenceDetail() {
         </Link>
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-4">
-            <div className="p-3 bg-white rounded-lg">
+            <div className="p-3 bg-white rounded-lg dark:bg-surface-900">
               <Icon className="w-8 h-8 text-surface-600" />
             </div>
             <div>
@@ -326,7 +326,7 @@ export default function EvidenceDetail() {
                 {evidence?.controlLinks?.map((link: any) => (
                   <div
                     key={link.id}
-                    className="flex items-center gap-3 p-3 bg-white rounded-lg group"
+                    className="flex items-center gap-3 p-3 bg-white rounded-lg group dark:bg-surface-900"
                   >
                     <Link
                       to={`/controls/${link.control?.id}`}
@@ -378,7 +378,7 @@ export default function EvidenceDetail() {
                   </span>
                 </div>
                 {evidence.reviewNotes && (
-                  <div className="mt-3 p-3 bg-white rounded-lg">
+                  <div className="mt-3 p-3 bg-white rounded-lg dark:bg-surface-900">
                     <p className="text-sm text-surface-500 mb-1">Notes:</p>
                     <p className="text-sm text-surface-700">{evidence.reviewNotes}</p>
                   </div>
@@ -622,8 +622,11 @@ export default function EvidenceDetail() {
 
           {/* Keyboard hint */}
           <p className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/40 text-sm">
-            Press <kbd className="px-1.5 py-0.5 bg-white/10 rounded text-xs">ESC</kbd> or click
-            anywhere to close
+            Press{' '}
+            <kbd className="px-1.5 py-0.5 bg-white/10 rounded text-xs dark:bg-surface-900/10">
+              ESC
+            </kbd>{' '}
+            or click anywhere to close
           </p>
         </div>
       )}
@@ -744,7 +747,7 @@ function ExcelPreview({ evidenceId }: { evidenceId: string }) {
     <div className="overflow-hidden">
       {/* Sheet tabs */}
       {sheets.length > 1 && (
-        <div className="flex gap-1 p-2 bg-white border-b border-surface-200 overflow-x-auto">
+        <div className="flex gap-1 p-2 bg-white border-b border-surface-200 overflow-x-auto dark:bg-surface-900">
           {sheets.map((sheet, index) => (
             <button
               key={sheet.name}
@@ -767,7 +770,10 @@ function ExcelPreview({ evidenceId }: { evidenceId: string }) {
         <table className="w-full text-sm">
           <tbody>
             {currentSheet?.data.slice(0, 100).map((row, rowIndex) => (
-              <tr key={rowIndex} className={rowIndex === 0 ? 'bg-white font-semibold' : ''}>
+              <tr
+                key={rowIndex}
+                className={rowIndex === 0 ? 'bg-white font-semibold dark:bg-surface-900' : ''}
+              >
                 {row.map((cell, cellIndex) => (
                   <td
                     key={cellIndex}

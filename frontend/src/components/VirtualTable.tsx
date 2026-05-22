@@ -63,7 +63,7 @@ function VirtualTableInner<T>({
     return (
       <div className={clsx('card overflow-hidden', className)}>
         <div className="animate-pulse">
-          <div className="h-12 bg-white border-b border-surface-200" />
+          <div className="h-12 bg-white border-b border-surface-200 dark:bg-surface-900" />
           {Array.from({ length: 10 }).map((_, i) => (
             <div key={i} className="h-13 border-b border-surface-200 flex items-center px-4 gap-4">
               <div className="h-4 bg-surface-200 rounded w-1/4" />
@@ -92,7 +92,7 @@ function VirtualTableInner<T>({
       {/* Fixed header */}
       <div
         className={clsx(
-          'flex items-center bg-white border-b border-surface-200 sticky top-0 z-10',
+          'flex items-center bg-white border-b border-surface-200 sticky top-0 z-10 dark:bg-surface-900',
           headerClassName
         )}
         style={{ height: rowHeight }}
@@ -135,7 +135,8 @@ function VirtualTableInner<T>({
                 data-index={virtualRow.index}
                 className={clsx(
                   'absolute top-0 left-0 w-full flex items-center border-b border-surface-200 transition-colors',
-                  onRowClick && 'cursor-pointer hover:bg-white/50',
+                  onRowClick &&
+                    'cursor-pointer hover:bg-white/50 dark:bg-surface-900/50 dark:hover:bg-surface-800/50',
                   isSelected && 'bg-brand-500/10',
                   rowClasses
                 )}

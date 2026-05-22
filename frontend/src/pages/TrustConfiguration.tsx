@@ -89,7 +89,7 @@ export default function TrustConfiguration() {
       <div className="space-y-6">
         <div className="animate-pulse">
           <div className="h-8 bg-surface-200 rounded w-48 mb-4" />
-          <div className="h-64 bg-white rounded" />
+          <div className="h-64 bg-white rounded dark:bg-surface-900" />
         </div>
       </div>
     );
@@ -139,7 +139,7 @@ export default function TrustConfiguration() {
       </div>
 
       {/* Tab Content */}
-      <div className="bg-white border border-surface-200 rounded-xl p-6">
+      <div className="bg-white border border-surface-200 rounded-xl p-6 dark:bg-surface-900">
         {activeTab === 'sla' && config && (
           <SlaSettingsTab
             config={config}
@@ -233,7 +233,7 @@ function SlaSettingsTab({
       </div>
       <div className="space-y-4">
         {priorities.map((priority) => (
-          <div key={priority} className="bg-white rounded-lg p-4">
+          <div key={priority} className="bg-white rounded-lg p-4 dark:bg-surface-900">
             <div className="flex items-center gap-3 mb-4">
               <span
                 className={clsx(
@@ -267,7 +267,7 @@ function SlaSettingsTab({
                   onChange={(e) =>
                     handleChange(priority, 'targetHours', parseInt(e.target.value) || 1)
                   }
-                  className="w-full px-3 py-2 bg-white border border-surface-300 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+                  className="w-full px-3 py-2 bg-white border border-surface-300 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
                 />
               </div>
               <div>
@@ -282,7 +282,7 @@ function SlaSettingsTab({
                   onChange={(e) =>
                     handleChange(priority, 'warningHours', parseInt(e.target.value) || 1)
                   }
-                  className="w-full px-3 py-2 bg-white border border-surface-300 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+                  className="w-full px-3 py-2 bg-white border border-surface-300 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
                 />
               </div>
             </div>
@@ -363,7 +363,7 @@ function AssignmentSettingsTab({
       </div>
 
       <div className="space-y-4">
-        <label className="flex items-center gap-3 p-4 bg-white rounded-lg cursor-pointer">
+        <label className="flex items-center gap-3 p-4 bg-white rounded-lg cursor-pointer dark:bg-surface-900">
           <input
             type="checkbox"
             checked={settings.enableAutoAssignment}
@@ -416,7 +416,7 @@ function KbSettingsTab({
       </div>
 
       <div className="space-y-4">
-        <label className="flex items-center gap-3 p-4 bg-white rounded-lg cursor-pointer">
+        <label className="flex items-center gap-3 p-4 bg-white rounded-lg cursor-pointer dark:bg-surface-900">
           <input
             type="checkbox"
             checked={settings.requireApprovalForNewEntries}
@@ -433,7 +433,7 @@ function KbSettingsTab({
           </div>
         </label>
 
-        <label className="flex items-center gap-3 p-4 bg-white rounded-lg cursor-pointer">
+        <label className="flex items-center gap-3 p-4 bg-white rounded-lg cursor-pointer dark:bg-surface-900">
           <input
             type="checkbox"
             checked={settings.autoSuggestFromKB}
@@ -450,7 +450,7 @@ function KbSettingsTab({
           </div>
         </label>
 
-        <label className="flex items-center gap-3 p-4 bg-white rounded-lg cursor-pointer">
+        <label className="flex items-center gap-3 p-4 bg-white rounded-lg cursor-pointer dark:bg-surface-900">
           <input
             type="checkbox"
             checked={settings.trackUsageMetrics}
@@ -502,7 +502,7 @@ function TrustCenterSettingsTab({
         </p>
       </div>
       <div className="space-y-4">
-        <label className="flex items-center gap-3 p-4 bg-white rounded-lg cursor-pointer">
+        <label className="flex items-center gap-3 p-4 bg-white rounded-lg cursor-pointer dark:bg-surface-900">
           <input
             type="checkbox"
             checked={settings.enabled}
@@ -515,7 +515,7 @@ function TrustCenterSettingsTab({
           </div>
         </label>
 
-        <label className="flex items-center gap-3 p-4 bg-white rounded-lg cursor-pointer">
+        <label className="flex items-center gap-3 p-4 bg-white rounded-lg cursor-pointer dark:bg-surface-900">
           <input
             type="checkbox"
             checked={settings.allowAnonymousAccess}
@@ -532,7 +532,7 @@ function TrustCenterSettingsTab({
           </div>
         </label>
 
-        <div className="p-4 bg-white rounded-lg">
+        <div className="p-4 bg-white rounded-lg dark:bg-surface-900">
           <label className="block text-sm font-medium text-surface-600 mb-2">
             Custom Domain (optional)
           </label>
@@ -543,7 +543,7 @@ function TrustCenterSettingsTab({
               setSettings((prev) => ({ ...prev, customDomain: e.target.value || null }))
             }
             placeholder="trust.yourcompany.com"
-            className="w-full px-3 py-2 bg-white border border-surface-300 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+            className="w-full px-3 py-2 bg-white border border-surface-300 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
           />
           <p className="text-xs text-surface-500 mt-1">
             Point a CNAME record to your trust center URL
@@ -598,7 +598,7 @@ function AiSettingsTab({
       )}
 
       <div className="space-y-4">
-        <label className="flex items-center gap-3 p-4 bg-white rounded-lg cursor-pointer">
+        <label className="flex items-center gap-3 p-4 bg-white rounded-lg cursor-pointer dark:bg-surface-900">
           <input
             type="checkbox"
             checked={settings.enabled}
@@ -615,7 +615,7 @@ function AiSettingsTab({
 
         {settings.enabled && (
           <>
-            <label className="flex items-center gap-3 p-4 bg-white rounded-lg cursor-pointer">
+            <label className="flex items-center gap-3 p-4 bg-white rounded-lg cursor-pointer dark:bg-surface-900">
               <input
                 type="checkbox"
                 checked={settings.autoCategorizationEnabled}
@@ -632,7 +632,7 @@ function AiSettingsTab({
               </div>
             </label>
 
-            <label className="flex items-center gap-3 p-4 bg-white rounded-lg cursor-pointer">
+            <label className="flex items-center gap-3 p-4 bg-white rounded-lg cursor-pointer dark:bg-surface-900">
               <input
                 type="checkbox"
                 checked={settings.answerSuggestionsEnabled}

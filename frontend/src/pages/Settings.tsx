@@ -391,7 +391,7 @@ function OrganizationSettings() {
             <div className="mt-2 flex items-start gap-4">
               {/* Current Logo Preview */}
               <div className="flex-shrink-0">
-                <div className="w-20 h-20 rounded-lg border border-surface-200 bg-white flex items-center justify-center overflow-hidden">
+                <div className="w-20 h-20 rounded-lg border border-surface-200 bg-white flex items-center justify-center overflow-hidden dark:bg-surface-900">
                   {logoUrl ? (
                     <img
                       src={safeLogoUrl()}
@@ -562,7 +562,7 @@ function OrganizationSettings() {
           />
         </div>
 
-        <div className="bg-white/60 rounded-lg p-4 space-y-2 text-sm text-surface-600">
+        <div className="bg-white/60 rounded-lg p-4 space-y-2 text-sm text-surface-600 dark:bg-surface-900/60">
           <p className="font-medium text-surface-800">What&apos;s included</p>
           <ul className="list-disc list-inside space-y-1">
             <li>Risk register data (using the full export endpoint)</li>
@@ -671,7 +671,7 @@ function MultiWorkspaceSettings() {
             } ${isToggling || isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
           >
             <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+              className={`inline-block h-4 w-4 transform rounded-full bg-white dark:bg-surface-100 transition-transform ${
                 isMultiWorkspaceEnabled ? 'translate-x-6' : 'translate-x-1'
               }`}
             />
@@ -701,7 +701,7 @@ function MultiWorkspaceSettings() {
         )}
 
         {!isMultiWorkspaceEnabled && (
-          <div className="bg-white rounded-lg p-4 text-sm text-surface-600">
+          <div className="bg-white rounded-lg p-4 text-sm text-surface-600 dark:bg-surface-900">
             <p className="mb-2">Multi-workspace mode allows you to:</p>
             <ul className="list-disc list-inside space-y-1">
               <li>Track compliance progress separately for each product</li>
@@ -938,7 +938,7 @@ function CommunicationsSettings() {
             </div>
 
             {emailProvider === 'smtp' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-white/50 rounded-lg">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-white/50 rounded-lg dark:bg-surface-900/50">
                 <div>
                   <label className="label">SMTP Host</label>
                   <Input
@@ -983,7 +983,7 @@ function CommunicationsSettings() {
             )}
 
             {emailProvider === 'sendgrid' && (
-              <div className="p-4 bg-white/50 rounded-lg">
+              <div className="p-4 bg-white/50 rounded-lg dark:bg-surface-900/50">
                 <label className="label">SendGrid API Key</label>
                 <Input
                   type="password"
@@ -996,7 +996,7 @@ function CommunicationsSettings() {
             )}
 
             {emailProvider === 'ses' && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-white/50 rounded-lg">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-white/50 rounded-lg dark:bg-surface-900/50">
                 <div>
                   <label className="label">AWS Region</label>
                   <SelectNative
@@ -1081,7 +1081,7 @@ function CommunicationsSettings() {
               onChange={(e) => setSlackForm((f) => ({ ...f, enabled: e.target.checked }))}
               className="sr-only peer"
             />
-            <div className="w-11 h-6 bg-surface-200 peer-focus:ring-2 peer-focus:ring-brand-500 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
+            <div className="w-11 h-6 bg-surface-200 peer-focus:ring-2 peer-focus:ring-brand-500 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600 dark:bg-surface-900"></div>
           </label>
         </div>
 
@@ -1266,7 +1266,7 @@ function ApiSettings() {
           {keys.map((key: ApiKey) => (
             <div
               key={key.id}
-              className="flex items-center justify-between p-4 bg-white/50 rounded-lg"
+              className="flex items-center justify-between p-4 bg-white/50 rounded-lg dark:bg-surface-900/50"
             >
               <div>
                 <div className="flex items-center gap-2">
@@ -1407,7 +1407,7 @@ function ApiSettings() {
                         setNewKeyScopes(newKeyScopes.filter((s) => s !== scope));
                       }
                     }}
-                    className="rounded border-surface-300 bg-white text-primary-500"
+                    className="rounded border-surface-300 bg-white text-primary-500 dark:bg-surface-900"
                   />
                   <span className="text-surface-700 text-sm">{scope}</span>
                 </label>
@@ -1440,7 +1440,7 @@ function ApiSettings() {
               Copy this key now. You won't be able to see it again!
             </p>
           </div>
-          <div className="bg-white rounded-lg p-4">
+          <div className="bg-white rounded-lg p-4 dark:bg-surface-900">
             <div className="flex items-center justify-between">
               <code className="text-green-600 text-sm break-all">{newKey.key}</code>
               <Button
@@ -1538,7 +1538,7 @@ function DashboardTemplatesSettings() {
             <div className="animate-spin w-6 h-6 border-2 border-surface-300 rounded-full border-t-brand-500" />
           </div>
         ) : templates?.length === 0 ? (
-          <div className="text-center py-12 bg-white/50 rounded-lg">
+          <div className="text-center py-12 bg-white/50 rounded-lg dark:bg-surface-900/50">
             <Squares2X2Icon className="w-12 h-12 mx-auto text-surface-500 mb-4" />
             <h3 className="text-surface-700 font-medium mb-2">No templates yet</h3>
             <p className="text-surface-500 text-sm mb-4">
@@ -1553,7 +1553,7 @@ function DashboardTemplatesSettings() {
             {templates?.map((template: any) => (
               <div
                 key={template.id}
-                className="flex items-center justify-between p-4 bg-white/50 rounded-lg hover:bg-white transition-colors"
+                className="flex items-center justify-between p-4 bg-white/50 rounded-lg hover:bg-white transition-colors dark:bg-surface-900/50 dark:hover:bg-surface-800"
               >
                 <div className="flex items-center gap-4">
                   <div className="p-2 bg-surface-200 rounded">
@@ -1574,7 +1574,7 @@ function DashboardTemplatesSettings() {
                   <Link
                     to={`/dashboards`}
                     state={{ editTemplate: template.id }}
-                    className="inline-flex items-center rounded-md border border-surface-300 bg-white px-3 h-8 text-small font-medium !text-surface-900 hover:bg-surface-100 transition-colors"
+                    className="inline-flex items-center rounded-md border border-surface-300 bg-white px-3 h-8 text-small font-medium !text-surface-900 hover:bg-surface-100 transition-colors dark:bg-surface-900"
                   >
                     <PencilIcon className="w-4 h-4 mr-1" /> Edit
                   </Link>
@@ -1968,7 +1968,7 @@ function EmployeeComplianceSettings() {
 
         <div className="space-y-4">
           {/* Background Check */}
-          <div className="p-4 bg-white/50 rounded-lg space-y-3">
+          <div className="p-4 bg-white/50 rounded-lg space-y-3 dark:bg-surface-900/50">
             <div className="flex items-center justify-between">
               <label className="text-surface-800 font-medium">Background Check</label>
               <label className="relative inline-flex items-center cursor-pointer">
@@ -1978,7 +1978,7 @@ function EmployeeComplianceSettings() {
                   onChange={(e) => updateRequirement('backgroundCheckRequired', e.target.checked)}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-surface-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
+                <div className="w-11 h-6 bg-surface-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500 dark:bg-surface-900 dark:border-surface-700"></div>
               </label>
             </div>
             {config.requirements.backgroundCheckRequired && (
@@ -2003,7 +2003,7 @@ function EmployeeComplianceSettings() {
           </div>
 
           {/* Training */}
-          <div className="p-4 bg-white/50 rounded-lg space-y-3">
+          <div className="p-4 bg-white/50 rounded-lg space-y-3 dark:bg-surface-900/50">
             <div className="flex items-center justify-between">
               <label className="text-surface-800 font-medium">Training Completion</label>
               <label className="relative inline-flex items-center cursor-pointer">
@@ -2015,7 +2015,7 @@ function EmployeeComplianceSettings() {
                   }
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-surface-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
+                <div className="w-11 h-6 bg-surface-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500 dark:bg-surface-900 dark:border-surface-700"></div>
               </label>
             </div>
             {config.requirements.trainingCompletionRequired && (
@@ -2037,7 +2037,7 @@ function EmployeeComplianceSettings() {
           </div>
 
           {/* Attestation */}
-          <div className="p-4 bg-white/50 rounded-lg space-y-3">
+          <div className="p-4 bg-white/50 rounded-lg space-y-3 dark:bg-surface-900/50">
             <div className="flex items-center justify-between">
               <label className="text-surface-800 font-medium">Policy Attestation</label>
               <label className="relative inline-flex items-center cursor-pointer">
@@ -2047,7 +2047,7 @@ function EmployeeComplianceSettings() {
                   onChange={(e) => updateRequirement('attestationRequired', e.target.checked)}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-surface-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
+                <div className="w-11 h-6 bg-surface-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500 dark:bg-surface-900 dark:border-surface-700"></div>
               </label>
             </div>
             {config.requirements.attestationRequired && (
@@ -2069,7 +2069,7 @@ function EmployeeComplianceSettings() {
           </div>
 
           {/* MFA */}
-          <div className="p-4 bg-white/50 rounded-lg">
+          <div className="p-4 bg-white/50 rounded-lg dark:bg-surface-900/50">
             <div className="flex items-center justify-between">
               <div>
                 <label className="text-surface-800 font-medium">MFA Required</label>
@@ -2084,7 +2084,7 @@ function EmployeeComplianceSettings() {
                   onChange={(e) => updateRequirement('mfaRequired', e.target.checked)}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-surface-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
+                <div className="w-11 h-6 bg-surface-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500 dark:bg-surface-900 dark:border-surface-700"></div>
               </label>
             </div>
           </div>
@@ -2103,7 +2103,7 @@ function EmployeeComplianceSettings() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           <Link
             to="/integrations?search=HR%20Tools"
-            className="p-3 bg-white/50 rounded-lg hover:bg-surface-200/50 hover:border-brand-500/50 border border-transparent transition-all cursor-pointer group"
+            className="p-3 bg-white/50 rounded-lg hover:bg-surface-200/50 hover:border-brand-500/50 border border-transparent transition-all cursor-pointer group dark:bg-surface-900/50"
           >
             <p className="text-surface-600 text-xs uppercase tracking-wider mb-1 group-hover:text-brand-400">
               HRIS / Employee List
@@ -2115,7 +2115,7 @@ function EmployeeComplianceSettings() {
           </Link>
           <Link
             to="/integrations?search=Background%20Check"
-            className="p-3 bg-white/50 rounded-lg hover:bg-surface-200/50 hover:border-brand-500/50 border border-transparent transition-all cursor-pointer group"
+            className="p-3 bg-white/50 rounded-lg hover:bg-surface-200/50 hover:border-brand-500/50 border border-transparent transition-all cursor-pointer group dark:bg-surface-900/50"
           >
             <p className="text-surface-600 text-xs uppercase tracking-wider mb-1 group-hover:text-brand-400">
               Background Check
@@ -2127,7 +2127,7 @@ function EmployeeComplianceSettings() {
           </Link>
           <Link
             to="/integrations?search=Security%20Awareness"
-            className="p-3 bg-white/50 rounded-lg hover:bg-surface-200/50 hover:border-brand-500/50 border border-transparent transition-all cursor-pointer group"
+            className="p-3 bg-white/50 rounded-lg hover:bg-surface-200/50 hover:border-brand-500/50 border border-transparent transition-all cursor-pointer group dark:bg-surface-900/50"
           >
             <p className="text-surface-600 text-xs uppercase tracking-wider mb-1 group-hover:text-brand-400">
               Training / LMS
@@ -2139,7 +2139,7 @@ function EmployeeComplianceSettings() {
           </Link>
           <Link
             to="/integrations?search=MDM"
-            className="p-3 bg-white/50 rounded-lg hover:bg-surface-200/50 hover:border-brand-500/50 border border-transparent transition-all cursor-pointer group"
+            className="p-3 bg-white/50 rounded-lg hover:bg-surface-200/50 hover:border-brand-500/50 border border-transparent transition-all cursor-pointer group dark:bg-surface-900/50"
           >
             <p className="text-surface-600 text-xs uppercase tracking-wider mb-1 group-hover:text-brand-400">
               MDM / Device
@@ -2151,7 +2151,7 @@ function EmployeeComplianceSettings() {
           </Link>
           <Link
             to="/integrations?search=Identity%20Provider"
-            className="p-3 bg-white/50 rounded-lg hover:bg-surface-200/50 hover:border-brand-500/50 border border-transparent transition-all cursor-pointer group"
+            className="p-3 bg-white/50 rounded-lg hover:bg-surface-200/50 hover:border-brand-500/50 border border-transparent transition-all cursor-pointer group dark:bg-surface-900/50"
           >
             <p className="text-surface-600 text-xs uppercase tracking-wider mb-1 group-hover:text-brand-400">
               Identity Provider
@@ -2343,7 +2343,7 @@ function AISettings() {
           ].map((feature) => (
             <div
               key={feature.key}
-              className="flex items-center justify-between p-3 bg-white/50 rounded-lg"
+              className="flex items-center justify-between p-3 bg-white/50 rounded-lg dark:bg-surface-900/50"
             >
               <div>
                 <p className="text-surface-800 font-medium">{feature.name}</p>
@@ -2357,7 +2357,7 @@ function AISettings() {
                   disabled={aiProvider === 'disabled'}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-surface-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500 peer-disabled:opacity-50"></div>
+                <div className="w-11 h-6 bg-surface-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500 peer-disabled:opacity-50 dark:bg-surface-900 dark:border-surface-700"></div>
               </label>
             </div>
           ))}

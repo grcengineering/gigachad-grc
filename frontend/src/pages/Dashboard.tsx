@@ -310,7 +310,7 @@ export default function Dashboard() {
                   className="fixed inset-0 z-10"
                   onClick={() => setShowDashboardSelector(false)}
                 />
-                <div className="absolute left-0 mt-2 w-64 bg-white border border-surface-200 rounded-lg shadow-xl z-20">
+                <div className="absolute left-0 mt-2 w-64 bg-white border border-surface-200 rounded-lg shadow-xl z-20 dark:bg-surface-900">
                   <div className="p-3 border-b border-surface-200">
                     <p className="text-sm font-medium text-surface-700">My Dashboards</p>
                   </div>
@@ -387,7 +387,7 @@ export default function Dashboard() {
                 'w-full flex items-center justify-between p-3 rounded-lg border transition-all',
                 config.widgets[widget]
                   ? 'bg-brand-500/10 border-brand-500/30 text-surface-900'
-                  : 'bg-white border-surface-200 text-surface-600'
+                  : 'bg-white border-surface-200 text-surface-600 dark:bg-surface-900'
               )}
             >
               <span className="font-medium">{WIDGET_LABELS[widget]}</span>
@@ -762,7 +762,7 @@ export default function Dashboard() {
                           </span>
                           <span className="text-sm text-surface-700">{String(count)}</span>
                         </div>
-                        <div className="w-full h-1.5 bg-white rounded-full overflow-hidden">
+                        <div className="w-full h-1.5 bg-white rounded-full overflow-hidden dark:bg-surface-900">
                           <div
                             className="h-full bg-brand-500 rounded-full"
                             style={{ width: `${percentage}%` }}
@@ -905,15 +905,15 @@ const VendorRiskSummary = memo(function VendorRiskSummary({ data }: VendorRiskSu
     <div className="space-y-4">
       {/* Summary Stats */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="text-center p-3 bg-white/50 rounded-lg">
+        <div className="text-center p-3 bg-white/50 rounded-lg dark:bg-surface-900/50">
           <p className="text-2xl font-bold text-surface-900">{stats.total}</p>
           <p className="text-xs text-surface-600">Total Vendors</p>
         </div>
-        <div className="text-center p-3 bg-white/50 rounded-lg">
+        <div className="text-center p-3 bg-white/50 rounded-lg dark:bg-surface-900/50">
           <p className="text-2xl font-bold text-green-600">{stats.active}</p>
           <p className="text-xs text-surface-600">Active</p>
         </div>
-        <div className="text-center p-3 bg-white/50 rounded-lg">
+        <div className="text-center p-3 bg-white/50 rounded-lg dark:bg-surface-900/50">
           <p className="text-2xl font-bold text-yellow-600">{stats.pendingReview}</p>
           <p className="text-xs text-surface-600">Pending Review</p>
         </div>
@@ -922,7 +922,7 @@ const VendorRiskSummary = memo(function VendorRiskSummary({ data }: VendorRiskSu
       {/* Criticality Breakdown */}
       <div>
         <p className="text-sm text-surface-600 mb-2">By Criticality</p>
-        <div className="flex gap-1 h-3 rounded-full overflow-hidden bg-white">
+        <div className="flex gap-1 h-3 rounded-full overflow-hidden bg-white dark:bg-surface-900">
           {criticialityData.map(
             (item) =>
               item.count > 0 && (
@@ -955,7 +955,7 @@ const VendorRiskSummary = memo(function VendorRiskSummary({ data }: VendorRiskSu
             <Link
               key={vendor.id}
               to={`/vendors/${vendor.id}`}
-              className="flex items-center justify-between p-2 bg-white/50 rounded-lg hover:bg-surface-200 transition-colors"
+              className="flex items-center justify-between p-2 bg-white/50 rounded-lg hover:bg-surface-200 transition-colors dark:bg-surface-900/50"
             >
               <div className="flex items-center gap-2">
                 <div

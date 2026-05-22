@@ -168,7 +168,7 @@ export default function ReportBuilderPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowTemplates(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-surface-200 text-white rounded-lg transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-surface-200 text-white rounded-lg transition-colors dark:bg-surface-900"
           >
             <FolderIcon className="w-4 h-4" />
             Templates
@@ -187,11 +187,11 @@ export default function ReportBuilderPage() {
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-40 bg-white rounded-xl animate-pulse" />
+            <div key={i} className="h-40 bg-white rounded-xl animate-pulse dark:bg-surface-900" />
           ))}
         </div>
       ) : reports.length === 0 ? (
-        <div className="text-center py-16 bg-white/50 rounded-xl border border-surface-200">
+        <div className="text-center py-16 bg-white/50 rounded-xl border border-surface-200 dark:bg-surface-900/50">
           <DocumentTextIcon className="w-12 h-12 text-surface-600 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-white mb-2">No Custom Reports Yet</h3>
           <p className="text-surface-600 mb-4">
@@ -217,7 +217,7 @@ export default function ReportBuilderPage() {
           {reports.map((report) => (
             <div
               key={report.id}
-              className="p-5 bg-white rounded-xl border border-surface-200 hover:border-surface-300 transition-colors group"
+              className="p-5 bg-white rounded-xl border border-surface-200 hover:border-surface-300 transition-colors group dark:bg-surface-900"
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="p-2 bg-brand-500/20 rounded-lg">
@@ -280,7 +280,7 @@ export default function ReportBuilderPage() {
               <button
                 key={i}
                 onClick={() => createFromTemplate(template)}
-                className="p-4 text-left bg-white hover:bg-surface-200 rounded-lg border border-surface-200 hover:border-surface-300 transition-colors"
+                className="p-4 text-left bg-white hover:bg-surface-200 rounded-lg border border-surface-200 hover:border-surface-300 transition-colors dark:bg-surface-900"
               >
                 <h4 className="font-medium text-white mb-1">{template.name}</h4>
                 <p className="text-sm text-surface-600">{template.description}</p>

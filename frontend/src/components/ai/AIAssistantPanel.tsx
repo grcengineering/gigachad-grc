@@ -94,7 +94,7 @@ export default function AIAssistantPanel({ isOpen, onClose }: AIAssistantPanelPr
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-y-0 right-0 w-96 bg-white border-l border-surface-200 shadow-2xl z-50 flex flex-col">
+    <div className="fixed inset-y-0 right-0 w-96 bg-white border-l border-surface-200 shadow-2xl z-50 flex flex-col dark:bg-surface-900">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-surface-200">
         <div className="flex items-center gap-3">
@@ -110,7 +110,7 @@ export default function AIAssistantPanel({ isOpen, onClose }: AIAssistantPanelPr
         </div>
         <button
           onClick={onClose}
-          className="p-1.5 text-surface-600 hover:text-white rounded-lg hover:bg-white transition-colors"
+          className="p-1.5 text-surface-600 hover:text-white rounded-lg hover:bg-white transition-colors dark:bg-surface-900 dark:hover:bg-surface-800"
         >
           <XMarkIcon className="w-5 h-5" />
         </button>
@@ -162,7 +162,7 @@ export default function AIAssistantPanel({ isOpen, onClose }: AIAssistantPanelPr
 
       {/* Mock Mode Info Banner */}
       {isMockMode && (
-        <div className="mx-4 mt-2 p-2 rounded-lg bg-white/50 border border-surface-200">
+        <div className="mx-4 mt-2 p-2 rounded-lg bg-white/50 border border-surface-200 dark:bg-surface-900/50">
           <p className="text-xs text-surface-600">
             <span className="text-amber-600 font-medium">Demo Mode:</span> AI responses are
             generated from policy templates. Perfect for testing and demonstrations. Add an API key
@@ -182,7 +182,7 @@ export default function AIAssistantPanel({ isOpen, onClose }: AIAssistantPanelPr
               className={clsx(
                 'w-full p-4 rounded-xl border transition-all text-left group',
                 isUsable
-                  ? 'border-surface-200 hover:border-purple-500/50 hover:bg-white/50'
+                  ? 'border-surface-200 hover:border-purple-500/50 hover:bg-white/50 dark:bg-surface-900/50 dark:hover:bg-surface-800/50'
                   : 'border-surface-200 opacity-50 cursor-not-allowed',
                 selectedFeature === feature.id && 'border-purple-500 bg-purple-500/10'
               )}
@@ -235,7 +235,7 @@ export default function AIAssistantPanel({ isOpen, onClose }: AIAssistantPanelPr
       )}
 
       {/* Quick Tip */}
-      <div className="p-4 border-t border-surface-200 bg-white/50">
+      <div className="p-4 border-t border-surface-200 bg-white/50 dark:bg-surface-900/50">
         <p className="text-xs text-surface-600">
           <span className="text-purple-600 font-medium">Tip:</span> AI features are also available
           directly in forms. Look for the{' '}
@@ -418,10 +418,10 @@ function SettingsPanel({ config, isMockMode, mockModeReason }: SettingsPanelProp
 
       <p className="text-xs text-surface-500 mt-2">
         To enable full AI capabilities, set environment variables:
-        <code className="block mt-1 p-2 bg-white rounded text-surface-700">
+        <code className="block mt-1 p-2 bg-white rounded text-surface-700 dark:bg-surface-900">
           OPENAI_API_KEY=sk-...
         </code>
-        <code className="block mt-1 p-2 bg-white rounded text-surface-700">
+        <code className="block mt-1 p-2 bg-white rounded text-surface-700 dark:bg-surface-900">
           ANTHROPIC_API_KEY=sk-ant-...
         </code>
       </p>

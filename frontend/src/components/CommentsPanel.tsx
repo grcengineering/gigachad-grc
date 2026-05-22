@@ -125,7 +125,12 @@ export default function CommentsPanel({ entityType, entityId }: CommentsPanelPro
           {comments.map((comment: any) => (
             <div
               key={comment.id}
-              className={clsx('p-3 rounded-lg', comment.isResolved ? 'bg-white/50' : 'bg-white')}
+              className={clsx(
+                'p-3 rounded-lg',
+                comment.isResolved
+                  ? 'bg-white/50 dark:bg-surface-900/50'
+                  : 'bg-white dark:bg-surface-900'
+              )}
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1">

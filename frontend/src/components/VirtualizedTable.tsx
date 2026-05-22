@@ -125,7 +125,7 @@ export function VirtualizedTable<T>({
       {/* Header */}
       <div
         className={clsx(
-          'flex bg-white border-b border-surface-200',
+          'flex bg-white border-b border-surface-200 dark:bg-surface-900',
           stickyHeader && 'sticky top-0 z-10'
         )}
         style={{ minHeight: rowHeight }}
@@ -181,7 +181,8 @@ export function VirtualizedTable<T>({
                 data-index={virtualRow.index}
                 className={clsx(
                   'flex absolute top-0 left-0 w-full border-b border-surface-200 transition-colors',
-                  onRowClick && 'cursor-pointer hover:bg-white/50',
+                  onRowClick &&
+                    'cursor-pointer hover:bg-white/50 dark:bg-surface-900/50 dark:hover:bg-surface-800/50',
                   isSelected && 'bg-brand-500/10'
                 )}
                 style={{
@@ -226,7 +227,7 @@ export function VirtualizedTable<T>({
       </div>
 
       {/* Footer with count */}
-      <div className="flex items-center justify-between px-4 py-2 bg-white/50 border-t border-surface-200 text-xs text-muted-foreground">
+      <div className="flex items-center justify-between px-4 py-2 bg-white/50 border-t border-surface-200 text-xs text-muted-foreground dark:bg-surface-900/50">
         <span>
           {selectedIds && selectedIds.size > 0
             ? `${selectedIds.size} of ${data.length} selected`

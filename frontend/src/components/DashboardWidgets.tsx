@@ -207,7 +207,7 @@ export function DashboardWidgets({ widgets, storageKey, className }: DashboardWi
 
       {/* Widget Visibility Panel (when customizing) */}
       {isCustomizing && (
-        <div className="mb-6 p-4 bg-white border border-surface-200 rounded-xl">
+        <div className="mb-6 p-4 bg-white border border-surface-200 rounded-xl dark:bg-surface-900">
           <h3 className="text-sm font-medium text-surface-700 mb-3">
             Widget Visibility ({layout.filter((w) => w.visible).length} of {layout.length} visible)
           </h3>
@@ -274,7 +274,7 @@ export function DashboardWidgets({ widgets, storageKey, className }: DashboardWi
 
       {/* Empty State */}
       {visibleWidgets.length === 0 && (
-        <div className="text-center py-12 bg-white border border-surface-200 rounded-xl">
+        <div className="text-center py-12 bg-white border border-surface-200 rounded-xl dark:bg-surface-900">
           <EyeSlashIcon className="w-12 h-12 mx-auto text-surface-600 mb-4" />
           <h3 className="text-lg font-medium text-surface-700 mb-2">No widgets visible</h3>
           <p className="text-surface-500 mb-4">Click "Customize" to enable some widgets</p>
@@ -312,7 +312,10 @@ interface WidgetCardProps {
 export function WidgetCard({ title, children, action, className }: WidgetCardProps) {
   return (
     <div
-      className={clsx('bg-white rounded-xl border border-surface-200 overflow-hidden', className)}
+      className={clsx(
+        'bg-white rounded-xl border border-surface-200 overflow-hidden dark:bg-surface-900',
+        className
+      )}
     >
       <div className="p-4 border-b border-surface-200 flex items-center justify-between">
         <h3 className="font-medium text-surface-900">{title}</h3>

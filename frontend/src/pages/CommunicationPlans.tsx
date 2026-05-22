@@ -223,7 +223,7 @@ export default function CommunicationPlans() {
                     {(contacts as EscalationContact[]).map((contact) => (
                       <div
                         key={contact.id}
-                        className="p-4 rounded-lg bg-white/50 border border-surface-200"
+                        className="p-4 rounded-lg bg-white/50 border border-surface-200 dark:bg-surface-900/50"
                       >
                         <div className="flex items-start justify-between mb-2">
                           <div>

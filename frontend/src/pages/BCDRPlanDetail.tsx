@@ -514,7 +514,7 @@ export default function BCDRPlanDetail() {
                 <Link
                   key={process.id}
                   to={`/bcdr/processes/${process.id}`}
-                  className="flex items-center justify-between p-4 rounded-lg bg-white/50 hover:bg-surface-200/50 transition-colors"
+                  className="flex items-center justify-between p-4 rounded-lg bg-white/50 hover:bg-surface-200/50 transition-colors dark:bg-surface-900/50"
                 >
                   <div className="flex items-center gap-3">
                     <ShieldExclamationIcon className="w-5 h-5 text-surface-600" />
@@ -540,7 +540,7 @@ export default function BCDRPlanDetail() {
             <h3 className="text-lg font-semibold text-surface-900">DR Tests</h3>
             <Link
               to="/bcdr/tests/new"
-              className="inline-flex items-center rounded-md border border-surface-300 bg-white px-3 h-8 text-small font-medium !text-surface-900 hover:bg-surface-100 transition-colors"
+              className="inline-flex items-center rounded-md border border-surface-300 bg-white px-3 h-8 text-small font-medium !text-surface-900 hover:bg-surface-100 transition-colors dark:bg-surface-900"
             >
               Schedule Test
             </Link>
@@ -551,7 +551,7 @@ export default function BCDRPlanDetail() {
                 <Link
                   key={test.id}
                   to={`/bcdr/tests/${test.id}`}
-                  className="flex items-center justify-between p-4 rounded-lg bg-white/50 hover:bg-surface-200/50 transition-colors"
+                  className="flex items-center justify-between p-4 rounded-lg bg-white/50 hover:bg-surface-200/50 transition-colors dark:bg-surface-900/50"
                 >
                   <div className="flex items-center gap-3">
                     {test.result === 'passed' ? (
@@ -599,7 +599,7 @@ export default function BCDRPlanDetail() {
                 <Link
                   key={control.id}
                   to={`/controls/${control.id}`}
-                  className="flex items-center justify-between p-4 rounded-lg bg-white/50 hover:bg-surface-200/50 transition-colors"
+                  className="flex items-center justify-between p-4 rounded-lg bg-white/50 hover:bg-surface-200/50 transition-colors dark:bg-surface-900/50"
                 >
                   <div>
                     <p className="text-surface-900 font-medium">{control.title}</p>

@@ -40,7 +40,7 @@ const statusColors: Record<string, string> = {
 };
 
 const priorityColors: Record<string, string> = {
-  low: 'text-gray-500',
+  low: 'text-gray-500 dark:text-surface-400',
   medium: 'text-amber-500',
   high: 'text-orange-500',
   critical: 'text-red-500',
@@ -53,7 +53,7 @@ const StatusIcon: React.FC<{ status: string }> = ({ status }) => {
     case 'in_progress':
       return <ClockIcon className="h-5 w-5 text-blue-500" />;
     case 'cancelled':
-      return <XCircleIcon className="h-5 w-5 text-gray-500" />;
+      return <XCircleIcon className="h-5 w-5 text-gray-500 dark:text-surface-400" />;
     default:
       return <ClipboardDocumentListIcon className="h-5 w-5 text-amber-500" />;
   }
@@ -238,7 +238,9 @@ function TaskCard({ task, onStart, onComplete, onCancel, isLoading }: TaskCardPr
             <span className={`text-xs font-medium ${priorityColors[task.priority]}`}>
               {task.priority}
             </span>
-            {task.isAutoCreated && <span className="text-xs text-gray-400">auto</span>}
+            {task.isAutoCreated && (
+              <span className="text-xs text-gray-400 dark:text-surface-500">auto</span>
+            )}
           </div>
 
           {task.description && (
@@ -326,7 +328,7 @@ function TaskCard({ task, onStart, onComplete, onCancel, isLoading }: TaskCardPr
             </button>
             <button
               onClick={() => setShowCancelDialog(false)}
-              className="px-3 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 rounded"
+              className="px-3 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 rounded dark:bg-surface-800"
             >
               Never mind
             </button>
@@ -346,7 +348,7 @@ function CompletedTaskRow({ task }: { task: RiskWorkflowTask }) {
         {task.status}
       </span>
       {task.completedAt && (
-        <span className="text-xs text-gray-500">
+        <span className="text-xs text-gray-500 dark:text-surface-400">
           {format(new Date(task.completedAt), 'MMM d, yyyy')}
         </span>
       )}

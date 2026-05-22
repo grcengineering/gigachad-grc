@@ -301,7 +301,7 @@ export default function MappingGaps() {
           {gapsQuery.isLoading ? (
             <div className="space-y-2" role="status" aria-label="Loading gaps">
               {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="h-10 bg-white rounded animate-pulse" />
+                <div key={i} className="h-10 bg-white rounded animate-pulse dark:bg-surface-900" />
               ))}
             </div>
           ) : gapsQuery.isError ? (
@@ -341,7 +341,10 @@ export default function MappingGaps() {
                         ? `/controls/${row.control.id}`
                         : '#';
                     return (
-                      <tr key={row.id} className="border-b border-surface-200 hover:bg-white/50">
+                      <tr
+                        key={row.id}
+                        className="border-b border-surface-200 hover:bg-white/50 dark:bg-surface-900/50 dark:hover:bg-surface-800/50"
+                      >
                         {showTypeColumn && (
                           <td className="py-2 px-3 text-surface-700">{TYPE_LABEL[row.type]}</td>
                         )}

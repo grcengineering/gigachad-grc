@@ -250,7 +250,7 @@ export default function WorkspaceSettings() {
       <div className="flex items-center gap-4 mb-6">
         <button
           onClick={() => navigate('/settings/workspaces')}
-          className="p-2 text-muted-foreground hover:text-foreground hover:bg-white rounded-lg"
+          className="p-2 text-muted-foreground hover:text-foreground hover:bg-white rounded-lg dark:bg-surface-900 dark:hover:bg-surface-800"
         >
           <ArrowLeftIcon className="w-5 h-5" />
         </button>
@@ -260,7 +260,7 @@ export default function WorkspaceSettings() {
         </div>
       </div>
       {/* Basic Information */}
-      <section className="bg-white rounded-lg p-6 border border-surface-200 mb-6">
+      <section className="bg-white rounded-lg p-6 border border-surface-200 mb-6 dark:bg-surface-900">
         <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
           <BuildingOfficeIcon className="w-5 h-5" />
           Basic Information
@@ -310,7 +310,7 @@ export default function WorkspaceSettings() {
         </div>
       </section>
       {/* Members */}
-      <section className="bg-white rounded-lg p-6 border border-surface-200 mb-6">
+      <section className="bg-white rounded-lg p-6 border border-surface-200 mb-6 dark:bg-surface-900">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-foreground">Members</h2>
           <button

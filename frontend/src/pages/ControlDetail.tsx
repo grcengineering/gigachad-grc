@@ -303,7 +303,7 @@ export default function ControlDetail() {
       </div>
       {/* Edit Modal */}
       <Dialog open={isEditing} onClose={() => setIsEditing(false)}>
-        <div className="p-4 border-b border-surface-200 flex items-center justify-between sticky top-0 bg-white">
+        <div className="p-4 border-b border-surface-200 flex items-center justify-between sticky top-0 bg-white dark:bg-surface-900">
           <h2 className="text-lg font-semibold text-surface-900">Edit Control</h2>
           <button onClick={() => setIsEditing(false)} className="p-1 hover:bg-surface-200 rounded">
             <XMarkIcon className="w-5 h-5 text-surface-600" />
@@ -425,7 +425,7 @@ export default function ControlDetail() {
             </div>
           )}
         </div>
-        <div className="p-4 border-t border-surface-200 flex justify-end gap-3 sticky bottom-0 bg-white">
+        <div className="p-4 border-t border-surface-200 flex justify-end gap-3 sticky bottom-0 bg-white dark:bg-surface-900">
           <Button variant="secondary" onClick={() => setIsEditing(false)}>
             Cancel
           </Button>
@@ -518,7 +518,7 @@ export default function ControlDetail() {
                 {control?.evidenceLinks?.map((link: any) => (
                   <div
                     key={link.id}
-                    className="flex items-center justify-between p-3 bg-white rounded-lg group"
+                    className="flex items-center justify-between p-3 bg-white rounded-lg group dark:bg-surface-900"
                   >
                     <Link
                       to={`/evidence/${link.evidence.id}`}
@@ -589,7 +589,7 @@ export default function ControlDetail() {
                 {control?.policyLinks?.map((link: any) => (
                   <div
                     key={link.id}
-                    className="flex items-center justify-between p-3 bg-white rounded-lg group"
+                    className="flex items-center justify-between p-3 bg-white rounded-lg group dark:bg-surface-900"
                   >
                     <Link
                       to={`/policies/${link.policy?.id}`}
@@ -655,7 +655,7 @@ export default function ControlDetail() {
                 {implementation?.tests?.map((test: any) => (
                   <div
                     key={test.id}
-                    className="flex items-start justify-between p-3 bg-white rounded-lg"
+                    className="flex items-start justify-between p-3 bg-white rounded-lg dark:bg-surface-900"
                   >
                     <div>
                       <div className="flex items-center gap-2">
@@ -751,7 +751,7 @@ export default function ControlDetail() {
                     <div
                       key={mapping.id}
                       role="listitem"
-                      className="group relative p-2 bg-white rounded-lg"
+                      className="group relative p-2 bg-white rounded-lg dark:bg-surface-900"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
@@ -784,7 +784,7 @@ export default function ControlDetail() {
                             {isMenuOpen && (
                               <div
                                 role="menu"
-                                className="absolute right-0 top-full mt-1 w-32 rounded-md border border-surface-200 bg-white shadow-lg z-10"
+                                className="absolute right-0 top-full mt-1 w-32 rounded-md border border-surface-200 bg-white shadow-lg z-10 dark:bg-surface-900"
                               >
                                 {canEditMappings && (
                                   <button
@@ -799,7 +799,7 @@ export default function ControlDetail() {
                                         frameworkId: mapping.frameworkId,
                                       });
                                     }}
-                                    className="w-full text-left px-3 py-2 text-xs text-surface-800 hover:bg-white first:rounded-t-md"
+                                    className="w-full text-left px-3 py-2 text-xs text-surface-800 hover:bg-white first:rounded-t-md dark:bg-surface-900 dark:hover:bg-surface-800"
                                   >
                                     Edit
                                   </button>
@@ -820,7 +820,7 @@ export default function ControlDetail() {
                                         },
                                       });
                                     }}
-                                    className="w-full text-left px-3 py-2 text-xs text-surface-800 hover:bg-white"
+                                    className="w-full text-left px-3 py-2 text-xs text-surface-800 hover:bg-white dark:bg-surface-900 dark:hover:bg-surface-800"
                                   >
                                     Copy to framework…
                                   </button>
@@ -832,7 +832,7 @@ export default function ControlDetail() {
                                     setMappingMenuOpenId(null);
                                     setHistoryDrawerMappingId(mapping.id);
                                   }}
-                                  className="flex items-center gap-2 w-full text-left px-3 py-2 text-xs text-surface-800 hover:bg-white"
+                                  className="flex items-center gap-2 w-full text-left px-3 py-2 text-xs text-surface-800 hover:bg-white dark:bg-surface-900 dark:hover:bg-surface-800"
                                 >
                                   <ClockIcon className="w-3.5 h-3.5" aria-hidden="true" />
                                   History
@@ -845,7 +845,7 @@ export default function ControlDetail() {
                                       setMappingMenuOpenId(null);
                                       setMappingDeleteConfirmId(mapping.id);
                                     }}
-                                    className="w-full text-left px-3 py-2 text-xs text-red-600 hover:bg-white last:rounded-b-md"
+                                    className="w-full text-left px-3 py-2 text-xs text-red-600 hover:bg-white last:rounded-b-md dark:bg-surface-900 dark:hover:bg-surface-800"
                                   >
                                     Delete
                                   </button>
@@ -856,7 +856,7 @@ export default function ControlDetail() {
                         )}
                       </div>
                       {isConfirmingDelete && (
-                        <div className="mt-2 p-2 bg-white border border-surface-200 rounded">
+                        <div className="mt-2 p-2 bg-white border border-surface-200 rounded dark:bg-surface-900">
                           <p className="text-xs text-surface-700 mb-2">Delete this mapping?</p>
                           <div className="flex justify-end gap-2">
                             <button
@@ -1169,7 +1169,7 @@ function LinkPolicyModal({
                 'flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors',
                 selectedPolicyIds.includes(policy.id)
                   ? 'bg-brand-500/20 border border-brand-500/50'
-                  : 'bg-white hover:bg-surface-200'
+                  : 'bg-white hover:bg-surface-200 dark:bg-surface-900'
               )}
             >
               <input

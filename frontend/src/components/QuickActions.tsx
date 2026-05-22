@@ -72,7 +72,12 @@ export function QuickActions({ className }: QuickActionsProps) {
   ];
 
   return (
-    <div className={clsx('bg-white rounded-xl border border-surface-200 p-4', className)}>
+    <div
+      className={clsx(
+        'bg-white rounded-xl border border-surface-200 p-4 dark:bg-surface-900',
+        className
+      )}
+    >
       <h3 className="font-medium text-white mb-4 flex items-center gap-2">
         <PlusIcon className="w-5 h-5 text-brand-400" />
         Quick Actions
@@ -138,7 +143,7 @@ export function QuickActionsBar() {
   ];
 
   return (
-    <div className="flex items-center gap-2 bg-white/50 rounded-lg p-1">
+    <div className="flex items-center gap-2 bg-white/50 rounded-lg p-1 dark:bg-surface-900/50">
       {actions.map((action) => (
         <button
           key={action.id}

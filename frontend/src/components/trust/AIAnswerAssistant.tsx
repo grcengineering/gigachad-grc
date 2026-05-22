@@ -190,7 +190,7 @@ export function AIAnswerAssistant({
               </div>
 
               {/* Suggested Answer */}
-              <div className="bg-white/50 rounded-lg p-3 border border-surface-200">
+              <div className="bg-white/50 rounded-lg p-3 border border-surface-200 dark:bg-surface-900/50">
                 <p className="text-sm text-surface-800 whitespace-pre-wrap">
                   {suggestion.suggestedAnswer}
                 </p>

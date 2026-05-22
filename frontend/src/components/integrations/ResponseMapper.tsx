@@ -117,7 +117,7 @@ export default function ResponseMapper({
   return (
     <div className="space-y-6">
       {/* Instructions */}
-      <div className="p-4 bg-white/50 rounded-lg border border-surface-200">
+      <div className="p-4 bg-white/50 rounded-lg border border-surface-200 dark:bg-surface-900/50">
         <div className="flex items-start gap-2">
           <InformationCircleIcon className="w-5 h-5 text-brand-400 flex-shrink-0 mt-0.5" />
           <div className="text-sm text-surface-600">
@@ -138,7 +138,7 @@ export default function ResponseMapper({
           {showSuggestions ? 'Hide suggestions' : 'Show common field suggestions'}
         </button>
         {showSuggestions && (
-          <div className="flex flex-wrap gap-2 p-3 bg-white/30 rounded-lg">
+          <div className="flex flex-wrap gap-2 p-3 bg-white/30 rounded-lg dark:bg-surface-900/30">
             {SUGGESTED_FIELDS.map(({ field, description }) => (
               <button
                 key={field}
@@ -179,7 +179,10 @@ export default function ResponseMapper({
       {/* Mapping List */}
       <div className="space-y-3">
         {mappings.map((mapping) => (
-          <div key={mapping.id} className="p-4 bg-white/50 rounded-lg border border-surface-200">
+          <div
+            key={mapping.id}
+            className="p-4 bg-white/50 rounded-lg border border-surface-200 dark:bg-surface-900/50"
+          >
             <div className="flex items-start gap-4">
               <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Source Path */}
@@ -259,7 +262,7 @@ export default function ResponseMapper({
               {/* Delete Button */}
               <button
                 onClick={() => deleteMapping(mapping.id)}
-                className="p-2 text-surface-600 hover:text-red-600 hover:bg-white rounded-lg transition-colors"
+                className="p-2 text-surface-600 hover:text-red-600 hover:bg-white rounded-lg transition-colors dark:bg-surface-900 dark:hover:bg-surface-800"
               >
                 <TrashIcon className="w-4 h-4" />
               </button>
@@ -280,7 +283,7 @@ export default function ResponseMapper({
         ))}
 
         {mappings.length === 0 && (
-          <div className="text-center py-8 text-surface-500 bg-white/30 rounded-lg border border-dashed border-surface-200">
+          <div className="text-center py-8 text-surface-500 bg-white/30 rounded-lg border border-dashed border-surface-200 dark:bg-surface-900/30">
             No field mappings configured. Add mappings to extract data from API responses.
           </div>
         )}

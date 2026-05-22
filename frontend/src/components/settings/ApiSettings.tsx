@@ -97,7 +97,7 @@ export default function ApiSettings() {
           {keys.map((key: ApiKey) => (
             <div
               key={key.id}
-              className="flex items-center justify-between p-4 bg-white/50 rounded-lg"
+              className="flex items-center justify-between p-4 bg-white/50 rounded-lg dark:bg-surface-900/50"
             >
               <div>
                 <div className="flex items-center gap-2">

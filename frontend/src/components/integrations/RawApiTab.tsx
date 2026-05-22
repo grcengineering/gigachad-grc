@@ -282,7 +282,7 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
     <div className="h-full flex flex-col">
       {/* Mode Toggle */}
       <div className="p-4 border-b border-surface-200">
-        <div className="flex items-center gap-2 p-1 bg-white rounded-lg w-fit">
+        <div className="flex items-center gap-2 p-1 bg-white rounded-lg w-fit dark:bg-surface-900">
           <button
             onClick={() => setMode('requests')}
             className={clsx(
@@ -338,7 +338,7 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
                     'w-full text-left p-2 rounded-lg transition-colors group',
                     selectedRequestId === request.id
                       ? 'bg-brand-500/10 border border-brand-500/30'
-                      : 'hover:bg-white border border-transparent'
+                      : 'hover:bg-white border border-transparent dark:bg-surface-900 dark:hover:bg-surface-800'
                   )}
                 >
                   <div className="flex items-center gap-2">
@@ -388,14 +388,14 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => duplicateRequest(selectedRequest.id)}
-                      className="p-1.5 text-surface-600 hover:text-surface-800 hover:bg-white rounded transition-colors"
+                      className="p-1.5 text-surface-600 hover:text-surface-800 hover:bg-white rounded transition-colors dark:bg-surface-900 dark:hover:bg-surface-800"
                       title="Duplicate"
                     >
                       <DocumentDuplicateIcon className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => deleteRequest(selectedRequest.id)}
-                      className="p-1.5 text-surface-600 hover:text-red-600 hover:bg-white rounded transition-colors"
+                      className="p-1.5 text-surface-600 hover:text-red-600 hover:bg-white rounded transition-colors dark:bg-surface-900 dark:hover:bg-surface-800"
                       title="Delete"
                     >
                       <TrashIcon className="w-4 h-4" />
@@ -549,7 +549,7 @@ export default function RawApiTab({ config, onChange }: RawApiTabProps) {
       ) : (
         /* Custom Code Mode */
         <div className="flex-1 flex flex-col overflow-hidden p-4 space-y-4">
-          <div className="p-4 bg-white/50 rounded-lg border border-surface-200">
+          <div className="p-4 bg-white/50 rounded-lg border border-surface-200 dark:bg-surface-900/50">
             <div className="flex items-start gap-2">
               <InformationCircleIcon className="w-5 h-5 text-brand-400 flex-shrink-0 mt-0.5" />
               <div className="text-sm text-surface-600">

@@ -409,7 +409,7 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
     <div className={clsx('space-y-6', className)}>
       {/* View Mode Toggle and Actions */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 bg-white rounded-lg p-1">
+        <div className="flex items-center gap-2 bg-white rounded-lg p-1 dark:bg-surface-900">
           <button
             onClick={() => setViewMode('month')}
             className={clsx(
@@ -469,7 +469,7 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Calendar Grid */}
-        <div className="lg:col-span-2 bg-white rounded-xl border border-surface-200 p-6">
+        <div className="lg:col-span-2 bg-white rounded-xl border border-surface-200 p-6 dark:bg-surface-900">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
@@ -600,7 +600,7 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
         <div className="space-y-6">
           {/* Selected Date Events */}
           {selectedDate && (
-            <div className="bg-white rounded-xl border border-surface-200 p-4">
+            <div className="bg-white rounded-xl border border-surface-200 p-4 dark:bg-surface-900">
               <h3 className="font-medium text-white mb-3">{formatDate(selectedDate)}</h3>
               {selectedDateEvents.length === 0 ? (
                 <p className="text-sm text-surface-500">No events scheduled</p>
@@ -635,7 +635,7 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
           )}
 
           {/* Upcoming Events */}
-          <div className="bg-white rounded-xl border border-surface-200 p-4">
+          <div className="bg-white rounded-xl border border-surface-200 p-4 dark:bg-surface-900">
             <h3 className="font-medium text-white mb-3">Upcoming (30 days)</h3>
             {upcomingEvents.length === 0 ? (
               <p className="text-sm text-surface-500">No upcoming events</p>
@@ -696,7 +696,7 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
               type="text"
               value={newEventTitle}
               onChange={(e) => setNewEventTitle(e.target.value)}
-              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-white placeholder-surface-500 focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-white placeholder-surface-500 focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-surface-900"
               placeholder="Event title"
               required
             />
@@ -706,7 +706,7 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
             <Textarea
               value={newEventDescription}
               onChange={(e) => setNewEventDescription(e.target.value)}
-              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-white placeholder-surface-500 focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-white placeholder-surface-500 focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-surface-900"
               placeholder="Optional description"
               rows={2}
             />
@@ -717,7 +717,7 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
               type="date"
               value={newEventDate}
               onChange={(e) => setNewEventDate(e.target.value)}
-              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-surface-900"
               required
             />
           </div>
@@ -726,7 +726,7 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
             <SelectNative
               value={newEventPriority}
               onChange={(e) => setNewEventPriority(e.target.value)}
-              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-surface-900"
             >
               <option value="low">Low</option>
               <option value="medium">Medium</option>

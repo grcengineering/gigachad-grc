@@ -53,7 +53,7 @@ const statusColors: Record<string, string> = {
 };
 
 const priorityColors: Record<string, string> = {
-  low: 'text-gray-400',
+  low: 'text-gray-400 dark:text-surface-500',
   medium: 'text-yellow-600',
   high: 'text-orange-600',
   critical: 'text-red-600',
@@ -178,7 +178,7 @@ export default function AuditRequests() {
             <p className="text-surface-600 mt-1">Create a new evidence or documentation request</p>
           </div>
         </div>
-        <div className="bg-white border border-surface-200 rounded-lg p-6">
+        <div className="bg-white border border-surface-200 rounded-lg p-6 dark:bg-surface-900">
           <form onSubmit={handleCreateRequest} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-surface-700 mb-1">
@@ -311,14 +311,14 @@ export default function AuditRequests() {
             placeholder="Search requests..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 placeholder-surface-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className="w-full pl-10 pr-4 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 placeholder-surface-500 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-surface-900"
           />
         </div>
 
         <SelectNative
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-4 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
+          className="px-4 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-surface-900"
         >
           <option value="">All Statuses</option>
           <option value="open">Open</option>
@@ -333,7 +333,7 @@ export default function AuditRequests() {
         <SelectNative
           value={priorityFilter}
           onChange={(e) => setPriorityFilter(e.target.value)}
-          className="px-4 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
+          className="px-4 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-surface-900"
         >
           <option value="">All Priorities</option>
           <option value="low">Low</option>
@@ -371,7 +371,7 @@ export default function AuditRequests() {
             <Link
               key={request.id}
               to={`/audit-requests/${request.id}`}
-              className="block bg-white border border-surface-200 rounded-lg p-6 hover:border-brand-500 transition-colors"
+              className="block bg-white border border-surface-200 rounded-lg p-6 hover:border-brand-500 transition-colors dark:bg-surface-900"
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">

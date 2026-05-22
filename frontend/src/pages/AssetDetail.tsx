@@ -254,7 +254,7 @@ export default function AssetDetail() {
       {/* Asset Details */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Info */}
-        <div className="lg:col-span-2 bg-white rounded-xl border border-surface-200 p-6 space-y-6">
+        <div className="lg:col-span-2 bg-white rounded-xl border border-surface-200 p-6 space-y-6 dark:bg-surface-900">
           {asset.description && (
             <div>
               <h3 className="text-sm font-medium text-surface-600 mb-2">Description</h3>
@@ -325,7 +325,7 @@ export default function AssetDetail() {
         {/* Sidebar */}
         <div className="space-y-4">
           {/* Quick Stats */}
-          <div className="bg-white rounded-xl border border-surface-200 p-6">
+          <div className="bg-white rounded-xl border border-surface-200 p-6 dark:bg-surface-900">
             <h3 className="text-lg font-medium text-white mb-4">Risk Summary</h3>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
@@ -345,7 +345,7 @@ export default function AssetDetail() {
           </div>
 
           {/* Timestamps */}
-          <div className="bg-white rounded-xl border border-surface-200 p-6">
+          <div className="bg-white rounded-xl border border-surface-200 p-6 dark:bg-surface-900">
             <h3 className="text-lg font-medium text-white mb-4">Timeline</h3>
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
@@ -366,7 +366,7 @@ export default function AssetDetail() {
       </div>
       {/* Associated Risks */}
       {asset.risks && asset.risks.length > 0 && (
-        <div className="bg-white rounded-xl border border-surface-200 p-6">
+        <div className="bg-white rounded-xl border border-surface-200 p-6 dark:bg-surface-900">
           <h3 className="text-lg font-medium text-white mb-4">Associated Risks</h3>
           <div className="space-y-2">
             {asset.risks.map((risk) => (
@@ -404,7 +404,7 @@ export default function AssetDetail() {
         </div>
       )}
       {/* BC/DR Information */}
-      <div className="bg-white rounded-xl border border-surface-200 p-6">
+      <div className="bg-white rounded-xl border border-surface-200 p-6 dark:bg-surface-900">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-medium text-white flex items-center gap-2">
             <ShieldAlert className="w-5 h-5 text-brand-400" />

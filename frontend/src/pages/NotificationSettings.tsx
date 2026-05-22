@@ -63,9 +63,9 @@ function EmailConfigurationNotice() {
 
   if (isLoading) {
     return (
-      <div className="bg-gray-800 border border-gray-700 rounded-xl p-4 animate-pulse">
-        <div className="h-4 bg-gray-700 rounded w-1/4 mb-2"></div>
-        <div className="h-3 bg-gray-700 rounded w-3/4"></div>
+      <div className="bg-gray-800 border border-gray-700 rounded-xl p-4 animate-pulse dark:bg-surface-200 dark:border-surface-300">
+        <div className="h-4 bg-gray-700 rounded w-1/4 mb-2 dark:bg-surface-300"></div>
+        <div className="h-3 bg-gray-700 rounded w-3/4 dark:bg-surface-300"></div>
       </div>
     );
   }
@@ -79,7 +79,7 @@ function EmailConfigurationNotice() {
           <CheckCircleIcon className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
           <div>
             <h4 className="text-green-600 font-medium">Email Notifications Active</h4>
-            <p className="text-gray-300 text-sm mt-1">
+            <p className="text-gray-300 text-sm mt-1 dark:text-surface-700">
               Email delivery is configured using {emailStatus?.provider?.toUpperCase() || 'SMTP'}.
               Notifications will be sent to recipient email addresses.
             </p>
@@ -95,11 +95,11 @@ function EmailConfigurationNotice() {
         <EnvelopeIcon className="h-6 w-6 text-amber-600 flex-shrink-0 mt-0.5" />
         <div>
           <h4 className="text-amber-600 font-medium">Email Notifications (Demo Mode)</h4>
-          <p className="text-gray-300 text-sm mt-1">
+          <p className="text-gray-300 text-sm mt-1 dark:text-surface-700">
             {emailStatus?.consoleReason ||
               'Email provider not configured. Configure SMTP, SendGrid, or AWS SES in environment variables to enable email delivery.'}
           </p>
-          <p className="text-gray-400 text-xs mt-2">
+          <p className="text-gray-400 text-xs mt-2 dark:text-surface-500">
             In demo mode, emails are logged to the console instead of being sent.
           </p>
         </div>
@@ -232,7 +232,7 @@ export default function NotificationSettings() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Notifications</h1>
-          <p className="text-gray-400 mt-1">
+          <p className="text-gray-400 mt-1 dark:text-surface-500">
             Manage your notification preferences and view history
           </p>
         </div>
@@ -241,7 +241,7 @@ export default function NotificationSettings() {
             <>
               <button
                 onClick={() => refetch()}
-                className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+                className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors dark:bg-surface-300 dark:hover:bg-surface-300 dark:text-surface-500"
                 title="Refresh"
               >
                 <ArrowPathIcon className="h-5 w-5" />
@@ -249,7 +249,7 @@ export default function NotificationSettings() {
               {unreadCount > 0 && (
                 <button
                   onClick={() => markAllReadMutation.mutate()}
-                  className="px-3 py-2 text-sm text-indigo-600 hover:text-indigo-700 hover:bg-gray-700 rounded-lg transition-colors flex items-center space-x-1"
+                  className="px-3 py-2 text-sm text-indigo-600 hover:text-indigo-700 hover:bg-gray-700 rounded-lg transition-colors flex items-center space-x-1 dark:bg-surface-300 dark:hover:bg-surface-300"
                 >
                   <CheckIcon className="h-4 w-4" />
                   <span>Mark all read</span>
@@ -262,7 +262,7 @@ export default function NotificationSettings() {
                       deleteAllMutation.mutate();
                     }
                   }}
-                  className="px-3 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-gray-700 rounded-lg transition-colors flex items-center space-x-1"
+                  className="px-3 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-gray-700 rounded-lg transition-colors flex items-center space-x-1 dark:bg-surface-300 dark:hover:bg-surface-300"
                 >
                   <TrashIcon className="h-4 w-4" />
                   <span>Clear all</span>
@@ -284,14 +284,14 @@ export default function NotificationSettings() {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-700">
+      <div className="border-b border-gray-700 dark:border-surface-300">
         <nav className="flex space-x-8">
           <button
             onClick={() => setActiveTab('all')}
             className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
               activeTab === 'all'
                 ? 'border-indigo-500 text-indigo-600'
-                : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-500'
+                : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-500 dark:text-surface-500 dark:border-surface-500'
             }`}
           >
             All Notifications
@@ -301,7 +301,7 @@ export default function NotificationSettings() {
             className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center space-x-2 ${
               activeTab === 'unread'
                 ? 'border-indigo-500 text-indigo-600'
-                : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-500'
+                : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-500 dark:text-surface-500 dark:border-surface-500'
             }`}
           >
             <span>Unread</span>
@@ -316,7 +316,7 @@ export default function NotificationSettings() {
             className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
               activeTab === 'settings'
                 ? 'border-indigo-500 text-indigo-600'
-                : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-500'
+                : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-500 dark:text-surface-500 dark:border-surface-500'
             }`}
           >
             Settings
@@ -329,11 +329,11 @@ export default function NotificationSettings() {
         /* Preferences Settings */
         <div className="space-y-6">
           {/* Quick Toggles */}
-          <div className="bg-gray-800 rounded-xl p-4 border border-gray-700">
+          <div className="bg-gray-800 rounded-xl p-4 border border-gray-700 dark:bg-surface-200 dark:border-surface-300">
             <h3 className="text-lg font-medium text-white mb-4">Quick Settings</h3>
             <div className="flex items-center space-x-6">
               <div className="flex items-center space-x-4">
-                <span className="text-gray-300 flex items-center space-x-2">
+                <span className="text-gray-300 flex items-center space-x-2 dark:text-surface-700">
                   <BellIcon className="h-5 w-5" />
                   <span>In-App</span>
                 </span>
@@ -345,13 +345,13 @@ export default function NotificationSettings() {
                 </button>
                 <button
                   onClick={() => handleToggleAll('inApp', false)}
-                  className="px-2 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-500"
+                  className="px-2 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-500 dark:bg-surface-400 dark:hover:bg-surface-500"
                 >
                   All Off
                 </button>
               </div>
               <div className="flex items-center space-x-4">
-                <span className="text-gray-300 flex items-center space-x-2">
+                <span className="text-gray-300 flex items-center space-x-2 dark:text-surface-700">
                   <EnvelopeIcon className="h-5 w-5" />
                   <span>Email</span>
                 </span>
@@ -363,7 +363,7 @@ export default function NotificationSettings() {
                 </button>
                 <button
                   onClick={() => handleToggleAll('email', false)}
-                  className="px-2 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-500"
+                  className="px-2 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-500 dark:bg-surface-400 dark:hover:bg-surface-500"
                 >
                   All Off
                 </button>
@@ -375,15 +375,15 @@ export default function NotificationSettings() {
           {preferencesLoading ? (
             <div className="text-center py-12">
               <div className="animate-spin h-8 w-8 border-2 border-indigo-500 border-t-transparent rounded-full mx-auto"></div>
-              <p className="mt-4 text-gray-400">Loading preferences...</p>
+              <p className="mt-4 text-gray-400 dark:text-surface-500">Loading preferences...</p>
             </div>
           ) : (
             Object.entries(preferencesByCategory).map(([category, prefs]) => (
               <div
                 key={category}
-                className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden"
+                className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden dark:bg-surface-200 dark:border-surface-300"
               >
-                <div className="px-4 py-3 bg-gray-900 border-b border-gray-700">
+                <div className="px-4 py-3 bg-gray-900 border-b border-gray-700 dark:bg-surface-100 dark:border-surface-300">
                   <h3 className="text-lg font-medium text-white flex items-center space-x-2">
                     <span>{categoryIcons[category] || '📌'}</span>
                     <span>{category}</span>
@@ -397,13 +397,19 @@ export default function NotificationSettings() {
                     >
                       <div className="flex-1">
                         <p className="text-white font-medium">{pref.typeName}</p>
-                        <p className="text-sm text-gray-400">{pref.description}</p>
+                        <p className="text-sm text-gray-400 dark:text-surface-500">
+                          {pref.description}
+                        </p>
                       </div>
                       <div className="flex items-center space-x-6">
                         {/* In-App Toggle */}
                         <label className="flex items-center space-x-2 cursor-pointer">
                           <BellIcon
-                            className={`h-5 w-5 ${pref.inApp ? 'text-indigo-600' : 'text-gray-500'}`}
+                            className={`h-5 w-5 ${
+                              pref.inApp
+                                ? 'text-indigo-600 dark:text-indigo-300'
+                                : 'text-surface-500 dark:text-surface-400'
+                            }`}
                           />
                           <input
                             type="checkbox"
@@ -418,17 +424,25 @@ export default function NotificationSettings() {
                             className="sr-only"
                           />
                           <div
-                            className={`relative w-10 h-6 rounded-full transition-colors ${pref.inApp ? 'bg-indigo-600' : 'bg-gray-600'}`}
+                            className={`relative w-10 h-6 rounded-full transition-colors ${
+                              pref.inApp
+                                ? 'bg-indigo-600 dark:bg-indigo-400'
+                                : 'bg-surface-600 dark:bg-surface-400'
+                            }`}
                           >
                             <div
-                              className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${pref.inApp ? 'translate-x-4' : 'translate-x-0'}`}
+                              className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${pref.inApp ? 'translate-x-4' : 'translate-x-0'} dark:bg-surface-900`}
                             ></div>
                           </div>
                         </label>
                         {/* Email Toggle */}
                         <label className="flex items-center space-x-2 cursor-pointer">
                           <EnvelopeIcon
-                            className={`h-5 w-5 ${pref.email ? 'text-indigo-600' : 'text-gray-500'}`}
+                            className={`h-5 w-5 ${
+                              pref.email
+                                ? 'text-indigo-600 dark:text-indigo-300'
+                                : 'text-surface-500 dark:text-surface-400'
+                            }`}
                           />
                           <input
                             type="checkbox"
@@ -443,10 +457,14 @@ export default function NotificationSettings() {
                             className="sr-only"
                           />
                           <div
-                            className={`relative w-10 h-6 rounded-full transition-colors ${pref.email ? 'bg-indigo-600' : 'bg-gray-600'}`}
+                            className={`relative w-10 h-6 rounded-full transition-colors ${
+                              pref.email
+                                ? 'bg-indigo-600 dark:bg-indigo-400'
+                                : 'bg-surface-600 dark:bg-surface-400'
+                            }`}
                           >
                             <div
-                              className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${pref.email ? 'translate-x-4' : 'translate-x-0'}`}
+                              className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${pref.email ? 'translate-x-4' : 'translate-x-0'} dark:bg-surface-900`}
                             ></div>
                           </div>
                         </label>
@@ -467,24 +485,26 @@ export default function NotificationSettings() {
           {notificationsLoading ? (
             <div className="text-center py-12">
               <div className="animate-spin h-8 w-8 border-2 border-indigo-500 border-t-transparent rounded-full mx-auto"></div>
-              <p className="mt-4 text-gray-400">Loading notifications...</p>
+              <p className="mt-4 text-gray-400 dark:text-surface-500">Loading notifications...</p>
             </div>
           ) : notifications.length === 0 ? (
-            <div className="text-center py-12 bg-gray-800 rounded-xl border border-gray-700">
-              <BellIcon className="h-16 w-16 mx-auto text-gray-600 mb-4" />
+            <div className="text-center py-12 bg-gray-800 rounded-xl border border-gray-700 dark:bg-surface-200 dark:border-surface-300">
+              <BellIcon className="h-16 w-16 mx-auto text-gray-600 mb-4 dark:text-surface-300" />
               <h3 className="text-lg font-medium text-white">No notifications</h3>
-              <p className="text-gray-400 mt-1">
+              <p className="text-gray-400 mt-1 dark:text-surface-500">
                 {activeTab === 'unread'
                   ? "You're all caught up!"
                   : "You haven't received any notifications yet."}
               </p>
             </div>
           ) : (
-            <div className="bg-gray-800 rounded-xl border border-gray-700 divide-y divide-gray-700 overflow-hidden">
+            <div className="bg-gray-800 rounded-xl border border-gray-700 divide-y divide-gray-700 overflow-hidden dark:bg-surface-200 dark:border-surface-300">
               {notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`p-4 hover:bg-gray-700/50 transition-colors ${!notification.isRead ? 'bg-gray-700/30' : ''}`}
+                  className={`p-4 hover:bg-surface-200 dark:hover:bg-surface-700/50 transition-colors ${
+                    !notification.isRead ? 'bg-surface-100 dark:bg-surface-800/30' : ''
+                  }`}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-start space-x-4 flex-1">
@@ -498,7 +518,11 @@ export default function NotificationSettings() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-2">
                           <h4
-                            className={`text-sm font-medium ${notification.isRead ? 'text-gray-300' : 'text-white'}`}
+                            className={`text-sm font-medium ${
+                              notification.isRead
+                                ? 'text-surface-600 dark:text-surface-400'
+                                : 'text-surface-900 dark:text-surface-100'
+                            }`}
                           >
                             {notification.title}
                           </h4>
@@ -506,15 +530,17 @@ export default function NotificationSettings() {
                             <span className="h-2 w-2 bg-indigo-500 rounded-full"></span>
                           )}
                         </div>
-                        <p className="text-sm text-gray-400 mt-1">{notification.message}</p>
+                        <p className="text-sm text-gray-400 mt-1 dark:text-surface-500">
+                          {notification.message}
+                        </p>
                         <div className="flex items-center space-x-3 mt-2">
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-gray-500 dark:text-surface-400">
                             {formatDistanceToNow(new Date(notification.createdAt), {
                               addSuffix: true,
                             })}
                           </span>
                           {notification.entityType && (
-                            <span className="text-xs text-gray-500 bg-gray-700 px-2 py-0.5 rounded">
+                            <span className="text-xs text-gray-500 bg-gray-700 px-2 py-0.5 rounded dark:bg-surface-300 dark:text-surface-400">
                               {notification.entityType}
                             </span>
                           )}
@@ -527,7 +553,7 @@ export default function NotificationSettings() {
                       {!notification.isRead && (
                         <button
                           onClick={() => markReadMutation.mutate(notification.id)}
-                          className="p-2 text-gray-400 hover:text-green-600 hover:bg-gray-700 rounded-lg transition-colors"
+                          className="p-2 text-gray-400 hover:text-green-600 hover:bg-gray-700 rounded-lg transition-colors dark:bg-surface-300 dark:hover:bg-surface-300 dark:text-surface-500"
                           title="Mark as read"
                         >
                           <CheckIcon className="h-4 w-4" />
@@ -535,7 +561,7 @@ export default function NotificationSettings() {
                       )}
                       <button
                         onClick={() => deleteMutation.mutate(notification.id)}
-                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-gray-700 rounded-lg transition-colors"
+                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-gray-700 rounded-lg transition-colors dark:bg-surface-300 dark:hover:bg-surface-300 dark:text-surface-500"
                         title="Delete"
                       >
                         <TrashIcon className="h-4 w-4" />

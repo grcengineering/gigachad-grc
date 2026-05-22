@@ -248,7 +248,7 @@ export function OnboardingTour({ isOpen, onClose, onComplete }: OnboardingTourPr
 
                   {/* Tips */}
                   {step.tips && step.tips.length > 0 && (
-                    <div className="bg-white/50 rounded-xl p-4 mb-6 text-left">
+                    <div className="bg-white/50 rounded-xl p-4 mb-6 text-left dark:bg-surface-900/50">
                       <p className="text-xs font-semibold text-surface-600 uppercase tracking-wider mb-3">
                         Pro Tips
                       </p>
@@ -291,7 +291,7 @@ export function OnboardingTour({ isOpen, onClose, onComplete }: OnboardingTourPr
                 </div>
 
                 {/* Footer */}
-                <div className="flex items-center justify-between px-8 py-4 border-t border-surface-200 bg-white/50">
+                <div className="flex items-center justify-between px-8 py-4 border-t border-surface-200 bg-white/50 dark:bg-surface-900/50">
                   <button
                     onClick={handlePrev}
                     disabled={isFirst}

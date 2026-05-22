@@ -263,7 +263,9 @@ export default function Integrations() {
           onClick={() => setStatusFilter(statusFilter === 'all' ? 'all' : 'all')}
           className={clsx(
             'card p-4 text-left transition-all',
-            statusFilter === 'all' ? 'ring-2 ring-surface-500' : 'hover:bg-white/50'
+            statusFilter === 'all'
+              ? 'ring-2 ring-surface-500'
+              : 'hover:bg-white/50 dark:bg-surface-900/50 dark:hover:bg-surface-800/50'
           )}
         >
           <p className="text-sm text-surface-600">Available Integrations</p>
@@ -277,7 +279,7 @@ export default function Integrations() {
             'card p-4 text-left transition-all',
             statusFilter === 'configured'
               ? 'ring-2 ring-green-500'
-              : 'hover:bg-white/50 cursor-pointer'
+              : 'hover:bg-white/50 cursor-pointer dark:bg-surface-900/50 dark:hover:bg-surface-800/50'
           )}
         >
           <p className="text-sm text-surface-600">Configured</p>
@@ -290,7 +292,9 @@ export default function Integrations() {
           onClick={() => setStatusFilter(statusFilter === 'active' ? 'all' : 'active')}
           className={clsx(
             'card p-4 text-left transition-all',
-            statusFilter === 'active' ? 'ring-2 ring-brand-500' : 'hover:bg-white/50 cursor-pointer'
+            statusFilter === 'active'
+              ? 'ring-2 ring-brand-500'
+              : 'hover:bg-white/50 cursor-pointer dark:bg-surface-900/50 dark:hover:bg-surface-800/50'
           )}
         >
           <p className="text-sm text-surface-600">Active</p>
@@ -307,7 +311,7 @@ export default function Integrations() {
             'card p-4 text-left transition-all',
             statusFilter === 'with_evidence'
               ? 'ring-2 ring-purple-500'
-              : 'hover:bg-white/50 cursor-pointer'
+              : 'hover:bg-white/50 cursor-pointer dark:bg-surface-900/50 dark:hover:bg-surface-800/50'
           )}
         >
           <p className="text-sm text-surface-600">Evidence Collected</p>
@@ -384,7 +388,7 @@ export default function Integrations() {
                       >
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex items-center gap-3">
-                            <div className="p-2 bg-white rounded-lg flex items-center justify-center">
+                            <div className="p-2 bg-white rounded-lg flex items-center justify-center dark:bg-surface-900">
                               <IntegrationIcon
                                 iconSlug={meta.iconSlug || type}
                                 integrationName={meta.name}
@@ -457,7 +461,7 @@ export default function Integrations() {
                                   testMutation.mutate(integration.id);
                                 }}
                                 disabled={testMutation.isPending}
-                                className="p-1.5 text-surface-600 hover:text-surface-900 hover:bg-white rounded transition-colors"
+                                className="p-1.5 text-surface-600 hover:text-surface-900 hover:bg-white rounded transition-colors dark:bg-surface-900 dark:hover:bg-surface-800"
                                 title="Test Connection"
                               >
                                 <ArrowPathIcon
@@ -474,7 +478,7 @@ export default function Integrations() {
                                     syncMutation.mutate(integration.id);
                                   }}
                                   disabled={syncMutation.isPending}
-                                  className="p-1.5 text-surface-600 hover:text-green-600 hover:bg-white rounded transition-colors"
+                                  className="p-1.5 text-surface-600 hover:text-green-600 hover:bg-white rounded transition-colors dark:bg-surface-900 dark:hover:bg-surface-800"
                                   title="Trigger Sync"
                                 >
                                   <PlayIcon className="w-4 h-4" />
@@ -490,7 +494,7 @@ export default function Integrations() {
                                   }
                                 }}
                                 disabled={deleteMutation.isPending}
-                                className="p-1.5 text-surface-600 hover:text-red-600 hover:bg-white rounded transition-colors"
+                                className="p-1.5 text-surface-600 hover:text-red-600 hover:bg-white rounded transition-colors dark:bg-surface-900 dark:hover:bg-surface-800"
                                 title="Delete"
                               >
                                 <TrashIcon className="w-4 h-4" />

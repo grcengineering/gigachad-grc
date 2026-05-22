@@ -252,22 +252,22 @@ export default function AuditFindings() {
       {/* Stats Cards */}
       {statsData && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg p-4 border border-surface-200">
+          <div className="bg-white rounded-lg p-4 border border-surface-200 dark:bg-surface-900">
             <p className="text-surface-600 text-sm">Total Findings</p>
             <p className="text-2xl font-bold text-white mt-1">{statsData.total}</p>
           </div>
-          <div className="bg-white rounded-lg p-4 border border-surface-200">
+          <div className="bg-white rounded-lg p-4 border border-surface-200 dark:bg-surface-900">
             <p className="text-surface-600 text-sm">Overdue</p>
             <p className="text-2xl font-bold text-red-600 mt-1">{statsData.overdue}</p>
           </div>
-          <div className="bg-white rounded-lg p-4 border border-surface-200">
+          <div className="bg-white rounded-lg p-4 border border-surface-200 dark:bg-surface-900">
             <p className="text-surface-600 text-sm">Critical/High</p>
             <p className="text-2xl font-bold text-orange-600 mt-1">
               {(statsData.bySeverity.find((s) => s.severity === 'critical')?.count || 0) +
                 (statsData.bySeverity.find((s) => s.severity === 'high')?.count || 0)}
             </p>
           </div>
-          <div className="bg-white rounded-lg p-4 border border-surface-200">
+          <div className="bg-white rounded-lg p-4 border border-surface-200 dark:bg-surface-900">
             <p className="text-surface-600 text-sm">Open</p>
             <p className="text-2xl font-bold text-yellow-600 mt-1">
               {statsData.byStatus.find((s) => s.status === 'open')?.count || 0}
@@ -325,7 +325,7 @@ export default function AuditFindings() {
         )}
       </div>
       {showFilters && (
-        <div className="bg-white rounded-lg p-4 border border-surface-200 grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white rounded-lg p-4 border border-surface-200 grid grid-cols-1 md:grid-cols-4 gap-4 dark:bg-surface-900">
           <div>
             <label className="block text-sm font-medium text-surface-700 mb-1">Audit</label>
             <SelectNative
@@ -402,7 +402,7 @@ export default function AuditFindings() {
           }}
         />
       ) : (
-        <div className="bg-white rounded-lg border border-surface-200 overflow-hidden">
+        <div className="bg-white rounded-lg border border-surface-200 overflow-hidden dark:bg-surface-900">
           <table className="w-full">
             <thead className="bg-surface-200">
               <tr>

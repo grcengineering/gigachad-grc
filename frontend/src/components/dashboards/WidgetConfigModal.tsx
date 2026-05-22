@@ -218,7 +218,7 @@ export default function WidgetConfigModal({ widget, onSave, onClose }: WidgetCon
 
             {/* Preview Results */}
             {previewData && (
-              <div className="bg-white rounded-lg p-4">
+              <div className="bg-white rounded-lg p-4 dark:bg-surface-900">
                 <h4 className="text-sm font-medium text-surface-700 mb-2">
                   Preview ({previewData.length} results)
                 </h4>
@@ -240,7 +240,7 @@ export default function WidgetConfigModal({ widget, onSave, onClose }: WidgetCon
                   id="showLegend"
                   checked={config.showLegend || false}
                   onChange={(e) => setConfig({ ...config, showLegend: e.target.checked })}
-                  className="w-4 h-4 rounded border-surface-300 bg-white text-brand-500 focus:ring-brand-500"
+                  className="w-4 h-4 rounded border-surface-300 bg-white text-brand-500 focus:ring-brand-500 dark:bg-surface-900"
                 />
                 <label htmlFor="showLegend" className="text-sm text-surface-700">
                   Show Legend
@@ -256,7 +256,7 @@ export default function WidgetConfigModal({ widget, onSave, onClose }: WidgetCon
                   id="showValues"
                   checked={config.showValues || false}
                   onChange={(e) => setConfig({ ...config, showValues: e.target.checked })}
-                  className="w-4 h-4 rounded border-surface-300 bg-white text-brand-500 focus:ring-brand-500"
+                  className="w-4 h-4 rounded border-surface-300 bg-white text-brand-500 focus:ring-brand-500 dark:bg-surface-900"
                 />
                 <label htmlFor="showValues" className="text-sm text-surface-700">
                   Show Values on Chart

@@ -45,14 +45,14 @@ function TrustCenterCustomDomainArticle() {
         <h2 className="text-2xl font-bold text-surface-900 mb-4">Summary</h2>
         <p className="text-surface-700">
           Custom domain URLs allow you to use your own branded domain (like{' '}
-          <code className="bg-white px-1.5 py-0.5 rounded text-brand-400">
+          <code className="bg-white px-1.5 py-0.5 rounded text-brand-400 dark:bg-surface-900">
             trust.yourcompany.com
           </code>
           ) instead of the default GigaChad GRC URL when sharing your Trust Center with prospects,
           customers, and partners.
         </p>
 
-        <div className="bg-white/50 border border-surface-200 rounded-lg p-4 mt-4">
+        <div className="bg-white/50 border border-surface-200 rounded-lg p-4 mt-4 dark:bg-surface-900/50">
           <h4 className="font-semibold text-surface-800 mb-2">
             Benefits of using a custom domain:
           </h4>
@@ -90,7 +90,10 @@ function TrustCenterCustomDomainArticle() {
             { text: 'Trust Center content - Your Trust Center has been configured', done: false },
           ].map((item, i) => (
             <li key={i} className="flex items-start gap-3 text-surface-700">
-              <input type="checkbox" className="mt-1 w-4 h-4 bg-white border-surface-300 rounded" />
+              <input
+                type="checkbox"
+                className="mt-1 w-4 h-4 bg-white border-surface-300 rounded dark:bg-surface-900"
+              />
               <span>{item.text}</span>
             </li>
           ))}
@@ -138,7 +141,7 @@ function TrustCenterCustomDomainArticle() {
             </span>
             <span>
               Enter your desired custom domain (e.g.,{' '}
-              <code className="bg-white px-1.5 py-0.5 rounded text-brand-400">
+              <code className="bg-white px-1.5 py-0.5 rounded text-brand-400 dark:bg-surface-900">
                 trust.yourcompany.com
               </code>
               )
@@ -156,8 +159,9 @@ function TrustCenterCustomDomainArticle() {
         <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 mt-4">
           <p className="text-blue-600 text-sm">
             <strong>Tip:</strong> We recommend using a subdomain like{' '}
-            <code className="bg-white px-1 rounded">trust</code> or{' '}
-            <code className="bg-white px-1 rounded">security</code> rather than your root domain.
+            <code className="bg-white px-1 rounded dark:bg-surface-900">trust</code> or{' '}
+            <code className="bg-white px-1 rounded dark:bg-surface-900">security</code> rather than
+            your root domain.
           </p>
         </div>
       </section>
@@ -172,7 +176,7 @@ function TrustCenterCustomDomainArticle() {
         </p>
 
         {/* DNS Record Table */}
-        <div className="bg-white rounded-lg overflow-hidden mb-6">
+        <div className="bg-white rounded-lg overflow-hidden mb-6 dark:bg-surface-900">
           <table className="w-full text-sm">
             <thead className="bg-surface-200">
               <tr>
@@ -217,8 +221,8 @@ function TrustCenterCustomDomainArticle() {
           <h3 className="text-lg font-semibold text-surface-800">Provider-Specific Instructions</h3>
 
           {/* Cloudflare */}
-          <details className="bg-white/50 border border-surface-200 rounded-lg">
-            <summary className="px-4 py-3 cursor-pointer text-surface-800 font-medium hover:bg-white rounded-lg">
+          <details className="bg-white/50 border border-surface-200 rounded-lg dark:bg-surface-900/50">
+            <summary className="px-4 py-3 cursor-pointer text-surface-800 font-medium hover:bg-white rounded-lg dark:bg-surface-900 dark:hover:bg-surface-800">
               Cloudflare
             </summary>
             <div className="px-4 pb-4 text-sm text-surface-600 space-y-2">
@@ -233,7 +237,7 @@ function TrustCenterCustomDomainArticle() {
                 </li>
                 <li>
                   Set Type to CNAME, Name to your subdomain, Target to{' '}
-                  <code className="bg-white px-1 rounded text-brand-400">
+                  <code className="bg-white px-1 rounded text-brand-400 dark:bg-surface-900">
                     trust.gigachad-grc.com
                   </code>
                 </li>
@@ -254,8 +258,8 @@ function TrustCenterCustomDomainArticle() {
           </details>
 
           {/* GoDaddy */}
-          <details className="bg-white/50 border border-surface-200 rounded-lg">
-            <summary className="px-4 py-3 cursor-pointer text-surface-800 font-medium hover:bg-white rounded-lg">
+          <details className="bg-white/50 border border-surface-200 rounded-lg dark:bg-surface-900/50">
+            <summary className="px-4 py-3 cursor-pointer text-surface-800 font-medium hover:bg-white rounded-lg dark:bg-surface-900 dark:hover:bg-surface-800">
               GoDaddy
             </summary>
             <div className="px-4 pb-4 text-sm text-surface-600 space-y-2">
@@ -272,7 +276,7 @@ function TrustCenterCustomDomainArticle() {
                 </li>
                 <li>
                   Set Type to CNAME, Name to your subdomain, Value to{' '}
-                  <code className="bg-white px-1 rounded text-brand-400">
+                  <code className="bg-white px-1 rounded text-brand-400 dark:bg-surface-900">
                     trust.gigachad-grc.com
                   </code>
                 </li>
@@ -285,8 +289,8 @@ function TrustCenterCustomDomainArticle() {
           </details>
 
           {/* Route 53 */}
-          <details className="bg-white/50 border border-surface-200 rounded-lg">
-            <summary className="px-4 py-3 cursor-pointer text-surface-800 font-medium hover:bg-white rounded-lg">
+          <details className="bg-white/50 border border-surface-200 rounded-lg dark:bg-surface-900/50">
+            <summary className="px-4 py-3 cursor-pointer text-surface-800 font-medium hover:bg-white rounded-lg dark:bg-surface-900 dark:hover:bg-surface-800">
               Amazon Route 53
             </summary>
             <div className="px-4 pb-4 text-sm text-surface-600 space-y-2">
@@ -301,7 +305,7 @@ function TrustCenterCustomDomainArticle() {
                 </li>
                 <li>
                   Enter your subdomain, select CNAME, enter{' '}
-                  <code className="bg-white px-1 rounded text-brand-400">
+                  <code className="bg-white px-1 rounded text-brand-400 dark:bg-surface-900">
                     trust.gigachad-grc.com
                   </code>
                 </li>
@@ -314,8 +318,8 @@ function TrustCenterCustomDomainArticle() {
           </details>
 
           {/* Namecheap */}
-          <details className="bg-white/50 border border-surface-200 rounded-lg">
-            <summary className="px-4 py-3 cursor-pointer text-surface-800 font-medium hover:bg-white rounded-lg">
+          <details className="bg-white/50 border border-surface-200 rounded-lg dark:bg-surface-900/50">
+            <summary className="px-4 py-3 cursor-pointer text-surface-800 font-medium hover:bg-white rounded-lg dark:bg-surface-900 dark:hover:bg-surface-800">
               Namecheap
             </summary>
             <div className="px-4 pb-4 text-sm text-surface-600 space-y-2">
@@ -332,7 +336,7 @@ function TrustCenterCustomDomainArticle() {
                 </li>
                 <li>
                   Select CNAME, enter your subdomain, value{' '}
-                  <code className="bg-white px-1 rounded text-brand-400">
+                  <code className="bg-white px-1 rounded text-brand-400 dark:bg-surface-900">
                     trust.gigachad-grc.com
                   </code>
                 </li>
@@ -342,8 +346,8 @@ function TrustCenterCustomDomainArticle() {
           </details>
 
           {/* Google Domains */}
-          <details className="bg-white/50 border border-surface-200 rounded-lg">
-            <summary className="px-4 py-3 cursor-pointer text-surface-800 font-medium hover:bg-white rounded-lg">
+          <details className="bg-white/50 border border-surface-200 rounded-lg dark:bg-surface-900/50">
+            <summary className="px-4 py-3 cursor-pointer text-surface-800 font-medium hover:bg-white rounded-lg dark:bg-surface-900 dark:hover:bg-surface-800">
               Google Domains / Squarespace
             </summary>
             <div className="px-4 pb-4 text-sm text-surface-600 space-y-2">
@@ -358,7 +362,7 @@ function TrustCenterCustomDomainArticle() {
                 </li>
                 <li>
                   Add CNAME record with your subdomain pointing to{' '}
-                  <code className="bg-white px-1 rounded text-brand-400">
+                  <code className="bg-white px-1 rounded text-brand-400 dark:bg-surface-900">
                     trust.gigachad-grc.com
                   </code>
                 </li>
@@ -404,7 +408,7 @@ function TrustCenterCustomDomainArticle() {
             <span className="text-brand-400">•</span>
             <span>
               Or run from terminal:{' '}
-              <code className="bg-white px-2 py-0.5 rounded text-brand-400">
+              <code className="bg-white px-2 py-0.5 rounded text-brand-400 dark:bg-surface-900">
                 dig trust.yourcompany.com CNAME
               </code>
             </span>
@@ -457,8 +461,11 @@ function TrustCenterCustomDomainArticle() {
               a: 'Contact your IT administrator with the CNAME record details: Type=CNAME, Host=trust, Value=trust.gigachad-grc.com',
             },
           ].map((faq, i) => (
-            <details key={i} className="bg-white/50 border border-surface-200 rounded-lg">
-              <summary className="px-4 py-3 cursor-pointer text-surface-800 font-medium hover:bg-white rounded-lg">
+            <details
+              key={i}
+              className="bg-white/50 border border-surface-200 rounded-lg dark:bg-surface-900/50"
+            >
+              <summary className="px-4 py-3 cursor-pointer text-surface-800 font-medium hover:bg-white rounded-lg dark:bg-surface-900 dark:hover:bg-surface-800">
                 {faq.q}
               </summary>
               <div className="px-4 pb-4 text-sm text-surface-600">{faq.a}</div>
@@ -473,7 +480,7 @@ function TrustCenterCustomDomainArticle() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Link
             to="/trust-center/settings"
-            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors"
+            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors dark:bg-surface-900/50 dark:hover:bg-surface-800"
           >
             <GlobeAltIcon className="w-5 h-5 text-surface-600" />
             <span className="text-surface-800">Trust Center Settings</span>
@@ -481,7 +488,7 @@ function TrustCenterCustomDomainArticle() {
           </Link>
           <Link
             to="/trust-center"
-            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors"
+            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors dark:bg-surface-900/50 dark:hover:bg-surface-800"
           >
             <GlobeAltIcon className="w-5 h-5 text-surface-600" />
             <span className="text-surface-800">Manage Trust Center Content</span>
@@ -506,7 +513,7 @@ function TrustCenterGettingStartedArticle() {
           need for repetitive security questionnaires.
         </p>
 
-        <div className="bg-white/50 border border-surface-200 rounded-lg p-4 mt-4">
+        <div className="bg-white/50 border border-surface-200 rounded-lg p-4 mt-4 dark:bg-surface-900/50">
           <h4 className="font-semibold text-surface-800 mb-2">What you can showcase:</h4>
           <ul className="text-surface-600 space-y-1 text-sm list-disc list-inside">
             <li>
@@ -623,7 +630,7 @@ function TrustCenterGettingStartedArticle() {
         <p className="text-surface-700 mb-4">
           Select which sections to display on your Trust Center:
         </p>
-        <div className="bg-white rounded-lg overflow-hidden mb-4">
+        <div className="bg-white rounded-lg overflow-hidden mb-4 dark:bg-surface-900">
           <table className="w-full text-sm">
             <thead className="bg-surface-200">
               <tr>
@@ -749,7 +756,7 @@ function TrustCenterGettingStartedArticle() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Link
             to="/help/trust-center/custom-domain"
-            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors"
+            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors dark:bg-surface-900/50 dark:hover:bg-surface-800"
           >
             <GlobeAltIcon className="w-5 h-5 text-surface-600" />
             <span className="text-surface-800">Set Up a Custom URL</span>
@@ -757,7 +764,7 @@ function TrustCenterGettingStartedArticle() {
           </Link>
           <Link
             to="/trust-center/settings"
-            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors"
+            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors dark:bg-surface-900/50 dark:hover:bg-surface-800"
           >
             <GlobeAltIcon className="w-5 h-5 text-surface-600" />
             <span className="text-surface-800">Trust Center Settings</span>
@@ -782,7 +789,7 @@ function IntegrationsOverviewArticle() {
           systems.
         </p>
 
-        <div className="bg-white/50 border border-surface-200 rounded-lg p-4 mt-4">
+        <div className="bg-white/50 border border-surface-200 rounded-lg p-4 mt-4 dark:bg-surface-900/50">
           <h4 className="font-semibold text-surface-800 mb-2">Integration categories:</h4>
           <ul className="text-surface-600 space-y-1 text-sm list-disc list-inside">
             <li>
@@ -844,7 +851,7 @@ function IntegrationsOverviewArticle() {
         </p>
 
         <div className="space-y-4">
-          <div className="bg-white/50 border border-surface-200 rounded-lg p-4">
+          <div className="bg-white/50 border border-surface-200 rounded-lg p-4 dark:bg-surface-900/50">
             <h4 className="font-semibold text-surface-800 mb-2">Quick Setup (No-Code)</h4>
             <p className="text-surface-600 text-sm mb-2">
               Best for standard integrations. Enter your credentials and select what data to
@@ -858,7 +865,7 @@ function IntegrationsOverviewArticle() {
             </ul>
           </div>
 
-          <div className="bg-white/50 border border-surface-200 rounded-lg p-4">
+          <div className="bg-white/50 border border-surface-200 rounded-lg p-4 dark:bg-surface-900/50">
             <h4 className="font-semibold text-surface-800 mb-2">Advanced Builder (Low-Code)</h4>
             <p className="text-surface-600 text-sm mb-2">
               For custom configurations. Build API calls visually with response mapping.
@@ -871,7 +878,7 @@ function IntegrationsOverviewArticle() {
             </ul>
           </div>
 
-          <div className="bg-white/50 border border-surface-200 rounded-lg p-4">
+          <div className="bg-white/50 border border-surface-200 rounded-lg p-4 dark:bg-surface-900/50">
             <h4 className="font-semibold text-surface-800 mb-2">Raw API (Code)</h4>
             <p className="text-surface-600 text-sm mb-2">
               For engineers. Write custom API calls or JavaScript code directly.
@@ -892,7 +899,7 @@ function IntegrationsOverviewArticle() {
         <p className="text-surface-700 mb-4">
           Each integration can collect different types of evidence. Common evidence types include:
         </p>
-        <div className="bg-white rounded-lg overflow-hidden mb-4">
+        <div className="bg-white rounded-lg overflow-hidden mb-4 dark:bg-surface-900">
           <table className="w-full text-sm">
             <thead className="bg-surface-200">
               <tr>
@@ -1002,7 +1009,7 @@ function IntegrationsOverviewArticle() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Link
             to="/integrations"
-            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors"
+            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors dark:bg-surface-900/50 dark:hover:bg-surface-800"
           >
             <LinkIcon className="w-5 h-5 text-surface-600" />
             <span className="text-surface-800">Browse Integrations</span>
@@ -1010,7 +1017,7 @@ function IntegrationsOverviewArticle() {
           </Link>
           <Link
             to="/evidence"
-            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors"
+            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors dark:bg-surface-900/50 dark:hover:bg-surface-800"
           >
             <ClipboardDocumentIcon className="w-5 h-5 text-surface-600" />
             <span className="text-surface-800">View Evidence</span>
@@ -1035,7 +1042,7 @@ function ComplianceFrameworksArticle() {
           requirements.
         </p>
 
-        <div className="bg-white/50 border border-surface-200 rounded-lg p-4 mt-4">
+        <div className="bg-white/50 border border-surface-200 rounded-lg p-4 mt-4 dark:bg-surface-900/50">
           <h4 className="font-semibold text-surface-800 mb-2">Supported frameworks include:</h4>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-surface-600 text-sm">
             <span>• SOC 2 Type I & II</span>
@@ -1126,7 +1133,7 @@ function ComplianceFrameworksArticle() {
           </li>
         </ol>
 
-        <div className="bg-white/50 border border-surface-200 rounded-lg p-4 mt-4">
+        <div className="bg-white/50 border border-surface-200 rounded-lg p-4 mt-4 dark:bg-surface-900/50">
           <h4 className="font-semibold text-surface-800 mb-2">Control mapping example:</h4>
           <p className="text-surface-600 text-sm">
             A "Multi-Factor Authentication" control might satisfy:
@@ -1146,7 +1153,7 @@ function ComplianceFrameworksArticle() {
         <p className="text-surface-700 mb-4">
           Monitor your compliance posture with real-time dashboards:
         </p>
-        <div className="bg-white rounded-lg overflow-hidden mb-4">
+        <div className="bg-white rounded-lg overflow-hidden mb-4 dark:bg-surface-900">
           <table className="w-full text-sm">
             <thead className="bg-surface-200">
               <tr>
@@ -1236,7 +1243,7 @@ function ComplianceFrameworksArticle() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Link
             to="/frameworks"
-            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors"
+            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors dark:bg-surface-900/50 dark:hover:bg-surface-800"
           >
             <ShieldCheckIcon className="w-5 h-5 text-surface-600" />
             <span className="text-surface-800">View Frameworks</span>
@@ -1244,7 +1251,7 @@ function ComplianceFrameworksArticle() {
           </Link>
           <Link
             to="/controls"
-            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors"
+            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors dark:bg-surface-900/50 dark:hover:bg-surface-800"
           >
             <ShieldCheckIcon className="w-5 h-5 text-surface-600" />
             <span className="text-surface-800">Manage Controls</span>
@@ -1269,7 +1276,7 @@ function VendorManagementArticle() {
           security program.
         </p>
 
-        <div className="bg-white/50 border border-surface-200 rounded-lg p-4 mt-4">
+        <div className="bg-white/50 border border-surface-200 rounded-lg p-4 mt-4 dark:bg-surface-900/50">
           <h4 className="font-semibold text-surface-800 mb-2">Key TPRM capabilities:</h4>
           <ul className="text-surface-600 space-y-1 text-sm list-disc list-inside">
             <li>
@@ -1338,7 +1345,7 @@ function VendorManagementArticle() {
         <p className="text-surface-700 mb-4">
           Determine the appropriate level of due diligence based on data access and business impact:
         </p>
-        <div className="bg-white rounded-lg overflow-hidden mb-4">
+        <div className="bg-white rounded-lg overflow-hidden mb-4 dark:bg-surface-900">
           <table className="w-full text-sm">
             <thead className="bg-surface-200">
               <tr>
@@ -1496,7 +1503,7 @@ function VendorManagementArticle() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Link
             to="/vendors"
-            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors"
+            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors dark:bg-surface-900/50 dark:hover:bg-surface-800"
           >
             <BuildingOfficeIcon className="w-5 h-5 text-surface-600" />
             <span className="text-surface-800">Manage Vendors</span>
@@ -1504,7 +1511,7 @@ function VendorManagementArticle() {
           </Link>
           <Link
             to="/contracts"
-            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors"
+            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors dark:bg-surface-900/50 dark:hover:bg-surface-800"
           >
             <ClipboardDocumentIcon className="w-5 h-5 text-surface-600" />
             <span className="text-surface-800">View Contracts</span>
@@ -1528,7 +1535,7 @@ function AuditManagementArticle() {
           ensure timely remediation of identified issues.
         </p>
 
-        <div className="bg-white/50 border border-surface-200 rounded-lg p-4 mt-4">
+        <div className="bg-white/50 border border-surface-200 rounded-lg p-4 mt-4 dark:bg-surface-900/50">
           <h4 className="font-semibold text-surface-800 mb-2">Audit management features:</h4>
           <ul className="text-surface-600 space-y-1 text-sm list-disc list-inside">
             <li>
@@ -1643,7 +1650,7 @@ function AuditManagementArticle() {
       <section className="mb-8">
         <h2 className="text-2xl font-bold text-surface-900 mb-4">Step 3: Track Audit Progress</h2>
         <p className="text-surface-700 mb-4">Monitor your audit status with the dashboard:</p>
-        <div className="bg-white rounded-lg overflow-hidden mb-4">
+        <div className="bg-white rounded-lg overflow-hidden mb-4 dark:bg-surface-900">
           <table className="w-full text-sm">
             <thead className="bg-surface-200">
               <tr>
@@ -1776,7 +1783,7 @@ function AuditManagementArticle() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Link
             to="/audits"
-            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors"
+            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors dark:bg-surface-900/50 dark:hover:bg-surface-800"
           >
             <ClipboardDocumentListIcon className="w-5 h-5 text-surface-600" />
             <span className="text-surface-800">View Audits</span>
@@ -1784,7 +1791,7 @@ function AuditManagementArticle() {
           </Link>
           <Link
             to="/audit"
-            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors"
+            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors dark:bg-surface-900/50 dark:hover:bg-surface-800"
           >
             <ClipboardDocumentListIcon className="w-5 h-5 text-surface-600" />
             <span className="text-surface-800">Audit Log</span>
@@ -1912,7 +1919,7 @@ function CloudDeploymentArticle() {
             </span>
             <div>
               <span>Configure redirect URIs:</span>
-              <div className="bg-white rounded p-3 mt-2 text-sm font-mono text-surface-700">
+              <div className="bg-white rounded p-3 mt-2 text-sm font-mono text-surface-700 dark:bg-surface-900">
                 https://your-app.vercel.app/login/callback
               </div>
             </div>
@@ -2005,7 +2012,7 @@ function CloudDeploymentArticle() {
           Step 4: Run Database Migrations
         </h2>
         <p className="text-surface-700 mb-4">After first deployment, run:</p>
-        <div className="bg-white rounded p-4 font-mono text-sm text-surface-700">
+        <div className="bg-white rounded p-4 font-mono text-sm text-surface-700 dark:bg-surface-900">
           npx prisma migrate deploy
         </div>
       </section>
@@ -2015,7 +2022,7 @@ function CloudDeploymentArticle() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Link
             to="/help/deployment/supabase-vercel-migration"
-            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors"
+            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors dark:bg-surface-900/50 dark:hover:bg-surface-800"
           >
             <BookOpenIcon className="w-5 h-5 text-surface-600" />
             <span className="text-surface-800">Full Migration Guide</span>
@@ -2023,7 +2030,7 @@ function CloudDeploymentArticle() {
           </Link>
           <Link
             to="/settings"
-            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors"
+            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors dark:bg-surface-900/50 dark:hover:bg-surface-800"
           >
             <Cog6ToothIcon className="w-5 h-5 text-surface-600" />
             <span className="text-surface-800">Settings</span>
@@ -2048,7 +2055,7 @@ function SupabaseVercelMigrationArticle() {
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-          <div className="bg-white/50 border border-surface-200 rounded-lg p-4">
+          <div className="bg-white/50 border border-surface-200 rounded-lg p-4 dark:bg-surface-900/50">
             <h4 className="font-semibold text-surface-800 mb-2">Previous Architecture</h4>
             <ul className="text-surface-600 text-sm space-y-1">
               <li>• 6 NestJS microservices</li>
@@ -2101,7 +2108,7 @@ function SupabaseVercelMigrationArticle() {
           ].map((item) => (
             <div
               key={item.phase}
-              className="flex items-start gap-4 p-4 bg-white/50 border border-surface-200 rounded-lg"
+              className="flex items-start gap-4 p-4 bg-white/50 border border-surface-200 rounded-lg dark:bg-surface-900/50"
             >
               <span className="bg-brand-600 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">
                 {item.phase}
@@ -2125,7 +2132,7 @@ function SupabaseVercelMigrationArticle() {
           Supabase uses two connection strings - pooled for queries and direct for migrations:
         </p>
         <div className="space-y-4">
-          <div className="bg-white rounded-lg p-4">
+          <div className="bg-white rounded-lg p-4 dark:bg-surface-900">
             <h4 className="font-mono text-brand-400 text-sm mb-2">
               DATABASE_URL (Pooled - Port 6543)
             </h4>
@@ -2136,7 +2143,7 @@ function SupabaseVercelMigrationArticle() {
               postgres://postgres.[ref]:[password]@aws-0-region.pooler.supabase.com:6543/postgres
             </code>
           </div>
-          <div className="bg-white rounded-lg p-4">
+          <div className="bg-white rounded-lg p-4 dark:bg-surface-900">
             <h4 className="font-mono text-brand-400 text-sm mb-2">
               DIRECT_URL (Direct - Port 5432)
             </h4>
@@ -2196,7 +2203,7 @@ function SupabaseVercelMigrationArticle() {
       <section className="mb-8">
         <h2 className="text-2xl font-bold text-surface-900 mb-4">Okta Configuration</h2>
         <div className="space-y-4">
-          <div className="bg-white rounded-lg p-4">
+          <div className="bg-white rounded-lg p-4 dark:bg-surface-900">
             <h4 className="font-semibold text-surface-800 mb-2">Application Settings</h4>
             <ul className="text-surface-600 text-sm space-y-1">
               <li>
@@ -2213,7 +2220,7 @@ function SupabaseVercelMigrationArticle() {
               </li>
             </ul>
           </div>
-          <div className="bg-white rounded-lg p-4">
+          <div className="bg-white rounded-lg p-4 dark:bg-surface-900">
             <h4 className="font-semibold text-surface-800 mb-2">Groups Claim (for roles)</h4>
             <p className="text-surface-600 text-sm mb-2">
               Add a groups claim to include user roles in tokens:
@@ -2258,7 +2265,7 @@ function SupabaseVercelMigrationArticle() {
             </span>
             <span>
               Start Docker services:{' '}
-              <code className="bg-white px-1.5 py-0.5 rounded text-brand-400">
+              <code className="bg-white px-1.5 py-0.5 rounded text-brand-400 dark:bg-surface-900">
                 docker-compose up -d
               </code>
             </span>
@@ -2277,7 +2284,7 @@ function SupabaseVercelMigrationArticle() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Link
             to="/help/deployment/cloud-deployment"
-            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors"
+            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors dark:bg-surface-900/50 dark:hover:bg-surface-800"
           >
             <BookOpenIcon className="w-5 h-5 text-surface-600" />
             <span className="text-surface-800">Cloud Deployment Guide</span>
@@ -2285,7 +2292,7 @@ function SupabaseVercelMigrationArticle() {
           </Link>
           <Link
             to="/integrations"
-            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors"
+            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors dark:bg-surface-900/50 dark:hover:bg-surface-800"
           >
             <LinkIcon className="w-5 h-5 text-surface-600" />
             <span className="text-surface-800">Integrations</span>
@@ -2309,7 +2316,7 @@ function MCPQuickStartArticle() {
           AI-powered analysis. This guide walks you through setting up your first MCP server.
         </p>
 
-        <div className="bg-white/50 border border-surface-200 rounded-lg p-4 mt-4">
+        <div className="bg-white/50 border border-surface-200 rounded-lg p-4 mt-4 dark:bg-surface-900/50">
           <h4 className="font-semibold text-surface-800 mb-2">Available MCP Server Types:</h4>
           <ul className="text-surface-600 space-y-1 text-sm list-disc list-inside">
             <li>
@@ -2357,7 +2364,7 @@ function MCPQuickStartArticle() {
         <h2 className="text-2xl font-bold text-surface-900 mb-4">Step 2: Select a Template</h2>
         <p className="text-surface-700 mb-4">Choose the server type that matches your needs:</p>
         <div className="space-y-4">
-          <div className="bg-white/50 border border-surface-200 rounded-lg p-4">
+          <div className="bg-white/50 border border-surface-200 rounded-lg p-4 dark:bg-surface-900/50">
             <h4 className="font-semibold text-surface-800 mb-2">GRC Evidence Collection Server</h4>
             <p className="text-surface-600 text-sm mb-2">
               Best for automated evidence gathering from cloud providers and identity systems.
@@ -2366,7 +2373,7 @@ function MCPQuickStartArticle() {
               Integrations: AWS, Azure, GitHub, Okta, Google Workspace, Jamf
             </p>
           </div>
-          <div className="bg-white/50 border border-surface-200 rounded-lg p-4">
+          <div className="bg-white/50 border border-surface-200 rounded-lg p-4 dark:bg-surface-900/50">
             <h4 className="font-semibold text-surface-800 mb-2">
               GRC Compliance Automation Server
             </h4>
@@ -2377,7 +2384,7 @@ function MCPQuickStartArticle() {
               Capabilities: Control testing, gap analysis, policy validation
             </p>
           </div>
-          <div className="bg-white/50 border border-surface-200 rounded-lg p-4">
+          <div className="bg-white/50 border border-surface-200 rounded-lg p-4 dark:bg-surface-900/50">
             <h4 className="font-semibold text-surface-800 mb-2">GRC AI Assistant Server</h4>
             <p className="text-surface-600 text-sm mb-2">
               Best for AI-powered analysis and recommendations.
@@ -2393,7 +2400,7 @@ function MCPQuickStartArticle() {
           After selecting a template, configure the integrations you want to use. Expand each
           section and enter your API credentials:
         </p>
-        <div className="bg-white rounded-lg overflow-hidden mb-4">
+        <div className="bg-white rounded-lg overflow-hidden mb-4 dark:bg-surface-900">
           <table className="w-full text-sm">
             <thead className="bg-surface-200">
               <tr>
@@ -2537,7 +2544,7 @@ function MCPQuickStartArticle() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Link
             to="/help/mcp/credential-security"
-            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors"
+            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors dark:bg-surface-900/50 dark:hover:bg-surface-800"
           >
             <ShieldCheckIcon className="w-5 h-5 text-surface-600" />
             <span className="text-surface-800">MCP Credential Security</span>
@@ -2545,7 +2552,7 @@ function MCPQuickStartArticle() {
           </Link>
           <Link
             to="/settings/mcp"
-            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors"
+            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors dark:bg-surface-900/50 dark:hover:bg-surface-800"
           >
             <Cog6ToothIcon className="w-5 h-5 text-surface-600" />
             <span className="text-surface-800">MCP Settings</span>
@@ -2582,7 +2589,7 @@ function MCPCredentialSecurityArticle() {
 
       <section className="mb-8">
         <h2 className="text-2xl font-bold text-surface-900 mb-4">Encryption Details</h2>
-        <div className="bg-white rounded-lg overflow-hidden mb-4">
+        <div className="bg-white rounded-lg overflow-hidden mb-4 dark:bg-surface-900">
           <table className="w-full text-sm">
             <thead className="bg-surface-200">
               <tr>
@@ -2621,12 +2628,12 @@ function MCPCredentialSecurityArticle() {
       <section className="mb-8">
         <h2 className="text-2xl font-bold text-surface-900 mb-4">Configuration</h2>
         <p className="text-surface-700 mb-4">Set the encryption key via environment variable:</p>
-        <div className="bg-white rounded-lg p-4 font-mono text-sm text-green-600 mb-4">
+        <div className="bg-white rounded-lg p-4 font-mono text-sm text-green-600 mb-4 dark:bg-surface-900">
           MCP_ENCRYPTION_KEY=your-64-character-random-string
         </div>
-        <div className="bg-white/50 border border-surface-200 rounded-lg p-4">
+        <div className="bg-white/50 border border-surface-200 rounded-lg p-4 dark:bg-surface-900/50">
           <h4 className="font-semibold text-surface-800 mb-2">Generate a Secure Key:</h4>
-          <div className="bg-white rounded-lg p-3 font-mono text-sm text-surface-700 mt-2">
+          <div className="bg-white rounded-lg p-3 font-mono text-sm text-surface-700 mt-2 dark:bg-surface-900">
             openssl rand -hex 32
           </div>
         </div>
@@ -2681,7 +2688,7 @@ function MCPCredentialSecurityArticle() {
       <section className="mb-8">
         <h2 className="text-2xl font-bold text-surface-900 mb-4">Audit Trail</h2>
         <p className="text-surface-700 mb-4">Every MCP server configuration records:</p>
-        <div className="bg-white rounded-lg overflow-hidden mb-4">
+        <div className="bg-white rounded-lg overflow-hidden mb-4 dark:bg-surface-900">
           <table className="w-full text-sm">
             <thead className="bg-surface-200">
               <tr>
@@ -2747,7 +2754,7 @@ function MCPCredentialSecurityArticle() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Link
             to="/help/mcp/quick-start"
-            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors"
+            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors dark:bg-surface-900/50 dark:hover:bg-surface-800"
           >
             <BookOpenIcon className="w-5 h-5 text-surface-600" />
             <span className="text-surface-800">MCP Quick Start Guide</span>
@@ -2755,7 +2762,7 @@ function MCPCredentialSecurityArticle() {
           </Link>
           <Link
             to="/settings/mcp"
-            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors"
+            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors dark:bg-surface-900/50 dark:hover:bg-surface-800"
           >
             <Cog6ToothIcon className="w-5 h-5 text-surface-600" />
             <span className="text-surface-800">MCP Settings</span>

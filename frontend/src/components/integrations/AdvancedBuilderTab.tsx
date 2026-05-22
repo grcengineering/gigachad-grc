@@ -147,7 +147,7 @@ export default function AdvancedBuilderTab({ config, onChange }: AdvancedBuilder
     return (
       <button
         onClick={() => toggleSection(section)}
-        className="w-full flex items-center justify-between p-4 bg-white/50 hover:bg-white transition-colors"
+        className="w-full flex items-center justify-between p-4 bg-white/50 hover:bg-white transition-colors dark:bg-surface-900/50 dark:hover:bg-surface-800"
       >
         <div className="flex items-center gap-2">
           {isExpanded ? (
@@ -197,7 +197,7 @@ export default function AdvancedBuilderTab({ config, onChange }: AdvancedBuilder
       <div>
         <SectionHeader section="auth" title="Authentication" />
         {expandedSections.has('auth') && (
-          <div className="p-6 bg-white/50">
+          <div className="p-6 bg-white/50 dark:bg-surface-900/50">
             <AuthConfigPanel config={config.authConfig} onChange={updateAuthConfig} />
           </div>
         )}
@@ -206,7 +206,7 @@ export default function AdvancedBuilderTab({ config, onChange }: AdvancedBuilder
       <div>
         <SectionHeader section="endpoints" title="API Endpoints" count={config.endpoints.length} />
         {expandedSections.has('endpoints') && (
-          <div className="p-6 bg-white/50">
+          <div className="p-6 bg-white/50 dark:bg-surface-900/50">
             <div className="flex flex-col lg:flex-row gap-6">
               {/* Endpoint List */}
               <div className="w-full lg:w-64 space-y-2">
@@ -218,7 +218,7 @@ export default function AdvancedBuilderTab({ config, onChange }: AdvancedBuilder
                       'w-full text-left p-3 rounded-lg border transition-colors',
                       selectedEndpointId === endpoint.id
                         ? 'bg-brand-500/10 border-brand-500/30'
-                        : 'bg-white border-surface-200 hover:border-surface-300'
+                        : 'bg-white border-surface-200 hover:border-surface-300 dark:bg-surface-900'
                     )}
                   >
                     <div className="flex items-center gap-2">
@@ -259,7 +259,7 @@ export default function AdvancedBuilderTab({ config, onChange }: AdvancedBuilder
                     onDelete={() => deleteEndpoint(selectedEndpoint.id)}
                   />
                 ) : (
-                  <div className="h-64 flex items-center justify-center text-surface-500 bg-white/50 rounded-lg border border-surface-200">
+                  <div className="h-64 flex items-center justify-center text-surface-500 bg-white/50 rounded-lg border border-surface-200 dark:bg-surface-900/50">
                     Select an endpoint to configure or add a new one
                   </div>
                 )}
@@ -276,7 +276,7 @@ export default function AdvancedBuilderTab({ config, onChange }: AdvancedBuilder
           count={config.responseMappings.length}
         />
         {expandedSections.has('mapping') && (
-          <div className="p-6 bg-white/50">
+          <div className="p-6 bg-white/50 dark:bg-surface-900/50">
             <ResponseMapper
               mappings={config.responseMappings}
               onChange={(mappings) => onChange({ ...config, responseMappings: mappings })}
@@ -289,7 +289,7 @@ export default function AdvancedBuilderTab({ config, onChange }: AdvancedBuilder
       <div>
         <SectionHeader section="testing" title="Test & Preview" />
         {expandedSections.has('testing') && (
-          <div className="p-6 bg-white/50">
+          <div className="p-6 bg-white/50 dark:bg-surface-900/50">
             <RequestTester
               endpoints={config.endpoints}
               authConfig={config.authConfig}

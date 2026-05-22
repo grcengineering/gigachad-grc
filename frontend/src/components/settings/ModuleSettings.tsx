@@ -123,7 +123,7 @@ export function ModuleSettings() {
               className={`px-3 py-1.5 rounded-full text-xs border ${
                 selectedPreset?.id === preset.id
                   ? 'bg-brand-500 text-white border-brand-500'
-                  : 'bg-white text-surface-700 border-surface-200 hover:bg-white'
+                  : 'bg-white text-surface-700 border-surface-200 hover:bg-white dark:bg-surface-900 dark:hover:bg-surface-800'
               }`}
             >
               {preset.name}
@@ -154,7 +154,7 @@ export function ModuleSettings() {
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-semibold text-surface-900">{mod.name}</span>
                   {!checked && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-white text-surface-600">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-white text-surface-600 dark:bg-surface-900">
                       Disabled
                     </span>
                   )}

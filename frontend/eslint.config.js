@@ -93,6 +93,36 @@ const designSystemRules = [
     selector: 'JSXOpeningElement[name.name="textarea"]',
     message: 'Use <Textarea> from @/components/ui instead of raw <textarea>.',
   },
+  // 11–14. Dark-mode coverage. Each rule requires that when a light-mode-only
+  //   utility class appears in a JSX className literal, a matching `dark:*`
+  //   sibling appears in the *same* string. The regex uses a negative
+  //   lookahead for the dark prefix and a positive lookahead for the bare
+  //   token; ternary branches that compose their own className inside `${}`
+  //   are checked separately because each branch is its own Literal.
+  {
+    selector:
+      'JSXAttribute[name.name="className"] Literal[value=/^(?!.*\\bdark:bg-)(?=.*(?<![:\\w-])bg-white(?![\\w-])).*$/]',
+    message:
+      'Dark-mode coverage: bare `bg-white` requires a `dark:bg-surface-*` sibling on the same className. (Use `dark:bg-surface-900` for cards, `dark:bg-surface-800` for hover overlays.)',
+  },
+  {
+    selector:
+      'JSXAttribute[name.name="className"] Literal[value=/^(?!.*\\bdark:bg-)(?=.*(?<![:\\w-])bg-gray-[0-9]+).*$/]',
+    message:
+      'Dark-mode coverage: bare `bg-gray-*` requires a `dark:bg-surface-*` sibling. Prefer `bg-surface-*` tokens over `bg-gray-*` to begin with.',
+  },
+  {
+    selector:
+      'JSXAttribute[name.name="className"] Literal[value=/^(?!.*\\bdark:text-)(?=.*(?<![:\\w-])text-gray-[0-9]+).*$/]',
+    message:
+      'Dark-mode coverage: bare `text-gray-*` requires a `dark:text-surface-*` sibling. Prefer `text-surface-*` tokens over `text-gray-*` to begin with.',
+  },
+  {
+    selector:
+      'JSXAttribute[name.name="className"] Literal[value=/^(?!.*\\bdark:border-)(?=.*(?<![:\\w-])border-gray-[0-9]+).*$/]',
+    message:
+      'Dark-mode coverage: bare `border-gray-*` requires a `dark:border-surface-*` sibling. Prefer `border-surface-*` tokens over `border-gray-*` to begin with.',
+  },
 ];
 
 export default [

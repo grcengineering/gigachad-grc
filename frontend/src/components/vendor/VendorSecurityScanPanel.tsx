@@ -203,7 +203,7 @@ function ScoreGauge({ score, size = 'lg' }: { score: number; size?: 'sm' | 'lg' 
     return (
       <div className="flex items-center gap-2">
         <div className={clsx('text-lg font-bold', getColor(score))}>{score}</div>
-        <div className="w-16 h-2 bg-white rounded-full overflow-hidden">
+        <div className="w-16 h-2 bg-white rounded-full overflow-hidden dark:bg-surface-900">
           <div
             className={clsx(
               'h-full',
@@ -301,7 +301,7 @@ function StatusBadgeWithLink({
         href={url}
         target="_blank"
         rel="noopener noreferrer"
-        className="hover:bg-white rounded px-1 -mx-1 transition-colors group"
+        className="hover:bg-white rounded px-1 -mx-1 transition-colors group dark:bg-surface-900 dark:hover:bg-surface-800"
         title={`Open ${label}`}
       >
         {content}
@@ -389,7 +389,7 @@ function SubdomainCrawlModal({
         </div>
         <button
           onClick={onClose}
-          className="p-2 text-surface-600 hover:text-surface-800 hover:bg-white rounded-lg transition-colors"
+          className="p-2 text-surface-600 hover:text-surface-800 hover:bg-white rounded-lg transition-colors dark:bg-surface-900 dark:hover:bg-surface-800"
         >
           <XMarkIcon className="w-5 h-5" />
         </button>
@@ -415,7 +415,7 @@ function SubdomainCrawlModal({
         {crawlResult && (
           <>
             {/* Stats Bar */}
-            <div className="flex items-center gap-6 p-4 bg-white/50 border-b border-surface-200">
+            <div className="flex items-center gap-6 p-4 bg-white/50 border-b border-surface-200 dark:bg-surface-900/50">
               <div>
                 <div className="text-2xl font-bold text-surface-900">
                   {crawlResult.pages.length}
@@ -462,7 +462,7 @@ function SubdomainCrawlModal({
             {/* Table */}
             <div className="overflow-auto max-h-[calc(85vh-280px)]">
               <table className="w-full text-sm">
-                <thead className="sticky top-0 bg-white z-10">
+                <thead className="sticky top-0 bg-white z-10 dark:bg-surface-900">
                   <tr className="border-b border-surface-200">
                     <th className="px-4 py-2 text-left text-xs font-medium text-surface-600 uppercase">
                       Page
@@ -479,7 +479,10 @@ function SubdomainCrawlModal({
                 <tbody className="divide-y divide-surface-200">
                   {(activeTab === 'pages' ? crawlResult.pages : crawlResult.externalLinks).map(
                     (page, idx) => (
-                      <tr key={idx} className="hover:bg-white/50">
+                      <tr
+                        key={idx}
+                        className="hover:bg-white/50 dark:bg-surface-900/50 dark:hover:bg-surface-800/50"
+                      >
                         <td className="px-4 py-3">
                           <div className="flex items-start gap-2">
                             <DocumentTextIcon className="w-4 h-4 text-surface-500 mt-0.5 flex-shrink-0" />
@@ -672,7 +675,7 @@ function SubdomainSection({
             'px-3 py-2 rounded-lg text-left transition-colors',
             filter === 'all'
               ? 'bg-brand-500/20 border border-brand-500/50'
-              : 'bg-white border border-surface-200 hover:border-surface-300'
+              : 'bg-white border border-surface-200 hover:border-surface-300 dark:bg-surface-900'
           )}
         >
           <div className="text-lg font-semibold text-surface-900">
@@ -686,7 +689,7 @@ function SubdomainSection({
             'px-3 py-2 rounded-lg text-left transition-colors',
             filter === 'sensitive'
               ? 'bg-red-500/20 border border-red-500/50'
-              : 'bg-white border border-surface-200 hover:border-surface-300'
+              : 'bg-white border border-surface-200 hover:border-surface-300 dark:bg-surface-900'
           )}
         >
           <div
@@ -705,7 +708,7 @@ function SubdomainSection({
             'px-3 py-2 rounded-lg text-left transition-colors',
             filter === 'ssl'
               ? 'bg-green-500/20 border border-green-500/50'
-              : 'bg-white border border-surface-200 hover:border-surface-300'
+              : 'bg-white border border-surface-200 hover:border-surface-300 dark:bg-surface-900'
           )}
         >
           <div className="text-lg font-semibold text-green-600">{sslSubdomains.length}</div>
@@ -717,7 +720,7 @@ function SubdomainSection({
             'px-3 py-2 rounded-lg text-left transition-colors',
             filter === 'nossl'
               ? 'bg-yellow-500/20 border border-yellow-500/50'
-              : 'bg-white border border-surface-200 hover:border-surface-300'
+              : 'bg-white border border-surface-200 hover:border-surface-300 dark:bg-surface-900'
           )}
         >
           <div
@@ -733,10 +736,10 @@ function SubdomainSection({
       </div>
 
       {/* Table */}
-      <div className="bg-white/50 rounded-lg border border-surface-200 overflow-hidden">
+      <div className="bg-white/50 rounded-lg border border-surface-200 overflow-hidden dark:bg-surface-900/50">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-surface-200 bg-white">
+            <tr className="border-b border-surface-200 bg-white dark:bg-surface-900">
               <th className="px-4 py-2 text-left text-xs font-medium text-surface-600 uppercase tracking-wider">
                 Subdomain
               </th>
@@ -874,7 +877,7 @@ function FindingCard({
       case 'Low':
         return 'border-blue-500/50 bg-blue-500/5';
       default:
-        return 'border-surface-200 bg-white/50';
+        return 'border-surface-200 bg-white/50 dark:bg-surface-900/50';
     }
   };
 
@@ -1025,7 +1028,7 @@ export function VendorSecurityScanPanel({
 
   if (scanning) {
     return (
-      <div className="bg-white border border-surface-200 rounded-lg p-8">
+      <div className="bg-white border border-surface-200 rounded-lg p-8 dark:bg-surface-900">
         <div className="flex flex-col items-center justify-center">
           <ArrowPathIcon className="w-12 h-12 text-brand-400 animate-spin mb-4" />
           <h3 className="text-lg font-medium text-surface-900 mb-2">Scanning {vendorName}...</h3>
@@ -1040,7 +1043,7 @@ export function VendorSecurityScanPanel({
 
   if (!result) {
     return (
-      <div className="bg-white border border-surface-200 rounded-lg p-6">
+      <div className="bg-white border border-surface-200 rounded-lg p-6 dark:bg-surface-900">
         <div className="flex items-center gap-4 mb-4">
           <GlobeAltIcon className="w-8 h-8 text-brand-400" />
           <div>
@@ -1079,7 +1082,7 @@ export function VendorSecurityScanPanel({
   }
 
   return (
-    <div className="bg-white border border-surface-200 rounded-lg">
+    <div className="bg-white border border-surface-200 rounded-lg dark:bg-surface-900">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-surface-200">
         <div className="flex items-center gap-3">
@@ -1317,7 +1320,7 @@ export function VendorSecurityScanPanel({
 
       {/* Recommendations */}
       {result.recommendations.length > 0 && (
-        <div className="p-4 bg-white/30 border-t border-surface-200">
+        <div className="p-4 bg-white/30 border-t border-surface-200 dark:bg-surface-900/30">
           <h4 className="text-sm font-medium text-surface-700 mb-2">Top Recommendations</h4>
           <ul className="space-y-1">
             {result.recommendations.slice(0, 5).map((rec, i) => (

@@ -77,7 +77,7 @@ export default function Questionnaires() {
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               filter === status
                 ? 'bg-brand-600 text-white'
-                : 'bg-white text-surface-700 hover:bg-surface-200'
+                : 'bg-white text-surface-700 hover:bg-surface-200 dark:bg-surface-900'
             }`}
           >
             {status === 'all'
@@ -100,9 +100,9 @@ export default function Questionnaires() {
           }}
         />
       ) : (
-        <div className="bg-white border border-surface-200 rounded-lg overflow-hidden">
+        <div className="bg-white border border-surface-200 rounded-lg overflow-hidden dark:bg-surface-900">
           <table className="w-full">
-            <thead className="bg-white border-b border-surface-200">
+            <thead className="bg-white border-b border-surface-200 dark:bg-surface-900">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-surface-600 uppercase tracking-wider">
                   Customer Request
@@ -131,7 +131,7 @@ export default function Questionnaires() {
                   <tr
                     key={questionnaire.id}
                     onClick={() => navigate(`/questionnaires/${questionnaire.id}`)}
-                    className="hover:bg-white cursor-pointer transition-colors"
+                    className="hover:bg-white cursor-pointer transition-colors dark:bg-surface-900 dark:hover:bg-surface-800"
                   >
                     <td className="px-6 py-4">
                       <div>

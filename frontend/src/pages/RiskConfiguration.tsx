@@ -530,7 +530,9 @@ function ScoringMethodology({
 
           {/* Formula */}
           <div className="mb-6 p-4 bg-gray-900 dark:bg-white rounded-lg">
-            <p className="text-xs text-gray-400 mb-2 uppercase tracking-wider">Formula</p>
+            <p className="text-xs text-gray-400 mb-2 uppercase tracking-wider dark:text-surface-500">
+              Formula
+            </p>
             <pre className="text-emerald-600 font-mono text-sm whitespace-pre-wrap">
               {currentMethodology.formula}
             </pre>
@@ -664,11 +666,11 @@ function ScoringMethodology({
             calculation.
           </p>
           <div className="grid grid-cols-2 gap-4 text-sm">
-            <div className="p-3 bg-white/50 rounded-lg">
+            <div className="p-3 bg-white/50 rounded-lg dark:bg-surface-900/50">
               <p className="text-gray-500 dark:text-surface-600">Currency</p>
               <p className="text-gray-900 dark:text-white font-medium">USD ($)</p>
             </div>
-            <div className="p-3 bg-white/50 rounded-lg">
+            <div className="p-3 bg-white/50 rounded-lg dark:bg-surface-900/50">
               <p className="text-gray-500 dark:text-surface-600">Analysis Period</p>
               <p className="text-gray-900 dark:text-white font-medium">Annual (12 months)</p>
             </div>

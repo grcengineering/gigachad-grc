@@ -48,7 +48,7 @@ const taskTypes = [
 ];
 
 const priorities = [
-  { value: 'low', label: 'Low', color: 'text-gray-500' },
+  { value: 'low', label: 'Low', color: 'text-gray-500 dark:text-surface-400' },
   { value: 'medium', label: 'Medium', color: 'text-amber-500' },
   { value: 'high', label: 'High', color: 'text-orange-500' },
   { value: 'critical', label: 'Critical', color: 'text-red-500' },
@@ -138,7 +138,7 @@ export default function CreateTaskModal({ riskId, onClose, onSuccess }: CreateTa
             </h2>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 dark:text-surface-500"
             >
               <XMarkIcon className="h-5 w-5" />
             </button>
@@ -162,7 +162,7 @@ export default function CreateTaskModal({ riskId, onClose, onSuccess }: CreateTa
                   </option>
                 ))}
               </SelectNative>
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-gray-500 dark:text-surface-400">
                 {taskTypes.find((t) => t.value === formData.taskType)?.description}
               </p>
             </div>
@@ -205,16 +205,18 @@ export default function CreateTaskModal({ riskId, onClose, onSuccess }: CreateTa
               {selectedUser ? (
                 <div className="flex items-center justify-between p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-700">
                   <div className="flex items-center gap-2">
-                    <UserIcon className="h-5 w-5 text-gray-400" />
+                    <UserIcon className="h-5 w-5 text-gray-400 dark:text-surface-500" />
                     <span className="text-gray-900 dark:text-gray-100">
                       {selectedUser.firstName} {selectedUser.lastName}
                     </span>
-                    <span className="text-sm text-gray-500">({selectedUser.email})</span>
+                    <span className="text-sm text-gray-500 dark:text-surface-400">
+                      ({selectedUser.email})
+                    </span>
                   </div>
                   <button
                     type="button"
                     onClick={() => setFormData((prev) => ({ ...prev, assigneeId: '' }))}
-                    className="text-gray-400 hover:text-gray-600"
+                    className="text-gray-400 hover:text-gray-600 dark:text-surface-500"
                   >
                     <XMarkIcon className="h-4 w-4" />
                   </button>
@@ -222,7 +224,7 @@ export default function CreateTaskModal({ riskId, onClose, onSuccess }: CreateTa
               ) : (
                 <div className="relative">
                   <div className="relative">
-                    <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-surface-500" />
                     <Input
                       type="text"
                       value={userSearch}
@@ -239,20 +241,24 @@ export default function CreateTaskModal({ riskId, onClose, onSuccess }: CreateTa
                   {showUserDropdown && (
                     <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-48 overflow-y-auto">
                       {filteredUsers.length === 0 ? (
-                        <div className="p-2 text-sm text-gray-500">No users found</div>
+                        <div className="p-2 text-sm text-gray-500 dark:text-surface-400">
+                          No users found
+                        </div>
                       ) : (
                         filteredUsers.slice(0, 10).map((user: User) => (
                           <button
                             key={user.id}
                             type="button"
                             onClick={() => selectUser(user.id)}
-                            className="w-full flex items-center gap-2 p-2 text-left hover:bg-gray-100 dark:hover:bg-gray-600"
+                            className="w-full flex items-center gap-2 p-2 text-left hover:bg-gray-100 dark:hover:bg-gray-600 dark:bg-surface-800"
                           >
-                            <UserIcon className="h-4 w-4 text-gray-400" />
+                            <UserIcon className="h-4 w-4 text-gray-400 dark:text-surface-500" />
                             <span className="text-gray-900 dark:text-gray-100">
                               {user.firstName} {user.lastName}
                             </span>
-                            <span className="text-sm text-gray-500">({user.email})</span>
+                            <span className="text-sm text-gray-500 dark:text-surface-400">
+                              ({user.email})
+                            </span>
                           </button>
                         ))
                       )}
@@ -335,7 +341,7 @@ export default function CreateTaskModal({ riskId, onClose, onSuccess }: CreateTa
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md dark:bg-surface-800"
               >
                 Cancel
               </button>

@@ -204,7 +204,7 @@ function CollectorCard({
     <div className="border border-surface-200 rounded-lg overflow-hidden">
       {/* Header */}
       <div
-        className="flex items-center justify-between p-4 bg-white/50 cursor-pointer"
+        className="flex items-center justify-between p-4 bg-white/50 cursor-pointer dark:bg-surface-900/50"
         onClick={onToggle}
       >
         <div className="flex items-center gap-3">
@@ -329,7 +329,7 @@ function CollectorCard({
 
           {/* Schedule Info */}
           {collector.scheduleEnabled && (
-            <div className="p-3 bg-white/50 rounded-lg">
+            <div className="p-3 bg-white/50 rounded-lg dark:bg-surface-900/50">
               <div className="flex items-center gap-2 text-sm">
                 <ClockIcon className="w-4 h-4 text-surface-500" />
                 <span className="text-surface-700">
@@ -355,7 +355,7 @@ function CollectorCard({
                   return (
                     <div
                       key={run.id}
-                      className="flex items-center justify-between p-2 bg-white/30 rounded text-xs"
+                      className="flex items-center justify-between p-2 bg-white/30 rounded text-xs dark:bg-surface-900/30"
                     >
                       <div className="flex items-center gap-2">
                         <RunIcon className={clsx('w-4 h-4', statusConfig[runStatus]?.color)} />

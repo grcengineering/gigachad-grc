@@ -1,6 +1,6 @@
 /**
  * Status Badge Component
- * 
+ *
  * A reusable badge component for displaying status with consistent styling.
  */
 
@@ -21,13 +21,13 @@ export const STATUS_CONFIGS: Record<string, StatusConfig> = {
   in_progress: { label: 'In Progress', color: 'yellow' },
   not_started: { label: 'Not Started', color: 'gray' },
   not_applicable: { label: 'N/A', color: 'gray' },
-  
+
   // Risk statuses
   open: { label: 'Open', color: 'red' },
   mitigated: { label: 'Mitigated', color: 'green' },
   accepted: { label: 'Accepted', color: 'blue' },
   transferred: { label: 'Transferred', color: 'purple' },
-  
+
   // Evidence statuses
   valid: { label: 'Valid', color: 'green' },
   expired: { label: 'Expired', color: 'red' },
@@ -35,30 +35,30 @@ export const STATUS_CONFIGS: Record<string, StatusConfig> = {
   pending_review: { label: 'Pending Review', color: 'yellow' },
   approved: { label: 'Approved', color: 'green' },
   rejected: { label: 'Rejected', color: 'red' },
-  
+
   // Vendor statuses
   active: { label: 'Active', color: 'green' },
   inactive: { label: 'Inactive', color: 'gray' },
   under_review: { label: 'Under Review', color: 'yellow' },
   terminated: { label: 'Terminated', color: 'red' },
-  
+
   // Audit statuses
   planned: { label: 'Planned', color: 'blue' },
   in_progress_audit: { label: 'In Progress', color: 'yellow' },
   completed: { label: 'Completed', color: 'green' },
   cancelled: { label: 'Cancelled', color: 'gray' },
-  
+
   // Priority levels
   critical: { label: 'Critical', color: 'red' },
   high: { label: 'High', color: 'orange' },
   medium: { label: 'Medium', color: 'yellow' },
   low: { label: 'Low', color: 'green' },
-  
+
   // Policy statuses
   draft: { label: 'Draft', color: 'gray' },
   published: { label: 'Published', color: 'green' },
   archived: { label: 'Archived', color: 'gray' },
-  
+
   // Task statuses
   todo: { label: 'To Do', color: 'gray' },
   done: { label: 'Done', color: 'green' },
@@ -66,7 +66,7 @@ export const STATUS_CONFIGS: Record<string, StatusConfig> = {
 };
 
 const colorClasses = {
-  gray: 'bg-gray-100 text-gray-800',
+  gray: 'bg-gray-100 text-gray-800 dark:bg-surface-800 dark:text-surface-100',
   green: 'bg-green-100 text-green-800',
   yellow: 'bg-yellow-100 text-yellow-800',
   red: 'bg-red-100 text-red-800',
@@ -77,7 +77,7 @@ const colorClasses = {
 };
 
 const dotColorClasses = {
-  gray: 'bg-gray-400',
+  gray: 'bg-gray-400 dark:bg-surface-600',
   green: 'bg-green-400',
   yellow: 'bg-yellow-400',
   red: 'bg-red-400',
@@ -109,12 +109,13 @@ export const StatusBadge = memo(function StatusBadge({
 }: StatusBadgeProps) {
   // Normalize status key (lowercase, replace spaces with underscores)
   const normalizedStatus = status.toLowerCase().replace(/\s+/g, '_');
-  
+
   // Get config from props or predefined configs
-  const statusConfig = config || STATUS_CONFIGS[normalizedStatus] || {
-    label: status,
-    color: 'gray' as const,
-  };
+  const statusConfig = config ||
+    STATUS_CONFIGS[normalizedStatus] || {
+      label: status,
+      color: 'gray' as const,
+    };
 
   const sizeClasses = {
     sm: 'px-2 py-0.5 text-xs',
@@ -146,9 +147,7 @@ export const StatusBadge = memo(function StatusBadge({
           )}
         />
       )}
-      {statusConfig.icon && (
-        <statusConfig.icon className="w-4 h-4" />
-      )}
+      {statusConfig.icon && <statusConfig.icon className="w-4 h-4" />}
       {statusConfig.label}
     </span>
   );

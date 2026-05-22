@@ -220,7 +220,7 @@ export default function RiskQueue() {
             className={`p-4 rounded-xl border transition-colors text-left ${
               activeTab === tab.key
                 ? 'bg-brand-500/20 border-brand-500'
-                : 'bg-white border-surface-200 hover:border-surface-300'
+                : 'bg-white border-surface-200 hover:border-surface-300 dark:bg-surface-900'
             }`}
           >
             <div className="flex items-center gap-3">
@@ -239,7 +239,7 @@ export default function RiskQueue() {
       </div>
 
       {/* Queue List */}
-      <div className="bg-white rounded-xl border border-surface-200">
+      <div className="bg-white rounded-xl border border-surface-200 dark:bg-surface-900">
         <div className="p-4 border-b border-surface-200">
           <h2 className="text-lg font-medium text-white">
             {tabs.find((t) => t.key === activeTab)?.label}
@@ -308,7 +308,7 @@ export default function RiskQueue() {
                                     ? 'bg-orange-500/20 text-orange-600'
                                     : task.priority === 'medium'
                                       ? 'bg-amber-500/20 text-amber-600'
-                                      : 'bg-gray-500/20 text-gray-400'
+                                      : 'bg-gray-500/20 text-gray-400 dark:bg-surface-500/20 dark:text-surface-500'
                               }`}
                             >
                               {task.priority}
@@ -434,7 +434,7 @@ export default function RiskQueue() {
       </div>
 
       {/* Tips Section */}
-      <div className="bg-white rounded-xl border border-surface-200 p-6">
+      <div className="bg-white rounded-xl border border-surface-200 p-6 dark:bg-surface-900">
         <h3 className="text-lg font-medium text-white mb-3">Queue Tips</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div className="flex gap-3">

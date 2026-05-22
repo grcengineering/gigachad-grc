@@ -143,7 +143,12 @@ export function ActivityFeed({
 
   if (isLoading) {
     return (
-      <div className={clsx('bg-white rounded-xl border border-surface-200', className)}>
+      <div
+        className={clsx(
+          'bg-white rounded-xl border border-surface-200 dark:bg-surface-900',
+          className
+        )}
+      >
         {showHeader && (
           <div className="px-4 py-3 border-b border-surface-200">
             <div className="h-5 bg-surface-200 rounded w-32 animate-pulse" />
@@ -165,7 +170,12 @@ export function ActivityFeed({
   }
 
   return (
-    <div className={clsx('bg-white rounded-xl border border-surface-200', className)}>
+    <div
+      className={clsx(
+        'bg-white rounded-xl border border-surface-200 dark:bg-surface-900',
+        className
+      )}
+    >
       {showHeader && (
         <div className="px-4 py-3 border-b border-surface-200 flex items-center justify-between">
           <h3 className="font-medium text-white">Recent Activity</h3>
@@ -279,7 +289,9 @@ export function ActivityFeed({
 
 // Compact version for sidebars
 export function CompactActivityFeed({ limit = 5 }: { limit?: number }) {
-  return <ActivityFeed limit={limit} compact showHeader className="bg-white/50" />;
+  return (
+    <ActivityFeed limit={limit} compact showHeader className="bg-white/50 dark:bg-surface-900/50" />
+  );
 }
 
 export default ActivityFeed;

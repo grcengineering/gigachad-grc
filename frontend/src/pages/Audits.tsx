@@ -44,7 +44,7 @@ const statusColors: Record<string, string> = {
   testing: 'bg-orange-100 text-orange-800',
   reporting: 'bg-purple-100 text-purple-800',
   completed: 'bg-green-100 text-green-800',
-  cancelled: 'bg-gray-100 text-gray-800',
+  cancelled: 'bg-gray-100 text-gray-800 dark:bg-surface-800 dark:text-surface-100',
 };
 
 const auditTypeLabels: Record<string, string> = {
@@ -111,14 +111,14 @@ export default function Audits() {
             placeholder="Search audits..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 placeholder-surface-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className="w-full pl-10 pr-4 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 placeholder-surface-500 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-surface-900"
           />
         </div>
 
         <SelectNative
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-4 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
+          className="px-4 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-surface-900"
         >
           <option value="">All Statuses</option>
           <option value="planning">Planning</option>
@@ -132,7 +132,7 @@ export default function Audits() {
         <SelectNative
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value)}
-          className="px-4 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
+          className="px-4 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-surface-900"
         >
           <option value="">All Types</option>
           <option value="internal">Internal</option>
@@ -162,7 +162,7 @@ export default function Audits() {
             <Link
               key={audit.id}
               to={`/audits/${audit.id}`}
-              className="block bg-white border border-surface-200 rounded-lg p-6 hover:border-brand-500 transition-colors"
+              className="block bg-white border border-surface-200 rounded-lg p-6 hover:border-brand-500 transition-colors dark:bg-surface-900"
             >
               <div className="flex items-start justify-between mb-4">
                 <div>

@@ -183,21 +183,21 @@ export default function TestProcedures() {
       {/* Stats */}
       {stats && (
         <div className="grid grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg p-4 border border-surface-200">
+          <div className="bg-white rounded-lg p-4 border border-surface-200 dark:bg-surface-900">
             <p className="text-surface-600 text-sm">Total Procedures</p>
             <p className="text-3xl font-bold text-white">{stats.total}</p>
           </div>
-          <div className="bg-white rounded-lg p-4 border border-surface-200">
+          <div className="bg-white rounded-lg p-4 border border-surface-200 dark:bg-surface-900">
             <p className="text-surface-600 text-sm">Effectiveness Rate</p>
             <p className="text-3xl font-bold text-green-600">{stats.effectivenessRate}%</p>
           </div>
-          <div className="bg-white rounded-lg p-4 border border-surface-200">
+          <div className="bg-white rounded-lg p-4 border border-surface-200 dark:bg-surface-900">
             <p className="text-surface-600 text-sm">Completed</p>
             <p className="text-3xl font-bold text-white">
               {stats.byStatus.find((s) => s.status === 'completed')?.count || 0}
             </p>
           </div>
-          <div className="bg-white rounded-lg p-4 border border-surface-200">
+          <div className="bg-white rounded-lg p-4 border border-surface-200 dark:bg-surface-900">
             <p className="text-surface-600 text-sm">Pending</p>
             <p className="text-3xl font-bold text-yellow-600">
               {stats.byStatus.find((s) => s.status === 'pending')?.count || 0}
@@ -209,7 +209,7 @@ export default function TestProcedures() {
       {isLoading ? (
         <div className="animate-pulse space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-white rounded-lg h-24" />
+            <div key={i} className="bg-white rounded-lg h-24 dark:bg-surface-900" />
           ))}
         </div>
       ) : (
@@ -219,7 +219,10 @@ export default function TestProcedures() {
             const isRecording = recordingId === proc.id;
 
             return (
-              <div key={proc.id} className="bg-white rounded-lg border border-surface-200 p-4">
+              <div
+                key={proc.id}
+                className="bg-white rounded-lg border border-surface-200 p-4 dark:bg-surface-900"
+              >
                 <div className="flex items-start justify-between">
                   <div className="flex items-start gap-4">
                     <div className="p-2 bg-brand-500/10 rounded-lg">
@@ -270,7 +273,7 @@ export default function TestProcedures() {
                           onChange={(e) =>
                             setResultForm({ ...resultForm, actualResult: e.target.value })
                           }
-                          className="w-full bg-white border border-surface-300 rounded-lg px-3 py-2 text-white"
+                          className="w-full bg-white border border-surface-300 rounded-lg px-3 py-2 text-white dark:bg-surface-900"
                           rows={3}
                         />
                       </div>
@@ -283,7 +286,7 @@ export default function TestProcedures() {
                           onChange={(e) =>
                             setResultForm({ ...resultForm, deviationsNoted: e.target.value })
                           }
-                          className="w-full bg-white border border-surface-300 rounded-lg px-3 py-2 text-white"
+                          className="w-full bg-white border border-surface-300 rounded-lg px-3 py-2 text-white dark:bg-surface-900"
                           rows={3}
                         />
                       </div>
@@ -298,7 +301,7 @@ export default function TestProcedures() {
                           onChange={(e) =>
                             setResultForm({ ...resultForm, conclusion: e.target.value })
                           }
-                          className="w-full bg-white border border-surface-300 rounded-lg px-3 py-2 text-white"
+                          className="w-full bg-white border border-surface-300 rounded-lg px-3 py-2 text-white dark:bg-surface-900"
                         >
                           <option value="effective">Effective</option>
                           <option value="partially_effective">Partially Effective</option>
@@ -316,7 +319,7 @@ export default function TestProcedures() {
                           onChange={(e) =>
                             setResultForm({ ...resultForm, conclusionRationale: e.target.value })
                           }
-                          className="w-full bg-white border border-surface-300 rounded-lg px-3 py-2 text-white"
+                          className="w-full bg-white border border-surface-300 rounded-lg px-3 py-2 text-white dark:bg-surface-900"
                         />
                       </div>
                     </div>
@@ -333,7 +336,7 @@ export default function TestProcedures() {
           })}
 
           {procedures.length === 0 && (
-            <div className="text-center py-12 bg-white rounded-lg border border-surface-200">
+            <div className="text-center py-12 bg-white rounded-lg border border-surface-200 dark:bg-surface-900">
               <BeakerIcon className="h-12 w-12 text-surface-500 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-white">No test procedures yet</h3>
               <p className="text-surface-600 mt-2">

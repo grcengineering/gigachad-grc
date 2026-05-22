@@ -168,7 +168,7 @@ export function ScheduledReports({ className }: ScheduledReportsProps) {
           <div className="animate-spin h-8 w-8 border-2 border-indigo-500 border-t-transparent rounded-full"></div>
         </div>
       ) : reports.length === 0 ? (
-        <div className="text-center py-12 bg-white border border-surface-200 rounded-xl">
+        <div className="text-center py-12 bg-white border border-surface-200 rounded-xl dark:bg-surface-900">
           <ClockIcon className="w-12 h-12 mx-auto text-surface-600 mb-4" />
           <h3 className="text-lg font-medium text-surface-700 mb-2">No scheduled reports</h3>
           <p className="text-surface-500 mb-4">
@@ -231,7 +231,7 @@ function ReportCard({ report, onEdit, onDelete, onToggle, onRunNow }: ReportCard
   return (
     <div
       className={clsx(
-        'bg-white border rounded-xl p-4',
+        'bg-white border rounded-xl p-4 dark:bg-surface-900',
         report.enabled ? 'border-surface-200' : 'border-surface-200/50 opacity-60'
       )}
     >

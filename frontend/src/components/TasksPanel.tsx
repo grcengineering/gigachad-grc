@@ -374,7 +374,7 @@ function TaskCard({
   return (
     <div
       className={clsx(
-        'card p-3 cursor-pointer hover:bg-white transition-colors',
+        'card p-3 cursor-pointer hover:bg-white transition-colors dark:bg-surface-900 dark:hover:bg-surface-800',
         task.status === 'completed' && 'opacity-60'
       )}
       onClick={onEdit}

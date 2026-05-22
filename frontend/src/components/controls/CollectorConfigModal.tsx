@@ -677,7 +677,7 @@ export default function CollectorConfigModal({
                   {testResult.message}
                 </p>
                 {testResult.data && (
-                  <pre className="mt-2 p-2 bg-white/50 rounded text-xs text-surface-600 overflow-auto max-h-32">
+                  <pre className="mt-2 p-2 bg-white/50 rounded text-xs text-surface-600 overflow-auto max-h-32 dark:bg-surface-900/50">
                     {JSON.stringify(testResult.data, null, 2)}
                   </pre>
                 )}
@@ -688,7 +688,7 @@ export default function CollectorConfigModal({
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between px-6 py-4 border-t border-surface-200 bg-white/50">
+      <div className="flex items-center justify-between px-6 py-4 border-t border-surface-200 bg-white/50 dark:bg-surface-900/50">
         <div>
           {isEditing && (
             <Button

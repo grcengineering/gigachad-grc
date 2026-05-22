@@ -1,6 +1,6 @@
 /**
  * Dashboard Widget Toggle Component
- * 
+ *
  * Displays a customization panel for toggling dashboard widgets on/off.
  */
 
@@ -70,15 +70,15 @@ export const DashboardWidgetToggle = memo(function DashboardWidgetToggle({
   }
 
   return (
-    <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-      <h3 className="text-sm font-medium text-gray-900 mb-3">
+    <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200 dark:bg-surface-900 dark:border-surface-800">
+      <h3 className="text-sm font-medium text-gray-900 mb-3 dark:text-surface-50">
         Toggle Dashboard Widgets
       </h3>
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
         {Object.entries(WIDGET_LABELS).map(([key, label]) => {
           const widgetKey = key as keyof DashboardConfig['widgets'];
           const isEnabled = config.widgets[widgetKey];
-          
+
           return (
             <button
               key={key}
@@ -87,14 +87,10 @@ export const DashboardWidgetToggle = memo(function DashboardWidgetToggle({
                 'flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors',
                 isEnabled
                   ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
-                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-surface-800 dark:hover:bg-surface-700 dark:text-surface-400'
               )}
             >
-              {isEnabled ? (
-                <EyeIcon className="w-4 h-4" />
-              ) : (
-                <EyeSlashIcon className="w-4 h-4" />
-              )}
+              {isEnabled ? <EyeIcon className="w-4 h-4" /> : <EyeSlashIcon className="w-4 h-4" />}
               <span className="truncate">{label}</span>
             </button>
           );

@@ -275,7 +275,7 @@ export default function TrustCenter() {
                   className={`flex items-center gap-2 px-5 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                     activeSection === section.id
                       ? 'border-brand-500 text-brand-400 bg-white dark:bg-white/50'
-                      : 'border-transparent text-gray-500 dark:text-surface-600 hover:text-gray-600 dark:text-surface-700 hover:bg-white dark:bg-white/30'
+                      : 'border-transparent text-gray-500 dark:text-surface-600 hover:text-gray-600 dark:text-surface-700 hover:bg-white dark:bg-white/30 dark:hover:bg-surface-800'
                   }`}
                 >
                   <Icon className="w-5 h-5" />
@@ -546,7 +546,7 @@ function PreviewModal({ config, contents, onClose }: PreviewModalProps) {
       {/* Close Button */}
       <button
         onClick={onClose}
-        className="sticky top-4 right-4 float-right z-10 p-2 bg-gray-800 text-gray-900 dark:text-white rounded-full hover:bg-gray-700 transition-colors m-4"
+        className="sticky top-4 right-4 float-right z-10 p-2 bg-gray-800 text-gray-900 dark:text-white rounded-full hover:bg-gray-700 transition-colors m-4 dark:bg-surface-200 dark:hover:bg-surface-300"
       >
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
@@ -577,7 +577,9 @@ function PreviewModal({ config, contents, onClose }: PreviewModalProps) {
             {config.companyName} Trust Center
           </h1>
           {config.description && (
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">{config.description}</p>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto dark:text-surface-300">
+              {config.description}
+            </p>
           )}
         </div>
 
@@ -606,9 +608,9 @@ function PreviewModal({ config, contents, onClose }: PreviewModalProps) {
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {sectionContents.map((content) => (
-                    <div key={content.id} className="bg-gray-50 p-5 rounded-lg">
+                    <div key={content.id} className="bg-gray-50 p-5 rounded-lg dark:bg-surface-900">
                       <h3 className="text-lg font-semibold mb-2">{content.title}</h3>
-                      <p className="text-gray-600">{content.content}</p>
+                      <p className="text-gray-600 dark:text-surface-300">{content.content}</p>
                     </div>
                   ))}
                 </div>
@@ -620,15 +622,19 @@ function PreviewModal({ config, contents, onClose }: PreviewModalProps) {
         {/* Empty State */}
         {publishedContents.length === 0 && (
           <div className="text-center py-16">
-            <GlobeAltIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-500 mb-2">No Published Content</h3>
-            <p className="text-gray-400">Add and publish content to see it here</p>
+            <GlobeAltIcon className="w-16 h-16 text-gray-300 mx-auto mb-4 dark:text-surface-700" />
+            <h3 className="text-xl font-semibold text-gray-500 mb-2 dark:text-surface-400">
+              No Published Content
+            </h3>
+            <p className="text-gray-400 dark:text-surface-500">
+              Add and publish content to see it here
+            </p>
           </div>
         )}
 
         {/* Footer */}
-        <footer className="text-center pt-8 mt-12 border-t border-gray-200">
-          <p className="text-gray-400 text-sm">
+        <footer className="text-center pt-8 mt-12 border-t border-gray-200 dark:border-surface-800">
+          <p className="text-gray-400 text-sm dark:text-surface-500">
             © {new Date().getFullYear()} {config.companyName}. All rights reserved.
           </p>
         </footer>

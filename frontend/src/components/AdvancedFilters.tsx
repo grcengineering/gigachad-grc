@@ -218,7 +218,7 @@ export function AdvancedFilters({ fields, onApply, storageKey, className }: Adva
         leftIcon={<FunnelIcon className="w-4 h-4" />}
         rightIcon={
           activeFilterCount > 0 ? (
-            <span className="ml-1 px-1.5 py-0.5 text-xs bg-white/20 rounded-full">
+            <span className="ml-1 px-1.5 py-0.5 text-xs bg-white/20 rounded-full dark:bg-surface-900/20">
               {activeFilterCount}
             </span>
           ) : (
@@ -234,7 +234,7 @@ export function AdvancedFilters({ fields, onApply, storageKey, className }: Adva
       {isOpen && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-          <div className="absolute right-0 mt-2 w-[480px] bg-white border border-surface-200 rounded-xl shadow-xl z-50 overflow-hidden">
+          <div className="absolute right-0 mt-2 w-[480px] bg-white border border-surface-200 rounded-xl shadow-xl z-50 overflow-hidden dark:bg-surface-900">
             {/* Header */}
             <div className="p-4 border-b border-surface-200 flex items-center justify-between">
               <h3 className="font-medium text-white">Advanced Filters</h3>
@@ -258,7 +258,7 @@ export function AdvancedFilters({ fields, onApply, storageKey, className }: Adva
 
             {/* Presets */}
             {presets.length > 0 && (
-              <div className="p-3 border-b border-surface-200 bg-white/50">
+              <div className="p-3 border-b border-surface-200 bg-white/50 dark:bg-surface-900/50">
                 <p className="text-xs text-surface-500 mb-2">Saved Filters</p>
                 <div className="flex flex-wrap gap-2">
                   {presets.map((preset) => (

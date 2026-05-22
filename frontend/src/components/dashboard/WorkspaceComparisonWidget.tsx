@@ -50,7 +50,7 @@ export function WorkspaceComparisonWidget() {
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-lg border border-surface-200 p-4">
+      <div className="bg-white rounded-lg border border-surface-200 p-4 dark:bg-surface-900">
         <div className="animate-pulse">
           <div className="h-5 bg-surface-200 rounded w-1/3 mb-4"></div>
           <div className="space-y-3">
@@ -79,7 +79,7 @@ export function WorkspaceComparisonWidget() {
   };
 
   return (
-    <div className="bg-white rounded-lg border border-surface-200 overflow-hidden">
+    <div className="bg-white rounded-lg border border-surface-200 overflow-hidden dark:bg-surface-900">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-surface-200">
         <div className="flex items-center gap-2">
@@ -97,17 +97,17 @@ export function WorkspaceComparisonWidget() {
 
       {/* Org-wide Stats */}
       <div className="grid grid-cols-3 gap-px bg-surface-200">
-        <div className="bg-white p-3 text-center">
+        <div className="bg-white p-3 text-center dark:bg-surface-900">
           <p className="text-xs text-muted-foreground">Avg Score</p>
           <p className={`text-lg font-bold ${getScoreColor(data.avgComplianceScore)}`}>
             {data.avgComplianceScore}%
           </p>
         </div>
-        <div className="bg-white p-3 text-center">
+        <div className="bg-white p-3 text-center dark:bg-surface-900">
           <p className="text-xs text-muted-foreground">Total Controls</p>
           <p className="text-lg font-bold text-foreground">{data.totals.controls}</p>
         </div>
-        <div className="bg-white p-3 text-center">
+        <div className="bg-white p-3 text-center dark:bg-surface-900">
           <p className="text-xs text-muted-foreground">Total Risks</p>
           <p className="text-lg font-bold text-foreground">{data.totals.risks}</p>
         </div>

@@ -374,7 +374,7 @@ export default function CustomConfigModal({
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between px-6 py-4 border-t border-surface-200 bg-white/50">
+      <div className="flex items-center justify-between px-6 py-4 border-t border-surface-200 bg-white/50 dark:bg-surface-900/50">
         <div className="flex items-center gap-2">
           {hasChanges && <span className="text-xs text-yellow-600">• Unsaved changes</span>}
         </div>

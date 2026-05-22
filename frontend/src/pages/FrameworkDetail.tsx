@@ -539,7 +539,7 @@ export default function FrameworkDetail() {
 
         <div className="space-y-4">
           {/* Instructions */}
-          <div className="p-4 bg-white/50 rounded-lg border border-surface-200">
+          <div className="p-4 bg-white/50 rounded-lg border border-surface-200 dark:bg-surface-900/50">
             <p className="text-sm text-surface-700 mb-2">
               Upload a CSV, Excel (.xlsx, .xls), or JSON file with the following columns:
             </p>
@@ -762,7 +762,9 @@ function RequirementRow({
       <div
         className={clsx(
           'flex items-center gap-3 p-4 transition-colors cursor-pointer',
-          isSelected ? 'bg-brand-500/20 border-l-2 border-brand-500' : 'hover:bg-white/50',
+          isSelected
+            ? 'bg-brand-500/20 border-l-2 border-brand-500'
+            : 'hover:bg-white/50 dark:bg-surface-900/50 dark:hover:bg-surface-800/50',
           directlyMatchesFilter && !isSelected && 'bg-surface-200/30'
         )}
         style={{ paddingLeft: `${level * 24 + 16}px` }}
@@ -1070,7 +1072,7 @@ function RequirementDetailPanel({
                   <SelectNative
                     value={selectedOwner}
                     onChange={(e) => setSelectedOwner(e.target.value)}
-                    className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-sm text-surface-900 focus:outline-none focus:border-brand-500"
+                    className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-sm text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
                   >
                     <option value="">Unassigned</option>
                     {users?.map((user: any) => (
@@ -1087,7 +1089,7 @@ function RequirementDetailPanel({
                   <SelectNative
                     value={priority}
                     onChange={(e) => setPriority(e.target.value)}
-                    className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-sm text-surface-900 focus:outline-none focus:border-brand-500"
+                    className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-sm text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
                   >
                     <option value="">Not Set</option>
                     <option value="high">High</option>
@@ -1103,7 +1105,7 @@ function RequirementDetailPanel({
                     type="date"
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
-                    className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-sm text-surface-900 focus:outline-none focus:border-brand-500"
+                    className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-sm text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
                   />
                 </div>
 
@@ -1115,14 +1117,14 @@ function RequirementDetailPanel({
                     onChange={(e) => setOwnerNotes(e.target.value)}
                     rows={3}
                     placeholder="Add notes about this requirement..."
-                    className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-sm text-surface-900 focus:outline-none focus:border-brand-500 resize-none"
+                    className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-sm text-surface-900 focus:outline-none focus:border-brand-500 resize-none dark:bg-surface-900"
                   />
                 </div>
               </div>
             ) : (
               <div className="space-y-2">
                 {/* Current Owner */}
-                <div className="flex items-center gap-2 p-2 bg-white/50 rounded-lg">
+                <div className="flex items-center gap-2 p-2 bg-white/50 rounded-lg dark:bg-surface-900/50">
                   <UserIcon className="w-4 h-4 text-surface-500" />
                   <span className="text-sm text-surface-700">
                     {currentOwner?.displayName || 'Unassigned'}
@@ -1131,7 +1133,7 @@ function RequirementDetailPanel({
 
                 {/* Priority */}
                 {currentPriority && (
-                  <div className="flex items-center gap-2 p-2 bg-white/50 rounded-lg">
+                  <div className="flex items-center gap-2 p-2 bg-white/50 rounded-lg dark:bg-surface-900/50">
                     <FlagIcon
                       className={clsx(
                         'w-4 h-4',
@@ -1150,7 +1152,7 @@ function RequirementDetailPanel({
 
                 {/* Due Date */}
                 {currentDueDate && (
-                  <div className="flex items-center gap-2 p-2 bg-white/50 rounded-lg">
+                  <div className="flex items-center gap-2 p-2 bg-white/50 rounded-lg dark:bg-surface-900/50">
                     <CalendarIcon className="w-4 h-4 text-surface-500" />
                     <span className="text-sm text-surface-700">
                       Due: {new Date(currentDueDate).toLocaleDateString()}
@@ -1160,7 +1162,7 @@ function RequirementDetailPanel({
 
                 {/* Notes */}
                 {currentNotes && (
-                  <div className="p-2 bg-white/50 rounded-lg">
+                  <div className="p-2 bg-white/50 rounded-lg dark:bg-surface-900/50">
                     <p className="text-xs text-surface-500 mb-1">Notes</p>
                     <p className="text-sm text-surface-700">{currentNotes}</p>
                   </div>
@@ -1207,7 +1209,7 @@ function RequirementDetailPanel({
                     <div
                       key={mapping.id}
                       role="listitem"
-                      className="group relative bg-white/50 rounded-lg hover:bg-white transition-colors"
+                      className="group relative bg-white/50 rounded-lg hover:bg-white transition-colors dark:bg-surface-900/50 dark:hover:bg-surface-800"
                     >
                       <div className="flex items-start gap-2 p-3">
                         <Link
@@ -1256,7 +1258,7 @@ function RequirementDetailPanel({
                             {isMenuOpen && (
                               <div
                                 role="menu"
-                                className="absolute right-0 top-7 z-10 min-w-[10rem] bg-white border border-surface-200 rounded-lg shadow-lg py-1"
+                                className="absolute right-0 top-7 z-10 min-w-[10rem] bg-white border border-surface-200 rounded-lg shadow-lg py-1 dark:bg-surface-900"
                               >
                                 {canEditMappings && (
                                   <button
@@ -1327,7 +1329,7 @@ function RequirementDetailPanel({
                           <div
                             role="alertdialog"
                             aria-label="Confirm mapping deletion"
-                            className="bg-white/60 border border-red-500/30 rounded-md p-2 text-xs text-surface-800"
+                            className="bg-white/60 border border-red-500/30 rounded-md p-2 text-xs text-surface-800 dark:bg-surface-900/60"
                           >
                             <p className="mb-2">Remove this mapping?</p>
                             <div className="flex justify-end gap-2">

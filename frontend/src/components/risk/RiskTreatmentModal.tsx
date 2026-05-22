@@ -108,7 +108,7 @@ export default function RiskTreatmentModal({
           <SelectNative
             value={formData.targetResidualRisk}
             onChange={(e) => setFormData({ ...formData, targetResidualRisk: e.target.value })}
-            className="w-full bg-white border border-surface-200 rounded-lg px-3 py-2 text-white"
+            className="w-full bg-white border border-surface-200 rounded-lg px-3 py-2 text-white dark:bg-surface-900"
           >
             {RISK_LEVELS.map((level) => (
               <option key={level.value} value={level.value}>
@@ -123,7 +123,7 @@ export default function RiskTreatmentModal({
             type="date"
             value={formData.treatmentDueDate}
             onChange={(e) => setFormData({ ...formData, treatmentDueDate: e.target.value })}
-            className="w-full bg-white border border-surface-200 rounded-lg px-3 py-2 text-white"
+            className="w-full bg-white border border-surface-200 rounded-lg px-3 py-2 text-white dark:bg-surface-900"
           />
         </div>
         <div>
@@ -133,7 +133,7 @@ export default function RiskTreatmentModal({
             onChange={(e) => setFormData({ ...formData, treatmentNotes: e.target.value })}
             rows={3}
             placeholder="Describe the treatment approach..."
-            className="w-full bg-white border border-surface-200 rounded-lg px-3 py-2 text-white"
+            className="w-full bg-white border border-surface-200 rounded-lg px-3 py-2 text-white dark:bg-surface-900"
           />
         </div>
         <div className="flex justify-end gap-3 pt-4">

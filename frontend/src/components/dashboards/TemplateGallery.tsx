@@ -66,7 +66,7 @@ export default function TemplateGallery({ onClose, onSelectTemplate }: TemplateG
             {templates?.map((template: Dashboard) => (
               <div
                 key={template.id}
-                className="bg-white border border-surface-200 rounded-lg p-4 hover:border-brand-500/50 transition-colors"
+                className="bg-white border border-surface-200 rounded-lg p-4 hover:border-brand-500/50 transition-colors dark:bg-surface-900"
               >
                 <div className="flex items-start justify-between mb-3">
                   <div>
@@ -83,7 +83,7 @@ export default function TemplateGallery({ onClose, onSelectTemplate }: TemplateG
                 </div>
 
                 {/* Widget preview */}
-                <div className="bg-white rounded p-3 mb-4">
+                <div className="bg-white rounded p-3 mb-4 dark:bg-surface-900">
                   <div className="grid grid-cols-4 gap-1 h-20">
                     {template.widgets?.slice(0, 8).map((widget, i) => (
                       <div

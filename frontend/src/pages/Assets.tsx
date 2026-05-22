@@ -206,7 +206,7 @@ export default function Assets() {
       {/* Stats Cards */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-xl border border-surface-200 p-4">
+          <div className="bg-white rounded-xl border border-surface-200 p-4 dark:bg-surface-900">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-brand-500/20 rounded-lg">
                 <Server className="w-5 h-5 text-brand-400" />
@@ -217,7 +217,7 @@ export default function Assets() {
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-xl border border-surface-200 p-4">
+          <div className="bg-white rounded-xl border border-surface-200 p-4 dark:bg-surface-900">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-emerald-500/20 rounded-lg">
                 <CheckCircle className="w-5 h-5 text-emerald-600" />
@@ -230,7 +230,7 @@ export default function Assets() {
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-xl border border-surface-200 p-4">
+          <div className="bg-white rounded-xl border border-surface-200 p-4 dark:bg-surface-900">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-red-500/20 rounded-lg">
                 <AlertTriangle className="w-5 h-5 text-red-600" />
@@ -243,7 +243,7 @@ export default function Assets() {
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-xl border border-surface-200 p-4">
+          <div className="bg-white rounded-xl border border-surface-200 p-4 dark:bg-surface-900">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-amber-500/20 rounded-lg">
                 <RefreshCw className="w-5 h-5 text-amber-600" />
@@ -257,7 +257,7 @@ export default function Assets() {
         </div>
       )}
       {/* Search and Filters */}
-      <div className="bg-white rounded-xl border border-surface-200 p-4">
+      <div className="bg-white rounded-xl border border-surface-200 p-4 dark:bg-surface-900">
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Search */}
           <div className="flex-1 relative">
@@ -328,7 +328,7 @@ export default function Assets() {
         </div>
       </div>
       {/* Assets Table */}
-      <div className="bg-white rounded-xl border border-surface-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-surface-200 overflow-hidden dark:bg-surface-900">
         {isLoading ? (
           <SkeletonTable rows={10} columns={7} className="border-none" />
         ) : data?.assets.length === 0 ? (

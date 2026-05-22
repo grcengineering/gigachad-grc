@@ -136,7 +136,7 @@ function AuditorPortalContent() {
 
   const getPriorityBadge = (priority: AuditRequest['priority']) => {
     const styles: Record<AuditRequest['priority'], string> = {
-      low: 'text-gray-500',
+      low: 'text-gray-500 dark:text-surface-400',
       medium: 'text-yellow-500',
       high: 'text-orange-500',
       critical: 'text-red-500',
@@ -324,7 +324,7 @@ function AuditorPortalContent() {
                     {requests.slice(0, 5).map((request) => (
                       <li
                         key={request.id}
-                        className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-750 cursor-pointer transition-colors"
+                        className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-750 cursor-pointer transition-colors dark:bg-surface-900"
                         onClick={() => setSelectedRequest(request)}
                       >
                         <div className="flex items-center justify-between">
@@ -343,7 +343,7 @@ function AuditorPortalContent() {
                           </div>
                           <div className="flex items-center gap-3">
                             {getStatusBadge(request.status)}
-                            <ChevronRightIcon className="w-5 h-5 text-gray-400" />
+                            <ChevronRightIcon className="w-5 h-5 text-gray-400 dark:text-surface-500" />
                           </div>
                         </div>
                       </li>
@@ -384,7 +384,10 @@ function AuditorPortalContent() {
                     </thead>
                     <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                       {requests.map((request) => (
-                        <tr key={request.id} className="hover:bg-gray-50 dark:hover:bg-gray-750">
+                        <tr
+                          key={request.id}
+                          className="hover:bg-gray-50 dark:hover:bg-gray-750 dark:bg-surface-900"
+                        >
                           <td className="px-6 py-4">
                             <div className="max-w-xs">
                               <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
@@ -412,14 +415,14 @@ function AuditorPortalContent() {
                           <td className="px-6 py-4 text-right">
                             <div className="flex items-center justify-end gap-2">
                               <button
-                                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 dark:text-surface-500"
                                 title="View Details"
                               >
                                 <EyeIcon className="w-4 h-4" />
                               </button>
                               {session.permissions.canSubmitComments && (
                                 <button
-                                  className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                                  className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 dark:text-surface-500"
                                   title="Add Comment"
                                 >
                                   <ChatBubbleLeftIcon className="w-4 h-4" />
@@ -428,7 +431,7 @@ function AuditorPortalContent() {
                               {session.permissions.canDownloadEvidence &&
                                 request.evidenceCount > 0 && (
                                   <button
-                                    className="p-2 text-gray-400 hover:text-purple-600 dark:hover:text-purple-600"
+                                    className="p-2 text-gray-400 hover:text-purple-600 dark:hover:text-purple-600 dark:text-surface-500"
                                     title="Download Evidence"
                                   >
                                     <DocumentArrowDownIcon className="w-4 h-4" />

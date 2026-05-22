@@ -145,7 +145,7 @@ export function OnboardingWizard({ onDismiss }: OnboardingWizardProps) {
   }
 
   return (
-    <div className="bg-white border border-surface-200 rounded-xl p-6 mb-6">
+    <div className="bg-white border border-surface-200 rounded-xl p-6 mb-6 dark:bg-surface-900">
       <div className="flex items-start justify-between mb-6">
         <div>
           <h2 className="text-xl font-semibold text-surface-900">Welcome to GigaChad GRC! 🚀</h2>
@@ -194,7 +194,7 @@ export function OnboardingWizard({ onDismiss }: OnboardingWizardProps) {
                     ? 'bg-green-900/20 border-green-800'
                     : isNext
                       ? 'bg-blue-900/20 border-blue-700'
-                      : 'bg-white border-surface-200'
+                      : 'bg-white border-surface-200 dark:bg-surface-900'
                 }
               `}
             >

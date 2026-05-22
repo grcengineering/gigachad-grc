@@ -23,7 +23,7 @@ export default function DisabledModulePage({ moduleId }: DisabledModulePageProps
     <div className="min-h-[60vh] flex items-center justify-center p-6">
       <div className="max-w-lg w-full text-center">
         {/* Icon */}
-        <div className="mx-auto w-20 h-20 rounded-full bg-white flex items-center justify-center mb-6">
+        <div className="mx-auto w-20 h-20 rounded-full bg-white flex items-center justify-center mb-6 dark:bg-surface-900">
           <LockClosedIcon className="w-10 h-10 text-surface-600" />
         </div>
 
@@ -41,7 +41,7 @@ export default function DisabledModulePage({ moduleId }: DisabledModulePageProps
         </p>
 
         {/* How to Enable */}
-        <div className="bg-white/50 rounded-lg p-4 mb-6 text-left">
+        <div className="bg-white/50 rounded-lg p-4 mb-6 text-left dark:bg-surface-900/50">
           <h3 className="text-sm font-semibold text-surface-800 mb-2 flex items-center gap-2">
             <Cog6ToothIcon className="w-4 h-4" />
             How to Enable This Module
@@ -51,7 +51,7 @@ export default function DisabledModulePage({ moduleId }: DisabledModulePageProps
               To enable this module, an administrator needs to update the environment configuration:
             </p>
             {moduleDefinition && (
-              <code className="block bg-white px-3 py-2 rounded text-xs text-green-600 font-mono">
+              <code className="block bg-white px-3 py-2 rounded text-xs text-green-600 font-mono dark:bg-surface-900">
                 {moduleDefinition.envVar}=true
               </code>
             )}

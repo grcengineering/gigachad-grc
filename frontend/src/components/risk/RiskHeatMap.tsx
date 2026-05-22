@@ -194,7 +194,7 @@ export function RiskHeatMap({
                     {/* Hover tooltip */}
                     {isHovered && cellRisks.length > 0 && (
                       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 pointer-events-none">
-                        <div className="bg-white border border-surface-200 rounded-lg shadow-xl p-3 min-w-[200px]">
+                        <div className="bg-white border border-surface-200 rounded-lg shadow-xl p-3 min-w-[200px] dark:bg-surface-900">
                           <p className="text-xs text-surface-600 mb-1">
                             {LIKELIHOOD_LABELS[likelihood]} × {IMPACT_LABELS[impact]}
                           </p>
@@ -236,7 +236,7 @@ export function RiskHeatMap({
 
       {/* Selected Cell Details */}
       {selectedCell && risksByCell[selectedCell]?.length > 0 && (
-        <div className="bg-white border border-surface-200 rounded-lg p-4">
+        <div className="bg-white border border-surface-200 rounded-lg p-4 dark:bg-surface-900">
           <div className="flex items-center justify-between mb-3">
             <h4 className="font-medium text-surface-900">
               {LIKELIHOOD_LABELS[selectedCell.split('-')[0]]} ×{' '}
@@ -268,7 +268,7 @@ export function RiskHeatMap({
 
       {/* Legend */}
       {showLegend && (
-        <div className="flex items-center justify-between bg-white/50 rounded-lg p-3">
+        <div className="flex items-center justify-between bg-white/50 rounded-lg p-3 dark:bg-surface-900/50">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded bg-emerald-400" />

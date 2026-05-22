@@ -324,7 +324,7 @@ export default function RiskWorkflowPanel({ risk, onUpdate }: RiskWorkflowPanelP
   const actions = getAvailableActions();
 
   return (
-    <div className="bg-white rounded-xl border border-surface-200 overflow-hidden">
+    <div className="bg-white rounded-xl border border-surface-200 overflow-hidden dark:bg-surface-900">
       {/* Header */}
       <button
         onClick={() => setExpanded(!expanded)}
@@ -1021,7 +1021,7 @@ function SubmitAssessmentModal({
 
   return (
     <Dialog open onClose={onClose}>
-      <div className="p-4 border-b border-surface-200 flex justify-between items-center sticky top-0 bg-white">
+      <div className="p-4 border-b border-surface-200 flex justify-between items-center sticky top-0 bg-white dark:bg-surface-900">
         <h3 className="text-lg font-medium text-white">Risk Assessment Form</h3>
         <button onClick={onClose} className="p-1 hover:bg-surface-200 rounded">
           <X className="w-5 h-5 text-surface-600" />
@@ -1177,7 +1177,7 @@ function SubmitAssessmentModal({
           />
         </div>
       </div>
-      <div className="p-4 border-t border-surface-200 flex justify-end gap-3 sticky bottom-0 bg-white">
+      <div className="p-4 border-t border-surface-200 flex justify-end gap-3 sticky bottom-0 bg-white dark:bg-surface-900">
         <button onClick={onClose} className="px-4 py-2 bg-surface-200 text-surface-700 rounded-lg">
           Cancel
         </button>

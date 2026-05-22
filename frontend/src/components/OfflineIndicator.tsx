@@ -67,7 +67,7 @@ export default function OfflineIndicator({
 
       {/* Expanded Details */}
       {isExpanded && (
-        <div className="absolute right-0 top-full mt-2 w-72 bg-white border border-surface-200 rounded-xl shadow-xl z-50 overflow-hidden">
+        <div className="absolute right-0 top-full mt-2 w-72 bg-white border border-surface-200 rounded-xl shadow-xl z-50 overflow-hidden dark:bg-surface-900">
           <div className="flex items-center justify-between p-3 border-b border-surface-200">
             <div className="flex items-center gap-2">
               {isOnline ? (
@@ -105,7 +105,7 @@ export default function OfflineIndicator({
                   <span className="text-xs text-surface-600">Pending Changes</span>
                   <span className="text-xs font-medium text-yellow-600">{pendingCount}</span>
                 </div>
-                <div className="w-full bg-white rounded-full h-1">
+                <div className="w-full bg-white rounded-full h-1 dark:bg-surface-900">
                   <div
                     className="bg-yellow-500 rounded-full h-1 transition-all"
                     style={{ width: `${Math.min(pendingCount * 10, 100)}%` }}
@@ -117,11 +117,11 @@ export default function OfflineIndicator({
             {/* Storage Stats */}
             {storageStats && (
               <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="p-2 bg-white rounded-lg">
+                <div className="p-2 bg-white rounded-lg dark:bg-surface-900">
                   <span className="text-surface-600">Cached Items</span>
                   <div className="font-medium text-white">{storageStats.cachedItems}</div>
                 </div>
-                <div className="p-2 bg-white rounded-lg">
+                <div className="p-2 bg-white rounded-lg dark:bg-surface-900">
                   <span className="text-surface-600">Storage Used</span>
                   <div className="font-medium text-white">{storageStats.estimatedSize}</div>
                 </div>

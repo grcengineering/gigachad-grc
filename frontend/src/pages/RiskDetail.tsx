@@ -233,7 +233,7 @@ export default function RiskDetail() {
 
   const getRiskLevelColor = (level: string) => {
     const levelConfig = RISK_LEVELS.find((l) => l.value === level);
-    return levelConfig?.color || 'bg-gray-500';
+    return levelConfig?.color || 'bg-gray-500 dark:bg-surface-500';
   };
 
   const getStatusColor = (status: string) => {
@@ -344,7 +344,7 @@ export default function RiskDetail() {
       {/* Risk Overview */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Info */}
-        <div className="lg:col-span-2 bg-white rounded-xl border border-surface-200 p-6 space-y-6">
+        <div className="lg:col-span-2 bg-white rounded-xl border border-surface-200 p-6 space-y-6 dark:bg-surface-900">
           <div>
             <h3 className="text-sm font-medium text-surface-600 mb-2">Description</h3>
             <p className="text-surface-800">{risk.description}</p>
@@ -415,7 +415,7 @@ export default function RiskDetail() {
         {/* Risk Scoring */}
         <div className="space-y-4">
           {/* Qualitative */}
-          <div className="bg-white rounded-xl border border-surface-200 p-6">
+          <div className="bg-white rounded-xl border border-surface-200 p-6 dark:bg-surface-900">
             <h3 className="text-lg font-medium text-white mb-4">Risk Assessment</h3>
 
             <div className="space-y-4">
@@ -454,7 +454,7 @@ export default function RiskDetail() {
 
           {/* Quantitative */}
           {(risk.likelihoodPct !== undefined || risk.impactValue !== undefined) && (
-            <div className="bg-white rounded-xl border border-surface-200 p-6">
+            <div className="bg-white rounded-xl border border-surface-200 p-6 dark:bg-surface-900">
               <h3 className="text-lg font-medium text-white mb-4">Quantitative Analysis</h3>
               <div className="space-y-4">
                 {risk.likelihoodPct !== undefined && (
@@ -491,7 +491,7 @@ export default function RiskDetail() {
           )}
 
           {/* Quick Stats */}
-          <div className="bg-white rounded-xl border border-surface-200 p-6">
+          <div className="bg-white rounded-xl border border-surface-200 p-6 dark:bg-surface-900">
             <h3 className="text-lg font-medium text-white mb-4">Linked Items</h3>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
@@ -521,7 +521,7 @@ export default function RiskDetail() {
       </div>
 
       {/* Tabs */}
-      <div className="bg-white rounded-xl border border-surface-200">
+      <div className="bg-white rounded-xl border border-surface-200 dark:bg-surface-900">
         {/* Tab Headers */}
         <div className="flex border-b border-surface-200">
           {[

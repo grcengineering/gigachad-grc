@@ -190,7 +190,7 @@ export default function AwarenessTraining() {
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                     categoryFilter === cat
                       ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400 border border-brand-500/30'
-                      : 'text-gray-600 dark:text-surface-600 hover:text-gray-900 dark:hover:text-surface-800 hover:bg-gray-100 dark:hover:bg-white'
+                      : 'text-gray-600 dark:text-surface-600 hover:text-gray-900 dark:hover:text-surface-800 hover:bg-gray-100 dark:hover:bg-white dark:bg-surface-900'
                   }`}
                 >
                   {cat === 'all' ? 'All Modules' : getCategoryLabel(cat as any)}
@@ -510,7 +510,7 @@ function TrainingViewer({
           )}
           <button
             onClick={() => setIsFullscreen(!isFullscreen)}
-            className="p-2 text-gray-500 dark:text-surface-600 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-surface-200 rounded-lg transition-colors"
+            className="p-2 text-gray-500 dark:text-surface-600 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-surface-200 rounded-lg transition-colors dark:bg-surface-800"
             title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
           >
             {isFullscreen ? (

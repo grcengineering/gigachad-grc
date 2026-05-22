@@ -260,7 +260,7 @@ export default function RiskHeatmap() {
           </button>
 
           {showExportMenu && !isExporting && (
-            <div className="absolute right-0 mt-2 w-48 bg-white border border-surface-200 rounded-lg shadow-xl z-10">
+            <div className="absolute right-0 mt-2 w-48 bg-white border border-surface-200 rounded-lg shadow-xl z-10 dark:bg-surface-900">
               <button
                 onClick={exportToPNG}
                 className="w-full flex items-center gap-3 px-4 py-3 text-left text-surface-700 hover:bg-surface-200 transition-colors"
@@ -288,7 +288,7 @@ export default function RiskHeatmap() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Heatmap Grid */}
-        <div className="lg:col-span-2 bg-white rounded-xl border border-surface-200 p-6">
+        <div className="lg:col-span-2 bg-white rounded-xl border border-surface-200 p-6 dark:bg-surface-900">
           {isLoading ? (
             <div className="flex items-center justify-center h-96">
               <div className="text-surface-600">Loading heatmap...</div>
@@ -385,7 +385,7 @@ export default function RiskHeatmap() {
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Selected Cell Details */}
-          <div className="bg-white rounded-xl border border-surface-200 p-6">
+          <div className="bg-white rounded-xl border border-surface-200 p-6 dark:bg-surface-900">
             <h3 className="text-lg font-medium text-white mb-4">
               {selectedCell ? 'Selected Risks' : 'Click a Cell'}
             </h3>
@@ -428,7 +428,7 @@ export default function RiskHeatmap() {
 
           {/* Stats */}
           {dashboard && (
-            <div className="bg-white rounded-xl border border-surface-200 p-6">
+            <div className="bg-white rounded-xl border border-surface-200 p-6 dark:bg-surface-900">
               <h3 className="text-lg font-medium text-white mb-4">Risk Distribution</h3>
               <div className="space-y-3">
                 {dashboard.byRiskLevel?.map((level: any) => {
@@ -465,7 +465,7 @@ export default function RiskHeatmap() {
 
           {/* Category Distribution */}
           {dashboard && (
-            <div className="bg-white rounded-xl border border-surface-200 p-6">
+            <div className="bg-white rounded-xl border border-surface-200 p-6 dark:bg-surface-900">
               <h3 className="text-lg font-medium text-white mb-4">By Category</h3>
               <div className="space-y-2">
                 {dashboard.byCategory?.map((cat: any) => (

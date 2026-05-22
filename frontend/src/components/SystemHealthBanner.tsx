@@ -113,7 +113,7 @@ export function SystemHealthBanner() {
             </p>
           </div>
         </div>
-        <button className="p-1 hover:bg-white/10 rounded">
+        <button className="p-1 hover:bg-white/10 rounded dark:bg-surface-900/10 dark:hover:bg-surface-800/10">
           {expanded ? (
             <ChevronUpIcon className="h-5 w-5" />
           ) : (
@@ -203,7 +203,7 @@ function WarningItem({ warning, onDismiss }: { warning: SystemWarning; onDismiss
             e.stopPropagation();
             onDismiss();
           }}
-          className="p-1 hover:bg-white/10 rounded text-foreground/50 hover:text-foreground"
+          className="p-1 hover:bg-white/10 rounded text-foreground/50 hover:text-foreground dark:bg-surface-900/10 dark:hover:bg-surface-800/10"
           title="Dismiss for this session"
         >
           <XMarkIcon className="h-4 w-4" />

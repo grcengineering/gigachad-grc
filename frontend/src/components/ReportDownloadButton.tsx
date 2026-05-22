@@ -153,7 +153,7 @@ export function ReportDownloadButton({
         leaveFrom="transform opacity-100 scale-100"
         leaveTo="transform opacity-0 scale-95"
       >
-        <Menu.Items className="absolute right-0 mt-2 w-72 origin-top-right rounded-lg bg-white border border-surface-200 shadow-lg focus:outline-none z-50">
+        <Menu.Items className="absolute right-0 mt-2 w-72 origin-top-right rounded-lg bg-white border border-surface-200 shadow-lg focus:outline-none z-50 dark:bg-surface-900">
           <div className="p-2">
             <p className="px-3 py-2 text-xs font-medium text-surface-600 uppercase tracking-wider">
               Download Reports

@@ -1,6 +1,6 @@
 /**
  * Dashboard Stats Component
- * 
+ *
  * Displays the main statistics cards at the top of the dashboard.
  */
 
@@ -88,25 +88,23 @@ const StatCard = memo(function StatCard({
   href,
 }: StatCardProps) {
   const colors = colorClasses[color];
-  
+
   return (
     <Link
       to={href}
-      className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-all hover:border-gray-300 group"
+      className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-all hover:border-gray-300 group dark:bg-surface-900 dark:border-surface-800"
     >
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm font-medium text-gray-600">{title}</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
-          {subValue && (
-            <p className={clsx('text-sm mt-1', colors.text)}>{subValue}</p>
-          )}
+          <p className="text-sm font-medium text-gray-600 dark:text-surface-300">{title}</p>
+          <p className="text-2xl font-bold text-gray-900 mt-1 dark:text-surface-50">{value}</p>
+          {subValue && <p className={clsx('text-sm mt-1', colors.text)}>{subValue}</p>}
         </div>
         <div className={clsx('p-3 rounded-lg', colors.bg)}>
           <Icon className={clsx('w-6 h-6', colors.text)} />
         </div>
       </div>
-      <div className="mt-3 flex items-center text-sm text-gray-500 group-hover:text-indigo-600 transition-colors">
+      <div className="mt-3 flex items-center text-sm text-gray-500 group-hover:text-indigo-600 transition-colors dark:text-surface-400">
         <span>View details</span>
         <ChevronRightIcon className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
       </div>
@@ -127,9 +125,10 @@ export const DashboardStats = memo(function DashboardStats({
     return null;
   }
 
-  const controlsImplemented = data.controls.total > 0
-    ? Math.round((data.controls.implemented / data.controls.total) * 100)
-    : 0;
+  const controlsImplemented =
+    data.controls.total > 0
+      ? Math.round((data.controls.implemented / data.controls.total) * 100)
+      : 0;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
@@ -144,7 +143,9 @@ export const DashboardStats = memo(function DashboardStats({
       <StatCard
         title="Evidence"
         value={data.evidence.total}
-        subValue={data.evidence.expiringSoon > 0 ? `${data.evidence.expiringSoon} expiring soon` : undefined}
+        subValue={
+          data.evidence.expiringSoon > 0 ? `${data.evidence.expiringSoon} expiring soon` : undefined
+        }
         icon={FolderOpenIcon}
         color="green"
         href="/evidence"
@@ -152,7 +153,11 @@ export const DashboardStats = memo(function DashboardStats({
       <StatCard
         title="Risks"
         value={data.risks.total}
-        subValue={data.risks.high + data.risks.critical > 0 ? `${data.risks.high + data.risks.critical} high/critical` : 'No high risks'}
+        subValue={
+          data.risks.high + data.risks.critical > 0
+            ? `${data.risks.high + data.risks.critical} high/critical`
+            : 'No high risks'
+        }
         icon={ExclamationTriangleIcon}
         color={data.risks.high + data.risks.critical > 0 ? 'red' : 'yellow'}
         href="/risks"
@@ -168,7 +173,11 @@ export const DashboardStats = memo(function DashboardStats({
       <StatCard
         title="Policies"
         value={data.policies.total}
-        subValue={data.policies.pendingReview > 0 ? `${data.policies.pendingReview} pending review` : `${data.policies.active} active`}
+        subValue={
+          data.policies.pendingReview > 0
+            ? `${data.policies.pendingReview} pending review`
+            : `${data.policies.active} active`
+        }
         icon={DocumentTextIcon}
         color="blue"
         href="/policies"

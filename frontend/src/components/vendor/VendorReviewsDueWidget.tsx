@@ -94,7 +94,9 @@ export function VendorReviewsDueWidget({ className }: VendorReviewsDueWidgetProp
         <div
           className={clsx(
             'p-3 rounded-lg text-center',
-            summary.overdueCount > 0 ? 'bg-red-500/10 border border-red-500/30' : 'bg-white'
+            summary.overdueCount > 0
+              ? 'bg-red-500/10 border border-red-500/30'
+              : 'bg-white dark:bg-surface-900'
           )}
         >
           <p
@@ -112,7 +114,7 @@ export function VendorReviewsDueWidget({ className }: VendorReviewsDueWidgetProp
             'p-3 rounded-lg text-center',
             summary.dueThisWeekCount > 0
               ? 'bg-orange-500/10 border border-orange-500/30'
-              : 'bg-white'
+              : 'bg-white dark:bg-surface-900'
           )}
         >
           <p
@@ -130,7 +132,7 @@ export function VendorReviewsDueWidget({ className }: VendorReviewsDueWidgetProp
             'p-3 rounded-lg text-center',
             summary.dueThisMonthCount > 0
               ? 'bg-yellow-500/10 border border-yellow-500/30'
-              : 'bg-white'
+              : 'bg-white dark:bg-surface-900'
           )}
         >
           <p
@@ -222,7 +224,7 @@ function ReviewItem({ vendor, status, statusText }: ReviewItemProps) {
   return (
     <Link
       to={`/vendors/${vendor.id}`}
-      className="flex items-center justify-between p-3 bg-white/50 hover:bg-surface-200 rounded-lg transition-colors group"
+      className="flex items-center justify-between p-3 bg-white/50 hover:bg-surface-200 rounded-lg transition-colors group dark:bg-surface-900/50"
     >
       <div className="flex items-center gap-3 min-w-0">
         <Icon className={clsx('w-4 h-4 flex-shrink-0', statusColors[status])} />

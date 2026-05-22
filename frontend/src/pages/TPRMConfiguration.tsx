@@ -158,7 +158,7 @@ export default function TPRMConfiguration() {
       </div>
 
       {/* Tab Content */}
-      <div className="bg-white rounded-xl border border-surface-200 p-6">
+      <div className="bg-white rounded-xl border border-surface-200 p-6 dark:bg-surface-900">
         {activeTab === 'tiers' && config && referenceData && (
           <TierFrequencyTab
             config={config}
@@ -416,7 +416,10 @@ function TierFrequencyTab({
             const freq = tierMapping[tier.key as keyof typeof tierMapping];
             const months = parseFrequencyToMonths(freq);
             return (
-              <div key={tier.key} className="text-center p-3 bg-white rounded-lg">
+              <div
+                key={tier.key}
+                className="text-center p-3 bg-white rounded-lg dark:bg-surface-900"
+              >
                 <p className="text-surface-600 text-xs mb-1">{tier.label}</p>
                 <p className="text-white font-medium">{formatFrequencyLabel(freq)}</p>
                 <p className="text-surface-500 text-xs mt-1">
@@ -880,7 +883,7 @@ function FeatureSettingsTab({
                   onChange={(e) => handleChange(feature.key, e.target.checked)}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-surface-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-brand-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
+                <div className="w-11 h-6 bg-surface-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-brand-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500 dark:bg-surface-900 dark:border-surface-700"></div>
               </label>
             </div>
           </div>

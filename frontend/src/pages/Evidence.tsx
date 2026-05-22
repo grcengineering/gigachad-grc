@@ -219,7 +219,7 @@ export default function Evidence() {
                 )}
               >
                 <div className="flex items-start gap-3">
-                  <div className="p-2 bg-white rounded-lg">
+                  <div className="p-2 bg-white rounded-lg dark:bg-surface-900">
                     <Icon className="w-6 h-6 text-surface-600" />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -419,7 +419,7 @@ function UploadModal({
       <div className="fixed inset-0 bg-black/60" onClick={onClose} />
       {/* Modal content - positioned on top */}
       <div className="relative min-h-screen flex items-center justify-center p-4">
-        <div className="relative bg-white border border-surface-200 rounded-xl w-full max-w-lg p-6 shadow-2xl">
+        <div className="relative bg-white border border-surface-200 rounded-xl w-full max-w-lg p-6 shadow-2xl dark:bg-surface-900">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-semibold text-surface-900">Upload Evidence</h2>
             <button onClick={onClose} className="text-surface-600 hover:text-surface-900">

@@ -79,7 +79,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="bg-white border border-surface-200 rounded-lg p-6 space-y-6">
+      <div className="bg-white border border-surface-200 rounded-lg p-6 space-y-6 dark:bg-surface-900">
         {/* Basic Information */}
         <div>
           <h3 className="text-lg font-medium text-surface-900 mb-4">Basic Information</h3>
@@ -92,7 +92,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
                 required
               />
             </div>
@@ -103,7 +103,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
               <SelectNative
                 value={formData.contractType}
                 onChange={(e) => setFormData({ ...formData, contractType: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
                 required
               >
                 <option value="msa">MSA</option>
@@ -119,7 +119,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
               <SelectNative
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
                 required
               >
                 <option value="active">Active</option>
@@ -134,7 +134,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
                 type="text"
                 value={formData.vendorId}
                 onChange={(e) => setFormData({ ...formData, vendorId: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
                 required
               />
             </div>
@@ -148,7 +148,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
             value={formData.description || ''}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             rows={3}
-            className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+            className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
           />
         </div>
 
@@ -169,7 +169,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
                     contractValue: parseFloat(e.target.value) || undefined,
                   })
                 }
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
               />
             </div>
             <div>
@@ -177,7 +177,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
               <SelectNative
                 value={formData.currency}
                 onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
               >
                 <option value="USD">USD</option>
                 <option value="EUR">EUR</option>
@@ -199,7 +199,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
                 type="date"
                 value={formData.startDate}
                 onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
                 required
               />
             </div>
@@ -209,7 +209,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
                 type="date"
                 value={formData.endDate}
                 onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
                 required
               />
             </div>
@@ -221,7 +221,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
                 type="date"
                 value={formData.renewalDate || ''}
                 onChange={(e) => setFormData({ ...formData, renewalDate: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
               />
             </div>
           </div>
@@ -231,7 +231,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
                 type="checkbox"
                 checked={formData.autoRenew}
                 onChange={(e) => setFormData({ ...formData, autoRenew: e.target.checked })}
-                className="w-4 h-4 bg-white border-surface-200 rounded text-brand-600 focus:ring-brand-500"
+                className="w-4 h-4 bg-white border-surface-200 rounded text-brand-600 focus:ring-brand-500 dark:bg-surface-900"
               />
               <span className="text-sm text-surface-700">Auto-renew contract</span>
             </label>
@@ -247,7 +247,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
                 type="checkbox"
                 checked={formData.requiresSoc2}
                 onChange={(e) => setFormData({ ...formData, requiresSoc2: e.target.checked })}
-                className="w-4 h-4 bg-white border-surface-200 rounded text-brand-600 focus:ring-brand-500"
+                className="w-4 h-4 bg-white border-surface-200 rounded text-brand-600 focus:ring-brand-500 dark:bg-surface-900"
               />
               <span className="text-sm text-surface-700">SOC 2 Required</span>
             </label>
@@ -256,7 +256,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
                 type="checkbox"
                 checked={formData.requiresIso27001}
                 onChange={(e) => setFormData({ ...formData, requiresIso27001: e.target.checked })}
-                className="w-4 h-4 bg-white border-surface-200 rounded text-brand-600 focus:ring-brand-500"
+                className="w-4 h-4 bg-white border-surface-200 rounded text-brand-600 focus:ring-brand-500 dark:bg-surface-900"
               />
               <span className="text-sm text-surface-700">ISO 27001 Required</span>
             </label>
@@ -265,7 +265,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
                 type="checkbox"
                 checked={formData.requiresHipaa}
                 onChange={(e) => setFormData({ ...formData, requiresHipaa: e.target.checked })}
-                className="w-4 h-4 bg-white border-surface-200 rounded text-brand-600 focus:ring-brand-500"
+                className="w-4 h-4 bg-white border-surface-200 rounded text-brand-600 focus:ring-brand-500 dark:bg-surface-900"
               />
               <span className="text-sm text-surface-700">HIPAA Required</span>
             </label>
@@ -274,7 +274,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
                 type="checkbox"
                 checked={formData.requiresGdpr}
                 onChange={(e) => setFormData({ ...formData, requiresGdpr: e.target.checked })}
-                className="w-4 h-4 bg-white border-surface-200 rounded text-brand-600 focus:ring-brand-500"
+                className="w-4 h-4 bg-white border-surface-200 rounded text-brand-600 focus:ring-brand-500 dark:bg-surface-900"
               />
               <span className="text-sm text-surface-700">GDPR Required</span>
             </label>
@@ -312,7 +312,7 @@ function ContractView({
 }) {
   return (
     <div className="space-y-6">
-      <div className="bg-white border border-surface-200 rounded-lg p-6 space-y-6">
+      <div className="bg-white border border-surface-200 rounded-lg p-6 space-y-6 dark:bg-surface-900">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
@@ -322,13 +322,13 @@ function ContractView({
           <div className="flex items-center gap-2">
             <button
               onClick={onEdit}
-              className="p-2 text-surface-600 hover:text-surface-900 hover:bg-white rounded-lg transition-colors"
+              className="p-2 text-surface-600 hover:text-surface-900 hover:bg-white rounded-lg transition-colors dark:bg-surface-900 dark:hover:bg-surface-800"
             >
               <PencilIcon className="w-5 h-5" />
             </button>
             <button
               onClick={onDelete}
-              className="p-2 text-red-600 hover:text-red-700 hover:bg-white rounded-lg transition-colors"
+              className="p-2 text-red-600 hover:text-red-700 hover:bg-white rounded-lg transition-colors dark:bg-surface-900 dark:hover:bg-surface-800"
             >
               <TrashIcon className="w-5 h-5" />
             </button>
@@ -550,7 +550,7 @@ export default function ContractDetail() {
       <div className="flex items-center gap-4">
         <button
           onClick={() => navigate('/contracts')}
-          className="p-2 text-surface-600 hover:text-surface-900 hover:bg-white rounded-lg transition-colors"
+          className="p-2 text-surface-600 hover:text-surface-900 hover:bg-white rounded-lg transition-colors dark:bg-surface-900 dark:hover:bg-surface-800"
         >
           <ArrowLeftIcon className="w-5 h-5" />
         </button>
@@ -590,7 +590,7 @@ export default function ContractDetail() {
         <div className="flex justify-end gap-2">
           <button
             onClick={() => setShowDeleteConfirm(false)}
-            className="px-4 py-2 bg-white text-surface-900 rounded-lg hover:bg-surface-200 transition-colors"
+            className="px-4 py-2 bg-white text-surface-900 rounded-lg hover:bg-surface-200 transition-colors dark:bg-surface-900"
           >
             Cancel
           </button>

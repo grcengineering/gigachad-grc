@@ -175,7 +175,7 @@ export default function CodeEditor({
   return (
     <div className="h-full flex flex-col">
       {/* Toolbar */}
-      <div className="flex items-center justify-between px-4 py-2 bg-white/50 border-b border-surface-200">
+      <div className="flex items-center justify-between px-4 py-2 bg-white/50 border-b border-surface-200 dark:bg-surface-900/50">
         <div className="flex items-center gap-2">
           <Button
             onClick={handleValidate}
@@ -223,7 +223,7 @@ export default function CodeEditor({
       </div>
       {/* Validation/Test Results */}
       {(validation || testResult) && (
-        <div className="px-4 py-2 bg-white/30 border-b border-surface-200">
+        <div className="px-4 py-2 bg-white/30 border-b border-surface-200 dark:bg-surface-900/30">
           {validation && (
             <div
               className={clsx(
@@ -275,7 +275,7 @@ export default function CodeEditor({
               <div>
                 <div>{testResult.message}</div>
                 {testResult.data && (
-                  <pre className="mt-2 p-2 bg-white rounded text-xs text-surface-700 overflow-auto max-h-32">
+                  <pre className="mt-2 p-2 bg-white rounded text-xs text-surface-700 overflow-auto max-h-32 dark:bg-surface-900">
                     {JSON.stringify(testResult.data, null, 2)}
                   </pre>
                 )}
@@ -305,7 +305,7 @@ export default function CodeEditor({
         />
       </div>
       {/* Help Text */}
-      <div className="px-4 py-2 bg-white/30 border-t border-surface-200 text-xs text-surface-500">
+      <div className="px-4 py-2 bg-white/30 border-t border-surface-200 text-xs text-surface-500 dark:bg-surface-900/30">
         <strong>Tip:</strong> The <code className="bg-surface-200 px-1 rounded">sync(context)</code>{' '}
         function is called when syncing. Return an object with an{' '}
         <code className="bg-surface-200 px-1 rounded">evidence</code> array containing data to save.

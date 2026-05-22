@@ -201,7 +201,7 @@ export default function IntegrationConfigModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between p-6 border-t border-surface-200 bg-white">
+        <div className="flex items-center justify-between p-6 border-t border-surface-200 bg-white dark:bg-surface-900">
           <div className="text-sm text-surface-500">
             {activeTab === 'quick' &&
               `${quickSetupConfig.evidenceTypes.length} evidence types selected`}

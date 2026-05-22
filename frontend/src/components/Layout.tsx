@@ -247,7 +247,7 @@ function NavSectionComponent({ section }: { section: NavSection }) {
           'flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300',
           hasActiveItem
             ? 'text-brand-400'
-            : 'text-surface-600 hover:bg-white hover:text-surface-900'
+            : 'text-surface-600 hover:bg-white hover:text-surface-900 dark:bg-surface-900 dark:hover:bg-surface-800'
         )}
       >
         <div className="flex items-center gap-3">
@@ -290,7 +290,7 @@ function NavSectionComponent({ section }: { section: NavSection }) {
                     'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200',
                     isActive
                       ? 'bg-brand-600/20 text-brand-400 font-medium'
-                      : 'text-surface-600 hover:bg-white hover:text-surface-900'
+                      : 'text-surface-600 hover:bg-white hover:text-surface-900 dark:bg-surface-900 dark:hover:bg-surface-800'
                   )}
                   style={{
                     transitionDelay: isOpen ? `${index * 30}ms` : '0ms',
@@ -352,7 +352,7 @@ export default function Layout() {
         role="navigation"
         aria-label="Main navigation"
         className={clsx(
-          'fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-surface-200 transform transition-transform duration-200 ease-in-out lg:translate-x-0',
+          'fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-surface-200 transform transition-transform duration-200 ease-in-out lg:translate-x-0 dark:bg-surface-900',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
@@ -372,7 +372,7 @@ export default function Layout() {
                 'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
                 isDashboardActive
                   ? 'bg-brand-600/20 text-brand-400'
-                  : 'text-surface-600 hover:bg-white hover:text-surface-900'
+                  : 'text-surface-600 hover:bg-white hover:text-surface-900 dark:bg-surface-900 dark:hover:bg-surface-800'
               )}
               onClick={() => setSidebarOpen(false)}
             >
@@ -388,7 +388,7 @@ export default function Layout() {
                   'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ml-2',
                   isActive
                     ? 'bg-brand-600/20 text-brand-400'
-                    : 'text-surface-600 hover:bg-white hover:text-surface-900'
+                    : 'text-surface-600 hover:bg-white hover:text-surface-900 dark:bg-surface-900 dark:hover:bg-surface-800'
                 )
               }
               onClick={() => setSidebarOpen(false)}
@@ -398,7 +398,7 @@ export default function Layout() {
             </NavLink>
 
             {/* Divider */}
-            <div className="h-px bg-white my-2" />
+            <div className="h-px bg-white my-2 dark:bg-surface-900" />
 
             {/* Collapsible Sections */}
             {navSections
@@ -435,7 +435,7 @@ export default function Layout() {
             </div>
             <button
               onClick={logout}
-              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-surface-600 hover:text-surface-900 hover:bg-white rounded-lg transition-colors"
+              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-surface-600 hover:text-surface-900 hover:bg-white rounded-lg transition-colors dark:bg-surface-900 dark:hover:bg-surface-800"
             >
               <ArrowRightOnRectangleIcon className="w-5 h-5" />
               Sign out
@@ -450,7 +450,7 @@ export default function Layout() {
         <header
           role="banner"
           aria-label="Site header"
-          className="sticky top-0 z-[60] bg-white/80 backdrop-blur-sm border-b border-surface-200"
+          className="sticky top-0 z-[60] bg-white/80 backdrop-blur-sm border-b border-surface-200 dark:bg-surface-900/80"
         >
           <div className="flex items-center justify-between gap-4 px-4 py-3 lg:px-6">
             <div className="flex items-center gap-2">
@@ -469,7 +469,7 @@ export default function Layout() {
               {/* Keyboard Shortcuts Button */}
               <button
                 onClick={() => setShowShortcuts(true)}
-                className="p-2 text-surface-600 hover:text-surface-900 hover:bg-white rounded-lg transition-colors"
+                className="p-2 text-surface-600 hover:text-surface-900 hover:bg-white rounded-lg transition-colors dark:bg-surface-900 dark:hover:bg-surface-800"
                 title="Keyboard Shortcuts (⌘/)"
               >
                 <CommandLineIcon className="w-5 h-5" />
@@ -478,7 +478,7 @@ export default function Layout() {
               {/* Help Center Link */}
               <NavLink
                 to="/help"
-                className="p-2 text-surface-600 hover:text-surface-900 hover:bg-white rounded-lg transition-colors"
+                className="p-2 text-surface-600 hover:text-surface-900 hover:bg-white rounded-lg transition-colors dark:bg-surface-900 dark:hover:bg-surface-800"
                 title="Help Center"
               >
                 <QuestionMarkCircleIcon className="w-5 h-5" />
@@ -486,7 +486,7 @@ export default function Layout() {
 
               <NavLink
                 to="/account"
-                className="p-2 text-surface-600 hover:text-surface-900 hover:bg-white rounded-lg transition-colors"
+                className="p-2 text-surface-600 hover:text-surface-900 hover:bg-white rounded-lg transition-colors dark:bg-surface-900 dark:hover:bg-surface-800"
                 title="Account Settings"
               >
                 <CogIcon className="w-5 h-5" />

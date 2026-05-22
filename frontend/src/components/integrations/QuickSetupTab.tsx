@@ -311,7 +311,7 @@ export default function QuickSetupTab({ typeMeta, config, onChange }: QuickSetup
               <button
                 key={key}
                 onClick={() => applyPreset(key as keyof typeof PRESETS)}
-                className="px-3 py-1.5 text-xs bg-white hover:bg-surface-200 border border-surface-200 rounded-lg transition-colors"
+                className="px-3 py-1.5 text-xs bg-white hover:bg-surface-200 border border-surface-200 rounded-lg transition-colors dark:bg-surface-900"
                 title={preset.description}
               >
                 {preset.label}
@@ -341,10 +341,10 @@ export default function QuickSetupTab({ typeMeta, config, onChange }: QuickSetup
               const allSelected = selectedCount === types.length;
 
               return (
-                <div key={category} className="bg-white/50">
+                <div key={category} className="bg-white/50 dark:bg-surface-900/50">
                   {/* Category Header */}
                   <div
-                    className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-white transition-colors"
+                    className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-white transition-colors dark:bg-surface-900 dark:hover:bg-surface-800"
                     onClick={() => toggleCategory(category)}
                   >
                     <div className="flex items-center gap-2">
@@ -382,7 +382,7 @@ export default function QuickSetupTab({ typeMeta, config, onChange }: QuickSetup
                               'flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-colors',
                               isSelected
                                 ? 'bg-brand-500/10 border border-brand-500/30'
-                                : 'bg-white/50 border border-transparent hover:border-surface-200'
+                                : 'bg-white/50 border border-transparent hover:border-surface-200 dark:bg-surface-900/50'
                             )}
                           >
                             <div
@@ -415,7 +415,7 @@ export default function QuickSetupTab({ typeMeta, config, onChange }: QuickSetup
 
           {/* Summary */}
           {config.evidenceTypes.length > 0 && (
-            <div className="mt-4 p-4 bg-white/50 rounded-lg border border-surface-200">
+            <div className="mt-4 p-4 bg-white/50 rounded-lg border border-surface-200 dark:bg-surface-900/50">
               <h4 className="text-xs font-semibold text-surface-700 uppercase mb-2">
                 Collection Summary
               </h4>

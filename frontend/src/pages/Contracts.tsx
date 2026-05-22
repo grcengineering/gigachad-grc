@@ -65,7 +65,7 @@ export default function Contracts() {
           }}
         />
       ) : (
-        <div className="bg-white border border-surface-200 rounded-xl overflow-hidden">
+        <div className="bg-white border border-surface-200 rounded-xl overflow-hidden dark:bg-surface-900">
           <table className="w-full">
             <thead className="bg-surface-200/50 border-b border-surface-200">
               <tr>

@@ -51,12 +51,12 @@ export default function TrustAnalytics() {
         <div className="h-8 bg-surface-200 rounded w-48 animate-pulse" />
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-32 bg-white rounded-xl animate-pulse" />
+            <div key={i} className="h-32 bg-white rounded-xl animate-pulse dark:bg-surface-900" />
           ))}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="h-80 bg-white rounded-xl animate-pulse" />
-          <div className="h-80 bg-white rounded-xl animate-pulse" />
+          <div className="h-80 bg-white rounded-xl animate-pulse dark:bg-surface-900" />
+          <div className="h-80 bg-white rounded-xl animate-pulse dark:bg-surface-900" />
         </div>
       </div>
     );
@@ -131,7 +131,7 @@ export default function TrustAnalytics() {
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Questions by Status */}
-        <div className="bg-white border border-surface-200 rounded-xl p-6">
+        <div className="bg-white border border-surface-200 rounded-xl p-6 dark:bg-surface-900">
           <h3 className="text-lg font-semibold text-surface-900 mb-4">Questions by Status</h3>
           <LazyRechartsWrapper height={250}>
             {(Recharts) =>
@@ -185,7 +185,7 @@ export default function TrustAnalytics() {
         </div>
 
         {/* Questionnaires by Priority */}
-        <div className="bg-white border border-surface-200 rounded-xl p-6">
+        <div className="bg-white border border-surface-200 rounded-xl p-6 dark:bg-surface-900">
           <h3 className="text-lg font-semibold text-surface-900 mb-4">
             Questionnaires by Priority
           </h3>
@@ -231,7 +231,7 @@ export default function TrustAnalytics() {
       {/* Response Time & Completion Trend */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Average Response Time by Priority */}
-        <div className="bg-white border border-surface-200 rounded-xl p-6">
+        <div className="bg-white border border-surface-200 rounded-xl p-6 dark:bg-surface-900">
           <div className="flex items-center gap-2 mb-4">
             <ClockIcon className="w-5 h-5 text-surface-600" />
             <h3 className="text-lg font-semibold text-surface-900">Average Response Time</h3>
@@ -258,7 +258,7 @@ export default function TrustAnalytics() {
         </div>
 
         {/* Completion Trend */}
-        <div className="bg-white border border-surface-200 rounded-xl p-6">
+        <div className="bg-white border border-surface-200 rounded-xl p-6 dark:bg-surface-900">
           <div className="flex items-center gap-2 mb-4">
             <ArrowTrendingUpIcon className="w-5 h-5 text-surface-600" />
             <h3 className="text-lg font-semibold text-surface-900">Completion Trend</h3>
@@ -313,7 +313,7 @@ export default function TrustAnalytics() {
       </div>
 
       {/* Top Knowledge Base Entries */}
-      <div className="bg-white border border-surface-200 rounded-xl p-6">
+      <div className="bg-white border border-surface-200 rounded-xl p-6 dark:bg-surface-900">
         <div className="flex items-center gap-2 mb-4">
           <BookOpenIcon className="w-5 h-5 text-surface-600" />
           <h3 className="text-lg font-semibold text-surface-900">
@@ -379,7 +379,7 @@ function StatCard({
   };
 
   return (
-    <div className="bg-white border border-surface-200 rounded-xl p-5">
+    <div className="bg-white border border-surface-200 rounded-xl p-5 dark:bg-surface-900">
       <div className="flex items-center gap-3 mb-3">
         <div className={clsx('p-2 rounded-lg', colorClasses[color])}>
           <Icon className="w-5 h-5" />

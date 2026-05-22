@@ -162,7 +162,7 @@ export default function KnowledgeBaseDetail() {
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate('/knowledge-base')}
-            className="p-2 text-surface-600 hover:text-surface-900 hover:bg-white rounded-lg transition-colors"
+            className="p-2 text-surface-600 hover:text-surface-900 hover:bg-white rounded-lg transition-colors dark:bg-surface-900 dark:hover:bg-surface-800"
           >
             <ArrowLeftIcon className="w-5 h-5" />
           </button>
@@ -194,7 +194,7 @@ export default function KnowledgeBaseDetail() {
         )}
       </div>
       {editing ? (
-        <div className="bg-white border border-surface-200 rounded-lg p-6 space-y-6">
+        <div className="bg-white border border-surface-200 rounded-lg p-6 space-y-6 dark:bg-surface-900">
           <div>
             <label className="block text-sm font-medium text-surface-600 mb-1">
               Title <span className="text-red-600">*</span>
@@ -203,7 +203,7 @@ export default function KnowledgeBaseDetail() {
               type="text"
               value={formData.title}
               onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
-              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
               placeholder="e.g., Data Encryption at Rest"
             />
           </div>
@@ -215,7 +215,7 @@ export default function KnowledgeBaseDetail() {
               <SelectNative
                 value={formData.category}
                 onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value }))}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
               >
                 {CATEGORIES.map((cat) => (
                   <option key={cat} value={cat}>
@@ -230,7 +230,7 @@ export default function KnowledgeBaseDetail() {
                 type="text"
                 value={formData.framework || ''}
                 onChange={(e) => setFormData((prev) => ({ ...prev, framework: e.target.value }))}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
                 placeholder="e.g., SOC2, ISO 27001"
               />
             </div>
@@ -241,7 +241,7 @@ export default function KnowledgeBaseDetail() {
               type="text"
               value={formData.question || ''}
               onChange={(e) => setFormData((prev) => ({ ...prev, question: e.target.value }))}
-              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
               placeholder="e.g., Does your platform encrypt data at rest?"
             />
           </div>
@@ -253,7 +253,7 @@ export default function KnowledgeBaseDetail() {
               value={formData.answer}
               onChange={(e) => setFormData((prev) => ({ ...prev, answer: e.target.value }))}
               rows={6}
-              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
               placeholder="Provide a detailed answer..."
             />
           </div>
@@ -270,7 +270,7 @@ export default function KnowledgeBaseDetail() {
                     handleAddTag();
                   }
                 }}
-                className="flex-1 px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+                className="flex-1 px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
                 placeholder="Add a tag and press Enter"
               />
               <button
@@ -307,7 +307,7 @@ export default function KnowledgeBaseDetail() {
               <SelectNative
                 value={formData.status}
                 onChange={(e) => setFormData((prev) => ({ ...prev, status: e.target.value }))}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 dark:bg-surface-900"
               >
                 {STATUSES.map((status) => (
                   <option key={status} value={status}>
@@ -322,7 +322,7 @@ export default function KnowledgeBaseDetail() {
                   type="checkbox"
                   checked={formData.isPublic}
                   onChange={(e) => setFormData((prev) => ({ ...prev, isPublic: e.target.checked }))}
-                  className="w-4 h-4 rounded border-surface-200 bg-white text-brand-600 focus:ring-brand-500"
+                  className="w-4 h-4 rounded border-surface-200 bg-white text-brand-600 focus:ring-brand-500 dark:bg-surface-900"
                 />
                 <span className="text-sm text-surface-700">Make publicly visible</span>
               </label>
@@ -352,7 +352,7 @@ export default function KnowledgeBaseDetail() {
           </div>
         </div>
       ) : entry ? (
-        <div className="bg-white border border-surface-200 rounded-lg p-6 space-y-6">
+        <div className="bg-white border border-surface-200 rounded-lg p-6 space-y-6 dark:bg-surface-900">
           <div className="flex items-center gap-2">
             <span className="px-2 py-1 text-xs bg-surface-200 text-surface-700 rounded capitalize">
               {entry.category}

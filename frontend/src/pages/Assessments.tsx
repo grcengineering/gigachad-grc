@@ -60,7 +60,7 @@ export default function Assessments() {
 
       {/* Assessments List */}
       {assessments.length === 0 ? (
-        <div className="bg-white border border-surface-200 rounded-lg p-12 text-center">
+        <div className="bg-white border border-surface-200 rounded-lg p-12 text-center dark:bg-surface-900">
           <DocumentCheckIcon className="w-12 h-12 text-surface-600 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-surface-700 mb-2">No assessments yet</h3>
           <p className="text-surface-500 mb-6">
@@ -74,9 +74,9 @@ export default function Assessments() {
           </Button>
         </div>
       ) : (
-        <div className="bg-white border border-surface-200 rounded-lg overflow-hidden">
+        <div className="bg-white border border-surface-200 rounded-lg overflow-hidden dark:bg-surface-900">
           <table className="w-full">
-            <thead className="bg-white border-b border-surface-200">
+            <thead className="bg-white border-b border-surface-200 dark:bg-surface-900">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-surface-600 uppercase tracking-wider">
                   Vendor
@@ -100,7 +100,7 @@ export default function Assessments() {
                 <tr
                   key={assessment.id}
                   onClick={() => navigate(`/assessments/${assessment.id}`)}
-                  className="hover:bg-white cursor-pointer transition-colors"
+                  className="hover:bg-white cursor-pointer transition-colors dark:bg-surface-900 dark:hover:bg-surface-800"
                 >
                   <td className="px-6 py-4 text-sm font-medium text-surface-900">
                     {assessment.vendor?.name}

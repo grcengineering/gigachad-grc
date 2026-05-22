@@ -115,7 +115,7 @@ export function ActionItemsWidget({
 
   if (isLoading) {
     return (
-      <div className="bg-white border border-surface-200 rounded-xl p-6">
+      <div className="bg-white border border-surface-200 rounded-xl p-6 dark:bg-surface-900">
         <div className="animate-pulse space-y-4">
           <div className="h-6 bg-surface-200 rounded w-1/3" />
           <div className="space-y-3">
@@ -129,7 +129,7 @@ export function ActionItemsWidget({
   }
 
   return (
-    <div className="bg-white border border-surface-200 rounded-xl">
+    <div className="bg-white border border-surface-200 rounded-xl dark:bg-surface-900">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-surface-200">
         <div>

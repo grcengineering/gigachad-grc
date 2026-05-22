@@ -170,7 +170,7 @@ export default function PolicyDetail() {
         </Link>
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-4">
-            <div className="p-3 bg-white rounded-xl">
+            <div className="p-3 bg-white rounded-xl dark:bg-surface-900">
               <DocumentTextIcon className="w-8 h-8 text-brand-400" />
             </div>
             <div>
@@ -273,7 +273,9 @@ export default function PolicyDetail() {
                     key={version.id}
                     className={clsx(
                       'flex items-center justify-between p-3 rounded-lg',
-                      index === 0 ? 'bg-brand-500/10 border border-brand-500/30' : 'bg-white'
+                      index === 0
+                        ? 'bg-brand-500/10 border border-brand-500/30'
+                        : 'bg-white dark:bg-surface-900'
                     )}
                   >
                     <div>
@@ -431,7 +433,7 @@ export default function PolicyDetail() {
                 {policy?.controlLinks?.map((link: any) => (
                   <div
                     key={link.id}
-                    className="flex items-center justify-between p-3 bg-white rounded-lg group"
+                    className="flex items-center justify-between p-3 bg-white rounded-lg group dark:bg-surface-900"
                   >
                     <Link
                       to={`/controls/${link.control?.id}`}
@@ -872,7 +874,7 @@ function LinkControlModal({
                 'flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors',
                 selectedControlIds.includes(control.id)
                   ? 'bg-brand-500/20 border border-brand-500/50'
-                  : 'bg-white hover:bg-surface-200'
+                  : 'bg-white hover:bg-surface-200 dark:bg-surface-900'
               )}
             >
               <input

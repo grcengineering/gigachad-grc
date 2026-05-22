@@ -89,14 +89,14 @@ export default function SessionWarning({
           <div className="flex-1">
             <h4 className="font-semibold">Session Expiring Soon</h4>
             <p className="text-sm text-yellow-100 mt-1">
-              Your session will expire in {formatTime(timeRemaining)}.
-              Save your work to avoid losing any changes.
+              Your session will expire in {formatTime(timeRemaining)}. Save your work to avoid
+              losing any changes.
             </p>
             <div className="flex gap-2 mt-3">
               {onExtendSession && (
                 <button
                   onClick={handleExtend}
-                  className="px-3 py-1.5 bg-white text-yellow-700 rounded text-sm font-medium hover:bg-yellow-50 transition-colors"
+                  className="px-3 py-1.5 bg-white text-yellow-700 rounded text-sm font-medium hover:bg-yellow-50 transition-colors dark:bg-surface-900"
                 >
                   Extend Session
                 </button>

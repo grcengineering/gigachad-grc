@@ -47,14 +47,14 @@ function formatDate(dateString: string | null | undefined): string {
 }
 
 function getScoreColor(score: number | undefined): string {
-  if (score === undefined) return 'text-gray-400';
+  if (score === undefined) return 'text-gray-400 dark:text-surface-500';
   if (score >= 80) return 'text-green-500';
   if (score >= 60) return 'text-yellow-500';
   return 'text-red-500';
 }
 
 function getScoreBgColor(score: number | undefined): string {
-  if (score === undefined) return 'bg-gray-500/20';
+  if (score === undefined) return 'bg-gray-500/20 dark:bg-surface-500/20';
   if (score >= 80) return 'bg-green-500/20';
   if (score >= 60) return 'bg-yellow-500/20';
   return 'bg-red-500/20';
@@ -76,7 +76,7 @@ function StatusBadge({ status }: { status: string | undefined }) {
     declined: { color: 'bg-red-500/20 text-red-600', icon: XCircleIcon },
   };
   const config = configs[status] || {
-    color: 'bg-gray-500/20 text-gray-400',
+    color: 'bg-gray-500/20 text-gray-400 dark:bg-surface-500/20 dark:text-surface-500',
     icon: ExclamationTriangleIcon,
   };
   const Icon = config.icon;
@@ -374,7 +374,11 @@ export default function EmployeeDetail() {
                         <td className="p-3 text-foreground">{training.courseName}</td>
                         <td className="p-3 text-center">
                           <span
-                            className={`text-xs px-2 py-0.5 rounded ${training.courseType === 'required' ? 'bg-red-500/20 text-red-600' : 'bg-gray-500/20 text-gray-400'}`}
+                            className={`text-xs px-2 py-0.5 rounded ${
+                              training.courseType === 'required'
+                                ? 'bg-red-500/20 dark:bg-red-500/20 text-red-600 dark:text-red-400'
+                                : 'bg-surface-500/20 dark:bg-surface-500/20 text-surface-500 dark:text-surface-400'
+                            }`}
                           >
                             {training.courseType || 'optional'}
                           </span>

@@ -46,7 +46,7 @@ export default function AccountSettings() {
                   'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
                   activeTab === tab.id
                     ? 'bg-brand-600/20 text-brand-400'
-                    : 'text-surface-600 hover:bg-white hover:text-surface-900'
+                    : 'text-surface-600 hover:bg-white hover:text-surface-900 dark:bg-surface-900 dark:hover:bg-surface-800'
                 )}
               >
                 <tab.icon className="w-5 h-5" />
@@ -166,7 +166,7 @@ function NotificationPreferences() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Email */}
-            <label className="flex flex-col p-4 bg-white/50 rounded-lg cursor-pointer hover:bg-white border-2 transition-colors border-transparent has-[:checked]:border-brand-500">
+            <label className="flex flex-col p-4 bg-white/50 rounded-lg cursor-pointer hover:bg-white border-2 transition-colors border-transparent has-[:checked]:border-brand-500 dark:bg-surface-900/50 dark:hover:bg-surface-800">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-surface-900 font-medium flex items-center gap-2">
                   <svg
@@ -195,7 +195,7 @@ function NotificationPreferences() {
             </label>
 
             {/* In-App */}
-            <label className="flex flex-col p-4 bg-white/50 rounded-lg cursor-pointer hover:bg-white border-2 transition-colors border-transparent has-[:checked]:border-brand-500">
+            <label className="flex flex-col p-4 bg-white/50 rounded-lg cursor-pointer hover:bg-white border-2 transition-colors border-transparent has-[:checked]:border-brand-500 dark:bg-surface-900/50 dark:hover:bg-surface-800">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-surface-900 font-medium flex items-center gap-2">
                   <BellIcon className="w-5 h-5 text-surface-600" />
@@ -212,7 +212,7 @@ function NotificationPreferences() {
             </label>
 
             {/* Slack */}
-            <label className="flex flex-col p-4 bg-white/50 rounded-lg cursor-pointer hover:bg-white border-2 transition-colors border-transparent has-[:checked]:border-brand-500">
+            <label className="flex flex-col p-4 bg-white/50 rounded-lg cursor-pointer hover:bg-white border-2 transition-colors border-transparent has-[:checked]:border-brand-500 dark:bg-surface-900/50 dark:hover:bg-surface-800">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-surface-900 font-medium flex items-center gap-2">
                   <svg className="w-5 h-5 text-surface-600" viewBox="0 0 24 24" fill="currentColor">
@@ -233,7 +233,7 @@ function NotificationPreferences() {
 
           {/* Slack User ID - only shown when Slack is enabled */}
           {riskTaskPrefs.slack && (
-            <div className="p-4 bg-white/30 rounded-lg border border-surface-200">
+            <div className="p-4 bg-white/30 rounded-lg border border-surface-200 dark:bg-surface-900/30">
               <label className="label">Slack User ID</label>
               <Input
                 type="text"
@@ -268,7 +268,7 @@ function NotificationPreferences() {
                   'flex-1 min-w-[200px] p-3 rounded-lg cursor-pointer border-2 transition-colors',
                   riskTaskPrefs.digestMode === option.value
                     ? 'border-brand-500 bg-brand-500/10'
-                    : 'border-surface-200 bg-white/50 hover:border-surface-300'
+                    : 'border-surface-200 bg-white/50 hover:border-surface-300 dark:bg-surface-900/50'
                 )}
               >
                 <div className="flex items-center gap-2">
@@ -305,7 +305,7 @@ function NotificationPreferences() {
           <h3 className="text-sm font-medium text-surface-700">Email Notifications</h3>
 
           <div className="space-y-3">
-            <label className="flex items-center justify-between p-3 bg-white/50 rounded-lg cursor-pointer hover:bg-white">
+            <label className="flex items-center justify-between p-3 bg-white/50 rounded-lg cursor-pointer hover:bg-white dark:bg-surface-900/50 dark:hover:bg-surface-800">
               <div>
                 <span className="text-surface-900 font-medium">Email Notifications</span>
                 <p className="text-surface-500 text-sm">Receive notifications via email</p>
@@ -318,7 +318,7 @@ function NotificationPreferences() {
               />
             </label>
 
-            <label className="flex items-center justify-between p-3 bg-white/50 rounded-lg cursor-pointer hover:bg-white">
+            <label className="flex items-center justify-between p-3 bg-white/50 rounded-lg cursor-pointer hover:bg-white dark:bg-surface-900/50 dark:hover:bg-surface-800">
               <div>
                 <span className="text-surface-900 font-medium">Compliance Alerts</span>
                 <p className="text-surface-500 text-sm">
@@ -333,7 +333,7 @@ function NotificationPreferences() {
               />
             </label>
 
-            <label className="flex items-center justify-between p-3 bg-white/50 rounded-lg cursor-pointer hover:bg-white">
+            <label className="flex items-center justify-between p-3 bg-white/50 rounded-lg cursor-pointer hover:bg-white dark:bg-surface-900/50 dark:hover:bg-surface-800">
               <div>
                 <span className="text-surface-900 font-medium">Evidence Reminders</span>
                 <p className="text-surface-500 text-sm">
@@ -348,7 +348,7 @@ function NotificationPreferences() {
               />
             </label>
 
-            <label className="flex items-center justify-between p-3 bg-white/50 rounded-lg cursor-pointer hover:bg-white">
+            <label className="flex items-center justify-between p-3 bg-white/50 rounded-lg cursor-pointer hover:bg-white dark:bg-surface-900/50 dark:hover:bg-surface-800">
               <div>
                 <span className="text-surface-900 font-medium">Risk Alerts</span>
                 <p className="text-surface-500 text-sm">
@@ -363,7 +363,7 @@ function NotificationPreferences() {
               />
             </label>
 
-            <label className="flex items-center justify-between p-3 bg-white/50 rounded-lg cursor-pointer hover:bg-white">
+            <label className="flex items-center justify-between p-3 bg-white/50 rounded-lg cursor-pointer hover:bg-white dark:bg-surface-900/50 dark:hover:bg-surface-800">
               <div>
                 <span className="text-surface-900 font-medium">Weekly Digest</span>
                 <p className="text-surface-500 text-sm">Summary of activity sent weekly</p>
@@ -379,7 +379,7 @@ function NotificationPreferences() {
 
           <h3 className="text-sm font-medium text-surface-700 pt-4">In-App Notifications</h3>
 
-          <label className="flex items-center justify-between p-3 bg-white/50 rounded-lg cursor-pointer hover:bg-white">
+          <label className="flex items-center justify-between p-3 bg-white/50 rounded-lg cursor-pointer hover:bg-white dark:bg-surface-900/50 dark:hover:bg-surface-800">
             <div>
               <span className="text-surface-900 font-medium">In-App Notifications</span>
               <p className="text-surface-500 text-sm">Show notifications in the app</p>
@@ -539,7 +539,7 @@ function SecuritySettings() {
         <p className="text-surface-600 text-sm">Manage your active sessions across devices</p>
 
         <div className="space-y-3">
-          <div className="flex items-center justify-between p-3 bg-white/50 rounded-lg">
+          <div className="flex items-center justify-between p-3 bg-white/50 rounded-lg dark:bg-surface-900/50">
             <div className="flex items-center gap-3">
               <ComputerDesktopIcon className="w-8 h-8 text-surface-600" />
               <div>

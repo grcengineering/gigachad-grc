@@ -182,7 +182,7 @@ export function SetupWizard({ onClose }: { onClose: () => void }) {
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-white/10 rounded-lg text-foreground/60 hover:text-foreground"
+            className="p-2 hover:bg-white/10 rounded-lg text-foreground/60 hover:text-foreground dark:bg-surface-900/10 dark:hover:bg-surface-800/10"
           >
             <XMarkIcon className="h-5 w-5" />
           </button>
@@ -217,7 +217,9 @@ export function SetupWizard({ onClose }: { onClose: () => void }) {
                   key={step.id}
                   onClick={() => setCurrentStep(index)}
                   className={`w-full text-left p-3 rounded-lg mb-2 transition-colors ${
-                    isActive ? 'bg-primary/20 border border-primary/50' : 'hover:bg-white/5'
+                    isActive
+                      ? 'bg-primary/20 border border-primary/50'
+                      : 'hover:bg-white/5 dark:bg-surface-900/5 dark:hover:bg-surface-800/5'
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -299,7 +301,7 @@ export function SetupWizard({ onClose }: { onClose: () => void }) {
                     </div>
 
                     {currentStepData.commands && currentStepData.commands.length > 0 && (
-                      <div className="bg-white rounded-lg p-4">
+                      <div className="bg-white rounded-lg p-4 dark:bg-surface-900">
                         <h4 className="text-sm font-medium text-foreground mb-3">Commands</h4>
                         <div className="space-y-2">
                           {currentStepData.commands.map((command, i) => (

@@ -18,7 +18,12 @@ export function SkeletonSubtitle({ className }: { className?: string }) {
 
 export function SkeletonCard({ className }: { className?: string }) {
   return (
-    <div className={clsx('bg-white border border-surface-200 rounded-lg p-6 space-y-4', className)}>
+    <div
+      className={clsx(
+        'bg-white border border-surface-200 rounded-lg p-6 space-y-4 dark:bg-surface-900',
+        className
+      )}
+    >
       <div className="flex items-center space-x-4">
         <Skeleton shape="circle" className="h-12 w-12" />
         <div className="space-y-2 flex-1">
@@ -37,7 +42,12 @@ export function SkeletonCard({ className }: { className?: string }) {
 
 export function SkeletonStatCard({ className }: { className?: string }) {
   return (
-    <div className={clsx('bg-white border border-surface-200 rounded-lg p-6', className)}>
+    <div
+      className={clsx(
+        'bg-white border border-surface-200 rounded-lg p-6 dark:bg-surface-900',
+        className
+      )}
+    >
       <Skeleton className="h-4 w-24 mb-2" />
       <Skeleton className="h-10 w-16 mb-1" />
       <Skeleton className="h-3 w-20" />
@@ -64,7 +74,10 @@ interface SkeletonTableProps {
 export function SkeletonTable({ rows = 5, columns = 5, className }: SkeletonTableProps) {
   return (
     <div
-      className={clsx('bg-white border border-surface-200 rounded-lg overflow-hidden', className)}
+      className={clsx(
+        'bg-white border border-surface-200 rounded-lg overflow-hidden dark:bg-surface-900',
+        className
+      )}
     >
       <div className="border-b border-surface-200 bg-surface-50 px-6 py-3">
         <div className="flex space-x-4">
@@ -179,7 +192,12 @@ export function SkeletonDetailSection({
   className?: string;
 }) {
   return (
-    <div className={clsx('bg-white border border-surface-200 rounded-lg p-6 space-y-4', className)}>
+    <div
+      className={clsx(
+        'bg-white border border-surface-200 rounded-lg p-6 space-y-4 dark:bg-surface-900',
+        className
+      )}
+    >
       {title && <Skeleton className="h-6 w-32 mb-4" />}
       <SkeletonText lines={4} />
     </div>
@@ -199,11 +217,11 @@ export function SkeletonDashboard({ className }: { className?: string }) {
         ))}
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white border border-surface-200 rounded-lg p-6">
+        <div className="bg-white border border-surface-200 rounded-lg p-6 dark:bg-surface-900">
           <Skeleton className="h-6 w-40 mb-4" />
           <Skeleton className="h-56 w-full" />
         </div>
-        <div className="bg-white border border-surface-200 rounded-lg p-6">
+        <div className="bg-white border border-surface-200 rounded-lg p-6 dark:bg-surface-900">
           <Skeleton className="h-6 w-40 mb-4" />
           <Skeleton className="h-44 w-full" />
           <div className="flex justify-center gap-4 mt-4">
@@ -214,11 +232,11 @@ export function SkeletonDashboard({ className }: { className?: string }) {
         </div>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white border border-surface-200 rounded-lg p-6">
+        <div className="bg-white border border-surface-200 rounded-lg p-6 dark:bg-surface-900">
           <Skeleton className="h-6 w-40 mb-4" />
           <Skeleton className="h-44 w-full" />
         </div>
-        <div className="bg-white border border-surface-200 rounded-lg p-6">
+        <div className="bg-white border border-surface-200 rounded-lg p-6 dark:bg-surface-900">
           <Skeleton className="h-6 w-48 mb-4" />
           <div className="space-y-3">
             {Array.from({ length: 6 }).map((_, i) => (

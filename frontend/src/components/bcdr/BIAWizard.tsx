@@ -60,7 +60,12 @@ interface WizardState {
 // ============================================
 
 const IMPACT_OPTIONS = [
-  { value: 'none', label: 'None', description: 'No measurable impact', color: 'bg-gray-500' },
+  {
+    value: 'none',
+    label: 'None',
+    description: 'No measurable impact',
+    color: 'bg-gray-500 dark:bg-surface-500',
+  },
   {
     value: 'minor',
     label: 'Minor',
@@ -602,7 +607,12 @@ export function BIAWizard({
               const option = IMPACT_OPTIONS.find((o) => o.value === item.value);
               return (
                 <div key={item.label} className="flex items-center gap-2">
-                  <div className={clsx('w-3 h-3 rounded-full', option?.color || 'bg-gray-500')} />
+                  <div
+                    className={clsx(
+                      'w-3 h-3 rounded-full',
+                      option?.color || 'bg-gray-500 dark:bg-surface-500'
+                    )}
+                  />
                   <span className="text-slate-400">{item.label}:</span>
                   <span className="text-white capitalize">{item.value}</span>
                 </div>

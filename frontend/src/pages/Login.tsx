@@ -91,7 +91,9 @@ export default function Login() {
                   <div className="w-full border-t border-surface-200"></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-surface-500">Development Only</span>
+                  <span className="px-2 bg-white text-surface-500 dark:bg-surface-900">
+                    Development Only
+                  </span>
                 </div>
               </div>
               <button

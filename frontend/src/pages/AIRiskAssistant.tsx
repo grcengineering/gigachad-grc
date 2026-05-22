@@ -44,7 +44,7 @@ export default function AIRiskAssistant() {
         <h1 className="text-2xl font-semibold text-white">AI Risk Assistant</h1>
         <p className="text-surface-600">
           The AI module is not enabled for this environment. Ask an administrator to set
-          <code className="mx-1 text-xs bg-white px-2 py-1 rounded">
+          <code className="mx-1 text-xs bg-white px-2 py-1 rounded dark:bg-surface-900">
             VITE_ENABLE_AI_MODULE=true
           </code>
           and provide AI provider API keys.

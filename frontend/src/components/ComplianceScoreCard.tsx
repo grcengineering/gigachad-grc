@@ -42,8 +42,8 @@ export function ComplianceScoreCard({
     <div
       onClick={onClick}
       className={`
-        bg-white border border-surface-200 rounded-xl p-6
-        ${onClick ? 'cursor-pointer hover:border-surface-300 transition-colors' : ''}
+        bg-white dark:bg-surface-900 border border-surface-200 dark:border-surface-800 rounded-xl p-6
+        ${onClick ? 'cursor-pointer hover:border-surface-300 dark:hover:border-surface-700 transition-colors' : ''}
       `}
     >
       <div className="flex items-start justify-between mb-4">

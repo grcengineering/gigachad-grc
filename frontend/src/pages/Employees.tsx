@@ -49,14 +49,14 @@ interface Employee {
 }
 
 function getScoreColor(score: number | undefined): string {
-  if (score === undefined) return 'text-gray-400';
+  if (score === undefined) return 'text-gray-400 dark:text-surface-500';
   if (score >= 80) return 'text-green-500';
   if (score >= 60) return 'text-yellow-500';
   return 'text-red-500';
 }
 
 function getScoreBgColor(score: number | undefined): string {
-  if (score === undefined) return 'bg-gray-500/20';
+  if (score === undefined) return 'bg-gray-500/20 dark:bg-surface-500/20';
   if (score >= 80) return 'bg-green-500/20';
   if (score >= 60) return 'bg-yellow-500/20';
   return 'bg-red-500/20';
@@ -88,7 +88,7 @@ function getStatusBadge(status: string | undefined) {
       );
     default:
       return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-gray-500/20 text-gray-400">
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-gray-500/20 text-gray-400 dark:bg-surface-500/20 dark:text-surface-500">
           <ExclamationTriangleIcon className="h-3 w-3" />
           None
         </span>
@@ -108,31 +108,51 @@ function DataSourceIcons({ dataSources }: { dataSources: Employee['dataSources']
   return (
     <div className="flex items-center gap-1">
       <div
-        className={`p-1 rounded ${sources.hasHris ? 'text-blue-600' : 'text-gray-600'}`}
+        className={`p-1 rounded ${
+          sources.hasHris
+            ? 'text-blue-600 dark:text-blue-300'
+            : 'text-surface-600 dark:text-surface-300'
+        }`}
         title="HRIS"
       >
         <BuildingOffice2Icon className="h-4 w-4" />
       </div>
       <div
-        className={`p-1 rounded ${sources.hasBackgroundCheck ? 'text-green-600' : 'text-gray-600'}`}
+        className={`p-1 rounded ${
+          sources.hasBackgroundCheck
+            ? 'text-green-600 dark:text-green-300'
+            : 'text-surface-600 dark:text-surface-300'
+        }`}
         title="Background Check"
       >
         <ShieldCheckIcon className="h-4 w-4" />
       </div>
       <div
-        className={`p-1 rounded ${sources.hasTraining ? 'text-purple-600' : 'text-gray-600'}`}
+        className={`p-1 rounded ${
+          sources.hasTraining
+            ? 'text-purple-600 dark:text-purple-300'
+            : 'text-surface-600 dark:text-surface-300'
+        }`}
         title="Training"
       >
         <AcademicCapIcon className="h-4 w-4" />
       </div>
       <div
-        className={`p-1 rounded ${sources.hasAssets ? 'text-orange-600' : 'text-gray-600'}`}
+        className={`p-1 rounded ${
+          sources.hasAssets
+            ? 'text-orange-600 dark:text-orange-300'
+            : 'text-surface-600 dark:text-surface-300'
+        }`}
         title="Assets"
       >
         <ComputerDesktopIcon className="h-4 w-4" />
       </div>
       <div
-        className={`p-1 rounded ${sources.hasAccess ? 'text-cyan-600' : 'text-gray-600'}`}
+        className={`p-1 rounded ${
+          sources.hasAccess
+            ? 'text-cyan-600 dark:text-cyan-300'
+            : 'text-surface-600 dark:text-surface-300'
+        }`}
         title="Access"
       >
         <KeyIcon className="h-4 w-4" />
@@ -336,7 +356,7 @@ export default function Employees() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-border bg-white/50">
+              <tr className="border-b border-border bg-white/50 dark:bg-surface-900/50">
                 <th className="text-left p-4 font-medium text-muted-foreground">Employee</th>
                 <th className="text-left p-4 font-medium text-muted-foreground">Department</th>
                 <th className="text-center p-4 font-medium text-muted-foreground">Score</th>
@@ -364,7 +384,10 @@ export default function Employees() {
                 </tr>
               ) : (
                 employees.map((employee) => (
-                  <tr key={employee.id} className="border-b border-border hover:bg-white/30">
+                  <tr
+                    key={employee.id}
+                    className="border-b border-border hover:bg-white/30 dark:bg-surface-900/30 dark:hover:bg-surface-800/30"
+                  >
                     <td className="p-4">
                       <div className="flex items-center gap-3">
                         <div className="h-10 w-10 rounded-full bg-surface-200 flex items-center justify-center">

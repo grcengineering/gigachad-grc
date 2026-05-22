@@ -44,12 +44,12 @@ export default function WidgetContainer({
   return (
     <div
       className={clsx(
-        'h-full w-full bg-white border border-surface-200 rounded-lg overflow-hidden flex flex-col',
+        'h-full w-full bg-white border border-surface-200 rounded-lg overflow-hidden flex flex-col dark:bg-surface-900',
         isEditing && 'ring-2 ring-brand-500/30'
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-surface-200 bg-white/50">
+      <div className="flex items-center justify-between px-4 py-2 border-b border-surface-200 bg-white/50 dark:bg-surface-900/50">
         <div className="flex items-center gap-2">
           {isEditing && (
             <div className="widget-drag-handle cursor-move p-1 hover:bg-surface-200 rounded">

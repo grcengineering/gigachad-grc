@@ -638,7 +638,7 @@ function MultiSelectStage({
           aria-label={
             mode === 'requirement-to-controls' ? 'Candidate controls' : 'Candidate requirements'
           }
-          className="max-h-72 overflow-y-auto space-y-1 border border-surface-200 rounded-lg p-2 bg-white/40"
+          className="max-h-72 overflow-y-auto space-y-1 border border-surface-200 rounded-lg p-2 bg-white/40 dark:bg-surface-900/40"
         >
           {candidates.map((c) => {
             const id = c.id;
@@ -655,14 +655,14 @@ function MultiSelectStage({
                     'flex items-start gap-3 rounded-md px-3 py-2 cursor-pointer',
                     checked
                       ? 'bg-brand-600/20 border border-brand-500/40'
-                      : 'hover:bg-white border border-transparent'
+                      : 'hover:bg-white border border-transparent dark:bg-surface-900 dark:hover:bg-surface-800'
                   )}
                 >
                   <input
                     type="checkbox"
                     checked={checked}
                     onChange={() => onToggle(id)}
-                    className="mt-1 h-4 w-4 rounded border-surface-300 bg-white text-brand-500 focus:ring-brand-500"
+                    className="mt-1 h-4 w-4 rounded border-surface-300 bg-white text-brand-500 focus:ring-brand-500 dark:bg-surface-900"
                   />
                   <span className="flex-1">
                     <span className="block font-mono text-sm text-surface-800">{primary}</span>
@@ -702,7 +702,7 @@ function PerRowFormStage({ rows, getLabel, onChange, disabled, isEditMode }: Per
         {rows.map((row) => (
           <li
             key={row.candidateId}
-            className="rounded-lg border border-surface-200 p-3 bg-white/40"
+            className="rounded-lg border border-surface-200 p-3 bg-white/40 dark:bg-surface-900/40"
           >
             {!isEditMode && (
               <p className="text-sm font-medium text-surface-800 mb-2">
@@ -768,7 +768,7 @@ function SuggestionsPanel({
   return (
     <section
       aria-label="AI mapping suggestions"
-      className="rounded-lg border border-surface-200 bg-white/40 p-3 space-y-3"
+      className="rounded-lg border border-surface-200 bg-white/40 p-3 space-y-3 dark:bg-surface-900/40"
     >
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
@@ -836,7 +836,7 @@ function SuggestionsPanel({
             return (
               <li
                 key={s.candidateId}
-                className="rounded-md border border-surface-200 bg-white/60 p-2.5"
+                className="rounded-md border border-surface-200 bg-white/60 p-2.5 dark:bg-surface-900/60"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">

@@ -178,7 +178,7 @@ export default function HelpCenter() {
             placeholder="Search help articles..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-white border border-surface-200 rounded-xl text-surface-900 placeholder-surface-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+            className="w-full pl-12 pr-4 py-3 bg-white border border-surface-200 rounded-xl text-surface-900 placeholder-surface-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 dark:bg-surface-900"
           />
         </div>
       </div>
@@ -194,7 +194,7 @@ export default function HelpCenter() {
               className={`flex flex-col items-center gap-2 p-4 rounded-lg border transition-colors ${
                 isSelected
                   ? 'bg-brand-600/20 border-brand-500 text-brand-400'
-                  : 'bg-white/50 border-surface-200 text-surface-600 hover:bg-white hover:text-surface-800'
+                  : 'bg-white/50 border-surface-200 text-surface-600 hover:bg-white hover:text-surface-800 dark:bg-surface-900/50 dark:hover:bg-surface-800'
               }`}
             >
               <Icon className={`w-6 h-6 ${isSelected ? 'text-brand-400' : category.color}`} />
@@ -243,7 +243,7 @@ export default function HelpCenter() {
         </h2>
 
         {filteredArticles.length === 0 ? (
-          <div className="text-center py-12 bg-white/30 rounded-lg border border-surface-200">
+          <div className="text-center py-12 bg-white/30 rounded-lg border border-surface-200 dark:bg-surface-900/30">
             <BookOpenIcon className="w-12 h-12 text-surface-600 mx-auto mb-3" />
             <p className="text-surface-600">No articles found matching your search</p>
             <button
@@ -262,7 +262,7 @@ export default function HelpCenter() {
               <Link
                 key={article.id}
                 to={article.href}
-                className="group bg-white/50 border border-surface-200 rounded-lg p-5 hover:bg-white hover:border-surface-300 transition-colors"
+                className="group bg-white/50 border border-surface-200 rounded-lg p-5 hover:bg-white hover:border-surface-300 transition-colors dark:bg-surface-900/50 dark:hover:bg-surface-800"
               >
                 <div className="flex items-start justify-between mb-2">
                   <span className="px-2 py-0.5 text-xs bg-surface-200 text-surface-600 rounded">
@@ -287,7 +287,7 @@ export default function HelpCenter() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Link
             to="/docs?section=api"
-            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors"
+            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors dark:bg-surface-900/50 dark:hover:bg-surface-800"
           >
             <BookOpenIcon className="w-5 h-5 text-surface-600" />
             <span className="text-surface-800">API Documentation</span>
@@ -295,7 +295,7 @@ export default function HelpCenter() {
           </Link>
           <Link
             to="/docs?section=architecture"
-            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors"
+            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors dark:bg-surface-900/50 dark:hover:bg-surface-800"
           >
             <BookOpenIcon className="w-5 h-5 text-surface-600" />
             <span className="text-surface-800">Architecture Guide</span>
@@ -303,7 +303,7 @@ export default function HelpCenter() {
           </Link>
           <Link
             to="/docs?section=configuration"
-            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors"
+            className="flex items-center gap-3 p-4 bg-white/50 border border-surface-200 rounded-lg hover:bg-white transition-colors dark:bg-surface-900/50 dark:hover:bg-surface-800"
           >
             <BookOpenIcon className="w-5 h-5 text-surface-600" />
             <span className="text-surface-800">Configuration Guide</span>
@@ -312,7 +312,7 @@ export default function HelpCenter() {
         </div>
       </div>
       {/* Contact Support */}
-      <div className="bg-white/30 border border-surface-200 rounded-xl p-6 text-center">
+      <div className="bg-white/30 border border-surface-200 rounded-xl p-6 text-center dark:bg-surface-900/30">
         <h3 className="text-lg font-semibold text-surface-900 mb-2">Still need help?</h3>
         <p className="text-surface-600 mb-4">
           Can't find what you're looking for? Our support team is here to help.

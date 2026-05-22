@@ -240,7 +240,7 @@ export default function DRTests() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-white/50">
+              <thead className="bg-white/50 dark:bg-surface-900/50">
                 <tr>
                   <th className="text-left p-4 text-surface-700 font-medium">Test</th>
                   <th className="text-left p-4 text-surface-700 font-medium">Type</th>
@@ -256,7 +256,10 @@ export default function DRTests() {
                   const ResultIcon = test.result ? resultColors[test.result]?.icon : null;
 
                   return (
-                    <tr key={test.id} className="hover:bg-white/30 transition-colors">
+                    <tr
+                      key={test.id}
+                      className="hover:bg-white/30 transition-colors dark:bg-surface-900/30 dark:hover:bg-surface-800/30"
+                    >
                       <td className="p-4">
                         <Link
                           to={`/bcdr/tests/${test.id}`}

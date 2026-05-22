@@ -60,7 +60,7 @@ export function ProductionReadiness() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-xl p-6">
+      <div className="bg-white rounded-xl p-6 dark:bg-surface-900">
         <div className="flex items-center justify-center py-8">
           <ArrowPathIcon className="h-6 w-6 animate-spin text-primary" />
           <span className="ml-2 text-foreground/60">Analyzing system...</span>
@@ -71,7 +71,7 @@ export function ProductionReadiness() {
 
   if (error || !data) {
     return (
-      <div className="bg-white rounded-xl p-6">
+      <div className="bg-white rounded-xl p-6 dark:bg-surface-900">
         <div className="text-center py-8">
           <ExclamationTriangleIcon className="h-12 w-12 mx-auto text-yellow-500 mb-3" />
           <p className="text-foreground/60">{error || 'Unable to load data'}</p>
@@ -93,7 +93,7 @@ export function ProductionReadiness() {
     data.score >= 80 ? 'bg-green-500/20' : data.score >= 60 ? 'bg-yellow-500/20' : 'bg-red-500/20';
 
   return (
-    <div className="bg-white rounded-xl overflow-hidden">
+    <div className="bg-white rounded-xl overflow-hidden dark:bg-surface-900">
       {/* Header with score */}
       <div className="p-6 border-b border-white/10">
         <div className="flex items-center justify-between">
@@ -108,7 +108,7 @@ export function ProductionReadiness() {
           </div>
           <button
             onClick={fetchReadiness}
-            className="p-2 hover:bg-white/10 rounded-lg text-foreground/60 hover:text-foreground"
+            className="p-2 hover:bg-white/10 rounded-lg text-foreground/60 hover:text-foreground dark:bg-surface-900/10 dark:hover:bg-surface-800/10"
             title="Refresh"
           >
             <ArrowPathIcon className="h-5 w-5" />

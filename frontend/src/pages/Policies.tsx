@@ -150,7 +150,7 @@ export default function Policies() {
                           to={`/policies/${policy.id}`}
                           className="flex items-center gap-3 hover:text-brand-400"
                         >
-                          <div className="p-2 bg-white rounded-lg">
+                          <div className="p-2 bg-white rounded-lg dark:bg-surface-900">
                             <DocumentTextIcon className="w-5 h-5 text-surface-600" />
                           </div>
                           <span className="font-medium text-surface-900">{policy.title}</span>

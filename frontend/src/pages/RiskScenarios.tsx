@@ -606,7 +606,7 @@ export default function RiskScenarios() {
             </div>
 
             {simulationResult && (
-              <div className="bg-white rounded-lg p-6 border border-surface-200">
+              <div className="bg-white rounded-lg p-6 border border-surface-200 dark:bg-surface-900">
                 <h4 className="font-semibold text-foreground mb-4">Simulation Results</h4>
                 <div className="grid grid-cols-2 gap-6">
                   <div>

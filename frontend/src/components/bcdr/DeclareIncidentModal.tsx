@@ -173,7 +173,7 @@ export function DeclareIncidentModal({ onClose, onComplete }: DeclareIncidentMod
                   'p-3 rounded-md border-2 text-left transition-all',
                   incidentType === type.value
                     ? 'border-brand-500 bg-brand-50'
-                    : 'border-surface-300 bg-white hover:border-surface-400'
+                    : 'border-surface-300 bg-white hover:border-surface-400 dark:bg-surface-900'
                 )}
               >
                 <span className="text-sm font-medium text-surface-900">{type.label}</span>
@@ -197,7 +197,7 @@ export function DeclareIncidentModal({ onClose, onComplete }: DeclareIncidentMod
                   'w-full p-3 rounded-md border-2 text-left transition-all flex items-center gap-3',
                   severity === level.value
                     ? 'border-brand-500 bg-brand-50'
-                    : 'border-surface-300 bg-white hover:border-surface-400'
+                    : 'border-surface-300 bg-white hover:border-surface-400 dark:bg-surface-900'
                 )}
               >
                 <div className={clsx('w-3 h-3 rounded-full', level.color)} />

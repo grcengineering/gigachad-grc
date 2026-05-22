@@ -164,7 +164,7 @@ export function BulkActionsBar({
 
   return (
     <>
-      <div className="sticky top-0 z-40 bg-white border border-surface-200 rounded-lg p-3 flex items-center justify-between shadow-lg animate-slide-down">
+      <div className="sticky top-0 z-40 bg-white border border-surface-200 rounded-lg p-3 flex items-center justify-between shadow-lg animate-slide-down dark:bg-surface-900">
         <div className="flex items-center gap-4">
           <button
             onClick={onClear}
@@ -259,7 +259,7 @@ export function StatusUpdateDropdown({
       {isOpen && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-          <div className="absolute right-0 mt-2 w-48 bg-white border border-surface-200 rounded-lg shadow-xl z-50 overflow-hidden">
+          <div className="absolute right-0 mt-2 w-48 bg-white border border-surface-200 rounded-lg shadow-xl z-50 overflow-hidden dark:bg-surface-900">
             {options.map((option) => (
               <button
                 key={option.value}

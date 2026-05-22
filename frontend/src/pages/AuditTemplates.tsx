@@ -152,7 +152,7 @@ export default function AuditTemplates() {
         <SelectNative
           value={selectedType}
           onChange={(e) => setSelectedType(e.target.value)}
-          className="bg-white border border-surface-300 rounded-lg px-3 py-2 text-white"
+          className="bg-white border border-surface-300 rounded-lg px-3 py-2 text-white dark:bg-surface-900"
         >
           <option value="">All Types</option>
           {Object.entries(auditTypeLabels).map(([value, label]) => (
@@ -166,7 +166,10 @@ export default function AuditTemplates() {
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="animate-pulse bg-white rounded-lg p-6 h-48" />
+            <div
+              key={i}
+              className="animate-pulse bg-white rounded-lg p-6 h-48 dark:bg-surface-900"
+            />
           ))}
         </div>
       ) : (
@@ -174,7 +177,7 @@ export default function AuditTemplates() {
           {(templates as AuditTemplate[]).map((template) => (
             <div
               key={template.id}
-              className="bg-white rounded-lg p-6 border border-surface-200 hover:border-surface-500 transition-colors"
+              className="bg-white rounded-lg p-6 border border-surface-200 hover:border-surface-500 transition-colors dark:bg-surface-900"
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">

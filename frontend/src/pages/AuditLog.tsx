@@ -423,7 +423,7 @@ export default function AuditLog() {
                 logs.map((log: any) => {
                   const actionConfig = ACTION_CONFIG[log.action] || {
                     color: 'text-surface-600',
-                    bg: 'bg-white',
+                    bg: 'bg-white dark:bg-surface-900',
                   };
                   const EntityIcon = ENTITY_ICONS[log.entityType] || DocumentIcon;
                   const isExpanded = expandedRow === log.id;
@@ -431,7 +431,7 @@ export default function AuditLog() {
                   return (
                     <React.Fragment key={log.id}>
                       <tr
-                        className="border-b border-surface-200/50 hover:bg-white/30 transition-colors cursor-pointer"
+                        className="border-b border-surface-200/50 hover:bg-white/30 transition-colors cursor-pointer dark:bg-surface-900/30 dark:hover:bg-surface-800/30"
                         onClick={() => setExpandedRow(isExpanded ? null : log.id)}
                       >
                         <td className="px-4 py-3">
@@ -505,7 +505,7 @@ export default function AuditLog() {
 
                       {/* Expanded Details */}
                       {isExpanded && (
-                        <tr className="bg-white/20">
+                        <tr className="bg-white/20 dark:bg-surface-900/20">
                           <td colSpan={6} className="px-4 py-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               {/* Left - Details */}
@@ -548,7 +548,7 @@ export default function AuditLog() {
                                     <h4 className="text-sm font-medium text-surface-700">
                                       Changes
                                     </h4>
-                                    <pre className="text-xs text-surface-600 bg-white/50 p-3 rounded-lg overflow-auto max-h-[200px]">
+                                    <pre className="text-xs text-surface-600 bg-white/50 p-3 rounded-lg overflow-auto max-h-[200px] dark:bg-surface-900/50">
                                       {JSON.stringify(log.changes, null, 2)}
                                     </pre>
                                   </>
@@ -558,7 +558,7 @@ export default function AuditLog() {
                                     <h4 className="text-sm font-medium text-surface-700">
                                       Metadata
                                     </h4>
-                                    <pre className="text-xs text-surface-600 bg-white/50 p-3 rounded-lg overflow-auto max-h-[200px]">
+                                    <pre className="text-xs text-surface-600 bg-white/50 p-3 rounded-lg overflow-auto max-h-[200px] dark:bg-surface-900/50">
                                       {JSON.stringify(log.metadata, null, 2)}
                                     </pre>
                                   </>

@@ -354,7 +354,7 @@ export default function Risks() {
 
   const getRiskLevelColor = (level: string) => {
     const levelConfig = RISK_LEVELS.find((l) => l.value === level);
-    return levelConfig?.color || 'bg-gray-500';
+    return levelConfig?.color || 'bg-gray-500 dark:bg-surface-500';
   };
 
   const getStatusColor = (status: string) => {
@@ -461,7 +461,10 @@ export default function Risks() {
       {!dashboard ? (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <SkeletonStatCard key={i} className="bg-white border border-surface-200" />
+            <SkeletonStatCard
+              key={i}
+              className="bg-white border border-surface-200 dark:bg-surface-900"
+            />
           ))}
         </div>
       ) : (
@@ -469,7 +472,7 @@ export default function Risks() {
           <button
             onClick={() => setStatFilter(statFilter === 'all' ? 'all' : 'all')}
             className={clsx(
-              'bg-white rounded-xl border p-4 text-left transition-all',
+              'bg-white rounded-xl border p-4 text-left transition-all dark:bg-surface-900',
               statFilter === 'all'
                 ? 'border-brand-500 ring-2 ring-brand-500'
                 : 'border-surface-200 hover:bg-surface-200/50 cursor-pointer'
@@ -491,7 +494,7 @@ export default function Risks() {
           <button
             onClick={() => setStatFilter(statFilter === 'open' ? 'all' : 'open')}
             className={clsx(
-              'bg-white rounded-xl border p-4 text-left transition-all',
+              'bg-white rounded-xl border p-4 text-left transition-all dark:bg-surface-900',
               statFilter === 'open'
                 ? 'border-red-500 ring-2 ring-red-500'
                 : 'border-surface-200 hover:bg-surface-200/50 cursor-pointer'
@@ -513,7 +516,7 @@ export default function Risks() {
           <button
             onClick={() => setStatFilter(statFilter === 'reviews_due' ? 'all' : 'reviews_due')}
             className={clsx(
-              'bg-white rounded-xl border p-4 text-left transition-all',
+              'bg-white rounded-xl border p-4 text-left transition-all dark:bg-surface-900',
               statFilter === 'reviews_due'
                 ? 'border-amber-500 ring-2 ring-amber-500'
                 : 'border-surface-200 hover:bg-surface-200/50 cursor-pointer'
@@ -537,7 +540,7 @@ export default function Risks() {
           <button
             onClick={() => setStatFilter(statFilter === 'mitigated' ? 'all' : 'mitigated')}
             className={clsx(
-              'bg-white rounded-xl border p-4 text-left transition-all',
+              'bg-white rounded-xl border p-4 text-left transition-all dark:bg-surface-900',
               statFilter === 'mitigated'
                 ? 'border-emerald-500 ring-2 ring-emerald-500'
                 : 'border-surface-200 hover:bg-surface-200/50 cursor-pointer'
@@ -586,7 +589,7 @@ export default function Risks() {
         </div>
       )}
       {/* Search and Filters */}
-      <div className="bg-white rounded-xl border border-surface-200 p-4">
+      <div className="bg-white rounded-xl border border-surface-200 p-4 dark:bg-surface-900">
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Search */}
           <div className="flex-1 relative">
@@ -652,7 +655,7 @@ export default function Risks() {
         </div>
       </div>
       {/* Risks Table */}
-      <div className="bg-white rounded-xl border border-surface-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-surface-200 overflow-hidden dark:bg-surface-900">
         {isLoading ? (
           <SkeletonTable rows={8} columns={8} className="border-none shadow-none" />
         ) : data?.risks.length === 0 ? (

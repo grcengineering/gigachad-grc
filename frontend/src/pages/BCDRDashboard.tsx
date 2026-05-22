@@ -399,7 +399,7 @@ export default function BCDRDashboard() {
                 <Link
                   key={test.id}
                   to={`/bcdr/tests/${test.id}`}
-                  className="flex items-center justify-between p-3 rounded-lg bg-white/50 hover:bg-surface-200/50 transition-colors"
+                  className="flex items-center justify-between p-3 rounded-lg bg-white/50 hover:bg-surface-200/50 transition-colors dark:bg-surface-900/50"
                 >
                   <div>
                     <p className="text-surface-900 font-medium">{test.name}</p>
@@ -584,35 +584,35 @@ export default function BCDRDashboard() {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <Link
             to="/bcdr/processes/new"
-            className="p-4 rounded-lg bg-white/50 hover:bg-surface-200/50 transition-colors text-center"
+            className="p-4 rounded-lg bg-white/50 hover:bg-surface-200/50 transition-colors text-center dark:bg-surface-900/50"
           >
             <ShieldExclamationIcon className="w-8 h-8 mx-auto mb-2 text-brand-400" />
             <span className="text-surface-800 text-sm">Add Process</span>
           </Link>
           <Link
             to="/bcdr/plans/new"
-            className="p-4 rounded-lg bg-white/50 hover:bg-surface-200/50 transition-colors text-center"
+            className="p-4 rounded-lg bg-white/50 hover:bg-surface-200/50 transition-colors text-center dark:bg-surface-900/50"
           >
             <DocumentTextIcon className="w-8 h-8 mx-auto mb-2 text-blue-600" />
             <span className="text-surface-800 text-sm">Create Plan</span>
           </Link>
           <Link
             to="/bcdr/tests/new"
-            className="p-4 rounded-lg bg-white/50 hover:bg-surface-200/50 transition-colors text-center"
+            className="p-4 rounded-lg bg-white/50 hover:bg-surface-200/50 transition-colors text-center dark:bg-surface-900/50"
           >
             <BeakerIcon className="w-8 h-8 mx-auto mb-2 text-purple-600" />
             <span className="text-surface-800 text-sm">Schedule Test</span>
           </Link>
           <Link
             to="/bcdr/runbooks/new"
-            className="p-4 rounded-lg bg-white/50 hover:bg-surface-200/50 transition-colors text-center"
+            className="p-4 rounded-lg bg-white/50 hover:bg-surface-200/50 transition-colors text-center dark:bg-surface-900/50"
           >
             <BookOpenIcon className="w-8 h-8 mx-auto mb-2 text-teal-600" />
             <span className="text-surface-800 text-sm">Create Runbook</span>
           </Link>
           <Link
             to="/bcdr/recovery-teams"
-            className="p-4 rounded-lg bg-white/50 hover:bg-surface-200/50 transition-colors text-center"
+            className="p-4 rounded-lg bg-white/50 hover:bg-surface-200/50 transition-colors text-center dark:bg-surface-900/50"
           >
             <UserGroupIcon className="w-8 h-8 mx-auto mb-2 text-green-600" />
             <span className="text-surface-800 text-sm">Recovery Teams</span>

@@ -110,9 +110,9 @@ export default function MCPWorkflowBuilder() {
       case 'running':
         return <ArrowPathIcon className="w-5 h-5 text-blue-500 animate-spin" />;
       case 'cancelled':
-        return <StopIcon className="w-5 h-5 text-gray-500" />;
+        return <StopIcon className="w-5 h-5 text-gray-500 dark:text-surface-400" />;
       default:
-        return <ClockIcon className="w-5 h-5 text-gray-500" />;
+        return <ClockIcon className="w-5 h-5 text-gray-500 dark:text-surface-400" />;
     }
   };
 
@@ -152,7 +152,7 @@ export default function MCPWorkflowBuilder() {
 
           {loadingWorkflows ? (
             <div className="p-8 text-center">
-              <ArrowPathIcon className="w-8 h-8 animate-spin mx-auto text-gray-400" />
+              <ArrowPathIcon className="w-8 h-8 animate-spin mx-auto text-gray-400 dark:text-surface-500" />
             </div>
           ) : (
             <div className="divide-y divide-gray-200 dark:divide-surface-200">
@@ -163,7 +163,7 @@ export default function MCPWorkflowBuilder() {
                   className={`p-4 cursor-pointer transition-colors ${
                     selectedWorkflow === workflow.id
                       ? 'bg-brand-50 dark:bg-brand-900/20'
-                      : 'hover:bg-gray-50 dark:hover:bg-surface-200/50'
+                      : 'hover:bg-gray-50 dark:hover:bg-surface-200/50 dark:bg-surface-900'
                   }`}
                 >
                   <div className="flex items-center justify-between">
@@ -186,7 +186,7 @@ export default function MCPWorkflowBuilder() {
                         </p>
                       </div>
                     </div>
-                    <ChevronRightIcon className="w-5 h-5 text-gray-400" />
+                    <ChevronRightIcon className="w-5 h-5 text-gray-400 dark:text-surface-500" />
                   </div>
                 </div>
               ))}
@@ -249,7 +249,7 @@ export default function MCPWorkflowBuilder() {
             </div>
           ) : (
             <div className="bg-white dark:bg-white rounded-lg border border-gray-200 dark:border-surface-200 p-8 text-center">
-              <BoltIcon className="w-12 h-12 mx-auto text-gray-400" />
+              <BoltIcon className="w-12 h-12 mx-auto text-gray-400 dark:text-surface-500" />
               <p className="mt-2 text-gray-600 dark:text-gray-400">
                 Select a workflow to view details
               </p>
@@ -266,7 +266,7 @@ export default function MCPWorkflowBuilder() {
 
             {executions.length === 0 ? (
               <div className="p-8 text-center">
-                <ClockIcon className="w-12 h-12 mx-auto text-gray-400" />
+                <ClockIcon className="w-12 h-12 mx-auto text-gray-400 dark:text-surface-500" />
                 <p className="mt-2 text-gray-600 dark:text-gray-400">No executions yet</p>
               </div>
             ) : (
@@ -295,7 +295,7 @@ export default function MCPWorkflowBuilder() {
                             {execution.status === 'running' && (
                               <button
                                 onClick={() => cancelMutation.mutate(execution.id)}
-                                className="p-2 text-gray-500 hover:text-red-600 dark:hover:text-red-600"
+                                className="p-2 text-gray-500 hover:text-red-600 dark:hover:text-red-600 dark:text-surface-400"
                                 title="Cancel"
                               >
                                 <StopIcon className="w-5 h-5" />
@@ -312,7 +312,7 @@ export default function MCPWorkflowBuilder() {
                               running: 'bg-blue-500 animate-pulse',
                               completed: 'bg-green-500',
                               failed: 'bg-red-500',
-                              skipped: 'bg-gray-400',
+                              skipped: 'bg-gray-400 dark:bg-surface-600',
                             };
                             return (
                               <div
@@ -349,7 +349,7 @@ export default function MCPWorkflowBuilder() {
                 setShowExecutionModal(false);
                 setExecutionInput({});
               }}
-              className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+              className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 dark:text-surface-400"
             >
               ×
             </button>

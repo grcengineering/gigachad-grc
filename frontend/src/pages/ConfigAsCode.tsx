@@ -383,7 +383,7 @@ function ExportImportContent({
               value={importConfig}
               onChange={(e) => setImportConfig(e.target.value)}
               placeholder="Paste your configuration here or upload a file..."
-              className="w-full h-64 px-4 py-3 bg-white border border-surface-200 rounded-lg text-surface-800 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="w-full h-64 px-4 py-3 bg-white border border-surface-200 rounded-lg text-surface-800 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-surface-900"
             />
           </div>
 
@@ -410,7 +410,7 @@ function ExportImportContent({
         </div>
       </div>
       {/* Info Section */}
-      <div className="bg-white border border-surface-200 rounded-lg p-4">
+      <div className="bg-white border border-surface-200 rounded-lg p-4 dark:bg-surface-900">
         <div className="flex items-start gap-3">
           <CodeBracketIcon className="w-5 h-5 text-brand-400 flex-shrink-0 mt-0.5" />
           <div>

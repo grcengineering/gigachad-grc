@@ -36,7 +36,7 @@ const statusColors: Record<string, string> = {
   scheduled: 'bg-blue-500/20 text-blue-600',
   in_progress: 'bg-purple-500/20 text-purple-600',
   completed: 'bg-green-500/20 text-green-600',
-  deferred: 'bg-gray-500/20 text-gray-400',
+  deferred: 'bg-gray-500/20 text-gray-400 dark:bg-surface-500/20 dark:text-surface-500',
   cancelled: 'bg-red-500/20 text-red-600',
 };
 
@@ -114,7 +114,7 @@ export default function AuditCalendar() {
 
       {/* Capacity Overview */}
       {capacity && (
-        <div className="bg-white rounded-lg p-4 border border-surface-200">
+        <div className="bg-white rounded-lg p-4 border border-surface-200 dark:bg-surface-900">
           <h3 className="text-sm font-medium text-surface-600 mb-2">
             {currentYear} Capacity Overview
           </h3>
@@ -142,9 +142,9 @@ export default function AuditCalendar() {
 
       {/* Calendar Grid */}
       {isLoading ? (
-        <div className="animate-pulse bg-white rounded-lg h-96" />
+        <div className="animate-pulse bg-white rounded-lg h-96 dark:bg-surface-900" />
       ) : (
-        <div className="bg-white rounded-lg border border-surface-200 overflow-hidden">
+        <div className="bg-white rounded-lg border border-surface-200 overflow-hidden dark:bg-surface-900">
           {/* Year Headers */}
           <div className="grid grid-cols-3 border-b border-surface-200">
             {years.map((year) => (
@@ -186,7 +186,7 @@ export default function AuditCalendar() {
                             {!entry.linkedAuditId && entry.status === 'planned' && (
                               <button
                                 onClick={() => convertToAuditMutation.mutate(entry.id)}
-                                className="p-1 hover:bg-white/10 rounded"
+                                className="p-1 hover:bg-white/10 rounded dark:bg-surface-900/10 dark:hover:bg-surface-800/10"
                                 title="Convert to Audit"
                               >
                                 <PlayIcon className="h-3 w-3" />

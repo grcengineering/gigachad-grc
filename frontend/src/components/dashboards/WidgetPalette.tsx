@@ -81,7 +81,7 @@ export default function WidgetPalette({ onSelect, onClose }: WidgetPaletteProps)
                     onClick={() => onSelect(widget.type)}
                     className={clsx(
                       'flex flex-col items-center p-4 rounded-lg border border-surface-200',
-                      'bg-white hover:bg-surface-200 hover:border-brand-500/50',
+                      'bg-white hover:bg-surface-200 hover:border-brand-500/50 dark:bg-surface-900',
                       'transition-all duration-200 text-left'
                     )}
                   >
@@ -104,7 +104,7 @@ export default function WidgetPalette({ onSelect, onClose }: WidgetPaletteProps)
       </div>
 
       {/* Footer */}
-      <div className="p-4 border-t border-surface-200 bg-white/50">
+      <div className="p-4 border-t border-surface-200 bg-white/50 dark:bg-surface-900/50">
         <p className="text-sm text-surface-500">
           Click a widget to add it to your dashboard. You can configure it after adding.
         </p>

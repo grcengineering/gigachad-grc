@@ -363,7 +363,10 @@ function TableWidget({ data, config }: { data: any[]; config: any }) {
         </thead>
         <tbody>
           {displayData.map((row, i) => (
-            <tr key={i} className="border-b border-surface-200 hover:bg-white/50">
+            <tr
+              key={i}
+              className="border-b border-surface-200 hover:bg-white/50 dark:bg-surface-900/50 dark:hover:bg-surface-800/50"
+            >
               {columns.map((col: any) => (
                 <td key={col.field} className="py-2 px-3 text-surface-600">
                   {formatValue(row[col.field])}
@@ -413,7 +416,7 @@ function ProgressWidget({ data, config }: { data: any[]; config: any }) {
         </span>
         <span className="text-surface-800 font-medium">{percentage}%</span>
       </div>
-      <div className="w-full h-3 bg-white rounded-full overflow-hidden">
+      <div className="w-full h-3 bg-white rounded-full overflow-hidden dark:bg-surface-900">
         <div
           className="h-full rounded-full transition-all duration-500"
           style={{ width: `${percentage}%`, backgroundColor: color }}
@@ -438,7 +441,7 @@ function ListWidget({ data, config: _config }: { data: any[]; config: any }) {
         return (
           <div
             key={i}
-            className="flex items-center justify-between p-2 bg-white/50 rounded hover:bg-white"
+            className="flex items-center justify-between p-2 bg-white/50 rounded hover:bg-white dark:bg-surface-900/50 dark:hover:bg-surface-800"
           >
             <span className="text-surface-800 truncate">{formatValue(displayFields[0]?.[1])}</span>
             {displayFields[1] && (
