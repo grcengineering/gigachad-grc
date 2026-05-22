@@ -294,14 +294,14 @@ export default function RiskScenarios() {
                 placeholder="Search scenarios..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-foreground"
+                className="w-full pl-10 pr-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-foreground"
               />
             </div>
           </div>
           <SelectNative
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-foreground"
+            className="px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-foreground"
           >
             <option value="">All Categories</option>
             {CATEGORIES.map((cat) => (
@@ -313,7 +313,7 @@ export default function RiskScenarios() {
           <SelectNative
             value={threatActorFilter}
             onChange={(e) => setThreatActorFilter(e.target.value)}
-            className="px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-foreground"
+            className="px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-foreground"
           >
             <option value="">All Threat Actors</option>
             {THREAT_ACTORS.map((actor) => (
@@ -327,7 +327,7 @@ export default function RiskScenarios() {
               type="checkbox"
               checked={showTemplatesOnly}
               onChange={(e) => setShowTemplatesOnly(e.target.checked)}
-              className="rounded border-surface-600"
+              className="rounded border-surface-300"
             />
             Templates Only
           </label>
@@ -380,7 +380,7 @@ export default function RiskScenarios() {
                       {getThreatActorLabel(scenario.threatActor)}
                     </span>
                     <span>{getAttackVectorLabel(scenario.attackVector)}</span>
-                    <span className="bg-surface-700 px-2 py-0.5 rounded">{scenario.category}</span>
+                    <span className="bg-surface-200 px-2 py-0.5 rounded">{scenario.category}</span>
                     {scenario.tags?.slice(0, 3).map((tag: string) => (
                       <span key={tag} className="flex items-center gap-1">
                         <TagIcon className="h-3 w-3" />
@@ -397,21 +397,21 @@ export default function RiskScenarios() {
                       setSimulationResult(null);
                       setSimulationParams({ controlEffectiveness: 50, mitigations: [] });
                     }}
-                    className="p-2 text-surface-600 hover:text-brand-400 hover:bg-surface-700 rounded-lg transition-colors"
+                    className="p-2 text-surface-600 hover:text-brand-400 hover:bg-surface-200 rounded-lg transition-colors"
                     title="Run Simulation"
                   >
                     <PlayCircleIcon className="h-5 w-5" />
                   </button>
                   <button
                     onClick={() => cloneMutation.mutate({ id: scenario.id })}
-                    className="p-2 text-surface-600 hover:text-brand-400 hover:bg-surface-700 rounded-lg transition-colors"
+                    className="p-2 text-surface-600 hover:text-brand-400 hover:bg-surface-200 rounded-lg transition-colors"
                     title="Clone"
                   >
                     <DocumentDuplicateIcon className="h-5 w-5" />
                   </button>
                   <button
                     onClick={() => setEditingScenario(scenario)}
-                    className="p-2 text-surface-600 hover:text-brand-400 hover:bg-surface-700 rounded-lg transition-colors"
+                    className="p-2 text-surface-600 hover:text-brand-400 hover:bg-surface-200 rounded-lg transition-colors"
                     title="Edit"
                   >
                     <PencilIcon className="h-5 w-5" />
@@ -422,7 +422,7 @@ export default function RiskScenarios() {
                         deleteMutation.mutate(scenario.id);
                       }
                     }}
-                    className="p-2 text-surface-600 hover:text-red-600 hover:bg-surface-700 rounded-lg transition-colors"
+                    className="p-2 text-surface-600 hover:text-red-600 hover:bg-surface-200 rounded-lg transition-colors"
                     title="Delete"
                   >
                     <TrashIcon className="h-5 w-5" />
@@ -463,7 +463,7 @@ export default function RiskScenarios() {
                   {categoryGroup.templates.map((template: RiskScenario) => (
                     <div
                       key={template.id}
-                      className="bg-surface-700/50 hover:bg-surface-700 rounded-lg p-4 transition-colors group"
+                      className="bg-surface-200/50 hover:bg-surface-200 rounded-lg p-4 transition-colors group"
                     >
                       <h5 className="font-medium text-foreground text-sm line-clamp-1">
                         {template.title}
@@ -481,7 +481,7 @@ export default function RiskScenarios() {
                           </span>
                         ))}
                       </div>
-                      <div className="flex items-center justify-between mt-3 pt-2 border-t border-surface-600">
+                      <div className="flex items-center justify-between mt-3 pt-2 border-t border-surface-300">
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <span>{getThreatActorLabel(template.threatActor)}</span>
                           {(template.usageCount ?? 0) > 0 && (
@@ -539,7 +539,7 @@ export default function RiskScenarios() {
       >
         {simulatingScenario && (
           <div className="space-y-6">
-            <div className="bg-surface-700/50 rounded-lg p-4">
+            <div className="bg-surface-200/50 rounded-lg p-4">
               <h4 className="font-medium text-foreground">{simulatingScenario.title}</h4>
               <p className="text-sm text-muted-foreground mt-1">{simulatingScenario.description}</p>
               <div className="flex items-center gap-4 mt-3 text-sm">
@@ -595,7 +595,7 @@ export default function RiskScenarios() {
                         .filter(Boolean),
                     })
                   }
-                  className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-foreground"
+                  className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-foreground"
                 />
               </div>
 
@@ -606,7 +606,7 @@ export default function RiskScenarios() {
             </div>
 
             {simulationResult && (
-              <div className="bg-surface-800 rounded-lg p-6 border border-surface-700">
+              <div className="bg-white rounded-lg p-6 border border-surface-200">
                 <h4 className="font-semibold text-foreground mb-4">Simulation Results</h4>
                 <div className="grid grid-cols-2 gap-6">
                   <div>
@@ -639,7 +639,7 @@ export default function RiskScenarios() {
                 <div className="mt-4">
                   <p className="text-sm text-muted-foreground">Risk Reduction</p>
                   <div className="flex items-center gap-2 mt-1">
-                    <div className="flex-1 h-2 bg-surface-700 rounded-full overflow-hidden">
+                    <div className="flex-1 h-2 bg-surface-200 rounded-full overflow-hidden">
                       <div
                         className="h-full bg-green-500 rounded-full transition-all"
                         style={{ width: `${simulationResult.riskReduction}%` }}
@@ -722,7 +722,7 @@ function ScenarioForm({ scenario, onSubmit, isLoading }: ScenarioFormProps) {
           required
           value={formData.title}
           onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-          className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-foreground"
+          className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-foreground"
           placeholder="e.g., Phishing Attack on Employees"
         />
       </div>
@@ -733,7 +733,7 @@ function ScenarioForm({ scenario, onSubmit, isLoading }: ScenarioFormProps) {
           rows={3}
           value={formData.description}
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-foreground"
+          className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-foreground"
           placeholder="Describe the risk scenario in detail..."
         />
       </div>
@@ -744,7 +744,7 @@ function ScenarioForm({ scenario, onSubmit, isLoading }: ScenarioFormProps) {
             required
             value={formData.category}
             onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-            className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-foreground"
+            className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-foreground"
           >
             {CATEGORIES.map((cat) => (
               <option key={cat} value={cat}>
@@ -760,7 +760,7 @@ function ScenarioForm({ scenario, onSubmit, isLoading }: ScenarioFormProps) {
             required
             value={formData.threatActor}
             onChange={(e) => setFormData({ ...formData, threatActor: e.target.value })}
-            className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-foreground"
+            className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-foreground"
           >
             {THREAT_ACTORS.map((actor) => (
               <option key={actor.value} value={actor.value}>
@@ -777,7 +777,7 @@ function ScenarioForm({ scenario, onSubmit, isLoading }: ScenarioFormProps) {
             required
             value={formData.attackVector}
             onChange={(e) => setFormData({ ...formData, attackVector: e.target.value })}
-            className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-foreground"
+            className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-foreground"
           >
             {ATTACK_VECTORS.map((vector) => (
               <option key={vector.value} value={vector.value}>
@@ -793,7 +793,7 @@ function ScenarioForm({ scenario, onSubmit, isLoading }: ScenarioFormProps) {
             type="text"
             value={formData.targetAssets}
             onChange={(e) => setFormData({ ...formData, targetAssets: e.target.value })}
-            className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-foreground"
+            className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-foreground"
             placeholder="e.g., Email System, Database (comma-separated)"
           />
         </div>
@@ -805,7 +805,7 @@ function ScenarioForm({ scenario, onSubmit, isLoading }: ScenarioFormProps) {
             required
             value={formData.likelihood}
             onChange={(e) => setFormData({ ...formData, likelihood: e.target.value })}
-            className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-foreground"
+            className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-foreground"
           >
             {LIKELIHOOD_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -821,7 +821,7 @@ function ScenarioForm({ scenario, onSubmit, isLoading }: ScenarioFormProps) {
             required
             value={formData.impact}
             onChange={(e) => setFormData({ ...formData, impact: e.target.value })}
-            className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-foreground"
+            className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-foreground"
           >
             {IMPACT_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -837,7 +837,7 @@ function ScenarioForm({ scenario, onSubmit, isLoading }: ScenarioFormProps) {
           type="text"
           value={formData.tags}
           onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-          className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-foreground"
+          className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-foreground"
           placeholder="e.g., critical, compliance, data (comma-separated)"
         />
       </div>
@@ -849,7 +849,7 @@ function ScenarioForm({ scenario, onSubmit, isLoading }: ScenarioFormProps) {
           rows={2}
           value={formData.mitigationStrategy}
           onChange={(e) => setFormData({ ...formData, mitigationStrategy: e.target.value })}
-          className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-foreground"
+          className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-foreground"
           placeholder="Describe how this risk can be mitigated..."
         />
       </div>
@@ -859,13 +859,13 @@ function ScenarioForm({ scenario, onSubmit, isLoading }: ScenarioFormProps) {
           id="isTemplate"
           checked={formData.isTemplate}
           onChange={(e) => setFormData({ ...formData, isTemplate: e.target.checked })}
-          className="rounded border-surface-600"
+          className="rounded border-surface-300"
         />
         <label htmlFor="isTemplate" className="text-sm text-foreground">
           Save as template (available for reuse)
         </label>
       </div>
-      <div className="flex justify-end gap-3 pt-4 border-t border-surface-700">
+      <div className="flex justify-end gap-3 pt-4 border-t border-surface-200">
         <Button type="submit" isLoading={isLoading}>
           {scenario ? 'Update Scenario' : 'Create Scenario'}
         </Button>

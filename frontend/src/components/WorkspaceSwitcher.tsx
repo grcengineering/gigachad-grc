@@ -127,7 +127,7 @@ export function WorkspaceSwitcher() {
   return (
     <>
       <Menu as="div" className="relative">
-        <Menu.Button className="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-800 hover:bg-surface-700 border border-surface-600 transition-colors text-sm text-foreground">
+        <Menu.Button className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white hover:bg-surface-200 border border-surface-300 transition-colors text-sm text-foreground">
           <BuildingOfficeIcon className="w-4 h-4 text-surface-700" />
           <span className="font-medium max-w-[160px] truncate">
             {currentWorkspace?.name || 'Select Workspace'}
@@ -144,7 +144,7 @@ export function WorkspaceSwitcher() {
           leaveFrom="transform opacity-100 scale-100"
           leaveTo="transform opacity-0 scale-95"
         >
-          <Menu.Items className="absolute left-0 mt-2 w-64 rounded-lg bg-surface-800 border border-surface-700 shadow-lg z-50 py-1 focus:outline-none">
+          <Menu.Items className="absolute left-0 mt-2 w-64 rounded-lg bg-white border border-surface-200 shadow-lg z-50 py-1 focus:outline-none">
             {/* Workspace List */}
             <div className="px-2 py-1">
               <p className="text-xs text-muted-foreground uppercase tracking-wider px-2 py-1">
@@ -159,7 +159,7 @@ export function WorkspaceSwitcher() {
                     <button
                       onClick={() => handleWorkspaceSelect(workspace)}
                       className={`w-full text-left px-4 py-2 text-sm flex items-center gap-2 ${
-                        active ? 'bg-surface-700' : ''
+                        active ? 'bg-surface-200' : ''
                       } ${
                         currentWorkspace?.id === workspace.id ? 'text-brand-400' : 'text-foreground'
                       }`}
@@ -185,7 +185,7 @@ export function WorkspaceSwitcher() {
             </div>
 
             {/* Actions */}
-            <div className="border-t border-surface-700 mt-1 pt-1">
+            <div className="border-t border-surface-200 mt-1 pt-1">
               {/* View All Workspaces (Admin) */}
               {user?.role === 'admin' && (
                 <Menu.Item>
@@ -193,7 +193,7 @@ export function WorkspaceSwitcher() {
                     <button
                       onClick={() => navigate('/settings/workspaces')}
                       className={`w-full text-left px-4 py-2 text-sm flex items-center gap-2 ${
-                        active ? 'bg-surface-700' : ''
+                        active ? 'bg-surface-200' : ''
                       } text-muted-foreground hover:text-foreground`}
                     >
                       <ChartBarIcon className="w-4 h-4" />
@@ -210,7 +210,7 @@ export function WorkspaceSwitcher() {
                     <button
                       onClick={() => navigate(`/settings/workspaces/${currentWorkspace.id}`)}
                       className={`w-full text-left px-4 py-2 text-sm flex items-center gap-2 ${
-                        active ? 'bg-surface-700' : ''
+                        active ? 'bg-surface-200' : ''
                       } text-muted-foreground hover:text-foreground`}
                     >
                       <Cog6ToothIcon className="w-4 h-4" />
@@ -227,7 +227,7 @@ export function WorkspaceSwitcher() {
                     <button
                       onClick={() => setShowCreateModal(true)}
                       className={`w-full text-left px-4 py-2 text-sm flex items-center gap-2 ${
-                        active ? 'bg-surface-700' : ''
+                        active ? 'bg-surface-200' : ''
                       } text-brand-400 hover:text-brand-300`}
                     >
                       <PlusIcon className="w-4 h-4" />

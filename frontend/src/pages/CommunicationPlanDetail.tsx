@@ -170,7 +170,7 @@ export default function CommunicationPlanDetail() {
       <div className="p-6">
         <div className="card p-8 text-center">
           <ExclamationCircleIcon className="w-12 h-12 mx-auto mb-4 text-red-600" />
-          <h2 className="text-lg font-semibold text-surface-100 mb-2">
+          <h2 className="text-lg font-semibold text-surface-900 mb-2">
             Communication Plan Not Found
           </h2>
           <p className="text-surface-600 mb-4">The requested plan could not be loaded.</p>
@@ -187,12 +187,12 @@ export default function CommunicationPlanDetail() {
         <div className="flex items-start gap-4">
           <button
             onClick={() => navigate('/bcdr/communication')}
-            className="p-2 hover:bg-surface-700 rounded-lg text-surface-600 mt-1"
+            className="p-2 hover:bg-surface-200 rounded-lg text-surface-600 mt-1"
           >
             <ArrowLeftIcon className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-surface-100">Create Communication Plan</h1>
+            <h1 className="text-2xl font-bold text-surface-900">Create Communication Plan</h1>
             <p className="text-surface-600 mt-1">
               Set up emergency contact lists and communication protocols
             </p>
@@ -212,7 +212,7 @@ export default function CommunicationPlanDetail() {
                 type="text"
                 value={editForm.name}
                 onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-surface-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-surface-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
                 placeholder="e.g., Emergency Response Communication Plan"
                 required
               />
@@ -223,7 +223,7 @@ export default function CommunicationPlanDetail() {
               <SelectNative
                 value={editForm.plan_type}
                 onChange={(e) => setEditForm({ ...editForm, plan_type: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-surface-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-surface-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 {PLAN_TYPES.map((type) => (
                   <option key={type.value} value={type.value}>
@@ -239,7 +239,7 @@ export default function CommunicationPlanDetail() {
                 value={editForm.description}
                 onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
                 rows={4}
-                className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-surface-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-surface-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
                 placeholder="Describe the purpose and scope of this communication plan..."
               />
             </div>
@@ -250,7 +250,7 @@ export default function CommunicationPlanDetail() {
                 id="is_active"
                 checked={editForm.is_active}
                 onChange={(e) => setEditForm({ ...editForm, is_active: e.target.checked })}
-                className="w-4 h-4 rounded bg-surface-700 border-surface-600 text-primary-500 focus:ring-primary-500"
+                className="w-4 h-4 rounded bg-surface-200 border-surface-300 text-primary-500 focus:ring-primary-500"
               />
               <label htmlFor="is_active" className="text-sm text-surface-700">
                 Active (plan is ready for use)
@@ -285,14 +285,14 @@ export default function CommunicationPlanDetail() {
         <div className="flex items-start gap-4">
           <button
             onClick={() => navigate('/bcdr/communication')}
-            className="p-2 hover:bg-surface-700 rounded-lg text-surface-600 mt-1"
+            className="p-2 hover:bg-surface-200 rounded-lg text-surface-600 mt-1"
           >
             <ArrowLeftIcon className="w-5 h-5" />
           </button>
           <div>
             <div className="flex items-center gap-3 mb-2">
               <MegaphoneIcon className="w-8 h-8 text-orange-600" />
-              <h1 className="text-2xl font-bold text-surface-100">{plan.name}</h1>
+              <h1 className="text-2xl font-bold text-surface-900">{plan.name}</h1>
               <span
                 className={clsx(
                   'px-2 py-1 text-xs font-medium rounded-full',
@@ -330,8 +330,8 @@ export default function CommunicationPlanDetail() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <div className="card">
-            <div className="p-4 border-b border-surface-700 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-surface-100">
+            <div className="p-4 border-b border-surface-200 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-surface-900">
                 <UserGroupIcon className="w-5 h-5 inline mr-2 text-surface-600" />
                 Contacts ({plan.contacts?.length || 0})
               </h2>
@@ -340,14 +340,14 @@ export default function CommunicationPlanDetail() {
                 Add Contact
               </Button>
             </div>
-            <div className="divide-y divide-surface-700">
+            <div className="divide-y divide-surface-200">
               {plan.contacts && plan.contacts.length > 0 ? (
                 plan.contacts.map((contact) => (
-                  <div key={contact.id} className="p-4 hover:bg-surface-700/50">
+                  <div key={contact.id} className="p-4 hover:bg-surface-200/50">
                     <div className="flex items-start justify-between">
                       <div>
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium text-surface-100">{contact.name}</span>
+                          <span className="font-medium text-surface-900">{contact.name}</span>
                           <Badge variant="info">Level {contact.escalation_level}</Badge>
                         </div>
                         <p className="text-sm text-surface-600">{contact.title}</p>
@@ -383,15 +383,15 @@ export default function CommunicationPlanDetail() {
             <div className="space-y-3">
               <div>
                 <span className="text-xs text-surface-500">Linked BC/DR Plan</span>
-                <p className="text-surface-100">{plan.bcdr_plan_title || 'None'}</p>
+                <p className="text-surface-900">{plan.bcdr_plan_title || 'None'}</p>
               </div>
               <div>
                 <span className="text-xs text-surface-500">Created</span>
-                <p className="text-surface-100">{new Date(plan.created_at).toLocaleDateString()}</p>
+                <p className="text-surface-900">{new Date(plan.created_at).toLocaleDateString()}</p>
               </div>
               <div>
                 <span className="text-xs text-surface-500">Last Updated</span>
-                <p className="text-surface-100">{new Date(plan.updated_at).toLocaleDateString()}</p>
+                <p className="text-surface-900">{new Date(plan.updated_at).toLocaleDateString()}</p>
               </div>
             </div>
           </div>
@@ -399,11 +399,11 @@ export default function CommunicationPlanDetail() {
       </div>
       {/* Edit Modal */}
       <Dialog open={showEditModal} onClose={() => setShowEditModal(false)}>
-        <div className="p-4 border-b border-surface-700 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-surface-100">Edit Communication Plan</h2>
+        <div className="p-4 border-b border-surface-200 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-surface-900">Edit Communication Plan</h2>
           <button
             onClick={() => setShowEditModal(false)}
-            className="p-1 hover:bg-surface-700 rounded"
+            className="p-1 hover:bg-surface-200 rounded"
           >
             <XMarkIcon className="w-5 h-5 text-surface-600" />
           </button>
@@ -421,7 +421,7 @@ export default function CommunicationPlanDetail() {
               type="text"
               value={editForm.name}
               onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-              className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-surface-100"
+              className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-surface-900"
               required
             />
           </div>
@@ -430,7 +430,7 @@ export default function CommunicationPlanDetail() {
             <SelectNative
               value={editForm.plan_type}
               onChange={(e) => setEditForm({ ...editForm, plan_type: e.target.value })}
-              className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-surface-100"
+              className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-surface-900"
             >
               {PLAN_TYPES.map((type) => (
                 <option key={type.value} value={type.value}>
@@ -445,7 +445,7 @@ export default function CommunicationPlanDetail() {
               value={editForm.description}
               onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
               rows={3}
-              className="w-full px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-surface-100"
+              className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-surface-900"
             />
           </div>
           <div className="flex items-center gap-2">
@@ -454,7 +454,7 @@ export default function CommunicationPlanDetail() {
               id="edit_is_active"
               checked={editForm.is_active}
               onChange={(e) => setEditForm({ ...editForm, is_active: e.target.checked })}
-              className="w-4 h-4 rounded bg-surface-700 border-surface-600 text-primary-500"
+              className="w-4 h-4 rounded bg-surface-200 border-surface-300 text-primary-500"
             />
             <label htmlFor="edit_is_active" className="text-sm text-surface-700">
               Active
@@ -472,7 +472,7 @@ export default function CommunicationPlanDetail() {
       </Dialog>
       {/* Delete Confirmation */}
       <Dialog open={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)}>
-        <h2 className="text-lg font-semibold text-surface-100 mb-2">Delete Communication Plan?</h2>
+        <h2 className="text-lg font-semibold text-surface-900 mb-2">Delete Communication Plan?</h2>
         <p className="text-surface-600 mb-4">
           This will permanently delete "{plan.name}" and all associated contacts. This action cannot
           be undone.

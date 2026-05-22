@@ -60,17 +60,17 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="bg-surface-900 border border-surface-800 rounded-lg p-6 space-y-6">
+      <div className="bg-white border border-surface-200 rounded-lg p-6 space-y-6">
         {/* Basic Information */}
         <div>
-          <h3 className="text-lg font-medium text-surface-100 mb-4">Basic Information</h3>
+          <h3 className="text-lg font-medium text-surface-900 mb-4">Basic Information</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-surface-600 mb-1">Vendor *</label>
               <SelectNative
                 value={formData.vendorId}
                 onChange={(e) => setFormData({ ...formData, vendorId: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
                 required
               >
                 <option value="">Select a vendor...</option>
@@ -88,7 +88,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
               <SelectNative
                 value={formData.assessmentType}
                 onChange={(e) => setFormData({ ...formData, assessmentType: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
                 required
               >
                 <option value="initial_onboarding">Initial Onboarding</option>
@@ -103,7 +103,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
               <SelectNative
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
                 required
               >
                 <option value="pending">Pending</option>
@@ -119,7 +119,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
               <SelectNative
                 value={formData.inherentRiskScore || ''}
                 onChange={(e) => setFormData({ ...formData, inherentRiskScore: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
               >
                 <option value="">Select risk level...</option>
                 <option value="very_low">Very Low</option>
@@ -134,7 +134,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
 
         {/* Dates */}
         <div>
-          <h3 className="text-lg font-medium text-surface-100 mb-4">Schedule</h3>
+          <h3 className="text-lg font-medium text-surface-900 mb-4">Schedule</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-surface-600 mb-1">Due Date</label>
@@ -142,7 +142,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
                 type="date"
                 value={formData.dueDate || ''}
                 onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
               />
             </div>
             <div>
@@ -153,7 +153,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
                 type="date"
                 value={formData.completedAt || ''}
                 onChange={(e) => setFormData({ ...formData, completedAt: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
               />
             </div>
           </div>
@@ -161,7 +161,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
 
         {/* Risk Assessment */}
         <div>
-          <h3 className="text-lg font-medium text-surface-100 mb-4">Risk Assessment</h3>
+          <h3 className="text-lg font-medium text-surface-900 mb-4">Risk Assessment</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-surface-600 mb-1">
@@ -175,7 +175,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
                 onChange={(e) =>
                   setFormData({ ...formData, overallScore: parseInt(e.target.value) || undefined })
                 }
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
               />
             </div>
             <div>
@@ -185,7 +185,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
               <SelectNative
                 value={formData.residualRiskScore || ''}
                 onChange={(e) => setFormData({ ...formData, residualRiskScore: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
               >
                 <option value="">Select risk level...</option>
                 <option value="very_low">Very Low</option>
@@ -202,7 +202,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
               <SelectNative
                 value={formData.securityRisk || ''}
                 onChange={(e) => setFormData({ ...formData, securityRisk: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
               >
                 <option value="">Select risk level...</option>
                 <option value="very_low">Very Low</option>
@@ -219,7 +219,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
               <SelectNative
                 value={formData.complianceRisk || ''}
                 onChange={(e) => setFormData({ ...formData, complianceRisk: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
               >
                 <option value="">Select risk level...</option>
                 <option value="very_low">Very Low</option>
@@ -236,7 +236,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
               <SelectNative
                 value={formData.operationalRisk || ''}
                 onChange={(e) => setFormData({ ...formData, operationalRisk: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
               >
                 <option value="">Select risk level...</option>
                 <option value="very_low">Very Low</option>
@@ -253,7 +253,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
               <SelectNative
                 value={formData.financialRisk || ''}
                 onChange={(e) => setFormData({ ...formData, financialRisk: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
               >
                 <option value="">Select risk level...</option>
                 <option value="very_low">Very Low</option>
@@ -268,14 +268,14 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
 
         {/* Outcome */}
         <div>
-          <h3 className="text-lg font-medium text-surface-100 mb-4">Assessment Outcome</h3>
+          <h3 className="text-lg font-medium text-surface-900 mb-4">Assessment Outcome</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-surface-600 mb-1">Outcome</label>
               <SelectNative
                 value={formData.outcome || ''}
                 onChange={(e) => setFormData({ ...formData, outcome: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
               >
                 <option value="">Select outcome...</option>
                 <option value="approved">Approved</option>
@@ -292,7 +292,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
                 type="text"
                 value={formData.outcomeNotes || ''}
                 onChange={(e) => setFormData({ ...formData, outcomeNotes: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
                 placeholder="Additional notes about the outcome..."
               />
             </div>
@@ -306,7 +306,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
             value={typeof formData.findings === 'string' ? formData.findings : ''}
             onChange={(e) => setFormData({ ...formData, findings: e.target.value })}
             rows={4}
-            className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+            className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
             placeholder="Document any findings, issues, or concerns discovered during the assessment..."
           />
         </div>
@@ -318,7 +318,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
             value={formData.recommendations || ''}
             onChange={(e) => setFormData({ ...formData, recommendations: e.target.value })}
             rows={4}
-            className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+            className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
             placeholder="Provide recommendations for improvement or remediation..."
           />
         </div>
@@ -328,7 +328,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 text-surface-700 hover:text-surface-100 transition-colors"
+          className="px-4 py-2 text-surface-700 hover:text-surface-900 transition-colors"
         >
           Cancel
         </button>
@@ -354,11 +354,11 @@ function AssessmentView({
 }) {
   return (
     <div className="space-y-6">
-      <div className="bg-surface-900 border border-surface-800 rounded-lg p-6 space-y-6">
+      <div className="bg-white border border-surface-200 rounded-lg p-6 space-y-6">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-surface-100 capitalize">
+            <h2 className="text-2xl font-bold text-surface-900 capitalize">
               {assessment.assessmentType.replace('_', ' ')}
             </h2>
             <p className="mt-1 text-surface-600">{assessment.vendor?.name}</p>
@@ -366,13 +366,13 @@ function AssessmentView({
           <div className="flex items-center gap-2">
             <button
               onClick={onEdit}
-              className="p-2 text-surface-600 hover:text-surface-100 hover:bg-surface-800 rounded-lg transition-colors"
+              className="p-2 text-surface-600 hover:text-surface-900 hover:bg-white rounded-lg transition-colors"
             >
               <PencilIcon className="w-5 h-5" />
             </button>
             <button
               onClick={onDelete}
-              className="p-2 text-red-600 hover:text-red-700 hover:bg-surface-800 rounded-lg transition-colors"
+              className="p-2 text-red-600 hover:text-red-700 hover:bg-white rounded-lg transition-colors"
             >
               <TrashIcon className="w-5 h-5" />
             </button>
@@ -381,15 +381,15 @@ function AssessmentView({
 
         {/* Basic Information */}
         <div>
-          <h3 className="text-lg font-medium text-surface-100 mb-4">Basic Information</h3>
+          <h3 className="text-lg font-medium text-surface-900 mb-4">Basic Information</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <dt className="text-sm font-medium text-surface-600 mb-1">Vendor</dt>
-              <dd className="text-sm text-surface-100">{assessment.vendor?.name}</dd>
+              <dd className="text-sm text-surface-900">{assessment.vendor?.name}</dd>
             </div>
             <div>
               <dt className="text-sm font-medium text-surface-600 mb-1">Type</dt>
-              <dd className="text-sm text-surface-100 capitalize">
+              <dd className="text-sm text-surface-900 capitalize">
                 {assessment.assessmentType.replace('_', ' ')}
               </dd>
             </div>
@@ -404,7 +404,7 @@ function AssessmentView({
                         ? 'bg-blue-500/20 text-blue-600'
                         : assessment.status === 'pending'
                           ? 'bg-yellow-500/20 text-yellow-600'
-                          : 'bg-surface-700 text-surface-600'
+                          : 'bg-surface-200 text-surface-600'
                   }`}
                 >
                   {assessment.status.replace('_', ' ')}
@@ -414,7 +414,7 @@ function AssessmentView({
             {assessment.inherentRiskScore && (
               <div>
                 <dt className="text-sm font-medium text-surface-600 mb-1">Inherent Risk</dt>
-                <dd className="text-sm text-surface-100 capitalize">
+                <dd className="text-sm text-surface-900 capitalize">
                   {assessment.inherentRiskScore.replace('_', ' ')}
                 </dd>
               </div>
@@ -424,12 +424,12 @@ function AssessmentView({
 
         {/* Schedule */}
         <div>
-          <h3 className="text-lg font-medium text-surface-100 mb-4">Schedule</h3>
+          <h3 className="text-lg font-medium text-surface-900 mb-4">Schedule</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {assessment.dueDate && (
               <div>
                 <dt className="text-sm font-medium text-surface-600 mb-1">Due Date</dt>
-                <dd className="text-sm text-surface-100">
+                <dd className="text-sm text-surface-900">
                   {new Date(assessment.dueDate).toLocaleDateString()}
                 </dd>
               </div>
@@ -437,7 +437,7 @@ function AssessmentView({
             {assessment.completedAt && (
               <div>
                 <dt className="text-sm font-medium text-surface-600 mb-1">Completed</dt>
-                <dd className="text-sm text-surface-100">
+                <dd className="text-sm text-surface-900">
                   {new Date(assessment.completedAt).toLocaleDateString()}
                 </dd>
               </div>
@@ -452,16 +452,16 @@ function AssessmentView({
           assessment.operationalRisk ||
           assessment.residualRiskScore) && (
           <div>
-            <h3 className="text-lg font-medium text-surface-100 mb-4">Risk Assessment</h3>
+            <h3 className="text-lg font-medium text-surface-900 mb-4">Risk Assessment</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {assessment.overallScore !== null && assessment.overallScore !== undefined && (
                 <div>
                   <dt className="text-sm font-medium text-surface-600 mb-2">Overall Score</dt>
                   <dd className="flex items-center gap-3">
-                    <span className="text-2xl font-bold text-surface-100">
+                    <span className="text-2xl font-bold text-surface-900">
                       {assessment.overallScore}
                     </span>
-                    <div className="flex-1 h-3 bg-surface-700 rounded-full overflow-hidden">
+                    <div className="flex-1 h-3 bg-surface-200 rounded-full overflow-hidden">
                       <div
                         className={`h-full ${
                           assessment.overallScore >= 80
@@ -583,7 +583,7 @@ function AssessmentView({
         {/* Outcome */}
         {(assessment.outcome || assessment.outcomeNotes) && (
           <div>
-            <h3 className="text-lg font-medium text-surface-100 mb-4">Outcome</h3>
+            <h3 className="text-lg font-medium text-surface-900 mb-4">Outcome</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {assessment.outcome && (
                 <div>
@@ -606,7 +606,7 @@ function AssessmentView({
               {assessment.outcomeNotes && (
                 <div>
                   <dt className="text-sm font-medium text-surface-600 mb-1">Notes</dt>
-                  <dd className="text-sm text-surface-100">{assessment.outcomeNotes}</dd>
+                  <dd className="text-sm text-surface-900">{assessment.outcomeNotes}</dd>
                 </div>
               )}
             </div>
@@ -616,7 +616,7 @@ function AssessmentView({
         {/* Findings */}
         {assessment.findings && (
           <div>
-            <h3 className="text-lg font-medium text-surface-100 mb-4">Findings</h3>
+            <h3 className="text-lg font-medium text-surface-900 mb-4">Findings</h3>
             <div className="text-sm text-surface-700 whitespace-pre-wrap">
               {typeof assessment.findings === 'string'
                 ? assessment.findings
@@ -628,7 +628,7 @@ function AssessmentView({
         {/* Recommendations */}
         {assessment.recommendations && (
           <div>
-            <h3 className="text-lg font-medium text-surface-100 mb-4">Recommendations</h3>
+            <h3 className="text-lg font-medium text-surface-900 mb-4">Recommendations</h3>
             <div className="text-sm text-surface-700 whitespace-pre-wrap">
               {assessment.recommendations}
             </div>
@@ -743,12 +743,12 @@ export default function AssessmentDetail() {
       <div className="flex items-center gap-4">
         <button
           onClick={() => navigate('/assessments')}
-          className="p-2 text-surface-600 hover:text-surface-100 hover:bg-surface-800 rounded-lg transition-colors"
+          className="p-2 text-surface-600 hover:text-surface-900 hover:bg-white rounded-lg transition-colors"
         >
           <ArrowLeftIcon className="w-5 h-5" />
         </button>
         <div>
-          <h1 className="text-3xl font-bold text-surface-100">
+          <h1 className="text-3xl font-bold text-surface-900">
             {id === 'new' ? 'New Assessment' : 'Assessment Details'}
           </h1>
           {assessment && (

@@ -203,7 +203,7 @@ function ScoreGauge({ score, size = 'lg' }: { score: number; size?: 'sm' | 'lg' 
     return (
       <div className="flex items-center gap-2">
         <div className={clsx('text-lg font-bold', getColor(score))}>{score}</div>
-        <div className="w-16 h-2 bg-surface-800 rounded-full overflow-hidden">
+        <div className="w-16 h-2 bg-white rounded-full overflow-hidden">
           <div
             className={clsx(
               'h-full',
@@ -301,7 +301,7 @@ function StatusBadgeWithLink({
         href={url}
         target="_blank"
         rel="noopener noreferrer"
-        className="hover:bg-surface-800 rounded px-1 -mx-1 transition-colors group"
+        className="hover:bg-white rounded px-1 -mx-1 transition-colors group"
         title={`Open ${label}`}
       >
         {content}
@@ -377,19 +377,19 @@ function SubdomainCrawlModal({
   return (
     <Dialog open onClose={onClose}>
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-surface-700">
+      <div className="flex items-center justify-between p-4 border-b border-surface-200">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-brand-500/20 rounded-lg">
             <LinkIcon className="w-5 h-5 text-brand-400" />
           </div>
           <div>
-            <h3 className="font-semibold text-surface-100">{subdomain.fullDomain}</h3>
+            <h3 className="font-semibold text-surface-900">{subdomain.fullDomain}</h3>
             <p className="text-sm text-surface-600">Discovered pages and links</p>
           </div>
         </div>
         <button
           onClick={onClose}
-          className="p-2 text-surface-600 hover:text-surface-200 hover:bg-surface-800 rounded-lg transition-colors"
+          className="p-2 text-surface-600 hover:text-surface-800 hover:bg-white rounded-lg transition-colors"
         >
           <XMarkIcon className="w-5 h-5" />
         </button>
@@ -415,15 +415,15 @@ function SubdomainCrawlModal({
         {crawlResult && (
           <>
             {/* Stats Bar */}
-            <div className="flex items-center gap-6 p-4 bg-surface-800/50 border-b border-surface-700">
+            <div className="flex items-center gap-6 p-4 bg-white/50 border-b border-surface-200">
               <div>
-                <div className="text-2xl font-bold text-surface-100">
+                <div className="text-2xl font-bold text-surface-900">
                   {crawlResult.pages.length}
                 </div>
                 <div className="text-xs text-surface-600">Pages Found</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-surface-100">
+                <div className="text-2xl font-bold text-surface-900">
                   {crawlResult.externalLinks.length}
                 </div>
                 <div className="text-xs text-surface-600">External Links</div>
@@ -434,14 +434,14 @@ function SubdomainCrawlModal({
             </div>
 
             {/* Tabs */}
-            <div className="flex border-b border-surface-700">
+            <div className="flex border-b border-surface-200">
               <button
                 onClick={() => setActiveTab('pages')}
                 className={clsx(
                   'px-4 py-2 text-sm font-medium border-b-2 transition-colors',
                   activeTab === 'pages'
                     ? 'border-brand-400 text-brand-400'
-                    : 'border-transparent text-surface-600 hover:text-surface-200'
+                    : 'border-transparent text-surface-600 hover:text-surface-800'
                 )}
               >
                 Internal Pages ({crawlResult.pages.length})
@@ -452,7 +452,7 @@ function SubdomainCrawlModal({
                   'px-4 py-2 text-sm font-medium border-b-2 transition-colors',
                   activeTab === 'external'
                     ? 'border-brand-400 text-brand-400'
-                    : 'border-transparent text-surface-600 hover:text-surface-200'
+                    : 'border-transparent text-surface-600 hover:text-surface-800'
                 )}
               >
                 External Links ({crawlResult.externalLinks.length})
@@ -462,8 +462,8 @@ function SubdomainCrawlModal({
             {/* Table */}
             <div className="overflow-auto max-h-[calc(85vh-280px)]">
               <table className="w-full text-sm">
-                <thead className="sticky top-0 bg-surface-800 z-10">
-                  <tr className="border-b border-surface-700">
+                <thead className="sticky top-0 bg-white z-10">
+                  <tr className="border-b border-surface-200">
                     <th className="px-4 py-2 text-left text-xs font-medium text-surface-600 uppercase">
                       Page
                     </th>
@@ -476,16 +476,16 @@ function SubdomainCrawlModal({
                     <th className="px-4 py-2 text-left text-xs font-medium text-surface-600 uppercase w-12"></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-surface-800">
+                <tbody className="divide-y divide-surface-200">
                   {(activeTab === 'pages' ? crawlResult.pages : crawlResult.externalLinks).map(
                     (page, idx) => (
-                      <tr key={idx} className="hover:bg-surface-800/50">
+                      <tr key={idx} className="hover:bg-white/50">
                         <td className="px-4 py-3">
                           <div className="flex items-start gap-2">
                             <DocumentTextIcon className="w-4 h-4 text-surface-500 mt-0.5 flex-shrink-0" />
                             <div className="min-w-0">
                               <div
-                                className="font-medium text-surface-200 truncate max-w-md"
+                                className="font-medium text-surface-800 truncate max-w-md"
                                 title={page.title || page.url}
                               >
                                 {page.title || new URL(page.url).pathname || '/'}
@@ -515,7 +515,7 @@ function SubdomainCrawlModal({
                                     ? 'bg-blue-500/20 text-blue-600'
                                     : page.statusCode >= 400
                                       ? 'bg-red-500/20 text-red-600'
-                                      : 'bg-surface-700 text-surface-600'
+                                      : 'bg-surface-200 text-surface-600'
                               )}
                             >
                               {page.statusCode}
@@ -557,7 +557,7 @@ function SubdomainCrawlModal({
       </div>
 
       {/* Footer */}
-      <div className="p-4 border-t border-surface-700 flex justify-between items-center">
+      <div className="p-4 border-t border-surface-200 flex justify-between items-center">
         <a
           href={`${subdomain.hasSSL ? 'https' : 'http'}://${subdomain.fullDomain}`}
           target="_blank"
@@ -622,7 +622,7 @@ function SubdomainSection({
       );
     }
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-surface-700 text-surface-600">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-surface-200 text-surface-600">
         <ServerIcon className="w-3 h-3" />
         DNS Only
       </span>
@@ -633,7 +633,7 @@ function SubdomainSection({
     SENSITIVE_SUBDOMAINS.some((s) => sub.subdomain.toLowerCase().includes(s));
 
   return (
-    <div className="p-4 border-b border-surface-800">
+    <div className="p-4 border-b border-surface-200">
       {/* Modal */}
       {selectedSubdomain && (
         <SubdomainCrawlModal
@@ -647,8 +647,8 @@ function SubdomainSection({
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <ServerIcon className="w-5 h-5 text-surface-600" />
-          <h4 className="text-sm font-medium text-surface-200">Discovered Subdomains</h4>
-          <span className="px-2 py-0.5 text-xs bg-surface-700 text-surface-700 rounded-full">
+          <h4 className="text-sm font-medium text-surface-800">Discovered Subdomains</h4>
+          <span className="px-2 py-0.5 text-xs bg-surface-200 text-surface-700 rounded-full">
             {subdomains.discovered.length} found
           </span>
           <Tooltip
@@ -672,10 +672,10 @@ function SubdomainSection({
             'px-3 py-2 rounded-lg text-left transition-colors',
             filter === 'all'
               ? 'bg-brand-500/20 border border-brand-500/50'
-              : 'bg-surface-800 border border-surface-700 hover:border-surface-600'
+              : 'bg-white border border-surface-200 hover:border-surface-300'
           )}
         >
-          <div className="text-lg font-semibold text-surface-100">
+          <div className="text-lg font-semibold text-surface-900">
             {subdomains.discovered.length}
           </div>
           <div className="text-xs text-surface-600">Total</div>
@@ -686,13 +686,13 @@ function SubdomainSection({
             'px-3 py-2 rounded-lg text-left transition-colors',
             filter === 'sensitive'
               ? 'bg-red-500/20 border border-red-500/50'
-              : 'bg-surface-800 border border-surface-700 hover:border-surface-600'
+              : 'bg-white border border-surface-200 hover:border-surface-300'
           )}
         >
           <div
             className={clsx(
               'text-lg font-semibold',
-              sensitiveSubdomains.length > 0 ? 'text-red-600' : 'text-surface-100'
+              sensitiveSubdomains.length > 0 ? 'text-red-600' : 'text-surface-900'
             )}
           >
             {sensitiveSubdomains.length}
@@ -705,7 +705,7 @@ function SubdomainSection({
             'px-3 py-2 rounded-lg text-left transition-colors',
             filter === 'ssl'
               ? 'bg-green-500/20 border border-green-500/50'
-              : 'bg-surface-800 border border-surface-700 hover:border-surface-600'
+              : 'bg-white border border-surface-200 hover:border-surface-300'
           )}
         >
           <div className="text-lg font-semibold text-green-600">{sslSubdomains.length}</div>
@@ -717,13 +717,13 @@ function SubdomainSection({
             'px-3 py-2 rounded-lg text-left transition-colors',
             filter === 'nossl'
               ? 'bg-yellow-500/20 border border-yellow-500/50'
-              : 'bg-surface-800 border border-surface-700 hover:border-surface-600'
+              : 'bg-white border border-surface-200 hover:border-surface-300'
           )}
         >
           <div
             className={clsx(
               'text-lg font-semibold',
-              noSslSubdomains.length > 0 ? 'text-yellow-600' : 'text-surface-100'
+              noSslSubdomains.length > 0 ? 'text-yellow-600' : 'text-surface-900'
             )}
           >
             {noSslSubdomains.length}
@@ -733,10 +733,10 @@ function SubdomainSection({
       </div>
 
       {/* Table */}
-      <div className="bg-surface-800/50 rounded-lg border border-surface-700 overflow-hidden">
+      <div className="bg-white/50 rounded-lg border border-surface-200 overflow-hidden">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-surface-700 bg-surface-800">
+            <tr className="border-b border-surface-200 bg-white">
               <th className="px-4 py-2 text-left text-xs font-medium text-surface-600 uppercase tracking-wider">
                 Subdomain
               </th>
@@ -754,12 +754,12 @@ function SubdomainSection({
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-surface-700">
+          <tbody className="divide-y divide-surface-200">
             {displaySubdomains.map((sub) => (
               <tr
                 key={sub.fullDomain}
                 className={clsx(
-                  'hover:bg-surface-700/50 transition-colors',
+                  'hover:bg-surface-200/50 transition-colors',
                   isSensitive(sub) && 'bg-red-500/5'
                 )}
               >
@@ -770,7 +770,7 @@ function SubdomainSection({
                         Sensitive
                       </span>
                     )}
-                    <span className="text-surface-200 font-medium">{sub.subdomain}</span>
+                    <span className="text-surface-800 font-medium">{sub.subdomain}</span>
                     <span className="text-surface-500">.{subdomains.domain}</span>
                   </div>
                 </td>
@@ -818,7 +818,7 @@ function SubdomainSection({
                       href={`${sub.hasSSL ? 'https' : 'http'}://${sub.fullDomain}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-1 text-surface-600 hover:text-surface-200 transition-colors"
+                      className="p-1 text-surface-600 hover:text-surface-800 transition-colors"
                       title="Open in new tab"
                     >
                       <ArrowTopRightOnSquareIcon className="w-4 h-4" />
@@ -874,7 +874,7 @@ function FindingCard({
       case 'Low':
         return 'border-blue-500/50 bg-blue-500/5';
       default:
-        return 'border-surface-700 bg-surface-800/50';
+        return 'border-surface-200 bg-white/50';
     }
   };
 
@@ -889,7 +889,7 @@ function FindingCard({
       case 'Low':
         return 'bg-blue-500/20 text-blue-600';
       default:
-        return 'bg-surface-700 text-surface-600';
+        return 'bg-surface-200 text-surface-600';
     }
   };
 
@@ -905,7 +905,7 @@ function FindingCard({
           >
             {finding.level}
           </span>
-          <span className="font-medium text-surface-200">{finding.title}</span>
+          <span className="font-medium text-surface-800">{finding.title}</span>
         </div>
         {expanded ? (
           <ChevronUpIcon className="w-4 h-4 text-surface-500" />
@@ -1025,10 +1025,10 @@ export function VendorSecurityScanPanel({
 
   if (scanning) {
     return (
-      <div className="bg-surface-900 border border-surface-800 rounded-lg p-8">
+      <div className="bg-white border border-surface-200 rounded-lg p-8">
         <div className="flex flex-col items-center justify-center">
           <ArrowPathIcon className="w-12 h-12 text-brand-400 animate-spin mb-4" />
-          <h3 className="text-lg font-medium text-surface-100 mb-2">Scanning {vendorName}...</h3>
+          <h3 className="text-lg font-medium text-surface-900 mb-2">Scanning {vendorName}...</h3>
           <p className="text-surface-600 text-center max-w-md">
             Analyzing SSL/TLS, security headers, DNS configuration, and compliance indicators. This
             may take 30 seconds to 2 minutes depending on the target website.
@@ -1040,11 +1040,11 @@ export function VendorSecurityScanPanel({
 
   if (!result) {
     return (
-      <div className="bg-surface-900 border border-surface-800 rounded-lg p-6">
+      <div className="bg-white border border-surface-200 rounded-lg p-6">
         <div className="flex items-center gap-4 mb-4">
           <GlobeAltIcon className="w-8 h-8 text-brand-400" />
           <div>
-            <h3 className="text-lg font-medium text-surface-100">Security Scan</h3>
+            <h3 className="text-lg font-medium text-surface-900">Security Scan</h3>
             <p className="text-sm text-surface-600">
               Automatically scan vendor website for security posture, compliance indicators, and
               risks.
@@ -1079,13 +1079,13 @@ export function VendorSecurityScanPanel({
   }
 
   return (
-    <div className="bg-surface-900 border border-surface-800 rounded-lg">
+    <div className="bg-white border border-surface-200 rounded-lg">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-surface-800">
+      <div className="flex items-center justify-between p-4 border-b border-surface-200">
         <div className="flex items-center gap-3">
           <ShieldCheckIcon className="w-6 h-6 text-brand-400" />
           <div>
-            <h3 className="font-medium text-surface-100">Security Scan Results</h3>
+            <h3 className="font-medium text-surface-900">Security Scan Results</h3>
             <p className="text-sm text-surface-500">
               Scanned {new Date(result.scannedAt).toLocaleDateString()} at{' '}
               {new Date(result.scannedAt).toLocaleTimeString()}
@@ -1103,7 +1103,7 @@ export function VendorSecurityScanPanel({
       </div>
 
       {/* Overall Score */}
-      <div className="p-6 border-b border-surface-800">
+      <div className="p-6 border-b border-surface-200">
         <div className="flex items-center gap-8">
           <ScoreGauge score={result.overallScore} />
           <div className="flex-1">
@@ -1127,7 +1127,7 @@ export function VendorSecurityScanPanel({
       </div>
 
       {/* Category Scores */}
-      <div className="p-4 border-b border-surface-800">
+      <div className="p-4 border-b border-surface-200">
         <h4 className="text-sm font-medium text-surface-700 mb-3">Category Scores</h4>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="flex items-center gap-3">
@@ -1174,7 +1174,7 @@ export function VendorSecurityScanPanel({
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 border-b border-surface-800">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 border-b border-surface-200">
         <div>
           <h5 className="text-xs font-medium text-surface-500 mb-2">SSL/TLS</h5>
           <div className="flex items-center gap-1">
@@ -1243,7 +1243,7 @@ export function VendorSecurityScanPanel({
         result.compliance.hasISO27001 ||
         result.compliance.hasSecurityWhitepaper ||
         result.compliance.certifications.length > 2) && (
-        <div className="px-4 pb-4 border-b border-surface-800">
+        <div className="px-4 pb-4 border-b border-surface-200">
           <h5 className="text-xs font-medium text-surface-500 mb-2">Additional Compliance</h5>
           <div className="flex flex-wrap gap-3">
             {result.compliance.hasBugBounty && (
@@ -1317,7 +1317,7 @@ export function VendorSecurityScanPanel({
 
       {/* Recommendations */}
       {result.recommendations.length > 0 && (
-        <div className="p-4 bg-surface-800/30 border-t border-surface-800">
+        <div className="p-4 bg-white/30 border-t border-surface-200">
           <h4 className="text-sm font-medium text-surface-700 mb-2">Top Recommendations</h4>
           <ul className="space-y-1">
             {result.recommendations.slice(0, 5).map((rec, i) => (

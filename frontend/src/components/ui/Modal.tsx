@@ -112,22 +112,25 @@ export function Modal({
             >
               <Dialog.Panel
                 className={clsx(
-                  'w-full transform rounded-xl bg-surface-800 shadow-xl transition-all',
-                  'border border-surface-700',
+                  'w-full transform rounded-xl bg-white shadow-xl transition-all dark:bg-surface-900',
+                  'border border-surface-200 dark:border-surface-800',
                   sizeStyles[size]
                 )}
               >
                 {/* Header */}
                 {(title || showCloseButton) && (
-                  <div className="flex items-start justify-between p-4 border-b border-surface-700">
+                  <div className="flex items-start justify-between p-4 border-b border-surface-200 dark:border-surface-800">
                     <div>
                       {title && (
-                        <Dialog.Title as="h2" className="text-lg font-semibold text-surface-100">
+                        <Dialog.Title
+                          as="h2"
+                          className="text-lg font-semibold text-surface-900 dark:text-surface-100"
+                        >
                           {title}
                         </Dialog.Title>
                       )}
                       {description && (
-                        <Dialog.Description className="mt-1 text-sm text-surface-600">
+                        <Dialog.Description className="mt-1 text-sm text-surface-600 dark:text-surface-400">
                           {description}
                         </Dialog.Description>
                       )}
@@ -139,9 +142,9 @@ export function Modal({
                         type="button"
                         onClick={onClose}
                         className={clsx(
-                          'rounded-lg p-1.5 text-surface-600',
-                          'hover:bg-surface-700 hover:text-surface-200',
-                          'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-surface-800',
+                          'rounded-lg p-1.5 text-surface-600 dark:text-surface-400',
+                          'hover:bg-surface-200 hover:text-surface-800 dark:hover:bg-surface-800 dark:hover:text-surface-200',
+                          'focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-surface-50 dark:focus:ring-offset-surface-950',
                           'transition-colors'
                         )}
                         aria-label="Close modal"
@@ -171,7 +174,7 @@ export function ModalFooter({ children, className }: { children: ReactNode; clas
   return (
     <div
       className={clsx(
-        'flex items-center justify-end gap-3 pt-4 mt-4 border-t border-surface-700',
+        'flex items-center justify-end gap-3 pt-4 mt-4 border-t border-surface-200 dark:border-surface-800',
         className
       )}
     >

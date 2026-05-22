@@ -50,12 +50,12 @@ export function WorkspaceComparisonWidget() {
 
   if (isLoading) {
     return (
-      <div className="bg-surface-800 rounded-lg border border-surface-700 p-4">
+      <div className="bg-white rounded-lg border border-surface-200 p-4">
         <div className="animate-pulse">
-          <div className="h-5 bg-surface-700 rounded w-1/3 mb-4"></div>
+          <div className="h-5 bg-surface-200 rounded w-1/3 mb-4"></div>
           <div className="space-y-3">
-            <div className="h-12 bg-surface-700 rounded"></div>
-            <div className="h-12 bg-surface-700 rounded"></div>
+            <div className="h-12 bg-surface-200 rounded"></div>
+            <div className="h-12 bg-surface-200 rounded"></div>
           </div>
         </div>
       </div>
@@ -79,9 +79,9 @@ export function WorkspaceComparisonWidget() {
   };
 
   return (
-    <div className="bg-surface-800 rounded-lg border border-surface-700 overflow-hidden">
+    <div className="bg-white rounded-lg border border-surface-200 overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-surface-700">
+      <div className="flex items-center justify-between p-4 border-b border-surface-200">
         <div className="flex items-center gap-2">
           <BuildingOfficeIcon className="w-5 h-5 text-brand-400" />
           <h3 className="font-semibold text-foreground">Workspace Comparison</h3>
@@ -96,25 +96,25 @@ export function WorkspaceComparisonWidget() {
       </div>
 
       {/* Org-wide Stats */}
-      <div className="grid grid-cols-3 gap-px bg-surface-700">
-        <div className="bg-surface-800 p-3 text-center">
+      <div className="grid grid-cols-3 gap-px bg-surface-200">
+        <div className="bg-white p-3 text-center">
           <p className="text-xs text-muted-foreground">Avg Score</p>
           <p className={`text-lg font-bold ${getScoreColor(data.avgComplianceScore)}`}>
             {data.avgComplianceScore}%
           </p>
         </div>
-        <div className="bg-surface-800 p-3 text-center">
+        <div className="bg-white p-3 text-center">
           <p className="text-xs text-muted-foreground">Total Controls</p>
           <p className="text-lg font-bold text-foreground">{data.totals.controls}</p>
         </div>
-        <div className="bg-surface-800 p-3 text-center">
+        <div className="bg-white p-3 text-center">
           <p className="text-xs text-muted-foreground">Total Risks</p>
           <p className="text-lg font-bold text-foreground">{data.totals.risks}</p>
         </div>
       </div>
 
       {/* Workspace List */}
-      <div className="divide-y divide-surface-700">
+      <div className="divide-y divide-surface-200">
         {sortedWorkspaces.slice(0, 5).map((workspace) => (
           <button
             key={workspace.id}
@@ -131,7 +131,7 @@ export function WorkspaceComparisonWidget() {
               });
               navigate('/dashboard');
             }}
-            className="w-full flex items-center justify-between p-3 hover:bg-surface-700/50 transition-colors"
+            className="w-full flex items-center justify-between p-3 hover:bg-surface-200/50 transition-colors"
           >
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-brand-600/20 flex items-center justify-center">
@@ -160,7 +160,7 @@ export function WorkspaceComparisonWidget() {
 
       {/* Show more link if there are more workspaces */}
       {data.workspaces.length > 5 && (
-        <div className="p-3 text-center border-t border-surface-700">
+        <div className="p-3 text-center border-t border-surface-200">
           <button
             onClick={() => navigate('/settings/workspaces')}
             className="text-sm text-muted-foreground hover:text-foreground"

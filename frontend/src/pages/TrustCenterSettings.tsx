@@ -87,7 +87,7 @@ export default function TrustCenterSettings() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-surface-100">Trust Center Settings</h1>
+        <h1 className="text-3xl font-bold text-surface-900">Trust Center Settings</h1>
         <p className="mt-1 text-surface-600">Configure your public-facing security trust center</p>
       </div>
 
@@ -122,14 +122,14 @@ export default function TrustCenterSettings() {
               onChange={(e) => updateConfig({ isEnabled: e.target.checked })}
               className="sr-only peer"
             />
-            <div className="w-14 h-7 bg-surface-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-600"></div>
+            <div className="w-14 h-7 bg-surface-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-600"></div>
           </label>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="bg-surface-900 border border-surface-800 rounded-lg overflow-hidden">
-        <div className="border-b border-surface-800">
+      <div className="bg-white border border-surface-200 rounded-lg overflow-hidden">
+        <div className="border-b border-surface-200">
           <nav className="flex">
             {tabs.map((tab) => {
               const Icon = tab.icon;
@@ -139,8 +139,8 @@ export default function TrustCenterSettings() {
                   onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center gap-2 px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
                     activeTab === tab.id
-                      ? 'border-brand-500 text-brand-400 bg-surface-800/50'
-                      : 'border-transparent text-surface-600 hover:text-surface-700 hover:bg-surface-800/30'
+                      ? 'border-brand-500 text-brand-400 bg-white/50'
+                      : 'border-transparent text-surface-600 hover:text-surface-700 hover:bg-white/30'
                   }`}
                 >
                   <Icon className="w-5 h-5" />
@@ -161,7 +161,7 @@ export default function TrustCenterSettings() {
 
       {/* Save indicator */}
       {saving && (
-        <div className="fixed bottom-4 right-4 bg-surface-800 text-surface-200 px-4 py-2 rounded-lg shadow-lg">
+        <div className="fixed bottom-4 right-4 bg-white text-surface-800 px-4 py-2 rounded-lg shadow-lg">
           Saving...
         </div>
       )}
@@ -180,7 +180,7 @@ function GeneralSettings({
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium text-surface-100 mb-4">Contact Information</h3>
+        <h3 className="text-lg font-medium text-surface-900 mb-4">Contact Information</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-surface-600 mb-1">
@@ -190,7 +190,7 @@ function GeneralSettings({
               type="email"
               value={config.securityEmail || ''}
               onChange={(e) => onUpdate({ securityEmail: e.target.value })}
-              className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
               placeholder="security@company.com"
             />
             <p className="text-xs text-surface-500 mt-1">Public email for security inquiries</p>
@@ -201,15 +201,15 @@ function GeneralSettings({
               type="url"
               value={config.supportUrl || ''}
               onChange={(e) => onUpdate({ supportUrl: e.target.value })}
-              className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
               placeholder="https://support.company.com"
             />
             <p className="text-xs text-surface-500 mt-1">Link to your support portal</p>
           </div>
         </div>
       </div>
-      <div className="pt-6 border-t border-surface-800">
-        <h3 className="text-lg font-medium text-surface-100 mb-4">Section Visibility</h3>
+      <div className="pt-6 border-t border-surface-200">
+        <h3 className="text-lg font-medium text-surface-900 mb-4">Section Visibility</h3>
         <p className="text-sm text-surface-600 mb-4">
           Choose which sections to display on your public trust center
         </p>
@@ -235,24 +235,24 @@ function GeneralSettings({
           ].map((section) => (
             <label
               key={section.key}
-              className="flex items-start gap-3 p-3 bg-surface-800/50 rounded-lg cursor-pointer hover:bg-surface-800 transition-colors"
+              className="flex items-start gap-3 p-3 bg-white/50 rounded-lg cursor-pointer hover:bg-white transition-colors"
             >
               <input
                 type="checkbox"
                 checked={config[section.key as keyof TrustCenterConfig] as boolean}
                 onChange={(e) => onUpdate({ [section.key]: e.target.checked })}
-                className="mt-1 w-4 h-4 bg-surface-800 border-surface-700 rounded text-brand-600 focus:ring-brand-500"
+                className="mt-1 w-4 h-4 bg-white border-surface-200 rounded text-brand-600 focus:ring-brand-500"
               />
               <div>
-                <span className="text-sm font-medium text-surface-200">{section.label}</span>
+                <span className="text-sm font-medium text-surface-800">{section.label}</span>
                 <p className="text-xs text-surface-500">{section.description}</p>
               </div>
             </label>
           ))}
         </div>
       </div>
-      <div className="pt-6 border-t border-surface-800">
-        <h3 className="text-lg font-medium text-surface-100 mb-4">Quick Links</h3>
+      <div className="pt-6 border-t border-surface-200">
+        <h3 className="text-lg font-medium text-surface-900 mb-4">Quick Links</h3>
         <div className="flex flex-wrap gap-3">
           <a
             href="/trust-center/public"
@@ -265,7 +265,7 @@ function GeneralSettings({
           </a>
           <a
             href="/trust-center"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-surface-700 text-surface-200 rounded-lg hover:bg-surface-600 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-surface-200 text-surface-800 rounded-lg hover:bg-surface-600 transition-colors"
           >
             Manage Content
           </a>
@@ -286,7 +286,7 @@ function BrandingSettings({
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium text-surface-100 mb-4">Company Information</h3>
+        <h3 className="text-lg font-medium text-surface-900 mb-4">Company Information</h3>
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-surface-600 mb-1">Company Name</label>
@@ -294,7 +294,7 @@ function BrandingSettings({
               type="text"
               value={config.companyName}
               onChange={(e) => onUpdate({ companyName: e.target.value })}
-              className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
               placeholder="Your Company Name"
             />
           </div>
@@ -306,7 +306,7 @@ function BrandingSettings({
               value={config.description || ''}
               onChange={(e) => onUpdate({ description: e.target.value })}
               rows={3}
-              className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
               placeholder="Describe your security posture and commitment to security..."
             />
             <p className="text-xs text-surface-500 mt-1">
@@ -315,8 +315,8 @@ function BrandingSettings({
           </div>
         </div>
       </div>
-      <div className="pt-6 border-t border-surface-800">
-        <h3 className="text-lg font-medium text-surface-100 mb-4">Visual Branding</h3>
+      <div className="pt-6 border-t border-surface-200">
+        <h3 className="text-lg font-medium text-surface-900 mb-4">Visual Branding</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-surface-600 mb-1">Logo URL</label>
@@ -324,7 +324,7 @@ function BrandingSettings({
               type="url"
               value={config.logoUrl || ''}
               onChange={(e) => onUpdate({ logoUrl: e.target.value })}
-              className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
               placeholder="https://example.com/logo.png"
             />
             <p className="text-xs text-surface-500 mt-1">Recommended: 200x50px, PNG or SVG</p>
@@ -336,13 +336,13 @@ function BrandingSettings({
                 type="color"
                 value={config.primaryColor || '#6366f1'}
                 onChange={(e) => onUpdate({ primaryColor: e.target.value })}
-                className="w-12 h-10 bg-surface-800 border border-surface-700 rounded-lg cursor-pointer"
+                className="w-12 h-10 bg-white border border-surface-200 rounded-lg cursor-pointer"
               />
               <Input
                 type="text"
                 value={config.primaryColor || '#6366f1'}
                 onChange={(e) => onUpdate({ primaryColor: e.target.value })}
-                className="flex-1 px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+                className="flex-1 px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
                 placeholder="#6366f1"
               />
             </div>
@@ -351,8 +351,8 @@ function BrandingSettings({
         </div>
       </div>
       {/* Preview */}
-      <div className="pt-6 border-t border-surface-800">
-        <h3 className="text-lg font-medium text-surface-100 mb-4">Preview</h3>
+      <div className="pt-6 border-t border-surface-200">
+        <h3 className="text-lg font-medium text-surface-900 mb-4">Preview</h3>
         <div className="bg-white rounded-lg p-8 text-center">
           {config.logoUrl && (
             <img src={config.logoUrl} alt={config.companyName} className="h-12 mx-auto mb-4" />
@@ -389,7 +389,7 @@ function DomainSettings({
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium text-surface-100 mb-2">Custom Domain</h3>
+        <h3 className="text-lg font-medium text-surface-900 mb-2">Custom Domain</h3>
         <p className="text-sm text-surface-600 mb-4">
           Host your Trust Center on your own domain for a seamless brand experience
         </p>
@@ -404,7 +404,7 @@ function DomainSettings({
                 type="text"
                 value={domainInput}
                 onChange={(e) => setDomainInput(e.target.value)}
-                className="flex-1 px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+                className="flex-1 px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
                 placeholder="trust.yourcompany.com"
               />
               <button
@@ -421,8 +421,8 @@ function DomainSettings({
         </div>
       </div>
       {config.customDomain && (
-        <div className="bg-surface-800/50 rounded-lg p-6 border border-surface-700">
-          <h4 className="text-md font-medium text-surface-200 mb-4 flex items-center gap-2">
+        <div className="bg-white/50 rounded-lg p-6 border border-surface-200">
+          <h4 className="text-md font-medium text-surface-800 mb-4 flex items-center gap-2">
             <LinkIcon className="w-5 h-5 text-brand-400" />
             DNS Configuration Required
           </h4>
@@ -433,7 +433,7 @@ function DomainSettings({
                 1
               </span>
               <div>
-                <p className="text-surface-200">Log in to your domain registrar or DNS provider</p>
+                <p className="text-surface-800">Log in to your domain registrar or DNS provider</p>
                 <p className="text-surface-500 text-xs mt-1">
                   Common providers: Cloudflare, GoDaddy, Namecheap, Route53
                 </p>
@@ -444,8 +444,8 @@ function DomainSettings({
                 2
               </span>
               <div>
-                <p className="text-surface-200">Add a CNAME record with these values:</p>
-                <div className="mt-2 bg-surface-900 rounded-lg p-4 space-y-2">
+                <p className="text-surface-800">Add a CNAME record with these values:</p>
+                <div className="mt-2 bg-white rounded-lg p-4 space-y-2">
                   <div className="flex justify-between">
                     <span className="text-surface-600">Type:</span>
                     <code className="text-brand-400">CNAME</code>
@@ -471,7 +471,7 @@ function DomainSettings({
                 3
               </span>
               <div>
-                <p className="text-surface-200">Wait for DNS propagation</p>
+                <p className="text-surface-800">Wait for DNS propagation</p>
                 <p className="text-surface-500 text-xs mt-1">
                   This can take up to 24-48 hours, but usually completes within minutes
                 </p>
@@ -482,7 +482,7 @@ function DomainSettings({
                 4
               </span>
               <div>
-                <p className="text-surface-200">
+                <p className="text-surface-800">
                   SSL certificate will be automatically provisioned
                 </p>
                 <p className="text-surface-500 text-xs mt-1">
@@ -492,7 +492,7 @@ function DomainSettings({
             </li>
           </ol>
 
-          <div className="mt-6 pt-4 border-t border-surface-700">
+          <div className="mt-6 pt-4 border-t border-surface-200">
             <a
               href={`https://${config.customDomain}`}
               target="_blank"
@@ -506,7 +506,7 @@ function DomainSettings({
         </div>
       )}
       {!config.customDomain && (
-        <div className="bg-surface-800/30 rounded-lg p-6 border border-dashed border-surface-700 text-center">
+        <div className="bg-white/30 rounded-lg p-6 border border-dashed border-surface-200 text-center">
           <LinkIcon className="w-12 h-12 text-surface-600 mx-auto mb-3" />
           <p className="text-surface-600">Enter a custom domain above to see setup instructions</p>
         </div>
@@ -556,18 +556,18 @@ function EmbedSettings({ config }: { config: TrustCenterConfig }) {
       <div>
         <div className="flex items-center gap-2 mb-2">
           <CodeBracketIcon className="w-5 h-5 text-brand-400" />
-          <h3 className="text-lg font-medium text-surface-100">Full Page Embed (iframe)</h3>
+          <h3 className="text-lg font-medium text-surface-900">Full Page Embed (iframe)</h3>
         </div>
         <p className="text-sm text-surface-600 mb-4">
           Embed your complete Trust Center on any webpage
         </p>
         <div className="relative">
-          <pre className="p-4 bg-surface-800 rounded-lg text-sm text-surface-700 overflow-x-auto">
+          <pre className="p-4 bg-white rounded-lg text-sm text-surface-700 overflow-x-auto">
             {iframeCode}
           </pre>
           <button
             onClick={() => copyToClipboard(iframeCode, 'iframe code')}
-            className="absolute top-2 right-2 flex items-center gap-1 px-3 py-1.5 text-xs bg-surface-700 text-surface-700 rounded hover:bg-surface-600 transition-colors"
+            className="absolute top-2 right-2 flex items-center gap-1 px-3 py-1.5 text-xs bg-surface-200 text-surface-700 rounded hover:bg-surface-600 transition-colors"
           >
             <ClipboardDocumentIcon className="w-4 h-4" />
             Copy
@@ -575,21 +575,21 @@ function EmbedSettings({ config }: { config: TrustCenterConfig }) {
         </div>
       </div>
       {/* Button Link */}
-      <div className="pt-6 border-t border-surface-800">
+      <div className="pt-6 border-t border-surface-200">
         <div className="flex items-center gap-2 mb-2">
           <LinkIcon className="w-5 h-5 text-brand-400" />
-          <h3 className="text-lg font-medium text-surface-100">Security Button</h3>
+          <h3 className="text-lg font-medium text-surface-900">Security Button</h3>
         </div>
         <p className="text-sm text-surface-600 mb-4">
           Add a branded button that links to your Trust Center
         </p>
         <div className="relative">
-          <pre className="p-4 bg-surface-800 rounded-lg text-sm text-surface-700 overflow-x-auto">
+          <pre className="p-4 bg-white rounded-lg text-sm text-surface-700 overflow-x-auto">
             {buttonCode}
           </pre>
           <button
             onClick={() => copyToClipboard(buttonCode.replace(/\n/g, ''), 'button code')}
-            className="absolute top-2 right-2 flex items-center gap-1 px-3 py-1.5 text-xs bg-surface-700 text-surface-700 rounded hover:bg-surface-600 transition-colors"
+            className="absolute top-2 right-2 flex items-center gap-1 px-3 py-1.5 text-xs bg-surface-200 text-surface-700 rounded hover:bg-surface-600 transition-colors"
           >
             <ClipboardDocumentIcon className="w-4 h-4" />
             Copy
@@ -597,7 +597,7 @@ function EmbedSettings({ config }: { config: TrustCenterConfig }) {
         </div>
 
         {/* Button Preview */}
-        <div className="mt-4 p-4 bg-surface-800/50 rounded-lg">
+        <div className="mt-4 p-4 bg-white/50 rounded-lg">
           <p className="text-xs text-surface-500 mb-3">Preview:</p>
           <a
             href={trustCenterUrl}
@@ -630,10 +630,10 @@ function EmbedSettings({ config }: { config: TrustCenterConfig }) {
         </div>
       </div>
       {/* Direct Link */}
-      <div className="pt-6 border-t border-surface-800">
+      <div className="pt-6 border-t border-surface-200">
         <div className="flex items-center gap-2 mb-2">
           <GlobeAltIcon className="w-5 h-5 text-brand-400" />
-          <h3 className="text-lg font-medium text-surface-100">Direct Link</h3>
+          <h3 className="text-lg font-medium text-surface-900">Direct Link</h3>
         </div>
         <p className="text-sm text-surface-600 mb-4">
           Share this URL directly with customers or partners
@@ -643,11 +643,11 @@ function EmbedSettings({ config }: { config: TrustCenterConfig }) {
             type="text"
             readOnly
             value={trustCenterUrl}
-            className="flex-1 px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-700 text-sm"
+            className="flex-1 px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-700 text-sm"
           />
           <button
             onClick={() => copyToClipboard(trustCenterUrl, 'URL')}
-            className="flex items-center gap-1 px-4 py-2 bg-surface-700 text-surface-200 rounded-lg hover:bg-surface-600 transition-colors"
+            className="flex items-center gap-1 px-4 py-2 bg-surface-200 text-surface-800 rounded-lg hover:bg-surface-600 transition-colors"
           >
             <ClipboardDocumentIcon className="w-4 h-4" />
             Copy

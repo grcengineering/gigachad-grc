@@ -156,7 +156,7 @@ privacy,GDPR Compliance,Are you GDPR compliant?,"We are fully GDPR compliant and
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-surface-100">Knowledge Base</h1>
+            <h1 className="text-3xl font-bold text-surface-900">Knowledge Base</h1>
             <p className="mt-1 text-surface-600">
               Pre-approved answers to common security questions
             </p>
@@ -171,7 +171,7 @@ privacy,GDPR Compliance,Are you GDPR compliant?,"We are fully GDPR compliant and
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-surface-100">Knowledge Base</h1>
+          <h1 className="text-3xl font-bold text-surface-900">Knowledge Base</h1>
           <p className="mt-1 text-surface-600">Pre-approved answers to common security questions</p>
         </div>
         <div className="flex gap-2">
@@ -199,13 +199,13 @@ privacy,GDPR Compliance,Are you GDPR compliant?,"We are fully GDPR compliant and
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search knowledge base..."
-            className="w-full pl-10 pr-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+            className="w-full pl-10 pr-4 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
           />
         </div>
         <SelectNative
           value={category}
           onChange={(e) => setCategory(e.target.value)}
-          className="px-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+          className="px-4 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
         >
           {categories.map((cat) => (
             <option key={cat} value={cat}>
@@ -236,10 +236,10 @@ privacy,GDPR Compliance,Are you GDPR compliant?,"We are fully GDPR compliant and
             <div
               key={entry.id}
               onClick={() => navigate(`/knowledge-base/${entry.id}`)}
-              className="bg-surface-900 border border-surface-800 rounded-lg p-6 hover:bg-surface-800 cursor-pointer transition-colors"
+              className="bg-white border border-surface-200 rounded-lg p-6 hover:bg-white cursor-pointer transition-colors"
             >
               <div className="flex items-start justify-between mb-3">
-                <h3 className="text-lg font-semibold text-surface-100 flex-1">{entry.title}</h3>
+                <h3 className="text-lg font-semibold text-surface-900 flex-1">{entry.title}</h3>
                 <div className="flex gap-2">
                   <span
                     className={`px-2 py-1 text-xs rounded capitalize ${
@@ -258,11 +258,11 @@ privacy,GDPR Compliance,Are you GDPR compliant?,"We are fully GDPR compliant and
                 </div>
               </div>
               <div className="flex items-center gap-2 mb-3">
-                <span className="px-2 py-1 text-xs bg-surface-700 text-surface-700 rounded capitalize">
+                <span className="px-2 py-1 text-xs bg-surface-200 text-surface-700 rounded capitalize">
                   {entry.category}
                 </span>
                 {entry.framework && (
-                  <span className="px-2 py-1 text-xs bg-surface-700 text-surface-700 rounded">
+                  <span className="px-2 py-1 text-xs bg-surface-200 text-surface-700 rounded">
                     {entry.framework}
                   </span>
                 )}
@@ -276,12 +276,12 @@ privacy,GDPR Compliance,Are you GDPR compliant?,"We are fully GDPR compliant and
       {/* Bulk Upload Modal */}
       <Dialog open={showBulkUpload} onClose={() => setShowBulkUpload(false)}>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold text-surface-100">
+          <h2 className="text-2xl font-bold text-surface-900">
             Bulk Upload Knowledge Base Entries
           </h2>
           <button
             onClick={downloadTemplate}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm bg-surface-700 text-surface-200 rounded-lg hover:bg-surface-600 transition-colors"
+            className="flex items-center gap-2 px-3 py-1.5 text-sm bg-surface-200 text-surface-800 rounded-lg hover:bg-surface-600 transition-colors"
           >
             <ArrowDownTrayIcon className="w-4 h-4" />
             Download Template
@@ -294,7 +294,7 @@ privacy,GDPR Compliance,Are you GDPR compliant?,"We are fully GDPR compliant and
 
         <div className="mb-4">
           <label className="block text-sm font-medium text-surface-600 mb-2">CSV File</label>
-          <div className="border-2 border-dashed border-surface-700 rounded-lg p-8 text-center">
+          <div className="border-2 border-dashed border-surface-200 rounded-lg p-8 text-center">
             <input
               type="file"
               accept=".csv"
@@ -315,7 +315,7 @@ privacy,GDPR Compliance,Are you GDPR compliant?,"We are fully GDPR compliant and
           </div>
         </div>
 
-        <div className="mb-4 bg-surface-800 rounded-lg p-4">
+        <div className="mb-4 bg-white rounded-lg p-4">
           <h3 className="text-sm font-medium text-surface-700 mb-2">Example CSV Format:</h3>
           <pre className="text-xs text-surface-600 font-mono overflow-x-auto">
             {`category,title,question,answer,tags,framework,status,isPublic

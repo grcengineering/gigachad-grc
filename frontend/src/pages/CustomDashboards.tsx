@@ -100,7 +100,7 @@ export default function CustomDashboards() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-surface-100">Custom Dashboards</h1>
+          <h1 className="text-2xl font-bold text-surface-900">Custom Dashboards</h1>
           <p className="text-surface-600 mt-1">Create and customize your own dashboard views</p>
         </div>
         <div className="flex items-center gap-2">
@@ -115,13 +115,13 @@ export default function CustomDashboards() {
       {/* Loading state */}
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin w-8 h-8 border-4 border-surface-700 rounded-full border-t-brand-500" />
+          <div className="animate-spin w-8 h-8 border-4 border-surface-200 rounded-full border-t-brand-500" />
         </div>
       ) : userDashboards.length === 0 ? (
         /* Empty state */
         <div className="card p-12 text-center">
           <Squares2X2Icon className="w-12 h-12 mx-auto text-surface-500 mb-4" />
-          <h3 className="text-lg font-medium text-surface-200 mb-2">No dashboards yet</h3>
+          <h3 className="text-lg font-medium text-surface-800 mb-2">No dashboards yet</h3>
           <p className="text-surface-600 mb-6">
             Create a custom dashboard or start from a template
           </p>
@@ -148,7 +148,7 @@ export default function CustomDashboards() {
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <h3 className="font-medium text-surface-200">{dashboard.name}</h3>
+                  <h3 className="font-medium text-surface-800">{dashboard.name}</h3>
                   {dashboard.isDefault && (
                     <StarIconSolid className="w-4 h-4 text-yellow-600" title="Default" />
                   )}
@@ -157,7 +157,7 @@ export default function CustomDashboards() {
                   {!dashboard.isDefault && (
                     <button
                       onClick={() => setDefaultMutation.mutate(dashboard.id)}
-                      className="p-1 hover:bg-surface-700 rounded text-surface-600 hover:text-yellow-600"
+                      className="p-1 hover:bg-surface-200 rounded text-surface-600 hover:text-yellow-600"
                       title="Set as default"
                     >
                       <StarIcon className="w-4 h-4" />
@@ -189,12 +189,12 @@ export default function CustomDashboards() {
               </div>
 
               {/* Mini preview */}
-              <div className="mt-3 bg-surface-800 rounded p-2">
+              <div className="mt-3 bg-white rounded p-2">
                 <div className="grid grid-cols-6 gap-1 h-12">
                   {dashboard.widgets?.slice(0, 6).map((widget, i) => (
                     <div
                       key={widget.id || i}
-                      className="bg-surface-700 rounded"
+                      className="bg-surface-200 rounded"
                       style={{
                         gridColumn: `span ${Math.min(widget.position.w, 2)}`,
                       }}
@@ -209,7 +209,7 @@ export default function CustomDashboards() {
       {/* Templates section */}
       {templates.length > 0 && (
         <div className="mt-8">
-          <h2 className="text-lg font-semibold text-surface-200 mb-4">Organization Templates</h2>
+          <h2 className="text-lg font-semibold text-surface-800 mb-4">Organization Templates</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {templates.slice(0, 3).map((template: Dashboard) => (
               <div
@@ -219,7 +219,7 @@ export default function CustomDashboards() {
               >
                 <div className="flex items-center gap-2 mb-2">
                   <Badge variant="info">Template</Badge>
-                  <h3 className="font-medium text-surface-200">{template.name}</h3>
+                  <h3 className="font-medium text-surface-800">{template.name}</h3>
                 </div>
                 <p className="text-sm text-surface-600 mb-2">
                   {template.widgets?.length || 0} widgets
@@ -244,7 +244,7 @@ export default function CustomDashboards() {
       )}
       {/* Create Dashboard Modal */}
       <Dialog open={showCreateModal} onClose={() => setShowCreateModal(false)}>
-        <h2 className="text-lg font-semibold text-surface-100 mb-4">Create New Dashboard</h2>
+        <h2 className="text-lg font-semibold text-surface-900 mb-4">Create New Dashboard</h2>
         <form onSubmit={handleCreate}>
           <div className="space-y-4">
             <div>

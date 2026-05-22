@@ -155,12 +155,12 @@ export default function VendorDetail() {
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate('/vendors')}
-            className="p-2 text-surface-600 hover:text-surface-100 hover:bg-surface-800 rounded-lg transition-colors"
+            className="p-2 text-surface-600 hover:text-surface-900 hover:bg-white rounded-lg transition-colors"
           >
             <ArrowLeftIcon className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-3xl font-bold text-surface-100">
+            <h1 className="text-3xl font-bold text-surface-900">
               {id === 'new' ? 'New Vendor' : vendor?.name || 'Vendor Details'}
             </h1>
             {vendor?.vendorId && <p className="mt-1 text-surface-600">{vendor.vendorId}</p>}
@@ -280,10 +280,10 @@ function VendorForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="bg-surface-900 border border-surface-800 rounded-lg p-6 space-y-6">
+      <div className="bg-white border border-surface-200 rounded-lg p-6 space-y-6">
         {/* Basic Information */}
         <div>
-          <h3 className="text-lg font-medium text-surface-100 mb-4">Basic Information</h3>
+          <h3 className="text-lg font-medium text-surface-900 mb-4">Basic Information</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-surface-700 mb-1">
@@ -294,7 +294,7 @@ function VendorForm({
                 required
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
               />
             </div>
 
@@ -304,7 +304,7 @@ function VendorForm({
                 type="text"
                 value={formData.legalName}
                 onChange={(e) => setFormData({ ...formData, legalName: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
               />
             </div>
 
@@ -314,7 +314,7 @@ function VendorForm({
                 required
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
               >
                 <option value="software_vendor">Software Vendor</option>
                 <option value="cloud_provider">Cloud Provider</option>
@@ -330,7 +330,7 @@ function VendorForm({
                 required
                 value={formData.tier}
                 onChange={(e) => setFormData({ ...formData, tier: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
               >
                 <option value="tier_1">Tier 1 (Critical)</option>
                 <option value="tier_2">Tier 2 (High)</option>
@@ -345,7 +345,7 @@ function VendorForm({
                 required
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
               >
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
@@ -361,7 +361,7 @@ function VendorForm({
                 type="url"
                 value={formData.website}
                 onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
               />
             </div>
           </div>
@@ -369,7 +369,7 @@ function VendorForm({
 
         {/* Contact Information */}
         <div>
-          <h3 className="text-lg font-medium text-surface-100 mb-4">Primary Contact</h3>
+          <h3 className="text-lg font-medium text-surface-900 mb-4">Primary Contact</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-surface-700 mb-1">
@@ -379,7 +379,7 @@ function VendorForm({
                 type="text"
                 value={formData.primaryContact}
                 onChange={(e) => setFormData({ ...formData, primaryContact: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
               />
             </div>
 
@@ -389,7 +389,7 @@ function VendorForm({
                 type="email"
                 value={formData.primaryContactEmail}
                 onChange={(e) => setFormData({ ...formData, primaryContactEmail: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
               />
             </div>
 
@@ -399,7 +399,7 @@ function VendorForm({
                 type="tel"
                 value={formData.primaryContactPhone}
                 onChange={(e) => setFormData({ ...formData, primaryContactPhone: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
               />
             </div>
           </div>
@@ -413,7 +413,7 @@ function VendorForm({
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={3}
-              className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
             />
           </div>
 
@@ -423,7 +423,7 @@ function VendorForm({
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               rows={3}
-              className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
             />
           </div>
         </div>
@@ -488,7 +488,7 @@ function VendorView({
               ? 'bg-red-500/10 border-red-500/30'
               : daysUntilReview !== null && daysUntilReview <= 30
                 ? 'bg-yellow-500/10 border-yellow-500/30'
-                : 'bg-surface-800 border-surface-700'
+                : 'bg-white border-surface-200'
           )}
         >
           <div className="flex items-center gap-3">
@@ -512,7 +512,7 @@ function VendorView({
                     ? 'text-red-600'
                     : daysUntilReview !== null && daysUntilReview <= 30
                       ? 'text-yellow-600'
-                      : 'text-surface-200'
+                      : 'text-surface-800'
                 )}
               >
                 {isOverdue
@@ -553,8 +553,8 @@ function VendorView({
       )}
 
       {/* Basic Information */}
-      <div className="bg-surface-900 border border-surface-800 rounded-lg p-6">
-        <h3 className="text-lg font-medium text-surface-100 mb-4">Basic Information</h3>
+      <div className="bg-white border border-surface-200 rounded-lg p-6">
+        <h3 className="text-lg font-medium text-surface-900 mb-4">Basic Information</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <InfoField label="Vendor Name" value={vendor.name} />
           <InfoField label="Legal Name" value={vendor.legalName} />
@@ -572,8 +572,8 @@ function VendorView({
 
       {/* Contact Information */}
       {(vendor.primaryContact || vendor.primaryContactEmail || vendor.primaryContactPhone) && (
-        <div className="bg-surface-900 border border-surface-800 rounded-lg p-6">
-          <h3 className="text-lg font-medium text-surface-100 mb-4">Primary Contact</h3>
+        <div className="bg-white border border-surface-200 rounded-lg p-6">
+          <h3 className="text-lg font-medium text-surface-900 mb-4">Primary Contact</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <InfoField label="Name" value={vendor.primaryContact} />
             <InfoField label="Email" value={vendor.primaryContactEmail} />
@@ -583,11 +583,11 @@ function VendorView({
       )}
 
       {/* Documents Section with AI Analysis */}
-      <div className="bg-surface-900 border border-surface-800 rounded-lg p-6">
+      <div className="bg-white border border-surface-200 rounded-lg p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <DocumentTextIcon className="w-5 h-5 text-surface-600" />
-            <h3 className="text-lg font-medium text-surface-100">Documents</h3>
+            <h3 className="text-lg font-medium text-surface-900">Documents</h3>
           </div>
         </div>
 
@@ -596,12 +596,12 @@ function VendorView({
             {extendedVendor.documents.map((doc) => (
               <div
                 key={doc.id}
-                className="flex items-center justify-between p-3 bg-surface-800/50 rounded-lg"
+                className="flex items-center justify-between p-3 bg-white/50 rounded-lg"
               >
                 <div className="flex items-center gap-3">
                   <DocumentTextIcon className="w-5 h-5 text-surface-600" />
                   <div>
-                    <p className="text-sm font-medium text-surface-200">{doc.title}</p>
+                    <p className="text-sm font-medium text-surface-800">{doc.title}</p>
                     <p className="text-xs text-surface-600">{doc.documentType.replace('_', ' ')}</p>
                   </div>
                 </div>
@@ -628,10 +628,10 @@ function VendorView({
         )}
 
         {/* Demo SOC 2 Analysis Section */}
-        <div className="mt-4 pt-4 border-t border-surface-700">
+        <div className="mt-4 pt-4 border-t border-surface-200">
           <div className="flex items-center gap-2 mb-3">
             <SparklesIcon className="w-5 h-5 text-purple-600" />
-            <h4 className="font-medium text-surface-200">AI-Powered SOC 2 Analysis</h4>
+            <h4 className="font-medium text-surface-800">AI-Powered SOC 2 Analysis</h4>
           </div>
           <p className="text-sm text-surface-600 mb-3">
             Upload a SOC 2 Type II report to automatically extract exceptions, CUECs, and control
@@ -692,16 +692,16 @@ function VendorView({
 
       {/* Description */}
       {vendor.description && (
-        <div className="bg-surface-900 border border-surface-800 rounded-lg p-6">
-          <h3 className="text-lg font-medium text-surface-100 mb-4">Description</h3>
+        <div className="bg-white border border-surface-200 rounded-lg p-6">
+          <h3 className="text-lg font-medium text-surface-900 mb-4">Description</h3>
           <p className="text-surface-700">{vendor.description}</p>
         </div>
       )}
 
       {/* Notes */}
       {vendor.notes && (
-        <div className="bg-surface-900 border border-surface-800 rounded-lg p-6">
-          <h3 className="text-lg font-medium text-surface-100 mb-4">Notes</h3>
+        <div className="bg-white border border-surface-200 rounded-lg p-6">
+          <h3 className="text-lg font-medium text-surface-900 mb-4">Notes</h3>
           <p className="text-surface-700 whitespace-pre-wrap">{vendor.notes}</p>
         </div>
       )}
@@ -727,7 +727,7 @@ function InfoField({
   return (
     <div>
       <dt className="text-sm font-medium text-surface-600 mb-1">{label}</dt>
-      <dd className={`text-sm text-surface-100 ${capitalize ? 'capitalize' : ''}`}>
+      <dd className={`text-sm text-surface-900 ${capitalize ? 'capitalize' : ''}`}>
         {href ? (
           <a
             href={href}

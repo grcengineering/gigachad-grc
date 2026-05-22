@@ -38,7 +38,7 @@ export function TrustAnalystQueueWidget({ className }: TrustAnalystQueueWidgetPr
 
   if (!organizationId) {
     return (
-      <div className={clsx('bg-surface-900 border border-surface-800 rounded-xl p-6', className)}>
+      <div className={clsx('bg-white border border-surface-200 rounded-xl p-6', className)}>
         <p className="text-surface-600 text-sm">Sign in to view your questionnaire queue.</p>
       </div>
     );
@@ -46,13 +46,13 @@ export function TrustAnalystQueueWidget({ className }: TrustAnalystQueueWidgetPr
 
   if (isLoading) {
     return (
-      <div className={clsx('bg-surface-900 border border-surface-800 rounded-xl p-6', className)}>
+      <div className={clsx('bg-white border border-surface-200 rounded-xl p-6', className)}>
         <div className="animate-pulse space-y-4">
-          <div className="h-6 bg-surface-700 rounded w-48" />
+          <div className="h-6 bg-surface-200 rounded w-48" />
           <div className="space-y-3">
-            <div className="h-16 bg-surface-800 rounded" />
-            <div className="h-16 bg-surface-800 rounded" />
-            <div className="h-16 bg-surface-800 rounded" />
+            <div className="h-16 bg-white rounded" />
+            <div className="h-16 bg-white rounded" />
+            <div className="h-16 bg-white rounded" />
           </div>
         </div>
       </div>
@@ -61,7 +61,7 @@ export function TrustAnalystQueueWidget({ className }: TrustAnalystQueueWidgetPr
 
   if (error) {
     return (
-      <div className={clsx('bg-surface-900 border border-surface-800 rounded-xl p-6', className)}>
+      <div className={clsx('bg-white border border-surface-200 rounded-xl p-6', className)}>
         <p className="text-red-600 text-sm">Failed to load queue</p>
       </div>
     );
@@ -74,19 +74,16 @@ export function TrustAnalystQueueWidget({ className }: TrustAnalystQueueWidgetPr
 
   return (
     <div
-      className={clsx(
-        'bg-surface-900 border border-surface-800 rounded-xl overflow-hidden',
-        className
-      )}
+      className={clsx('bg-white border border-surface-200 rounded-xl overflow-hidden', className)}
     >
       {/* Header */}
-      <div className="px-5 py-4 border-b border-surface-800 flex items-center justify-between">
+      <div className="px-5 py-4 border-b border-surface-200 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-brand-600/20 rounded-lg">
             <DocumentTextIcon className="w-5 h-5 text-brand-400" />
           </div>
           <div>
-            <h3 className="font-semibold text-surface-100">Trust Queue</h3>
+            <h3 className="font-semibold text-surface-900">Trust Queue</h3>
             <p className="text-xs text-surface-600">Questionnaires requiring attention</p>
           </div>
         </div>
@@ -98,7 +95,7 @@ export function TrustAnalystQueueWidget({ className }: TrustAnalystQueueWidgetPr
       </div>
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-4 gap-px bg-surface-700">
+      <div className="grid grid-cols-4 gap-px bg-surface-200">
         <StatBox
           icon={ExclamationTriangleIcon}
           label="Overdue"
@@ -168,7 +165,7 @@ export function TrustAnalystQueueWidget({ className }: TrustAnalystQueueWidgetPr
       </div>
 
       {/* Footer */}
-      <div className="px-5 py-3 border-t border-surface-800 bg-surface-800/50">
+      <div className="px-5 py-3 border-t border-surface-200 bg-white/50">
         <Link
           to="/questionnaires"
           className="flex items-center justify-center gap-2 text-sm text-brand-400 hover:text-brand-300 transition-colors"
@@ -201,7 +198,7 @@ function StatBox({
   };
 
   return (
-    <div className="bg-surface-900 p-3 text-center">
+    <div className="bg-white p-3 text-center">
       <div
         className={clsx('text-2xl font-bold', value > 0 ? colorClasses[color] : 'text-surface-500')}
       >
@@ -238,11 +235,11 @@ function QueueSection({
     urgent: 'bg-red-500/20 text-red-600',
     high: 'bg-orange-500/20 text-orange-600',
     medium: 'bg-yellow-500/20 text-yellow-600',
-    low: 'bg-surface-700 text-surface-600',
+    low: 'bg-surface-200 text-surface-600',
   };
 
   return (
-    <div className="border-b border-surface-800 last:border-b-0">
+    <div className="border-b border-surface-200 last:border-b-0">
       <div
         className={clsx(
           'px-4 py-2 flex items-center gap-2 text-xs font-medium border-l-2',
@@ -252,17 +249,17 @@ function QueueSection({
         <Icon className="w-3.5 h-3.5" />
         {title} ({items.length})
       </div>
-      <div className="divide-y divide-surface-800">
+      <div className="divide-y divide-surface-200">
         {items.slice(0, 3).map((item) => (
           <Link
             key={item.id}
             to={`/questionnaires/${item.id}`}
-            className="block px-4 py-3 hover:bg-surface-800/50 transition-colors group"
+            className="block px-4 py-3 hover:bg-white/50 transition-colors group"
           >
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-sm font-medium text-surface-100 truncate">
+                  <span className="text-sm font-medium text-surface-900 truncate">
                     {item.title}
                   </span>
                   <span
@@ -285,7 +282,7 @@ function QueueSection({
                 </div>
                 {/* Progress Bar */}
                 <div className="mt-2 flex items-center gap-2">
-                  <div className="flex-1 h-1.5 bg-surface-700 rounded-full overflow-hidden">
+                  <div className="flex-1 h-1.5 bg-surface-200 rounded-full overflow-hidden">
                     <div
                       className={clsx(
                         'h-full transition-all',

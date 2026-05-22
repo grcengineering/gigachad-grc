@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 @layer base {
+  /* Light mode (default). Each token has a `.dark` counterpart below. */
   :root {
     --background: 252 252 251;
     --foreground: 31 29 27;
@@ -24,68 +25,97 @@
     --ring-offset: 252 252 251;
   }
 
+  /* Dark mode. Activated by adding the `dark` class to <html>. */
+  .dark {
+    --background: 20 19 15;
+    --foreground: 245 244 241;
+    --card: 31 30 28;
+    --card-foreground: 245 244 241;
+    --primary: 16 185 129;
+    --primary-foreground: 6 78 59;
+    --secondary: 47 46 44;
+    --secondary-foreground: 245 244 241;
+    --muted: 47 46 44;
+    --muted-foreground: 138 136 132;
+    --accent: 217 119 87;
+    --accent-foreground: 20 19 15;
+    --destructive: 248 113 113;
+    --destructive-foreground: 20 19 15;
+    --border: 47 46 44;
+    --input: 47 46 44;
+    --ring: 16 185 129;
+    --ring-offset: 20 19 15;
+  }
+
   * {
-    @apply border-surface-200;
+    @apply border-surface-200 dark:border-surface-800;
   }
 
   html {
     color-scheme: light;
   }
+  html.dark {
+    color-scheme: dark;
+  }
 
   body {
-    @apply bg-surface-50 text-surface-900 antialiased;
+    @apply bg-surface-50 text-surface-900 dark:bg-surface-950 dark:text-surface-100 antialiased;
     font-feature-settings: "cv11", "ss01", "ss03";
   }
 
   *:focus-visible {
-    @apply outline-none ring-2 ring-brand-500 ring-offset-2 ring-offset-surface-50;
+    @apply outline-none ring-2 ring-brand-500 ring-offset-2 ring-offset-surface-50 dark:ring-offset-surface-950;
   }
 
   ::selection {
     background-color: rgb(217 119 87 / 0.25);
     color: rgb(31 29 27);
   }
+  .dark ::selection {
+    background-color: rgb(217 119 87 / 0.35);
+    color: rgb(245 244 241);
+  }
 }
 
 @layer components {
   /* Legacy utilities — kept as escape hatches. New code uses primitives. */
   .btn {
-    @apply inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-50 disabled:opacity-50 disabled:pointer-events-none;
+    @apply inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-50 dark:focus-visible:ring-offset-surface-950 disabled:opacity-50 disabled:pointer-events-none;
   }
 
   .btn-primary {
-    @apply btn bg-brand-600 text-white hover:bg-brand-700 shadow-sm;
+    @apply btn bg-brand-600 text-white hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-400 shadow-sm;
   }
 
   .btn-secondary {
-    @apply btn bg-white text-surface-800 border border-surface-200 hover:bg-surface-100 shadow-sm;
+    @apply btn bg-white text-surface-800 border border-surface-200 hover:bg-surface-100 dark:bg-surface-800 dark:text-surface-100 dark:border-surface-700 dark:hover:bg-surface-700 shadow-sm;
   }
 
   .btn-outline {
-    @apply btn border border-surface-300 bg-white text-surface-700 hover:bg-surface-100 hover:border-surface-400;
+    @apply btn border border-surface-300 bg-white text-surface-700 hover:bg-surface-100 hover:border-surface-400 dark:bg-transparent dark:text-surface-200 dark:border-surface-700 dark:hover:bg-surface-800 dark:hover:border-surface-600;
   }
 
   .btn-ghost {
-    @apply btn bg-transparent text-surface-700 hover:bg-surface-100;
+    @apply btn bg-transparent text-surface-700 hover:bg-surface-100 dark:text-surface-300 dark:hover:bg-surface-800 dark:hover:text-surface-100;
   }
 
   .btn-danger {
-    @apply btn bg-red-600 text-white hover:bg-red-700 shadow-sm;
+    @apply btn bg-red-600 text-white hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-400 shadow-sm;
   }
 
   .card {
-    @apply bg-white border border-surface-200 rounded-lg;
+    @apply bg-white border border-surface-200 rounded-lg dark:bg-surface-900 dark:border-surface-800;
     box-shadow:
       0 1px 2px 0 rgba(30, 25, 20, 0.06),
       0 1px 3px -1px rgba(30, 25, 20, 0.08);
   }
 
   .input {
-    @apply w-full rounded-md border border-surface-300 bg-white px-3 py-2 text-sm text-surface-900 placeholder:text-surface-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-1 focus-visible:ring-offset-surface-50 focus:border-transparent disabled:opacity-50;
+    @apply w-full rounded-md border border-surface-300 bg-white px-3 py-2 text-sm text-surface-900 placeholder:text-surface-400 dark:bg-surface-900 dark:text-surface-100 dark:border-surface-700 dark:placeholder:text-surface-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-1 focus-visible:ring-offset-surface-50 dark:focus-visible:ring-offset-surface-950 focus:border-transparent disabled:opacity-50;
   }
 
   .label {
-    @apply text-sm font-medium text-surface-700;
+    @apply text-sm font-medium text-surface-700 dark:text-surface-300;
   }
 
   .badge {
@@ -94,23 +124,23 @@
 
   /* Legacy badge classes. New code: use <Badge variant="..."> from @/components/ui. */
   .badge-success {
-    @apply badge bg-emerald-50 text-emerald-800 border border-emerald-200;
+    @apply badge bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-200 dark:border-emerald-800;
   }
 
   .badge-warning {
-    @apply badge bg-amber-50 text-amber-800 border border-amber-200;
+    @apply badge bg-amber-50 text-amber-800 border border-amber-200 dark:bg-amber-900/40 dark:text-amber-200 dark:border-amber-800;
   }
 
   .badge-danger {
-    @apply badge bg-red-50 text-red-800 border border-red-200;
+    @apply badge bg-red-50 text-red-800 border border-red-200 dark:bg-red-900/40 dark:text-red-200 dark:border-red-800;
   }
 
   .badge-info {
-    @apply badge bg-blue-50 text-blue-800 border border-blue-200;
+    @apply badge bg-blue-50 text-blue-800 border border-blue-200 dark:bg-blue-900/40 dark:text-blue-200 dark:border-blue-800;
   }
 
   .badge-neutral {
-    @apply badge bg-surface-100 text-surface-700 border border-surface-300;
+    @apply badge bg-surface-100 text-surface-700 border border-surface-300 dark:bg-surface-800 dark:text-surface-300 dark:border-surface-700;
   }
 
   .stat-card {
@@ -118,15 +148,15 @@
   }
 
   .stat-value {
-    @apply text-3xl font-bold text-surface-900;
+    @apply text-3xl font-bold text-surface-900 dark:text-surface-100;
   }
 
   .stat-label {
-    @apply text-sm text-surface-600 mt-1;
+    @apply text-sm text-surface-600 dark:text-surface-400 mt-1;
   }
 
   .progress-bar {
-    @apply h-2 bg-surface-100 rounded-full overflow-hidden;
+    @apply h-2 bg-surface-100 dark:bg-surface-800 rounded-full overflow-hidden;
   }
 
   .progress-fill {
@@ -135,13 +165,23 @@
 }
 
 @layer utilities {
-  /* Skeleton shimmer — warm light */
+  /* Skeleton shimmer — warm light + dark variants */
   .skeleton-shimmer {
     background: linear-gradient(
       90deg,
       rgb(220 214 199 / 1) 0%,
       rgb(196 189 170 / 1) 50%,
       rgb(220 214 199 / 1) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.6s ease-in-out infinite;
+  }
+  .dark .skeleton-shimmer {
+    background: linear-gradient(
+      90deg,
+      rgb(47 46 44 / 1) 0%,
+      rgb(69 68 65 / 1) 50%,
+      rgb(47 46 44 / 1) 100%
     );
     background-size: 200% 100%;
     animation: shimmer 1.6s ease-in-out infinite;
@@ -159,6 +199,12 @@
       0 1px 2px 0 rgba(30, 25, 20, 0.06),
       0 1px 3px -1px rgba(30, 25, 20, 0.08);
   }
+  .dark .surface-elevated {
+    background: rgb(31 30 28);
+    box-shadow:
+      0 1px 2px 0 rgba(0, 0, 0, 0.4),
+      0 1px 3px -1px rgba(0, 0, 0, 0.5);
+  }
 
   /* Hover-lift */
   .lift-hover {
@@ -169,6 +215,11 @@
     box-shadow:
       0 6px 16px -4px rgba(30, 25, 20, 0.12),
       0 0 0 1px rgba(30, 25, 20, 0.08);
+  }
+  .dark .lift-hover:hover {
+    box-shadow:
+      0 6px 16px -4px rgba(0, 0, 0, 0.5),
+      0 0 0 1px rgba(255, 255, 255, 0.08);
   }
 }
 
@@ -182,7 +233,7 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-surface-300/80 rounded-full hover:bg-surface-400;
+  @apply bg-surface-300/80 rounded-full hover:bg-surface-400 dark:bg-surface-700/80 dark:hover:bg-surface-600;
 }
 
 .table-container {
@@ -194,25 +245,25 @@ table {
 }
 
 thead {
-  @apply border-b border-surface-200;
+  @apply border-b border-surface-200 dark:border-surface-800;
 }
 
 th {
-  @apply px-4 py-3 text-left text-xs font-medium text-surface-500 uppercase tracking-wider;
+  @apply px-4 py-3 text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider;
 }
 
 td {
-  @apply px-4 py-4 text-surface-700;
+  @apply px-4 py-4 text-surface-700 dark:text-surface-200;
 }
 
 tbody tr {
-  @apply border-b border-surface-200/60 hover:bg-surface-100/60 transition-colors;
+  @apply border-b border-surface-200/60 hover:bg-surface-100/60 dark:border-surface-800/60 dark:hover:bg-surface-800/40 transition-colors;
 }
 
 [cmdk-root] { @apply w-full; }
-[cmdk-input] { @apply w-full bg-transparent text-surface-900 placeholder:text-surface-400 outline-none border-0; }
+[cmdk-input] { @apply w-full bg-transparent text-surface-900 placeholder:text-surface-400 dark:text-surface-100 dark:placeholder:text-surface-500 outline-none border-0; }
 [cmdk-list] { @apply max-h-96 overflow-y-auto overscroll-contain; }
-[cmdk-item] { @apply flex items-center gap-3 px-3 py-2 rounded-md text-sm text-surface-700 cursor-pointer transition-colors; }
-[cmdk-item][data-selected="true"] { @apply bg-surface-100 text-surface-900; }
-[cmdk-group-heading] { @apply px-3 py-1.5 text-xs font-medium text-surface-500 uppercase tracking-wider; }
-[cmdk-empty] { @apply px-3 py-6 text-center text-sm text-surface-500; }
+[cmdk-item] { @apply flex items-center gap-3 px-3 py-2 rounded-md text-sm text-surface-700 dark:text-surface-200 cursor-pointer transition-colors; }
+[cmdk-item][data-selected="true"] { @apply bg-surface-100 text-surface-900 dark:bg-surface-800 dark:text-surface-100; }
+[cmdk-group-heading] { @apply px-3 py-1.5 text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider; }
+[cmdk-empty] { @apply px-3 py-6 text-center text-sm text-surface-500 dark:text-surface-400; }

@@ -66,7 +66,7 @@ export default function Policies() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-surface-100">Policy Center</h1>
+          <h1 className="text-2xl font-bold text-surface-900">Policy Center</h1>
           <p className="text-surface-600 mt-1">
             Manage your organization's policies and track review cycles
           </p>
@@ -88,7 +88,7 @@ export default function Policies() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="card p-4">
           <p className="text-sm text-surface-600">Total Policies</p>
-          <p className="text-2xl font-bold text-surface-100 mt-1">{stats?.total || 0}</p>
+          <p className="text-2xl font-bold text-surface-900 mt-1">{stats?.total || 0}</p>
         </div>
         <div className="card p-4">
           <p className="text-sm text-surface-600">Approved</p>
@@ -150,10 +150,10 @@ export default function Policies() {
                           to={`/policies/${policy.id}`}
                           className="flex items-center gap-3 hover:text-brand-400"
                         >
-                          <div className="p-2 bg-surface-800 rounded-lg">
+                          <div className="p-2 bg-white rounded-lg">
                             <DocumentTextIcon className="w-5 h-5 text-surface-600" />
                           </div>
-                          <span className="font-medium text-surface-100">{policy.title}</span>
+                          <span className="font-medium text-surface-900">{policy.title}</span>
                         </Link>
                       </td>
                       <td>
@@ -261,8 +261,8 @@ function UploadPolicyModal({ onClose, onSuccess }: { onClose: () => void; onSucc
   return (
     <Dialog open onClose={onClose}>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-semibold text-surface-100">Upload Policy</h2>
-        <button onClick={onClose} className="text-surface-600 hover:text-surface-100">
+        <h2 className="text-lg font-semibold text-surface-900">Upload Policy</h2>
+        <button onClick={onClose} className="text-surface-600 hover:text-surface-900">
           <XMarkIcon className="w-5 h-5" />
         </button>
       </div>
@@ -272,7 +272,7 @@ function UploadPolicyModal({ onClose, onSuccess }: { onClose: () => void; onSucc
         <div
           className={clsx(
             'border-2 border-dashed rounded-lg p-8 text-center transition-colors',
-            isDragging ? 'border-brand-500 bg-brand-500/10' : 'border-surface-700',
+            isDragging ? 'border-brand-500 bg-brand-500/10' : 'border-surface-200',
             file && 'border-green-500 bg-green-500/10'
           )}
           onDragOver={(e) => {
@@ -286,7 +286,7 @@ function UploadPolicyModal({ onClose, onSuccess }: { onClose: () => void; onSucc
             <div className="flex items-center justify-center gap-3">
               <DocumentTextIcon className="w-8 h-8 text-green-600" />
               <div className="text-left">
-                <p className="text-surface-100 font-medium">{file.name}</p>
+                <p className="text-surface-900 font-medium">{file.name}</p>
                 <p className="text-surface-500 text-sm">
                   {(file.size / 1024 / 1024).toFixed(2)} MB
                 </p>

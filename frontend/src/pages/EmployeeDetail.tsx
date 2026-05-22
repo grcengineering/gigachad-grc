@@ -94,17 +94,17 @@ function LoadingState() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center gap-4">
-        <div className="p-2 rounded-lg bg-surface-700 h-9 w-9 animate-pulse" />
+        <div className="p-2 rounded-lg bg-surface-200 h-9 w-9 animate-pulse" />
         <div className="flex-1 space-y-2">
-          <div className="h-8 w-48 bg-surface-700 rounded animate-pulse" />
-          <div className="h-4 w-64 bg-surface-700 rounded animate-pulse" />
+          <div className="h-8 w-48 bg-surface-200 rounded animate-pulse" />
+          <div className="h-4 w-64 bg-surface-200 rounded animate-pulse" />
         </div>
-        <div className="h-20 w-20 rounded-full bg-surface-700 animate-pulse" />
+        <div className="h-20 w-20 rounded-full bg-surface-200 animate-pulse" />
       </div>
-      <div className="h-12 bg-surface-700 rounded animate-pulse" />
+      <div className="h-12 bg-surface-200 rounded animate-pulse" />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="card p-6 h-48 bg-surface-700 animate-pulse" />
+          <div key={i} className="card p-6 h-48 bg-surface-200 animate-pulse" />
         ))}
       </div>
     </div>
@@ -169,7 +169,7 @@ export default function EmployeeDetail() {
       <div className="flex items-center gap-4">
         <Link
           to="/people"
-          className="p-2 rounded-lg hover:bg-surface-700 text-muted-foreground hover:text-foreground"
+          className="p-2 rounded-lg hover:bg-surface-200 text-muted-foreground hover:text-foreground"
         >
           <ArrowLeftIcon className="h-5 w-5" />
         </Link>
@@ -260,7 +260,7 @@ export default function EmployeeDetail() {
               ) : (
                 <div className="space-y-2">
                   {complianceIssues.map((issue: any, i: number) => (
-                    <div key={i} className="flex items-start gap-2 p-2 rounded bg-surface-700/50">
+                    <div key={i} className="flex items-start gap-2 p-2 rounded bg-surface-200/50">
                       <ExclamationTriangleIcon
                         className={`h-4 w-4 mt-0.5 ${issue.severity === 'critical' ? 'text-red-600' : issue.severity === 'high' ? 'text-orange-600' : 'text-yellow-600'}`}
                       />
@@ -286,7 +286,7 @@ export default function EmployeeDetail() {
                   {dataSources.map((source: any, i: number) => (
                     <div
                       key={i}
-                      className="flex items-center justify-between p-2 rounded bg-surface-700/50"
+                      className="flex items-center justify-between p-2 rounded bg-surface-200/50"
                     >
                       <div>
                         <p className="text-sm font-medium text-foreground">{source.integration}</p>
@@ -461,7 +461,7 @@ export default function EmployeeDetail() {
             ) : (
               accessRecords.map((record: any) => (
                 <div key={record.id} className="space-y-4">
-                  <div className="flex items-center gap-4 p-3 bg-surface-700/50 rounded-lg">
+                  <div className="flex items-center gap-4 p-3 bg-surface-200/50 rounded-lg">
                     <div className="flex items-center gap-2">
                       <KeyIcon className="h-5 w-5 text-muted-foreground" />
                       <span className="text-foreground">MFA Status:</span>

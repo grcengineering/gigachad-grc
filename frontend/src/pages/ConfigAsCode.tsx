@@ -154,21 +154,21 @@ function ConfigAsCodeContent() {
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-surface-100">Configuration as Code</h1>
+        <h1 className="text-2xl font-bold text-surface-900">Configuration as Code</h1>
         <p className="text-surface-600 mt-1">
           Manage your GRC resources declaratively with version control
         </p>
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-surface-700">
+      <div className="border-b border-surface-200">
         <nav className="flex gap-4">
           <button
             onClick={() => setActiveTab('ide')}
             className={
               activeTab === 'ide'
                 ? 'px-4 py-2 border-b-2 border-brand-500 text-brand-300 font-medium'
-                : 'px-4 py-2 text-surface-600 hover:text-surface-200'
+                : 'px-4 py-2 text-surface-600 hover:text-surface-800'
             }
           >
             <div className="flex items-center gap-2">
@@ -181,7 +181,7 @@ function ConfigAsCodeContent() {
             className={
               activeTab === 'export'
                 ? 'px-4 py-2 border-b-2 border-brand-500 text-brand-300 font-medium'
-                : 'px-4 py-2 text-surface-600 hover:text-surface-200'
+                : 'px-4 py-2 text-surface-600 hover:text-surface-800'
             }
           >
             <div className="flex items-center gap-2">
@@ -255,7 +255,7 @@ function ExportImportContent({
       <div className="card p-6">
         <div className="flex items-center gap-3 mb-4">
           <ArrowDownTrayIcon className="w-6 h-6 text-brand-400" />
-          <h2 className="text-lg font-semibold text-surface-100">Export Configuration</h2>
+          <h2 className="text-lg font-semibold text-surface-900">Export Configuration</h2>
         </div>
         <p className="text-surface-600 mb-4">
           Export your current GRC state to a configuration file for version control.
@@ -330,7 +330,7 @@ function ExportImportContent({
       <div className="card p-6">
         <div className="flex items-center gap-3 mb-4">
           <ArrowUpTrayIcon className="w-6 h-6 text-brand-400" />
-          <h2 className="text-lg font-semibold text-surface-100">Import Configuration</h2>
+          <h2 className="text-lg font-semibold text-surface-900">Import Configuration</h2>
         </div>
         <p className="text-surface-600 mb-4">
           Import a configuration file to apply changes to your GRC resources.
@@ -383,7 +383,7 @@ function ExportImportContent({
               value={importConfig}
               onChange={(e) => setImportConfig(e.target.value)}
               placeholder="Paste your configuration here or upload a file..."
-              className="w-full h-64 px-4 py-3 bg-surface-800 border border-surface-700 rounded-lg text-surface-200 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="w-full h-64 px-4 py-3 bg-white border border-surface-200 rounded-lg text-surface-800 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
@@ -410,11 +410,11 @@ function ExportImportContent({
         </div>
       </div>
       {/* Info Section */}
-      <div className="bg-surface-800 border border-surface-700 rounded-lg p-4">
+      <div className="bg-white border border-surface-200 rounded-lg p-4">
         <div className="flex items-start gap-3">
           <CodeBracketIcon className="w-5 h-5 text-brand-400 flex-shrink-0 mt-0.5" />
           <div>
-            <h3 className="text-sm font-medium text-surface-200 mb-1">
+            <h3 className="text-sm font-medium text-surface-800 mb-1">
               About Configuration as Code
             </h3>
             <p className="text-sm text-surface-600">

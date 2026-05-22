@@ -169,16 +169,16 @@ export default function AuditRequests() {
         <div className="flex items-start gap-4">
           <button
             onClick={() => navigate('/audit-requests')}
-            className="p-2 hover:bg-surface-700 rounded-lg text-surface-600 mt-1"
+            className="p-2 hover:bg-surface-200 rounded-lg text-surface-600 mt-1"
           >
             <ArrowLeftIcon className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-2xl font-semibold text-surface-100">Create Audit Request</h1>
+            <h1 className="text-2xl font-semibold text-surface-900">Create Audit Request</h1>
             <p className="text-surface-600 mt-1">Create a new evidence or documentation request</p>
           </div>
         </div>
-        <div className="bg-surface-800 border border-surface-700 rounded-lg p-6">
+        <div className="bg-white border border-surface-200 rounded-lg p-6">
           <form onSubmit={handleCreateRequest} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-surface-700 mb-1">
@@ -188,7 +188,7 @@ export default function AuditRequests() {
                 type="text"
                 value={createForm.title}
                 onChange={(e) => setCreateForm({ ...createForm, title: e.target.value })}
-                className="w-full bg-surface-700 border border-surface-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="w-full bg-surface-200 border border-surface-300 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
                 placeholder="e.g., SOC 2 Evidence - Access Control Logs"
               />
             </div>
@@ -200,7 +200,7 @@ export default function AuditRequests() {
               <SelectNative
                 value={createForm.auditId}
                 onChange={(e) => setCreateForm({ ...createForm, auditId: e.target.value })}
-                className="w-full bg-surface-700 border border-surface-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="w-full bg-surface-200 border border-surface-300 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
               >
                 <option value="">Select an audit...</option>
                 {audits.map((audit) => (
@@ -222,7 +222,7 @@ export default function AuditRequests() {
                 <SelectNative
                   value={createForm.category}
                   onChange={(e) => setCreateForm({ ...createForm, category: e.target.value })}
-                  className="w-full bg-surface-700 border border-surface-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="w-full bg-surface-200 border border-surface-300 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
                 >
                   {Object.entries(categoryLabels).map(([value, label]) => (
                     <option key={value} value={value}>
@@ -237,7 +237,7 @@ export default function AuditRequests() {
                 <SelectNative
                   value={createForm.priority}
                   onChange={(e) => setCreateForm({ ...createForm, priority: e.target.value })}
-                  className="w-full bg-surface-700 border border-surface-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="w-full bg-surface-200 border border-surface-300 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
                 >
                   <option value="low">Low</option>
                   <option value="medium">Medium</option>
@@ -252,7 +252,7 @@ export default function AuditRequests() {
                   type="date"
                   value={createForm.dueDate}
                   onChange={(e) => setCreateForm({ ...createForm, dueDate: e.target.value })}
-                  className="w-full bg-surface-700 border border-surface-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="w-full bg-surface-200 border border-surface-300 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
               </div>
             </div>
@@ -263,7 +263,7 @@ export default function AuditRequests() {
                 value={createForm.description}
                 onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
                 rows={3}
-                className="w-full bg-surface-700 border border-surface-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="w-full bg-surface-200 border border-surface-300 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
                 placeholder="Describe what evidence or documentation is needed..."
               />
             </div>
@@ -290,7 +290,7 @@ export default function AuditRequests() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-surface-100">Audit Requests</h1>
+          <h1 className="text-2xl font-semibold text-surface-900">Audit Requests</h1>
           <p className="text-surface-600 mt-1">
             Manage evidence and documentation requests from auditors
           </p>
@@ -311,14 +311,14 @@ export default function AuditRequests() {
             placeholder="Search requests..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 placeholder-surface-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className="w-full pl-10 pr-4 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 placeholder-surface-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
         </div>
 
         <SelectNative
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:ring-2 focus:ring-brand-500"
+          className="px-4 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
         >
           <option value="">All Statuses</option>
           <option value="open">Open</option>
@@ -333,7 +333,7 @@ export default function AuditRequests() {
         <SelectNative
           value={priorityFilter}
           onChange={(e) => setPriorityFilter(e.target.value)}
-          className="px-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:ring-2 focus:ring-brand-500"
+          className="px-4 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
         >
           <option value="">All Priorities</option>
           <option value="low">Low</option>
@@ -371,12 +371,12 @@ export default function AuditRequests() {
             <Link
               key={request.id}
               to={`/audit-requests/${request.id}`}
-              className="block bg-surface-800 border border-surface-700 rounded-lg p-6 hover:border-brand-500 transition-colors"
+              className="block bg-white border border-surface-200 rounded-lg p-6 hover:border-brand-500 transition-colors"
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-lg font-semibold text-surface-100">{request.title}</h3>
+                    <h3 className="text-lg font-semibold text-surface-900">{request.title}</h3>
                     <span className="text-sm text-surface-500">#{request.requestNumber}</span>
                     <span className={`${priorityColors[request.priority]}`}>
                       <ExclamationTriangleIcon className="w-5 h-5" />
@@ -400,7 +400,7 @@ export default function AuditRequests() {
                 </span>
               </div>
 
-              <div className="flex items-center gap-6 pt-4 border-t border-surface-700 text-sm text-surface-600">
+              <div className="flex items-center gap-6 pt-4 border-t border-surface-200 text-sm text-surface-600">
                 <div className="flex items-center gap-2">
                   <DocumentTextIcon className="w-5 h-5" />
                   <span>{request._count.evidence} evidence items</span>

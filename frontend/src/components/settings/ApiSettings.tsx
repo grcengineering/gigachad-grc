@@ -76,7 +76,7 @@ export default function ApiSettings() {
     <div className="card p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-surface-100">API Keys</h2>
+          <h2 className="text-lg font-semibold text-surface-900">API Keys</h2>
           <p className="text-surface-600 text-sm mt-1">Manage API keys for programmatic access</p>
         </div>
         <Button onClick={() => setShowCreateModal(true)} variant="primary">
@@ -97,11 +97,11 @@ export default function ApiSettings() {
           {keys.map((key: ApiKey) => (
             <div
               key={key.id}
-              className="flex items-center justify-between p-4 bg-surface-800/50 rounded-lg"
+              className="flex items-center justify-between p-4 bg-white/50 rounded-lg"
             >
               <div>
                 <div className="flex items-center gap-2">
-                  <p className="text-surface-100 font-medium">{key.name}</p>
+                  <p className="text-surface-900 font-medium">{key.name}</p>
                   {!key.isActive && (
                     <span className="px-2 py-0.5 text-xs bg-red-500/20 text-red-600 rounded">
                       Revoked

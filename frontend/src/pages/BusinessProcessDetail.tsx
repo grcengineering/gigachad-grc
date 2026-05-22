@@ -217,7 +217,7 @@ export default function BusinessProcessDetail() {
       <div className="p-6">
         <div className="card p-8 text-center">
           <ExclamationCircleIcon className="w-12 h-12 mx-auto mb-4 text-red-600" />
-          <h2 className="text-lg font-semibold text-surface-100 mb-2">
+          <h2 className="text-lg font-semibold text-surface-900 mb-2">
             Business Process Not Found
           </h2>
           <p className="text-surface-600 mb-4">
@@ -238,7 +238,7 @@ export default function BusinessProcessDetail() {
         <div className="flex items-start gap-4">
           <button
             onClick={() => navigate('/bcdr/processes')}
-            className="p-2 hover:bg-surface-700 rounded-lg text-surface-600 mt-1"
+            className="p-2 hover:bg-surface-200 rounded-lg text-surface-600 mt-1"
           >
             <ArrowLeftIcon className="w-5 h-5" />
           </button>
@@ -246,7 +246,7 @@ export default function BusinessProcessDetail() {
             <div className="flex items-center gap-3 mb-2">
               <ShieldExclamationIcon className="w-8 h-8 text-brand-400" />
               <div>
-                <h1 className="text-2xl font-bold text-surface-100">{process.name}</h1>
+                <h1 className="text-2xl font-bold text-surface-900">{process.name}</h1>
                 <p className="text-surface-600 text-sm">{process.process_id}</p>
               </div>
             </div>
@@ -289,7 +289,7 @@ export default function BusinessProcessDetail() {
         </div>
       </div>
       {/* Tabs */}
-      <div className="border-b border-surface-700">
+      <div className="border-b border-surface-200">
         <nav className="flex gap-6">
           {(['overview', 'dependencies', 'assets', 'plans'] as const).map((tab) => (
             <button
@@ -299,7 +299,7 @@ export default function BusinessProcessDetail() {
                 'pb-3 px-1 text-sm font-medium border-b-2 transition-colors capitalize',
                 activeTab === tab
                   ? 'border-brand-500 text-brand-400'
-                  : 'border-transparent text-surface-600 hover:text-surface-200'
+                  : 'border-transparent text-surface-600 hover:text-surface-800'
               )}
             >
               {tab}
@@ -313,32 +313,32 @@ export default function BusinessProcessDetail() {
           {/* Main Info */}
           <div className="lg:col-span-2 space-y-6">
             <div className="card p-6">
-              <h3 className="text-lg font-semibold text-surface-100 mb-4">Description</h3>
+              <h3 className="text-lg font-semibold text-surface-900 mb-4">Description</h3>
               <p className="text-surface-700">
                 {process.description || 'No description provided.'}
               </p>
             </div>
 
             <div className="card p-6">
-              <h3 className="text-lg font-semibold text-surface-100 mb-4">Recovery Objectives</h3>
+              <h3 className="text-lg font-semibold text-surface-900 mb-4">Recovery Objectives</h3>
               <div className="grid grid-cols-3 gap-4">
-                <div className="p-4 rounded-lg bg-surface-800/50">
+                <div className="p-4 rounded-lg bg-white/50">
                   <p className="text-surface-600 text-sm">RTO</p>
-                  <p className="text-2xl font-bold text-surface-100">
+                  <p className="text-2xl font-bold text-surface-900">
                     {process.rto_hours || 'N/A'}h
                   </p>
                   <p className="text-surface-500 text-xs">Recovery Time Objective</p>
                 </div>
-                <div className="p-4 rounded-lg bg-surface-800/50">
+                <div className="p-4 rounded-lg bg-white/50">
                   <p className="text-surface-600 text-sm">RPO</p>
-                  <p className="text-2xl font-bold text-surface-100">
+                  <p className="text-2xl font-bold text-surface-900">
                     {process.rpo_hours || 'N/A'}h
                   </p>
                   <p className="text-surface-500 text-xs">Recovery Point Objective</p>
                 </div>
-                <div className="p-4 rounded-lg bg-surface-800/50">
+                <div className="p-4 rounded-lg bg-white/50">
                   <p className="text-surface-600 text-sm">MTPD</p>
-                  <p className="text-2xl font-bold text-surface-100">
+                  <p className="text-2xl font-bold text-surface-900">
                     {process.mtpd_hours || 'N/A'}h
                   </p>
                   <p className="text-surface-500 text-xs">Max Tolerable Downtime</p>
@@ -348,37 +348,37 @@ export default function BusinessProcessDetail() {
 
             {process.impact_description && (
               <div className="card p-6">
-                <h3 className="text-lg font-semibold text-surface-100 mb-4">Business Impact</h3>
+                <h3 className="text-lg font-semibold text-surface-900 mb-4">Business Impact</h3>
                 <p className="text-surface-700">{process.impact_description}</p>
               </div>
             )}
 
             <div className="card p-6">
-              <h3 className="text-lg font-semibold text-surface-100 mb-4">Continuity Details</h3>
+              <h3 className="text-lg font-semibold text-surface-900 mb-4">Continuity Details</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-surface-600 text-sm">Recovery Priority</p>
-                  <p className="text-surface-100">{process.recovery_priority || 'Not set'}</p>
+                  <p className="text-surface-900">{process.recovery_priority || 'Not set'}</p>
                 </div>
                 <div>
                   <p className="text-surface-600 text-sm">Minimum Staff Required</p>
-                  <p className="text-surface-100">{process.minimum_staff_required || 'Not set'}</p>
+                  <p className="text-surface-900">{process.minimum_staff_required || 'Not set'}</p>
                 </div>
                 <div>
                   <p className="text-surface-600 text-sm">Alternate Site Required</p>
-                  <p className="text-surface-100">
+                  <p className="text-surface-900">
                     {process.alternate_site_required ? 'Yes' : 'No'}
                   </p>
                 </div>
                 <div>
                   <p className="text-surface-600 text-sm">Manual Workaround Available</p>
-                  <p className="text-surface-100">
+                  <p className="text-surface-900">
                     {process.manual_workaround_available ? 'Yes' : 'No'}
                   </p>
                 </div>
               </div>
               {process.workaround_description && (
-                <div className="mt-4 pt-4 border-t border-surface-700">
+                <div className="mt-4 pt-4 border-t border-surface-200">
                   <p className="text-surface-600 text-sm mb-2">Workaround Description</p>
                   <p className="text-surface-700">{process.workaround_description}</p>
                 </div>
@@ -389,15 +389,15 @@ export default function BusinessProcessDetail() {
           {/* Sidebar */}
           <div className="space-y-6">
             <div className="card p-6">
-              <h3 className="text-lg font-semibold text-surface-100 mb-4">Details</h3>
+              <h3 className="text-lg font-semibold text-surface-900 mb-4">Details</h3>
               <div className="space-y-4">
                 <div>
                   <p className="text-surface-600 text-sm">Department</p>
-                  <p className="text-surface-100">{process.department || '-'}</p>
+                  <p className="text-surface-900">{process.department || '-'}</p>
                 </div>
                 <div>
                   <p className="text-surface-600 text-sm">Owner</p>
-                  <p className="text-surface-100">{process.owner_name || '-'}</p>
+                  <p className="text-surface-900">{process.owner_name || '-'}</p>
                   {process.owner_email && (
                     <p className="text-surface-500 text-sm">{process.owner_email}</p>
                   )}
@@ -406,7 +406,7 @@ export default function BusinessProcessDetail() {
                   <p className="text-surface-600 text-sm">Next Review Due</p>
                   <p
                     className={clsx(
-                      'text-surface-100',
+                      'text-surface-900',
                       process.next_review_due &&
                         isOverdue(process.next_review_due) &&
                         'text-red-600'
@@ -419,7 +419,7 @@ export default function BusinessProcessDetail() {
                 </div>
                 <div>
                   <p className="text-surface-600 text-sm">Last Reviewed</p>
-                  <p className="text-surface-100">
+                  <p className="text-surface-900">
                     {process.last_reviewed_at
                       ? new Date(process.last_reviewed_at).toLocaleDateString()
                       : 'Never'}
@@ -429,23 +429,23 @@ export default function BusinessProcessDetail() {
             </div>
 
             <div className="card p-6">
-              <h3 className="text-lg font-semibold text-surface-100 mb-4">Statistics</h3>
+              <h3 className="text-lg font-semibold text-surface-900 mb-4">Statistics</h3>
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-surface-600">Dependencies</span>
-                  <span className="text-surface-100">{process.dependencies?.length || 0}</span>
+                  <span className="text-surface-900">{process.dependencies?.length || 0}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-surface-600">Assets</span>
-                  <span className="text-surface-100">{process.assets?.length || 0}</span>
+                  <span className="text-surface-900">{process.assets?.length || 0}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-surface-600">BC/DR Plans</span>
-                  <span className="text-surface-100">{process.bcdr_plans?.length || 0}</span>
+                  <span className="text-surface-900">{process.bcdr_plans?.length || 0}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-surface-600">Recovery Strategies</span>
-                  <span className="text-surface-100">
+                  <span className="text-surface-900">
                     {process.recovery_strategies?.length || 0}
                   </span>
                 </div>
@@ -456,19 +456,19 @@ export default function BusinessProcessDetail() {
       )}
       {activeTab === 'dependencies' && (
         <div className="card p-6">
-          <h3 className="text-lg font-semibold text-surface-100 mb-4">Process Dependencies</h3>
+          <h3 className="text-lg font-semibold text-surface-900 mb-4">Process Dependencies</h3>
           {process.dependencies && process.dependencies.length > 0 ? (
             <div className="space-y-2">
               {process.dependencies.map((dep) => (
                 <Link
                   key={dep.id}
                   to={`/bcdr/processes/${dep.dependent_process_id}`}
-                  className="flex items-center justify-between p-4 rounded-lg bg-surface-800/50 hover:bg-surface-700/50 transition-colors"
+                  className="flex items-center justify-between p-4 rounded-lg bg-white/50 hover:bg-surface-200/50 transition-colors"
                 >
                   <div className="flex items-center gap-3">
                     <LinkIcon className="w-5 h-5 text-surface-600" />
                     <div>
-                      <p className="text-surface-100 font-medium">{dep.dependent_process_name}</p>
+                      <p className="text-surface-900 font-medium">{dep.dependent_process_name}</p>
                       <p className="text-surface-600 text-sm capitalize">{dep.dependency_type}</p>
                     </div>
                   </div>
@@ -482,19 +482,19 @@ export default function BusinessProcessDetail() {
       )}
       {activeTab === 'assets' && (
         <div className="card p-6">
-          <h3 className="text-lg font-semibold text-surface-100 mb-4">Supporting Assets</h3>
+          <h3 className="text-lg font-semibold text-surface-900 mb-4">Supporting Assets</h3>
           {process.assets && process.assets.length > 0 ? (
             <div className="space-y-2">
               {process.assets.map((asset) => (
                 <Link
                   key={asset.id}
                   to={`/assets/${asset.asset_id}`}
-                  className="flex items-center justify-between p-4 rounded-lg bg-surface-800/50 hover:bg-surface-700/50 transition-colors"
+                  className="flex items-center justify-between p-4 rounded-lg bg-white/50 hover:bg-surface-200/50 transition-colors"
                 >
                   <div className="flex items-center gap-3">
                     <CubeIcon className="w-5 h-5 text-surface-600" />
                     <div>
-                      <p className="text-surface-100 font-medium">{asset.asset_name}</p>
+                      <p className="text-surface-900 font-medium">{asset.asset_name}</p>
                       <p className="text-surface-600 text-sm capitalize">{asset.asset_type}</p>
                     </div>
                   </div>
@@ -508,23 +508,23 @@ export default function BusinessProcessDetail() {
       )}
       {activeTab === 'plans' && (
         <div className="card p-6">
-          <h3 className="text-lg font-semibold text-surface-100 mb-4">BC/DR Plans</h3>
+          <h3 className="text-lg font-semibold text-surface-900 mb-4">BC/DR Plans</h3>
           {process.bcdr_plans && process.bcdr_plans.length > 0 ? (
             <div className="space-y-2">
               {process.bcdr_plans.map((plan) => (
                 <Link
                   key={plan.id}
                   to={`/bcdr/plans/${plan.id}`}
-                  className="flex items-center justify-between p-4 rounded-lg bg-surface-800/50 hover:bg-surface-700/50 transition-colors"
+                  className="flex items-center justify-between p-4 rounded-lg bg-white/50 hover:bg-surface-200/50 transition-colors"
                 >
                   <div className="flex items-center gap-3">
                     <DocumentTextIcon className="w-5 h-5 text-surface-600" />
                     <div>
-                      <p className="text-surface-100 font-medium">{plan.title}</p>
+                      <p className="text-surface-900 font-medium">{plan.title}</p>
                       <p className="text-surface-600 text-sm">{plan.plan_id}</p>
                     </div>
                   </div>
-                  <span className="px-2 py-1 rounded text-xs font-medium bg-surface-700 text-surface-700 capitalize">
+                  <span className="px-2 py-1 rounded text-xs font-medium bg-surface-200 text-surface-700 capitalize">
                     {plan.status}
                   </span>
                 </Link>
@@ -537,11 +537,11 @@ export default function BusinessProcessDetail() {
       )}
       {/* Edit Modal */}
       <Dialog open={showEditModal} onClose={() => setShowEditModal(false)}>
-        <div className="p-6 border-b border-surface-700 flex items-center justify-between">
+        <div className="p-6 border-b border-surface-200 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-white">Edit Business Process</h2>
           <button
             onClick={() => setShowEditModal(false)}
-            className="p-2 hover:bg-surface-700 rounded-lg text-surface-600"
+            className="p-2 hover:bg-surface-200 rounded-lg text-surface-600"
           >
             <XMarkIcon className="w-5 h-5" />
           </button>
@@ -712,7 +712,7 @@ export default function BusinessProcessDetail() {
                     alternate_site_required: e.target.checked,
                   }))
                 }
-                className="rounded border-surface-600 bg-surface-700 text-brand-600"
+                className="rounded border-surface-300 bg-surface-200 text-brand-600"
               />
               <span className="text-surface-700 text-sm">Alternate Site Required</span>
             </label>
@@ -726,7 +726,7 @@ export default function BusinessProcessDetail() {
                     manual_workaround_available: e.target.checked,
                   }))
                 }
-                className="rounded border-surface-600 bg-surface-700 text-brand-600"
+                className="rounded border-surface-300 bg-surface-200 text-brand-600"
               />
               <span className="text-surface-700 text-sm">Manual Workaround Available</span>
             </label>
@@ -748,7 +748,7 @@ export default function BusinessProcessDetail() {
             </div>
           )}
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-surface-700">
+          <div className="flex justify-end gap-3 pt-4 border-t border-surface-200">
             <Button variant="secondary" type="button" onClick={() => setShowEditModal(false)}>
               Cancel
             </Button>

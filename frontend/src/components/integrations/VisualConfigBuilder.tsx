@@ -119,8 +119,8 @@ export default function VisualConfigBuilder({ config, onChange, onTest, isTestLo
         <p className="text-xs text-surface-500 mt-1">The base URL for all API requests</p>
       </div>
       {/* Authentication */}
-      <div className="border border-surface-700 rounded-lg p-4">
-        <h3 className="text-sm font-medium text-surface-200 mb-4">Authentication</h3>
+      <div className="border border-surface-200 rounded-lg p-4">
+        <h3 className="text-sm font-medium text-surface-800 mb-4">Authentication</h3>
 
         <div className="flex gap-4 mb-4">
           <label className="flex items-center gap-2 cursor-pointer">
@@ -258,7 +258,7 @@ export default function VisualConfigBuilder({ config, onChange, onTest, isTestLo
       {/* Endpoints */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-medium text-surface-200">Endpoints</h3>
+          <h3 className="text-sm font-medium text-surface-800">Endpoints</h3>
           <Button
             onClick={addEndpoint}
             className="text-sm flex items-center gap-1"
@@ -270,7 +270,7 @@ export default function VisualConfigBuilder({ config, onChange, onTest, isTestLo
         </div>
 
         {config.endpoints.length === 0 ? (
-          <div className="text-center py-8 text-surface-500 border border-dashed border-surface-700 rounded-lg">
+          <div className="text-center py-8 text-surface-500 border border-dashed border-surface-200 rounded-lg">
             No endpoints configured. Add an endpoint to get started.
           </div>
         ) : (
@@ -346,10 +346,10 @@ function EndpointCard({
   };
 
   return (
-    <div className="border border-surface-700 rounded-lg overflow-hidden">
+    <div className="border border-surface-200 rounded-lg overflow-hidden">
       {/* Header */}
       <div
-        className="flex items-center justify-between px-4 py-3 bg-surface-800/50 cursor-pointer"
+        className="flex items-center justify-between px-4 py-3 bg-white/50 cursor-pointer"
         onClick={onToggle}
       >
         <div className="flex items-center gap-3">
@@ -361,7 +361,7 @@ function EndpointCard({
           >
             {endpoint.method}
           </span>
-          <span className="text-surface-200 font-medium">{endpoint.name || endpoint.path}</span>
+          <span className="text-surface-800 font-medium">{endpoint.name || endpoint.path}</span>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -392,7 +392,7 @@ function EndpointCard({
       </div>
       {/* Expanded Content */}
       {isExpanded && (
-        <div className="p-4 space-y-4 bg-surface-900/30">
+        <div className="p-4 space-y-4 bg-white/30">
           {/* Name & Description */}
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -502,7 +502,7 @@ function EndpointCard({
           )}
 
           {/* Response Mapping */}
-          <div className="border-t border-surface-700 pt-4">
+          <div className="border-t border-surface-200 pt-4">
             <h4 className="text-xs font-medium text-surface-700 mb-3">
               Response Mapping (JSONPath)
             </h4>

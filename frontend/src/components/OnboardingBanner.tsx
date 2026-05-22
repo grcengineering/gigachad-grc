@@ -103,7 +103,7 @@ export default function OnboardingBanner({ onDismiss }: OnboardingBannerProps) {
           <div className="flex justify-end lg:hidden">
             <button
               onClick={handleDismiss}
-              className="p-1 hover:bg-surface-700 rounded-lg text-muted-foreground hover:text-foreground"
+              className="p-1 hover:bg-surface-200 rounded-lg text-muted-foreground hover:text-foreground"
             >
               <XMarkIcon className="h-5 w-5" />
             </button>
@@ -127,7 +127,7 @@ export default function OnboardingBanner({ onDismiss }: OnboardingBannerProps) {
             {/* Desktop dismiss button */}
             <button
               onClick={handleDismiss}
-              className="hidden lg:flex p-2 hover:bg-surface-700 rounded-lg text-muted-foreground hover:text-foreground flex-shrink-0"
+              className="hidden lg:flex p-2 hover:bg-surface-200 rounded-lg text-muted-foreground hover:text-foreground flex-shrink-0"
               title="Dismiss"
             >
               <XMarkIcon className="h-5 w-5" />
@@ -158,7 +158,7 @@ function FeatureCard({
   description: string;
 }) {
   return (
-    <div className="flex items-center gap-2 p-2 bg-surface-800/50 rounded-lg">
+    <div className="flex items-center gap-2 p-2 bg-white/50 rounded-lg">
       <Icon className="h-5 w-5 text-brand-400 flex-shrink-0" />
       <div className="min-w-0">
         <p className="text-xs font-medium text-foreground truncate">{label}</p>

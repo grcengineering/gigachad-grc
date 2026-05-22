@@ -180,7 +180,7 @@ export default function AwarenessTraining() {
           />
 
           {/* Category Filter */}
-          <div className="flex items-center gap-3 border-b border-gray-200 dark:border-surface-700 pb-4">
+          <div className="flex items-center gap-3 border-b border-gray-200 dark:border-surface-200 pb-4">
             <span className="text-gray-500 dark:text-surface-500 text-sm font-medium">Filter:</span>
             <div className="flex gap-1">
               {['all', 'social-engineering', 'privacy', 'secure-coding', 'general'].map((cat) => (
@@ -190,7 +190,7 @@ export default function AwarenessTraining() {
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                     categoryFilter === cat
                       ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400 border border-brand-500/30'
-                      : 'text-gray-600 dark:text-surface-600 hover:text-gray-900 dark:hover:text-surface-200 hover:bg-gray-100 dark:hover:bg-surface-800'
+                      : 'text-gray-600 dark:text-surface-600 hover:text-gray-900 dark:hover:text-surface-800 hover:bg-gray-100 dark:hover:bg-white'
                   }`}
                 >
                   {cat === 'all' ? 'All Modules' : getCategoryLabel(cat as any)}
@@ -221,14 +221,14 @@ function StatsOverview({ stats }: { stats: TrainingStats }) {
   const completionPercent = Math.round((stats.completedModules / stats.totalModules) * 100);
 
   return (
-    <div className="bg-white/50 dark:bg-surface-800/50 rounded-xl border border-gray-200 dark:border-surface-700 p-6">
+    <div className="bg-white/50 dark:bg-white/50 rounded-xl border border-gray-200 dark:border-surface-200 p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-medium text-gray-900 dark:text-white">Training Progress</h2>
         <span className="text-2xl font-bold text-brand-500 dark:text-brand-400">
           {completionPercent}%
         </span>
       </div>
-      <div className="h-2 bg-gray-200 dark:bg-surface-700 rounded-full overflow-hidden mb-6">
+      <div className="h-2 bg-gray-200 dark:bg-surface-200 rounded-full overflow-hidden mb-6">
         <div
           className="h-full bg-brand-500 transition-all duration-500"
           style={{ width: `${completionPercent}%` }}
@@ -343,11 +343,11 @@ function TrainingCard({
   const isInProgress = progress?.status === 'in_progress';
 
   return (
-    <div className="bg-white dark:bg-surface-800 rounded-xl border border-gray-200 dark:border-surface-700 overflow-hidden hover:border-gray-300 dark:hover:border-surface-600 transition-all group">
+    <div className="bg-white dark:bg-white rounded-xl border border-gray-200 dark:border-surface-200 overflow-hidden hover:border-gray-300 dark:hover:border-surface-300 transition-all group">
       {/* Header */}
-      <div className="p-5 border-b border-gray-200 dark:border-surface-700">
+      <div className="p-5 border-b border-gray-200 dark:border-surface-200">
         <div className="flex items-start justify-between mb-3">
-          <div className="p-2.5 bg-gray-100 dark:bg-surface-700/50 rounded-lg group-hover:bg-brand-500/10 transition-colors">
+          <div className="p-2.5 bg-gray-100 dark:bg-surface-200/50 rounded-lg group-hover:bg-brand-500/10 transition-colors">
             <ModuleIcon
               type={module.iconType}
               className="w-6 h-6 text-gray-500 dark:text-surface-700 group-hover:text-brand-500 dark:group-hover:text-brand-400 transition-colors"
@@ -379,7 +379,7 @@ function TrainingCard({
       <div className="p-5">
         {/* Tags */}
         <div className="flex items-center gap-2 mb-4">
-          <span className="text-xs text-gray-500 dark:text-surface-500 bg-gray-100 dark:bg-surface-700/50 px-2 py-1 rounded">
+          <span className="text-xs text-gray-500 dark:text-surface-500 bg-gray-100 dark:bg-surface-200/50 px-2 py-1 rounded">
             {getCategoryLabel(module.category)}
           </span>
           <span className={`text-xs px-2 py-1 rounded ${getDifficultyColor(module.difficulty)}`}>
@@ -394,7 +394,7 @@ function TrainingCard({
               <span>Progress</span>
               <span>{progress.slideProgress}%</span>
             </div>
-            <div className="h-1.5 bg-gray-200 dark:bg-surface-700 rounded-full overflow-hidden">
+            <div className="h-1.5 bg-gray-200 dark:bg-surface-200 rounded-full overflow-hidden">
               <div
                 className={`h-full ${isCompleted ? 'bg-emerald-500' : 'bg-brand-500'} transition-all`}
                 style={{ width: `${progress.slideProgress}%` }}
@@ -464,9 +464,9 @@ function TrainingViewer({
   }, [onComplete]);
 
   return (
-    <div className={`${isFullscreen ? 'fixed inset-0 z-50' : ''} bg-gray-100 dark:bg-surface-900`}>
+    <div className={`${isFullscreen ? 'fixed inset-0 z-50' : ''} bg-gray-100 dark:bg-white`}>
       {/* Header */}
-      <div className="bg-white dark:bg-surface-800 border-b border-gray-200 dark:border-surface-700 px-4 py-3 flex items-center justify-between">
+      <div className="bg-white dark:bg-white border-b border-gray-200 dark:border-surface-200 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
@@ -476,7 +476,7 @@ function TrainingViewer({
             Back
           </Button>
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-gray-100 dark:bg-surface-700 rounded-lg">
+            <div className="p-2 bg-gray-100 dark:bg-surface-200 rounded-lg">
               <ModuleIcon
                 type={module.iconType}
                 className="w-5 h-5 text-brand-500 dark:text-brand-400"
@@ -510,7 +510,7 @@ function TrainingViewer({
           )}
           <button
             onClick={() => setIsFullscreen(!isFullscreen)}
-            className="p-2 text-gray-500 dark:text-surface-600 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-surface-700 rounded-lg transition-colors"
+            className="p-2 text-gray-500 dark:text-surface-600 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-surface-200 rounded-lg transition-colors"
             title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
           >
             {isFullscreen ? (
@@ -579,7 +579,7 @@ function ProgressDashboard({
               return (
                 <div
                   key={module.id}
-                  className="bg-white dark:bg-surface-800 rounded-xl border border-gray-200 dark:border-surface-700 p-4 flex items-center gap-4"
+                  className="bg-white dark:bg-white rounded-xl border border-gray-200 dark:border-surface-200 p-4 flex items-center gap-4"
                 >
                   <div className="p-2.5 bg-amber-500/10 rounded-lg">
                     <ModuleIcon
@@ -592,7 +592,7 @@ function ProgressDashboard({
                       {module.title}
                     </h4>
                     <div className="flex items-center gap-3 mt-2">
-                      <div className="flex-1 h-1.5 bg-gray-200 dark:bg-surface-700 rounded-full overflow-hidden">
+                      <div className="flex-1 h-1.5 bg-gray-200 dark:bg-surface-200 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-amber-500"
                           style={{ width: `${moduleProgress?.slideProgress || 0}%` }}
@@ -629,7 +629,7 @@ function ProgressDashboard({
               return (
                 <div
                   key={module.id}
-                  className="bg-white dark:bg-surface-800 rounded-xl border border-emerald-500/20 p-4"
+                  className="bg-white dark:bg-white rounded-xl border border-emerald-500/20 p-4"
                 >
                   <div className="flex items-start gap-3 mb-3">
                     <div className="p-2 bg-emerald-500/10 rounded-lg">
@@ -649,7 +649,7 @@ function ProgressDashboard({
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-surface-700">
+                  <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-surface-200">
                     <span className="text-emerald-500 dark:text-emerald-600 text-xs font-medium flex items-center gap-1">
                       <SparklesIcon className="w-3.5 h-3.5" /> Certificate Earned
                     </span>
@@ -678,9 +678,9 @@ function ProgressDashboard({
             {notStartedModules.map((module) => (
               <div
                 key={module.id}
-                className="bg-white dark:bg-surface-800 rounded-xl border border-gray-200 dark:border-surface-700 p-4 flex items-center gap-4"
+                className="bg-white dark:bg-white rounded-xl border border-gray-200 dark:border-surface-200 p-4 flex items-center gap-4"
               >
-                <div className="p-2.5 bg-gray-100 dark:bg-surface-700/50 rounded-lg">
+                <div className="p-2.5 bg-gray-100 dark:bg-surface-200/50 rounded-lg">
                   <ModuleIcon
                     type={module.iconType}
                     className="w-5 h-5 text-gray-500 dark:text-surface-600"

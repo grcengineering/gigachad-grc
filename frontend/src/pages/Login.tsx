@@ -42,8 +42,8 @@ export default function Login() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-surface-950">
-        <div className="animate-spin w-8 h-8 border-4 border-surface-700 rounded-full border-t-brand-500"></div>
+      <div className="min-h-screen flex items-center justify-center bg-surface-50">
+        <div className="animate-spin w-8 h-8 border-4 border-surface-200 rounded-full border-t-brand-500"></div>
       </div>
     );
   }
@@ -51,7 +51,7 @@ export default function Login() {
   const isDev = import.meta.env.DEV || import.meta.env.VITE_ENABLE_DEV_AUTH === 'true';
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-surface-950 px-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-surface-50 px-4">
       {/* Background gradient */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-brand-600/20 rounded-full blur-3xl"></div>
@@ -61,7 +61,7 @@ export default function Login() {
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
           <img src={branding.logoUrl} alt="Logo" className="w-16 h-16 object-contain mb-4" />
-          <h1 className="text-3xl font-bold text-surface-100">{branding.platformName}</h1>
+          <h1 className="text-3xl font-bold text-surface-900">{branding.platformName}</h1>
           <p className="text-surface-600 mt-2">Governance, Risk, and Compliance Platform</p>
         </div>
 
@@ -74,7 +74,7 @@ export default function Login() {
 
         {/* Login card */}
         <div className="card p-8">
-          <h2 className="text-xl font-semibold text-surface-100 text-center mb-2">Welcome Back</h2>
+          <h2 className="text-xl font-semibold text-surface-900 text-center mb-2">Welcome Back</h2>
           <p className="text-surface-600 text-center mb-8">
             Sign in to access your compliance dashboard
           </p>
@@ -88,10 +88,10 @@ export default function Login() {
             <>
               <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-surface-700"></div>
+                  <div className="w-full border-t border-surface-200"></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-surface-800 text-surface-500">Development Only</span>
+                  <span className="px-2 bg-white text-surface-500">Development Only</span>
                 </div>
               </div>
               <button

@@ -385,7 +385,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
             leaveFrom="opacity-100 scale-100"
             leaveTo="opacity-0 scale-95"
           >
-            <Dialog.Panel className="mx-auto max-w-2xl transform overflow-hidden rounded-xl bg-surface-800 border border-surface-700 shadow-2xl transition-all">
+            <Dialog.Panel className="mx-auto max-w-2xl transform overflow-hidden rounded-xl bg-white border border-surface-200 shadow-2xl transition-all">
               <Combobox onChange={handleSelect}>
                 {/* Search Input */}
                 <div className="relative">
@@ -401,7 +401,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                     value={query}
                   />
                   <div className="absolute right-4 top-3 text-xs text-surface-500 hidden sm:flex items-center gap-1">
-                    <kbd className="px-1.5 py-0.5 bg-surface-700 rounded text-surface-600">Esc</kbd>
+                    <kbd className="px-1.5 py-0.5 bg-surface-200 rounded text-surface-600">Esc</kbd>
                     <span>to close</span>
                   </div>
                 </div>
@@ -410,11 +410,11 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                 {filteredCommands.length > 0 && (
                   <Combobox.Options
                     static
-                    className="max-h-96 scroll-py-2 overflow-y-auto border-t border-surface-700"
+                    className="max-h-96 scroll-py-2 overflow-y-auto border-t border-surface-200"
                   >
                     {Object.entries(groupedCommands).map(([category, commands]) => (
                       <div key={category}>
-                        <div className="px-4 py-2 text-xs font-semibold text-surface-500 uppercase tracking-wider bg-surface-900/50">
+                        <div className="px-4 py-2 text-xs font-semibold text-surface-500 uppercase tracking-wider bg-white/50">
                           {categoryLabels[category] || category}
                         </div>
                         {commands.map((command) => (
@@ -424,7 +424,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                             className={({ active }) =>
                               clsx(
                                 'flex items-center gap-3 px-4 py-3 cursor-pointer',
-                                active ? 'bg-surface-700' : ''
+                                active ? 'bg-surface-200' : ''
                               )
                             }
                           >
@@ -440,7 +440,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                                   <p
                                     className={clsx(
                                       'text-sm font-medium truncate',
-                                      active ? 'text-white' : 'text-surface-200'
+                                      active ? 'text-white' : 'text-surface-800'
                                     )}
                                   >
                                     {command.name}
@@ -452,7 +452,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                                   )}
                                 </div>
                                 {command.shortcut && (
-                                  <kbd className="px-2 py-1 text-xs bg-surface-700 rounded text-surface-600">
+                                  <kbd className="px-2 py-1 text-xs bg-surface-200 rounded text-surface-600">
                                     {command.shortcut}
                                   </kbd>
                                 )}
@@ -467,7 +467,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
 
                 {/* Empty state */}
                 {query && filteredCommands.length === 0 && (
-                  <div className="px-6 py-14 text-center border-t border-surface-700">
+                  <div className="px-6 py-14 text-center border-t border-surface-200">
                     <MagnifyingGlassIcon className="mx-auto h-8 w-8 text-surface-500" />
                     <p className="mt-4 text-sm text-surface-600">No results found for "{query}"</p>
                     <p className="mt-2 text-xs text-surface-500">
@@ -477,15 +477,15 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                 )}
 
                 {/* Footer */}
-                <div className="flex items-center justify-between border-t border-surface-700 px-4 py-2 text-xs text-surface-500">
+                <div className="flex items-center justify-between border-t border-surface-200 px-4 py-2 text-xs text-surface-500">
                   <div className="flex items-center gap-4">
                     <span className="flex items-center gap-1">
-                      <kbd className="px-1.5 py-0.5 bg-surface-700 rounded">↑</kbd>
-                      <kbd className="px-1.5 py-0.5 bg-surface-700 rounded">↓</kbd>
+                      <kbd className="px-1.5 py-0.5 bg-surface-200 rounded">↑</kbd>
+                      <kbd className="px-1.5 py-0.5 bg-surface-200 rounded">↓</kbd>
                       navigate
                     </span>
                     <span className="flex items-center gap-1">
-                      <kbd className="px-1.5 py-0.5 bg-surface-700 rounded">↵</kbd>
+                      <kbd className="px-1.5 py-0.5 bg-surface-200 rounded">↵</kbd>
                       select
                     </span>
                   </div>

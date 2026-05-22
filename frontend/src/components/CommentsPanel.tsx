@@ -93,7 +93,7 @@ export default function CommentsPanel({ entityType, entityId }: CommentsPanelPro
     <div className="space-y-4">
       <div className="flex items-center gap-2">
         <ChatBubbleLeftRightIcon className="w-5 h-5 text-surface-600" />
-        <h3 className="text-sm font-semibold text-surface-100">Comments ({comments.length})</h3>
+        <h3 className="text-sm font-semibold text-surface-900">Comments ({comments.length})</h3>
       </div>
       {/* New Comment Form */}
       <form onSubmit={handleSubmit} className="flex gap-2">
@@ -125,15 +125,12 @@ export default function CommentsPanel({ entityType, entityId }: CommentsPanelPro
           {comments.map((comment: any) => (
             <div
               key={comment.id}
-              className={clsx(
-                'p-3 rounded-lg',
-                comment.isResolved ? 'bg-surface-800/50' : 'bg-surface-800'
-              )}
+              className={clsx('p-3 rounded-lg', comment.isResolved ? 'bg-white/50' : 'bg-white')}
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm font-medium text-surface-200">
+                    <span className="text-sm font-medium text-surface-800">
                       {comment.author?.displayName || 'Unknown'}
                     </span>
                     <span className="text-xs text-surface-500">
@@ -156,7 +153,7 @@ export default function CommentsPanel({ entityType, entityId }: CommentsPanelPro
                       })
                     }
                     className={clsx(
-                      'p-1 rounded hover:bg-surface-700 transition-colors',
+                      'p-1 rounded hover:bg-surface-200 transition-colors',
                       comment.isResolved ? 'text-green-600' : 'text-surface-500'
                     )}
                     title={comment.isResolved ? 'Unresolve' : 'Mark as resolved'}
@@ -166,7 +163,7 @@ export default function CommentsPanel({ entityType, entityId }: CommentsPanelPro
                   {comment.authorId === user?.id && (
                     <button
                       onClick={() => deleteMutation.mutate(comment.id)}
-                      className="p-1 rounded text-surface-500 hover:text-red-600 hover:bg-surface-700 transition-colors"
+                      className="p-1 rounded text-surface-500 hover:text-red-600 hover:bg-surface-200 transition-colors"
                       title="Delete"
                     >
                       <TrashIcon className="w-4 h-4" />
@@ -177,7 +174,7 @@ export default function CommentsPanel({ entityType, entityId }: CommentsPanelPro
 
               {/* Replies */}
               {comment.replies?.length > 0 && (
-                <div className="mt-3 ml-4 pl-3 border-l-2 border-surface-700 space-y-2">
+                <div className="mt-3 ml-4 pl-3 border-l-2 border-surface-200 space-y-2">
                   {comment.replies.map((reply: any) => (
                     <div key={reply.id} className="text-sm">
                       <div className="flex items-center gap-2 mb-1">

@@ -175,7 +175,7 @@ export default function CodeEditor({
   return (
     <div className="h-full flex flex-col">
       {/* Toolbar */}
-      <div className="flex items-center justify-between px-4 py-2 bg-surface-800/50 border-b border-surface-700">
+      <div className="flex items-center justify-between px-4 py-2 bg-white/50 border-b border-surface-200">
         <div className="flex items-center gap-2">
           <Button
             onClick={handleValidate}
@@ -207,14 +207,14 @@ export default function CodeEditor({
         <div className="flex items-center gap-2">
           <button
             onClick={handleCopy}
-            className="p-2 text-surface-600 hover:text-surface-200"
+            className="p-2 text-surface-600 hover:text-surface-800"
             title="Copy code"
           >
             <DocumentDuplicateIcon className="w-4 h-4" />
           </button>
           <button
             onClick={handleReset}
-            className="p-2 text-surface-600 hover:text-surface-200"
+            className="p-2 text-surface-600 hover:text-surface-800"
             title="Reset to template"
           >
             <ArrowPathIcon className="w-4 h-4" />
@@ -223,7 +223,7 @@ export default function CodeEditor({
       </div>
       {/* Validation/Test Results */}
       {(validation || testResult) && (
-        <div className="px-4 py-2 bg-surface-800/30 border-b border-surface-700">
+        <div className="px-4 py-2 bg-white/30 border-b border-surface-200">
           {validation && (
             <div
               className={clsx(
@@ -275,7 +275,7 @@ export default function CodeEditor({
               <div>
                 <div>{testResult.message}</div>
                 {testResult.data && (
-                  <pre className="mt-2 p-2 bg-surface-900 rounded text-xs text-surface-700 overflow-auto max-h-32">
+                  <pre className="mt-2 p-2 bg-white rounded text-xs text-surface-700 overflow-auto max-h-32">
                     {JSON.stringify(testResult.data, null, 2)}
                   </pre>
                 )}
@@ -305,10 +305,10 @@ export default function CodeEditor({
         />
       </div>
       {/* Help Text */}
-      <div className="px-4 py-2 bg-surface-800/30 border-t border-surface-700 text-xs text-surface-500">
-        <strong>Tip:</strong> The <code className="bg-surface-700 px-1 rounded">sync(context)</code>{' '}
+      <div className="px-4 py-2 bg-white/30 border-t border-surface-200 text-xs text-surface-500">
+        <strong>Tip:</strong> The <code className="bg-surface-200 px-1 rounded">sync(context)</code>{' '}
         function is called when syncing. Return an object with an{' '}
-        <code className="bg-surface-700 px-1 rounded">evidence</code> array containing data to save.
+        <code className="bg-surface-200 px-1 rounded">evidence</code> array containing data to save.
       </div>
     </div>
   );

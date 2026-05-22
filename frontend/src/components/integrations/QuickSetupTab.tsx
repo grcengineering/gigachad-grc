@@ -237,7 +237,7 @@ export default function QuickSetupTab({ typeMeta, config, onChange }: QuickSetup
     <div className="p-6 space-y-8">
       {/* Basic Info */}
       <section>
-        <h3 className="text-sm font-semibold text-surface-200 mb-4">Basic Information</h3>
+        <h3 className="text-sm font-semibold text-surface-800 mb-4">Basic Information</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm text-surface-600 mb-1.5">Name</label>
@@ -276,7 +276,7 @@ export default function QuickSetupTab({ typeMeta, config, onChange }: QuickSetup
       </section>
       {/* Connection Settings */}
       <section>
-        <h3 className="text-sm font-semibold text-surface-200 mb-4">Connection Settings</h3>
+        <h3 className="text-sm font-semibold text-surface-800 mb-4">Connection Settings</h3>
         <div className="space-y-4">
           {typeMeta.configFields?.map((field) => (
             <div key={field.key}>
@@ -299,7 +299,7 @@ export default function QuickSetupTab({ typeMeta, config, onChange }: QuickSetup
       {typeMeta.evidenceTypes && typeMeta.evidenceTypes.length > 0 && (
         <section>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-surface-200">Data to Collect</h3>
+            <h3 className="text-sm font-semibold text-surface-800">Data to Collect</h3>
             <span className="text-xs text-surface-500">
               {config.evidenceTypes.length} of {typeMeta.evidenceTypes.length} selected
             </span>
@@ -311,7 +311,7 @@ export default function QuickSetupTab({ typeMeta, config, onChange }: QuickSetup
               <button
                 key={key}
                 onClick={() => applyPreset(key as keyof typeof PRESETS)}
-                className="px-3 py-1.5 text-xs bg-surface-800 hover:bg-surface-700 border border-surface-700 rounded-lg transition-colors"
+                className="px-3 py-1.5 text-xs bg-white hover:bg-surface-200 border border-surface-200 rounded-lg transition-colors"
                 title={preset.description}
               >
                 {preset.label}
@@ -332,7 +332,7 @@ export default function QuickSetupTab({ typeMeta, config, onChange }: QuickSetup
           </div>
 
           {/* Category Groups */}
-          <div className="space-y-2 border border-surface-800 rounded-lg overflow-hidden">
+          <div className="space-y-2 border border-surface-200 rounded-lg overflow-hidden">
             {Object.entries(filteredGroups).map(([category, types]) => {
               const isExpanded = expandedCategories.has(category);
               const selectedCount = types.filter((t) =>
@@ -341,10 +341,10 @@ export default function QuickSetupTab({ typeMeta, config, onChange }: QuickSetup
               const allSelected = selectedCount === types.length;
 
               return (
-                <div key={category} className="bg-surface-800/50">
+                <div key={category} className="bg-white/50">
                   {/* Category Header */}
                   <div
-                    className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-surface-800 transition-colors"
+                    className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-white transition-colors"
                     onClick={() => toggleCategory(category)}
                   >
                     <div className="flex items-center gap-2">
@@ -353,7 +353,7 @@ export default function QuickSetupTab({ typeMeta, config, onChange }: QuickSetup
                       ) : (
                         <ChevronRightIcon className="w-4 h-4 text-surface-600" />
                       )}
-                      <span className="font-medium text-surface-200">{category}</span>
+                      <span className="font-medium text-surface-800">{category}</span>
                       <span className="text-xs text-surface-500">
                         ({selectedCount}/{types.length})
                       </span>
@@ -382,7 +382,7 @@ export default function QuickSetupTab({ typeMeta, config, onChange }: QuickSetup
                               'flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-colors',
                               isSelected
                                 ? 'bg-brand-500/10 border border-brand-500/30'
-                                : 'bg-surface-900/50 border border-transparent hover:border-surface-700'
+                                : 'bg-white/50 border border-transparent hover:border-surface-200'
                             )}
                           >
                             <div
@@ -390,13 +390,13 @@ export default function QuickSetupTab({ typeMeta, config, onChange }: QuickSetup
                                 'w-5 h-5 rounded flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors',
                                 isSelected
                                   ? 'bg-brand-500 text-white'
-                                  : 'bg-surface-700 border border-surface-600'
+                                  : 'bg-surface-200 border border-surface-300'
                               )}
                             >
                               {isSelected && <CheckIcon className="w-3.5 h-3.5" />}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <div className="font-medium text-sm text-surface-200">
+                              <div className="font-medium text-sm text-surface-800">
                                 {evidenceType.label}
                               </div>
                               <div className="text-xs text-surface-500 mt-0.5">
@@ -415,7 +415,7 @@ export default function QuickSetupTab({ typeMeta, config, onChange }: QuickSetup
 
           {/* Summary */}
           {config.evidenceTypes.length > 0 && (
-            <div className="mt-4 p-4 bg-surface-800/50 rounded-lg border border-surface-700">
+            <div className="mt-4 p-4 bg-white/50 rounded-lg border border-surface-200">
               <h4 className="text-xs font-semibold text-surface-700 uppercase mb-2">
                 Collection Summary
               </h4>
@@ -425,14 +425,14 @@ export default function QuickSetupTab({ typeMeta, config, onChange }: QuickSetup
                   return (
                     <span
                       key={key}
-                      className="px-2 py-1 text-xs bg-surface-700 rounded text-surface-700"
+                      className="px-2 py-1 text-xs bg-surface-200 rounded text-surface-700"
                     >
                       {et?.label || key}
                     </span>
                   );
                 })}
                 {config.evidenceTypes.length > 10 && (
-                  <span className="px-2 py-1 text-xs bg-surface-700 rounded text-surface-600">
+                  <span className="px-2 py-1 text-xs bg-surface-200 rounded text-surface-600">
                     +{config.evidenceTypes.length - 10} more
                   </span>
                 )}

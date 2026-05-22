@@ -426,12 +426,12 @@ export default function ConfigIDE({ workspaceId }: Props) {
   }
 
   return (
-    <div className="flex h-[calc(100vh-200px)] border border-surface-700 rounded-lg overflow-hidden bg-surface-900">
+    <div className="flex h-[calc(100vh-200px)] border border-surface-200 rounded-lg overflow-hidden bg-white">
       {/* File Explorer Sidebar */}
-      <div className="w-64 border-r border-surface-700 bg-surface-800 overflow-y-auto">
-        <div className="p-4 border-b border-surface-700">
+      <div className="w-64 border-r border-surface-200 bg-white overflow-y-auto">
+        <div className="p-4 border-b border-surface-200">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-semibold text-surface-200">Files</h3>
+            <h3 className="text-sm font-semibold text-surface-800">Files</h3>
             <button
               onClick={() => {
                 const path = prompt('Enter file path (e.g., controls/main.tf):');
@@ -441,7 +441,7 @@ export default function ConfigIDE({ workspaceId }: Props) {
                   setIsEditing(true);
                 }
               }}
-              className="p-1 text-surface-600 hover:text-surface-200"
+              className="p-1 text-surface-600 hover:text-surface-800"
               title="New File"
             >
               <PlusIcon className="w-4 h-4" />
@@ -513,7 +513,7 @@ export default function ConfigIDE({ workspaceId }: Props) {
                   <div>
                     <button
                       onClick={() => toggleFolder(node.path)}
-                      className="w-full flex items-center gap-2 px-2 py-1 text-sm text-surface-700 hover:bg-surface-700 rounded"
+                      className="w-full flex items-center gap-2 px-2 py-1 text-sm text-surface-700 hover:bg-surface-200 rounded"
                     >
                       <FolderIcon className="w-4 h-4" />
                       <span>{node.name}</span>
@@ -528,7 +528,7 @@ export default function ConfigIDE({ workspaceId }: Props) {
                               'w-full flex items-center gap-2 px-2 py-1 text-sm rounded',
                               selectedFile === child.path
                                 ? 'bg-brand-500/20 text-brand-300'
-                                : 'text-surface-600 hover:bg-surface-700'
+                                : 'text-surface-600 hover:bg-surface-200'
                             )}
                           >
                             <DocumentTextIcon className="w-4 h-4" />
@@ -545,7 +545,7 @@ export default function ConfigIDE({ workspaceId }: Props) {
                       'w-full flex items-center gap-2 px-2 py-1 text-sm rounded',
                       selectedFile === node.path
                         ? 'bg-brand-500/20 text-brand-300'
-                        : 'text-surface-600 hover:bg-surface-700'
+                        : 'text-surface-600 hover:bg-surface-200'
                     )}
                   >
                     <DocumentTextIcon className="w-4 h-4" />
@@ -562,10 +562,10 @@ export default function ConfigIDE({ workspaceId }: Props) {
         {selectedFile ? (
           <>
             {/* Editor Header */}
-            <div className="h-12 border-b border-surface-700 bg-surface-800 flex items-center justify-between px-4">
+            <div className="h-12 border-b border-surface-200 bg-white flex items-center justify-between px-4">
               <div className="flex items-center gap-2">
                 <DocumentTextIcon className="w-5 h-5 text-surface-600" />
-                <span className="text-sm font-medium text-surface-200">{selectedFile}</span>
+                <span className="text-sm font-medium text-surface-800">{selectedFile}</span>
                 {fileData && <span className="text-xs text-surface-500">v{fileData.version}</span>}
                 {isEditing && <span className="text-xs text-yellow-600">● Modified</span>}
               </div>
@@ -596,7 +596,7 @@ export default function ConfigIDE({ workspaceId }: Props) {
                   placeholder="Commit message (optional)"
                   value={commitMessage}
                   onChange={(e) => setCommitMessage(e.target.value)}
-                  className="px-2 py-1 text-xs bg-surface-700 border border-surface-600 rounded text-surface-200 placeholder-surface-500"
+                  className="px-2 py-1 text-xs bg-surface-200 border border-surface-300 rounded text-surface-800 placeholder-surface-500"
                   style={{ width: '200px' }}
                 />
                 <Button
@@ -656,10 +656,10 @@ export default function ConfigIDE({ workspaceId }: Props) {
 
             {/* Preview Panel */}
             {previewData && (
-              <div className="h-48 border-t border-surface-700 bg-surface-800 p-4 overflow-y-auto">
+              <div className="h-48 border-t border-surface-200 bg-white p-4 overflow-y-auto">
                 <div className="flex items-center gap-2 mb-2">
                   <EyeIcon className="w-5 h-5 text-brand-400" />
-                  <h4 className="font-semibold text-surface-200">Preview Changes</h4>
+                  <h4 className="font-semibold text-surface-800">Preview Changes</h4>
                 </div>
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center gap-2">

@@ -208,7 +208,7 @@ export default function AssetDetail() {
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate('/assets')}
-            className="p-2 hover:bg-surface-700 rounded-lg text-surface-600"
+            className="p-2 hover:bg-surface-200 rounded-lg text-surface-600"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -254,11 +254,11 @@ export default function AssetDetail() {
       {/* Asset Details */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Info */}
-        <div className="lg:col-span-2 bg-surface-800 rounded-xl border border-surface-700 p-6 space-y-6">
+        <div className="lg:col-span-2 bg-white rounded-xl border border-surface-200 p-6 space-y-6">
           {asset.description && (
             <div>
               <h3 className="text-sm font-medium text-surface-600 mb-2">Description</h3>
-              <p className="text-surface-200">{asset.description}</p>
+              <p className="text-surface-800">{asset.description}</p>
             </div>
           )}
 
@@ -311,9 +311,9 @@ export default function AssetDetail() {
 
           {/* Metadata */}
           {asset.metadata && Object.keys(asset.metadata).length > 0 && (
-            <div className="border-t border-surface-700 pt-6">
+            <div className="border-t border-surface-200 pt-6">
               <h3 className="text-sm font-medium text-surface-600 mb-3">Additional Metadata</h3>
-              <div className="bg-surface-700/50 rounded-lg p-4">
+              <div className="bg-surface-200/50 rounded-lg p-4">
                 <pre className="text-sm text-surface-700 overflow-x-auto">
                   {JSON.stringify(asset.metadata, null, 2)}
                 </pre>
@@ -325,7 +325,7 @@ export default function AssetDetail() {
         {/* Sidebar */}
         <div className="space-y-4">
           {/* Quick Stats */}
-          <div className="bg-surface-800 rounded-xl border border-surface-700 p-6">
+          <div className="bg-white rounded-xl border border-surface-200 p-6">
             <h3 className="text-lg font-medium text-white mb-4">Risk Summary</h3>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
@@ -345,18 +345,18 @@ export default function AssetDetail() {
           </div>
 
           {/* Timestamps */}
-          <div className="bg-surface-800 rounded-xl border border-surface-700 p-6">
+          <div className="bg-white rounded-xl border border-surface-200 p-6">
             <h3 className="text-lg font-medium text-white mb-4">Timeline</h3>
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
                 <span className="text-surface-600">Created</span>
-                <span className="text-surface-200">
+                <span className="text-surface-800">
                   {new Date(asset.createdAt).toLocaleDateString()}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-surface-600">Updated</span>
-                <span className="text-surface-200">
+                <span className="text-surface-800">
                   {new Date(asset.updatedAt).toLocaleDateString()}
                 </span>
               </div>
@@ -366,14 +366,14 @@ export default function AssetDetail() {
       </div>
       {/* Associated Risks */}
       {asset.risks && asset.risks.length > 0 && (
-        <div className="bg-surface-800 rounded-xl border border-surface-700 p-6">
+        <div className="bg-white rounded-xl border border-surface-200 p-6">
           <h3 className="text-lg font-medium text-white mb-4">Associated Risks</h3>
           <div className="space-y-2">
             {asset.risks.map((risk) => (
               <div
                 key={risk.id}
                 onClick={() => navigate(`/risks/${risk.id}`)}
-                className="flex items-center justify-between p-4 bg-surface-700 rounded-lg cursor-pointer hover:bg-surface-600 transition-colors"
+                className="flex items-center justify-between p-4 bg-surface-200 rounded-lg cursor-pointer hover:bg-surface-600 transition-colors"
               >
                 <div className="flex items-center gap-4">
                   <span className="text-brand-400 font-mono text-sm">{risk.riskId}</span>
@@ -404,7 +404,7 @@ export default function AssetDetail() {
         </div>
       )}
       {/* BC/DR Information */}
-      <div className="bg-surface-800 rounded-xl border border-surface-700 p-6">
+      <div className="bg-white rounded-xl border border-surface-200 p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-medium text-white flex items-center gap-2">
             <ShieldAlert className="w-5 h-5 text-brand-400" />
@@ -472,19 +472,19 @@ export default function AssetDetail() {
           </div>
         </div>
         {(asset as any).recoveryNotes && (
-          <div className="mt-4 pt-4 border-t border-surface-700">
+          <div className="mt-4 pt-4 border-t border-surface-200">
             <h4 className="text-sm font-medium text-surface-600 mb-2">Recovery Notes</h4>
-            <p className="text-surface-200 text-sm">{(asset as any).recoveryNotes}</p>
+            <p className="text-surface-800 text-sm">{(asset as any).recoveryNotes}</p>
           </div>
         )}
       </div>
       {/* Edit Modal */}
       <Dialog open={showEditModal} onClose={() => setShowEditModal(false)}>
-        <div className="p-6 border-b border-surface-700 flex items-center justify-between">
+        <div className="p-6 border-b border-surface-200 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-white">Edit Asset</h2>
           <button
             onClick={() => setShowEditModal(false)}
-            className="p-2 hover:bg-surface-700 rounded-lg text-surface-600"
+            className="p-2 hover:bg-surface-200 rounded-lg text-surface-600"
           >
             <X className="w-5 h-5" />
           </button>
@@ -504,7 +504,7 @@ export default function AssetDetail() {
               value={editForm.name}
               onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
               required
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
             />
           </div>
 
@@ -514,7 +514,7 @@ export default function AssetDetail() {
               <SelectNative
                 value={editForm.type}
                 onChange={(e) => setEditForm((prev) => ({ ...prev, type: e.target.value }))}
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+                className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
               >
                 {ASSET_TYPES.map((type) => (
                   <option key={type.value} value={type.value}>
@@ -528,7 +528,7 @@ export default function AssetDetail() {
               <SelectNative
                 value={editForm.status}
                 onChange={(e) => setEditForm((prev) => ({ ...prev, status: e.target.value }))}
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+                className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
               >
                 {STATUSES.map((status) => (
                   <option key={status.value} value={status.value}>
@@ -545,7 +545,7 @@ export default function AssetDetail() {
               <SelectNative
                 value={editForm.criticality}
                 onChange={(e) => setEditForm((prev) => ({ ...prev, criticality: e.target.value }))}
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+                className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
               >
                 {CRITICALITY_LEVELS.map((level) => (
                   <option key={level.value} value={level.value}>
@@ -560,7 +560,7 @@ export default function AssetDetail() {
                 type="text"
                 value={editForm.category}
                 onChange={(e) => setEditForm((prev) => ({ ...prev, category: e.target.value }))}
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+                className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
                 placeholder="e.g., Web Server"
               />
             </div>
@@ -573,7 +573,7 @@ export default function AssetDetail() {
                 type="text"
                 value={editForm.owner}
                 onChange={(e) => setEditForm((prev) => ({ ...prev, owner: e.target.value }))}
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+                className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
               />
             </div>
             <div>
@@ -582,7 +582,7 @@ export default function AssetDetail() {
                 type="text"
                 value={editForm.department}
                 onChange={(e) => setEditForm((prev) => ({ ...prev, department: e.target.value }))}
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+                className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
               />
             </div>
           </div>
@@ -593,7 +593,7 @@ export default function AssetDetail() {
               type="text"
               value={editForm.location}
               onChange={(e) => setEditForm((prev) => ({ ...prev, location: e.target.value }))}
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
               placeholder="e.g., AWS us-east-1, Office HQ"
             />
           </div>
@@ -604,14 +604,14 @@ export default function AssetDetail() {
               value={editForm.description}
               onChange={(e) => setEditForm((prev) => ({ ...prev, description: e.target.value }))}
               rows={3}
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
               placeholder="Describe this asset..."
             />
           </div>
 
           {/* BC/DR Fields */}
-          <div className="border-t border-surface-700 pt-4 mt-4">
-            <h4 className="text-sm font-medium text-surface-200 mb-4 flex items-center gap-2">
+          <div className="border-t border-surface-200 pt-4 mt-4">
+            <h4 className="text-sm font-medium text-surface-800 mb-4 flex items-center gap-2">
               <ShieldAlert className="w-4 h-4 text-brand-400" />
               Business Continuity / Disaster Recovery
             </h4>
@@ -631,7 +631,7 @@ export default function AssetDetail() {
                       rtoHours: e.target.value ? parseInt(e.target.value) : undefined,
                     }))
                   }
-                  className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+                  className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
                   placeholder="e.g., 4"
                 />
                 <p className="text-xs text-surface-500 mt-1">Recovery Time Objective</p>
@@ -650,7 +650,7 @@ export default function AssetDetail() {
                       rpoHours: e.target.value ? parseInt(e.target.value) : undefined,
                     }))
                   }
-                  className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+                  className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
                   placeholder="e.g., 1"
                 />
                 <p className="text-xs text-surface-500 mt-1">Recovery Point Objective</p>
@@ -667,7 +667,7 @@ export default function AssetDetail() {
                   onChange={(e) =>
                     setEditForm((prev) => ({ ...prev, bcdrCriticality: e.target.value }))
                   }
-                  className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+                  className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
                 >
                   <option value="">Not set</option>
                   <option value="tier_1_critical">Tier 1 - Critical</option>
@@ -688,17 +688,17 @@ export default function AssetDetail() {
                   setEditForm((prev) => ({ ...prev, recoveryNotes: e.target.value }))
                 }
                 rows={2}
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+                className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
                 placeholder="Notes about recovery procedures for this asset..."
               />
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-surface-700">
+          <div className="flex justify-end gap-3 pt-4 border-t border-surface-200">
             <button
               type="button"
               onClick={() => setShowEditModal(false)}
-              className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg hover:bg-surface-600"
+              className="px-4 py-2 bg-surface-200 text-surface-700 rounded-lg hover:bg-surface-600"
             >
               Cancel
             </button>
@@ -721,7 +721,7 @@ export default function AssetDetail() {
         <div className="flex justify-end gap-2">
           <button
             onClick={() => setShowDeleteConfirm(false)}
-            className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg hover:bg-surface-600"
+            className="px-4 py-2 bg-surface-200 text-surface-700 rounded-lg hover:bg-surface-600"
           >
             Cancel
           </button>

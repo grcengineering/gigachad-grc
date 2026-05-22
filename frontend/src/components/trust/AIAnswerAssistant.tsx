@@ -128,10 +128,10 @@ export function AIAnswerAssistant({
       >
         <div className="flex items-center gap-2">
           <SparklesIcon className="w-5 h-5 text-purple-600" />
-          <span className="font-medium text-surface-100">AI Assistant</span>
+          <span className="font-medium text-surface-900">AI Assistant</span>
           {aiEnabled === false && <span className="text-xs text-surface-500">(Disabled)</span>}
         </div>
-        <button className="p-1 text-surface-600 hover:text-surface-200">
+        <button className="p-1 text-surface-600 hover:text-surface-800">
           {isExpanded ? (
             <ChevronUpIcon className="w-4 h-4" />
           ) : (
@@ -190,8 +190,8 @@ export function AIAnswerAssistant({
               </div>
 
               {/* Suggested Answer */}
-              <div className="bg-surface-800/50 rounded-lg p-3 border border-surface-700">
-                <p className="text-sm text-surface-200 whitespace-pre-wrap">
+              <div className="bg-white/50 rounded-lg p-3 border border-surface-200">
+                <p className="text-sm text-surface-800 whitespace-pre-wrap">
                   {suggestion.suggestedAnswer}
                 </p>
               </div>
@@ -212,7 +212,7 @@ export function AIAnswerAssistant({
                     {suggestion.sources.map((source) => (
                       <span
                         key={source.id}
-                        className="px-2 py-0.5 text-xs bg-surface-700 text-surface-700 rounded"
+                        className="px-2 py-0.5 text-xs bg-surface-200 text-surface-700 rounded"
                       >
                         {source.title}
                       </span>

@@ -118,7 +118,7 @@ function ProgressBar({ value, max, color }: { value: number; max: number; color:
   const percentage = max > 0 ? Math.round((value / max) * 100) : 0;
   return (
     <div className="flex items-center gap-3">
-      <div className="flex-1 h-2 bg-surface-700 rounded-full overflow-hidden">
+      <div className="flex-1 h-2 bg-surface-200 rounded-full overflow-hidden">
         <div
           className={clsx('h-full rounded-full transition-all', color)}
           style={{ width: `${percentage}%` }}
@@ -336,7 +336,7 @@ export default function SecurityTrainingDashboard() {
               {stats.departmentStats.slice(0, 6).map((dept) => (
                 <div
                   key={dept.department}
-                  className="flex items-center justify-between py-2 border-b border-surface-700 last:border-0"
+                  className="flex items-center justify-between py-2 border-b border-surface-200 last:border-0"
                 >
                   <div>
                     <p className="text-foreground font-medium">{dept.department}</p>
@@ -386,7 +386,7 @@ export default function SecurityTrainingDashboard() {
               {stats.upcomingDue.slice(0, 10).map((item, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center justify-between py-2 border-b border-surface-700 last:border-0"
+                  className="flex items-center justify-between py-2 border-b border-surface-200 last:border-0"
                 >
                   <div>
                     <p className="text-foreground font-medium">
@@ -424,7 +424,7 @@ export default function SecurityTrainingDashboard() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-surface-700">
+                <tr className="border-b border-surface-200">
                   <th className="text-left text-sm font-medium text-surface-600 pb-3">Employee</th>
                   <th className="text-left text-sm font-medium text-surface-600 pb-3">Course</th>
                   <th className="text-left text-sm font-medium text-surface-600 pb-3">Completed</th>
@@ -433,7 +433,7 @@ export default function SecurityTrainingDashboard() {
               </thead>
               <tbody>
                 {stats.recentCompletions.slice(0, 10).map((completion, idx) => (
-                  <tr key={idx} className="border-b border-surface-700/50">
+                  <tr key={idx} className="border-b border-surface-200/50">
                     <td className="py-3">
                       <p className="text-foreground">{completion.employeeName}</p>
                       <p className="text-sm text-surface-600">{completion.employeeEmail}</p>

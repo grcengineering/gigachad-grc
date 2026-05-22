@@ -63,13 +63,13 @@ function VirtualTableInner<T>({
     return (
       <div className={clsx('card overflow-hidden', className)}>
         <div className="animate-pulse">
-          <div className="h-12 bg-surface-800 border-b border-surface-700" />
+          <div className="h-12 bg-white border-b border-surface-200" />
           {Array.from({ length: 10 }).map((_, i) => (
-            <div key={i} className="h-13 border-b border-surface-800 flex items-center px-4 gap-4">
-              <div className="h-4 bg-surface-700 rounded w-1/4" />
-              <div className="h-4 bg-surface-700 rounded w-1/3" />
-              <div className="h-4 bg-surface-700 rounded w-1/6" />
-              <div className="h-4 bg-surface-700 rounded w-1/6" />
+            <div key={i} className="h-13 border-b border-surface-200 flex items-center px-4 gap-4">
+              <div className="h-4 bg-surface-200 rounded w-1/4" />
+              <div className="h-4 bg-surface-200 rounded w-1/3" />
+              <div className="h-4 bg-surface-200 rounded w-1/6" />
+              <div className="h-4 bg-surface-200 rounded w-1/6" />
             </div>
           ))}
         </div>
@@ -92,7 +92,7 @@ function VirtualTableInner<T>({
       {/* Fixed header */}
       <div
         className={clsx(
-          'flex items-center bg-surface-800 border-b border-surface-700 sticky top-0 z-10',
+          'flex items-center bg-white border-b border-surface-200 sticky top-0 z-10',
           headerClassName
         )}
         style={{ height: rowHeight }}
@@ -134,8 +134,8 @@ function VirtualTableInner<T>({
                 key={rowKey}
                 data-index={virtualRow.index}
                 className={clsx(
-                  'absolute top-0 left-0 w-full flex items-center border-b border-surface-800 transition-colors',
-                  onRowClick && 'cursor-pointer hover:bg-surface-800/50',
+                  'absolute top-0 left-0 w-full flex items-center border-b border-surface-200 transition-colors',
+                  onRowClick && 'cursor-pointer hover:bg-white/50',
                   isSelected && 'bg-brand-500/10',
                   rowClasses
                 )}

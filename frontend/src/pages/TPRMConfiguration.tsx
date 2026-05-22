@@ -131,7 +131,7 @@ export default function TPRMConfiguration() {
               }
             }}
             disabled={resetMutation.isPending}
-            className="px-4 py-2 bg-surface-700 text-surface-700 rounded-lg hover:bg-surface-600 flex items-center gap-2"
+            className="px-4 py-2 bg-surface-200 text-surface-700 rounded-lg hover:bg-surface-600 flex items-center gap-2"
           >
             <ArrowPathIcon className="w-4 h-4" />
             Reset to Defaults
@@ -140,7 +140,7 @@ export default function TPRMConfiguration() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b border-surface-700 pb-px">
+      <div className="flex gap-2 border-b border-surface-200 pb-px">
         {tabs.map((tab) => (
           <button
             key={tab.key}
@@ -158,7 +158,7 @@ export default function TPRMConfiguration() {
       </div>
 
       {/* Tab Content */}
-      <div className="bg-surface-800 rounded-xl border border-surface-700 p-6">
+      <div className="bg-white rounded-xl border border-surface-200 p-6">
         {activeTab === 'tiers' && config && referenceData && (
           <TierFrequencyTab
             config={config}
@@ -339,7 +339,7 @@ function TierFrequencyTab({
       case 'green':
         return 'bg-emerald-500/20 border-emerald-500/30 text-emerald-600';
       default:
-        return 'bg-surface-700 border-surface-600 text-surface-700';
+        return 'bg-surface-200 border-surface-300 text-surface-700';
     }
   };
 
@@ -373,7 +373,7 @@ function TierFrequencyTab({
                 <SelectNative
                   value={getSelectValue(tier.key)}
                   onChange={(e) => handleFrequencyChange(tier.key, e.target.value)}
-                  className="px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white min-w-[180px]"
+                  className="px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white min-w-[180px]"
                 >
                   {referenceData.frequencyOptions.map((opt) => (
                     <option key={opt.value} value={opt.value}>
@@ -398,7 +398,7 @@ function TierFrequencyTab({
                       onChange={(e) =>
                         handleCustomMonthsChange(tier.key, parseInt(e.target.value) || 1)
                       }
-                      className="w-20 px-3 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white text-center"
+                      className="w-20 px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white text-center"
                     />
                     <span className="text-sm text-surface-700">months</span>
                   </div>
@@ -409,14 +409,14 @@ function TierFrequencyTab({
         ))}
       </div>
       {/* Preview */}
-      <div className="p-4 bg-surface-700/50 rounded-lg">
+      <div className="p-4 bg-surface-200/50 rounded-lg">
         <h4 className="text-white font-medium mb-3">Review Schedule Summary</h4>
         <div className="grid grid-cols-4 gap-4 text-sm">
           {tiers.map((tier) => {
             const freq = tierMapping[tier.key as keyof typeof tierMapping];
             const months = parseFrequencyToMonths(freq);
             return (
-              <div key={tier.key} className="text-center p-3 bg-surface-800 rounded-lg">
+              <div key={tier.key} className="text-center p-3 bg-white rounded-lg">
                 <p className="text-surface-600 text-xs mb-1">{tier.label}</p>
                 <p className="text-white font-medium">{formatFrequencyLabel(freq)}</p>
                 <p className="text-surface-500 text-xs mt-1">
@@ -474,7 +474,7 @@ function VendorCategoriesTab({
       </div>
       <div className="space-y-3">
         {categories.map((cat) => (
-          <div key={cat.id} className="flex items-center gap-4 p-4 bg-surface-700/50 rounded-lg">
+          <div key={cat.id} className="flex items-center gap-4 p-4 bg-surface-200/50 rounded-lg">
             <div className="w-4 h-4 rounded" style={{ backgroundColor: cat.color }} />
             <div className="flex-1">
               <p className="text-white font-medium">{cat.name}</p>
@@ -489,7 +489,7 @@ function VendorCategoriesTab({
           </div>
         ))}
       </div>
-      <div className="pt-4 border-t border-surface-700">
+      <div className="pt-4 border-t border-surface-200">
         <h4 className="text-white font-medium mb-3">Add Category</h4>
         <div className="flex gap-4">
           <Input
@@ -497,14 +497,14 @@ function VendorCategoriesTab({
             placeholder="Category name"
             value={newCategory.name}
             onChange={(e) => setNewCategory((prev) => ({ ...prev, name: e.target.value }))}
-            className="flex-1 px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white placeholder:text-surface-500"
+            className="flex-1 px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white placeholder:text-surface-500"
           />
           <Input
             type="text"
             placeholder="Description"
             value={newCategory.description}
             onChange={(e) => setNewCategory((prev) => ({ ...prev, description: e.target.value }))}
-            className="flex-1 px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white placeholder:text-surface-500"
+            className="flex-1 px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white placeholder:text-surface-500"
           />
           <input
             type="color"
@@ -556,7 +556,7 @@ function AssessmentSettingsTab({
         </p>
       </div>
       <div className="space-y-4">
-        <label className="flex items-center justify-between p-4 bg-surface-700/50 rounded-lg">
+        <label className="flex items-center justify-between p-4 bg-surface-200/50 rounded-lg">
           <div>
             <p className="text-white">Require Document Upload</p>
             <p className="text-surface-600 text-sm">
@@ -567,11 +567,11 @@ function AssessmentSettingsTab({
             type="checkbox"
             checked={settings.requireDocumentUpload ?? false}
             onChange={(e) => handleChange('requireDocumentUpload', e.target.checked)}
-            className="rounded border-surface-600"
+            className="rounded border-surface-300"
           />
         </label>
 
-        <label className="flex items-center justify-between p-4 bg-surface-700/50 rounded-lg">
+        <label className="flex items-center justify-between p-4 bg-surface-200/50 rounded-lg">
           <div>
             <p className="text-white">Auto-Create Assessment on New Vendor</p>
             <p className="text-surface-600 text-sm">
@@ -582,11 +582,11 @@ function AssessmentSettingsTab({
             type="checkbox"
             checked={settings.autoCreateAssessmentOnNewVendor ?? false}
             onChange={(e) => handleChange('autoCreateAssessmentOnNewVendor', e.target.checked)}
-            className="rounded border-surface-600"
+            className="rounded border-surface-300"
           />
         </label>
 
-        <label className="flex items-center justify-between p-4 bg-surface-700/50 rounded-lg">
+        <label className="flex items-center justify-between p-4 bg-surface-200/50 rounded-lg">
           <div>
             <p className="text-white">Enable AI Analysis</p>
             <p className="text-surface-600 text-sm">
@@ -597,11 +597,11 @@ function AssessmentSettingsTab({
             type="checkbox"
             checked={settings.enableAIAnalysis ?? true}
             onChange={(e) => handleChange('enableAIAnalysis', e.target.checked)}
-            className="rounded border-surface-600"
+            className="rounded border-surface-300"
           />
         </label>
 
-        <label className="flex items-center justify-between p-4 bg-surface-700/50 rounded-lg">
+        <label className="flex items-center justify-between p-4 bg-surface-200/50 rounded-lg">
           <div>
             <p className="text-white">Notify on Overdue Review</p>
             <p className="text-surface-600 text-sm">
@@ -612,11 +612,11 @@ function AssessmentSettingsTab({
             type="checkbox"
             checked={settings.notifyOnOverdueReview ?? true}
             onChange={(e) => handleChange('notifyOnOverdueReview', e.target.checked)}
-            className="rounded border-surface-600"
+            className="rounded border-surface-300"
           />
         </label>
 
-        <div className="p-4 bg-surface-700/50 rounded-lg">
+        <div className="p-4 bg-surface-200/50 rounded-lg">
           <div className="flex items-center justify-between mb-2">
             <div>
               <p className="text-white">Overdue Reminder Days</p>
@@ -631,11 +631,11 @@ function AssessmentSettingsTab({
             onChange={(e) => handleChange('overdueReminderDays', parseInt(e.target.value))}
             min="1"
             max="90"
-            className="w-24 px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            className="w-24 px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
           />
         </div>
 
-        <div className="p-4 bg-surface-700/50 rounded-lg">
+        <div className="p-4 bg-surface-200/50 rounded-lg">
           <div className="flex items-center justify-between mb-2">
             <div>
               <p className="text-white">Default Assessment Type</p>
@@ -647,7 +647,7 @@ function AssessmentSettingsTab({
           <SelectNative
             value={settings.defaultAssessmentType ?? 'standard'}
             onChange={(e) => handleChange('defaultAssessmentType', e.target.value)}
-            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
           >
             <option value="standard">Standard Assessment</option>
             <option value="questionnaire">Questionnaire-Based</option>
@@ -713,7 +713,7 @@ function ContractSettingsTab({
         </p>
       </div>
       <div className="space-y-4">
-        <div className="p-4 bg-surface-700/50 rounded-lg">
+        <div className="p-4 bg-surface-200/50 rounded-lg">
           <div className="mb-2">
             <p className="text-white">Expiration Warning Days</p>
             <p className="text-surface-600 text-sm">
@@ -725,14 +725,14 @@ function ContractSettingsTab({
             value={warningDays}
             onChange={(e) => handleWarningDaysChange(e.target.value)}
             placeholder="90, 60, 30, 14, 7"
-            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white placeholder:text-surface-500"
+            className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white placeholder:text-surface-500"
           />
           <p className="text-surface-500 text-xs mt-2">
             Current: {(settings.expirationWarningDays || []).join(', ')} days before expiration
           </p>
         </div>
 
-        <label className="flex items-center justify-between p-4 bg-surface-700/50 rounded-lg">
+        <label className="flex items-center justify-between p-4 bg-surface-200/50 rounded-lg">
           <div>
             <p className="text-white">Require Security Addendum</p>
             <p className="text-surface-600 text-sm">
@@ -743,11 +743,11 @@ function ContractSettingsTab({
             type="checkbox"
             checked={settings.requireSecurityAddendum ?? false}
             onChange={(e) => handleChange('requireSecurityAddendum', e.target.checked)}
-            className="rounded border-surface-600"
+            className="rounded border-surface-300"
           />
         </label>
 
-        <label className="flex items-center justify-between p-4 bg-surface-700/50 rounded-lg">
+        <label className="flex items-center justify-between p-4 bg-surface-200/50 rounded-lg">
           <div>
             <p className="text-white">Auto-Renewal Notification</p>
             <p className="text-surface-600 text-sm">
@@ -758,7 +758,7 @@ function ContractSettingsTab({
             type="checkbox"
             checked={settings.autoRenewNotification ?? true}
             onChange={(e) => handleChange('autoRenewNotification', e.target.checked)}
-            className="rounded border-surface-600"
+            className="rounded border-surface-300"
           />
         </label>
       </div>
@@ -857,7 +857,7 @@ function FeatureSettingsTab({
 
       <div className="space-y-4">
         {features.map((feature) => (
-          <div key={feature.key} className="p-4 bg-surface-700/50 rounded-lg">
+          <div key={feature.key} className="p-4 bg-surface-200/50 rounded-lg">
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-1">

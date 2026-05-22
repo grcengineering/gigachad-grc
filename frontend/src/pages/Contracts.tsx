@@ -65,9 +65,9 @@ export default function Contracts() {
           }}
         />
       ) : (
-        <div className="bg-surface-800 border border-surface-700 rounded-xl overflow-hidden">
+        <div className="bg-white border border-surface-200 rounded-xl overflow-hidden">
           <table className="w-full">
-            <thead className="bg-surface-700/50 border-b border-surface-700">
+            <thead className="bg-surface-200/50 border-b border-surface-200">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-surface-600 uppercase tracking-wider">
                   Contract
@@ -89,12 +89,12 @@ export default function Contracts() {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-surface-700">
+            <tbody className="divide-y divide-surface-200">
               {(contracts as any[]).map((contract) => (
                 <tr
                   key={contract.id}
                   onClick={() => navigate(`/contracts/${contract.id}`)}
-                  className="hover:bg-surface-700/50 cursor-pointer transition-colors"
+                  className="hover:bg-surface-200/50 cursor-pointer transition-colors"
                 >
                   <td className="px-6 py-4">
                     <div>

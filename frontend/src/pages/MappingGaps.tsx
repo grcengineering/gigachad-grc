@@ -224,7 +224,7 @@ export default function MappingGaps() {
   return (
     <div className="p-6 space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold text-surface-100">Mapping Gap Analysis</h1>
+        <h1 className="text-2xl font-semibold text-surface-900">Mapping Gap Analysis</h1>
         <p className="text-sm text-surface-600 mt-1">
           Find requirements without coverage and controls that are not mapped to any requirement.
         </p>
@@ -275,7 +275,7 @@ export default function MappingGaps() {
         </div>
       </div>
       <div className="card overflow-hidden">
-        <div className="border-b border-surface-700 px-4">
+        <div className="border-b border-surface-200 px-4">
           <nav className="flex flex-wrap gap-6" aria-label="Tabs" role="tablist">
             {TABS.map((tab) => (
               <button
@@ -288,7 +288,7 @@ export default function MappingGaps() {
                   'py-3 px-1 border-b-2 font-medium text-sm transition-colors',
                   activeTab === tab.key
                     ? 'border-brand-500 text-brand-400'
-                    : 'border-transparent text-surface-600 hover:text-surface-200 hover:border-surface-600'
+                    : 'border-transparent text-surface-600 hover:text-surface-800 hover:border-surface-300'
                 )}
               >
                 {tab.label}
@@ -301,7 +301,7 @@ export default function MappingGaps() {
           {gapsQuery.isLoading ? (
             <div className="space-y-2" role="status" aria-label="Loading gaps">
               {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="h-10 bg-surface-800 rounded animate-pulse" />
+                <div key={i} className="h-10 bg-white rounded animate-pulse" />
               ))}
             </div>
           ) : gapsQuery.isError ? (
@@ -321,7 +321,7 @@ export default function MappingGaps() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-left text-surface-600 border-b border-surface-700">
+                  <tr className="text-left text-surface-600 border-b border-surface-200">
                     {showTypeColumn && <th className="py-2 px-3 font-medium">Type</th>}
                     {showFrameworkColumn && <th className="py-2 px-3 font-medium">Framework</th>}
                     <th className="py-2 px-3 font-medium">
@@ -341,10 +341,7 @@ export default function MappingGaps() {
                         ? `/controls/${row.control.id}`
                         : '#';
                     return (
-                      <tr
-                        key={row.id}
-                        className="border-b border-surface-800 hover:bg-surface-800/50"
-                      >
+                      <tr key={row.id} className="border-b border-surface-200 hover:bg-white/50">
                         {showTypeColumn && (
                           <td className="py-2 px-3 text-surface-700">{TYPE_LABEL[row.type]}</td>
                         )}
@@ -363,7 +360,7 @@ export default function MappingGaps() {
                             {row.requirement ? 'Requirement' : row.control ? 'Control' : '—'}
                           </td>
                         )}
-                        <td className="py-2 px-3 text-surface-200">
+                        <td className="py-2 px-3 text-surface-800">
                           {row.requirement?.title ?? row.control?.title ?? '—'}
                         </td>
                       </tr>

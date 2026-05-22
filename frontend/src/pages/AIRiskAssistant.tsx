@@ -44,7 +44,7 @@ export default function AIRiskAssistant() {
         <h1 className="text-2xl font-semibold text-white">AI Risk Assistant</h1>
         <p className="text-surface-600">
           The AI module is not enabled for this environment. Ask an administrator to set
-          <code className="mx-1 text-xs bg-surface-900 px-2 py-1 rounded">
+          <code className="mx-1 text-xs bg-white px-2 py-1 rounded">
             VITE_ENABLE_AI_MODULE=true
           </code>
           and provide AI provider API keys.
@@ -93,25 +93,25 @@ export default function AIRiskAssistant() {
             {data.suggestedCategory && (
               <div>
                 <p className="text-surface-500">Category</p>
-                <p className="text-surface-100 font-medium">{data.suggestedCategory}</p>
+                <p className="text-surface-900 font-medium">{data.suggestedCategory}</p>
               </div>
             )}
             {data.suggestedLikelihood && (
               <div>
                 <p className="text-surface-500">Likelihood</p>
-                <p className="text-surface-100 font-medium">{data.suggestedLikelihood}</p>
+                <p className="text-surface-900 font-medium">{data.suggestedLikelihood}</p>
               </div>
             )}
             {data.suggestedImpact && (
               <div>
                 <p className="text-surface-500">Impact</p>
-                <p className="text-surface-100 font-medium">{data.suggestedImpact}</p>
+                <p className="text-surface-900 font-medium">{data.suggestedImpact}</p>
               </div>
             )}
             {data.suggestedTreatmentPlan && (
               <div className="md:col-span-2">
                 <p className="text-surface-500">Treatment Plan</p>
-                <p className="text-surface-100 whitespace-pre-wrap">
+                <p className="text-surface-900 whitespace-pre-wrap">
                   {data.suggestedTreatmentPlan}
                 </p>
               </div>

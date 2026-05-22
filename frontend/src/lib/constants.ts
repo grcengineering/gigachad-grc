@@ -192,7 +192,7 @@ export const BCDR_PLAN_STATUSES = {
   in_review: { value: 'in_review', label: 'In Review', color: 'bg-yellow-500/20 text-yellow-400' },
   approved: { value: 'approved', label: 'Approved', color: 'bg-blue-500/20 text-blue-400' },
   published: { value: 'published', label: 'Published', color: 'bg-green-500/20 text-green-400' },
-  archived: { value: 'archived', label: 'Archived', color: 'bg-surface-700 text-surface-400' },
+  archived: { value: 'archived', label: 'Archived', color: 'bg-surface-200 text-surface-400' },
 } as const;
 
 export const BCDR_PLAN_STATUS_OPTIONS = Object.values(BCDR_PLAN_STATUSES);

@@ -47,7 +47,7 @@ export default function Vendors() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-surface-100">Vendors</h1>
+            <h1 className="text-3xl font-bold text-surface-900">Vendors</h1>
             <p className="mt-1 text-surface-600">
               Manage third-party vendor relationships and profiles
             </p>
@@ -63,7 +63,7 @@ export default function Vendors() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-surface-100">Vendors</h1>
+          <h1 className="text-3xl font-bold text-surface-900">Vendors</h1>
           <p className="mt-1 text-surface-600">
             Manage third-party vendor relationships and profiles
           </p>
@@ -96,7 +96,7 @@ export default function Vendors() {
       </div>
       {/* Vendors List */}
       {vendors.length === 0 ? (
-        <div className="bg-surface-900 border border-surface-800 rounded-lg p-12 text-center">
+        <div className="bg-white border border-surface-200 rounded-lg p-12 text-center">
           <BuildingOfficeIcon className="w-12 h-12 text-surface-600 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-surface-700 mb-2">No vendors yet</h3>
           <p className="text-surface-500 mb-6">Get started by adding your first vendor</p>
@@ -108,9 +108,9 @@ export default function Vendors() {
           </Button>
         </div>
       ) : (
-        <div className="bg-surface-900 border border-surface-800 rounded-lg overflow-hidden">
+        <div className="bg-white border border-surface-200 rounded-lg overflow-hidden">
           <table className="w-full">
-            <thead className="bg-surface-800 border-b border-surface-700">
+            <thead className="bg-white border-b border-surface-200">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-surface-600 uppercase tracking-wider">
                   Vendor
@@ -129,16 +129,16 @@ export default function Vendors() {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-surface-800">
+            <tbody className="divide-y divide-surface-200">
               {vendors.map((vendor: Vendor) => (
                 <tr
                   key={vendor.id}
                   onClick={() => navigate(`/vendors/${vendor.id}`)}
-                  className="hover:bg-surface-800 cursor-pointer transition-colors"
+                  className="hover:bg-white cursor-pointer transition-colors"
                 >
                   <td className="px-6 py-4">
                     <div>
-                      <div className="text-sm font-medium text-surface-100">{vendor.name}</div>
+                      <div className="text-sm font-medium text-surface-900">{vendor.name}</div>
                       <div className="text-sm text-surface-500">{vendor.vendorId}</div>
                     </div>
                   </td>
@@ -146,7 +146,7 @@ export default function Vendors() {
                     {vendor.category.replace('_', ' ')}
                   </td>
                   <td className="px-6 py-4">
-                    <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-surface-700 text-surface-700 capitalize">
+                    <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-surface-200 text-surface-700 capitalize">
                       {vendor.tier.replace('_', ' ')}
                     </span>
                   </td>
@@ -162,7 +162,7 @@ export default function Vendors() {
                                 ? 'bg-yellow-500/20 text-yellow-600'
                                 : vendor.inherentRiskScore === 'low'
                                   ? 'bg-green-500/20 text-green-600'
-                                  : 'bg-surface-700 text-surface-700'
+                                  : 'bg-surface-200 text-surface-700'
                         }`}
                       >
                         {vendor.inherentRiskScore}
@@ -177,7 +177,7 @@ export default function Vendors() {
                         vendor.status === 'active'
                           ? 'bg-green-500/20 text-green-600'
                           : vendor.status === 'inactive'
-                            ? 'bg-surface-700 text-surface-600'
+                            ? 'bg-surface-200 text-surface-600'
                             : 'bg-yellow-500/20 text-yellow-600'
                       }`}
                     >

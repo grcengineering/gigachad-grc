@@ -220,12 +220,12 @@ export default function RiskQueue() {
             className={`p-4 rounded-xl border transition-colors text-left ${
               activeTab === tab.key
                 ? 'bg-brand-500/20 border-brand-500'
-                : 'bg-surface-800 border-surface-700 hover:border-surface-600'
+                : 'bg-white border-surface-200 hover:border-surface-300'
             }`}
           >
             <div className="flex items-center gap-3">
               <div
-                className={`p-2 rounded-lg ${activeTab === tab.key ? 'bg-brand-500/30' : 'bg-surface-700'}`}
+                className={`p-2 rounded-lg ${activeTab === tab.key ? 'bg-brand-500/30' : 'bg-surface-200'}`}
               >
                 <tab.icon className={`w-5 h-5 ${tab.color}`} />
               </div>
@@ -239,8 +239,8 @@ export default function RiskQueue() {
       </div>
 
       {/* Queue List */}
-      <div className="bg-surface-800 rounded-xl border border-surface-700">
-        <div className="p-4 border-b border-surface-700">
+      <div className="bg-white rounded-xl border border-surface-200">
+        <div className="p-4 border-b border-surface-200">
           <h2 className="text-lg font-medium text-white">
             {tabs.find((t) => t.key === activeTab)?.label}
           </h2>
@@ -251,7 +251,7 @@ export default function RiskQueue() {
           )}
         </div>
 
-        <div className="divide-y divide-surface-700">
+        <div className="divide-y divide-surface-200">
           {/* Tasks Tab Content */}
           {activeTab === 'tasks' && (
             <>
@@ -267,7 +267,7 @@ export default function RiskQueue() {
                   return (
                     <div
                       key={task.id}
-                      className={`p-4 hover:bg-surface-700/50 transition-colors ${
+                      className={`p-4 hover:bg-surface-200/50 transition-colors ${
                         isOverdue ? 'bg-red-900/10' : ''
                       }`}
                     >
@@ -359,7 +359,7 @@ export default function RiskQueue() {
                           )}
                           <Link
                             to={`/risks/${task.riskId}`}
-                            className="flex items-center gap-1 px-3 py-1.5 bg-surface-700 text-white rounded-lg hover:bg-surface-600 text-sm"
+                            className="flex items-center gap-1 px-3 py-1.5 bg-surface-200 text-white rounded-lg hover:bg-surface-600 text-sm"
                           >
                             View Risk
                             <ArrowRightIcon className="w-4 h-4" />
@@ -384,7 +384,7 @@ export default function RiskQueue() {
                 </div>
               ) : (
                 getActiveQueue().map((risk: any) => (
-                  <div key={risk.id} className="p-4 hover:bg-surface-700/50 transition-colors">
+                  <div key={risk.id} className="p-4 hover:bg-surface-200/50 transition-colors">
                     <div className="flex items-center gap-4">
                       {/* Risk Level Indicator */}
                       <div
@@ -434,7 +434,7 @@ export default function RiskQueue() {
       </div>
 
       {/* Tips Section */}
-      <div className="bg-surface-800 rounded-xl border border-surface-700 p-6">
+      <div className="bg-white rounded-xl border border-surface-200 p-6">
         <h3 className="text-lg font-medium text-white mb-3">Queue Tips</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div className="flex gap-3">
@@ -442,7 +442,7 @@ export default function RiskQueue() {
               <span className="text-amber-600 font-bold">1</span>
             </div>
             <p className="text-surface-600">
-              <strong className="text-surface-200">Assessments:</strong> Complete risk analysis
+              <strong className="text-surface-800">Assessments:</strong> Complete risk analysis
               including likelihood, impact, and recommended treatment.
             </p>
           </div>
@@ -451,7 +451,7 @@ export default function RiskQueue() {
               <span className="text-orange-600 font-bold">2</span>
             </div>
             <p className="text-surface-600">
-              <strong className="text-surface-200">Treatments:</strong> Decide how to handle the
+              <strong className="text-surface-800">Treatments:</strong> Decide how to handle the
               risk - mitigate, accept, transfer, or avoid.
             </p>
           </div>
@@ -460,7 +460,7 @@ export default function RiskQueue() {
               <span className="text-purple-600 font-bold">3</span>
             </div>
             <p className="text-surface-600">
-              <strong className="text-surface-200">Approvals:</strong> Executive review required for
+              <strong className="text-surface-800">Approvals:</strong> Executive review required for
               high-risk accept/transfer/avoid decisions.
             </p>
           </div>
@@ -469,7 +469,7 @@ export default function RiskQueue() {
               <span className="text-cyan-600 font-bold">4</span>
             </div>
             <p className="text-surface-600">
-              <strong className="text-surface-200">Reviews:</strong> GRC team validates assessments
+              <strong className="text-surface-800">Reviews:</strong> GRC team validates assessments
               before treatment decisions.
             </p>
           </div>

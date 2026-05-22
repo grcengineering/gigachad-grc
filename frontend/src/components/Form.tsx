@@ -137,12 +137,12 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
             ref={ref}
             type="checkbox"
             className={clsx(
-              'h-4 w-4 rounded bg-surface-700 border',
-              'focus:ring-2 focus:ring-offset-0 focus:ring-offset-surface-900',
+              'h-4 w-4 rounded bg-surface-200 border',
+              'focus:ring-2 focus:ring-offset-0 focus:ring-offset-surface-50',
               'disabled:cursor-not-allowed disabled:opacity-50',
               error
                 ? 'border-red-500 text-red-600 focus:ring-red-500/20'
-                : 'border-surface-600 text-brand-600 focus:ring-brand-500/20'
+                : 'border-surface-300 text-brand-600 focus:ring-brand-500/20'
             )}
             {...registration}
             {...props}
@@ -207,12 +207,12 @@ export function RadioGroup({
               value={option.value}
               disabled={option.disabled}
               className={clsx(
-                'h-4 w-4 bg-surface-700 border',
-                'focus:ring-2 focus:ring-offset-0 focus:ring-offset-surface-900',
+                'h-4 w-4 bg-surface-200 border',
+                'focus:ring-2 focus:ring-offset-0 focus:ring-offset-surface-50',
                 'disabled:cursor-not-allowed disabled:opacity-50',
                 error
                   ? 'border-red-500 text-red-600 focus:ring-red-500/20'
-                  : 'border-surface-600 text-brand-600 focus:ring-brand-500/20'
+                  : 'border-surface-300 text-brand-600 focus:ring-brand-500/20'
               )}
               {...registration}
             />
@@ -260,7 +260,7 @@ export function FormActions({ children, className, align = 'right' }: FormAction
   return (
     <div
       className={clsx(
-        'flex items-center gap-3 pt-4 border-t border-surface-700',
+        'flex items-center gap-3 pt-4 border-t border-surface-200',
         alignClasses[align],
         className
       )}
@@ -286,7 +286,7 @@ export function FormSection({ title, description, children, className }: FormSec
     <div className={clsx('space-y-4', className)}>
       {(title || description) && (
         <div>
-          {title && <h3 className="text-lg font-medium text-surface-100">{title}</h3>}
+          {title && <h3 className="text-lg font-medium text-surface-900">{title}</h3>}
           {description && <p className="mt-1 text-sm text-surface-600">{description}</p>}
         </div>
       )}
@@ -300,7 +300,7 @@ export function FormSection({ title, description, children, className }: FormSec
 // ===========================================
 
 export function FormDivider({ className }: { className?: string }) {
-  return <hr className={clsx('border-surface-700 my-6', className)} />;
+  return <hr className={clsx('border-surface-200 my-6', className)} />;
 }
 
 // ===========================================

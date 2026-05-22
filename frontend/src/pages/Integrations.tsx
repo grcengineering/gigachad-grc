@@ -231,7 +231,7 @@ export default function Integrations() {
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-surface-100">Integrations</h1>
+        <h1 className="text-2xl font-bold text-surface-900">Integrations</h1>
         <p className="text-surface-600 mt-1">
           Connect external services for automated evidence collection
         </p>
@@ -250,7 +250,7 @@ export default function Integrations() {
           {searchQuery && (
             <button
               onClick={() => handleSearchChange('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-surface-600 hover:text-surface-100"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-surface-600 hover:text-surface-900"
             >
               <XMarkIcon className="w-5 h-5" />
             </button>
@@ -263,11 +263,11 @@ export default function Integrations() {
           onClick={() => setStatusFilter(statusFilter === 'all' ? 'all' : 'all')}
           className={clsx(
             'card p-4 text-left transition-all',
-            statusFilter === 'all' ? 'ring-2 ring-surface-500' : 'hover:bg-surface-800/50'
+            statusFilter === 'all' ? 'ring-2 ring-surface-500' : 'hover:bg-white/50'
           )}
         >
           <p className="text-sm text-surface-600">Available Integrations</p>
-          <p className="text-2xl font-bold text-surface-100 mt-1">
+          <p className="text-2xl font-bold text-surface-900 mt-1">
             {integrationTypes ? Object.keys(integrationTypes).length : 0}
           </p>
         </button>
@@ -277,7 +277,7 @@ export default function Integrations() {
             'card p-4 text-left transition-all',
             statusFilter === 'configured'
               ? 'ring-2 ring-green-500'
-              : 'hover:bg-surface-800/50 cursor-pointer'
+              : 'hover:bg-white/50 cursor-pointer'
           )}
         >
           <p className="text-sm text-surface-600">Configured</p>
@@ -290,9 +290,7 @@ export default function Integrations() {
           onClick={() => setStatusFilter(statusFilter === 'active' ? 'all' : 'active')}
           className={clsx(
             'card p-4 text-left transition-all',
-            statusFilter === 'active'
-              ? 'ring-2 ring-brand-500'
-              : 'hover:bg-surface-800/50 cursor-pointer'
+            statusFilter === 'active' ? 'ring-2 ring-brand-500' : 'hover:bg-white/50 cursor-pointer'
           )}
         >
           <p className="text-sm text-surface-600">Active</p>
@@ -309,7 +307,7 @@ export default function Integrations() {
             'card p-4 text-left transition-all',
             statusFilter === 'with_evidence'
               ? 'ring-2 ring-purple-500'
-              : 'hover:bg-surface-800/50 cursor-pointer'
+              : 'hover:bg-white/50 cursor-pointer'
           )}
         >
           <p className="text-sm text-surface-600">Evidence Collected</p>
@@ -340,7 +338,7 @@ export default function Integrations() {
           <span className="text-surface-500">({visibleCount} results)</span>
           <button
             onClick={() => setStatusFilter('all')}
-            className="text-surface-600 hover:text-surface-100 ml-2"
+            className="text-surface-600 hover:text-surface-900 ml-2"
           >
             <XMarkIcon className="w-4 h-4" />
           </button>
@@ -349,7 +347,7 @@ export default function Integrations() {
       {/* Integrations by Category */}
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin w-8 h-8 border-4 border-surface-700 rounded-full border-t-brand-500"></div>
+          <div className="animate-spin w-8 h-8 border-4 border-surface-200 rounded-full border-t-brand-500"></div>
         </div>
       ) : (
         <div className="space-y-8">
@@ -357,7 +355,7 @@ export default function Integrations() {
             .sort(([catA], [catB]) => catA.localeCompare(catB))
             .map(([category, items]) => (
               <div key={category}>
-                <h2 className="text-lg font-semibold text-surface-200 mb-4 flex items-center gap-2">
+                <h2 className="text-lg font-semibold text-surface-800 mb-4 flex items-center gap-2">
                   {category}
                   <span className="text-sm font-normal text-surface-500">({items.length})</span>
                 </h2>
@@ -379,22 +377,22 @@ export default function Integrations() {
                         className={clsx(
                           'card p-6 transition-colors cursor-pointer',
                           isConfigured
-                            ? 'hover:border-surface-700'
+                            ? 'hover:border-surface-200'
                             : 'hover:border-brand-500/50 opacity-75'
                         )}
                         onClick={() => handleConfigureIntegration(type, integration)}
                       >
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex items-center gap-3">
-                            <div className="p-2 bg-surface-800 rounded-lg flex items-center justify-center">
+                            <div className="p-2 bg-white rounded-lg flex items-center justify-center">
                               <IntegrationIcon
                                 iconSlug={meta.iconSlug || type}
                                 integrationName={meta.name}
-                                className="w-6 h-6 text-surface-100"
+                                className="w-6 h-6 text-surface-900"
                               />
                             </div>
                             <div>
-                              <h3 className="font-semibold text-surface-100">{meta.name}</h3>
+                              <h3 className="font-semibold text-surface-900">{meta.name}</h3>
                               <span className={clsx('text-xs', statusConfig.badge)}>
                                 {statusConfig.label}
                               </span>
@@ -431,7 +429,7 @@ export default function Integrations() {
                         )}
                         {isConfigured ? (
                           <>
-                            <div className="flex items-center justify-between text-xs text-surface-500 pt-4 border-t border-surface-800">
+                            <div className="flex items-center justify-between text-xs text-surface-500 pt-4 border-t border-surface-200">
                               <span>
                                 {integration.lastSyncAt
                                   ? `Last sync: ${new Date(integration.lastSyncAt).toLocaleDateString()}`
@@ -441,7 +439,7 @@ export default function Integrations() {
                             </div>
 
                             {/* Action buttons */}
-                            <div className="flex items-center gap-2 mt-4 pt-4 border-t border-surface-800">
+                            <div className="flex items-center gap-2 mt-4 pt-4 border-t border-surface-200">
                               <Button
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -459,7 +457,7 @@ export default function Integrations() {
                                   testMutation.mutate(integration.id);
                                 }}
                                 disabled={testMutation.isPending}
-                                className="p-1.5 text-surface-600 hover:text-surface-100 hover:bg-surface-800 rounded transition-colors"
+                                className="p-1.5 text-surface-600 hover:text-surface-900 hover:bg-white rounded transition-colors"
                                 title="Test Connection"
                               >
                                 <ArrowPathIcon
@@ -476,7 +474,7 @@ export default function Integrations() {
                                     syncMutation.mutate(integration.id);
                                   }}
                                   disabled={syncMutation.isPending}
-                                  className="p-1.5 text-surface-600 hover:text-green-600 hover:bg-surface-800 rounded transition-colors"
+                                  className="p-1.5 text-surface-600 hover:text-green-600 hover:bg-white rounded transition-colors"
                                   title="Trigger Sync"
                                 >
                                   <PlayIcon className="w-4 h-4" />
@@ -492,7 +490,7 @@ export default function Integrations() {
                                   }
                                 }}
                                 disabled={deleteMutation.isPending}
-                                className="p-1.5 text-surface-600 hover:text-red-600 hover:bg-surface-800 rounded transition-colors"
+                                className="p-1.5 text-surface-600 hover:text-red-600 hover:bg-white rounded transition-colors"
                                 title="Delete"
                               >
                                 <TrashIcon className="w-4 h-4" />
@@ -500,7 +498,7 @@ export default function Integrations() {
                             </div>
                           </>
                         ) : (
-                          <div className="pt-4 border-t border-surface-800 text-center">
+                          <div className="pt-4 border-t border-surface-200 text-center">
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();

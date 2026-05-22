@@ -104,7 +104,7 @@ export default function Settings({ section }: SettingsProps) {
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-surface-100">{title}</h1>
+        <h1 className="text-2xl font-bold text-surface-900">{title}</h1>
         <p className="text-surface-600 mt-1">{description}</p>
       </div>
 
@@ -363,7 +363,7 @@ function OrganizationSettings() {
       {/* Platform Branding */}
       <div className="card p-6 space-y-6">
         <div>
-          <h2 className="text-lg font-semibold text-surface-100">Platform Branding</h2>
+          <h2 className="text-lg font-semibold text-surface-900">Platform Branding</h2>
           <p className="text-surface-600 text-sm mt-1">
             Customize the look and name of your GRC platform
           </p>
@@ -391,7 +391,7 @@ function OrganizationSettings() {
             <div className="mt-2 flex items-start gap-4">
               {/* Current Logo Preview */}
               <div className="flex-shrink-0">
-                <div className="w-20 h-20 rounded-lg border border-surface-700 bg-surface-800 flex items-center justify-center overflow-hidden">
+                <div className="w-20 h-20 rounded-lg border border-surface-200 bg-white flex items-center justify-center overflow-hidden">
                   {logoUrl ? (
                     <img
                       src={safeLogoUrl()}
@@ -428,7 +428,7 @@ function OrganizationSettings() {
                     <Button
                       type="button"
                       onClick={handleResetLogo}
-                      className="text-sm text-surface-600 hover:text-surface-200"
+                      className="text-sm text-surface-600 hover:text-surface-800"
                       variant="ghost"
                     >
                       Reset to Default
@@ -461,7 +461,7 @@ function OrganizationSettings() {
           </div>
         </div>
 
-        <div className="flex justify-end pt-4 border-t border-surface-800">
+        <div className="flex justify-end pt-4 border-t border-surface-200">
           <Button onClick={handleSaveBranding} disabled={isSaving} variant="primary">
             {isSaving ? 'Saving...' : 'Save Branding'}
           </Button>
@@ -469,7 +469,7 @@ function OrganizationSettings() {
       </div>
       {/* Organization Settings */}
       <div className="card p-6 space-y-6">
-        <h2 className="text-lg font-semibold text-surface-100">Organization Details</h2>
+        <h2 className="text-lg font-semibold text-surface-900">Organization Details</h2>
 
         <div className="space-y-4">
           <div>
@@ -534,7 +534,7 @@ function OrganizationSettings() {
           </div>
         </div>
 
-        <div className="flex justify-end pt-4 border-t border-surface-800">
+        <div className="flex justify-end pt-4 border-t border-surface-200">
           <Button onClick={handleSaveOrganization} disabled={isSavingOrg} variant="primary">
             {isSavingOrg ? 'Saving...' : 'Save Organization'}
           </Button>
@@ -546,7 +546,7 @@ function OrganizationSettings() {
       <div className="card p-6 space-y-4">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-lg font-semibold text-surface-100">
+            <h2 className="text-lg font-semibold text-surface-900">
               Data Portability & Offboarding
             </h2>
             <p className="text-surface-600 text-sm mt-1">
@@ -562,8 +562,8 @@ function OrganizationSettings() {
           />
         </div>
 
-        <div className="bg-surface-800/60 rounded-lg p-4 space-y-2 text-sm text-surface-600">
-          <p className="font-medium text-surface-200">What&apos;s included</p>
+        <div className="bg-white/60 rounded-lg p-4 space-y-2 text-sm text-surface-600">
+          <p className="font-medium text-surface-800">What&apos;s included</p>
           <ul className="list-disc list-inside space-y-1">
             <li>Risk register data (using the full export endpoint)</li>
             <li>Controls and implementations</li>
@@ -577,7 +577,7 @@ function OrganizationSettings() {
           </p>
         </div>
 
-        <div className="flex justify-end pt-4 border-t border-surface-800">
+        <div className="flex justify-end pt-4 border-t border-surface-200">
           <Button
             type="button"
             onClick={handleExportOrganizationData}
@@ -591,8 +591,8 @@ function OrganizationSettings() {
       {/* Demo Data Settings */}
       <DemoDataSettings />
       {/* System Health & Production Readiness */}
-      <div className="space-y-4 pt-4 border-t border-surface-800">
-        <h2 className="text-lg font-semibold text-surface-100">System Health</h2>
+      <div className="space-y-4 pt-4 border-t border-surface-200">
+        <h2 className="text-lg font-semibold text-surface-900">System Health</h2>
         <SystemHealthBanner />
         <ProductionReadiness />
       </div>
@@ -657,7 +657,7 @@ function MultiWorkspaceSettings() {
           <div className="flex items-center gap-3">
             <BuildingOfficeIcon className="w-6 h-6 text-brand-400" />
             <div>
-              <h2 className="text-lg font-semibold text-surface-100">Multi-Workspace Mode</h2>
+              <h2 className="text-lg font-semibold text-surface-900">Multi-Workspace Mode</h2>
               <p className="text-sm text-surface-600">
                 Enable separate workspaces for different products or teams
               </p>
@@ -679,10 +679,10 @@ function MultiWorkspaceSettings() {
         </div>
 
         {isMultiWorkspaceEnabled && (
-          <div className="pt-4 border-t border-surface-700">
+          <div className="pt-4 border-t border-surface-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-surface-100 font-medium">
+                <p className="text-surface-900 font-medium">
                   {workspaces.length} workspace{workspaces.length !== 1 ? 's' : ''} active
                 </p>
                 <p className="text-sm text-surface-600">
@@ -701,7 +701,7 @@ function MultiWorkspaceSettings() {
         )}
 
         {!isMultiWorkspaceEnabled && (
-          <div className="bg-surface-800 rounded-lg p-4 text-sm text-surface-600">
+          <div className="bg-white rounded-lg p-4 text-sm text-surface-600">
             <p className="mb-2">Multi-workspace mode allows you to:</p>
             <ul className="list-disc list-inside space-y-1">
               <li>Track compliance progress separately for each product</li>
@@ -715,7 +715,7 @@ function MultiWorkspaceSettings() {
 
       {/* Disable Warning Modal */}
       <Dialog open={showDisableWarning} onClose={() => setShowDisableWarning(false)}>
-        <h3 className="text-lg font-semibold text-surface-100 mb-4">
+        <h3 className="text-lg font-semibold text-surface-900 mb-4">
           Disable Multi-Workspace Mode?
         </h3>
         <p className="text-surface-600 mb-6">
@@ -725,7 +725,7 @@ function MultiWorkspaceSettings() {
         <div className="flex justify-end gap-3">
           <button
             onClick={() => setShowDisableWarning(false)}
-            className="px-4 py-2 text-sm text-surface-600 hover:text-surface-100"
+            className="px-4 py-2 text-sm text-surface-600 hover:text-surface-900"
           >
             Cancel
           </button>
@@ -869,8 +869,8 @@ function CommunicationsSettings() {
     return (
       <div className="card p-6">
         <div className="animate-pulse space-y-4">
-          <div className="h-6 bg-surface-700 rounded w-1/3" />
-          <div className="h-32 bg-surface-700 rounded" />
+          <div className="h-6 bg-surface-200 rounded w-1/3" />
+          <div className="h-32 bg-surface-200 rounded" />
         </div>
       </div>
     );
@@ -882,7 +882,7 @@ function CommunicationsSettings() {
       <div className="card p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-surface-100 flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-surface-900 flex items-center gap-2">
               <EnvelopeIcon className="w-5 h-5" />
               Email Configuration
             </h2>
@@ -938,7 +938,7 @@ function CommunicationsSettings() {
             </div>
 
             {emailProvider === 'smtp' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-surface-800/50 rounded-lg">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-white/50 rounded-lg">
                 <div>
                   <label className="label">SMTP Host</label>
                   <Input
@@ -983,7 +983,7 @@ function CommunicationsSettings() {
             )}
 
             {emailProvider === 'sendgrid' && (
-              <div className="p-4 bg-surface-800/50 rounded-lg">
+              <div className="p-4 bg-white/50 rounded-lg">
                 <label className="label">SendGrid API Key</label>
                 <Input
                   type="password"
@@ -996,7 +996,7 @@ function CommunicationsSettings() {
             )}
 
             {emailProvider === 'ses' && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-surface-800/50 rounded-lg">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-white/50 rounded-lg">
                 <div>
                   <label className="label">AWS Region</label>
                   <SelectNative
@@ -1036,7 +1036,7 @@ function CommunicationsSettings() {
               </div>
             )}
 
-            <div className="flex items-center gap-4 pt-4 border-t border-surface-700">
+            <div className="flex items-center gap-4 pt-4 border-t border-surface-200">
               <div className="flex-1">
                 <Input
                   type="email"
@@ -1057,7 +1057,7 @@ function CommunicationsSettings() {
           </>
         )}
 
-        <div className="flex justify-end pt-4 border-t border-surface-800">
+        <div className="flex justify-end pt-4 border-t border-surface-200">
           <Button
             onClick={handleSaveEmail}
             disabled={updateEmailMutation.isPending}
@@ -1071,7 +1071,7 @@ function CommunicationsSettings() {
       <div className="card p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-surface-100">Slack Notifications</h2>
+            <h2 className="text-lg font-semibold text-surface-900">Slack Notifications</h2>
             <p className="text-surface-600 text-sm mt-1">Send alerts and notifications to Slack</p>
           </div>
           <label className="relative inline-flex items-center cursor-pointer">
@@ -1081,7 +1081,7 @@ function CommunicationsSettings() {
               onChange={(e) => setSlackForm((f) => ({ ...f, enabled: e.target.checked }))}
               className="sr-only peer"
             />
-            <div className="w-11 h-6 bg-surface-700 peer-focus:ring-2 peer-focus:ring-brand-500 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
+            <div className="w-11 h-6 bg-surface-200 peer-focus:ring-2 peer-focus:ring-brand-500 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
           </label>
         </div>
 
@@ -1127,7 +1127,7 @@ function CommunicationsSettings() {
               </div>
             </div>
 
-            <div className="flex items-center gap-4 pt-4 border-t border-surface-700">
+            <div className="flex items-center gap-4 pt-4 border-t border-surface-200">
               <Button
                 onClick={() => testSlackMutation.mutate(slackForm.defaultChannel)}
                 disabled={testSlackMutation.isPending}
@@ -1139,7 +1139,7 @@ function CommunicationsSettings() {
           </>
         )}
 
-        <div className="flex justify-end pt-4 border-t border-surface-800">
+        <div className="flex justify-end pt-4 border-t border-surface-200">
           <Button
             onClick={handleSaveSlack}
             disabled={updateSlackMutation.isPending}
@@ -1245,7 +1245,7 @@ function ApiSettings() {
     <div className="card p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-surface-100">API Keys</h2>
+          <h2 className="text-lg font-semibold text-surface-900">API Keys</h2>
           <p className="text-surface-600 text-sm mt-1">Manage API keys for programmatic access</p>
         </div>
         <Button onClick={() => setShowCreateModal(true)} variant="primary">
@@ -1266,11 +1266,11 @@ function ApiSettings() {
           {keys.map((key: ApiKey) => (
             <div
               key={key.id}
-              className="flex items-center justify-between p-4 bg-surface-800/50 rounded-lg"
+              className="flex items-center justify-between p-4 bg-white/50 rounded-lg"
             >
               <div>
                 <div className="flex items-center gap-2">
-                  <p className="text-surface-100 font-medium">{key.name}</p>
+                  <p className="text-surface-900 font-medium">{key.name}</p>
                   {!key.isActive && (
                     <span className="px-2 py-0.5 text-xs bg-red-500/20 text-red-600 rounded">
                       Revoked
@@ -1367,7 +1367,7 @@ function ApiSettings() {
       </div>
       {/* Create Key Modal */}
       <Dialog open={showCreateModal} onClose={() => setShowCreateModal(false)}>
-        <h3 className="text-lg font-semibold text-surface-100 mb-4">Create API Key</h3>
+        <h3 className="text-lg font-semibold text-surface-900 mb-4">Create API Key</h3>
         <form onSubmit={handleCreate} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-surface-700 mb-1">Name</label>
@@ -1407,7 +1407,7 @@ function ApiSettings() {
                         setNewKeyScopes(newKeyScopes.filter((s) => s !== scope));
                       }
                     }}
-                    className="rounded border-surface-600 bg-surface-800 text-primary-500"
+                    className="rounded border-surface-300 bg-white text-primary-500"
                   />
                   <span className="text-surface-700 text-sm">{scope}</span>
                 </label>
@@ -1433,14 +1433,14 @@ function ApiSettings() {
         <Dialog open={showNewKeyModal} onClose={() => setShowNewKeyModal(false)}>
           <div className="flex items-center gap-2 mb-4">
             <CheckCircleIcon className="w-6 h-6 text-green-600" />
-            <h3 className="text-lg font-semibold text-surface-100">API Key Created</h3>
+            <h3 className="text-lg font-semibold text-surface-900">API Key Created</h3>
           </div>
           <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg mb-4">
             <p className="text-amber-600 text-sm">
               Copy this key now. You won't be able to see it again!
             </p>
           </div>
-          <div className="bg-surface-800 rounded-lg p-4">
+          <div className="bg-white rounded-lg p-4">
             <div className="flex items-center justify-between">
               <code className="text-green-600 text-sm break-all">{newKey.key}</code>
               <Button
@@ -1523,7 +1523,7 @@ function DashboardTemplatesSettings() {
       <div className="card p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-lg font-semibold text-surface-100">Dashboard Templates</h2>
+            <h2 className="text-lg font-semibold text-surface-900">Dashboard Templates</h2>
             <p className="text-surface-600 text-sm mt-1">
               Templates are shared with all users in your organization
             </p>
@@ -1535,10 +1535,10 @@ function DashboardTemplatesSettings() {
 
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
-            <div className="animate-spin w-6 h-6 border-2 border-surface-600 rounded-full border-t-brand-500" />
+            <div className="animate-spin w-6 h-6 border-2 border-surface-300 rounded-full border-t-brand-500" />
           </div>
         ) : templates?.length === 0 ? (
-          <div className="text-center py-12 bg-surface-800/50 rounded-lg">
+          <div className="text-center py-12 bg-white/50 rounded-lg">
             <Squares2X2Icon className="w-12 h-12 mx-auto text-surface-500 mb-4" />
             <h3 className="text-surface-700 font-medium mb-2">No templates yet</h3>
             <p className="text-surface-500 text-sm mb-4">
@@ -1553,14 +1553,14 @@ function DashboardTemplatesSettings() {
             {templates?.map((template: any) => (
               <div
                 key={template.id}
-                className="flex items-center justify-between p-4 bg-surface-800/50 rounded-lg hover:bg-surface-800 transition-colors"
+                className="flex items-center justify-between p-4 bg-white/50 rounded-lg hover:bg-white transition-colors"
               >
                 <div className="flex items-center gap-4">
-                  <div className="p-2 bg-surface-700 rounded">
+                  <div className="p-2 bg-surface-200 rounded">
                     <Squares2X2Icon className="w-5 h-5 text-brand-400" />
                   </div>
                   <div>
-                    <p className="text-surface-100 font-medium">{template.name}</p>
+                    <p className="text-surface-900 font-medium">{template.name}</p>
                     {template.description && (
                       <p className="text-surface-500 text-sm">{template.description}</p>
                     )}
@@ -1597,7 +1597,7 @@ function DashboardTemplatesSettings() {
         )}
       </div>
       <div className="card p-6">
-        <h3 className="text-md font-semibold text-surface-100 mb-4">Template Tips</h3>
+        <h3 className="text-md font-semibold text-surface-900 mb-4">Template Tips</h3>
         <ul className="space-y-2 text-sm text-surface-600">
           <li className="flex items-start gap-2">
             <CheckCircleIcon className="w-5 h-5 text-green-600 flex-shrink-0" />
@@ -1615,7 +1615,7 @@ function DashboardTemplatesSettings() {
       </div>
       {/* Create Template Modal */}
       <Dialog open={showCreateModal} onClose={() => setShowCreateModal(false)}>
-        <h2 className="text-lg font-semibold text-surface-100 mb-4">Create Dashboard Template</h2>
+        <h2 className="text-lg font-semibold text-surface-900 mb-4">Create Dashboard Template</h2>
         <form onSubmit={handleCreate}>
           <div className="space-y-4">
             <div>
@@ -1818,7 +1818,7 @@ function EmployeeComplianceSettings() {
       {/* Score Weights */}
       <div className="card p-6 space-y-4">
         <div>
-          <h2 className="text-lg font-semibold text-surface-100">Compliance Score Weights</h2>
+          <h2 className="text-lg font-semibold text-surface-900">Compliance Score Weights</h2>
           <p className="text-surface-600 text-sm mt-1">
             Configure how much each category contributes to the overall compliance score. Weights
             must total 100%.
@@ -1897,7 +1897,7 @@ function EmployeeComplianceSettings() {
       {/* Compliance Thresholds */}
       <div className="card p-6 space-y-4">
         <div>
-          <h2 className="text-lg font-semibold text-surface-100">Compliance Thresholds</h2>
+          <h2 className="text-lg font-semibold text-surface-900">Compliance Thresholds</h2>
           <p className="text-surface-600 text-sm mt-1">
             Define score thresholds for compliance status categories.
           </p>
@@ -1960,7 +1960,7 @@ function EmployeeComplianceSettings() {
       {/* Compliance Requirements */}
       <div className="card p-6 space-y-4">
         <div>
-          <h2 className="text-lg font-semibold text-surface-100">Compliance Requirements</h2>
+          <h2 className="text-lg font-semibold text-surface-900">Compliance Requirements</h2>
           <p className="text-surface-600 text-sm mt-1">
             Configure what is required for employee compliance.
           </p>
@@ -1968,9 +1968,9 @@ function EmployeeComplianceSettings() {
 
         <div className="space-y-4">
           {/* Background Check */}
-          <div className="p-4 bg-surface-800/50 rounded-lg space-y-3">
+          <div className="p-4 bg-white/50 rounded-lg space-y-3">
             <div className="flex items-center justify-between">
-              <label className="text-surface-200 font-medium">Background Check</label>
+              <label className="text-surface-800 font-medium">Background Check</label>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
                   type="checkbox"
@@ -1978,7 +1978,7 @@ function EmployeeComplianceSettings() {
                   onChange={(e) => updateRequirement('backgroundCheckRequired', e.target.checked)}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-surface-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
+                <div className="w-11 h-6 bg-surface-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
               </label>
             </div>
             {config.requirements.backgroundCheckRequired && (
@@ -2003,9 +2003,9 @@ function EmployeeComplianceSettings() {
           </div>
 
           {/* Training */}
-          <div className="p-4 bg-surface-800/50 rounded-lg space-y-3">
+          <div className="p-4 bg-white/50 rounded-lg space-y-3">
             <div className="flex items-center justify-between">
-              <label className="text-surface-200 font-medium">Training Completion</label>
+              <label className="text-surface-800 font-medium">Training Completion</label>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
                   type="checkbox"
@@ -2015,7 +2015,7 @@ function EmployeeComplianceSettings() {
                   }
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-surface-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
+                <div className="w-11 h-6 bg-surface-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
               </label>
             </div>
             {config.requirements.trainingCompletionRequired && (
@@ -2037,9 +2037,9 @@ function EmployeeComplianceSettings() {
           </div>
 
           {/* Attestation */}
-          <div className="p-4 bg-surface-800/50 rounded-lg space-y-3">
+          <div className="p-4 bg-white/50 rounded-lg space-y-3">
             <div className="flex items-center justify-between">
-              <label className="text-surface-200 font-medium">Policy Attestation</label>
+              <label className="text-surface-800 font-medium">Policy Attestation</label>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
                   type="checkbox"
@@ -2047,7 +2047,7 @@ function EmployeeComplianceSettings() {
                   onChange={(e) => updateRequirement('attestationRequired', e.target.checked)}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-surface-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
+                <div className="w-11 h-6 bg-surface-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
               </label>
             </div>
             {config.requirements.attestationRequired && (
@@ -2069,10 +2069,10 @@ function EmployeeComplianceSettings() {
           </div>
 
           {/* MFA */}
-          <div className="p-4 bg-surface-800/50 rounded-lg">
+          <div className="p-4 bg-white/50 rounded-lg">
             <div className="flex items-center justify-between">
               <div>
-                <label className="text-surface-200 font-medium">MFA Required</label>
+                <label className="text-surface-800 font-medium">MFA Required</label>
                 <p className="text-surface-500 text-xs mt-1">
                   Require multi-factor authentication for all employees
                 </p>
@@ -2084,7 +2084,7 @@ function EmployeeComplianceSettings() {
                   onChange={(e) => updateRequirement('mfaRequired', e.target.checked)}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-surface-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
+                <div className="w-11 h-6 bg-surface-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
               </label>
             </div>
           </div>
@@ -2093,7 +2093,7 @@ function EmployeeComplianceSettings() {
       {/* Data Sources Info */}
       <div className="card p-6 space-y-4">
         <div>
-          <h2 className="text-lg font-semibold text-surface-100">Data Sources</h2>
+          <h2 className="text-lg font-semibold text-surface-900">Data Sources</h2>
           <p className="text-surface-600 text-sm mt-1">
             Employee compliance data is gathered from configured integrations. Click a category to
             view or configure integrations.
@@ -2103,60 +2103,60 @@ function EmployeeComplianceSettings() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           <Link
             to="/integrations?search=HR%20Tools"
-            className="p-3 bg-surface-800/50 rounded-lg hover:bg-surface-700/50 hover:border-brand-500/50 border border-transparent transition-all cursor-pointer group"
+            className="p-3 bg-white/50 rounded-lg hover:bg-surface-200/50 hover:border-brand-500/50 border border-transparent transition-all cursor-pointer group"
           >
             <p className="text-surface-600 text-xs uppercase tracking-wider mb-1 group-hover:text-brand-400">
               HRIS / Employee List
             </p>
-            <p className="text-surface-200 text-sm">BambooHR, Workday, ADP, etc.</p>
+            <p className="text-surface-800 text-sm">BambooHR, Workday, ADP, etc.</p>
             <p className="text-surface-500 text-xs mt-2 group-hover:text-brand-400">
               Click to configure →
             </p>
           </Link>
           <Link
             to="/integrations?search=Background%20Check"
-            className="p-3 bg-surface-800/50 rounded-lg hover:bg-surface-700/50 hover:border-brand-500/50 border border-transparent transition-all cursor-pointer group"
+            className="p-3 bg-white/50 rounded-lg hover:bg-surface-200/50 hover:border-brand-500/50 border border-transparent transition-all cursor-pointer group"
           >
             <p className="text-surface-600 text-xs uppercase tracking-wider mb-1 group-hover:text-brand-400">
               Background Check
             </p>
-            <p className="text-surface-200 text-sm">Certn, Checkr, Sterling, etc.</p>
+            <p className="text-surface-800 text-sm">Certn, Checkr, Sterling, etc.</p>
             <p className="text-surface-500 text-xs mt-2 group-hover:text-brand-400">
               Click to configure →
             </p>
           </Link>
           <Link
             to="/integrations?search=Security%20Awareness"
-            className="p-3 bg-surface-800/50 rounded-lg hover:bg-surface-700/50 hover:border-brand-500/50 border border-transparent transition-all cursor-pointer group"
+            className="p-3 bg-white/50 rounded-lg hover:bg-surface-200/50 hover:border-brand-500/50 border border-transparent transition-all cursor-pointer group"
           >
             <p className="text-surface-600 text-xs uppercase tracking-wider mb-1 group-hover:text-brand-400">
               Training / LMS
             </p>
-            <p className="text-surface-200 text-sm">KnowBe4, Proofpoint, Curricula, etc.</p>
+            <p className="text-surface-800 text-sm">KnowBe4, Proofpoint, Curricula, etc.</p>
             <p className="text-surface-500 text-xs mt-2 group-hover:text-brand-400">
               Click to configure →
             </p>
           </Link>
           <Link
             to="/integrations?search=MDM"
-            className="p-3 bg-surface-800/50 rounded-lg hover:bg-surface-700/50 hover:border-brand-500/50 border border-transparent transition-all cursor-pointer group"
+            className="p-3 bg-white/50 rounded-lg hover:bg-surface-200/50 hover:border-brand-500/50 border border-transparent transition-all cursor-pointer group"
           >
             <p className="text-surface-600 text-xs uppercase tracking-wider mb-1 group-hover:text-brand-400">
               MDM / Device
             </p>
-            <p className="text-surface-200 text-sm">Jamf, Kandji, Intune, etc.</p>
+            <p className="text-surface-800 text-sm">Jamf, Kandji, Intune, etc.</p>
             <p className="text-surface-500 text-xs mt-2 group-hover:text-brand-400">
               Click to configure →
             </p>
           </Link>
           <Link
             to="/integrations?search=Identity%20Provider"
-            className="p-3 bg-surface-800/50 rounded-lg hover:bg-surface-700/50 hover:border-brand-500/50 border border-transparent transition-all cursor-pointer group"
+            className="p-3 bg-white/50 rounded-lg hover:bg-surface-200/50 hover:border-brand-500/50 border border-transparent transition-all cursor-pointer group"
           >
             <p className="text-surface-600 text-xs uppercase tracking-wider mb-1 group-hover:text-brand-400">
               Identity Provider
             </p>
-            <p className="text-surface-200 text-sm">Okta, Azure AD, Google Workspace</p>
+            <p className="text-surface-800 text-sm">Okta, Azure AD, Google Workspace</p>
             <p className="text-surface-500 text-xs mt-2 group-hover:text-brand-400">
               Click to configure →
             </p>
@@ -2224,7 +2224,7 @@ function AISettings() {
       {/* AI Provider Selection */}
       <div className="card p-6 space-y-4">
         <div>
-          <h2 className="text-lg font-semibold text-surface-100">AI Provider</h2>
+          <h2 className="text-lg font-semibold text-surface-900">AI Provider</h2>
           <p className="text-surface-600 text-sm mt-1">
             Select an AI provider for intelligent automation features.
           </p>
@@ -2236,10 +2236,10 @@ function AISettings() {
             className={`p-4 rounded-lg border-2 transition-all ${
               aiProvider === 'disabled'
                 ? 'border-brand-500 bg-brand-500/10'
-                : 'border-surface-700 hover:border-surface-600'
+                : 'border-surface-200 hover:border-surface-300'
             }`}
           >
-            <p className="text-surface-100 font-medium">Disabled</p>
+            <p className="text-surface-900 font-medium">Disabled</p>
             <p className="text-surface-500 text-sm mt-1">No AI features</p>
           </button>
           <button
@@ -2250,10 +2250,10 @@ function AISettings() {
             className={`p-4 rounded-lg border-2 transition-all ${
               aiProvider === 'openai'
                 ? 'border-brand-500 bg-brand-500/10'
-                : 'border-surface-700 hover:border-surface-600'
+                : 'border-surface-200 hover:border-surface-300'
             }`}
           >
-            <p className="text-surface-100 font-medium">OpenAI</p>
+            <p className="text-surface-900 font-medium">OpenAI</p>
             <p className="text-surface-500 text-sm mt-1">GPT-4, GPT-3.5</p>
           </button>
           <button
@@ -2264,16 +2264,16 @@ function AISettings() {
             className={`p-4 rounded-lg border-2 transition-all ${
               aiProvider === 'anthropic'
                 ? 'border-brand-500 bg-brand-500/10'
-                : 'border-surface-700 hover:border-surface-600'
+                : 'border-surface-200 hover:border-surface-300'
             }`}
           >
-            <p className="text-surface-100 font-medium">Anthropic</p>
+            <p className="text-surface-900 font-medium">Anthropic</p>
             <p className="text-surface-500 text-sm mt-1">Claude 3</p>
           </button>
         </div>
 
         {aiProvider !== 'disabled' && (
-          <div className="space-y-4 pt-4 border-t border-surface-700">
+          <div className="space-y-4 pt-4 border-t border-surface-200">
             <div>
               <label className="label">API Key</label>
               <Input
@@ -2307,7 +2307,7 @@ function AISettings() {
       {/* AI Features */}
       <div className="card p-6 space-y-4">
         <div>
-          <h2 className="text-lg font-semibold text-surface-100">AI Features</h2>
+          <h2 className="text-lg font-semibold text-surface-900">AI Features</h2>
           <p className="text-surface-600 text-sm mt-1">
             Enable or disable specific AI-powered features.
           </p>
@@ -2343,10 +2343,10 @@ function AISettings() {
           ].map((feature) => (
             <div
               key={feature.key}
-              className="flex items-center justify-between p-3 bg-surface-800/50 rounded-lg"
+              className="flex items-center justify-between p-3 bg-white/50 rounded-lg"
             >
               <div>
-                <p className="text-surface-200 font-medium">{feature.name}</p>
+                <p className="text-surface-800 font-medium">{feature.name}</p>
                 <p className="text-surface-500 text-sm">{feature.desc}</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
@@ -2357,7 +2357,7 @@ function AISettings() {
                   disabled={aiProvider === 'disabled'}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-surface-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500 peer-disabled:opacity-50"></div>
+                <div className="w-11 h-6 bg-surface-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500 peer-disabled:opacity-50"></div>
               </label>
             </div>
           ))}
@@ -2367,7 +2367,7 @@ function AISettings() {
       <div className="card p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-surface-100">MCP Server Integration</h2>
+            <h2 className="text-lg font-semibold text-surface-900">MCP Server Integration</h2>
             <p className="text-surface-600 text-sm mt-1">
               Configure Model Context Protocol (MCP) servers for advanced AI workflows.
             </p>

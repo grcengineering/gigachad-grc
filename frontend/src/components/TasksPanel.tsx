@@ -120,7 +120,7 @@ export default function TasksPanel({ entityType, entityId }: TasksPanelProps) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <ClipboardDocumentListIcon className="w-5 h-5 text-surface-600" />
-          <h3 className="text-sm font-semibold text-surface-100">
+          <h3 className="text-sm font-semibold text-surface-900">
             Tasks ({openTasks.length} open)
           </h3>
         </div>
@@ -374,7 +374,7 @@ function TaskCard({
   return (
     <div
       className={clsx(
-        'card p-3 cursor-pointer hover:bg-surface-800 transition-colors',
+        'card p-3 cursor-pointer hover:bg-white transition-colors',
         task.status === 'completed' && 'opacity-60'
       )}
       onClick={onEdit}
@@ -389,7 +389,7 @@ function TaskCard({
           </div>
           <p
             className={clsx(
-              'text-sm font-medium text-surface-200',
+              'text-sm font-medium text-surface-800',
               task.status === 'completed' && 'line-through'
             )}
           >
@@ -421,7 +421,7 @@ function TaskCard({
                 e.stopPropagation();
                 onUpdate({ status: 'completed' });
               }}
-              className="p-1 rounded text-surface-500 hover:text-green-600 hover:bg-surface-700 transition-colors"
+              className="p-1 rounded text-surface-500 hover:text-green-600 hover:bg-surface-200 transition-colors"
               title="Mark complete"
             >
               <CheckIcon className="w-4 h-4" />
@@ -432,7 +432,7 @@ function TaskCard({
               e.stopPropagation();
               onDelete();
             }}
-            className="p-1 rounded text-surface-500 hover:text-red-600 hover:bg-surface-700 transition-colors"
+            className="p-1 rounded text-surface-500 hover:text-red-600 hover:bg-surface-200 transition-colors"
             title="Delete"
           >
             <TrashIcon className="w-4 h-4" />

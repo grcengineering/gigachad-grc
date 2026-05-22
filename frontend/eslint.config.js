@@ -41,12 +41,16 @@ const designSystemRules = [
     message:
       'Do not hand-roll centered modal overlays with `grid place-items-center`. Use <Dialog open={...} onClose={...}> from @/components/ui.',
   },
-  // 4. Faint text colors on the light cream background
+  // 4. Faint text colors on the light cream background.
+  //    The negative-lookbehind for `:` skips dark-mode forms — in dark mode
+  //    the 300/400 shades are the BRIGHT text colors, intentionally used
+  //    (e.g., `dark:text-brand-300`). Hover/focus modifiers also bypass
+  //    because they target ephemeral states.
   {
     selector:
-      'JSXAttribute[name.name="className"] Literal[value=/\\btext-(green|yellow|red|blue|orange|purple|teal|cyan|indigo|emerald|sky|violet|amber|fuchsia|lime|rose|surface)-(300|400)\\b/]',
+      'JSXAttribute[name.name="className"] Literal[value=/(?<!:)\\btext-(green|yellow|red|blue|orange|purple|teal|cyan|indigo|emerald|sky|violet|amber|fuchsia|lime|rose|surface)-(300|400)\\b/]',
     message:
-      'Text-300/400 shades are unreadable on the cream background. Use 600-800 for text or `text-surface-500` for muted.',
+      'Text-300/400 shades are unreadable on the cream background. Use 600-800 for text or `text-surface-500` for muted. (Dark-mode forms `dark:text-*-300/400` are allowed.)',
   },
   // 5. `rounded-full` on what looks like a text pill (has px-* and bg-*-* together)
   {
@@ -62,12 +66,15 @@ const designSystemRules = [
     message:
       'Hand-rolled colored pill. Use <Badge variant="..."> or <CategoryChip value="..."> from @/components/ui.',
   },
-  // 7. Card chrome on dark surface
+  // 7. Card chrome via bg-surface-100/200 base bg. Use bg-white instead.
+  //    The negative-lookbehind for `:` and `-` skips modifier prefixes
+  //    (`hover:bg-surface-200`, `border-surface-200`) so the rule fires
+  //    only on the base background token.
   {
     selector:
-      'JSXAttribute[name.name="className"] Literal[value=/\\bbg-surface-(100|200)\\b.*\\brounded(-md|-lg|-xl)\\b.*\\bborder\\b/]',
+      'JSXAttribute[name.name="className"] Literal[value=/(?<![:\\-])\\bbg-surface-(100|200)\\b.*\\brounded(-md|-lg|-xl)\\b.*\\bborder\\b/]',
     message:
-      'Card chrome on dark surface. Use <Card> or `bg-white border border-surface-200 rounded-lg`.',
+      'Card chrome via `bg-surface-100/200` is a design-system anti-pattern. Use <Card> or `bg-white border border-surface-200 rounded-lg`.',
   },
   // 8. Raw <input> for text-style inputs — use <Input> from @/components/ui
   {

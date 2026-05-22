@@ -77,7 +77,7 @@ function ScoreBar({
   return (
     <div className="flex items-center gap-3">
       <span className="text-sm text-surface-600 w-24">{label}</span>
-      <div className="flex-1 h-2 bg-surface-800 rounded-full overflow-hidden">
+      <div className="flex-1 h-2 bg-white rounded-full overflow-hidden">
         <div className={clsx('h-full transition-all', color)} style={{ width: `${percentage}%` }} />
       </div>
       <span className="text-sm font-medium text-surface-700 w-12 text-right">
@@ -174,10 +174,10 @@ export function VendorRiskAssessmentPanel({
 
   if (loading) {
     return (
-      <div className="bg-surface-900 border border-surface-800 rounded-lg p-6">
+      <div className="bg-white border border-surface-200 rounded-lg p-6">
         <div className="flex items-center gap-3 mb-4">
           <ShieldExclamationIcon className="w-5 h-5 text-brand-400" />
-          <h3 className="text-lg font-medium text-surface-100">Risk Assessment</h3>
+          <h3 className="text-lg font-medium text-surface-900">Risk Assessment</h3>
         </div>
         <div className="flex items-center justify-center py-8">
           <ArrowPathIcon className="w-6 h-6 text-surface-600 animate-spin" />
@@ -189,10 +189,10 @@ export function VendorRiskAssessmentPanel({
 
   if (error) {
     return (
-      <div className="bg-surface-900 border border-surface-800 rounded-lg p-6">
+      <div className="bg-white border border-surface-200 rounded-lg p-6">
         <div className="flex items-center gap-3 mb-4">
           <ShieldExclamationIcon className="w-5 h-5 text-brand-400" />
-          <h3 className="text-lg font-medium text-surface-100">Risk Assessment</h3>
+          <h3 className="text-lg font-medium text-surface-900">Risk Assessment</h3>
         </div>
         <div className="text-center py-6">
           <ExclamationTriangleIcon className="w-10 h-10 mx-auto mb-2 text-red-600" />
@@ -207,11 +207,11 @@ export function VendorRiskAssessmentPanel({
 
   if (!latestAssessment) {
     return (
-      <div className="bg-surface-900 border border-surface-800 rounded-lg p-6">
+      <div className="bg-white border border-surface-200 rounded-lg p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <ShieldExclamationIcon className="w-5 h-5 text-brand-400" />
-            <h3 className="text-lg font-medium text-surface-100">Risk Assessment</h3>
+            <h3 className="text-lg font-medium text-surface-900">Risk Assessment</h3>
           </div>
         </div>
         <div className="text-center py-8">
@@ -232,12 +232,12 @@ export function VendorRiskAssessmentPanel({
   }
 
   return (
-    <div className="bg-surface-900 border border-surface-800 rounded-lg p-6">
+    <div className="bg-white border border-surface-200 rounded-lg p-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <ShieldExclamationIcon className="w-5 h-5 text-brand-400" />
-          <h3 className="text-lg font-medium text-surface-100">Risk Assessment</h3>
+          <h3 className="text-lg font-medium text-surface-900">Risk Assessment</h3>
         </div>
         <Button variant="outline" size="sm" onClick={onStartAssessment}>
           New Assessment
@@ -260,12 +260,12 @@ export function VendorRiskAssessmentPanel({
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <span className="text-3xl font-bold text-surface-100">
+              <span className="text-3xl font-bold text-surface-900">
                 {latestAssessment.totalScore}
               </span>
               <RiskBadge level={latestAssessment.riskLevel} />
             </div>
-            <h4 className="font-medium text-surface-200 mb-1">{latestAssessment.title}</h4>
+            <h4 className="font-medium text-surface-800 mb-1">{latestAssessment.title}</h4>
             {latestAssessment.description && (
               <p className="text-sm text-surface-600 mb-2">{latestAssessment.description}</p>
             )}
@@ -319,11 +319,11 @@ export function VendorRiskAssessmentPanel({
       </div>
 
       {/* Recommended Action */}
-      <div className="p-3 bg-surface-800/50 rounded-lg mb-6">
+      <div className="p-3 bg-white/50 rounded-lg mb-6">
         <div className="flex items-start gap-2">
           <CheckCircleIcon className="w-5 h-5 text-brand-400 mt-0.5 flex-shrink-0" />
           <div>
-            <h5 className="text-sm font-medium text-surface-200">Recommended Action</h5>
+            <h5 className="text-sm font-medium text-surface-800">Recommended Action</h5>
             <p className="text-sm text-surface-600">{latestAssessment.recommendedAction}</p>
           </div>
         </div>
@@ -331,9 +331,9 @@ export function VendorRiskAssessmentPanel({
 
       {/* Details Grid */}
       <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="p-3 bg-surface-800/30 rounded-lg">
+        <div className="p-3 bg-white/30 rounded-lg">
           <h5 className="text-xs text-surface-500 uppercase tracking-wide mb-1">Likelihood</h5>
-          <p className="text-lg font-semibold text-surface-200">
+          <p className="text-lg font-semibold text-surface-800">
             {latestAssessment.likelihood.level}
           </p>
           <p className="text-xs text-surface-600">
@@ -342,16 +342,16 @@ export function VendorRiskAssessmentPanel({
             {latestAssessment.likelihood.controlStrength}
           </p>
         </div>
-        <div className="p-3 bg-surface-800/30 rounded-lg">
+        <div className="p-3 bg-white/30 rounded-lg">
           <h5 className="text-xs text-surface-500 uppercase tracking-wide mb-1">Impact</h5>
-          <p className="text-lg font-semibold text-surface-200">{latestAssessment.impact.level}</p>
+          <p className="text-lg font-semibold text-surface-800">{latestAssessment.impact.level}</p>
           <p className="text-xs text-surface-600">Total: {latestAssessment.impact.total} points</p>
         </div>
       </div>
 
       {/* Assessment History */}
       {history.length > 1 && (
-        <div className="border-t border-surface-800 pt-4">
+        <div className="border-t border-surface-200 pt-4">
           <button
             onClick={() => setShowHistory(!showHistory)}
             className="flex items-center justify-between w-full text-left"
@@ -371,7 +371,7 @@ export function VendorRiskAssessmentPanel({
               {history.slice(1).map((assessment) => (
                 <div
                   key={assessment.id}
-                  className="flex items-center justify-between p-3 bg-surface-800/30 rounded-lg"
+                  className="flex items-center justify-between p-3 bg-white/30 rounded-lg"
                 >
                   <div>
                     <p className="text-sm font-medium text-surface-700">{assessment.title}</p>

@@ -37,7 +37,7 @@ const statusColors: Record<string, string> = {
   in_review: 'bg-yellow-500/20 text-yellow-600',
   approved: 'bg-blue-500/20 text-blue-600',
   published: 'bg-green-500/20 text-green-600',
-  archived: 'bg-surface-700 text-surface-600',
+  archived: 'bg-surface-200 text-surface-600',
   expired: 'bg-red-500/20 text-red-600',
 };
 
@@ -89,7 +89,7 @@ export default function BCDRPlans() {
       <div className="p-6">
         <div className="card p-8 text-center">
           <ExclamationCircleIcon className="w-12 h-12 mx-auto mb-4 text-red-600" />
-          <h2 className="text-lg font-semibold text-surface-100 mb-2">
+          <h2 className="text-lg font-semibold text-surface-900 mb-2">
             Failed to load BC/DR Plans
           </h2>
           <p className="text-surface-600 mb-4">
@@ -108,7 +108,7 @@ export default function BCDRPlans() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-surface-100">BC/DR Plans</h1>
+          <h1 className="text-2xl font-bold text-surface-900">BC/DR Plans</h1>
           <p className="text-surface-600 mt-1">
             Manage business continuity and disaster recovery plans
           </p>
@@ -171,9 +171,9 @@ export default function BCDRPlans() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3].map((i) => (
             <div key={i} className="card p-6 animate-pulse">
-              <div className="h-6 bg-surface-700 rounded w-3/4 mb-4"></div>
-              <div className="h-4 bg-surface-700 rounded w-1/2 mb-2"></div>
-              <div className="h-4 bg-surface-700 rounded w-2/3"></div>
+              <div className="h-6 bg-surface-200 rounded w-3/4 mb-4"></div>
+              <div className="h-4 bg-surface-200 rounded w-1/2 mb-2"></div>
+              <div className="h-4 bg-surface-200 rounded w-2/3"></div>
             </div>
           ))}
         </div>
@@ -211,7 +211,7 @@ export default function BCDRPlans() {
                 <span className="text-surface-600 text-xs">v{plan.version}</span>
               </div>
 
-              <h3 className="text-lg font-semibold text-surface-100 mb-1">{plan.title}</h3>
+              <h3 className="text-lg font-semibold text-surface-900 mb-1">{plan.title}</h3>
               <p className="text-surface-600 text-sm mb-3">{plan.plan_id}</p>
 
               <div className="space-y-2 text-sm">

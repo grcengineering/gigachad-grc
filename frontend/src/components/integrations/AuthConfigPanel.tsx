@@ -88,7 +88,7 @@ export default function AuthConfigPanel({ config, onChange }: AuthConfigPanelPro
               className={`p-3 text-left rounded-lg border transition-colors ${
                 config.type === authType.value
                   ? 'bg-brand-500/10 border-brand-500/30 text-brand-400'
-                  : 'bg-surface-800 border-surface-700 hover:border-surface-600 text-surface-700'
+                  : 'bg-white border-surface-200 hover:border-surface-300 text-surface-700'
               }`}
             >
               <div className="font-medium text-sm">{authType.label}</div>
@@ -99,7 +99,7 @@ export default function AuthConfigPanel({ config, onChange }: AuthConfigPanelPro
       </div>
       {/* API Key Configuration */}
       {config.type === 'api_key' && (
-        <div className="space-y-4 p-4 bg-surface-800/50 rounded-lg border border-surface-700">
+        <div className="space-y-4 p-4 bg-white/50 rounded-lg border border-surface-200">
           <div>
             <label className="text-sm text-surface-600 block mb-1.5">API Key</label>
             <Input
@@ -144,7 +144,7 @@ export default function AuthConfigPanel({ config, onChange }: AuthConfigPanelPro
       )}
       {/* Bearer Token Configuration */}
       {config.type === 'bearer' && (
-        <div className="space-y-4 p-4 bg-surface-800/50 rounded-lg border border-surface-700">
+        <div className="space-y-4 p-4 bg-white/50 rounded-lg border border-surface-200">
           <div>
             <label className="text-sm text-surface-600 block mb-1.5">Bearer Token</label>
             <Input
@@ -173,7 +173,7 @@ export default function AuthConfigPanel({ config, onChange }: AuthConfigPanelPro
       )}
       {/* Basic Auth Configuration */}
       {config.type === 'basic' && (
-        <div className="space-y-4 p-4 bg-surface-800/50 rounded-lg border border-surface-700">
+        <div className="space-y-4 p-4 bg-white/50 rounded-lg border border-surface-200">
           <div>
             <label className="text-sm text-surface-600 block mb-1.5">Username</label>
             <Input
@@ -202,7 +202,7 @@ export default function AuthConfigPanel({ config, onChange }: AuthConfigPanelPro
       )}
       {/* OAuth 2.0 Configuration */}
       {config.type === 'oauth2' && (
-        <div className="space-y-4 p-4 bg-surface-800/50 rounded-lg border border-surface-700">
+        <div className="space-y-4 p-4 bg-white/50 rounded-lg border border-surface-200">
           <div>
             <label className="text-sm text-surface-600 block mb-2">Grant Type</label>
             <div className="grid grid-cols-2 gap-2">
@@ -213,10 +213,10 @@ export default function AuthConfigPanel({ config, onChange }: AuthConfigPanelPro
                   className={`p-3 text-left rounded-lg border transition-colors ${
                     config.oauth2Config?.grantType === grant.value
                       ? 'bg-brand-500/10 border-brand-500/30'
-                      : 'bg-surface-900 border-surface-700 hover:border-surface-600'
+                      : 'bg-white border-surface-200 hover:border-surface-300'
                   }`}
                 >
-                  <div className="font-medium text-sm text-surface-200">{grant.label}</div>
+                  <div className="font-medium text-sm text-surface-800">{grant.label}</div>
                   <div className="text-xs text-surface-500">{grant.description}</div>
                 </button>
               ))}
@@ -269,7 +269,7 @@ export default function AuthConfigPanel({ config, onChange }: AuthConfigPanelPro
       )}
       {/* Custom Authentication */}
       {config.type === 'custom' && (
-        <div className="space-y-4 p-4 bg-surface-800/50 rounded-lg border border-surface-700">
+        <div className="space-y-4 p-4 bg-white/50 rounded-lg border border-surface-200">
           <div>
             <label className="text-sm text-surface-600 block mb-1.5">Header Name</label>
             <Input

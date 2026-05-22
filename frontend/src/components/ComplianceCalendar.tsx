@@ -409,14 +409,14 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
     <div className={clsx('space-y-6', className)}>
       {/* View Mode Toggle and Actions */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 bg-surface-800 rounded-lg p-1">
+        <div className="flex items-center gap-2 bg-white rounded-lg p-1">
           <button
             onClick={() => setViewMode('month')}
             className={clsx(
               'px-3 py-1.5 rounded text-sm flex items-center gap-1',
               viewMode === 'month'
                 ? 'bg-brand-500 text-white'
-                : 'text-surface-600 hover:text-surface-200'
+                : 'text-surface-600 hover:text-surface-800'
             )}
           >
             <CalendarIcon className="w-4 h-4" />
@@ -428,7 +428,7 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
               'px-3 py-1.5 rounded text-sm flex items-center gap-1',
               viewMode === 'week'
                 ? 'bg-brand-500 text-white'
-                : 'text-surface-600 hover:text-surface-200'
+                : 'text-surface-600 hover:text-surface-800'
             )}
           >
             <CalendarIcon className="w-4 h-4" />
@@ -440,7 +440,7 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
               'px-3 py-1.5 rounded text-sm flex items-center gap-1',
               viewMode === 'list'
                 ? 'bg-brand-500 text-white'
-                : 'text-surface-600 hover:text-surface-200'
+                : 'text-surface-600 hover:text-surface-800'
             )}
           >
             <Bars3Icon className="w-4 h-4" />
@@ -450,7 +450,7 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
         <div className="flex items-center gap-2">
           <button
             onClick={handleExportIcal}
-            className="px-3 py-1.5 text-sm text-surface-600 hover:text-surface-200 flex items-center gap-1"
+            className="px-3 py-1.5 text-sm text-surface-600 hover:text-surface-800 flex items-center gap-1"
           >
             <ArrowDownTrayIcon className="w-4 h-4" />
             Export iCal
@@ -469,7 +469,7 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Calendar Grid */}
-        <div className="lg:col-span-2 bg-surface-800 rounded-xl border border-surface-700 p-6">
+        <div className="lg:col-span-2 bg-white rounded-xl border border-surface-200 p-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
@@ -478,7 +478,7 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
               </h2>
               <button
                 onClick={goToToday}
-                className="px-3 py-1 text-sm bg-surface-700 hover:bg-surface-600 rounded-lg text-surface-700"
+                className="px-3 py-1 text-sm bg-surface-200 hover:bg-surface-600 rounded-lg text-surface-700"
               >
                 Today
               </button>
@@ -486,13 +486,13 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
             <div className="flex items-center gap-2">
               <button
                 onClick={prevMonth}
-                className="p-2 hover:bg-surface-700 rounded-lg text-surface-600"
+                className="p-2 hover:bg-surface-200 rounded-lg text-surface-600"
               >
                 <ChevronLeftIcon className="w-5 h-5" />
               </button>
               <button
                 onClick={nextMonth}
-                className="p-2 hover:bg-surface-700 rounded-lg text-surface-600"
+                className="p-2 hover:bg-surface-200 rounded-lg text-surface-600"
               >
                 <ChevronRightIcon className="w-5 h-5" />
               </button>
@@ -530,8 +530,8 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
                   onClick={() => setSelectedDate(date)}
                   className={clsx(
                     'aspect-square p-1 rounded-lg transition-all relative',
-                    isSelected ? 'bg-brand-500/20 ring-2 ring-brand-500' : 'hover:bg-surface-700',
-                    isTodayDate && 'bg-surface-700',
+                    isSelected ? 'bg-brand-500/20 ring-2 ring-brand-500' : 'hover:bg-surface-200',
+                    isTodayDate && 'bg-surface-200',
                     isPast && 'opacity-50'
                   )}
                 >
@@ -570,7 +570,7 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
 
           {/* Filter toggles */}
           {showFilters && (
-            <div className="mt-6 pt-4 border-t border-surface-700">
+            <div className="mt-6 pt-4 border-t border-surface-200">
               <div className="flex flex-wrap gap-2">
                 {Object.entries(EVENT_CONFIG).map(([type, config]) => {
                   const Icon = config.icon;
@@ -583,7 +583,7 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
                         'flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-all',
                         isActive
                           ? `${config.color}/20 ${config.textColor}`
-                          : 'bg-surface-700/50 text-surface-500'
+                          : 'bg-surface-200/50 text-surface-500'
                       )}
                     >
                       <Icon className="w-4 h-4" />
@@ -600,7 +600,7 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
         <div className="space-y-6">
           {/* Selected Date Events */}
           {selectedDate && (
-            <div className="bg-surface-800 rounded-xl border border-surface-700 p-4">
+            <div className="bg-white rounded-xl border border-surface-200 p-4">
               <h3 className="font-medium text-white mb-3">{formatDate(selectedDate)}</h3>
               {selectedDateEvents.length === 0 ? (
                 <p className="text-sm text-surface-500">No events scheduled</p>
@@ -613,14 +613,14 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
                       <button
                         key={event.id}
                         onClick={() => handleEventClick(event)}
-                        className="w-full text-left p-2 rounded-lg bg-surface-700/50 hover:bg-surface-700 transition-colors"
+                        className="w-full text-left p-2 rounded-lg bg-surface-200/50 hover:bg-surface-200 transition-colors"
                       >
                         <div className="flex items-start gap-2">
                           <div className={clsx('p-1 rounded', `${config.color}/20`)}>
                             <Icon className={clsx('w-4 h-4', config.textColor)} />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-surface-100 truncate">
+                            <p className="text-sm font-medium text-surface-900 truncate">
                               {event.title}
                             </p>
                             <p className="text-xs text-surface-500">{config.label}</p>
@@ -635,7 +635,7 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
           )}
 
           {/* Upcoming Events */}
-          <div className="bg-surface-800 rounded-xl border border-surface-700 p-4">
+          <div className="bg-white rounded-xl border border-surface-200 p-4">
             <h3 className="font-medium text-white mb-3">Upcoming (30 days)</h3>
             {upcomingEvents.length === 0 ? (
               <p className="text-sm text-surface-500">No upcoming events</p>
@@ -651,14 +651,14 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
                     <button
                       key={event.id}
                       onClick={() => handleEventClick(event)}
-                      className="w-full text-left p-2 rounded-lg bg-surface-700/50 hover:bg-surface-700 transition-colors"
+                      className="w-full text-left p-2 rounded-lg bg-surface-200/50 hover:bg-surface-200 transition-colors"
                     >
                       <div className="flex items-start gap-2">
                         <div className={clsx('p-1 rounded', `${config.color}/20`)}>
                           <Icon className={clsx('w-4 h-4', config.textColor)} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-surface-100 truncate">
+                          <p className="text-sm font-medium text-surface-900 truncate">
                             {event.title}
                           </p>
                           <p className="text-xs text-surface-500">
@@ -684,7 +684,7 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
           <h3 className="text-lg font-semibold text-white">Create Event</h3>
           <button
             onClick={() => setShowCreateModal(false)}
-            className="text-surface-600 hover:text-surface-200"
+            className="text-surface-600 hover:text-surface-800"
           >
             <XMarkIcon className="w-5 h-5" />
           </button>
@@ -696,7 +696,7 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
               type="text"
               value={newEventTitle}
               onChange={(e) => setNewEventTitle(e.target.value)}
-              className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-white placeholder-surface-500 focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-white placeholder-surface-500 focus:ring-2 focus:ring-brand-500 focus:border-transparent"
               placeholder="Event title"
               required
             />
@@ -706,7 +706,7 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
             <Textarea
               value={newEventDescription}
               onChange={(e) => setNewEventDescription(e.target.value)}
-              className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-white placeholder-surface-500 focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-white placeholder-surface-500 focus:ring-2 focus:ring-brand-500 focus:border-transparent"
               placeholder="Optional description"
               rows={2}
             />
@@ -717,7 +717,7 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
               type="date"
               value={newEventDate}
               onChange={(e) => setNewEventDate(e.target.value)}
-              className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent"
               required
             />
           </div>
@@ -726,7 +726,7 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
             <SelectNative
               value={newEventPriority}
               onChange={(e) => setNewEventPriority(e.target.value)}
-              className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent"
             >
               <option value="low">Low</option>
               <option value="medium">Medium</option>
@@ -738,7 +738,7 @@ export function ComplianceCalendar({ className, showFilters = true }: Compliance
             <button
               type="button"
               onClick={() => setShowCreateModal(false)}
-              className="px-4 py-2 text-surface-600 hover:text-surface-200"
+              className="px-4 py-2 text-surface-600 hover:text-surface-800"
             >
               Cancel
             </button>

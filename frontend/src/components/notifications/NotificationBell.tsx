@@ -123,7 +123,7 @@ export default function NotificationBell() {
       {/* Bell Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 rounded-lg text-surface-600 hover:text-surface-100 hover:bg-surface-800 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-colors"
+        className="relative p-2 rounded-lg text-surface-600 hover:text-surface-900 hover:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 transition-colors"
         aria-label="Notifications"
       >
         {unreadCount > 0 ? (
@@ -142,10 +142,10 @@ export default function NotificationBell() {
 
       {/* Dropdown Panel */}
       {isOpen && (
-        <div className="absolute left-0 mt-2 w-80 bg-surface-900 rounded-xl shadow-2xl border border-surface-700 z-[100] overflow-hidden">
+        <div className="absolute left-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-surface-200 z-[100] overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 bg-surface-800 border-b border-surface-700">
-            <h3 className="text-sm font-semibold text-surface-100">Notifications</h3>
+          <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-surface-200">
+            <h3 className="text-sm font-semibold text-surface-900">Notifications</h3>
             <div className="flex items-center space-x-2">
               {unreadCount > 0 && (
                 <button
@@ -160,7 +160,7 @@ export default function NotificationBell() {
               <Link
                 to="/settings/notifications"
                 onClick={() => setIsOpen(false)}
-                className="p-1 text-surface-600 hover:text-surface-100 rounded"
+                className="p-1 text-surface-600 hover:text-surface-900 rounded"
                 title="Notification settings"
               >
                 <Cog6ToothIcon className="h-4 w-4" />
@@ -181,7 +181,7 @@ export default function NotificationBell() {
                 <p className="text-sm">No notifications yet</p>
               </div>
             ) : (
-              <ul className="divide-y divide-surface-700">
+              <ul className="divide-y divide-surface-200">
                 {notifications.map((notification) => {
                   const link = getEntityLink(
                     notification.entityType,
@@ -191,7 +191,7 @@ export default function NotificationBell() {
 
                   const NotificationContent = (
                     <div
-                      className={`p-3 hover:bg-surface-800 transition-colors cursor-pointer ${!notification.isRead ? 'bg-surface-800/50' : ''}`}
+                      className={`p-3 hover:bg-white transition-colors cursor-pointer ${!notification.isRead ? 'bg-white/50' : ''}`}
                     >
                       <div className="flex items-start space-x-2">
                         {/* Severity Icon */}
@@ -203,7 +203,7 @@ export default function NotificationBell() {
                           {/* Title with unread indicator */}
                           <div className="flex items-center justify-between">
                             <p
-                              className={`text-xs font-medium truncate ${notification.isRead ? 'text-surface-700' : 'text-surface-100'}`}
+                              className={`text-xs font-medium truncate ${notification.isRead ? 'text-surface-700' : 'text-surface-900'}`}
                             >
                               {notification.title}
                             </p>
@@ -276,7 +276,7 @@ export default function NotificationBell() {
 
           {/* Footer */}
           {notifications.length > 0 && (
-            <div className="px-3 py-2 bg-surface-800 border-t border-surface-700 text-center">
+            <div className="px-3 py-2 bg-white border-t border-surface-200 text-center">
               <Link
                 to="/settings/notifications"
                 onClick={() => setIsOpen(false)}

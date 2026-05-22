@@ -125,7 +125,7 @@ export default function Evidence() {
             <div className="flex items-center gap-3">
               <LinkIcon className="w-5 h-5 text-brand-400" />
               <div>
-                <p className="text-sm font-medium text-surface-100">Linking evidence to control</p>
+                <p className="text-sm font-medium text-surface-900">Linking evidence to control</p>
                 <p className="text-xs text-surface-600">
                   <span className="font-mono text-brand-400">{linkControl.controlId}</span>
                   {' - '}
@@ -143,7 +143,7 @@ export default function Evidence() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-surface-100">Evidence Library</h1>
+          <h1 className="text-2xl font-bold text-surface-900">Evidence Library</h1>
           <p className="text-surface-600 mt-1">
             {linkToControlId
               ? 'Select evidence to link to the control, or upload new evidence'
@@ -215,15 +215,15 @@ export default function Evidence() {
                 to={`/evidence/${item.id}`}
                 className={clsx(
                   'card p-4 transition-colors block',
-                  isLinked ? 'border-green-500/50 bg-green-500/5' : 'hover:border-surface-700'
+                  isLinked ? 'border-green-500/50 bg-green-500/5' : 'hover:border-surface-200'
                 )}
               >
                 <div className="flex items-start gap-3">
-                  <div className="p-2 bg-surface-800 rounded-lg">
+                  <div className="p-2 bg-white rounded-lg">
                     <Icon className="w-6 h-6 text-surface-600" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-medium text-surface-100 truncate">{item.title}</h3>
+                    <h3 className="text-sm font-medium text-surface-900 truncate">{item.title}</h3>
                     <p className="text-xs text-surface-500 mt-1">{item.filename}</p>
                     <div className="flex items-center gap-2 mt-2">
                       <span className={clsx('text-xs', STATUS_STYLES[item.status])}>
@@ -238,7 +238,7 @@ export default function Evidence() {
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2 mt-4 pt-3 border-t border-surface-800">
+                <div className="flex items-center gap-2 mt-4 pt-3 border-t border-surface-200">
                   <span className="text-xs text-surface-500 flex-1">
                     {new Date(item.createdAt).toLocaleDateString()}
                   </span>
@@ -298,7 +298,7 @@ export default function Evidence() {
                         toast.error('Failed to download file');
                       }
                     }}
-                    className="p-1 text-surface-600 hover:text-surface-100"
+                    className="p-1 text-surface-600 hover:text-surface-900"
                     title="Download"
                   >
                     <ArrowDownTrayIcon className="w-4 h-4" />
@@ -327,7 +327,7 @@ function StatCard({
   color?: 'surface' | 'yellow' | 'orange' | 'red';
 }) {
   const colorClasses = {
-    surface: 'text-surface-100',
+    surface: 'text-surface-900',
     yellow: 'text-yellow-600',
     orange: 'text-orange-600',
     red: 'text-red-600',
@@ -419,10 +419,10 @@ function UploadModal({
       <div className="fixed inset-0 bg-black/60" onClick={onClose} />
       {/* Modal content - positioned on top */}
       <div className="relative min-h-screen flex items-center justify-center p-4">
-        <div className="relative bg-surface-900 border border-surface-800 rounded-xl w-full max-w-lg p-6 shadow-2xl">
+        <div className="relative bg-white border border-surface-200 rounded-xl w-full max-w-lg p-6 shadow-2xl">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold text-surface-100">Upload Evidence</h2>
-            <button onClick={onClose} className="text-surface-600 hover:text-surface-100">
+            <h2 className="text-lg font-semibold text-surface-900">Upload Evidence</h2>
+            <button onClick={onClose} className="text-surface-600 hover:text-surface-900">
               <XMarkIcon className="w-5 h-5" />
             </button>
           </div>
@@ -446,7 +446,7 @@ function UploadModal({
                   ? 'border-brand-500 bg-brand-500/10 scale-[1.02]'
                   : file
                     ? 'border-green-500 bg-green-500/10'
-                    : 'border-surface-700 hover:border-surface-600'
+                    : 'border-surface-200 hover:border-surface-300'
               )}
             >
               <input {...getInputProps()} />
@@ -461,7 +461,7 @@ function UploadModal({
                       setFile(null);
                       setTitle('');
                     }}
-                    className="ml-2 p-1 hover:bg-surface-700 rounded"
+                    className="ml-2 p-1 hover:bg-surface-200 rounded"
                   >
                     <XMarkIcon className="w-4 h-4 text-surface-600" />
                   </button>
