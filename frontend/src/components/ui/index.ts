@@ -60,3 +60,6 @@ export type { StatCardProps, StatCardTone } from './StatCard';
 
 export { DataTable } from './DataTable';
 export type { DataTableProps, DataTableColumn } from './DataTable';
+
+export { CommandMenu } from './CommandMenu';
+export type { CommandMenuProps, CommandMenuItem, CommandMenuGroup } from './CommandMenu';
