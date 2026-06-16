@@ -48,7 +48,7 @@ FROM node:22-alpine@sha256:e58326d0d441090181ac150dc2078d3e2cf6a0d42e809aebba3ef
 
 # Patch OS-level CVEs, install OpenSSL for Prisma, remove npm (not needed at runtime)
 USER root
-RUN apk upgrade --no-cache && apk add --no-cache openssl && \
+RUN apk upgrade --no-cache && apk add --no-cache "openssl>=3.5.7-r0" libcrypto3 libssl3 && \
     rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
 
 WORKDIR /app
