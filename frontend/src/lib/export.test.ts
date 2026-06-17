@@ -13,11 +13,18 @@ const mockWorkbook = {
   },
 };
 
+// `new ExcelJS.Workbook()` is constructed with `new`, so the mock must be a
+// constructor. A regular function returning the mock works (arrow functions
+// are not constructors and throw under vitest 4).
 vi.mock('exceljs', () => ({
   default: {
-    Workbook: vi.fn(() => mockWorkbook),
+    Workbook: vi.fn(function () {
+      return mockWorkbook;
+    }),
   },
-  Workbook: vi.fn(() => mockWorkbook),
+  Workbook: vi.fn(function () {
+    return mockWorkbook;
+  }),
 }));
 
 describe('Export Utilities', () => {
@@ -35,17 +42,21 @@ describe('Export Utilities', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Mock URL APIs
     global.URL.createObjectURL = vi.fn(() => 'blob:mock-url');
     global.URL.revokeObjectURL = vi.fn();
-    
+
     // Mock document.createElement
     const mockClick = vi.fn();
     const mockLink = { href: '', download: '', click: mockClick };
     vi.spyOn(document, 'createElement').mockReturnValue(mockLink as unknown as HTMLElement);
-    vi.spyOn(document.body, 'appendChild').mockImplementation(() => mockLink as unknown as HTMLElement);
-    vi.spyOn(document.body, 'removeChild').mockImplementation(() => mockLink as unknown as HTMLElement);
+    vi.spyOn(document.body, 'appendChild').mockImplementation(
+      () => mockLink as unknown as HTMLElement
+    );
+    vi.spyOn(document.body, 'removeChild').mockImplementation(
+      () => mockLink as unknown as HTMLElement
+    );
   });
 
   describe('exportData', () => {
@@ -91,9 +102,7 @@ describe('Export Utilities', () => {
     });
 
     it('handles nested object properties with dot notation', async () => {
-      const nestedData = [
-        { id: '1', details: { name: 'Nested Item', count: 5 } },
-      ];
+      const nestedData = [{ id: '1', details: { name: 'Nested Item', count: 5 } }];
       const nestedColumns = [
         { key: 'details.name', header: 'Detail Name' },
         { key: 'details.count', header: 'Count' },
@@ -112,8 +121,8 @@ describe('Export Utilities', () => {
 
     it('handles custom transform functions', async () => {
       const columnsWithTransform = [
-        { 
-          key: 'status', 
+        {
+          key: 'status',
           header: 'Status',
           transform: (v: unknown) => String(v).toUpperCase(),
         },
@@ -193,9 +202,9 @@ describe('Export Utilities', () => {
 
     it('control config has required columns', () => {
       const requiredKeys = ['controlId', 'title', 'description', 'status', 'category'];
-      const actualKeys = exportConfigs.controls.map(c => c.key);
-      
-      requiredKeys.forEach(key => {
+      const actualKeys = exportConfigs.controls.map((c) => c.key);
+
+      requiredKeys.forEach((key) => {
         expect(actualKeys).toContain(key);
       });
     });

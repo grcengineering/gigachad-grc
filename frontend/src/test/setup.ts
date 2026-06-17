@@ -93,25 +93,25 @@ const localStorageMock = {
 };
 Object.defineProperty(window, 'localStorage', { value: localStorageMock });
 
-// Mock IntersectionObserver
-const mockIntersectionObserver = vi.fn();
-mockIntersectionObserver.mockReturnValue({
-  observe: () => null,
-  unobserve: () => null,
-  disconnect: () => null,
+// Mock IntersectionObserver / ResizeObserver.
+// These are invoked with `new`, so the mock implementation must be a class
+// (vitest 4 rejects mockReturnValue / arrow-function implementations for
+// mocks constructed with `new` — arrow functions are not constructors).
+const mockIntersectionObserver = vi.fn(function () {
+  return {
+    observe: () => null,
+    unobserve: () => null,
+    disconnect: () => null,
+    takeRecords: () => [],
+  };
 });
-window.IntersectionObserver = mockIntersectionObserver;
+window.IntersectionObserver = mockIntersectionObserver as unknown as typeof IntersectionObserver;
 
-// Mock ResizeObserver
-const mockResizeObserver = vi.fn();
-mockResizeObserver.mockReturnValue({
-  observe: () => null,
-  unobserve: () => null,
-  disconnect: () => null,
+const mockResizeObserver = vi.fn(function () {
+  return {
+    observe: () => null,
+    unobserve: () => null,
+    disconnect: () => null,
+  };
 });
-window.ResizeObserver = mockResizeObserver;
-
-
-
-
-
+window.ResizeObserver = mockResizeObserver as unknown as typeof ResizeObserver;
