@@ -133,9 +133,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run npm audit (BLOCKING)
+      - name: Run npm audit (BLOCKING, production deps)
+        # Blocking gate scoped to production dependencies — what actually ships
+        # in the deployed containers. Dev-only build/test tooling is audited
+        # below as advisory (non-blocking).
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Run npm audit on dev dependencies (advisory)
+        continue-on-error: true
         run: npm audit --audit-level=high
-        # Security check is now blocking - no continue-on-error
 
       - name: Verify npm package signatures (BLOCKING)
         # Checks sigstore attestations for installed packages. Catches
@@ -154,6 +160,7 @@ jobs:
           exit-code: '1' # BLOCKING: Fail on HIGH/CRITICAL vulnerabilities
           format: 'table'
           ignore-unfixed: true # Only fail on vulnerabilities with available fixes
+          cache: false # Fresh DB each run; a stale cached DB causes false positives
 
   # Docker build check
   docker:
