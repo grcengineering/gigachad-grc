@@ -179,7 +179,7 @@ export function CommandMenu<T>({
                     <Search className="mx-auto h-8 w-8 text-surface-500 dark:text-surface-400" />
                     <p className="mt-4 text-sm text-surface-700 dark:text-surface-200">
                       {emptyTitle}
-                      {query && <> for &ldquo;{query}&rdquo;</>}
+                      <> for &ldquo;{query}&rdquo;</>
                     </p>
                     {emptyDescription && (
                       <p className="mt-2 text-xs text-surface-500 dark:text-surface-400">
