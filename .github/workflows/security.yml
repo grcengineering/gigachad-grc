@@ -194,8 +194,11 @@ jobs:
           push: false
           load: true
           tags: grc-${{ matrix.service }}:scan
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # No build cache for the security scan: a cached builder layer can
+          # carry stale node_modules / base packages, so the scanned image
+          # would not reflect current lockfile and Dockerfile fixes. Build
+          # fresh so Trivy scans what actually ships.
+          no-cache: true
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # master
