@@ -36,7 +36,6 @@ CVE-2026-23745  # high - system package, not application source
 CVE-2026-23950  # high - system package, not application source
 CVE-2026-24001  # low  - system package, not application source
 CVE-2026-24842  # high - system package, not application source
-CVE-2026-45447  # high - openssl (libcrypto3/libssl3) in node:22-alpine base; clears when base image bumps to alpine openssl 3.5.7-r0
 
 # ---------------------------------------------------------------------------
 # Container-rebuild pending. Dockerfiles already include the upgrade;
