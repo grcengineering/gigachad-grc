@@ -160,6 +160,7 @@ jobs:
           exit-code: '1' # BLOCKING: Fail on HIGH/CRITICAL vulnerabilities
           format: 'table'
           ignore-unfixed: true # Only fail on vulnerabilities with available fixes
+          cache: false # Fresh DB each run; a stale cached DB causes false positives
 
   # Docker build check
   docker:

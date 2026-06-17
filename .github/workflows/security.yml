@@ -208,18 +208,16 @@ jobs:
           severity: 'CRITICAL,HIGH'
           exit-code: '1' # BLOCKING: Fail on critical/high vulnerabilities
           ignore-unfixed: true
+          # cache: false forces a fresh vulnerability DB download each run.
+          # A stale cached DB was producing false positives — flagging CVEs
+          # that no longer exist in the current DB (verified: a fresh-DB scan
+          # of the same image reports 0 findings).
+          cache: false
           # .trivyignore at the repo root mirrors the GitHub code-scanning
           # dismissals that Trivy itself does not honor. Each entry there
           # documents the rationale for the dismissal.
           trivyignores: '.trivyignore'
         continue-on-error: false
-
-      - name: DEBUG print Trivy findings (table, non-blocking)
-        if: always()
-        run: |
-          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.70.0 \
-            image --severity CRITICAL,HIGH --ignore-unfixed --scanners vuln --format table \
-            grc-${{ matrix.service }}:scan || true
 
       - name: Upload Trivy scan results
         if: always()
