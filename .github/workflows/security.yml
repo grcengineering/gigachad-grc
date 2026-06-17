@@ -194,8 +194,9 @@ jobs:
           push: false
           load: true
           tags: grc-${{ matrix.service }}:scan
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # Build fresh so Trivy scans the image that actually ships, not a
+          # stale cached layer with already-fixed CVEs.
+          no-cache: true
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # master
@@ -212,6 +213,13 @@ jobs:
           # documents the rationale for the dismissal.
           trivyignores: '.trivyignore'
         continue-on-error: false
+
+      - name: DEBUG print Trivy findings (table, non-blocking)
+        if: always()
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.70.0 \
+            image --severity CRITICAL,HIGH --ignore-unfixed --scanners vuln --format table \
+            grc-${{ matrix.service }}:scan || true
 
       - name: Upload Trivy scan results
         if: always()
