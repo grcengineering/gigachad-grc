@@ -707,7 +707,9 @@ export interface Policy {
 export interface UploadPolicyData {
   title: string;
   description?: string;
-  type?: PolicyType;
+  // Backend CreatePolicy/UploadPolicy DTO whitelists `category` (PolicyCategory
+  // enum), not `type`. Sending `type` is rejected by forbidNonWhitelisted.
+  category?: string;
   version?: string;
   ownerId?: string;
   effectiveDate?: string;

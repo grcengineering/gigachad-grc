@@ -223,7 +223,7 @@ function UploadPolicyModal({ onClose, onSuccess }: { onClose: () => void; onSucc
       return policiesApi.upload(file, {
         title,
         description,
-        type: category as any,
+        category,
         version,
       });
     },
