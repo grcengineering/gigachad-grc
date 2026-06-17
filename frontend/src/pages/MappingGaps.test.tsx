@@ -33,15 +33,20 @@ vi.mock('@/lib/export', () => ({
 
 // Mock dynamic imports for PDF export.
 const jsPdfSave = vi.fn();
-const jsPdfCtor = vi.fn().mockImplementation(() => ({
-  setFillColor: vi.fn(),
-  rect: vi.fn(),
-  setFontSize: vi.fn(),
-  setTextColor: vi.fn(),
-  text: vi.fn(),
-  addImage: vi.fn(),
-  save: jsPdfSave,
-}));
+// `new jsPDF()` is constructed with `new`; the mock implementation must be a
+// constructor (a regular function returning the instance), not an arrow
+// function (vitest 4 rejects arrow functions used with `new`).
+const jsPdfCtor = vi.fn(function () {
+  return {
+    setFillColor: vi.fn(),
+    rect: vi.fn(),
+    setFontSize: vi.fn(),
+    setTextColor: vi.fn(),
+    text: vi.fn(),
+    addImage: vi.fn(),
+    save: jsPdfSave,
+  };
+});
 const html2canvasFn = vi.fn().mockResolvedValue({
   width: 800,
   height: 600,
