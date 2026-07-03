@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "seed": "ts-node seed-database.ts",
-    "generate": "prisma generate --schema=../services/shared/prisma/schema.prisma"
+    "generate": "cp ../services/shared/prisma/schema.prisma ./.prisma.schema.prisma && PRISMA_GENERATE_SKIP_AUTOINSTALL=1 ./node_modules/.bin/prisma generate --schema=./.prisma.schema.prisma && rm ./.prisma.schema.prisma"
   },
   "dependencies": {
     "@prisma/client": "^5.7.0"

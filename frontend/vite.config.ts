@@ -1,11 +1,90 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import { createStubMiddleware } from './dev-stubs/_helpers';
+import { bcdrHandlers } from './dev-stubs/bcdr';
+import {
+  meHandlers,
+  workspacesHandlers,
+  dashboardsHandlers,
+  mcpHandlers,
+  tprmConfigHandlers,
+  trustConfigHandlers,
+  configAsCodeHandlers,
+  trustCenterHandlers,
+} from './dev-stubs/settings';
+import {
+  peopleHandlers,
+  trainingHandlers,
+  employeeComplianceHandlers,
+} from './dev-stubs/people';
+import { auditDeepHandlers, auditorPortalHandlers } from './dev-stubs/audit-deep';
+import {
+  aiHandlers,
+  answerTemplatesHandlers,
+  reportsHandlers,
+  calendarHandlers,
+  helpHandlers,
+  frameworkLibraryHandlers,
+} from './dev-stubs/one-offs';
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    {
+      name: 'grc-dev-stubs',
+      configureServer(server) {
+        // Dev-only stubs for endpoints whose real backend services aren't built yet.
+        // Each prefix is checked first; falls through to Vite's proxy for non-matches.
+        server.middlewares.use(createStubMiddleware('/api/bcdr', bcdrHandlers));
+        server.middlewares.use(createStubMiddleware('/api/me', meHandlers));
+        server.middlewares.use(createStubMiddleware('/api/workspaces', workspacesHandlers));
+        server.middlewares.use(createStubMiddleware('/api/dashboards', dashboardsHandlers));
+        server.middlewares.use(createStubMiddleware('/api/mcp', mcpHandlers));
+        server.middlewares.use(createStubMiddleware('/api/config/tprm', tprmConfigHandlers));
+        server.middlewares.use(createStubMiddleware('/api/trust-config', trustConfigHandlers));
+        server.middlewares.use(createStubMiddleware('/api/config-as-code', configAsCodeHandlers));
+        server.middlewares.use(createStubMiddleware('/api/trust-center', trustCenterHandlers));
+        server.middlewares.use(createStubMiddleware('/api/people', peopleHandlers));
+        server.middlewares.use(createStubMiddleware('/api/training', trainingHandlers));
+        server.middlewares.use(createStubMiddleware('/api/employee-compliance', employeeComplianceHandlers));
+        // Audit deep: only stubs the paths the real audit service does NOT serve
+        // (analytics/calendar/templates/workpapers/test-procedures). The middleware
+        // returns 404 for unmatched paths under its prefix, but the real audit
+        // service is reached via the Vite proxy further down — so we need to
+        // route ONLY the unmatched-here paths through the proxy. To avoid
+        // shadowing the real /api/audits endpoints, audit-deep is mounted as
+        // separate prefixes that don't collide.
+        server.middlewares.use(createStubMiddleware('/api/audits/analytics', [
+          { method: 'GET', path: '/', body: auditDeepHandlers[0].body },
+        ]));
+        server.middlewares.use(createStubMiddleware('/api/audits/calendar', [
+          { method: 'GET', path: '/', body: auditDeepHandlers[1].body },
+        ]));
+        server.middlewares.use(createStubMiddleware('/api/audits/templates', [
+          { method: 'GET', path: '/', body: auditDeepHandlers[2].body },
+        ]));
+        server.middlewares.use(createStubMiddleware('/api/audits/workpapers', [
+          { method: 'GET', path: '/', body: auditDeepHandlers[3].body },
+        ]));
+        server.middlewares.use(createStubMiddleware('/api/audits/test-procedures', [
+          { method: 'GET', path: '/', body: auditDeepHandlers[4].body },
+        ]));
+        server.middlewares.use(createStubMiddleware('/api/auditor', auditorPortalHandlers));
+        // One-offs
+        server.middlewares.use(createStubMiddleware('/api/ai', aiHandlers));
+        server.middlewares.use(createStubMiddleware('/api/answer-templates', answerTemplatesHandlers));
+        server.middlewares.use(createStubMiddleware('/api/reports', reportsHandlers));
+        server.middlewares.use(createStubMiddleware('/api/calendar', calendarHandlers));
+        server.middlewares.use(createStubMiddleware('/api/help', helpHandlers));
+        server.middlewares.use(createStubMiddleware('/api/framework-library', frameworkLibraryHandlers));
+      },
+    },
+  ],
   resolve: {
     alias: {
+      '@heroicons/react/24/outline': path.resolve(__dirname, './src/lib/heroicons-outline.ts'),
+      '@heroicons/react/24/solid': path.resolve(__dirname, './src/lib/heroicons-solid.ts'),
       '@': path.resolve(__dirname, './src'),
     },
   },

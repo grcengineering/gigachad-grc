@@ -17,7 +17,9 @@
     "noFallthroughCasesInSwitch": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@heroicons/react/24/outline": ["src/lib/heroicons-outline.ts"],
+      "@heroicons/react/24/solid": ["src/lib/heroicons-solid.ts"]
     }
   },
   "include": ["src"],

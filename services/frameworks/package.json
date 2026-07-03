@@ -11,7 +11,7 @@
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
-    "prisma:generate": "prisma generate --schema=../shared/prisma/schema.prisma",
+    "prisma:generate": "cp ../shared/prisma/schema.prisma ./.prisma.schema.prisma && PRISMA_GENERATE_SKIP_AUTOINSTALL=1 ./node_modules/.bin/prisma generate --schema=./.prisma.schema.prisma && rm ./.prisma.schema.prisma",
     "seed": "ts-node src/seed/run-seed.ts"
   },
   "dependencies": {

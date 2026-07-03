@@ -256,9 +256,10 @@ docker-compose up -d
 # 3. Wait for services to be healthy
 docker-compose ps
 
-# 4. Push database schema
-DATABASE_URL='postgresql://grc:NEW_PASSWORD@localhost:5433/gigachad_grc' \
-  npm run prisma:push --schema=services/shared/prisma/schema.prisma
+# 4. Push database schema (from a service package)
+cd services/controls
+DATABASE_URL='postgresql://grc:NEW_PASSWORD@localhost:5433/gigachad_grc' npm run prisma:push
+cd ../..
 
 # 5. Verify services
 curl http://localhost:3001/api/docs  # Controls API
