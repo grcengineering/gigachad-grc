@@ -47,7 +47,6 @@
     "date-fns": "^4.1.0",
     "exceljs": "^4.4.0",
     "helmet": "^7.1.0",
-    "isolated-vm": "^5.0.1",
     "js-yaml": "^4.2.0",
     "nodemailer": "^9.0.1",
     "pdfkit": "^0.18.0",
