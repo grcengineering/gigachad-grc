@@ -73,7 +73,7 @@
     "minimatch": "^10.2.3",
     "rollup": "^4.59.0",
     "@smithy/config-resolver": "^4.4.0",
-    "multer": ">=2.1.0",
+    "multer": "^2.2.0",
     "serialize-javascript": ">=7.0.3",
     "file-type": ">=21.3.4",
     "dompurify": ">=3.4.0",
