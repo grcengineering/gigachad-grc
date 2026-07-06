@@ -1,6 +1,5 @@
-import { useState, useCallback } from 'react';
+import { useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useDropzone } from 'react-dropzone';
 import { useSearchParams, Link } from 'react-router-dom';
 import { evidenceApi, controlsApi } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
@@ -350,6 +349,8 @@ function UploadModal({
 }) {
   const queryClient = useQueryClient();
   const [file, setFile] = useState<File | null>(null);
+  const [isDragActive, setIsDragActive] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [title, setTitle] = useState('');
   const [type, setType] = useState('document');
   const [description, setDescription] = useState('');
@@ -386,32 +387,17 @@ function UploadModal({
     },
   });
 
-  const onDrop = useCallback(
-    (acceptedFiles: File[]) => {
-      if (acceptedFiles[0]) {
-        setFile(acceptedFiles[0]);
-        if (!title) {
-          setTitle(acceptedFiles[0].name.replace(/\.[^/.]+$/, ''));
-        }
-      }
-    },
-    [title]
-  );
+  const assignSelectedFile = (nextFile: File | null) => {
+    if (!nextFile) return;
+    setFile(nextFile);
+    if (!title) {
+      setTitle(nextFile.name.replace(/\.[^/.]+$/, ''));
+    }
+  };
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    maxFiles: 1,
-    accept: {
-      'application/pdf': ['.pdf'],
-      'image/*': ['.png', '.jpg', '.jpeg', '.gif'],
-      'application/msword': ['.doc'],
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
-      'application/vnd.ms-excel': ['.xls'],
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
-      'text/csv': ['.csv'],
-      'text/plain': ['.txt'],
-    },
-  });
+  const handleFiles = (files: FileList | null) => {
+    assignSelectedFile(files?.[0] ?? null);
+  };
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -439,7 +425,6 @@ function UploadModal({
           <div className="space-y-4">
             {/* Dropzone */}
             <div
-              {...getRootProps()}
               className={clsx(
                 'border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all',
                 isDragActive
@@ -448,8 +433,28 @@ function UploadModal({
                     ? 'border-green-500 bg-green-500/10'
                     : 'border-surface-200 hover:border-surface-300'
               )}
+              onClick={() => fileInputRef.current?.click()}
+              onDragOver={(event) => {
+                event.preventDefault();
+                setIsDragActive(true);
+              }}
+              onDragLeave={(event) => {
+                event.preventDefault();
+                setIsDragActive(false);
+              }}
+              onDrop={(event) => {
+                event.preventDefault();
+                setIsDragActive(false);
+                handleFiles(event.dataTransfer.files);
+              }}
             >
-              <input {...getInputProps()} />
+              <input
+                ref={fileInputRef}
+                type="file"
+                className="hidden"
+                accept=".pdf,.png,.jpg,.jpeg,.gif,.doc,.docx,.xls,.xlsx,.csv,.txt"
+                onChange={(event) => handleFiles(event.target.files)}
+              />
               {file ? (
                 <div className="flex items-center justify-center gap-2 text-green-600">
                   <CheckIcon className="w-6 h-6" />
