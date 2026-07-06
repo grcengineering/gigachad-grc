@@ -1,7 +1,7 @@
 import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
 import { safeFetch, SSRFProtectionError } from '@gigachad-grc/shared';
 import { PrismaService } from '../prisma/prisma.service';
-import { createHmac, timingSafeEqual } from 'crypto';
+import { createHmac, randomUUID, timingSafeEqual } from 'crypto';
 import { AuditStatus } from '@prisma/client';
 import {
   FieldGuideConnectDto,
@@ -16,7 +16,6 @@ import {
   LinkAuditDto,
   FieldGuideAudit,
 } from './dto/fieldguide.dto';
-import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class FieldGuideService {
@@ -143,7 +142,7 @@ export class FieldGuideService {
       throw new BadRequestException('FieldGuide is not connected');
     }
 
-    const syncId = uuidv4();
+    const syncId = randomUUID();
     const startedAt = new Date();
     const direction = dto.direction || SyncDirection.BIDIRECTIONAL;
     const entityTypes = dto.entityTypes || Object.values(SyncEntityType);

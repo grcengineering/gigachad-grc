@@ -1,5 +1,5 @@
 import { Logger, HttpException, InternalServerErrorException } from '@nestjs/common';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 
 /**
  * Standard error response structure.
@@ -282,7 +282,7 @@ export async function retryAsync<T>(
  */
 export function createApiErrorResponse(error: unknown, correlationId?: string): ApiErrorResponse {
   const errorDetails = toErrorDetails(error);
-  const id = correlationId || uuidv4();
+  const id = correlationId || randomUUID();
 
   return {
     success: false,
@@ -333,7 +333,7 @@ export function CatchErrors(options: CatchErrorsOptions = {}): MethodDecorator {
     const methodName = String(propertyKey);
 
     descriptor.value = async function (...args: unknown[]) {
-      const correlationId = uuidv4();
+      const correlationId = randomUUID();
       const logger = (this as { logger?: Logger }).logger || new Logger(methodName);
       const context = options.context || methodName;
 

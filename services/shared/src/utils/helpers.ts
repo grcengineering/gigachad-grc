@@ -1,10 +1,10 @@
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 
 /**
  * Generate a UUID
  */
 export function generateId(): string {
-  return uuidv4();
+  return randomUUID();
 }
 
 /**
