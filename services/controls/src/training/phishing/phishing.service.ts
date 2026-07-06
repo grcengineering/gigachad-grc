@@ -2,8 +2,7 @@ import { Injectable, Logger, BadRequestException, NotFoundException } from '@nes
 import { PrismaService } from '../../prisma/prisma.service';
 import { EmailService } from '../../email/email.service';
 import { Prisma } from '@prisma/client';
-import { v4 as uuidv4 } from 'uuid';
-import { createHmac, timingSafeEqual } from 'crypto';
+import { createHmac, randomUUID, timingSafeEqual } from 'crypto';
 import { maskEmail } from '@gigachad-grc/shared';
 import {
   CampaignStatus,
@@ -72,7 +71,7 @@ export class PhishingService {
     organizationId: string,
     dto: CreatePhishingTemplateDto
   ): Promise<PhishingTemplateDto> {
-    const id = uuidv4();
+    const id = randomUUID();
     const now = new Date();
 
     // Store in organization settings (or a dedicated table if you prefer)
@@ -175,7 +174,7 @@ export class PhishingService {
       throw new BadRequestException('Template not found');
     }
 
-    const id = uuidv4();
+    const id = randomUUID();
     const now = new Date();
 
     // Store campaign in organization settings
