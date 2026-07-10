@@ -87,8 +87,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const initKeycloak = async () => {
+      const isLocalE2EBypass =
+        typeof window !== 'undefined' &&
+        (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') &&
+        new URLSearchParams(window.location.search).get('devAuth') === '1';
+
       // Check for dev auth first
-      if (import.meta.env.DEV) {
+      if (import.meta.env.DEV || isLocalE2EBypass) {
         const storedAuth = localStorage.getItem('grc-dev-auth');
         if (storedAuth) {
           try {

@@ -28,10 +28,12 @@ setup('authenticate via devLogin', async ({ page, context }) => {
     localStorage.setItem('organizationId', user.organizationId);
   }, devUser);
 
-  await page.goto('/dashboard');
+  // In CI we run a production build; use an explicit local-only flag to allow
+  // AuthContext to restore the seeded dev session without Keycloak redirects.
+  await page.goto('/dashboard?devAuth=1');
 
   // AuthContext should pick up the dev-auth on init and skip Keycloak entirely.
-  await expect(page).toHaveURL(/\/dashboard$/, { timeout: 10_000 });
+  await expect(page).toHaveURL(/\/dashboard(\?|$)/, { timeout: 10_000 });
 
   // Sidebar should render with user name (proves the AuthContext loaded the user).
   await expect(page.getByText('John Doe').first()).toBeVisible({ timeout: 8_000 });
