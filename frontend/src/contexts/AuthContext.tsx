@@ -87,13 +87,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const initKeycloak = async () => {
-      const isLocalE2EBypass =
+      const isLocalHost =
         typeof window !== 'undefined' &&
-        (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') &&
-        new URLSearchParams(window.location.search).get('devAuth') === '1';
+        (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+      if (isLocalHost && new URLSearchParams(window.location.search).get('devAuth') === '1') {
+        // Explicit one-time local opt-in used by Playwright setup; persisted
+        // in localStorage so subsequent routes/contexts keep using dev auth.
+        localStorage.setItem('grc-dev-auth-enabled', '1');
+      }
+
+      const hasLocalDevAuthOptIn =
+        isLocalHost && localStorage.getItem('grc-dev-auth-enabled') === '1';
 
       // Check for dev auth first
-      if (import.meta.env.DEV || isLocalE2EBypass) {
+      if (import.meta.env.DEV || hasLocalDevAuthOptIn) {
         const storedAuth = localStorage.getItem('grc-dev-auth');
         if (storedAuth) {
           try {
@@ -202,6 +210,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const kc = getKeycloak();
     // Clear dev login state and user info
     localStorage.removeItem('grc-dev-auth');
+    localStorage.removeItem('grc-dev-auth-enabled');
     localStorage.removeItem('userId');
     localStorage.removeItem('organizationId');
     localStorage.removeItem('token');
