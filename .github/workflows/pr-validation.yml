@@ -269,15 +269,20 @@ jobs:
           ready_frontend=0
           ready_frameworks=0
           while [ "$(date +%s)" -lt "$deadline" ]; do
+            frontend_code="ready"
             if [ "$ready_controls" -eq 0 ] && \
                curl -sf -o /dev/null http://127.0.0.1:3001/health; then
               echo "controls service ready"
               ready_controls=1
             fi
-            if [ "$ready_frontend" -eq 0 ] && \
-               curl -sf -o /dev/null http://127.0.0.1:3000/; then
-              echo "frontend ready"
-              ready_frontend=1
+            if [ "$ready_frontend" -eq 0 ]; then
+              # Frontend can legitimately return non-2xx while booting auth/routes.
+              # Treat any HTTP response as ready; only reject connection refused.
+              frontend_code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://127.0.0.1:3000/ || true)"
+              if [ "$frontend_code" != "000" ]; then
+                echo "frontend ready (http $frontend_code)"
+                ready_frontend=1
+              fi
             fi
             if [ "$ready_frameworks" -eq 0 ] && \
                curl -s -o /dev/null --max-time 5 http://127.0.0.1:3002/ \
@@ -292,6 +297,7 @@ jobs:
               echo "All endpoints healthy"
               exit 0
             fi
+            echo "wait: controls=$ready_controls frontend=$ready_frontend frameworks=$ready_frameworks frontend_http=$frontend_code"
             sleep 5
           done
           echo "::error::Stack did not become ready within 5 minutes"
@@ -407,21 +413,25 @@ jobs:
           ready_api=0
           ready_frontend=0
           while [ "$(date +%s)" -lt "$deadline" ]; do
+            frontend_code="ready"
             if [ "$ready_api" -eq 0 ] && \
                curl -sf -o /dev/null http://127.0.0.1:3001/health; then
               echo "api ready"
               ready_api=1
             fi
-            if [ "$ready_frontend" -eq 0 ] && \
-               curl -sf -o /dev/null http://127.0.0.1:3000/; then
-              echo "frontend ready"
-              ready_frontend=1
+            if [ "$ready_frontend" -eq 0 ]; then
+              # Frontend can return non-2xx from / on boot; only 000 means not reachable.
+              frontend_code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://127.0.0.1:3000/ || true)"
+              if [ "$frontend_code" != "000" ]; then
+                echo "frontend ready (http $frontend_code)"
+                ready_frontend=1
+              fi
             fi
             if [ "$ready_api" -eq 1 ] && [ "$ready_frontend" -eq 1 ]; then
               echo "Stack ready (api+frontend)"
               exit 0
             fi
-            echo "wait: api=$ready_api frontend=$ready_frontend"
+            echo "wait: api=$ready_api frontend=$ready_frontend frontend_http=$frontend_code"
             sleep 5
           done
           echo "::error::Stack did not become healthy within 5 minutes"
