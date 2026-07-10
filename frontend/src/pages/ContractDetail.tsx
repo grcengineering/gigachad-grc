@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeftIcon,
@@ -6,15 +6,7 @@ import {
   PencilIcon,
   DocumentArrowDownIcon,
 } from '@heroicons/react/24/outline';
-import { contractsApi } from '../lib/api';
-import toast from 'react-hot-toast';
-
-import { Textarea } from '@/components/ui/Textarea';
-
-import { Input } from '@/components/ui/Input';
-
-import { SelectNative } from '@/components/ui/SelectNative';
-import { Dialog } from '@/components/ui/Dialog';
+import { Button, Badge, Dialog, Input, Select, Textarea } from '@/components/ui';
 
 interface Contract {
   id: string;
@@ -49,6 +41,35 @@ interface ContractFormProps {
   contract: Contract | null;
   onSave: (data: Partial<Contract>) => Promise<void>;
   onCancel: () => void;
+}
+
+const CONTRACT_TYPE_OPTIONS = [
+  { value: 'msa', label: 'MSA' },
+  { value: 'nda', label: 'NDA' },
+  { value: 'sow', label: 'SOW' },
+  { value: 'dpa', label: 'DPA' },
+  { value: 'sla', label: 'SLA' },
+  { value: 'other', label: 'Other' },
+];
+
+const CONTRACT_STATUS_OPTIONS = [
+  { value: 'active', label: 'Active' },
+  { value: 'expired', label: 'Expired' },
+  { value: 'pending', label: 'Pending' },
+  { value: 'terminated', label: 'Terminated' },
+];
+
+const CURRENCY_OPTIONS = [
+  { value: 'USD', label: 'USD' },
+  { value: 'EUR', label: 'EUR' },
+  { value: 'GBP', label: 'GBP' },
+];
+
+function statusBadgeVariant(status: string): 'success' | 'danger' | 'warning' | 'neutral' {
+  if (status === 'active') return 'success';
+  if (status === 'expired') return 'danger';
+  if (status === 'pending') return 'warning';
+  return 'neutral';
 }
 
 function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
@@ -89,10 +110,8 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
                 Contract Title *
               </label>
               <Input
-                type="text"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
                 required
               />
             </div>
@@ -100,41 +119,25 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
               <label className="block text-sm font-medium text-surface-600 mb-1">
                 Contract Type *
               </label>
-              <SelectNative
-                value={formData.contractType}
-                onChange={(e) => setFormData({ ...formData, contractType: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
-                required
-              >
-                <option value="msa">MSA</option>
-                <option value="nda">NDA</option>
-                <option value="sow">SOW</option>
-                <option value="dpa">DPA</option>
-                <option value="sla">SLA</option>
-                <option value="other">Other</option>
-              </SelectNative>
+              <Select
+                value={formData.contractType || ''}
+                onChange={(value) => setFormData({ ...formData, contractType: value })}
+                options={CONTRACT_TYPE_OPTIONS}
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-surface-600 mb-1">Status *</label>
-              <SelectNative
-                value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
-                required
-              >
-                <option value="active">Active</option>
-                <option value="expired">Expired</option>
-                <option value="pending">Pending</option>
-                <option value="terminated">Terminated</option>
-              </SelectNative>
+              <Select
+                value={formData.status || ''}
+                onChange={(value) => setFormData({ ...formData, status: value })}
+                options={CONTRACT_STATUS_OPTIONS}
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-surface-600 mb-1">Vendor ID *</label>
               <Input
-                type="text"
                 value={formData.vendorId}
                 onChange={(e) => setFormData({ ...formData, vendorId: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
                 required
               />
             </div>
@@ -148,7 +151,6 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
             value={formData.description || ''}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             rows={3}
-            className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
           />
         </div>
 
@@ -169,20 +171,15 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
                     contractValue: parseFloat(e.target.value) || undefined,
                   })
                 }
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-surface-600 mb-1">Currency</label>
-              <SelectNative
-                value={formData.currency}
-                onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
-              >
-                <option value="USD">USD</option>
-                <option value="EUR">EUR</option>
-                <option value="GBP">GBP</option>
-              </SelectNative>
+              <Select
+                value={formData.currency || 'USD'}
+                onChange={(value) => setFormData({ ...formData, currency: value })}
+                options={CURRENCY_OPTIONS}
+              />
             </div>
           </div>
         </div>
@@ -199,7 +196,6 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
                 type="date"
                 value={formData.startDate}
                 onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
                 required
               />
             </div>
@@ -209,7 +205,6 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
                 type="date"
                 value={formData.endDate}
                 onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
                 required
               />
             </div>
@@ -221,7 +216,6 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
                 type="date"
                 value={formData.renewalDate || ''}
                 onChange={(e) => setFormData({ ...formData, renewalDate: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
               />
             </div>
           </div>
@@ -231,7 +225,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
                 type="checkbox"
                 checked={formData.autoRenew}
                 onChange={(e) => setFormData({ ...formData, autoRenew: e.target.checked })}
-                className="w-4 h-4 bg-white border-surface-200 rounded text-brand-600 focus:ring-brand-500"
+                className="w-4 h-4 bg-surface-100 border-surface-300 rounded text-brand-600 focus:ring-brand-500"
               />
               <span className="text-sm text-surface-700">Auto-renew contract</span>
             </label>
@@ -247,7 +241,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
                 type="checkbox"
                 checked={formData.requiresSoc2}
                 onChange={(e) => setFormData({ ...formData, requiresSoc2: e.target.checked })}
-                className="w-4 h-4 bg-white border-surface-200 rounded text-brand-600 focus:ring-brand-500"
+                className="w-4 h-4 bg-surface-100 border-surface-300 rounded text-brand-600 focus:ring-brand-500"
               />
               <span className="text-sm text-surface-700">SOC 2 Required</span>
             </label>
@@ -256,7 +250,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
                 type="checkbox"
                 checked={formData.requiresIso27001}
                 onChange={(e) => setFormData({ ...formData, requiresIso27001: e.target.checked })}
-                className="w-4 h-4 bg-white border-surface-200 rounded text-brand-600 focus:ring-brand-500"
+                className="w-4 h-4 bg-surface-100 border-surface-300 rounded text-brand-600 focus:ring-brand-500"
               />
               <span className="text-sm text-surface-700">ISO 27001 Required</span>
             </label>
@@ -265,7 +259,7 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
                 type="checkbox"
                 checked={formData.requiresHipaa}
                 onChange={(e) => setFormData({ ...formData, requiresHipaa: e.target.checked })}
-                className="w-4 h-4 bg-white border-surface-200 rounded text-brand-600 focus:ring-brand-500"
+                className="w-4 h-4 bg-surface-100 border-surface-300 rounded text-brand-600 focus:ring-brand-500"
               />
               <span className="text-sm text-surface-700">HIPAA Required</span>
             </label>
@@ -274,28 +268,20 @@ function ContractForm({ contract, onSave, onCancel }: ContractFormProps) {
                 type="checkbox"
                 checked={formData.requiresGdpr}
                 onChange={(e) => setFormData({ ...formData, requiresGdpr: e.target.checked })}
-                className="w-4 h-4 bg-white border-surface-200 rounded text-brand-600 focus:ring-brand-500"
+                className="w-4 h-4 bg-surface-100 border-surface-300 rounded text-brand-600 focus:ring-brand-500"
               />
               <span className="text-sm text-surface-700">GDPR Required</span>
             </label>
           </div>
         </div>
       </div>
+
       {/* Actions */}
       <div className="flex items-center justify-end gap-3">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-4 py-2 text-surface-700 hover:text-surface-900 transition-colors"
-        >
+        <Button type="button" variant="ghost" onClick={onCancel}>
           Cancel
-        </button>
-        <button
-          type="submit"
-          className="px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors"
-        >
-          Save Contract
-        </button>
+        </Button>
+        <Button type="submit">Save Contract</Button>
       </div>
     </form>
   );
@@ -322,13 +308,13 @@ function ContractView({
           <div className="flex items-center gap-2">
             <button
               onClick={onEdit}
-              className="p-2 text-surface-600 hover:text-surface-900 hover:bg-white rounded-lg transition-colors"
+              className="p-2 text-surface-600 hover:text-surface-900 hover:bg-surface-100 rounded-lg transition-colors"
             >
               <PencilIcon className="w-5 h-5" />
             </button>
             <button
               onClick={onDelete}
-              className="p-2 text-red-600 hover:text-red-700 hover:bg-white rounded-lg transition-colors"
+              className="p-2 text-red-600 hover:text-red-700 hover:bg-surface-100 rounded-lg transition-colors"
             >
               <TrashIcon className="w-5 h-5" />
             </button>
@@ -346,19 +332,7 @@ function ContractView({
             <div>
               <dt className="text-sm font-medium text-surface-600 mb-1">Status</dt>
               <dd>
-                <span
-                  className={`inline-flex px-2 py-1 text-xs font-medium rounded-full capitalize ${
-                    contract.status === 'active'
-                      ? 'bg-green-500/20 text-green-600'
-                      : contract.status === 'expired'
-                        ? 'bg-red-500/20 text-red-600'
-                        : contract.status === 'pending'
-                          ? 'bg-yellow-500/20 text-yellow-600'
-                          : 'bg-surface-200 text-surface-600'
-                  }`}
-                >
-                  {contract.status}
-                </span>
+                <Badge variant={statusBadgeVariant(contract.status)}>{contract.status}</Badge>
               </dd>
             </div>
             {contract.description && (
@@ -423,24 +397,24 @@ function ContractView({
           <h3 className="text-lg font-medium text-surface-900 mb-4">Compliance Requirements</h3>
           <div className="flex flex-wrap gap-2">
             {contract.requiresSoc2 && (
-              <span className="px-3 py-1 bg-brand-600/20 text-brand-400 text-sm rounded-full">
+              <Badge variant="brand" capitalize={false}>
                 SOC 2
-              </span>
+              </Badge>
             )}
             {contract.requiresIso27001 && (
-              <span className="px-3 py-1 bg-brand-600/20 text-brand-400 text-sm rounded-full">
+              <Badge variant="brand" capitalize={false}>
                 ISO 27001
-              </span>
+              </Badge>
             )}
             {contract.requiresHipaa && (
-              <span className="px-3 py-1 bg-brand-600/20 text-brand-400 text-sm rounded-full">
+              <Badge variant="brand" capitalize={false}>
                 HIPAA
-              </span>
+              </Badge>
             )}
             {contract.requiresGdpr && (
-              <span className="px-3 py-1 bg-brand-600/20 text-brand-400 text-sm rounded-full">
+              <Badge variant="brand" capitalize={false}>
                 GDPR
-              </span>
+              </Badge>
             )}
             {!contract.requiresSoc2 &&
               !contract.requiresIso27001 &&
@@ -467,9 +441,9 @@ function ContractView({
                     : 'Unknown size'}
                 </p>
               </div>
-              <button className="px-3 py-1 text-sm text-brand-400 hover:text-brand-300 transition-colors">
+              <Button variant="link" size="sm">
                 Download
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -486,6 +460,18 @@ export default function ContractDetail() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [editing, setEditing] = useState(false);
 
+  const fetchContract = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/contracts/${id}`);
+      const data = await response.json();
+      setContract(data);
+    } catch (error) {
+      console.error('Error fetching contract:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
+
   useEffect(() => {
     if (id && id !== 'new') {
       fetchContract();
@@ -493,31 +479,30 @@ export default function ContractDetail() {
       setEditing(true);
       setLoading(false);
     }
-  }, [id]);
-
-  const fetchContract = async () => {
-    try {
-      if (!id) {
-        return;
-      }
-      const response = await contractsApi.get(id);
-      setContract(response.data as unknown as Contract);
-    } catch (error) {
-      console.error('Error fetching contract:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [id, fetchContract]);
 
   const handleSave = async (formData: Partial<Contract>) => {
     try {
-      if (id === 'new') {
-        const response = await contractsApi.create(formData as any);
-        navigate(`/contracts/${response.data.id}`);
-      } else if (id) {
-        const response = await contractsApi.update(id, formData as any);
-        setContract(response.data as unknown as Contract);
-        setEditing(false);
+      const url = id === 'new' ? '/api/contracts' : `/api/contracts/${id}`;
+      const method = id === 'new' ? 'POST' : 'PATCH';
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': 'system', // TODO: Get from auth context
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (id === 'new') {
+          navigate(`/contracts/${data.id}`);
+        } else {
+          setContract(data);
+          setEditing(false);
+        }
       }
     } catch (error) {
       console.error('Error saving contract:', error);
@@ -530,8 +515,16 @@ export default function ContractDetail() {
     }
 
     try {
-      await contractsApi.delete(id!);
-      navigate('/contracts');
+      const response = await fetch(`/api/contracts/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'x-user-id': 'system', // TODO: Get from auth context
+        },
+      });
+
+      if (response.ok) {
+        navigate('/contracts');
+      }
     } catch (error) {
       console.error('Error deleting contract:', error);
     }
@@ -550,7 +543,7 @@ export default function ContractDetail() {
       <div className="flex items-center gap-4">
         <button
           onClick={() => navigate('/contracts')}
-          className="p-2 text-surface-600 hover:text-surface-900 hover:bg-white rounded-lg transition-colors"
+          className="p-2 text-surface-600 hover:text-surface-900 hover:bg-surface-100 rounded-lg transition-colors"
         >
           <ArrowLeftIcon className="w-5 h-5" />
         </button>
@@ -582,36 +575,38 @@ export default function ContractDetail() {
         <ContractView contract={contract} onEdit={() => setEditing(true)} onDelete={handleDelete} />
       ) : null}
       {/* Delete Confirmation Modal */}
-      <Dialog open={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)}>
-        <h3 className="text-lg font-semibold text-surface-900 mb-2">Delete Contract</h3>
-        <p className="text-surface-600 mb-6">
+      <Dialog
+        open={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        title="Delete Contract"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setShowDeleteConfirm(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              onClick={async () => {
+                try {
+                  await fetch(`/api/contracts/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'x-user-id': 'system' },
+                  });
+                  navigate('/contracts');
+                } catch (error) {
+                  console.error('Error deleting contract:', error);
+                  alert('Failed to delete contract');
+                }
+              }}
+            >
+              Delete
+            </Button>
+          </>
+        }
+      >
+        <p className="text-surface-600">
           Are you sure you want to delete this contract? This action cannot be undone.
         </p>
-        <div className="flex justify-end gap-2">
-          <button
-            onClick={() => setShowDeleteConfirm(false)}
-            className="px-4 py-2 bg-white text-surface-900 rounded-lg hover:bg-surface-200 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={async () => {
-              try {
-                if (id) {
-                  await contractsApi.delete(id);
-                }
-                toast.success('Contract deleted successfully');
-                navigate('/contracts');
-              } catch (error) {
-                console.error('Error deleting contract:', error);
-                toast.error('Failed to delete contract');
-              }
-            }}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-          >
-            Delete
-          </button>
-        </div>
       </Dialog>
     </div>
   );

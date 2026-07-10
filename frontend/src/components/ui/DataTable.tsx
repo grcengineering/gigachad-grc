@@ -79,12 +79,7 @@ export function DataTable<TData>({
 
   if (loading) {
     return (
-      <div
-        className={cn(
-          'rounded-lg border border-surface-200 bg-white p-4 dark:bg-surface-900 dark:border-surface-800',
-          className
-        )}
-      >
+      <div className={cn('rounded-lg border border-surface-200 bg-white p-4', className)}>
         <SkeletonRows rows={loadingRows} />
       </div>
     );
@@ -92,33 +87,20 @@ export function DataTable<TData>({
 
   if (data.length === 0) {
     return (
-      <div
-        className={cn(
-          'rounded-lg border border-surface-200 bg-white dark:bg-surface-900 dark:border-surface-800',
-          className
-        )}
-      >
+      <div className={cn('rounded-lg border border-surface-200 bg-white', className)}>
         {emptyState ?? <EmptyState title="No results" description="Try adjusting your filters." />}
       </div>
     );
   }
 
   return (
-    <div
-      className={cn(
-        'rounded-lg border border-surface-200 bg-white overflow-hidden dark:bg-surface-900 dark:border-surface-800',
-        className
-      )}
-    >
+    <div className={cn('rounded-lg border border-surface-200 bg-white overflow-hidden', className)}>
       {/* Desktop table */}
       <div className={cn('overflow-x-auto', mobileBehavior === 'cards' && 'hidden md:block')}>
         <table className="w-full text-small">
-          <thead className="bg-surface-50/40 dark:bg-surface-950/40">
+          <thead className="bg-surface-50/40">
             {table.getHeaderGroups().map((headerGroup) => (
-              <tr
-                key={headerGroup.id}
-                className="border-b border-surface-200 dark:border-surface-800"
-              >
+              <tr key={headerGroup.id} className="border-b border-surface-200">
                 {headerGroup.headers.map((header) => {
                   const canSort = header.column.getCanSort();
                   const sorted = header.column.getIsSorted();
@@ -126,10 +108,9 @@ export function DataTable<TData>({
                     <th
                       key={header.id}
                       className={cn(
-                        'px-4 text-left text-xs font-medium text-surface-600 uppercase tracking-wider dark:text-surface-400',
+                        'px-4 text-left text-xs font-medium text-surface-600 uppercase tracking-wider',
                         densityHead[density],
-                        canSort &&
-                          'cursor-pointer select-none hover:text-surface-800 dark:hover:text-surface-200'
+                        canSort && 'cursor-pointer select-none hover:text-surface-800'
                       )}
                       onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
                       style={{ width: header.getSize() !== 150 ? header.getSize() : undefined }}
@@ -137,7 +118,7 @@ export function DataTable<TData>({
                       <div className="inline-flex items-center gap-1">
                         {flexRender(header.column.columnDef.header, header.getContext())}
                         {canSort && (
-                          <span className="text-surface-500 dark:text-surface-400">
+                          <span className="text-surface-500">
                             {sorted === 'asc' ? (
                               <ChevronUp className="h-3.5 w-3.5" />
                             ) : sorted === 'desc' ? (
@@ -160,18 +141,14 @@ export function DataTable<TData>({
                 key={row.id}
                 onClick={onRowClick ? () => onRowClick(row.original) : undefined}
                 className={cn(
-                  'border-b border-surface-200/60 last:border-b-0 transition-colors dark:border-surface-800/60',
-                  onRowClick &&
-                    'cursor-pointer hover:bg-surface-100/50 dark:hover:bg-surface-800/40'
+                  'border-b border-surface-200/60 last:border-b-0 transition-colors',
+                  onRowClick && 'cursor-pointer hover:bg-surface-100/50'
                 )}
               >
                 {row.getVisibleCells().map((cell) => (
                   <td
                     key={cell.id}
-                    className={cn(
-                      'px-4 text-surface-800 align-middle dark:text-surface-200',
-                      densityRow[density]
-                    )}
+                    className={cn('px-4 text-surface-800 align-middle', densityRow[density])}
                   >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>
@@ -184,7 +161,7 @@ export function DataTable<TData>({
 
       {/* Mobile card stack */}
       {mobileBehavior === 'cards' && (
-        <div className="md:hidden divide-y divide-surface-200/60 dark:divide-surface-800/60">
+        <div className="md:hidden divide-y divide-surface-200/60">
           {table.getRowModel().rows.map((row) => (
             <MobileRow
               key={row.id}
@@ -223,8 +200,7 @@ function MobileRow<TData>({
       onClick={onClick}
       className={cn(
         'p-4 transition-colors',
-        onClick &&
-          'cursor-pointer hover:bg-surface-100/40 active:bg-surface-100/60 dark:hover:bg-surface-800/40 dark:active:bg-surface-800/60'
+        onClick && 'cursor-pointer hover:bg-surface-100/40 active:bg-surface-100/60'
       )}
     >
       <div className="space-y-2">
@@ -237,16 +213,11 @@ function MobileRow<TData>({
           return (
             <div key={cell.id} className="flex items-start justify-between gap-3">
               {label && (
-                <span className="text-xs font-medium text-surface-500 uppercase tracking-wider shrink-0 dark:text-surface-400">
+                <span className="text-xs font-medium text-surface-500 uppercase tracking-wider shrink-0">
                   {label}
                 </span>
               )}
-              <div
-                className={cn(
-                  'text-small text-surface-800 min-w-0 dark:text-surface-200',
-                  label && 'text-right'
-                )}
-              >
+              <div className={cn('text-small text-surface-800 min-w-0', label && 'text-right')}>
                 {flexRender(cell.column.columnDef.cell, cell.getContext())}
               </div>
             </div>

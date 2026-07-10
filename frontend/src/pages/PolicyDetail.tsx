@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { policiesApi, controlsApi } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import toast from 'react-hot-toast';
-import EntityAuditHistory from '@/components/EntityAuditHistory';
 import {
   ArrowLeftIcon,
   ArrowDownTrayIcon,
@@ -18,29 +17,16 @@ import {
   TagIcon,
   ArrowUpTrayIcon,
   XMarkIcon,
-  ChatBubbleLeftRightIcon,
 } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
-import { Button } from '@/components/ui/Button';
-import { SkeletonDetailHeader, SkeletonDetailSection } from '@/components/Skeleton';
+import { Badge, Button, Dialog, Input, Select, Textarea, type BadgeVariant } from '@/components/ui';
 
-import { Textarea } from '@/components/ui/Textarea';
-
-import { Input } from '@/components/ui/Input';
-
-import { SelectNative } from '@/components/ui/SelectNative';
-
-import { Badge } from '@/components/ui/Badge';
-import { Dialog } from '@/components/ui/Dialog';
-
-type TabType = 'status' | 'history';
-
-const STATUS_CONFIG: Record<string, { label: string; color: string; next?: string[] }> = {
-  draft: { label: 'Draft', color: '', next: ['in_review'] },
-  in_review: { label: 'In Review', color: '', next: ['approved', 'draft'] },
-  approved: { label: 'Approved', color: '', next: ['published', 'in_review'] },
-  published: { label: 'Published', color: '', next: ['retired'] },
-  retired: { label: 'Retired', color: '', next: [] },
+const STATUS_CONFIG: Record<string, { label: string; variant: BadgeVariant; next?: string[] }> = {
+  draft: { label: 'Draft', variant: 'neutral', next: ['in_review'] },
+  in_review: { label: 'In Review', variant: 'warning', next: ['approved', 'draft'] },
+  approved: { label: 'Approved', variant: 'success', next: ['published', 'in_review'] },
+  published: { label: 'Published', variant: 'info', next: ['retired'] },
+  retired: { label: 'Retired', variant: 'danger', next: [] },
 };
 
 const CATEGORY_OPTIONS = [
@@ -58,11 +44,9 @@ const CATEGORY_OPTIONS = [
 
 export default function PolicyDetail() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const { hasPermission } = useAuth();
   const queryClient = useQueryClient();
   const [isNewVersionOpen, setIsNewVersionOpen] = useState(false);
-  const [_showDeleteConfirm, _setShowDeleteConfirm] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isLinkControlOpen, setIsLinkControlOpen] = useState(false);
   const [statusChangeModal, setStatusChangeModal] = useState<{
@@ -73,8 +57,6 @@ export default function PolicyDetail() {
     targetStatus: null,
   });
   const [statusChangeNotes, setStatusChangeNotes] = useState('');
-  const [activeTab, setActiveTab] = useState<TabType>('status');
-  const [previewError, setPreviewError] = useState(false);
 
   const { data: policy, isLoading } = useQuery({
     queryKey: ['policy', id],
@@ -101,7 +83,7 @@ export default function PolicyDetail() {
     mutationFn: () => policiesApi.delete(id!),
     onSuccess: () => {
       toast.success('Policy deleted');
-      navigate('/policies');
+      window.location.href = '/policies';
     },
     onError: () => {
       toast.error('Failed to delete policy');
@@ -130,18 +112,8 @@ export default function PolicyDetail() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6 animate-fade-in">
-        <SkeletonDetailHeader />
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            <SkeletonDetailSection title />
-            <SkeletonDetailSection title />
-          </div>
-          <div className="space-y-6">
-            <SkeletonDetailSection title />
-            <SkeletonDetailSection title />
-          </div>
-        </div>
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin w-8 h-8 border-4 border-surface-300 rounded-full border-t-brand-500"></div>
       </div>
     );
   }
@@ -170,14 +142,14 @@ export default function PolicyDetail() {
         </Link>
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-4">
-            <div className="p-3 bg-white rounded-xl">
-              <DocumentTextIcon className="w-8 h-8 text-brand-400" />
+            <div className="p-3 bg-surface-100 rounded-xl">
+              <DocumentTextIcon className="w-8 h-8 text-brand-700" />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-surface-900">{policy.title}</h1>
               <p className="text-surface-600 mt-1">{policy.description || 'No description'}</p>
               <div className="flex items-center gap-3 mt-3">
-                <span className={clsx('', statusConfig.color)}>{statusConfig.label}</span>
+                <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>
                 <span className="text-surface-500">•</span>
                 <span className="font-mono text-surface-600">v{policy.version}</span>
                 <span className="text-surface-500">•</span>
@@ -216,6 +188,7 @@ export default function PolicyDetail() {
           </div>
         </div>
       </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
@@ -223,39 +196,28 @@ export default function PolicyDetail() {
           <div className="card p-6">
             <h2 className="text-lg font-semibold text-surface-900 mb-4">Preview</h2>
             <div className="border border-surface-200 rounded-lg overflow-hidden bg-surface-50">
-              {previewError ? (
-                <div className="flex flex-col items-center justify-center py-16 text-surface-500">
-                  <DocumentTextIcon className="w-16 h-16 mb-4" />
-                  <p className="text-center">File preview not available</p>
-                  <p className="text-sm text-surface-600 mt-2">
-                    The policy file may not have been uploaded yet.
-                  </p>
-                  <Button onClick={handleDownload} className="mt-4" variant="outline">
-                    <ArrowDownTrayIcon className="w-4 h-4 mr-2" />
-                    Try Download
-                  </Button>
-                </div>
-              ) : policy.mimeType === 'application/pdf' ? (
+              {policy.mimeType === 'application/pdf' ? (
                 <iframe
                   src={policiesApi.getPreviewUrl(id!)}
                   className="w-full h-[800px]"
                   title={policy.title}
-                  onError={() => setPreviewError(true)}
-                  sandbox="allow-scripts allow-same-origin"
                 />
               ) : policy.mimeType?.startsWith('image/') ? (
                 <img
                   src={policiesApi.getPreviewUrl(id!)}
                   alt={policy.title}
                   className="max-w-full h-auto mx-auto"
-                  onError={() => setPreviewError(true)}
                 />
               ) : (
                 <div className="flex flex-col items-center justify-center py-16 text-surface-500">
                   <DocumentTextIcon className="w-16 h-16 mb-4" />
                   <p>Preview not available for this file type</p>
-                  <Button onClick={handleDownload} className="mt-4" variant="outline">
-                    <ArrowDownTrayIcon className="w-4 h-4 mr-2" />
+                  <Button
+                    variant="outline"
+                    onClick={handleDownload}
+                    leftIcon={<ArrowDownTrayIcon className="w-4 h-4" />}
+                    className="mt-4"
+                  >
                     Download to View
                   </Button>
                 </div>
@@ -266,21 +228,21 @@ export default function PolicyDetail() {
           {/* Version History */}
           <div className="card p-6">
             <h2 className="text-lg font-semibold text-surface-900 mb-4">Version History</h2>
-            {(policy?.versions?.length ?? 0) > 0 ? (
+            {policy.versions?.length > 0 ? (
               <div className="space-y-3">
-                {policy?.versions?.map((version: any, index: number) => (
+                {policy.versions.map((version: any, index: number) => (
                   <div
                     key={version.id}
                     className={clsx(
                       'flex items-center justify-between p-3 rounded-lg',
-                      index === 0 ? 'bg-brand-500/10 border border-brand-500/30' : 'bg-white'
+                      index === 0 ? 'bg-brand-500/10 border border-brand-500/30' : 'bg-surface-100'
                     )}
                   >
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="font-mono text-surface-800">v{version.version}</span>
                         {index === 0 && (
-                          <Badge className="text-xs" variant="info">
+                          <Badge variant="info" size="sm">
                             Current
                           </Badge>
                         )}
@@ -300,112 +262,69 @@ export default function PolicyDetail() {
             )}
           </div>
 
-          {/* History Tabs */}
-          <div className="card overflow-hidden">
-            {/* Tab Navigation */}
-            <div className="border-b border-surface-200 px-4">
-              <nav className="flex gap-6" aria-label="History Tabs">
-                <button
-                  onClick={() => setActiveTab('status')}
-                  className={clsx(
-                    'py-3 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2',
-                    activeTab === 'status'
-                      ? 'border-brand-500 text-brand-400'
-                      : 'border-transparent text-surface-600 hover:text-surface-800 hover:border-surface-300'
-                  )}
-                >
-                  <ChatBubbleLeftRightIcon className="w-4 h-4" />
-                  Status History
-                </button>
-                <button
-                  onClick={() => setActiveTab('history')}
-                  className={clsx(
-                    'py-3 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2',
-                    activeTab === 'history'
-                      ? 'border-brand-500 text-brand-400'
-                      : 'border-transparent text-surface-600 hover:text-surface-800 hover:border-surface-300'
-                  )}
-                >
-                  <ClockIcon className="w-4 h-4" />
-                  Change History
-                </button>
-              </nav>
-            </div>
+          {/* Status Audit Trail */}
+          <div className="card p-6">
+            <h2 className="text-lg font-semibold text-surface-900 mb-4">Status History</h2>
+            <p className="text-xs text-surface-500 mb-3">
+              Audit trail showing who moved this policy through workflow stages
+            </p>
+            {policy.statusHistory?.length > 0 ? (
+              <div className="relative">
+                {/* Timeline line */}
+                <div className="absolute left-4 top-2 bottom-2 w-0.5 bg-surface-200" />
 
-            {/* Tab Content */}
-            <div className="p-6">
-              {activeTab === 'status' && (
-                <div>
-                  <p className="text-xs text-surface-500 mb-4">
-                    Audit trail showing who moved this policy through workflow stages
-                  </p>
-                  {(policy?.statusHistory?.length ?? 0) > 0 ? (
-                    <div className="relative">
-                      {/* Timeline line */}
-                      <div className="absolute left-4 top-2 bottom-2 w-0.5 bg-surface-200" />
+                <div className="space-y-4">
+                  {policy.statusHistory.map((entry: any, index: number) => (
+                    <div key={entry.id} className="relative flex gap-4 pl-10">
+                      {/* Timeline dot */}
+                      <div
+                        className={clsx(
+                          'absolute left-2.5 w-3 h-3 rounded-full border-2 border-surface-900',
+                          index === 0 ? 'bg-brand-500' : 'bg-surface-300'
+                        )}
+                      />
 
-                      <div className="space-y-4">
-                        {policy?.statusHistory?.map((entry: any, index: number) => (
-                          <div key={entry.id} className="relative flex gap-4 pl-10">
-                            {/* Timeline dot */}
-                            <div
-                              className={clsx(
-                                'absolute left-2.5 w-3 h-3 rounded-full border-2 border-surface-900',
-                                index === 0 ? 'bg-brand-500' : 'bg-surface-600'
-                              )}
-                            />
+                      <div className="flex-1 pb-4">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {entry.fromStatus ? (
+                            <>
+                              <Badge
+                                variant={STATUS_CONFIG[entry.fromStatus]?.variant || 'neutral'}
+                                size="sm"
+                              >
+                                {STATUS_CONFIG[entry.fromStatus]?.label || entry.fromStatus}
+                              </Badge>
+                              <span className="text-surface-500">→</span>
+                            </>
+                          ) : null}
+                          <Badge
+                            variant={STATUS_CONFIG[entry.toStatus]?.variant || 'neutral'}
+                            size="sm"
+                          >
+                            {STATUS_CONFIG[entry.toStatus]?.label || entry.toStatus}
+                          </Badge>
+                        </div>
 
-                            <div className="flex-1 pb-4">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                {entry.fromStatus ? (
-                                  <>
-                                    <span
-                                      className={clsx(
-                                        'text-xs',
-                                        STATUS_CONFIG[entry.fromStatus]?.color || ''
-                                      )}
-                                    >
-                                      {STATUS_CONFIG[entry.fromStatus]?.label || entry.fromStatus}
-                                    </span>
-                                    <span className="text-surface-500">→</span>
-                                  </>
-                                ) : null}
-                                <span
-                                  className={clsx(
-                                    'text-xs',
-                                    STATUS_CONFIG[entry.toStatus]?.color || ''
-                                  )}
-                                >
-                                  {STATUS_CONFIG[entry.toStatus]?.label || entry.toStatus}
-                                </span>
-                              </div>
+                        <div className="mt-2 text-sm">
+                          <span className="text-surface-800 font-medium">
+                            {entry.changedByName || entry.changedBy?.displayName || 'Unknown'}
+                          </span>
+                          <span className="text-surface-500 ml-2">
+                            {new Date(entry.createdAt).toLocaleString()}
+                          </span>
+                        </div>
 
-                              <div className="mt-2 text-sm">
-                                <span className="text-surface-800 font-medium">
-                                  {entry.changedByName || entry.changedBy?.displayName || 'Unknown'}
-                                </span>
-                                <span className="text-surface-500 ml-2">
-                                  {new Date(entry.createdAt).toLocaleString()}
-                                </span>
-                              </div>
-
-                              {entry.notes && (
-                                <p className="mt-1 text-sm text-surface-600 italic">
-                                  "{entry.notes}"
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        ))}
+                        {entry.notes && (
+                          <p className="mt-1 text-sm text-surface-600 italic">"{entry.notes}"</p>
+                        )}
                       </div>
                     </div>
-                  ) : (
-                    <p className="text-surface-500">No status history available</p>
-                  )}
+                  ))}
                 </div>
-              )}
-              {activeTab === 'history' && <EntityAuditHistory entityType="policy" entityId={id!} />}
-            </div>
+              </div>
+            ) : (
+              <p className="text-surface-500">No status history available</p>
+            )}
           </div>
 
           {/* Linked Controls (Policy as Evidence) */}
@@ -414,11 +333,11 @@ export default function PolicyDetail() {
               <h2 className="text-lg font-semibold text-surface-900">Linked Controls</h2>
               {canEdit && (
                 <Button
-                  onClick={() => setIsLinkControlOpen(true)}
-                  className="text-sm"
                   variant="outline"
+                  size="sm"
+                  onClick={() => setIsLinkControlOpen(true)}
+                  leftIcon={<LinkIcon className="w-4 h-4" />}
                 >
-                  <LinkIcon className="w-4 h-4 mr-2" />
                   Link to Control
                 </Button>
               )}
@@ -426,20 +345,20 @@ export default function PolicyDetail() {
             <p className="text-xs text-surface-500 mb-3">
               This policy serves as evidence for the following controls:
             </p>
-            {(policy?.controlLinks?.length ?? 0) > 0 ? (
+            {policy.controlLinks?.length > 0 ? (
               <div className="space-y-2">
-                {policy?.controlLinks?.map((link: any) => (
+                {policy.controlLinks.map((link: any) => (
                   <div
                     key={link.id}
-                    className="flex items-center justify-between p-3 bg-white rounded-lg group"
+                    className="flex items-center justify-between p-3 bg-surface-100 rounded-lg group"
                   >
                     <Link
                       to={`/controls/${link.control?.id}`}
-                      className="flex items-center gap-3 flex-1 hover:text-brand-400"
+                      className="flex items-center gap-3 flex-1 hover:text-brand-700"
                     >
-                      <LinkIcon className="w-4 h-4 text-brand-400" />
+                      <LinkIcon className="w-4 h-4 text-brand-700" />
                       <div>
-                        <p className="font-mono text-sm text-brand-400">
+                        <p className="font-mono text-sm text-brand-700">
                           {link.control?.controlId}
                         </p>
                         <p className="text-sm text-surface-800">{link.control?.title}</p>
@@ -475,12 +394,12 @@ export default function PolicyDetail() {
                   return (
                     <Button
                       key={nextStatus}
+                      variant="outline"
+                      fullWidth
                       onClick={() =>
                         setStatusChangeModal({ isOpen: true, targetStatus: nextStatus })
                       }
                       disabled={updateStatusMutation.isPending}
-                      className="w-full justify-center"
-                      variant="outline"
                     >
                       Move to {nextConfig.label}
                     </Button>
@@ -532,14 +451,14 @@ export default function PolicyDetail() {
                   </dd>
                 </div>
               </div>
-              {(policy?.tags?.length ?? 0) > 0 && (
+              {policy.tags?.length > 0 && (
                 <div className="flex items-start gap-3">
                   <TagIcon className="w-5 h-5 text-surface-500 mt-0.5" />
                   <div>
                     <dt className="text-xs text-surface-500">Tags</dt>
                     <dd className="flex flex-wrap gap-1 mt-1">
-                      {policy?.tags?.map((tag: string) => (
-                        <Badge key={tag} className="text-xs" variant="neutral">
+                      {policy.tags.map((tag: string) => (
+                        <Badge key={tag} variant="neutral" size="sm">
                           {tag}
                         </Badge>
                       ))}
@@ -580,22 +499,23 @@ export default function PolicyDetail() {
             <div className="card p-6 border-red-500/30">
               <h3 className="text-sm font-semibold text-red-600 mb-4">Danger Zone</h3>
               <Button
+                variant="danger"
+                fullWidth
                 onClick={() => {
                   if (confirm('Are you sure you want to delete this policy?')) {
                     deleteMutation.mutate();
                   }
                 }}
                 disabled={deleteMutation.isPending}
-                className="w-full text-red-600 border-red-400/50 hover:bg-red-400/10"
-                variant="outline"
+                leftIcon={<TrashIcon className="w-4 h-4" />}
               >
-                <TrashIcon className="w-4 h-4 mr-2" />
                 Delete Policy
               </Button>
             </div>
           )}
         </div>
       </div>
+
       {/* New Version Modal */}
       {isNewVersionOpen && (
         <NewVersionModal
@@ -608,6 +528,7 @@ export default function PolicyDetail() {
           }}
         />
       )}
+
       {isEditOpen && (
         <EditPolicyModal
           policy={policy}
@@ -619,6 +540,7 @@ export default function PolicyDetail() {
           }}
         />
       )}
+
       {isLinkControlOpen && (
         <LinkControlModal
           policyId={id!}
@@ -630,50 +552,18 @@ export default function PolicyDetail() {
           }}
         />
       )}
+
       {/* Status Change Modal */}
-      {statusChangeModal.targetStatus && (
-        <Dialog
-          open={statusChangeModal.isOpen}
-          onClose={() => {
-            setStatusChangeModal({ isOpen: false, targetStatus: null });
-            setStatusChangeNotes('');
-          }}
-        >
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-surface-900">Change Status</h2>
-            <button
-              onClick={() => {
-                setStatusChangeModal({ isOpen: false, targetStatus: null });
-                setStatusChangeNotes('');
-              }}
-              className="text-surface-600 hover:text-surface-900"
-            >
-              <XMarkIcon className="w-5 h-5" />
-            </button>
-          </div>
-
-          <div className="mb-4">
-            <p className="text-surface-700">
-              Move this policy from{' '}
-              <span className={clsx('', statusConfig.color)}>{statusConfig.label}</span> to{' '}
-              <span className={clsx('', STATUS_CONFIG[statusChangeModal.targetStatus]?.color)}>
-                {STATUS_CONFIG[statusChangeModal.targetStatus]?.label}
-              </span>
-            </p>
-          </div>
-
-          <div className="mb-4">
-            <label className="label">Notes (optional)</label>
-            <Textarea
-              value={statusChangeNotes}
-              onChange={(e) => setStatusChangeNotes(e.target.value)}
-              className="input mt-1"
-              rows={3}
-              placeholder="Add notes about this status change..."
-            />
-          </div>
-
-          <div className="flex justify-end gap-3">
+      <Dialog
+        open={statusChangeModal.isOpen && !!statusChangeModal.targetStatus}
+        onClose={() => {
+          setStatusChangeModal({ isOpen: false, targetStatus: null });
+          setStatusChangeNotes('');
+        }}
+        title="Change Status"
+        size="sm"
+        footer={
+          <>
             <Button
               variant="secondary"
               onClick={() => {
@@ -684,19 +574,48 @@ export default function PolicyDetail() {
               Cancel
             </Button>
             <Button
+              variant="primary"
               onClick={() =>
+                statusChangeModal.targetStatus &&
                 updateStatusMutation.mutate({
-                  status: statusChangeModal.targetStatus!,
+                  status: statusChangeModal.targetStatus,
                   notes: statusChangeNotes || undefined,
                 })
               }
-              isLoading={updateStatusMutation.isPending}
+              disabled={updateStatusMutation.isPending}
             >
-              Confirm
+              {updateStatusMutation.isPending ? 'Updating...' : 'Confirm'}
             </Button>
-          </div>
-        </Dialog>
-      )}
+          </>
+        }
+      >
+        {statusChangeModal.targetStatus && (
+          <>
+            <div className="mb-4">
+              <p className="text-surface-700">
+                Move this policy from{' '}
+                <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge> to{' '}
+                <Badge
+                  variant={STATUS_CONFIG[statusChangeModal.targetStatus]?.variant || 'neutral'}
+                >
+                  {STATUS_CONFIG[statusChangeModal.targetStatus]?.label}
+                </Badge>
+              </p>
+            </div>
+
+            <div className="mb-4">
+              <label className="label">Notes (optional)</label>
+              <Textarea
+                value={statusChangeNotes}
+                onChange={(e) => setStatusChangeNotes(e.target.value)}
+                className="mt-1"
+                rows={3}
+                placeholder="Add notes about this status change..."
+              />
+            </div>
+          </>
+        )}
+      </Dialog>
     </div>
   );
 }
@@ -735,14 +654,26 @@ function NewVersionModal({
   });
 
   return (
-    <Dialog open onClose={onClose}>
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-semibold text-surface-900">Upload New Version</h2>
-        <button onClick={onClose} className="text-surface-600 hover:text-surface-900">
-          <XMarkIcon className="w-5 h-5" />
-        </button>
-      </div>
-
+    <Dialog
+      open
+      onClose={onClose}
+      title="Upload New Version"
+      size="sm"
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => uploadMutation.mutate()}
+            disabled={!file || !versionNumber || uploadMutation.isPending}
+          >
+            {uploadMutation.isPending ? 'Uploading...' : 'Upload Version'}
+          </Button>
+        </>
+      }
+    >
       <div className="space-y-4">
         <div>
           <label className="label">File *</label>
@@ -760,7 +691,7 @@ function NewVersionModal({
             type="text"
             value={versionNumber}
             onChange={(e) => setVersionNumber(e.target.value)}
-            className="input mt-1"
+            className="mt-1"
             placeholder="e.g., 2.0"
           />
           <p className="text-xs text-surface-500 mt-1">Current: v{currentVersion}</p>
@@ -771,24 +702,11 @@ function NewVersionModal({
           <Textarea
             value={changeNotes}
             onChange={(e) => setChangeNotes(e.target.value)}
-            className="input mt-1"
+            className="mt-1"
             rows={3}
             placeholder="What changed in this version?"
           />
         </div>
-      </div>
-
-      <div className="flex justify-end gap-3 mt-6">
-        <Button variant="secondary" onClick={onClose}>
-          Cancel
-        </Button>
-        <Button
-          onClick={() => uploadMutation.mutate()}
-          disabled={!file || !versionNumber}
-          isLoading={uploadMutation.isPending}
-        >
-          Upload Version
-        </Button>
       </div>
     </Dialog>
   );
@@ -836,27 +754,38 @@ function LinkControlModal({
   };
 
   return (
-    <Dialog open onClose={onClose}>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-surface-900">Link Policy to Controls</h2>
-        <button onClick={onClose} className="text-surface-600 hover:text-surface-900">
-          <XMarkIcon className="w-5 h-5" />
-        </button>
-      </div>
-
+    <Dialog
+      open
+      onClose={onClose}
+      title="Link Policy to Controls"
+      size="md"
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => linkMutation.mutate()}
+            disabled={selectedControlIds.length === 0 || linkMutation.isPending}
+          >
+            {linkMutation.isPending ? 'Linking...' : 'Link to Controls'}
+          </Button>
+        </>
+      }
+    >
       <p className="text-sm text-surface-600 mb-4">
         Select controls to link this policy as evidence:
       </p>
 
-      <div className="relative mb-4">
+      <div className="mb-4">
         <Input
           type="text"
           placeholder="Search controls..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="input pl-10"
+          leftIcon={<LinkIcon className="w-4 h-4" />}
         />
-        <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-500" />
       </div>
 
       <div className="flex-1 overflow-y-auto space-y-2 min-h-[200px] max-h-[300px]">
@@ -872,17 +801,17 @@ function LinkControlModal({
                 'flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors',
                 selectedControlIds.includes(control.id)
                   ? 'bg-brand-500/20 border border-brand-500/50'
-                  : 'bg-white hover:bg-surface-200'
+                  : 'bg-surface-100 hover:bg-surface-200'
               )}
             >
               <input
                 type="checkbox"
                 checked={selectedControlIds.includes(control.id)}
                 onChange={() => toggleControl(control.id)}
-                className="rounded border-surface-300"
+                className="rounded border-surface-400"
               />
               <div>
-                <p className="font-mono text-sm text-brand-400">{control.controlId}</p>
+                <p className="font-mono text-sm text-brand-700">{control.controlId}</p>
                 <p className="text-sm text-surface-800">{control.title}</p>
               </div>
             </label>
@@ -895,19 +824,6 @@ function LinkControlModal({
           {selectedControlIds.length} control(s) selected
         </p>
       )}
-
-      <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-surface-200">
-        <Button variant="secondary" onClick={onClose}>
-          Cancel
-        </Button>
-        <Button
-          onClick={() => linkMutation.mutate()}
-          disabled={selectedControlIds.length === 0}
-          isLoading={linkMutation.isPending}
-        >
-          Link to Controls
-        </Button>
-      </div>
     </Dialog>
   );
 }
@@ -937,9 +853,9 @@ function EditPolicyModal({
       policiesApi.update(policy.id, {
         title,
         description: description || undefined,
-        type: category as any,
+        category,
         effectiveDate: effectiveDate || undefined,
-        reviewDate: nextReviewDue || undefined,
+        nextReviewDate: nextReviewDue || undefined,
         tags: tags
           ? tags
               .split(',')
@@ -957,14 +873,26 @@ function EditPolicyModal({
   });
 
   return (
-    <Dialog open onClose={onClose}>
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-semibold text-surface-900">Edit Policy</h2>
-        <button onClick={onClose} className="text-surface-600 hover:text-surface-900">
-          <XMarkIcon className="w-5 h-5" />
-        </button>
-      </div>
-
+    <Dialog
+      open
+      onClose={onClose}
+      title="Edit Policy"
+      size="md"
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => updateMutation.mutate()}
+            disabled={!title || !category || updateMutation.isPending}
+          >
+            {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </>
+      }
+    >
       <div className="space-y-4">
         <div>
           <label className="label">Title *</label>
@@ -972,7 +900,7 @@ function EditPolicyModal({
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="input mt-1"
+            className="mt-1"
             required
           />
         </div>
@@ -982,24 +910,16 @@ function EditPolicyModal({
           <Textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="input mt-1"
+            className="mt-1"
             rows={2}
           />
         </div>
 
         <div>
           <label className="label">Category *</label>
-          <SelectNative
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="input mt-1"
-          >
-            {CATEGORY_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </SelectNative>
+          <div className="mt-1">
+            <Select value={category} onChange={setCategory} options={CATEGORY_OPTIONS} />
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -1009,7 +929,7 @@ function EditPolicyModal({
               type="date"
               value={effectiveDate}
               onChange={(e) => setEffectiveDate(e.target.value)}
-              className="input mt-1"
+              className="mt-1"
             />
           </div>
           <div>
@@ -1018,7 +938,7 @@ function EditPolicyModal({
               type="date"
               value={nextReviewDue}
               onChange={(e) => setNextReviewDue(e.target.value)}
-              className="input mt-1"
+              className="mt-1"
             />
           </div>
         </div>
@@ -1029,23 +949,10 @@ function EditPolicyModal({
             type="text"
             value={tags}
             onChange={(e) => setTags(e.target.value)}
-            className="input mt-1"
+            className="mt-1"
             placeholder="e.g., security, compliance, annual"
           />
         </div>
-      </div>
-
-      <div className="flex justify-end gap-3 mt-6">
-        <Button variant="secondary" onClick={onClose}>
-          Cancel
-        </Button>
-        <Button
-          onClick={() => updateMutation.mutate()}
-          disabled={!title || !category}
-          isLoading={updateMutation.isPending}
-        >
-          Save Changes
-        </Button>
       </div>
     </Dialog>
   );

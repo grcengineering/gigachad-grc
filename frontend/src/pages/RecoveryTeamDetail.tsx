@@ -1,586 +1,321 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { ArrowLeft, Users, Mail, Phone, Calendar, Link as LinkIcon, Edit2 } from 'lucide-react';
+import api from '@/lib/api';
 import {
-  ArrowLeftIcon,
-  UserGroupIcon,
-  PlusIcon,
-  TrashIcon,
-  LinkIcon,
-  UserIcon,
-  PhoneIcon,
-  EnvelopeIcon,
-} from '@heroicons/react/24/outline';
-import { Button } from '@/components/ui/Button';
-import { api } from '@/lib/api';
-import clsx from 'clsx';
-
-import { Textarea } from '@/components/ui/Textarea';
-
-import { Input } from '@/components/ui/Input';
-
-import { SelectNative } from '@/components/ui/SelectNative';
-import { Dialog } from '@/components/ui/Dialog';
-
-// ============================================
-// Types
-// ============================================
-
-interface RecoveryTeam {
-  id: string;
-  name: string;
-  description: string;
-  teamType: string;
-  activationCriteria: string;
-  assemblyLocation: string;
-  communicationChannel: string;
-  isActive: boolean;
-  members: TeamMember[];
-  planLinks: PlanLink[];
-}
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  PageHeader,
+  Tabs,
+  EmptyState,
+  Skeleton,
+} from '@/components/ui';
 
 interface TeamMember {
   id: string;
-  role: string;
-  userId: string;
-  userName: string;
-  userEmail: string;
-  externalName: string;
-  externalEmail: string;
-  externalPhone: string;
-  responsibilities: string;
-  isPrimary: boolean;
-  alternateFor: string;
+  role?: string;
+  userId?: string;
+  userName?: string;
+  user_name?: string;
+  userEmail?: string;
+  user_email?: string;
+  externalName?: string;
+  external_name?: string;
+  externalEmail?: string;
+  external_email?: string;
+  externalPhone?: string;
+  external_phone?: string;
+  responsibilities?: string;
+  isPrimary?: boolean;
+  is_primary?: boolean;
+}
+
+interface RotationSlot {
+  id: string;
+  startDate?: string;
+  start_date?: string;
+  endDate?: string;
+  end_date?: string;
+  memberName?: string;
+  member_name?: string;
+  role?: string;
 }
 
 interface PlanLink {
   id: string;
-  planId: string;
-  planTitle: string;
-  planType: string;
-  roleInPlan: string;
+  planId?: string;
+  plan_id?: string;
+  planTitle?: string;
+  plan_title?: string;
+  planType?: string;
+  plan_type?: string;
+  roleInPlan?: string;
+  role_in_plan?: string;
 }
 
-const ROLE_OPTIONS = [
-  { value: 'team_lead', label: 'Team Lead' },
-  { value: 'alternate_lead', label: 'Alternate Lead' },
-  { value: 'technical_lead', label: 'Technical Lead' },
-  { value: 'coordinator', label: 'Coordinator' },
-  { value: 'member', label: 'Member' },
-];
+interface RecoveryTeamDetailData {
+  id: string;
+  name: string;
+  description?: string;
+  teamType?: string;
+  team_type?: string;
+  function?: string;
+  isActive?: boolean;
+  is_active?: boolean;
+  activationCriteria?: string;
+  activation_criteria?: string;
+  assemblyLocation?: string;
+  assembly_location?: string;
+  communicationChannel?: string;
+  communication_channel?: string;
+  members?: TeamMember[];
+  rotation?: RotationSlot[];
+  planLinks?: PlanLink[];
+  plan_links?: PlanLink[];
+}
 
-const TEAM_TYPE_COLORS: Record<string, string> = {
-  crisis_management: 'bg-red-500',
-  it_recovery: 'bg-blue-500',
-  business_recovery: 'bg-green-500',
-  communications: 'bg-purple-500',
-  executive: 'bg-orange-500',
-};
+function pick<T>(...vals: (T | undefined)[]) {
+  for (const v of vals) if (v !== undefined && v !== null) return v;
+  return undefined;
+}
 
-// ============================================
-// Recovery Team Detail Page Component
-// ============================================
+function formatDate(v?: string) {
+  if (!v) return '—';
+  try {
+    return new Date(v).toLocaleDateString();
+  } catch {
+    return v;
+  }
+}
 
 export default function RecoveryTeamDetail() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const [team, setTeam] = useState<RecoveryTeam | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [showAddMember, setShowAddMember] = useState(false);
-  const [showLinkPlan, setShowLinkPlan] = useState(false);
-  const [users, setUsers] = useState<{ id: string; name: string; email: string }[]>([]);
-  const [plans, setPlans] = useState<{ id: string; title: string }[]>([]);
 
-  // Add member form state
-  const [memberRole, setMemberRole] = useState('member');
-  const [memberUserId, setMemberUserId] = useState('');
-  const [memberExternalName, setMemberExternalName] = useState('');
-  const [memberExternalEmail, setMemberExternalEmail] = useState('');
-  const [memberExternalPhone, setMemberExternalPhone] = useState('');
-  const [memberResponsibilities, setMemberResponsibilities] = useState('');
-  const [isExternal, setIsExternal] = useState(false);
-  const [isAddingMember, setIsAddingMember] = useState(false);
-
-  // Link plan form state
-  const [selectedPlanId, setSelectedPlanId] = useState('');
-  const [roleInPlan, setRoleInPlan] = useState('');
-  const [isLinkingPlan, setIsLinkingPlan] = useState(false);
-
-  useEffect(() => {
-    if (id) {
-      loadTeam();
-      loadUsers();
-      loadPlans();
-    }
-  }, [id]);
-
-  const loadTeam = async () => {
-    setIsLoading(true);
-    try {
-      const response = await api.get(`/bcdr/recovery-teams/${id}`);
-      setTeam(response.data);
-    } catch (error) {
-      console.error('Failed to load team:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const loadUsers = async () => {
-    try {
-      const response = await api.get('/users');
-      setUsers(response.data.data || []);
-    } catch (error) {
-      console.error('Failed to load users:', error);
-    }
-  };
-
-  const loadPlans = async () => {
-    try {
-      const response = await api.get('/bcdr/plans');
-      setPlans(response.data.data || []);
-    } catch (error) {
-      console.error('Failed to load plans:', error);
-    }
-  };
-
-  const handleAddMember = async () => {
-    setIsAddingMember(true);
-    try {
-      await api.post(`/bcdr/recovery-teams/${id}/members`, {
-        role: memberRole,
-        userId: !isExternal && memberUserId ? memberUserId : undefined,
-        externalName: isExternal ? memberExternalName : undefined,
-        externalEmail: isExternal ? memberExternalEmail : undefined,
-        externalPhone: isExternal ? memberExternalPhone : undefined,
-        responsibilities: memberResponsibilities || undefined,
-      });
-      loadTeam();
-      setShowAddMember(false);
-      resetMemberForm();
-    } catch (error) {
-      console.error('Failed to add member:', error);
-    } finally {
-      setIsAddingMember(false);
-    }
-  };
-
-  const handleRemoveMember = async (memberId: string) => {
-    if (!confirm('Are you sure you want to remove this member?')) return;
-
-    try {
-      await api.delete(`/bcdr/recovery-teams/${id}/members/${memberId}`);
-      loadTeam();
-    } catch (error) {
-      console.error('Failed to remove member:', error);
-    }
-  };
-
-  const handleLinkPlan = async () => {
-    if (!selectedPlanId) return;
-
-    setIsLinkingPlan(true);
-    try {
-      await api.post(`/bcdr/recovery-teams/${id}/link-plan`, {
-        planId: selectedPlanId,
-        roleInPlan: roleInPlan || undefined,
-      });
-      loadTeam();
-      setShowLinkPlan(false);
-      setSelectedPlanId('');
-      setRoleInPlan('');
-    } catch (error) {
-      console.error('Failed to link plan:', error);
-    } finally {
-      setIsLinkingPlan(false);
-    }
-  };
-
-  const handleUnlinkPlan = async (planId: string) => {
-    if (!confirm('Are you sure you want to unlink this plan?')) return;
-
-    try {
-      await api.delete(`/bcdr/recovery-teams/${id}/link-plan/${planId}`);
-      loadTeam();
-    } catch (error) {
-      console.error('Failed to unlink plan:', error);
-    }
-  };
-
-  const resetMemberForm = () => {
-    setMemberRole('member');
-    setMemberUserId('');
-    setMemberExternalName('');
-    setMemberExternalEmail('');
-    setMemberExternalPhone('');
-    setMemberResponsibilities('');
-    setIsExternal(false);
-  };
+  const { data: team, isLoading } = useQuery<RecoveryTeamDetailData>({
+    queryKey: ['recovery-team', id],
+    queryFn: async () => {
+      const res = await api.get(`/api/bcdr/recovery-teams/${id}`);
+      return res.data;
+    },
+    enabled: !!id,
+  });
 
   if (isLoading) {
     return (
-      <div className="text-center py-12">
-        <div className="animate-spin h-8 w-8 border-2 border-cyan-500 border-t-transparent rounded-full mx-auto" />
-        <p className="text-slate-400 mt-4">Loading team...</p>
+      <div className="space-y-5 animate-fade-in">
+        <Skeleton className="h-8 w-40" />
+        <Skeleton className="h-16 w-full" />
+        <Skeleton className="h-48 w-full" />
       </div>
     );
   }
 
   if (!team) {
     return (
-      <div className="text-center py-12">
-        <p className="text-slate-400">Team not found</p>
+      <div className="space-y-5 animate-fade-in">
+        <Link
+          to="/bcdr/recovery-teams"
+          className="inline-flex items-center gap-1 text-small text-brand-700 hover:text-brand-800"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Teams
+        </Link>
+        <Card>
+          <CardBody density="comfy">
+            <EmptyState
+              icon={<Users className="h-8 w-8" />}
+              title="Team not found"
+              description="The team may have been deleted or you may not have access."
+            />
+          </CardBody>
+        </Card>
       </div>
     );
   }
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => navigate('/bcdr/recovery-teams')}
-            className="p-2 hover:bg-slate-700 rounded-lg"
-          >
-            <ArrowLeftIcon className="h-5 w-5 text-slate-400" />
-          </button>
-          <div className="flex items-center gap-4">
-            <div
-              className={clsx(
-                'w-12 h-12 rounded-lg flex items-center justify-center',
-                TEAM_TYPE_COLORS[team.teamType] || 'bg-slate-600'
-              )}
-            >
-              <UserGroupIcon className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-white">{team.name}</h1>
-              <p className="text-slate-400 capitalize">{team.teamType.replace('_', ' ')}</p>
-            </div>
-          </div>
-        </div>
-        <span
-          className={clsx(
-            'px-3 py-1 rounded text-sm font-medium',
-            team.isActive ? 'bg-green-500/20 text-green-600' : 'bg-slate-600 text-slate-400'
-          )}
-        >
-          {team.isActive ? 'Active' : 'Inactive'}
-        </span>
-      </div>
-      {/* Team Info */}
-      {(team.description || team.activationCriteria || team.assemblyLocation) && (
-        <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
-          {team.description && (
-            <div className="mb-4">
-              <h3 className="text-sm font-medium text-slate-400 mb-1">Description</h3>
-              <p className="text-white">{team.description}</p>
-            </div>
-          )}
-          <div className="grid grid-cols-3 gap-4">
-            {team.activationCriteria && (
-              <div>
-                <h3 className="text-sm font-medium text-slate-400 mb-1">Activation Criteria</h3>
-                <p className="text-white">{team.activationCriteria}</p>
-              </div>
-            )}
-            {team.assemblyLocation && (
-              <div>
-                <h3 className="text-sm font-medium text-slate-400 mb-1">Assembly Location</h3>
-                <p className="text-white">{team.assemblyLocation}</p>
-              </div>
-            )}
-            {team.communicationChannel && (
-              <div>
-                <h3 className="text-sm font-medium text-slate-400 mb-1">Communication Channel</h3>
-                <p className="text-white">{team.communicationChannel}</p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-      {/* Members Section */}
-      <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-medium text-white flex items-center gap-2">
-            <UserGroupIcon className="h-5 w-5 text-slate-400" />
-            Team Members ({team.members.length})
-          </h2>
-          <Button variant="secondary" onClick={() => setShowAddMember(true)}>
-            <PlusIcon className="h-4 w-4 mr-1" />
-            Add Member
-          </Button>
-        </div>
+  const teamFn = pick(team.function, team.teamType, team.team_type);
+  const isActive = pick(team.isActive, team.is_active);
+  const members = team.members ?? [];
+  const rotation = team.rotation ?? [];
+  const planLinks = team.planLinks ?? team.plan_links ?? [];
 
-        {team.members.length === 0 ? (
-          <p className="text-slate-400 text-center py-8">No members added yet</p>
+  const membersTab = (
+    <Card>
+      <CardBody density="comfy">
+        {members.length === 0 ? (
+          <EmptyState
+            size="sm"
+            icon={<Users className="h-6 w-6" />}
+            title="No members yet"
+            description="Add members to this team to coordinate response."
+          />
         ) : (
-          <div className="space-y-3">
-            {team.members.map((member) => (
-              <div
-                key={member.id}
-                className="flex items-center justify-between p-4 bg-slate-700 rounded-lg"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-slate-600 rounded-full flex items-center justify-center">
-                    <UserIcon className="h-5 w-5 text-slate-300" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-white font-medium">
-                        {member.userName || member.externalName || 'Unknown'}
-                      </span>
-                      <span
-                        className={clsx(
-                          'px-2 py-0.5 rounded text-xs',
-                          member.role === 'team_lead'
-                            ? 'bg-red-500/20 text-red-600'
-                            : member.role === 'alternate_lead'
-                              ? 'bg-orange-500/20 text-orange-600'
-                              : 'bg-slate-600 text-slate-300'
-                        )}
-                      >
-                        {ROLE_OPTIONS.find((r) => r.value === member.role)?.label || member.role}
-                      </span>
-                      {!member.isPrimary && (
-                        <span className="px-2 py-0.5 bg-purple-500/20 text-purple-600 rounded text-xs">
+          <ul className="divide-y divide-surface-200">
+            {members.map((m) => {
+              const name =
+                pick(m.userName, m.user_name, m.externalName, m.external_name) ?? 'Unknown';
+              const email = pick(m.userEmail, m.user_email, m.externalEmail, m.external_email);
+              const phone = pick(m.externalPhone, m.external_phone);
+              const isPrimary = pick(m.isPrimary, m.is_primary);
+              return (
+                <li key={m.id} className="py-3 flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-body text-surface-900">{name}</span>
+                      {m.role && (
+                        <Badge variant="brand" size="sm">
+                          {m.role.replace(/_/g, ' ')}
+                        </Badge>
+                      )}
+                      {isPrimary === false && (
+                        <Badge variant="info" size="sm">
                           Alternate
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-surface-500">
+                      {email && (
+                        <span className="inline-flex items-center gap-1">
+                          <Mail className="h-3.5 w-3.5" />
+                          {email}
+                        </span>
+                      )}
+                      {phone && (
+                        <span className="inline-flex items-center gap-1">
+                          <Phone className="h-3.5 w-3.5" />
+                          {phone}
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-4 text-sm text-slate-400 mt-1">
-                      {(member.userEmail || member.externalEmail) && (
-                        <span className="flex items-center gap-1">
-                          <EnvelopeIcon className="h-4 w-4" />
-                          {member.userEmail || member.externalEmail}
-                        </span>
-                      )}
-                      {member.externalPhone && (
-                        <span className="flex items-center gap-1">
-                          <PhoneIcon className="h-4 w-4" />
-                          {member.externalPhone}
-                        </span>
-                      )}
-                    </div>
-                    {member.responsibilities && (
-                      <p className="text-sm text-slate-400 mt-1">{member.responsibilities}</p>
+                    {m.responsibilities && (
+                      <p className="text-small text-surface-700 mt-1">{m.responsibilities}</p>
                     )}
                   </div>
-                </div>
-                <button
-                  onClick={() => handleRemoveMember(member.id)}
-                  className="p-2 text-slate-400 hover:text-red-600"
-                >
-                  <TrashIcon className="h-4 w-4" />
-                </button>
-              </div>
-            ))}
-          </div>
+                </li>
+              );
+            })}
+          </ul>
         )}
-      </div>
-      {/* Linked Plans Section */}
-      <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-medium text-white flex items-center gap-2">
-            <LinkIcon className="h-5 w-5 text-slate-400" />
-            Linked Plans ({team.planLinks.length})
-          </h2>
-          <Button variant="secondary" onClick={() => setShowLinkPlan(true)}>
-            <PlusIcon className="h-4 w-4 mr-1" />
-            Link Plan
-          </Button>
-        </div>
+      </CardBody>
+    </Card>
+  );
 
-        {team.planLinks.length === 0 ? (
-          <p className="text-slate-400 text-center py-8">No plans linked yet</p>
+  const rotationTab = (
+    <Card>
+      <CardBody density="comfy">
+        {rotation.length === 0 ? (
+          <EmptyState
+            size="sm"
+            icon={<Calendar className="h-6 w-6" />}
+            title="No rotation configured"
+            description="Define an on-call rotation so the right person is paged."
+          />
         ) : (
-          <div className="space-y-3">
-            {team.planLinks.map((link) => (
-              <div
-                key={link.id}
-                className="flex items-center justify-between p-4 bg-slate-700 rounded-lg"
-              >
-                <div>
-                  <span className="text-white font-medium">{link.planTitle}</span>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-sm text-slate-400 capitalize">
-                      {link.planType?.replace('_', ' ')}
-                    </span>
-                    {link.roleInPlan && (
-                      <span className="text-sm text-slate-400">• {link.roleInPlan}</span>
+          <ul className="divide-y divide-surface-200">
+            {rotation.map((slot) => (
+              <li key={slot.id} className="py-3 flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-body text-surface-900">
+                    {pick(slot.memberName, slot.member_name) ?? 'Unassigned'}
+                  </p>
+                  {slot.role && (
+                    <p className="text-xs text-surface-500 capitalize">
+                      {slot.role.replace(/_/g, ' ')}
+                    </p>
+                  )}
+                </div>
+                <div className="text-xs text-surface-500 text-right shrink-0">
+                  <p>{formatDate(pick(slot.startDate, slot.start_date))}</p>
+                  <p>→ {formatDate(pick(slot.endDate, slot.end_date))}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardBody>
+    </Card>
+  );
+
+  const plansTab = (
+    <Card>
+      <CardBody density="comfy">
+        {planLinks.length === 0 ? (
+          <EmptyState
+            size="sm"
+            icon={<LinkIcon className="h-6 w-6" />}
+            title="No linked plans"
+            description="Link this team to BC/DR plans so it gets paged on activation."
+          />
+        ) : (
+          <ul className="divide-y divide-surface-200">
+            {planLinks.map((p) => (
+              <li key={p.id} className="py-3 flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-body text-surface-900">
+                    {pick(p.planTitle, p.plan_title) ?? 'Untitled plan'}
+                  </p>
+                  <div className="flex items-center gap-2 mt-1 text-xs text-surface-500">
+                    {pick(p.planType, p.plan_type) && (
+                      <span className="capitalize">
+                        {(pick(p.planType, p.plan_type) ?? '').replace(/_/g, ' ')}
+                      </span>
+                    )}
+                    {pick(p.roleInPlan, p.role_in_plan) && (
+                      <span>• {pick(p.roleInPlan, p.role_in_plan)}</span>
                     )}
                   </div>
                 </div>
-                <button
-                  onClick={() => handleUnlinkPlan(link.planId)}
-                  className="p-2 text-slate-400 hover:text-red-600"
-                >
-                  <TrashIcon className="h-4 w-4" />
-                </button>
-              </div>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
-      </div>
-      {/* Add Member Modal */}
-      <Dialog open={showAddMember} onClose={() => setShowAddMember(false)}>
-        <h2 className="text-xl font-semibold text-white mb-6">Add Team Member</h2>
+      </CardBody>
+    </Card>
+  );
 
-        <div className="space-y-4">
-          <div className="flex items-center gap-4 mb-4">
-            <button
-              onClick={() => setIsExternal(false)}
-              className={clsx(
-                'flex-1 py-2 rounded-lg text-center transition-all',
-                !isExternal
-                  ? 'bg-cyan-500 text-white'
-                  : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-              )}
-            >
-              Internal User
-            </button>
-            <button
-              onClick={() => setIsExternal(true)}
-              className={clsx(
-                'flex-1 py-2 rounded-lg text-center transition-all',
-                isExternal
-                  ? 'bg-cyan-500 text-white'
-                  : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-              )}
-            >
-              External Contact
-            </button>
-          </div>
+  return (
+    <div className="space-y-5 animate-fade-in">
+      <Link
+        to="/bcdr/recovery-teams"
+        className="inline-flex items-center gap-1 text-small text-brand-700 hover:text-brand-800"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back to Teams
+      </Link>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Role</label>
-            <SelectNative
-              value={memberRole}
-              onChange={(e) => setMemberRole(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
-            >
-              {ROLE_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </SelectNative>
-          </div>
-
-          {!isExternal ? (
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">User</label>
-              <SelectNative
-                value={memberUserId}
-                onChange={(e) => setMemberUserId(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
-              >
-                <option value="">Select user...</option>
-                {users.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.name} ({user.email})
-                  </option>
-                ))}
-              </SelectNative>
-            </div>
-          ) : (
-            <>
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Name</label>
-                <Input
-                  type="text"
-                  value={memberExternalName}
-                  onChange={(e) => setMemberExternalName(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Email</label>
-                <Input
-                  type="email"
-                  value={memberExternalEmail}
-                  onChange={(e) => setMemberExternalEmail(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Phone</label>
-                <Input
-                  type="tel"
-                  value={memberExternalPhone}
-                  onChange={(e) => setMemberExternalPhone(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
-                />
-              </div>
-            </>
-          )}
-
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              Responsibilities
-            </label>
-            <Textarea
-              value={memberResponsibilities}
-              onChange={(e) => setMemberResponsibilities(e.target.value)}
-              rows={2}
-              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
-            />
-          </div>
-        </div>
-
-        <div className="flex items-center justify-end gap-3 mt-6">
-          <Button variant="secondary" onClick={() => setShowAddMember(false)}>
-            Cancel
+      <PageHeader
+        title={team.name}
+        description={team.description}
+        meta={
+          <>
+            {teamFn && (
+              <Badge variant="info" size="sm">
+                {teamFn.replace(/_/g, ' ')}
+              </Badge>
+            )}
+            {isActive !== undefined && (
+              <Badge variant={isActive ? 'success' : 'neutral'} size="sm" dot>
+                {isActive ? 'Active' : 'Inactive'}
+              </Badge>
+            )}
+          </>
+        }
+        actions={
+          <Button variant="outline" size="sm" leftIcon={<Edit2 className="h-4 w-4" />}>
+            Edit
           </Button>
-          <Button variant="primary" onClick={handleAddMember} disabled={isAddingMember}>
-            {isAddingMember ? 'Adding...' : 'Add Member'}
-          </Button>
-        </div>
-      </Dialog>
-      {/* Link Plan Modal */}
-      <Dialog open={showLinkPlan} onClose={() => setShowLinkPlan(false)}>
-        <h2 className="text-xl font-semibold text-white mb-6">Link to Plan</h2>
+        }
+      />
 
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">BC/DR Plan</label>
-            <SelectNative
-              value={selectedPlanId}
-              onChange={(e) => setSelectedPlanId(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
-            >
-              <option value="">Select plan...</option>
-              {plans.map((plan) => (
-                <option key={plan.id} value={plan.id}>
-                  {plan.title}
-                </option>
-              ))}
-            </SelectNative>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              Role in Plan (Optional)
-            </label>
-            <Input
-              type="text"
-              value={roleInPlan}
-              onChange={(e) => setRoleInPlan(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
-              placeholder="e.g., Primary response team"
-            />
-          </div>
-        </div>
-
-        <div className="flex items-center justify-end gap-3 mt-6">
-          <Button variant="secondary" onClick={() => setShowLinkPlan(false)}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleLinkPlan} disabled={isLinkingPlan}>
-            {isLinkingPlan ? 'Linking...' : 'Link Plan'}
-          </Button>
-        </div>
-      </Dialog>
+      <Tabs
+        tabs={[
+          { label: `Members (${members.length})`, content: membersTab },
+          { label: 'Rotation', content: rotationTab },
+          { label: `Linked Plans (${planLinks.length})`, content: plansTab },
+        ]}
+      />
     </div>
   );
 }

@@ -1,771 +1,329 @@
+import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  UsersIcon,
-  ChartBarIcon,
-  ExclamationTriangleIcon,
-  CheckCircleIcon,
-  ClockIcon,
-  ArrowPathIcon,
-  BuildingOffice2Icon,
-  ShieldCheckIcon,
-  AcademicCapIcon,
-  ComputerDesktopIcon,
-  KeyIcon,
-  Cog6ToothIcon,
-} from '@heroicons/react/24/outline';
-import { employeeComplianceApi } from '@/lib/api';
-import { SkeletonCard, SkeletonTable } from '@/components/Skeleton';
-import { useToast } from '@/hooks/useToast';
+  AlertTriangle,
+  CheckCircle2,
+  ClipboardList,
+  ClockAlert,
+  ShieldCheck,
+  Users,
+  Building2,
+  ArrowRight,
+} from 'lucide-react';
+import api from '@/lib/api';
+import {
+  Badge,
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+  CategoryChip,
+  EmptyState,
+  PageHeader,
+  Skeleton,
+  StatCard,
+} from '@/components/ui';
 
-import { Button } from '@/components/ui/Button';
-
-interface DashboardMetrics {
-  totalEmployees: number;
-  averageScore: number;
-  complianceRate: number;
-  scoreDistribution: {
-    compliant: number;
-    atRisk: number;
-    nonCompliant: number;
-  };
-  issueBreakdown: {
-    overdueTrainings: number;
-    missingBackgroundChecks: number;
-    pendingAttestations: number;
-    mfaNotEnabled: number;
-    nonCompliantDevices: number;
-  };
-  departmentStats: {
-    department: string;
-    employeeCount: number;
-    averageScore: number;
-  }[];
-  upcomingDeadlines: {
-    expiringBackgroundChecks: DeadlineItem[];
-    overdueTrainings: DeadlineItem[];
-    pendingAttestations: DeadlineItem[];
-  };
-  dataCoverage: {
-    hris: number;
-    backgroundCheck: number;
-    training: number;
-    assets: number;
-    access: number;
-  };
+interface DepartmentStat {
+  department: string;
+  employeeCount: number;
+  compliantPct: number;
 }
 
-interface DeadlineItem {
-  type: string;
-  employeeEmail: string;
-  employeeName: string;
-  deadline: string;
-  details: Record<string, string>;
+interface AssignmentFunnel {
+  assigned: number;
+  inProgress: number;
+  completed: number;
 }
 
-// Fallback mock data when API returns empty or no data
-const FALLBACK_METRICS: DashboardMetrics = {
-  totalEmployees: 0,
-  averageScore: 0,
-  complianceRate: 0,
-  scoreDistribution: { compliant: 0, atRisk: 0, nonCompliant: 0 },
-  issueBreakdown: {
-    overdueTrainings: 0,
-    missingBackgroundChecks: 0,
-    pendingAttestations: 0,
-    mfaNotEnabled: 0,
-    nonCompliantDevices: 0,
-  },
-  departmentStats: [],
-  upcomingDeadlines: {
-    expiringBackgroundChecks: [],
-    overdueTrainings: [],
-    pendingAttestations: [],
-  },
-  dataCoverage: { hris: 0, backgroundCheck: 0, training: 0, assets: 0, access: 0 },
-};
-
-function StatCard({
-  title,
-  value,
-  subtitle,
-  icon: Icon,
-  color,
-  isLoading = false,
-}: {
-  title: string;
-  value: string | number;
-  subtitle?: string;
-  icon: typeof UsersIcon;
-  color: string;
-  isLoading?: boolean;
-}) {
-  if (isLoading) {
-    return (
-      <div className="card p-6 animate-pulse">
-        <div className="flex items-center justify-between">
-          <div className="space-y-2">
-            <div className="h-4 w-24 bg-surface-200 rounded" />
-            <div className="h-8 w-16 bg-surface-200 rounded" />
-            <div className="h-3 w-20 bg-surface-200 rounded" />
-          </div>
-          <div className="p-3 rounded-lg bg-surface-200 h-12 w-12" />
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="card p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-muted-foreground">{title}</p>
-          <p className={`text-3xl font-bold ${color}`}>{value}</p>
-          {subtitle && <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>}
-        </div>
-        <div className="p-3 rounded-lg bg-surface-200">
-          <Icon className={`h-6 w-6 ${color}`} />
-        </div>
-      </div>
-    </div>
-  );
+interface OverdueEmployee {
+  id: string;
+  fullName?: string;
+  firstName?: string;
+  lastName?: string;
+  email: string;
+  department?: string;
+  overdueCount: number;
+  oldestDueAt?: string;
 }
 
-function ScoreBar({
-  range,
-  count,
-  total,
-  color,
-}: {
-  range: string;
-  count: number;
-  total: number;
-  color: string;
-}) {
-  const percentage = total > 0 ? (count / total) * 100 : 0;
+interface EmployeeComplianceDashboardData {
+  compliantPct?: number;
+  totalEmployees?: number;
+  overdue?: number;
+  expiringSoon?: number;
+  departments?: DepartmentStat[];
+  funnel?: AssignmentFunnel;
+  overdueEmployees?: OverdueEmployee[];
+}
+
+function formatDate(value?: string) {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString();
+}
+
+function getDisplayName(emp: OverdueEmployee): string {
+  if (emp.fullName) return emp.fullName;
+  const composed = `${emp.firstName ?? ''} ${emp.lastName ?? ''}`.trim();
+  return composed || emp.email;
+}
+
+function DepartmentRow({ stat }: { stat: DepartmentStat }) {
+  const safe = Math.max(0, Math.min(100, Math.round(stat.compliantPct ?? 0)));
+  const tone = safe >= 80 ? 'bg-emerald-500' : safe >= 50 ? 'bg-amber-500' : 'bg-red-500';
   return (
     <div className="flex items-center gap-3">
-      <span className="text-sm text-muted-foreground w-24">{range}</span>
-      <div className="flex-1 h-6 bg-surface-200 rounded-full overflow-hidden">
-        <div
-          className={`h-full ${color} rounded-full transition-all duration-500`}
-          style={{ width: `${percentage}%` }}
-        />
+      <div className="flex items-center gap-2 w-40 shrink-0 min-w-0">
+        <Building2 className="h-4 w-4 text-surface-500 shrink-0" />
+        <span className="text-small text-surface-900 truncate">{stat.department}</span>
       </div>
-      <span className="text-sm text-foreground w-10 text-right">{count}</span>
+      <span className="text-xs text-surface-500 tabular-nums w-12 shrink-0 text-right">
+        {stat.employeeCount}
+      </span>
+      <div className="flex-1 h-2 rounded-full bg-surface-200 overflow-hidden">
+        <div className={`h-full ${tone} transition-all`} style={{ width: `${safe}%` }} />
+      </div>
+      <span className="text-xs text-surface-700 tabular-nums w-10 shrink-0 text-right">
+        {safe}%
+      </span>
     </div>
   );
 }
 
-function DataCoverageBar({
+function FunnelStage({
   label,
-  percentage,
-  icon: Icon,
-  color,
+  value,
+  pct,
+  tone,
 }: {
   label: string;
-  percentage: number;
-  icon: typeof UsersIcon;
-  color: string;
+  value: number;
+  pct: number;
+  tone: string;
 }) {
+  const safe = Math.max(0, Math.min(100, pct));
   return (
-    <div className="flex items-center gap-3">
-      <Icon className={`h-5 w-5 ${color}`} />
-      <span className="text-sm text-muted-foreground w-32">{label}</span>
-      <div className="flex-1 h-2 bg-surface-200 rounded-full overflow-hidden">
-        <div
-          className={`h-full ${percentage >= 90 ? 'bg-green-500' : percentage >= 70 ? 'bg-yellow-500' : 'bg-red-500'} rounded-full transition-all duration-500`}
-          style={{ width: `${percentage}%` }}
-        />
+    <div className="space-y-1">
+      <div className="flex items-center justify-between">
+        <span className="text-small text-surface-700">{label}</span>
+        <span className="text-small text-surface-900 tabular-nums font-medium">
+          {value.toLocaleString()}
+        </span>
       </div>
-      <span className="text-sm text-foreground w-12 text-right">{percentage}%</span>
-    </div>
-  );
-}
-
-function EmptyState({ message, icon: Icon }: { message: string; icon: typeof UsersIcon }) {
-  return (
-    <div className="flex flex-col items-center justify-center py-8 text-center">
-      <Icon className="h-12 w-12 text-surface-500 mb-3" />
-      <p className="text-surface-600">{message}</p>
-      <Link
-        to="/settings/employee-compliance"
-        className="text-brand-400 hover:text-brand-300 mt-2 text-sm flex items-center gap-1"
-      >
-        <Cog6ToothIcon className="h-4 w-4" />
-        Configure Integrations
-      </Link>
+      <div
+        className={`h-8 rounded-md ${tone} transition-all`}
+        style={{ width: `${Math.max(8, safe)}%` }}
+      />
     </div>
   );
 }
 
 export default function EmployeeComplianceDashboard() {
-  const queryClient = useQueryClient();
-  const toast = useToast();
-
-  // Fetch dashboard metrics from API
-  const {
-    data: dashboardData,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ['employee-compliance-dashboard'],
+  const { data, isLoading } = useQuery<EmployeeComplianceDashboardData>({
+    queryKey: ['employee-compliance', 'dashboard'],
     queryFn: async () => {
-      const response = await employeeComplianceApi.getDashboard();
-      return response.data;
+      const res = await api.get('/api/employee-compliance/dashboard');
+      return res.data ?? {};
     },
-    refetchInterval: 60000, // Refresh every minute
+    staleTime: 60_000,
   });
 
-  // Fetch missing data report
-  const { data: missingData } = useQuery({
-    queryKey: ['employee-compliance-missing'],
-    queryFn: async () => {
-      const response = await employeeComplianceApi.getMissingData();
-      return response.data;
-    },
-  });
-
-  // Sync mutation
-  const syncMutation = useMutation({
-    mutationFn: () => employeeComplianceApi.triggerSync(),
-    onSuccess: () => {
-      toast.success('Sync initiated. Data will be refreshed shortly.');
-      queryClient.invalidateQueries({ queryKey: ['employee-compliance-dashboard'] });
-      queryClient.invalidateQueries({ queryKey: ['employee-compliance-missing'] });
-    },
-    onError: () => {
-      toast.error('Failed to initiate sync. Please try again.');
-    },
-  });
-
-  // Transform API data to component format
-  const metrics: DashboardMetrics = dashboardData
-    ? {
-        totalEmployees: dashboardData.totalEmployees || 0,
-        averageScore: Math.round(dashboardData.averageScore || 0),
-        complianceRate: Math.round(dashboardData.complianceRate || 0),
-        scoreDistribution: {
-          compliant: dashboardData.scoreDistribution?.compliant || 0,
-          atRisk: dashboardData.scoreDistribution?.atRisk || 0,
-          nonCompliant: dashboardData.scoreDistribution?.nonCompliant || 0,
-        },
-        issueBreakdown: {
-          overdueTrainings: dashboardData.issueBreakdown?.overdueTrainings || 0,
-          missingBackgroundChecks: dashboardData.issueBreakdown?.missingBackgroundChecks || 0,
-          pendingAttestations: dashboardData.issueBreakdown?.pendingAttestations || 0,
-          mfaNotEnabled: dashboardData.issueBreakdown?.mfaNotEnabled || 0,
-          nonCompliantDevices: dashboardData.issueBreakdown?.nonCompliantDevices || 0,
-        },
-        departmentStats: dashboardData.departmentStats || [],
-        upcomingDeadlines: dashboardData.upcomingDeadlines || {
-          expiringBackgroundChecks: [],
-          overdueTrainings: [],
-          pendingAttestations: [],
-        },
-        dataCoverage: {
-          hris: dashboardData.dataCoverage?.hris || 0,
-          backgroundCheck: dashboardData.dataCoverage?.backgroundCheck || 0,
-          training: dashboardData.dataCoverage?.training || 0,
-          assets: dashboardData.dataCoverage?.assets || 0,
-          access: dashboardData.dataCoverage?.access || 0,
-        },
-      }
-    : FALLBACK_METRICS;
-
-  // Calculate issue breakdown for display
-  const issueBreakdownItems = [
-    {
-      type: 'training',
-      count: metrics.issueBreakdown.overdueTrainings,
-      label: 'Training Overdue',
-      icon: AcademicCapIcon,
-      color: 'text-purple-600',
-    },
-    {
-      type: 'background_check',
-      count: metrics.issueBreakdown.missingBackgroundChecks,
-      label: 'Missing Background Check',
-      icon: ShieldCheckIcon,
-      color: 'text-green-600',
-    },
-    {
-      type: 'attestation',
-      count: metrics.issueBreakdown.pendingAttestations,
-      label: 'Pending Attestations',
-      icon: ClockIcon,
-      color: 'text-yellow-600',
-    },
-    {
-      type: 'mfa',
-      count: metrics.issueBreakdown.mfaNotEnabled,
-      label: 'MFA Not Enabled',
-      icon: KeyIcon,
-      color: 'text-cyan-600',
-    },
-    {
-      type: 'device',
-      count: metrics.issueBreakdown.nonCompliantDevices,
-      label: 'Non-Compliant Devices',
-      icon: ComputerDesktopIcon,
-      color: 'text-orange-600',
-    },
-  ];
-
-  const totalIssues = issueBreakdownItems.reduce((sum, i) => sum + i.count, 0);
-  const hasData = metrics.totalEmployees > 0;
-
-  if (error) {
+  if (isLoading) {
     return (
-      <div className="p-6">
-        <div className="card p-8 text-center">
-          <ExclamationTriangleIcon className="h-12 w-12 text-red-600 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-foreground mb-2">Unable to Load Dashboard</h2>
-          <p className="text-muted-foreground mb-4">
-            There was an error loading the employee compliance dashboard. Please try again later.
-          </p>
-          <Button
-            onClick={() =>
-              queryClient.invalidateQueries({ queryKey: ['employee-compliance-dashboard'] })
-            }
-            variant="primary"
-          >
-            Retry
-          </Button>
+      <div className="space-y-5 animate-fade-in">
+        <PageHeader
+          title="Employee Compliance"
+          description="Training compliance, attestations, and assignment health across the organization."
+        />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-28" />
+          ))}
         </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <Skeleton className="h-64" />
+          <Skeleton className="h-64" />
+        </div>
+        <Skeleton className="h-48" />
       </div>
     );
   }
 
+  const compliantPct = Math.round(data?.compliantPct ?? 0);
+  const totalEmployees = data?.totalEmployees ?? 0;
+  const overdue = data?.overdue ?? 0;
+  const expiringSoon = data?.expiringSoon ?? 0;
+  const departments = data?.departments ?? [];
+  const funnel = data?.funnel ?? { assigned: 0, inProgress: 0, completed: 0 };
+  const overdueEmployees = data?.overdueEmployees ?? [];
+
+  const funnelMax = Math.max(funnel.assigned, funnel.inProgress, funnel.completed, 1);
+
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Employee Compliance Dashboard</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Overview of employee compliance across all systems
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Link to="/settings/employee-compliance" className="">
-            <Cog6ToothIcon className="h-5 w-5" />
-            Settings
-          </Link>
-          <Button
-            onClick={() => syncMutation.mutate()}
-            disabled={syncMutation.isPending}
-            variant="secondary"
-          >
-            <ArrowPathIcon className={`h-5 w-5 ${syncMutation.isPending ? 'animate-spin' : ''}`} />
-            {syncMutation.isPending ? 'Syncing...' : 'Sync All'}
-          </Button>
-          <Link to="/people" className="">
-            View All Employees
-          </Link>
-        </div>
-      </div>
-      {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div className="space-y-5 animate-fade-in">
+      <PageHeader
+        title="Employee Compliance"
+        description="Training compliance, attestations, and assignment health across the organization."
+      />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title="Total Employees"
-          value={metrics.totalEmployees}
-          subtitle="Active employees"
-          icon={UsersIcon}
-          color="text-blue-600"
-          isLoading={isLoading}
+          label="Compliant"
+          value={`${compliantPct}%`}
+          icon={<ShieldCheck className="h-5 w-5" />}
+          tone="emerald"
+          caption="All training current"
         />
         <StatCard
-          title="Average Score"
-          value={metrics.averageScore}
-          subtitle="Out of 100"
-          icon={ChartBarIcon}
-          color={
-            metrics.averageScore >= 80
-              ? 'text-green-600'
-              : metrics.averageScore >= 60
-                ? 'text-yellow-600'
-                : 'text-red-600'
-          }
-          isLoading={isLoading}
+          label="Total Employees"
+          value={totalEmployees}
+          icon={<Users className="h-5 w-5" />}
+          tone="brand"
         />
         <StatCard
-          title="Compliance Rate"
-          value={`${metrics.complianceRate}%`}
-          subtitle="Score ≥ 80"
-          icon={CheckCircleIcon}
-          color="text-green-600"
-          isLoading={isLoading}
+          label="Overdue"
+          value={overdue}
+          icon={<ClockAlert className="h-5 w-5" />}
+          tone="red"
         />
         <StatCard
-          title="Issues Found"
-          value={totalIssues}
-          subtitle="Across all categories"
-          icon={ExclamationTriangleIcon}
-          color="text-orange-600"
-          isLoading={isLoading}
+          label="Expiring Soon"
+          value={expiringSoon}
+          icon={<AlertTriangle className="h-5 w-5" />}
+          tone="amber"
+          caption="Next 30 days"
         />
       </div>
-      {!isLoading && !hasData && (
-        <div className="card p-8 text-center">
-          <UsersIcon className="h-16 w-16 text-surface-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-foreground mb-2">No Employee Data Yet</h2>
-          <p className="text-muted-foreground mb-4 max-w-md mx-auto">
-            Connect your HRIS, background check, training, and MDM integrations to start tracking
-            employee compliance.
-          </p>
-          <Link to="/settings/employee-compliance" className="">
-            <Cog6ToothIcon className="h-5 w-5 mr-2" />
-            Configure Data Sources
-          </Link>
-        </div>
-      )}
-      {(isLoading || hasData) && (
-        <>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Score Distribution */}
-            <div className="card p-6">
-              <h3 className="font-semibold text-foreground mb-4">Score Distribution</h3>
-              {isLoading ? (
-                <div className="space-y-3">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="h-6 bg-surface-200 rounded animate-pulse" />
-                  ))}
-                </div>
-              ) : !hasData ? (
-                <EmptyState message="No score data available" icon={ChartBarIcon} />
-              ) : (
-                <div className="space-y-3">
-                  <ScoreBar
-                    range="Compliant (≥80)"
-                    count={metrics.scoreDistribution.compliant}
-                    total={metrics.totalEmployees}
-                    color="bg-green-500"
-                  />
-                  <ScoreBar
-                    range="At Risk (60-79)"
-                    count={metrics.scoreDistribution.atRisk}
-                    total={metrics.totalEmployees}
-                    color="bg-yellow-500"
-                  />
-                  <ScoreBar
-                    range="Non-Compliant (<60)"
-                    count={metrics.scoreDistribution.nonCompliant}
-                    total={metrics.totalEmployees}
-                    color="bg-red-500"
-                  />
-                </div>
-              )}
-            </div>
 
-            {/* Issue Breakdown */}
-            <div className="card p-6">
-              <h3 className="font-semibold text-foreground mb-4">Issue Breakdown</h3>
-              {isLoading ? (
-                <div className="space-y-3">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <div key={i} className="h-12 bg-surface-200 rounded animate-pulse" />
-                  ))}
-                </div>
-              ) : totalIssues === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <CheckCircleIcon className="h-12 w-12 text-green-500 mb-3" />
-                  <p className="text-green-600 font-medium">All Clear!</p>
-                  <p className="text-surface-600 text-sm">No compliance issues detected</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {issueBreakdownItems
-                    .filter((i) => i.count > 0)
-                    .map((issue) => (
-                      <div
-                        key={issue.type}
-                        className="flex items-center justify-between p-3 bg-surface-200/50 rounded-lg hover:bg-surface-200 transition-colors"
-                      >
-                        <div className="flex items-center gap-3">
-                          <issue.icon className={`h-5 w-5 ${issue.color}`} />
-                          <span className="text-foreground">{issue.label}</span>
-                        </div>
-                        <span className="text-lg font-semibold text-foreground">{issue.count}</span>
-                      </div>
-                    ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Department Stats */}
-            <div className="card p-6">
-              <h3 className="font-semibold text-foreground mb-4">Compliance by Department</h3>
-              {isLoading ? (
-                <SkeletonTable rows={5} columns={3} />
-              ) : metrics.departmentStats.length === 0 ? (
-                <EmptyState message="No department data available" icon={BuildingOffice2Icon} />
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-border">
-                        <th className="text-left p-2 font-medium text-muted-foreground">
-                          Department
-                        </th>
-                        <th className="text-center p-2 font-medium text-muted-foreground">
-                          Employees
-                        </th>
-                        <th className="text-center p-2 font-medium text-muted-foreground">
-                          Avg Score
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {metrics.departmentStats.map((dept) => (
-                        <tr
-                          key={dept.department}
-                          className="border-b border-border hover:bg-surface-200/30 transition-colors"
-                        >
-                          <td className="p-2">
-                            <div className="flex items-center gap-2">
-                              <BuildingOffice2Icon className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-foreground">{dept.department}</span>
-                            </div>
-                          </td>
-                          <td className="p-2 text-center text-muted-foreground">
-                            {dept.employeeCount}
-                          </td>
-                          <td className="p-2 text-center">
-                            <span
-                              className={`font-semibold ${dept.averageScore >= 80 ? 'text-green-600' : dept.averageScore >= 60 ? 'text-yellow-600' : 'text-red-600'}`}
-                            >
-                              {dept.averageScore}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-
-            {/* Data Coverage */}
-            <div className="card p-6">
-              <h3 className="font-semibold text-foreground mb-4">Data Coverage</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Percentage of employees with data from each integration type
-              </p>
-              {isLoading ? (
-                <div className="space-y-4">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <div key={i} className="h-5 bg-surface-200 rounded animate-pulse" />
-                  ))}
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <DataCoverageBar
-                    label="HRIS"
-                    percentage={metrics.dataCoverage.hris}
-                    icon={BuildingOffice2Icon}
-                    color="text-blue-600"
-                  />
-                  <DataCoverageBar
-                    label="Background Check"
-                    percentage={metrics.dataCoverage.backgroundCheck}
-                    icon={ShieldCheckIcon}
-                    color="text-green-600"
-                  />
-                  <DataCoverageBar
-                    label="Training (LMS)"
-                    percentage={metrics.dataCoverage.training}
-                    icon={AcademicCapIcon}
-                    color="text-purple-600"
-                  />
-                  <DataCoverageBar
-                    label="Assets (MDM)"
-                    percentage={metrics.dataCoverage.assets}
-                    icon={ComputerDesktopIcon}
-                    color="text-orange-600"
-                  />
-                  <DataCoverageBar
-                    label="Access (IdP)"
-                    percentage={metrics.dataCoverage.access}
-                    icon={KeyIcon}
-                    color="text-cyan-600"
-                  />
-                </div>
-              )}
-
-              {/* Missing Data Alert */}
-              {missingData &&
-                (missingData.noBackgroundCheck?.length > 0 ||
-                  missingData.noTrainingData?.length > 0 ||
-                  missingData.noDeviceData?.length > 0 ||
-                  missingData.noAccessData?.length > 0) && (
-                  <div className="mt-4 p-3 bg-amber-50 dark:bg-yellow-500/10 border border-amber-300 dark:border-yellow-500/30 rounded-lg">
-                    <p className="text-sm text-amber-700 dark:text-yellow-600 font-medium mb-1">
-                      Missing Data Detected
-                    </p>
-                    <p className="text-xs text-amber-600 dark:text-yellow-600/80">
-                      {missingData.noBackgroundCheck?.length || 0} employees missing background
-                      checks, {missingData.noTrainingData?.length || 0} missing training data
-                    </p>
-                    <Link
-                      to="/people?filter=missing-data"
-                      className="text-xs text-amber-700 dark:text-yellow-700 hover:text-amber-800 dark:hover:text-yellow-200 mt-1 inline-block"
-                    >
-                      View details →
-                    </Link>
-                  </div>
-                )}
-            </div>
-          </div>
-
-          {/* Upcoming Deadlines */}
-          <div className="card p-6">
-            <h3 className="font-semibold text-foreground mb-4">Upcoming Deadlines & Issues</h3>
-            {isLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {[1, 2, 3].map((i) => (
-                  <SkeletonCard key={i} />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <Card>
+          <CardHeader>
+            <CardTitle>Compliance by Department</CardTitle>
+            {departments.length > 0 && (
+              <Badge variant="neutral" size="sm" capitalize={false}>
+                {departments.length}
+              </Badge>
+            )}
+          </CardHeader>
+          <CardBody density="comfy">
+            {departments.length === 0 ? (
+              <EmptyState
+                icon={<Building2 className="h-6 w-6" />}
+                title="No department data"
+                description="Compliance breakdown by department will appear here once data is available."
+                size="sm"
+              />
+            ) : (
+              <div className="space-y-3">
+                {departments.map((dept) => (
+                  <DepartmentRow key={dept.department} stat={dept} />
                 ))}
               </div>
+            )}
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Assignment Funnel</CardTitle>
+          </CardHeader>
+          <CardBody density="comfy">
+            {funnel.assigned === 0 ? (
+              <EmptyState
+                icon={<ClipboardList className="h-6 w-6" />}
+                title="No assignments yet"
+                description="Once training is assigned, its journey through completion will appear here."
+                size="sm"
+              />
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Overdue Trainings */}
-                <div className="border border-border rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <AcademicCapIcon className="h-5 w-5 text-red-600" />
-                    <span className="font-medium text-foreground">Overdue Trainings</span>
-                    {metrics.upcomingDeadlines.overdueTrainings.length > 0 && (
-                      <span className="ml-auto bg-red-500/20 text-red-600 px-2 py-0.5 rounded-full text-xs">
-                        {metrics.upcomingDeadlines.overdueTrainings.length}
-                      </span>
-                    )}
-                  </div>
-                  {metrics.upcomingDeadlines.overdueTrainings.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No overdue trainings</p>
-                  ) : (
-                    <div className="space-y-2 max-h-48 overflow-y-auto">
-                      {metrics.upcomingDeadlines.overdueTrainings.slice(0, 5).map((item, i) => (
-                        <div
-                          key={i}
-                          className="text-sm p-2 bg-surface-200/30 rounded hover:bg-surface-200/50 transition-colors"
-                        >
-                          <p className="text-foreground font-medium">
-                            {item.employeeName || item.employeeEmail}
-                          </p>
-                          <p className="text-muted-foreground text-xs">
-                            {item.details?.courseName || 'Training course'}
-                          </p>
-                          <p className="text-red-600 text-xs">
-                            Due: {new Date(item.deadline).toLocaleDateString()}
-                          </p>
-                        </div>
-                      ))}
-                      {metrics.upcomingDeadlines.overdueTrainings.length > 5 && (
-                        <Link
-                          to="/people?filter=overdue-training"
-                          className="text-xs text-brand-400 hover:text-brand-300 block text-center mt-2"
-                        >
-                          View all {metrics.upcomingDeadlines.overdueTrainings.length} →
-                        </Link>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* Expiring Background Checks */}
-                <div className="border border-border rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <ShieldCheckIcon className="h-5 w-5 text-yellow-600" />
-                    <span className="font-medium text-foreground">Expiring Background Checks</span>
-                    {metrics.upcomingDeadlines.expiringBackgroundChecks.length > 0 && (
-                      <span className="ml-auto bg-yellow-500/20 text-yellow-600 px-2 py-0.5 rounded-full text-xs">
-                        {metrics.upcomingDeadlines.expiringBackgroundChecks.length}
-                      </span>
-                    )}
-                  </div>
-                  {metrics.upcomingDeadlines.expiringBackgroundChecks.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No expiring checks</p>
-                  ) : (
-                    <div className="space-y-2 max-h-48 overflow-y-auto">
-                      {metrics.upcomingDeadlines.expiringBackgroundChecks
-                        .slice(0, 5)
-                        .map((item, i) => (
-                          <div
-                            key={i}
-                            className="text-sm p-2 bg-surface-200/30 rounded hover:bg-surface-200/50 transition-colors"
-                          >
-                            <p className="text-foreground font-medium">
-                              {item.employeeName || item.employeeEmail}
-                            </p>
-                            <p className="text-muted-foreground text-xs capitalize">
-                              {item.details?.checkType || 'Background'} check
-                            </p>
-                            <p className="text-yellow-600 text-xs">
-                              Expires: {new Date(item.deadline).toLocaleDateString()}
-                            </p>
-                          </div>
-                        ))}
-                      {metrics.upcomingDeadlines.expiringBackgroundChecks.length > 5 && (
-                        <Link
-                          to="/people?filter=expiring-background"
-                          className="text-xs text-brand-400 hover:text-brand-300 block text-center mt-2"
-                        >
-                          View all {metrics.upcomingDeadlines.expiringBackgroundChecks.length} →
-                        </Link>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* Pending Attestations */}
-                <div className="border border-border rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <ClockIcon className="h-5 w-5 text-blue-600" />
-                    <span className="font-medium text-foreground">Pending Attestations</span>
-                    {metrics.upcomingDeadlines.pendingAttestations.length > 0 && (
-                      <span className="ml-auto bg-blue-500/20 text-blue-600 px-2 py-0.5 rounded-full text-xs">
-                        {metrics.upcomingDeadlines.pendingAttestations.length}
-                      </span>
-                    )}
-                  </div>
-                  {metrics.upcomingDeadlines.pendingAttestations.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No pending attestations</p>
-                  ) : (
-                    <div className="space-y-2 max-h-48 overflow-y-auto">
-                      {metrics.upcomingDeadlines.pendingAttestations.slice(0, 5).map((item, i) => (
-                        <div
-                          key={i}
-                          className="text-sm p-2 bg-surface-200/30 rounded hover:bg-surface-200/50 transition-colors"
-                        >
-                          <p className="text-foreground font-medium">
-                            {item.employeeName || item.employeeEmail}
-                          </p>
-                          <p className="text-muted-foreground text-xs">
-                            {item.details?.policyTitle || 'Policy attestation'}
-                          </p>
-                          <p className="text-blue-600 text-xs">
-                            Requested: {new Date(item.deadline).toLocaleDateString()}
-                          </p>
-                        </div>
-                      ))}
-                      {metrics.upcomingDeadlines.pendingAttestations.length > 5 && (
-                        <Link
-                          to="/people?filter=pending-attestation"
-                          className="text-xs text-brand-400 hover:text-brand-300 block text-center mt-2"
-                        >
-                          View all {metrics.upcomingDeadlines.pendingAttestations.length} →
-                        </Link>
-                      )}
-                    </div>
-                  )}
+              <div className="space-y-4">
+                <FunnelStage
+                  label="Assigned"
+                  value={funnel.assigned}
+                  pct={(funnel.assigned / funnelMax) * 100}
+                  tone="bg-blue-500/80"
+                />
+                <FunnelStage
+                  label="In progress"
+                  value={funnel.inProgress}
+                  pct={(funnel.inProgress / funnelMax) * 100}
+                  tone="bg-amber-500/80"
+                />
+                <FunnelStage
+                  label="Completed"
+                  value={funnel.completed}
+                  pct={(funnel.completed / funnelMax) * 100}
+                  tone="bg-emerald-500/80"
+                />
+                <div className="pt-2 border-t border-surface-200 text-xs text-surface-500 flex items-center justify-between">
+                  <span>Completion rate</span>
+                  <span className="tabular-nums text-surface-700">
+                    {funnel.assigned > 0
+                      ? Math.round((funnel.completed / funnel.assigned) * 100)
+                      : 0}
+                    %
+                  </span>
                 </div>
               </div>
             )}
-          </div>
-        </>
-      )}
+          </CardBody>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Overdue Employees</CardTitle>
+          {overdueEmployees.length > 0 && (
+            <Badge variant="warning" size="sm" capitalize={false}>
+              {overdueEmployees.length}
+            </Badge>
+          )}
+        </CardHeader>
+        <CardBody density="comfy">
+          {overdueEmployees.length === 0 ? (
+            <EmptyState
+              icon={<CheckCircle2 className="h-6 w-6" />}
+              title="Everyone's on track"
+              description="No employees currently have overdue training or attestations."
+              size="sm"
+            />
+          ) : (
+            <div className="space-y-2">
+              {overdueEmployees.map((emp) => (
+                <Link
+                  key={emp.id}
+                  to={`/people/${emp.id}`}
+                  className="flex items-center gap-3 p-3 rounded-md bg-surface-50 hover:bg-surface-100 border border-surface-200 transition-colors"
+                >
+                  <ClockAlert className="h-4 w-4 text-amber-700 shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-surface-900 font-medium truncate">{getDisplayName(emp)}</p>
+                    <p className="text-xs text-surface-500 truncate">{emp.email}</p>
+                  </div>
+                  {emp.department && (
+                    <div className="shrink-0 hidden sm:block">
+                      <CategoryChip value={emp.department} />
+                    </div>
+                  )}
+                  <div className="shrink-0 flex items-center gap-2">
+                    <Badge variant="danger" size="sm" capitalize={false}>
+                      {emp.overdueCount} overdue
+                    </Badge>
+                    {emp.oldestDueAt && (
+                      <span className="text-xs text-surface-500 tabular-nums hidden md:inline">
+                        Since {formatDate(emp.oldestDueAt)}
+                      </span>
+                    )}
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-surface-500 shrink-0" />
+                </Link>
+              ))}
+            </div>
+          )}
+        </CardBody>
+      </Card>
     </div>
   );
 }

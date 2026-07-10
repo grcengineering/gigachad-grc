@@ -1,440 +1,296 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
+import { Plus, Search, Clock, FileText, Layers } from 'lucide-react';
+import api from '@/lib/api';
 import {
-  MagnifyingGlassIcon,
-  FunnelIcon,
-  DocumentDuplicateIcon,
-  ClockIcon,
-  UserGroupIcon,
-  ArrowLeftIcon,
-} from '@heroicons/react/24/outline';
-import { Button } from '@/components/ui/Button';
-import { ExerciseTemplatePreview } from '@/components/bcdr/ExerciseTemplatePreview';
-import { api } from '@/lib/api';
-import clsx from 'clsx';
-import toast from 'react-hot-toast';
-
-import { Textarea } from '@/components/ui/Textarea';
-
-import { Input } from '@/components/ui/Input';
-
-import { SelectNative } from '@/components/ui/SelectNative';
-
-// ============================================
-// Types
-// ============================================
+  Button,
+  Badge,
+  Card,
+  CardBody,
+  PageHeader,
+  FilterBar,
+  Select,
+  Input,
+  EmptyState,
+  Skeleton,
+  type BadgeVariant,
+  type ActiveFilter,
+} from '@/components/ui';
 
 interface ExerciseTemplate {
   id: string;
-  templateId: string;
-  title: string;
-  description: string;
-  category: string;
-  scenarioType: string;
-  scenarioNarrative: string;
-  discussionQuestions: any[];
-  injects?: any[];
-  expectedDecisions?: string[];
-  facilitatorNotes?: string;
+  templateId?: string;
+  template_id?: string;
+  name?: string;
+  title?: string;
+  description?: string;
+  category?: string;
+  difficulty?: string;
   estimatedDuration?: number;
-  participantRoles?: any[];
-  tags: string[];
-  isGlobal: boolean;
-  usageCount: number;
+  estimated_duration?: number;
+  duration?: number;
+  scenarios?: unknown[];
+  scenarioCount?: number;
+  scenario_count?: number;
+  discussionQuestions?: unknown[];
+  discussion_questions?: unknown[];
+  isGlobal?: boolean;
+  is_global?: boolean;
+  tags?: string[];
 }
 
-const CATEGORY_OPTIONS = [
-  { value: '', label: 'All Categories' },
-  { value: 'ransomware', label: 'Ransomware' },
-  { value: 'infrastructure', label: 'Infrastructure' },
-  { value: 'vendor_outage', label: 'Vendor Outage' },
-  { value: 'natural_disaster', label: 'Natural Disaster' },
-  { value: 'pandemic', label: 'Pandemic' },
-  { value: 'data_breach', label: 'Data Breach' },
-];
+interface CategoryStat {
+  category: string;
+  count: number;
+}
 
-const CATEGORY_COLORS: Record<string, string> = {
-  ransomware: 'bg-red-500',
-  natural_disaster: 'bg-orange-500',
-  vendor_outage: 'bg-yellow-500',
-  data_breach: 'bg-purple-500',
-  pandemic: 'bg-blue-500',
-  infrastructure: 'bg-cyan-500',
+const DIFFICULTY_VARIANT: Record<string, BadgeVariant> = {
+  beginner: 'success',
+  easy: 'success',
+  intermediate: 'warning',
+  medium: 'warning',
+  advanced: 'danger',
+  hard: 'danger',
+  expert: 'danger',
 };
 
-// ============================================
-// Exercise Templates Page Component
-// ============================================
+function pick<T>(...vals: (T | undefined)[]) {
+  for (const v of vals) if (v !== undefined && v !== null) return v;
+  return undefined;
+}
+
+function formatDuration(minutes?: number) {
+  if (!minutes) return null;
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  const rem = minutes % 60;
+  return rem ? `${hours}h ${rem}m` : `${hours}h`;
+}
+
+function toTitle(s: string) {
+  return s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
 export default function ExerciseTemplates() {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const isNewTemplate = id === 'new';
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [templates, setTemplates] = useState<ExerciseTemplate[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [category, setCategory] = useState('');
-  const [selectedTemplate, setSelectedTemplate] = useState<ExerciseTemplate | null>(null);
-  const [categories, setCategories] = useState<{ category: string; count: number }[]>([]);
-  const [isCreating, setIsCreating] = useState(false);
-  const [createForm, setCreateForm] = useState({
-    title: '',
-    description: '',
-    category: 'ransomware',
-    scenarioType: 'tabletop',
-    scenarioNarrative: '',
-    estimatedDuration: 60,
-    facilitatorNotes: '',
-  });
+  const filters = {
+    search: searchParams.get('search') ?? '',
+    category: searchParams.get('category') ?? '',
+  };
+
+  const [searchInput, setSearchInput] = useState(filters.search);
+  const [debouncedSearch, setDebouncedSearch] = useState(filters.search);
 
   useEffect(() => {
-    if (!isNewTemplate) {
-      loadTemplates();
-      loadCategories();
-    }
-  }, [search, category, isNewTemplate]);
+    const t = setTimeout(() => setDebouncedSearch(searchInput), 300);
+    return () => clearTimeout(t);
+  }, [searchInput]);
 
-  const handleCreateTemplate = async () => {
-    if (!createForm.title.trim()) {
-      toast.error('Please enter a template title');
-      return;
-    }
-    setIsCreating(true);
-    try {
-      await api.post('/api/bcdr/exercise-templates', {
-        ...createForm,
-        templateId: `tpl-${Date.now()}`,
-        discussionQuestions: [],
-        injects: [],
-        expectedDecisions: [],
-        participantRoles: [],
-        tags: [],
-      });
-      toast.success('Template created successfully');
-      navigate(`/bcdr/exercise-templates`);
-    } catch (error) {
-      console.error('Failed to create template:', error);
-      toast.error('Failed to create template');
-    } finally {
-      setIsCreating(false);
-    }
-  };
-
-  const loadTemplates = async () => {
-    setIsLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (search) params.append('search', search);
-      if (category) params.append('category', category);
-      params.append('includeGlobal', 'true');
-
-      const response = await api.get(`/bcdr/exercise-templates?${params.toString()}`);
-      setTemplates(response.data.data || []);
-    } catch (error) {
-      console.error('Failed to load templates:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const loadCategories = async () => {
-    try {
-      const response = await api.get('/bcdr/exercise-templates/categories');
-      const data = response.data;
-      // Handle both array response and { data: [] } response format
-      setCategories(Array.isArray(data) ? data : data?.data || []);
-    } catch (error) {
-      console.error('Failed to load categories:', error);
-      setCategories([]);
-    }
-  };
-
-  const handleCloneTemplate = async (templateId: string) => {
-    try {
-      const response = await api.post(`/bcdr/exercise-templates/${templateId}/clone`);
-      // Navigate to create a new DR test using this template
-      navigate(`/bcdr/tests/new?templateId=${response.data.id}`);
-    } catch (error) {
-      console.error('Failed to clone template:', error);
-    }
-  };
-
-  // Ensure categories is always an array
-  const safeCategories = Array.isArray(categories) ? categories : [];
-
-  // Create form for new templates
-  if (isNewTemplate) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-start gap-4">
-          <button
-            onClick={() => navigate('/bcdr/exercise-templates')}
-            className="p-2 hover:bg-slate-700 rounded-lg text-slate-400 mt-1"
-          >
-            <ArrowLeftIcon className="w-5 h-5" />
-          </button>
-          <div>
-            <h1 className="text-2xl font-bold text-white">Create Exercise Template</h1>
-            <p className="text-slate-400 mt-1">
-              Create a custom tabletop exercise scenario template
-            </p>
-          </div>
-        </div>
-        <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              Template Title *
-            </label>
-            <Input
-              type="text"
-              value={createForm.title}
-              onChange={(e) => setCreateForm({ ...createForm, title: e.target.value })}
-              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-              placeholder="e.g., Ransomware Attack Scenario"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Category</label>
-              <SelectNative
-                value={createForm.category}
-                onChange={(e) => setCreateForm({ ...createForm, category: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-              >
-                {CATEGORY_OPTIONS.filter((opt) => opt.value).map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </SelectNative>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
-                Estimated Duration (minutes)
-              </label>
-              <Input
-                type="number"
-                value={createForm.estimatedDuration}
-                onChange={(e) =>
-                  setCreateForm({
-                    ...createForm,
-                    estimatedDuration: parseInt(e.target.value) || 60,
-                  })
-                }
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Description</label>
-            <Textarea
-              value={createForm.description}
-              onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
-              rows={2}
-              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-              placeholder="Brief description of the exercise template..."
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              Scenario Narrative
-            </label>
-            <Textarea
-              value={createForm.scenarioNarrative}
-              onChange={(e) => setCreateForm({ ...createForm, scenarioNarrative: e.target.value })}
-              rows={4}
-              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-              placeholder="Describe the scenario in detail for participants..."
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              Facilitator Notes
-            </label>
-            <Textarea
-              value={createForm.facilitatorNotes}
-              onChange={(e) => setCreateForm({ ...createForm, facilitatorNotes: e.target.value })}
-              rows={2}
-              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-              placeholder="Notes for the exercise facilitator..."
-            />
-          </div>
-
-          <div className="flex justify-end gap-3 pt-4">
-            <Button variant="secondary" onClick={() => navigate('/bcdr/exercise-templates')}>
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              onClick={handleCreateTemplate}
-              disabled={isCreating || !createForm.title.trim()}
-            >
-              {isCreating ? 'Creating...' : 'Create Template'}
-            </Button>
-          </div>
-        </div>
-      </div>
+  useEffect(() => {
+    setSearchParams(
+      (prev) => {
+        const params = new URLSearchParams(prev);
+        if (debouncedSearch) params.set('search', debouncedSearch);
+        else params.delete('search');
+        return params;
+      },
+      { replace: true }
     );
+  }, [debouncedSearch, setSearchParams]);
+
+  const updateFilter = (key: string, value: string) => {
+    const params = new URLSearchParams(searchParams);
+    if (value) params.set(key, value);
+    else params.delete(key);
+    setSearchParams(params);
+  };
+
+  const clearAll = () => {
+    setSearchInput('');
+    setSearchParams(new URLSearchParams());
+  };
+
+  const { data: templates = [], isLoading } = useQuery<ExerciseTemplate[]>({
+    queryKey: ['exercise-templates', debouncedSearch, filters.category],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (debouncedSearch) params.append('search', debouncedSearch);
+      if (filters.category) params.append('category', filters.category);
+      const qs = params.toString();
+      const res = await api.get(`/api/bcdr/exercise-templates${qs ? `?${qs}` : ''}`);
+      const body = res.data;
+      if (Array.isArray(body)) return body;
+      return body?.data ?? [];
+    },
+  });
+
+  const { data: categories = [] } = useQuery<CategoryStat[]>({
+    queryKey: ['exercise-template-categories'],
+    queryFn: async () => {
+      const res = await api.get('/api/bcdr/exercise-templates/categories');
+      const body = res.data;
+      if (Array.isArray(body)) return body;
+      return body?.data ?? [];
+    },
+  });
+
+  const categoryOptions = categories
+    .filter((c) => !!c.category)
+    .map((c) => ({
+      value: c.category,
+      label: `${toTitle(c.category)} (${c.count})`,
+    }));
+
+  const activeFilters: ActiveFilter[] = [];
+  if (filters.search) {
+    activeFilters.push({
+      key: 'search',
+      label: `Search: ${filters.search}`,
+      onClear: () => {
+        setSearchInput('');
+        updateFilter('search', '');
+      },
+    });
+  }
+  if (filters.category) {
+    activeFilters.push({
+      key: 'category',
+      label: `Category: ${toTitle(filters.category)}`,
+      onClear: () => updateFilter('category', ''),
+    });
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Exercise Template Library</h1>
-          <p className="text-slate-400 mt-1">
-            Pre-built tabletop exercise scenarios for DR testing
-          </p>
-        </div>
-        <Button variant="primary" onClick={() => navigate('/bcdr/exercise-templates/new')}>
-          Create Custom Template
-        </Button>
-      </div>
-      {/* Filters */}
-      <div className="flex items-center gap-4">
-        <div className="flex-1 relative">
-          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-          <Input
-            type="text"
-            placeholder="Search templates..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400"
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <FunnelIcon className="h-5 w-5 text-slate-400" />
-          <SelectNative
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
-          >
-            {CATEGORY_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </SelectNative>
-        </div>
-      </div>
-      {/* Category Stats */}
-      {safeCategories.length > 0 && (
-        <div className="flex flex-wrap gap-3">
-          {safeCategories.map((cat) => (
-            <button
-              key={cat.category}
-              onClick={() => setCategory(cat.category === category ? '' : cat.category)}
-              className={clsx(
-                'flex items-center gap-2 px-3 py-1.5 rounded-full text-sm transition-all',
-                cat.category === category
-                  ? 'bg-cyan-500 text-white'
-                  : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-              )}
-            >
-              <div
-                className={clsx(
-                  'w-2 h-2 rounded-full',
-                  CATEGORY_COLORS[cat.category] || 'bg-slate-500'
-                )}
-              />
-              <span className="capitalize">{cat.category.replace('_', ' ')}</span>
-              <span className="text-slate-400">({cat.count})</span>
-            </button>
-          ))}
-        </div>
-      )}
-      {/* Templates Grid */}
+    <div className="space-y-5 animate-fade-in">
+      <PageHeader
+        title="Exercise Templates"
+        description="Pre-built tabletop scenarios for BC/DR drills and DR testing."
+        actions={
+          <Button size="sm" leftIcon={<Plus className="h-4 w-4" />}>
+            Create Template
+          </Button>
+        }
+      />
+
+      <FilterBar active={activeFilters} onClearAll={activeFilters.length ? clearAll : undefined}>
+        <Input
+          inputSize="sm"
+          className="w-64"
+          placeholder="Search templates…"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          leftIcon={<Search className="h-4 w-4" />}
+        />
+        <Select
+          size="sm"
+          fullWidth={false}
+          className="w-56"
+          placeholder="All Categories"
+          value={filters.category}
+          onChange={(v) => updateFilter('category', v)}
+          options={categoryOptions}
+          clearable
+          searchable
+        />
+      </FilterBar>
+
       {isLoading ? (
-        <div className="text-center py-12">
-          <div className="animate-spin h-8 w-8 border-2 border-cyan-500 border-t-transparent rounded-full mx-auto" />
-          <p className="text-slate-400 mt-4">Loading templates...</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-44" />
+          ))}
         </div>
       ) : templates.length === 0 ? (
-        <div className="text-center py-12">
-          <DocumentDuplicateIcon className="h-12 w-12 text-slate-500 mx-auto" />
-          <p className="text-slate-400 mt-4">No templates found</p>
-        </div>
+        <Card>
+          <CardBody density="comfy">
+            <EmptyState
+              icon={<FileText className="h-8 w-8" />}
+              title="No exercise templates found"
+              description={
+                activeFilters.length
+                  ? 'Try clearing your filters to see all templates.'
+                  : 'Create a tabletop exercise template to get started.'
+              }
+              action={
+                activeFilters.length ? (
+                  <Button variant="outline" size="sm" onClick={clearAll}>
+                    Clear filters
+                  </Button>
+                ) : (
+                  <Button size="sm" leftIcon={<Plus className="h-4 w-4" />}>
+                    Create Template
+                  </Button>
+                )
+              }
+            />
+          </CardBody>
+        </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {templates.map((template) => (
-            <div
-              key={template.id}
-              className="bg-slate-800 rounded-lg p-6 border border-slate-700 hover:border-slate-600 transition-all cursor-pointer group"
-              onClick={() => setSelectedTemplate(template)}
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div
-                    className={clsx(
-                      'w-3 h-3 rounded-full',
-                      CATEGORY_COLORS[template.category] || 'bg-slate-500'
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {templates.map((tpl) => {
+            const name = pick(tpl.name, tpl.title) ?? 'Untitled template';
+            const duration = formatDuration(
+              pick(tpl.estimatedDuration, tpl.estimated_duration, tpl.duration)
+            );
+            const scenarioCount =
+              pick(tpl.scenarioCount, tpl.scenario_count) ??
+              (Array.isArray(tpl.scenarios) ? tpl.scenarios.length : undefined) ??
+              (Array.isArray(tpl.discussionQuestions)
+                ? tpl.discussionQuestions.length
+                : Array.isArray(tpl.discussion_questions)
+                  ? tpl.discussion_questions.length
+                  : 0);
+            const isGlobal = pick(tpl.isGlobal, tpl.is_global);
+
+            return (
+              <Card key={tpl.id} interactive>
+                <CardBody density="comfy" className="space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      {tpl.category && (
+                        <p className="text-xs uppercase tracking-wider text-surface-500">
+                          {toTitle(tpl.category)}
+                        </p>
+                      )}
+                      <h3 className="text-h3 text-surface-900 mt-0.5">{name}</h3>
+                    </div>
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      {tpl.difficulty && (
+                        <Badge variant={DIFFICULTY_VARIANT[tpl.difficulty] ?? 'neutral'} size="sm">
+                          {tpl.difficulty.replace(/_/g, ' ')}
+                        </Badge>
+                      )}
+                      {isGlobal && (
+                        <Badge variant="info" size="sm">
+                          Global
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+
+                  {tpl.description && (
+                    <p className="text-small text-surface-700 line-clamp-3">{tpl.description}</p>
+                  )}
+
+                  <div className="flex items-center gap-4 text-small text-surface-700 pt-2 border-t border-surface-200">
+                    {duration && (
+                      <span className="inline-flex items-center gap-1">
+                        <Clock className="h-4 w-4 text-surface-500" />
+                        {duration}
+                      </span>
                     )}
-                  />
-                  <span className="text-sm text-slate-400 capitalize">
-                    {template.category.replace('_', ' ')}
-                  </span>
-                </div>
-                {template.isGlobal && (
-                  <span className="px-2 py-0.5 bg-cyan-500/20 text-cyan-600 rounded text-xs">
-                    Global
-                  </span>
-                )}
-              </div>
-
-              <h3 className="text-lg font-medium text-white mb-2 group-hover:text-cyan-600 transition-colors">
-                {template.title}
-              </h3>
-              <p className="text-sm text-slate-400 line-clamp-2 mb-4">{template.description}</p>
-
-              <div className="flex items-center gap-4 text-sm text-slate-400">
-                {template.estimatedDuration && (
-                  <div className="flex items-center gap-1">
-                    <ClockIcon className="h-4 w-4" />
-                    <span>{template.estimatedDuration}m</span>
+                    <span className="inline-flex items-center gap-1">
+                      <Layers className="h-4 w-4 text-surface-500" />
+                      {scenarioCount} {scenarioCount === 1 ? 'scenario' : 'scenarios'}
+                    </span>
                   </div>
-                )}
-                {template.participantRoles && (
-                  <div className="flex items-center gap-1">
-                    <UserGroupIcon className="h-4 w-4" />
-                    <span>{template.participantRoles.length} roles</span>
-                  </div>
-                )}
-                <div className="flex items-center gap-1">
-                  <DocumentDuplicateIcon className="h-4 w-4" />
-                  <span>{template.usageCount} uses</span>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-2 mt-4">
-                {template.tags?.slice(0, 3).map((tag) => (
-                  <span
-                    key={tag}
-                    className="px-2 py-0.5 bg-slate-700 text-slate-300 rounded text-xs"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </div>
-          ))}
+                </CardBody>
+              </Card>
+            );
+          })}
         </div>
-      )}
-      {/* Template Preview Modal */}
-      {selectedTemplate && (
-        <ExerciseTemplatePreview
-          template={selectedTemplate}
-          onClose={() => setSelectedTemplate(null)}
-          onUseTemplate={() => {
-            handleCloneTemplate(selectedTemplate.id);
-            setSelectedTemplate(null);
-          }}
-        />
       )}
     </div>
   );

@@ -1,12 +1,8 @@
 import { useState } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { risksApi, assetsApi, controlsApi } from '../lib/api';
-import { RiskDetail as RiskDetailData } from '../lib/apiTypes';
 import RiskWorkflowPanel from '../components/risk/RiskWorkflowPanel';
-import RiskTasksPanel from '../components/risk/RiskTasksPanel';
-import EntityAuditHistory from '../components/EntityAuditHistory';
-import toast from 'react-hot-toast';
 import {
   ArrowLeft,
   Edit2,
@@ -22,17 +18,115 @@ import {
   DollarSign,
   TrendingUp,
   Percent,
-  ClipboardList,
 } from 'lucide-react';
+import { Badge, Button, Dialog, Input, Select, Textarea } from '@/components/ui';
+import { riskStatusVariant } from '@/lib/riskStatus';
 
-import { Textarea } from '@/components/ui/Textarea';
-
-import { Input } from '@/components/ui/Input';
-
-import { SelectNative } from '@/components/ui/SelectNative';
-import { Dialog } from '@/components/ui/Dialog';
-
-// Using RiskDetail from apiTypes as RiskDetailData
+// Types
+interface RiskDetail {
+  id: string;
+  riskId: string;
+  title: string;
+  description: string;
+  category: string;
+  source?: string;
+  initialSeverity?: string;
+  status: string;
+  likelihood: string;
+  impact: string;
+  inherentRisk: string;
+  residualRisk?: string;
+  likelihoodPct?: number;
+  impactValue?: number;
+  annualLossExp?: number;
+  treatmentPlan?: string;
+  treatmentNotes?: string;
+  treatmentDueDate?: string;
+  ownerId?: string;
+  ownerName?: string;
+  reporterId?: string;
+  grcSmeId?: string;
+  riskAssessorId?: string;
+  riskOwnerId?: string;
+  reviewFrequency: string;
+  lastReviewedAt?: string;
+  nextReviewDue?: string;
+  tags: string[];
+  assetCount: number;
+  controlCount: number;
+  scenarioCount: number;
+  createdAt: string;
+  assets: { id: string; name: string; type: string; criticality: string; source: string }[];
+  controls: {
+    id: string;
+    controlId: string;
+    title: string;
+    status: string;
+    effectiveness: string;
+  }[];
+  scenarios: {
+    id: string;
+    title: string;
+    description: string;
+    threatActor?: string;
+    attackVector?: string;
+    likelihood: string;
+    impact: string;
+    createdAt: string;
+  }[];
+  history: {
+    id: string;
+    action: string;
+    changes?: any;
+    notes?: string;
+    changedBy: string;
+    changedAt: string;
+  }[];
+  // Workflow fields
+  assessment?: {
+    id: string;
+    status: string;
+    riskAssessorId?: string;
+    threatDescription?: string;
+    affectedAssets?: string[];
+    existingControls?: string[];
+    vulnerabilities?: string;
+    likelihoodScore?: string;
+    likelihoodRationale?: string;
+    impactScore?: string;
+    impactRationale?: string;
+    recommendedOwnerId?: string;
+    assessmentNotes?: string;
+    treatmentRecommendation?: string;
+    calculatedRiskScore?: string;
+    grcReviewedBy?: string;
+    grcReviewNotes?: string;
+    grcDeclinedReason?: string;
+  };
+  treatment?: {
+    id: string;
+    status: string;
+    riskOwnerId?: string;
+    decision?: string;
+    justification?: string;
+    mitigationDescription?: string;
+    mitigationTargetDate?: string;
+    mitigationStatus?: string;
+    mitigationProgress?: number;
+    transferTo?: string;
+    transferCost?: number;
+    avoidStrategy?: string;
+    acceptanceRationale?: string;
+    acceptanceExpiresAt?: string;
+    executiveApproverId?: string;
+    executiveApproved?: boolean;
+    executiveNotes?: string;
+    executiveDeniedReason?: string;
+    residualLikelihood?: string;
+    residualImpact?: string;
+    residualRiskLevel?: string;
+  };
+}
 
 const RISK_LEVELS = [
   { value: 'low', label: 'Low', color: 'bg-emerald-500' },
@@ -53,7 +147,7 @@ const TREATMENT_PLANS = [
 
 const CONTROL_EFFECTIVENESS = [
   { value: 'none', label: 'None', color: 'text-red-600' },
-  { value: 'partial', label: 'Partial', color: 'text-amber-600' },
+  { value: 'partial', label: 'Partial', color: 'text-amber-700' },
   { value: 'full', label: 'Full', color: 'text-emerald-600' },
 ];
 
@@ -61,22 +155,10 @@ export default function RiskDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [searchParams] = useSearchParams();
 
-  // Read initial tab from URL query param
-  const tabFromUrl = searchParams.get('tab') as
-    | 'assets'
-    | 'controls'
-    | 'scenarios'
-    | 'tasks'
-    | 'history'
-    | null;
-  const validTabs = ['assets', 'controls', 'scenarios', 'tasks', 'history'];
-  const initialTab = tabFromUrl && validTabs.includes(tabFromUrl) ? tabFromUrl : 'controls';
-
-  const [activeTab, setActiveTab] = useState<
-    'assets' | 'controls' | 'scenarios' | 'tasks' | 'history'
-  >(initialTab);
+  const [activeTab, setActiveTab] = useState<'assets' | 'controls' | 'scenarios' | 'history'>(
+    'controls'
+  );
   const [showEditModal, setShowEditModal] = useState(false);
   const [showTreatmentModal, setShowTreatmentModal] = useState(false);
   const [showLinkControlModal, setShowLinkControlModal] = useState(false);
@@ -84,7 +166,7 @@ export default function RiskDetail() {
   const [showScenarioModal, setShowScenarioModal] = useState(false);
 
   // Fetch risk details
-  const { data: risk, isLoading } = useQuery<RiskDetailData>({
+  const { data: risk, isLoading } = useQuery<RiskDetail>({
     queryKey: ['risks', id],
     queryFn: async () => {
       const response = await risksApi.get(id!);
@@ -120,9 +202,7 @@ export default function RiskDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['risks', id] });
       setShowEditModal(false);
-      toast.success('Risk updated successfully');
     },
-    onError: () => toast.error('Failed to update risk'),
   });
 
   const deleteMutation = useMutation({
@@ -130,10 +210,8 @@ export default function RiskDetail() {
       await risksApi.delete(id!);
     },
     onSuccess: () => {
-      toast.success('Risk deleted successfully');
       navigate('/risks');
     },
-    onError: () => toast.error('Failed to delete risk'),
   });
 
   const updateTreatmentMutation = useMutation({
@@ -144,9 +222,7 @@ export default function RiskDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['risks', id] });
       setShowTreatmentModal(false);
-      toast.success('Treatment plan updated');
     },
-    onError: () => toast.error('Failed to update treatment'),
   });
 
   const markReviewedMutation = useMutation({
@@ -156,9 +232,7 @@ export default function RiskDetail() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['risks', id] });
-      toast.success('Risk marked as reviewed');
     },
-    onError: () => toast.error('Failed to mark as reviewed'),
   });
 
   const linkControlMutation = useMutation({
@@ -168,9 +242,7 @@ export default function RiskDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['risks', id] });
       setShowLinkControlModal(false);
-      toast.success('Control linked');
     },
-    onError: () => toast.error('Failed to link control'),
   });
 
   const unlinkControlMutation = useMutation({
@@ -179,9 +251,7 @@ export default function RiskDetail() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['risks', id] });
-      toast.success('Control unlinked');
     },
-    onError: () => toast.error('Failed to unlink control'),
   });
 
   const linkAssetsMutation = useMutation({
@@ -191,9 +261,7 @@ export default function RiskDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['risks', id] });
       setShowLinkAssetModal(false);
-      toast.success('Assets linked');
     },
-    onError: () => toast.error('Failed to link assets'),
   });
 
   const unlinkAssetMutation = useMutation({
@@ -202,9 +270,7 @@ export default function RiskDetail() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['risks', id] });
-      toast.success('Asset unlinked');
     },
-    onError: () => toast.error('Failed to unlink asset'),
   });
 
   const createScenarioMutation = useMutation({
@@ -215,9 +281,7 @@ export default function RiskDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['risks', id] });
       setShowScenarioModal(false);
-      toast.success('Scenario created');
     },
-    onError: () => toast.error('Failed to create scenario'),
   });
 
   const deleteScenarioMutation = useMutation({
@@ -225,32 +289,13 @@ export default function RiskDetail() {
       await risksApi.deleteScenario(id!, scenarioId);
     },
     onSuccess: () => {
-      toast.success('Scenario deleted');
       queryClient.invalidateQueries({ queryKey: ['risks', id] });
     },
-    onError: () => toast.error('Failed to delete scenario'),
   });
 
   const getRiskLevelColor = (level: string) => {
     const levelConfig = RISK_LEVELS.find((l) => l.value === level);
-    return levelConfig?.color || 'bg-gray-500';
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'open':
-        return 'bg-red-500/20 text-red-600';
-      case 'in_treatment':
-        return 'bg-amber-500/20 text-amber-600';
-      case 'accepted':
-        return 'bg-blue-500/20 text-blue-600';
-      case 'mitigated':
-        return 'bg-emerald-500/20 text-emerald-600';
-      case 'closed':
-        return 'bg-surface-500/20 text-surface-600';
-      default:
-        return 'bg-surface-500/20 text-surface-600';
-    }
+    return levelConfig?.color || 'bg-surface-300';
   };
 
   const formatCurrency = (value: number) => {
@@ -290,21 +335,19 @@ export default function RiskDetail() {
           </button>
           <div>
             <div className="flex items-center gap-3">
-              <span className="text-brand-400 font-mono">{risk.riskId}</span>
-              <span
-                className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(risk.status)}`}
-              >
-                {risk.status?.replace('_', ' ') || 'Unknown'}
-              </span>
+              <span className="text-brand-700 font-mono">{risk.riskId}</span>
+              <Badge variant={riskStatusVariant(risk.status)} size="sm">
+                {(risk.status || '').replace(/_/g, ' ')}
+              </Badge>
             </div>
-            <h1 className="text-2xl font-semibold text-white mt-1">{risk.title}</h1>
+            <h1 className="text-2xl font-semibold text-surface-900 mt-1">{risk.title}</h1>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={() => markReviewedMutation.mutate()}
             disabled={markReviewedMutation.isPending}
-            className="px-4 py-2 bg-surface-200 text-surface-700 rounded-lg hover:bg-surface-600 flex items-center gap-2"
+            className="px-4 py-2 bg-surface-200 text-surface-700 rounded-lg hover:bg-surface-300 flex items-center gap-2"
           >
             <CheckCircle className="w-4 h-4" />
             Mark Reviewed
@@ -353,35 +396,39 @@ export default function RiskDetail() {
           <div className="grid grid-cols-2 gap-6">
             <div>
               <h3 className="text-sm font-medium text-surface-600 mb-2">Category</h3>
-              <p className="text-white capitalize">{risk.category}</p>
+              <p className="text-surface-900 capitalize">{risk.category}</p>
             </div>
             <div>
               <h3 className="text-sm font-medium text-surface-600 mb-2">Review Frequency</h3>
-              <p className="text-white capitalize">{risk.reviewFrequency}</p>
+              <p className="text-surface-900 capitalize">{risk.reviewFrequency}</p>
             </div>
             {risk.lastReviewedAt && (
               <div>
                 <h3 className="text-sm font-medium text-surface-600 mb-2">Last Reviewed</h3>
-                <p className="text-white">{new Date(risk.lastReviewedAt).toLocaleDateString()}</p>
+                <p className="text-surface-900">
+                  {new Date(risk.lastReviewedAt).toLocaleDateString()}
+                </p>
               </div>
             )}
             {risk.nextReviewDue && (
               <div>
                 <h3 className="text-sm font-medium text-surface-600 mb-2">Next Review Due</h3>
-                <p className="text-white">{new Date(risk.nextReviewDue).toLocaleDateString()}</p>
+                <p className="text-surface-900">
+                  {new Date(risk.nextReviewDue).toLocaleDateString()}
+                </p>
               </div>
             )}
           </div>
 
           {/* Tags */}
-          {(risk?.tags?.length ?? 0) > 0 && (
+          {risk.tags.length > 0 && (
             <div>
               <h3 className="text-sm font-medium text-surface-600 mb-2">Tags</h3>
               <div className="flex flex-wrap gap-2">
-                {risk?.tags?.map((tag) => (
+                {risk.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="px-2 py-1 bg-brand-500/20 text-brand-400 rounded text-sm"
+                    className="px-2 py-1 bg-brand-500/20 text-brand-700 rounded text-sm"
                   >
                     {tag}
                   </span>
@@ -392,10 +439,10 @@ export default function RiskDetail() {
 
           {/* Treatment Info */}
           {risk.treatmentPlan && (
-            <div className="pt-4 border-t border-surface-200">
+            <div className="pt-4 border-t border-surface-300">
               <h3 className="text-sm font-medium text-surface-600 mb-2">Treatment Plan</h3>
               <div className="flex items-center gap-4">
-                <span className="px-3 py-1 bg-brand-500/20 text-brand-400 rounded capitalize">
+                <span className="px-3 py-1 bg-brand-500/20 text-brand-700 rounded capitalize">
                   {risk.treatmentPlan}
                 </span>
                 {risk.treatmentDueDate && (
@@ -416,26 +463,28 @@ export default function RiskDetail() {
         <div className="space-y-4">
           {/* Qualitative */}
           <div className="bg-white rounded-xl border border-surface-200 p-6">
-            <h3 className="text-lg font-medium text-white mb-4">Risk Assessment</h3>
+            <h3 className="text-lg font-medium text-surface-900 mb-4">Risk Assessment</h3>
 
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-surface-600">Likelihood</span>
-                <span className="text-white capitalize">
-                  {(risk.likelihood || '').replace('_', ' ')}
+                <span className="text-surface-900 capitalize">
+                  {risk.likelihood.replace('_', ' ')}
                 </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-surface-600">Impact</span>
-                <span className="text-white capitalize">{risk.impact}</span>
+                <span className="text-surface-900 capitalize">{risk.impact}</span>
               </div>
-              <div className="flex justify-between items-center pt-2 border-t border-surface-200">
+              <div className="flex justify-between items-center pt-2 border-t border-surface-300">
                 <span className="text-surface-600">Inherent Risk</span>
                 <div className="flex items-center gap-2">
                   <span
-                    className={`w-3 h-3 rounded-full ${getRiskLevelColor(risk.inherentRisk || '')}`}
+                    className={`w-3 h-3 rounded-full ${getRiskLevelColor(risk.inherentRisk)}`}
                   />
-                  <span className="text-white capitalize font-medium">{risk.inherentRisk}</span>
+                  <span className="text-surface-900 capitalize font-medium">
+                    {risk.inherentRisk}
+                  </span>
                 </div>
               </div>
               {risk.residualRisk && (
@@ -445,7 +494,9 @@ export default function RiskDetail() {
                     <span
                       className={`w-3 h-3 rounded-full ${getRiskLevelColor(risk.residualRisk)}`}
                     />
-                    <span className="text-white capitalize font-medium">{risk.residualRisk}</span>
+                    <span className="text-surface-900 capitalize font-medium">
+                      {risk.residualRisk}
+                    </span>
                   </div>
                 </div>
               )}
@@ -455,7 +506,7 @@ export default function RiskDetail() {
           {/* Quantitative */}
           {(risk.likelihoodPct !== undefined || risk.impactValue !== undefined) && (
             <div className="bg-white rounded-xl border border-surface-200 p-6">
-              <h3 className="text-lg font-medium text-white mb-4">Quantitative Analysis</h3>
+              <h3 className="text-lg font-medium text-surface-900 mb-4">Quantitative Analysis</h3>
               <div className="space-y-4">
                 {risk.likelihoodPct !== undefined && (
                   <div className="flex justify-between items-center">
@@ -463,7 +514,7 @@ export default function RiskDetail() {
                       <Percent className="w-4 h-4" />
                       Likelihood
                     </span>
-                    <span className="text-white">{risk.likelihoodPct}%</span>
+                    <span className="text-surface-900">{risk.likelihoodPct}%</span>
                   </div>
                 )}
                 {risk.impactValue !== undefined && (
@@ -472,16 +523,16 @@ export default function RiskDetail() {
                       <DollarSign className="w-4 h-4" />
                       Impact Value
                     </span>
-                    <span className="text-white">{formatCurrency(risk.impactValue)}</span>
+                    <span className="text-surface-900">{formatCurrency(risk.impactValue)}</span>
                   </div>
                 )}
                 {risk.annualLossExp !== undefined && (
-                  <div className="flex justify-between items-center pt-2 border-t border-surface-200">
+                  <div className="flex justify-between items-center pt-2 border-t border-surface-300">
                     <span className="text-surface-600 flex items-center gap-2">
                       <TrendingUp className="w-4 h-4" />
                       Annual Loss Exp.
                     </span>
-                    <span className="text-white font-medium">
+                    <span className="text-surface-900 font-medium">
                       {formatCurrency(risk.annualLossExp)}
                     </span>
                   </div>
@@ -492,28 +543,28 @@ export default function RiskDetail() {
 
           {/* Quick Stats */}
           <div className="bg-white rounded-xl border border-surface-200 p-6">
-            <h3 className="text-lg font-medium text-white mb-4">Linked Items</h3>
+            <h3 className="text-lg font-medium text-surface-900 mb-4">Linked Items</h3>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-surface-600 flex items-center gap-2">
                   <Server className="w-4 h-4" />
                   Assets
                 </span>
-                <span className="text-white">{risk.assetCount}</span>
+                <span className="text-surface-900">{risk.assetCount}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-surface-600 flex items-center gap-2">
                   <Shield className="w-4 h-4" />
                   Controls
                 </span>
-                <span className="text-white">{risk.controlCount}</span>
+                <span className="text-surface-900">{risk.controlCount}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-surface-600 flex items-center gap-2">
                   <Target className="w-4 h-4" />
                   Scenarios
                 </span>
-                <span className="text-white">{risk.scenarioCount}</span>
+                <span className="text-surface-900">{risk.scenarioCount}</span>
               </div>
             </div>
           </div>
@@ -523,38 +574,25 @@ export default function RiskDetail() {
       {/* Tabs */}
       <div className="bg-white rounded-xl border border-surface-200">
         {/* Tab Headers */}
-        <div className="flex border-b border-surface-200">
+        <div className="flex border-b border-surface-300">
           {[
-            {
-              key: 'controls',
-              label: 'Controls',
-              icon: Shield,
-              count: risk?.controls?.length ?? 0,
-            },
-            { key: 'assets', label: 'Assets', icon: Server, count: risk?.assets?.length ?? 0 },
-            {
-              key: 'scenarios',
-              label: 'Scenarios',
-              icon: Target,
-              count: risk?.scenarios?.length ?? 0,
-            },
-            { key: 'tasks', label: 'Tasks', icon: ClipboardList, count: null },
-            { key: 'history', label: 'History', icon: History, count: risk?.history?.length ?? 0 },
+            { key: 'controls', label: 'Controls', icon: Shield, count: risk.controls.length },
+            { key: 'assets', label: 'Assets', icon: Server, count: risk.assets.length },
+            { key: 'scenarios', label: 'Scenarios', icon: Target, count: risk.scenarios.length },
+            { key: 'history', label: 'History', icon: History, count: risk.history.length },
           ].map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key as any)}
               className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${
                 activeTab === tab.key
-                  ? 'border-brand-500 text-brand-400'
+                  ? 'border-brand-500 text-brand-700'
                   : 'border-transparent text-surface-600 hover:text-surface-700'
               }`}
             >
               <tab.icon className="w-4 h-4" />
               {tab.label}
-              {tab.count !== null && (
-                <span className="px-2 py-0.5 bg-surface-200 rounded text-xs">{tab.count}</span>
-              )}
+              <span className="px-2 py-0.5 bg-surface-200 rounded text-xs">{tab.count}</span>
             </button>
           ))}
         </div>
@@ -574,23 +612,23 @@ export default function RiskDetail() {
                   Link Control
                 </button>
               </div>
-              {(risk?.controls?.length ?? 0) === 0 ? (
+              {risk.controls.length === 0 ? (
                 <div className="text-center py-8 text-surface-500">
                   No controls linked to this risk
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {risk?.controls?.map((control) => (
+                  {risk.controls.map((control) => (
                     <div
                       key={control.id}
                       className="flex items-center justify-between p-4 bg-surface-200 rounded-lg"
                     >
                       <div className="flex items-center gap-4">
                         <div>
-                          <span className="text-brand-400 font-mono text-sm">
+                          <span className="text-brand-700 font-mono text-sm">
                             {control.controlId}
                           </span>
-                          <p className="text-white">{control.title}</p>
+                          <p className="text-surface-900">{control.title}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-4">
@@ -604,7 +642,7 @@ export default function RiskDetail() {
                         </span>
                         <button
                           onClick={() => unlinkControlMutation.mutate(control.id)}
-                          className="p-1 hover:bg-surface-600 rounded text-surface-600 hover:text-red-600"
+                          className="p-1 hover:bg-surface-300 rounded text-surface-600 hover:text-red-600"
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -629,13 +667,13 @@ export default function RiskDetail() {
                   Link Asset
                 </button>
               </div>
-              {(risk?.assets?.length ?? 0) === 0 ? (
+              {risk.assets.length === 0 ? (
                 <div className="text-center py-8 text-surface-500">
                   No assets linked to this risk
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {risk?.assets?.map((asset) => (
+                  {risk.assets.map((asset) => (
                     <div
                       key={asset.id}
                       className="flex items-center justify-between p-4 bg-surface-200 rounded-lg"
@@ -643,7 +681,7 @@ export default function RiskDetail() {
                       <div className="flex items-center gap-4">
                         <Server className="w-8 h-8 text-surface-600" />
                         <div>
-                          <p className="text-white">{asset.name}</p>
+                          <p className="text-surface-900">{asset.name}</p>
                           <p className="text-sm text-surface-600">
                             {asset.type} • {asset.criticality} criticality • {asset.source}
                           </p>
@@ -651,7 +689,7 @@ export default function RiskDetail() {
                       </div>
                       <button
                         onClick={() => unlinkAssetMutation.mutate(asset.id)}
-                        className="p-1 hover:bg-surface-600 rounded text-surface-600 hover:text-red-600"
+                        className="p-1 hover:bg-surface-300 rounded text-surface-600 hover:text-red-600"
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -675,17 +713,17 @@ export default function RiskDetail() {
                   Add Scenario
                 </button>
               </div>
-              {(risk?.scenarios?.length ?? 0) === 0 ? (
+              {risk.scenarios.length === 0 ? (
                 <div className="text-center py-8 text-surface-500">
                   No scenarios defined for this risk
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {risk?.scenarios?.map((scenario) => (
+                  {risk.scenarios.map((scenario) => (
                     <div key={scenario.id} className="p-4 bg-surface-200 rounded-lg">
                       <div className="flex justify-between items-start">
                         <div>
-                          <h4 className="text-white font-medium">{scenario.title}</h4>
+                          <h4 className="text-surface-900 font-medium">{scenario.title}</h4>
                           <p className="text-surface-600 mt-1">{scenario.description}</p>
                           <div className="flex gap-4 mt-2 text-sm">
                             {scenario.threatActor && (
@@ -714,7 +752,7 @@ export default function RiskDetail() {
                         </div>
                         <button
                           onClick={() => deleteScenarioMutation.mutate(scenario.id)}
-                          className="p-1 hover:bg-surface-600 rounded text-surface-600 hover:text-red-600"
+                          className="p-1 hover:bg-surface-300 rounded text-surface-600 hover:text-red-600"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -726,24 +764,47 @@ export default function RiskDetail() {
             </div>
           )}
 
-          {/* Tasks Tab */}
-          {activeTab === 'tasks' && (
-            <RiskTasksPanel
-              riskId={id!}
-              onTaskAction={() => queryClient.invalidateQueries({ queryKey: ['risks', id] })}
-            />
-          )}
-
           {/* History Tab */}
-          {activeTab === 'history' && <EntityAuditHistory entityType="risk" entityId={id!} />}
+          {activeTab === 'history' && (
+            <div className="space-y-4">
+              <p className="text-surface-600">Activity history for this risk</p>
+              {risk.history.length === 0 ? (
+                <div className="text-center py-8 text-surface-500">No history recorded</div>
+              ) : (
+                <div className="space-y-3">
+                  {risk.history.map((entry) => (
+                    <div
+                      key={entry.id}
+                      className="flex items-start gap-4 p-4 bg-surface-200 rounded-lg"
+                    >
+                      <div className="p-2 bg-surface-300 rounded-lg">
+                        <History className="w-4 h-4 text-surface-600" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-surface-900 capitalize">
+                          {entry.action.replace('_', ' ')}
+                        </p>
+                        {entry.notes && (
+                          <p className="text-surface-600 text-sm mt-1">{entry.notes}</p>
+                        )}
+                        <p className="text-surface-500 text-sm mt-2">
+                          {new Date(entry.changedAt).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Link Control Modal */}
       {showLinkControlModal && (
         <LinkControlModal
-          controls={(availableControls as any)?.data || []}
-          linkedControlIds={risk?.controls?.map((c) => c.id) ?? []}
+          controls={availableControls?.controls || []}
+          linkedControlIds={risk.controls.map((c) => c.id)}
           onLink={(controlId, effectiveness) =>
             linkControlMutation.mutate({ controlId, effectiveness })
           }
@@ -756,7 +817,7 @@ export default function RiskDetail() {
       {showLinkAssetModal && (
         <LinkAssetModal
           assets={availableAssets?.assets || []}
-          linkedAssetIds={risk?.assets?.map((a) => a.id) ?? []}
+          linkedAssetIds={risk.assets.map((a) => a.id)}
           onLink={(assetIds) => linkAssetsMutation.mutate(assetIds)}
           onClose={() => setShowLinkAssetModal(false)}
           isPending={linkAssetsMutation.isPending}
@@ -824,20 +885,32 @@ function LinkControlModal({
   );
 
   return (
-    <Dialog open onClose={onClose}>
-      <div className="p-4 border-b border-surface-200 flex justify-between items-center">
-        <h3 className="text-lg font-medium text-white">Link Control</h3>
-        <button onClick={onClose} className="p-1 hover:bg-surface-200 rounded">
-          <X className="w-5 h-5 text-surface-600" />
-        </button>
-      </div>
-      <div className="p-4 space-y-4">
+    <Dialog
+      open
+      onClose={onClose}
+      title="Link Control"
+      size="md"
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => selectedControlId && onLink(selectedControlId, effectiveness)}
+            disabled={!selectedControlId || isPending}
+          >
+            {isPending ? 'Linking...' : 'Link Control'}
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
         <Input
           type="text"
           placeholder="Search controls..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
         />
         <div className="max-h-60 overflow-y-auto space-y-2">
           {availableControls.map((control) => (
@@ -846,7 +919,7 @@ function LinkControlModal({
               className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer ${
                 selectedControlId === control.id
                   ? 'bg-brand-500/20'
-                  : 'bg-surface-200 hover:bg-surface-600'
+                  : 'bg-surface-100 hover:bg-surface-200'
               }`}
             >
               <input
@@ -858,8 +931,8 @@ function LinkControlModal({
                 className="sr-only"
               />
               <div>
-                <span className="text-brand-400 font-mono text-sm">{control.controlId}</span>
-                <p className="text-white">{control.title}</p>
+                <span className="text-brand-700 font-mono text-sm">{control.controlId}</span>
+                <p className="text-surface-900">{control.title}</p>
               </div>
             </label>
           ))}
@@ -867,29 +940,17 @@ function LinkControlModal({
         {selectedControlId && (
           <div>
             <label className="block text-sm text-surface-600 mb-2">Control Effectiveness</label>
-            <SelectNative
+            <Select
               value={effectiveness}
-              onChange={(e) => setEffectiveness(e.target.value)}
-              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
-            >
-              <option value="none">None</option>
-              <option value="partial">Partial</option>
-              <option value="full">Full</option>
-            </SelectNative>
+              onChange={setEffectiveness}
+              options={[
+                { value: 'none', label: 'None' },
+                { value: 'partial', label: 'Partial' },
+                { value: 'full', label: 'Full' },
+              ]}
+            />
           </div>
         )}
-      </div>
-      <div className="p-4 border-t border-surface-200 flex justify-end gap-3">
-        <button onClick={onClose} className="px-4 py-2 bg-surface-200 text-surface-700 rounded-lg">
-          Cancel
-        </button>
-        <button
-          onClick={() => selectedControlId && onLink(selectedControlId, effectiveness)}
-          disabled={!selectedControlId || isPending}
-          className="px-4 py-2 bg-brand-500 text-white rounded-lg disabled:opacity-50"
-        >
-          {isPending ? 'Linking...' : 'Link Control'}
-        </button>
       </div>
     </Dialog>
   );
@@ -922,20 +983,32 @@ function LinkAssetModal({
   };
 
   return (
-    <Dialog open onClose={onClose}>
-      <div className="p-4 border-b border-surface-200 flex justify-between items-center">
-        <h3 className="text-lg font-medium text-white">Link Assets</h3>
-        <button onClick={onClose} className="p-1 hover:bg-surface-200 rounded">
-          <X className="w-5 h-5 text-surface-600" />
-        </button>
-      </div>
-      <div className="p-4 space-y-4">
+    <Dialog
+      open
+      onClose={onClose}
+      title="Link Assets"
+      size="md"
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => onLink(selectedAssetIds)}
+            disabled={selectedAssetIds.length === 0 || isPending}
+          >
+            {isPending ? 'Linking...' : `Link ${selectedAssetIds.length} Asset(s)`}
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
         <Input
           type="text"
           placeholder="Search assets..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
         />
         <div className="max-h-60 overflow-y-auto space-y-2">
           {availableAssets.length === 0 ? (
@@ -947,7 +1020,7 @@ function LinkAssetModal({
                 className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer ${
                   selectedAssetIds.includes(asset.id)
                     ? 'bg-brand-500/20'
-                    : 'bg-surface-200 hover:bg-surface-600'
+                    : 'bg-surface-100 hover:bg-surface-200'
                 }`}
               >
                 <input
@@ -957,7 +1030,7 @@ function LinkAssetModal({
                   className="rounded border-surface-500"
                 />
                 <div>
-                  <p className="text-white">{asset.name}</p>
+                  <p className="text-surface-900">{asset.name}</p>
                   <p className="text-sm text-surface-600">
                     {asset.type} • {asset.source}
                   </p>
@@ -966,18 +1039,6 @@ function LinkAssetModal({
             ))
           )}
         </div>
-      </div>
-      <div className="p-4 border-t border-surface-200 flex justify-end gap-3">
-        <button onClick={onClose} className="px-4 py-2 bg-surface-200 text-surface-700 rounded-lg">
-          Cancel
-        </button>
-        <button
-          onClick={() => onLink(selectedAssetIds)}
-          disabled={selectedAssetIds.length === 0 || isPending}
-          className="px-4 py-2 bg-brand-500 text-white rounded-lg disabled:opacity-50"
-        >
-          {isPending ? 'Linking...' : `Link ${selectedAssetIds.length} Asset(s)`}
-        </button>
       </div>
     </Dialog>
   );
@@ -1003,14 +1064,33 @@ function TreatmentModal({
   const [dueDate, setDueDate] = useState(currentDueDate ? currentDueDate.split('T')[0] : '');
 
   return (
-    <Dialog open onClose={onClose}>
-      <div className="p-4 border-b border-surface-200 flex justify-between items-center">
-        <h3 className="text-lg font-medium text-white">Treatment Plan</h3>
-        <button onClick={onClose} className="p-1 hover:bg-surface-200 rounded">
-          <X className="w-5 h-5 text-surface-600" />
-        </button>
-      </div>
-      <div className="p-4 space-y-4">
+    <Dialog
+      open
+      onClose={onClose}
+      title="Treatment Plan"
+      size="md"
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() =>
+              onSave({
+                treatmentPlan: plan,
+                treatmentNotes: notes,
+                treatmentDueDate: dueDate || undefined,
+              })
+            }
+            disabled={isPending}
+          >
+            {isPending ? 'Saving...' : 'Save Treatment'}
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
         <div>
           <label className="block text-sm text-surface-600 mb-2">Treatment Strategy</label>
           <div className="grid grid-cols-2 gap-2">
@@ -1022,10 +1102,10 @@ function TreatmentModal({
                 className={`p-3 rounded-lg text-left ${
                   plan === tp.value
                     ? 'bg-brand-500/20 border border-brand-500'
-                    : 'bg-surface-200 border border-surface-300 hover:bg-surface-600'
+                    : 'bg-surface-100 border border-surface-300 hover:bg-surface-200'
                 }`}
               >
-                <p className="text-white font-medium">{tp.label}</p>
+                <p className="text-surface-900 font-medium">{tp.label}</p>
                 <p className="text-surface-600 text-sm">{tp.description}</p>
               </button>
             ))}
@@ -1033,12 +1113,7 @@ function TreatmentModal({
         </div>
         <div>
           <label className="block text-sm text-surface-600 mb-2">Due Date</label>
-          <Input
-            type="date"
-            value={dueDate}
-            onChange={(e) => setDueDate(e.target.value)}
-            className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
-          />
+          <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
         </div>
         <div>
           <label className="block text-sm text-surface-600 mb-2">Notes</label>
@@ -1046,28 +1121,9 @@ function TreatmentModal({
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
-            className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
             placeholder="Describe the treatment approach..."
           />
         </div>
-      </div>
-      <div className="p-4 border-t border-surface-200 flex justify-end gap-3">
-        <button onClick={onClose} className="px-4 py-2 bg-surface-200 text-surface-700 rounded-lg">
-          Cancel
-        </button>
-        <button
-          onClick={() =>
-            onSave({
-              treatmentPlan: plan,
-              treatmentNotes: notes,
-              treatmentDueDate: dueDate || undefined,
-            })
-          }
-          disabled={isPending}
-          className="px-4 py-2 bg-brand-500 text-white rounded-lg disabled:opacity-50"
-        >
-          {isPending ? 'Saving...' : 'Save Treatment'}
-        </button>
       </div>
     </Dialog>
   );
@@ -1092,20 +1148,31 @@ function ScenarioModal({
     notes: '',
   });
 
+  const formId = 'scenario-modal-form';
   return (
-    <Dialog open onClose={onClose}>
-      <div className="p-4 border-b border-surface-200 flex justify-between items-center">
-        <h3 className="text-lg font-medium text-white">Add Scenario</h3>
-        <button onClick={onClose} className="p-1 hover:bg-surface-200 rounded">
-          <X className="w-5 h-5 text-surface-600" />
-        </button>
-      </div>
+    <Dialog
+      open
+      onClose={onClose}
+      title="Add Scenario"
+      size="md"
+      footer={
+        <>
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" form={formId} variant="primary" disabled={isPending}>
+            {isPending ? 'Creating...' : 'Create Scenario'}
+          </Button>
+        </>
+      }
+    >
       <form
+        id={formId}
         onSubmit={(e) => {
           e.preventDefault();
           onCreate(scenario);
         }}
-        className="p-4 space-y-4"
+        className="space-y-4"
       >
         <div>
           <label className="block text-sm text-surface-600 mb-2">Title *</label>
@@ -1114,7 +1181,6 @@ function ScenarioModal({
             value={scenario.title}
             onChange={(e) => setScenario((prev) => ({ ...prev, title: e.target.value }))}
             required
-            className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
             placeholder="e.g., Phishing attack on employees"
           />
         </div>
@@ -1125,22 +1191,22 @@ function ScenarioModal({
             onChange={(e) => setScenario((prev) => ({ ...prev, description: e.target.value }))}
             required
             rows={2}
-            className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
           />
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm text-surface-600 mb-2">Threat Actor</label>
-            <SelectNative
+            <Select
               value={scenario.threatActor}
-              onChange={(e) => setScenario((prev) => ({ ...prev, threatActor: e.target.value }))}
-              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
-            >
-              <option value="">Select...</option>
-              <option value="insider">Insider</option>
-              <option value="external">External</option>
-              <option value="natural">Natural Event</option>
-            </SelectNative>
+              onChange={(v) => setScenario((prev) => ({ ...prev, threatActor: v }))}
+              placeholder="Select..."
+              options={[
+                { value: '', label: 'Select...' },
+                { value: 'insider', label: 'Insider' },
+                { value: 'external', label: 'External' },
+                { value: 'natural', label: 'Natural Event' },
+              ]}
+            />
           </div>
           <div>
             <label className="block text-sm text-surface-600 mb-2">Attack Vector</label>
@@ -1148,7 +1214,6 @@ function ScenarioModal({
               type="text"
               value={scenario.attackVector}
               onChange={(e) => setScenario((prev) => ({ ...prev, attackVector: e.target.value }))}
-              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
               placeholder="e.g., Email, Network"
             />
           </div>
@@ -1156,48 +1221,20 @@ function ScenarioModal({
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm text-surface-600 mb-2">Likelihood</label>
-            <SelectNative
+            <Select
               value={scenario.likelihood}
-              onChange={(e) => setScenario((prev) => ({ ...prev, likelihood: e.target.value }))}
-              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
-            >
-              {LIKELIHOODS.map((l) => (
-                <option key={l} value={l}>
-                  {l.replace('_', ' ')}
-                </option>
-              ))}
-            </SelectNative>
+              onChange={(v) => setScenario((prev) => ({ ...prev, likelihood: v }))}
+              options={LIKELIHOODS.map((l) => ({ value: l, label: l.replace('_', ' ') }))}
+            />
           </div>
           <div>
             <label className="block text-sm text-surface-600 mb-2">Impact</label>
-            <SelectNative
+            <Select
               value={scenario.impact}
-              onChange={(e) => setScenario((prev) => ({ ...prev, impact: e.target.value }))}
-              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
-            >
-              {IMPACTS.map((i) => (
-                <option key={i} value={i}>
-                  {i}
-                </option>
-              ))}
-            </SelectNative>
+              onChange={(v) => setScenario((prev) => ({ ...prev, impact: v }))}
+              options={IMPACTS.map((i) => ({ value: i, label: i }))}
+            />
           </div>
-        </div>
-        <div className="flex justify-end gap-3 pt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 bg-surface-200 text-surface-700 rounded-lg"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={isPending}
-            className="px-4 py-2 bg-brand-500 text-white rounded-lg disabled:opacity-50"
-          >
-            {isPending ? 'Creating...' : 'Create Scenario'}
-          </button>
         </div>
       </form>
     </Dialog>
@@ -1238,7 +1275,7 @@ function EditRiskModal({
   onClose,
   isPending,
 }: {
-  risk: RiskDetailData;
+  risk: RiskDetail;
   onSave: (data: any) => void;
   onClose: () => void;
   isPending: boolean;
@@ -1270,21 +1307,31 @@ function EditRiskModal({
     }));
   };
 
+  const formId = 'edit-risk-modal-form';
   return (
-    <Dialog open onClose={onClose}>
-      <div className="p-6 border-b border-surface-200 flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-white">Edit Risk</h2>
-        <button onClick={onClose} className="p-2 hover:bg-surface-200 rounded-lg text-surface-600">
-          <X className="w-5 h-5" />
-        </button>
-      </div>
-
+    <Dialog
+      open
+      onClose={onClose}
+      title="Edit Risk"
+      size="lg"
+      footer={
+        <>
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" form={formId} variant="primary" disabled={isPending}>
+            {isPending ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </>
+      }
+    >
       <form
+        id={formId}
         onSubmit={(e) => {
           e.preventDefault();
           onSave(formData);
         }}
-        className="p-6 space-y-4"
+        className="space-y-4"
       >
         {/* Title */}
         <div>
@@ -1294,7 +1341,6 @@ function EditRiskModal({
             value={formData.title}
             onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
             required
-            className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white placeholder-surface-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
         </div>
 
@@ -1306,7 +1352,6 @@ function EditRiskModal({
             onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
             required
             rows={4}
-            className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white placeholder-surface-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
         </div>
 
@@ -1314,31 +1359,19 @@ function EditRiskModal({
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-surface-700 mb-2">Category</label>
-            <SelectNative
+            <Select
               value={formData.category}
-              onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value }))}
-              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-            >
-              {CATEGORIES.map((cat) => (
-                <option key={cat.value} value={cat.value}>
-                  {cat.label}
-                </option>
-              ))}
-            </SelectNative>
+              onChange={(v) => setFormData((prev) => ({ ...prev, category: v }))}
+              options={CATEGORIES}
+            />
           </div>
           <div>
             <label className="block text-sm font-medium text-surface-700 mb-2">Source</label>
-            <SelectNative
+            <Select
               value={formData.source}
-              onChange={(e) => setFormData((prev) => ({ ...prev, source: e.target.value }))}
-              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-            >
-              {SOURCES.map((src) => (
-                <option key={src.value} value={src.value}>
-                  {src.label}
-                </option>
-              ))}
-            </SelectNative>
+              onChange={(v) => setFormData((prev) => ({ ...prev, source: v }))}
+              options={SOURCES}
+            />
           </div>
         </div>
 
@@ -1347,19 +1380,11 @@ function EditRiskModal({
           <label className="block text-sm font-medium text-surface-700 mb-2">
             Initial Severity
           </label>
-          <SelectNative
+          <Select
             value={formData.initialSeverity}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, initialSeverity: e.target.value as any }))
-            }
-            className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-          >
-            {SEVERITIES.map((sev) => (
-              <option key={sev.value} value={sev.value}>
-                {sev.label}
-              </option>
-            ))}
-          </SelectNative>
+            onChange={(v) => setFormData((prev) => ({ ...prev, initialSeverity: v }))}
+            options={SEVERITIES}
+          />
         </div>
 
         {/* Tags */}
@@ -1369,13 +1394,13 @@ function EditRiskModal({
             {formData.tags.map((tag) => (
               <span
                 key={tag}
-                className="px-2 py-1 bg-brand-500/20 text-brand-400 rounded text-sm flex items-center gap-1"
+                className="px-2 py-1 bg-brand-500/20 text-brand-700 rounded text-sm flex items-center gap-1"
               >
                 {tag}
                 <button
                   type="button"
                   onClick={() => handleRemoveTag(tag)}
-                  className="hover:text-brand-300"
+                  className="hover:text-brand-800"
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -1388,35 +1413,12 @@ function EditRiskModal({
               value={tagInput}
               onChange={(e) => setTagInput(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
-              className="flex-1 px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white placeholder-surface-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
               placeholder="Add tag..."
             />
-            <button
-              type="button"
-              onClick={handleAddTag}
-              className="px-4 py-2 bg-surface-200 text-surface-700 rounded-lg hover:bg-surface-600"
-            >
+            <Button type="button" variant="secondary" onClick={handleAddTag}>
               Add
-            </button>
+            </Button>
           </div>
-        </div>
-
-        {/* Actions */}
-        <div className="flex justify-end gap-3 pt-4 border-t border-surface-200">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 bg-surface-200 text-surface-700 rounded-lg hover:bg-surface-600"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={isPending}
-            className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 disabled:opacity-50"
-          >
-            {isPending ? 'Saving...' : 'Save Changes'}
-          </button>
         </div>
       </form>
     </Dialog>

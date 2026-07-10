@@ -1,372 +1,259 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { Link, useNavigate } from 'react-router-dom';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  BuildingOfficeIcon,
-  PlusIcon,
-  MagnifyingGlassIcon,
-  ChartBarIcon,
-  UsersIcon,
-  Cog6ToothIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  ArchiveBoxIcon,
-} from '@heroicons/react/24/outline';
-import { useWorkspace, Workspace } from '@/contexts/WorkspaceContext';
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+  Dialog,
+  EmptyState,
+  Input,
+  Label,
+  PageHeader,
+  Skeleton,
+  Textarea,
+} from '@/components/ui';
 import api from '@/lib/api';
 
-import { Textarea } from '@/components/ui/Textarea';
+interface Workspace {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  memberCount: number;
+  isActive: boolean;
+}
 
-import { Input } from '@/components/ui/Input';
-import { Dialog } from '@/components/ui/Dialog';
-
-function CreateWorkspaceModal({
-  isOpen,
-  onClose,
-  onCreate,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  onCreate: (data: { name: string; description?: string }) => Promise<void>;
-}) {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [isCreating, setIsCreating] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim()) return;
-
-    setIsCreating(true);
-    try {
-      await onCreate({ name: name.trim(), description: description.trim() || undefined });
-      setName('');
-      setDescription('');
-      onClose();
-    } catch (error) {
-      console.error('Failed to create workspace:', error);
-    } finally {
-      setIsCreating(false);
-    }
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <Dialog open onClose={onClose}>
-      <h3 className="text-lg font-semibold text-foreground mb-4">Create New Workspace</h3>
-      <form onSubmit={handleSubmit}>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1">
-              Workspace Name *
-            </label>
-            <Input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g., Product A, Enterprise Edition"
-              className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand-500"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1">
-              Description (optional)
-            </label>
-            <Textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Brief description of this workspace..."
-              rows={2}
-              className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
-            />
-          </div>
-        </div>
-        <div className="mt-6 flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={!name.trim() || isCreating}
-            className="px-4 py-2 text-sm bg-brand-600 text-white rounded-lg hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isCreating ? 'Creating...' : 'Create Workspace'}
-          </button>
-        </div>
-      </form>
-    </Dialog>
-  );
+function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 }
 
 export default function WorkspaceList() {
   const navigate = useNavigate();
-  const {
-    isMultiWorkspaceEnabled,
-    enableMultiWorkspace,
-    createWorkspace,
-    setCurrentWorkspace,
-    currentWorkspace,
-    canManageWorkspaces,
-  } = useWorkspace();
-  const [search, setSearch] = useState('');
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [isEnabling, setIsEnabling] = useState(false);
+  const queryClient = useQueryClient();
 
-  // Fetch org dashboard for stats
-  const { data: orgDashboard } = useQuery({
-    queryKey: ['org-dashboard'],
-    queryFn: () => api.get('/api/workspaces/org/dashboard').then((r) => r.data),
-    enabled: isMultiWorkspaceEnabled,
-  });
+  const [showCreate, setShowCreate] = useState(false);
+  const [name, setName] = useState('');
+  const [slug, setSlug] = useState('');
+  const [slugTouched, setSlugTouched] = useState(false);
+  const [description, setDescription] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
-  // Fetch workspaces list
-  const { data: workspaces = [], refetch } = useQuery({
+  const { data, isLoading, isError } = useQuery<Workspace[]>({
     queryKey: ['workspaces'],
-    queryFn: () => api.get('/api/workspaces').then((r) => r.data),
-    enabled: isMultiWorkspaceEnabled,
+    queryFn: async () => {
+      const res = await api.get('/api/workspaces');
+      const body = res.data;
+      if (Array.isArray(body)) return body as Workspace[];
+      if (Array.isArray(body?.data)) return body.data as Workspace[];
+      return [];
+    },
   });
 
-  const handleEnableMultiWorkspace = async () => {
-    setIsEnabling(true);
-    try {
-      await enableMultiWorkspace();
-      refetch();
-    } catch (error) {
-      console.error('Failed to enable multi-workspace mode:', error);
-    } finally {
-      setIsEnabling(false);
+  const createWorkspace = useMutation({
+    mutationFn: async (payload: { name: string; slug: string; description: string }) => {
+      const res = await api.post('/api/workspaces', payload);
+      return res.data as Workspace;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workspaces'] });
+      setShowCreate(false);
+      setName('');
+      setSlug('');
+      setSlugTouched(false);
+      setDescription('');
+      setError(null);
+    },
+    onError: () => {
+      setError('Failed to create workspace.');
+    },
+  });
+
+  const switchWorkspace = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await api.post(`/api/workspaces/${id}/switch`);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workspaces'] });
+    },
+  });
+
+  const onNameChange = (value: string) => {
+    setName(value);
+    if (!slugTouched) {
+      setSlug(slugify(value));
     }
   };
 
-  const handleCreateWorkspace = async (data: { name: string; description?: string }) => {
-    const newWorkspace = await createWorkspace(data);
-    setCurrentWorkspace(newWorkspace);
-    refetch();
-  };
-
-  const filteredWorkspaces = workspaces.filter(
-    (ws: Workspace) =>
-      ws.name.toLowerCase().includes(search.toLowerCase()) ||
-      ws.description?.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'active':
-        return <CheckCircleIcon className="w-4 h-4 text-green-600" />;
-      case 'inactive':
-        return <XCircleIcon className="w-4 h-4 text-yellow-600" />;
-      case 'archived':
-        return <ArchiveBoxIcon className="w-4 h-4 text-muted-foreground" />;
-      default:
-        return null;
+  const handleCreate = () => {
+    const finalSlug = slug.trim() || slugify(name);
+    if (!name.trim() || !finalSlug) {
+      setError('Name and slug are required.');
+      return;
     }
+    setError(null);
+    createWorkspace.mutate({
+      name: name.trim(),
+      slug: finalSlug,
+      description: description.trim(),
+    });
   };
-
-  // If multi-workspace is not enabled, show the enable screen
-  if (!isMultiWorkspaceEnabled) {
-    return (
-      <div className="p-6">
-        <div className="max-w-2xl mx-auto text-center py-12">
-          <BuildingOfficeIcon className="w-16 h-16 text-muted-foreground mx-auto mb-6" />
-          <h1 className="text-2xl font-bold text-foreground mb-4">Multi-Workspace Mode</h1>
-          <p className="text-muted-foreground mb-8">
-            Enable multi-workspace mode to manage multiple products or services with separate
-            compliance tracking, while sharing a common control library across your organization.
-          </p>
-
-          <div className="bg-white rounded-lg p-6 text-left mb-8">
-            <h3 className="font-semibold text-foreground mb-4">What you get with workspaces:</h3>
-            <ul className="space-y-3 text-sm text-muted-foreground">
-              <li className="flex items-start gap-3">
-                <ChartBarIcon className="w-5 h-5 text-brand-400 flex-shrink-0 mt-0.5" />
-                <span>Track compliance progress independently for each product</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <UsersIcon className="w-5 h-5 text-brand-400 flex-shrink-0 mt-0.5" />
-                <span>Assign different team members to different workspaces</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <BuildingOfficeIcon className="w-5 h-5 text-brand-400 flex-shrink-0 mt-0.5" />
-                <span>Consolidated org-level dashboard for executives</span>
-              </li>
-            </ul>
-          </div>
-
-          {canManageWorkspaces ? (
-            <button
-              onClick={handleEnableMultiWorkspace}
-              disabled={isEnabling}
-              className="px-6 py-3 bg-brand-600 text-white rounded-lg hover:bg-brand-700 disabled:opacity-50"
-            >
-              {isEnabling ? 'Enabling...' : 'Enable Multi-Workspace Mode'}
-            </button>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              Contact your administrator to enable multi-workspace mode.
-            </p>
-          )}
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Workspaces</h1>
-          <p className="text-muted-foreground mt-1">Manage workspaces for your organization</p>
-        </div>
-        {canManageWorkspaces && (
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700"
-          >
-            <PlusIcon className="w-5 h-5" />
-            New Workspace
-          </button>
-        )}
-      </div>
-      {/* Org-level Stats */}
-      {orgDashboard && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white rounded-lg p-4 border border-surface-200">
-            <p className="text-sm text-muted-foreground">Total Workspaces</p>
-            <p className="text-2xl font-bold text-foreground mt-1">
-              {orgDashboard.workspaces?.length || 0}
-            </p>
-          </div>
-          <div className="bg-white rounded-lg p-4 border border-surface-200">
-            <p className="text-sm text-muted-foreground">Avg Compliance Score</p>
-            <p className="text-2xl font-bold text-brand-400 mt-1">
-              {orgDashboard.avgComplianceScore || 0}%
-            </p>
-          </div>
-          <div className="bg-white rounded-lg p-4 border border-surface-200">
-            <p className="text-sm text-muted-foreground">Total Controls</p>
-            <p className="text-2xl font-bold text-foreground mt-1">
-              {orgDashboard.totals?.controls || 0}
-            </p>
-          </div>
-          <div className="bg-white rounded-lg p-4 border border-surface-200">
-            <p className="text-sm text-muted-foreground">Total Risks</p>
-            <p className="text-2xl font-bold text-foreground mt-1">
-              {orgDashboard.totals?.risks || 0}
-            </p>
-          </div>
-        </div>
-      )}
-      {/* Search */}
-      <div className="relative mb-6">
-        <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-        <Input
-          type="text"
-          placeholder="Search workspaces..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 bg-white border border-surface-200 rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand-500"
-        />
-      </div>
-      {/* Workspaces Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredWorkspaces.map((workspace: Workspace) => {
-          const stats = orgDashboard?.workspaces?.find((w: any) => w.id === workspace.id);
-          return (
-            <div
-              key={workspace.id}
-              className={`bg-white rounded-lg p-5 border transition-all cursor-pointer hover:border-brand-500/50 ${
-                currentWorkspace?.id === workspace.id
-                  ? 'border-brand-500 ring-1 ring-brand-500/30'
-                  : 'border-surface-200'
-              }`}
-              onClick={() => {
-                setCurrentWorkspace(workspace);
-                navigate('/dashboard');
-              }}
-            >
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <BuildingOfficeIcon className="w-5 h-5 text-brand-400" />
-                  <h3 className="font-semibold text-foreground">{workspace.name}</h3>
-                </div>
-                <div className="flex items-center gap-2">
-                  {getStatusIcon(workspace.status)}
-                  {currentWorkspace?.id === workspace.id && (
-                    <span className="text-xs bg-brand-600/20 text-brand-400 px-2 py-0.5 rounded">
-                      Active
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {workspace.description && (
-                <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                  {workspace.description}
-                </p>
-              )}
-
-              {/* Workspace Stats */}
-              <div className="grid grid-cols-3 gap-2 mb-4 text-center">
-                <div className="bg-surface-200/50 rounded p-2">
-                  <p className="text-xs text-muted-foreground">Controls</p>
-                  <p className="text-sm font-medium text-foreground">
-                    {stats?.stats?.controls || 0}
-                  </p>
-                </div>
-                <div className="bg-surface-200/50 rounded p-2">
-                  <p className="text-xs text-muted-foreground">Risks</p>
-                  <p className="text-sm font-medium text-foreground">{stats?.stats?.risks || 0}</p>
-                </div>
-                <div className="bg-surface-200/50 rounded p-2">
-                  <p className="text-xs text-muted-foreground">Score</p>
-                  <p className="text-sm font-medium text-brand-400">
-                    {stats?.complianceScore || 0}%
-                  </p>
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="flex items-center justify-between pt-3 border-t border-surface-200">
-                <span className="text-xs text-muted-foreground">
-                  {workspace.memberCount || 0} members
-                </span>
-                {canManageWorkspaces && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate(`/settings/workspaces/${workspace.id}`);
-                    }}
-                    className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-surface-200 rounded"
-                  >
-                    <Cog6ToothIcon className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-      {filteredWorkspaces.length === 0 && (
-        <div className="text-center py-12">
-          <BuildingOfficeIcon className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground">
-            {search ? 'No workspaces match your search.' : 'No workspaces yet.'}
-          </p>
-        </div>
-      )}
-      <CreateWorkspaceModal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        onCreate={handleCreateWorkspace}
+    <div className="space-y-5">
+      <PageHeader
+        title="Workspaces"
+        description="Each workspace tracks its own controls, evidence, and risks."
+        actions={<Button onClick={() => setShowCreate(true)}>Create workspace</Button>}
       />
+
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-44 w-full" />
+          ))}
+        </div>
+      ) : isError ? (
+        <Card>
+          <CardBody>
+            <EmptyState
+              title="Could not load workspaces"
+              description="Please refresh the page or try again later."
+            />
+          </CardBody>
+        </Card>
+      ) : !data || data.length === 0 ? (
+        <Card>
+          <CardBody>
+            <EmptyState
+              title="No workspaces yet"
+              description="Create your first workspace to start tracking compliance."
+              action={<Button onClick={() => setShowCreate(true)}>Create workspace</Button>}
+            />
+          </CardBody>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {data.map((ws) => (
+            <Card key={ws.id} interactive>
+              <Link
+                to={`/settings/workspaces/${ws.id}`}
+                className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded-lg"
+              >
+                <CardHeader>
+                  <div className="min-w-0">
+                    <CardTitle className="truncate">{ws.name}</CardTitle>
+                    <code className="block font-mono text-xs text-surface-600 mt-1 truncate">
+                      {ws.slug}
+                    </code>
+                  </div>
+                  {ws.isActive && <Badge variant="success">Active</Badge>}
+                </CardHeader>
+                <CardBody className="space-y-3">
+                  <p className="text-small text-surface-700 min-h-[2.5rem] line-clamp-2">
+                    {ws.description || 'No description provided.'}
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-small text-surface-600">
+                      {ws.memberCount} member{ws.memberCount === 1 ? '' : 's'}
+                    </span>
+                    {ws.isActive ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          navigate(`/settings/workspaces/${ws.id}`);
+                        }}
+                      >
+                        Open settings
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          switchWorkspace.mutate(ws.id);
+                        }}
+                        loading={switchWorkspace.isPending && switchWorkspace.variables === ws.id}
+                      >
+                        Switch
+                      </Button>
+                    )}
+                  </div>
+                </CardBody>
+              </Link>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      <Dialog
+        open={showCreate}
+        onClose={() => setShowCreate(false)}
+        title="Create workspace"
+        description="Workspaces let you isolate compliance data per product or business unit."
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setShowCreate(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreate} loading={createWorkspace.isPending}>
+              Create workspace
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="ws-name" required>
+              Name
+            </Label>
+            <Input
+              id="ws-name"
+              value={name}
+              onChange={(e) => onNameChange(e.target.value)}
+              placeholder="Acme Production"
+            />
+          </div>
+          <div>
+            <Label htmlFor="ws-slug" required>
+              Slug
+            </Label>
+            <Input
+              id="ws-slug"
+              value={slug}
+              onChange={(e) => {
+                setSlug(e.target.value);
+                setSlugTouched(true);
+              }}
+              placeholder="acme-production"
+              className="font-mono"
+            />
+          </div>
+          <div>
+            <Label htmlFor="ws-desc">Description</Label>
+            <Textarea
+              id="ws-desc"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="What does this workspace track?"
+              rows={3}
+            />
+          </div>
+          {error && <p className="text-small text-red-700">{error}</p>}
+        </div>
+      </Dialog>
     </div>
   );
 }

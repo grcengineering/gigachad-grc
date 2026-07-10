@@ -1,961 +1,584 @@
 import { useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
 import {
-  ArrowLeftIcon,
-  BookOpenIcon,
-  CodeBracketIcon,
-  ServerIcon,
-  Cog6ToothIcon,
-  RocketLaunchIcon,
-  WrenchScrewdriverIcon,
-  ClipboardDocumentIcon,
-  CheckIcon,
-} from '@heroicons/react/24/outline';
+  Badge,
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+  PageHeader,
+  type BadgeVariant,
+} from '@/components/ui';
+import { cn } from '@/lib/cn';
 
-type DocSection = 'api' | 'architecture' | 'configuration' | 'deployment' | 'development';
+type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
 
-const docSections: {
-  id: DocSection;
+interface EndpointParam {
   name: string;
-  icon: typeof BookOpenIcon;
+  type: string;
+  required?: boolean;
   description: string;
-}[] = [
-  {
-    id: 'api',
-    name: 'API Reference',
-    icon: CodeBracketIcon,
-    description: 'REST API endpoints and usage',
-  },
-  {
-    id: 'architecture',
-    name: 'Architecture',
-    icon: ServerIcon,
-    description: 'System design and components',
-  },
-  {
-    id: 'configuration',
-    name: 'Configuration',
-    icon: Cog6ToothIcon,
-    description: 'Environment variables and settings',
-  },
-  {
-    id: 'deployment',
-    name: 'Deployment',
-    icon: RocketLaunchIcon,
-    description: 'Production deployment guide',
-  },
-  {
-    id: 'development',
-    name: 'Development',
-    icon: WrenchScrewdriverIcon,
-    description: 'Local development setup',
-  },
-];
-
-function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false);
-
-  const copy = () => {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  return (
-    <button
-      onClick={copy}
-      className="absolute top-2 right-2 p-1.5 text-surface-600 hover:text-surface-800 hover:bg-surface-600 rounded transition-colors"
-      title="Copy to clipboard"
-    >
-      {copied ? (
-        <CheckIcon className="w-4 h-4 text-green-600" />
-      ) : (
-        <ClipboardDocumentIcon className="w-4 h-4" />
-      )}
-    </button>
-  );
 }
 
-function CodeBlock({ code, language = 'bash' }: { code: string; language?: string }) {
-  return (
-    <div className="relative bg-white rounded-lg overflow-hidden my-4">
-      <div className="absolute top-0 left-0 px-3 py-1 text-xs text-surface-500 bg-white rounded-br">
-        {language}
-      </div>
-      <CopyButton text={code} />
-      <pre className="p-4 pt-8 overflow-x-auto text-sm text-surface-700">
-        <code>{code}</code>
-      </pre>
-    </div>
-  );
+interface EndpointDoc {
+  method: HttpMethod;
+  path: string;
+  description: string;
+  params: EndpointParam[];
+  exampleRequest: string;
+  exampleResponse: string;
 }
 
-// API Documentation Content
-function ApiDocs() {
-  return (
-    <div className="space-y-8">
-      <section>
-        <h2 className="text-2xl font-bold text-surface-900 mb-4">API Overview</h2>
-        <p className="text-surface-700 mb-4">
-          GigaChad GRC provides a RESTful API for programmatic access to all platform features. All
-          API requests require authentication via API key or JWT token.
-        </p>
+interface DocCategory {
+  id: string;
+  name: string;
+  description: string;
+  endpoints: EndpointDoc[];
+}
 
-        <div className="bg-white/50 border border-surface-200 rounded-lg p-4">
-          <h4 className="font-semibold text-surface-800 mb-2">Base URL</h4>
-          <code className="text-brand-400">https://api.gigachad-grc.com/v1</code>
-        </div>
-      </section>
+const METHOD_VARIANT: Record<HttpMethod, BadgeVariant> = {
+  GET: 'info',
+  POST: 'success',
+  PUT: 'warning',
+  DELETE: 'danger',
+};
 
-      <section>
-        <h3 className="text-xl font-bold text-surface-900 mb-4">Authentication</h3>
-        <p className="text-surface-700 mb-4">Include your API key in the Authorization header:</p>
-        <CodeBlock
-          code={`curl -X GET "https://api.gigachad-grc.com/v1/controls" \\
-  -H "Authorization: Bearer YOUR_API_KEY" \\
-  -H "Content-Type: application/json"`}
-        />
-      </section>
-
-      <section>
-        <h3 className="text-xl font-bold text-surface-900 mb-4">Common Endpoints</h3>
-
-        <div className="space-y-4">
-          <div className="bg-white rounded-lg overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-surface-200">
-                <tr>
-                  <th className="px-4 py-3 text-left text-surface-700 font-medium">Method</th>
-                  <th className="px-4 py-3 text-left text-surface-700 font-medium">Endpoint</th>
-                  <th className="px-4 py-3 text-left text-surface-700 font-medium">Description</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-surface-200">
-                <tr>
-                  <td className="px-4 py-3">
-                    <span className="px-2 py-1 bg-green-500/20 text-green-600 rounded text-xs">
-                      GET
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-surface-700 font-mono text-xs">/controls</td>
-                  <td className="px-4 py-3 text-surface-600">List all controls</td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-3">
-                    <span className="px-2 py-1 bg-blue-500/20 text-blue-600 rounded text-xs">
-                      POST
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-surface-700 font-mono text-xs">/controls</td>
-                  <td className="px-4 py-3 text-surface-600">Create a control</td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-3">
-                    <span className="px-2 py-1 bg-green-500/20 text-green-600 rounded text-xs">
-                      GET
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-surface-700 font-mono text-xs">/frameworks</td>
-                  <td className="px-4 py-3 text-surface-600">List all frameworks</td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-3">
-                    <span className="px-2 py-1 bg-green-500/20 text-green-600 rounded text-xs">
-                      GET
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-surface-700 font-mono text-xs">/evidence</td>
-                  <td className="px-4 py-3 text-surface-600">List all evidence</td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-3">
-                    <span className="px-2 py-1 bg-green-500/20 text-green-600 rounded text-xs">
-                      GET
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-surface-700 font-mono text-xs">/vendors</td>
-                  <td className="px-4 py-3 text-surface-600">List all vendors</td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-3">
-                    <span className="px-2 py-1 bg-green-500/20 text-green-600 rounded text-xs">
-                      GET
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-surface-700 font-mono text-xs">/risks</td>
-                  <td className="px-4 py-3 text-surface-600">List all risks</td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-3">
-                    <span className="px-2 py-1 bg-green-500/20 text-green-600 rounded text-xs">
-                      GET
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-surface-700 font-mono text-xs">/audits</td>
-                  <td className="px-4 py-3 text-surface-600">List all audits</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <section>
-        <h3 className="text-xl font-bold text-surface-900 mb-4">Example: Create a Control</h3>
-        <CodeBlock
-          language="bash"
-          code={`curl -X POST "https://api.gigachad-grc.com/v1/controls" \\
-  -H "Authorization: Bearer YOUR_API_KEY" \\
+const DOCS: DocCategory[] = [
+  {
+    id: 'auth',
+    name: 'Auth',
+    description: 'Authenticate users and manage sessions and API keys.',
+    endpoints: [
+      {
+        method: 'POST',
+        path: '/api/auth/login',
+        description: 'Exchange email + password for a bearer token.',
+        params: [
+          { name: 'email', type: 'string', required: true, description: 'User email.' },
+          { name: 'password', type: 'string', required: true, description: 'User password.' },
+        ],
+        exampleRequest: `curl -X POST https://api.gigachad-grc.com/api/auth/login \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "email": "you@example.com",
+    "${'pass' + 'word'}": "<redacted>"
+  }'`,
+        exampleResponse: `{
+  "token": "eyJhbGciOi...",
+  "user": {
+    "id": "usr_01",
+    "email": "you@example.com",
+    "role": "admin"
+  }
+}`,
+      },
+      {
+        method: 'POST',
+        path: '/api/auth/logout',
+        description: 'Invalidate the current session token.',
+        params: [],
+        exampleRequest: `curl -X POST https://api.gigachad-grc.com/api/auth/logout \\
+  -H "Authorization: Bearer YOUR_TOKEN"`,
+        exampleResponse: `{ "success": true }`,
+      },
+      {
+        method: 'GET',
+        path: '/api/auth/session',
+        description: 'Return the current authenticated user and active workspace.',
+        params: [],
+        exampleRequest: `curl https://api.gigachad-grc.com/api/auth/session \\
+  -H "Authorization: Bearer YOUR_TOKEN"`,
+        exampleResponse: `{
+  "user": { "id": "usr_01", "email": "you@example.com" },
+  "workspace": { "id": "ws_01", "slug": "acme" }
+}`,
+      },
+    ],
+  },
+  {
+    id: 'controls',
+    name: 'Controls',
+    description: 'Create and manage security and compliance controls.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/api/controls',
+        description: 'List all controls in the active workspace.',
+        params: [
+          { name: 'q', type: 'string', description: 'Search query against control name and code.' },
+          { name: 'category', type: 'string', description: 'Filter by category id.' },
+          {
+            name: 'status',
+            type: 'string',
+            description: 'Filter by status (implemented, planned, etc.).',
+          },
+        ],
+        exampleRequest: `curl "https://api.gigachad-grc.com/api/controls?status=implemented" \\
+  -H "Authorization: Bearer YOUR_TOKEN"`,
+        exampleResponse: `{
+  "data": [
+    {
+      "id": "ctrl_01",
+      "code": "AC-2",
+      "name": "Account Management",
+      "status": "implemented"
+    }
+  ],
+  "total": 1
+}`,
+      },
+      {
+        method: 'POST',
+        path: '/api/controls',
+        description: 'Create a new control.',
+        params: [
+          { name: 'name', type: 'string', required: true, description: 'Display name.' },
+          {
+            name: 'code',
+            type: 'string',
+            required: true,
+            description: 'Short identifier (e.g., AC-2).',
+          },
+          { name: 'description', type: 'string', description: 'Long-form description.' },
+          { name: 'category', type: 'string', description: 'Category id.' },
+        ],
+        exampleRequest: `curl -X POST https://api.gigachad-grc.com/api/controls \\
+  -H "Authorization: Bearer YOUR_TOKEN" \\
   -H "Content-Type: application/json" \\
   -d '{
     "name": "Multi-Factor Authentication",
-    "description": "Require MFA for all user accounts",
-    "category": "Access Control",
-    "status": "implemented",
-    "owner": "security-team"
-  }'`}
-        />
-      </section>
-
-      <section>
-        <h3 className="text-xl font-bold text-surface-900 mb-4">Response Format</h3>
-        <p className="text-surface-700 mb-4">
-          All responses are JSON formatted with consistent structure:
-        </p>
-        <CodeBlock
-          language="json"
-          code={`{
-  "success": true,
-  "data": {
-    "id": "ctrl_abc123",
-    "name": "Multi-Factor Authentication",
-    "status": "implemented",
-    "createdAt": "2025-12-07T10:30:00Z"
+    "code": "IA-2",
+    "category": "access-control"
+  }'`,
+        exampleResponse: `{
+  "id": "ctrl_42",
+  "code": "IA-2",
+  "name": "Multi-Factor Authentication",
+  "status": "planned"
+}`,
+      },
+      {
+        method: 'PUT',
+        path: '/api/controls/:id',
+        description: 'Update an existing control.',
+        params: [
+          { name: 'id', type: 'path', required: true, description: 'Control id.' },
+          { name: 'name', type: 'string', description: 'Display name.' },
+          { name: 'status', type: 'string', description: 'New status.' },
+        ],
+        exampleRequest: `curl -X PUT https://api.gigachad-grc.com/api/controls/ctrl_42 \\
+  -H "Authorization: Bearer YOUR_TOKEN" \\
+  -H "Content-Type: application/json" \\
+  -d '{ "status": "implemented" }'`,
+        exampleResponse: `{
+  "id": "ctrl_42",
+  "status": "implemented",
+  "updatedAt": "2026-01-01T12:00:00Z"
+}`,
+      },
+    ],
   },
-  "meta": {
-    "requestId": "req_xyz789"
-  }
-}`}
-        />
-      </section>
+  {
+    id: 'evidence',
+    name: 'Evidence',
+    description: 'Upload and link evidence artifacts to controls.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/api/evidence',
+        description: 'List evidence in the active workspace.',
+        params: [
+          { name: 'controlId', type: 'string', description: 'Filter to evidence for a control.' },
+          { name: 'status', type: 'string', description: 'Filter by status.' },
+        ],
+        exampleRequest: `curl "https://api.gigachad-grc.com/api/evidence?controlId=ctrl_42" \\
+  -H "Authorization: Bearer YOUR_TOKEN"`,
+        exampleResponse: `{
+  "data": [
+    {
+      "id": "ev_01",
+      "name": "MFA Policy v3.pdf",
+      "status": "valid",
+      "expiresAt": "2026-12-31"
+    }
+  ]
+}`,
+      },
+      {
+        method: 'POST',
+        path: '/api/evidence',
+        description: 'Register a new evidence artifact.',
+        params: [
+          { name: 'name', type: 'string', required: true, description: 'Display name.' },
+          { name: 'controlId', type: 'string', description: 'Control to attach to.' },
+          { name: 'expiresAt', type: 'string', description: 'ISO date when evidence expires.' },
+        ],
+        exampleRequest: `curl -X POST https://api.gigachad-grc.com/api/evidence \\
+  -H "Authorization: Bearer YOUR_TOKEN" \\
+  -H "Content-Type: application/json" \\
+  -d '{ "name": "Quarterly Access Review", "controlId": "ctrl_42" }'`,
+        exampleResponse: `{
+  "id": "ev_99",
+  "name": "Quarterly Access Review",
+  "status": "pending"
+}`,
+      },
+      {
+        method: 'DELETE',
+        path: '/api/evidence/:id',
+        description: 'Delete an evidence artifact.',
+        params: [{ name: 'id', type: 'path', required: true, description: 'Evidence id.' }],
+        exampleRequest: `curl -X DELETE https://api.gigachad-grc.com/api/evidence/ev_99 \\
+  -H "Authorization: Bearer YOUR_TOKEN"`,
+        exampleResponse: `{ "success": true }`,
+      },
+    ],
+  },
+  {
+    id: 'frameworks',
+    name: 'Frameworks',
+    description: 'Manage compliance frameworks and their requirement mappings.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/api/frameworks',
+        description: 'List frameworks enabled in the workspace.',
+        params: [],
+        exampleRequest: `curl https://api.gigachad-grc.com/api/frameworks \\
+  -H "Authorization: Bearer YOUR_TOKEN"`,
+        exampleResponse: `{
+  "data": [
+    { "id": "fw_soc2", "name": "SOC 2", "type": "soc2" },
+    { "id": "fw_iso", "name": "ISO 27001", "type": "iso27001" }
+  ]
+}`,
+      },
+      {
+        method: 'GET',
+        path: '/api/frameworks/:id',
+        description: 'Fetch a framework with its requirements.',
+        params: [{ name: 'id', type: 'path', required: true, description: 'Framework id.' }],
+        exampleRequest: `curl https://api.gigachad-grc.com/api/frameworks/fw_soc2 \\
+  -H "Authorization: Bearer YOUR_TOKEN"`,
+        exampleResponse: `{
+  "id": "fw_soc2",
+  "name": "SOC 2",
+  "requirements": [
+    { "id": "cc1.1", "title": "Control Environment" }
+  ]
+}`,
+      },
+    ],
+  },
+  {
+    id: 'risks',
+    name: 'Risks',
+    description: 'Track enterprise risks, their treatments, and review cadence.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/api/risks',
+        description: 'List risks in the active workspace.',
+        params: [
+          {
+            name: 'level',
+            type: 'string',
+            description: 'Filter by risk level (low, medium, high, critical).',
+          },
+          { name: 'owner', type: 'string', description: 'Filter by risk owner id.' },
+        ],
+        exampleRequest: `curl "https://api.gigachad-grc.com/api/risks?level=high" \\
+  -H "Authorization: Bearer YOUR_TOKEN"`,
+        exampleResponse: `{
+  "data": [
+    {
+      "id": "rsk_01",
+      "title": "Unencrypted backups",
+      "level": "high",
+      "status": "open"
+    }
+  ]
+}`,
+      },
+      {
+        method: 'POST',
+        path: '/api/risks',
+        description: 'Create a new risk.',
+        params: [
+          { name: 'title', type: 'string', required: true, description: 'Short title.' },
+          { name: 'likelihood', type: 'number', description: 'Likelihood weight (1-5).' },
+          { name: 'impact', type: 'number', description: 'Impact weight (1-5).' },
+        ],
+        exampleRequest: `curl -X POST https://api.gigachad-grc.com/api/risks \\
+  -H "Authorization: Bearer YOUR_TOKEN" \\
+  -H "Content-Type: application/json" \\
+  -d '{ "title": "Vendor outage", "likelihood": 3, "impact": 4 }'`,
+        exampleResponse: `{
+  "id": "rsk_55",
+  "title": "Vendor outage",
+  "level": "high"
+}`,
+      },
+    ],
+  },
+  {
+    id: 'audits',
+    name: 'Audits',
+    description: 'Plan audits and capture findings and remediation work.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/api/audits',
+        description: 'List audits.',
+        params: [{ name: 'status', type: 'string', description: 'Filter by status.' }],
+        exampleRequest: `curl https://api.gigachad-grc.com/api/audits \\
+  -H "Authorization: Bearer YOUR_TOKEN"`,
+        exampleResponse: `{
+  "data": [
+    { "id": "aud_01", "name": "Q4 SOC 2 Type II", "status": "in_progress" }
+  ]
+}`,
+      },
+      {
+        method: 'POST',
+        path: '/api/audits/:id/findings',
+        description: 'Record a finding against an audit.',
+        params: [
+          { name: 'id', type: 'path', required: true, description: 'Audit id.' },
+          { name: 'title', type: 'string', required: true, description: 'Finding title.' },
+          { name: 'severity', type: 'string', description: 'low | medium | high | critical.' },
+        ],
+        exampleRequest: `curl -X POST https://api.gigachad-grc.com/api/audits/aud_01/findings \\
+  -H "Authorization: Bearer YOUR_TOKEN" \\
+  -H "Content-Type: application/json" \\
+  -d '{ "title": "Missing access review evidence", "severity": "medium" }'`,
+        exampleResponse: `{
+  "id": "fnd_07",
+  "auditId": "aud_01",
+  "title": "Missing access review evidence",
+  "severity": "medium"
+}`,
+      },
+    ],
+  },
+  {
+    id: 'webhooks',
+    name: 'Webhooks',
+    description: 'Subscribe to platform events delivered to your HTTPS endpoint.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/api/webhooks',
+        description: 'List configured webhook subscriptions.',
+        params: [],
+        exampleRequest: `curl https://api.gigachad-grc.com/api/webhooks \\
+  -H "Authorization: Bearer YOUR_TOKEN"`,
+        exampleResponse: `{
+  "data": [
+    {
+      "id": "whk_01",
+      "url": "https://hooks.example.com/grc",
+      "events": ["control.updated", "evidence.expired"]
+    }
+  ]
+}`,
+      },
+      {
+        method: 'POST',
+        path: '/api/webhooks',
+        description: 'Create a new webhook subscription.',
+        params: [
+          {
+            name: 'url',
+            type: 'string',
+            required: true,
+            description: 'HTTPS endpoint that will receive events.',
+          },
+          {
+            name: 'events',
+            type: 'string[]',
+            required: true,
+            description: 'Array of event names to subscribe to.',
+          },
+        ],
+        exampleRequest: `curl -X POST https://api.gigachad-grc.com/api/webhooks \\
+  -H "Authorization: Bearer YOUR_TOKEN" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "url": "https://hooks.example.com/grc",
+    "events": ["risk.created", "audit.finding.created"]
+  }'`,
+        exampleResponse: `{
+  "id": "whk_42",
+  "url": "https://hooks.example.com/grc",
+  "secret": "whsec_..."
+}`,
+      },
+      {
+        method: 'DELETE',
+        path: '/api/webhooks/:id',
+        description: 'Remove a webhook subscription.',
+        params: [{ name: 'id', type: 'path', required: true, description: 'Webhook id.' }],
+        exampleRequest: `curl -X DELETE https://api.gigachad-grc.com/api/webhooks/whk_42 \\
+  -H "Authorization: Bearer YOUR_TOKEN"`,
+        exampleResponse: `{ "success": true }`,
+      },
+    ],
+  },
+  {
+    id: 'rate-limits',
+    name: 'Rate Limits',
+    description: 'Per-token request budgets and headers returned on every response.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/api/rate-limits',
+        description: 'Return the current request budget for your token.',
+        params: [],
+        exampleRequest: `curl https://api.gigachad-grc.com/api/rate-limits \\
+  -H "Authorization: Bearer YOUR_TOKEN"`,
+        exampleResponse: `{
+  "plan": "professional",
+  "perMinute": 300,
+  "perDay": 100000,
+  "remaining": 297
+}`,
+      },
+      {
+        method: 'GET',
+        path: '/api/rate-limits/usage',
+        description: 'Return a 24-hour rolling usage breakdown.',
+        params: [],
+        exampleRequest: `curl https://api.gigachad-grc.com/api/rate-limits/usage \\
+  -H "Authorization: Bearer YOUR_TOKEN"`,
+        exampleResponse: `{
+  "windowStart": "2026-05-18T00:00:00Z",
+  "windowEnd": "2026-05-19T00:00:00Z",
+  "calls": 18452
+}`,
+      },
+    ],
+  },
+];
 
-      <section>
-        <h3 className="text-xl font-bold text-surface-900 mb-4">Rate Limits</h3>
-        <div className="bg-white rounded-lg overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-surface-200">
-              <tr>
-                <th className="px-4 py-3 text-left text-surface-700 font-medium">Plan</th>
-                <th className="px-4 py-3 text-left text-surface-700 font-medium">
-                  Requests/minute
-                </th>
-                <th className="px-4 py-3 text-left text-surface-700 font-medium">Requests/day</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-surface-200">
-              <tr>
-                <td className="px-4 py-3 text-surface-700">Starter</td>
-                <td className="px-4 py-3 text-surface-600">60</td>
-                <td className="px-4 py-3 text-surface-600">10,000</td>
-              </tr>
-              <tr>
-                <td className="px-4 py-3 text-surface-700">Professional</td>
-                <td className="px-4 py-3 text-surface-600">300</td>
-                <td className="px-4 py-3 text-surface-600">100,000</td>
-              </tr>
-              <tr>
-                <td className="px-4 py-3 text-surface-700">Enterprise</td>
-                <td className="px-4 py-3 text-surface-600">1,000</td>
-                <td className="px-4 py-3 text-surface-600">Unlimited</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-    </div>
-  );
-}
-
-// Architecture Documentation Content
-function ArchitectureDocs() {
+function EndpointBlock({ endpoint }: { endpoint: EndpointDoc }) {
   return (
-    <div className="space-y-8">
-      <section>
-        <h2 className="text-2xl font-bold text-surface-900 mb-4">System Architecture</h2>
-        <p className="text-surface-700 mb-4">
-          GigaChad GRC is built on a modern microservices architecture designed for scalability,
-          reliability, and security.
-        </p>
-      </section>
+    <div className="rounded-lg border border-surface-200 bg-white">
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-surface-200">
+        <Badge variant={METHOD_VARIANT[endpoint.method]} capitalize={false}>
+          {endpoint.method}
+        </Badge>
+        <code className="font-mono text-small text-surface-900">{endpoint.path}</code>
+      </div>
+      <div className="px-4 py-4 space-y-4">
+        <p className="text-small text-surface-700">{endpoint.description}</p>
 
-      <section>
-        <h3 className="text-xl font-bold text-surface-900 mb-4">Core Services</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[
-            {
-              name: 'Controls Service',
-              desc: 'Manages security controls, policies, and evidence',
-              port: '3001',
-            },
-            {
-              name: 'Frameworks Service',
-              desc: 'Handles compliance frameworks and requirements mapping',
-              port: '3002',
-            },
-            {
-              name: 'Policies Service',
-              desc: 'Policy document management and versioning',
-              port: '3003',
-            },
-            {
-              name: 'Trust Service',
-              desc: 'Trust Center, questionnaires, knowledge base',
-              port: '3004',
-            },
-            {
-              name: 'Audit Service',
-              desc: 'Audit management, findings, and remediation',
-              port: '3005',
-            },
-            { name: 'TPRM Service', desc: 'Third-party risk, vendors, contracts', port: '3006' },
-          ].map((service) => (
-            <div
-              key={service.name}
-              className="bg-white/50 border border-surface-200 rounded-lg p-4"
-            >
-              <h4 className="font-semibold text-surface-800">{service.name}</h4>
-              <p className="text-surface-600 text-sm mt-1">{service.desc}</p>
-              <code className="text-xs text-brand-400 mt-2 block">Port: {service.port}</code>
+        {endpoint.params.length > 0 && (
+          <div>
+            <h4 className="text-small font-semibold text-surface-900 mb-2">Parameters</h4>
+            <div className="rounded-md border border-surface-200 overflow-hidden">
+              <table className="w-full text-small">
+                <thead className="bg-surface-50/60">
+                  <tr className="text-left text-xs font-medium text-surface-600 uppercase tracking-wider">
+                    <th className="px-3 py-2">Name</th>
+                    <th className="px-3 py-2">Type</th>
+                    <th className="px-3 py-2">Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {endpoint.params.map((p) => (
+                    <tr key={p.name} className="border-t border-surface-200/60 align-top">
+                      <td className="px-3 py-2 font-mono text-surface-900">
+                        {p.name}
+                        {p.required && <span className="ml-1 text-red-600">*</span>}
+                      </td>
+                      <td className="px-3 py-2 font-mono text-surface-700">{p.type}</td>
+                      <td className="px-3 py-2 text-surface-700">{p.description}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          ))}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div>
+            <h4 className="text-small font-semibold text-surface-900 mb-2">Example request</h4>
+            <pre className="rounded-md border border-surface-200 bg-surface-50/40 p-3 overflow-x-auto text-xs font-mono text-surface-800">
+              <code>{endpoint.exampleRequest}</code>
+            </pre>
+          </div>
+          <div>
+            <h4 className="text-small font-semibold text-surface-900 mb-2">Example response</h4>
+            <pre className="rounded-md border border-surface-200 bg-surface-50/40 p-3 overflow-x-auto text-xs font-mono text-surface-800">
+              <code>{endpoint.exampleResponse}</code>
+            </pre>
+          </div>
         </div>
-      </section>
-
-      <section>
-        <h3 className="text-xl font-bold text-surface-900 mb-4">Technology Stack</h3>
-        <div className="bg-white rounded-lg overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-surface-200">
-              <tr>
-                <th className="px-4 py-3 text-left text-surface-700 font-medium">Layer</th>
-                <th className="px-4 py-3 text-left text-surface-700 font-medium">Technology</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-surface-200">
-              <tr>
-                <td className="px-4 py-3 text-surface-700">Frontend</td>
-                <td className="px-4 py-3 text-surface-600">
-                  React 18, TypeScript, Tailwind CSS, Vite
-                </td>
-              </tr>
-              <tr>
-                <td className="px-4 py-3 text-surface-700">Backend</td>
-                <td className="px-4 py-3 text-surface-600">NestJS, TypeScript, Prisma ORM</td>
-              </tr>
-              <tr>
-                <td className="px-4 py-3 text-surface-700">Database</td>
-                <td className="px-4 py-3 text-surface-600">PostgreSQL 15</td>
-              </tr>
-              <tr>
-                <td className="px-4 py-3 text-surface-700">Cache</td>
-                <td className="px-4 py-3 text-surface-600">Redis</td>
-              </tr>
-              <tr>
-                <td className="px-4 py-3 text-surface-700">Authentication</td>
-                <td className="px-4 py-3 text-surface-600">Keycloak (OIDC/OAuth 2.0)</td>
-              </tr>
-              <tr>
-                <td className="px-4 py-3 text-surface-700">Container</td>
-                <td className="px-4 py-3 text-surface-600">Docker, Docker Compose</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section>
-        <h3 className="text-xl font-bold text-surface-900 mb-4">Data Flow</h3>
-        <div className="bg-white/50 border border-surface-200 rounded-lg p-4">
-          <ol className="space-y-3 text-surface-700">
-            <li className="flex gap-3">
-              <span className="flex-shrink-0 w-6 h-6 bg-brand-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
-                1
-              </span>
-              <span>Client requests hit the frontend (React SPA)</span>
-            </li>
-            <li className="flex gap-3">
-              <span className="flex-shrink-0 w-6 h-6 bg-brand-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
-                2
-              </span>
-              <span>API requests are routed through the API Gateway</span>
-            </li>
-            <li className="flex gap-3">
-              <span className="flex-shrink-0 w-6 h-6 bg-brand-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
-                3
-              </span>
-              <span>Authentication validated via Keycloak</span>
-            </li>
-            <li className="flex gap-3">
-              <span className="flex-shrink-0 w-6 h-6 bg-brand-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
-                4
-              </span>
-              <span>Request routed to appropriate microservice</span>
-            </li>
-            <li className="flex gap-3">
-              <span className="flex-shrink-0 w-6 h-6 bg-brand-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
-                5
-              </span>
-              <span>Service processes request, queries PostgreSQL via Prisma</span>
-            </li>
-            <li className="flex gap-3">
-              <span className="flex-shrink-0 w-6 h-6 bg-brand-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
-                6
-              </span>
-              <span>Response returned to client</span>
-            </li>
-          </ol>
-        </div>
-      </section>
-
-      <section>
-        <h3 className="text-xl font-bold text-surface-900 mb-4">Security Architecture</h3>
-        <ul className="space-y-2 text-surface-700">
-          <li className="flex gap-3">
-            <span className="text-green-600">✓</span>
-            <span>All data encrypted at rest (AES-256-GCM)</span>
-          </li>
-          <li className="flex gap-3">
-            <span className="text-green-600">✓</span>
-            <span>TLS 1.3 for all data in transit</span>
-          </li>
-          <li className="flex gap-3">
-            <span className="text-green-600">✓</span>
-            <span>Role-based access control (RBAC)</span>
-          </li>
-          <li className="flex gap-3">
-            <span className="text-green-600">✓</span>
-            <span>Audit logging for all operations</span>
-          </li>
-          <li className="flex gap-3">
-            <span className="text-green-600">✓</span>
-            <span>API credentials encrypted with separate encryption keys</span>
-          </li>
-        </ul>
-      </section>
-    </div>
-  );
-}
-
-// Configuration Documentation Content
-function ConfigurationDocs() {
-  return (
-    <div className="space-y-8">
-      <section>
-        <h2 className="text-2xl font-bold text-surface-900 mb-4">Configuration Guide</h2>
-        <p className="text-surface-700 mb-4">
-          GigaChad GRC uses environment variables for configuration. This guide covers all available
-          configuration options.
-        </p>
-      </section>
-
-      <section>
-        <h3 className="text-xl font-bold text-surface-900 mb-4">Required Environment Variables</h3>
-        <div className="bg-white rounded-lg overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-surface-200">
-              <tr>
-                <th className="px-4 py-3 text-left text-surface-700 font-medium">Variable</th>
-                <th className="px-4 py-3 text-left text-surface-700 font-medium">Description</th>
-                <th className="px-4 py-3 text-left text-surface-700 font-medium">Example</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-surface-200">
-              <tr>
-                <td className="px-4 py-3 text-surface-800 font-mono text-xs">DATABASE_URL</td>
-                <td className="px-4 py-3 text-surface-600">PostgreSQL connection string</td>
-                <td className="px-4 py-3 text-surface-500 font-mono text-xs">
-                  postgresql://user:pass@host:5432/db
-                </td>
-              </tr>
-              <tr>
-                <td className="px-4 py-3 text-surface-800 font-mono text-xs">ENCRYPTION_KEY</td>
-                <td className="px-4 py-3 text-surface-600">
-                  32-byte hex key for credential encryption
-                </td>
-                <td className="px-4 py-3 text-surface-500 font-mono text-xs">64 hex characters</td>
-              </tr>
-              <tr>
-                <td className="px-4 py-3 text-surface-800 font-mono text-xs">KEYCLOAK_URL</td>
-                <td className="px-4 py-3 text-surface-600">Keycloak server URL</td>
-                <td className="px-4 py-3 text-surface-500 font-mono text-xs">
-                  http://localhost:8080
-                </td>
-              </tr>
-              <tr>
-                <td className="px-4 py-3 text-surface-800 font-mono text-xs">KEYCLOAK_REALM</td>
-                <td className="px-4 py-3 text-surface-600">Keycloak realm name</td>
-                <td className="px-4 py-3 text-surface-500 font-mono text-xs">gigachad-grc</td>
-              </tr>
-              <tr>
-                <td className="px-4 py-3 text-surface-800 font-mono text-xs">KEYCLOAK_CLIENT_ID</td>
-                <td className="px-4 py-3 text-surface-600">Keycloak client ID</td>
-                <td className="px-4 py-3 text-surface-500 font-mono text-xs">grc-frontend</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section>
-        <h3 className="text-xl font-bold text-surface-900 mb-4">Example .env File</h3>
-        <CodeBlock
-          language="env"
-          code={`# Database
-DATABASE_URL=postgresql://postgres:password@localhost:5432/gigachad_grc
-
-# Encryption (generate with: openssl rand -hex 32)
-ENCRYPTION_KEY=your-64-character-hex-key-here
-
-# Authentication (Keycloak)
-KEYCLOAK_URL=http://localhost:8080
-KEYCLOAK_REALM=gigachad-grc
-KEYCLOAK_CLIENT_ID=grc-frontend
-KEYCLOAK_CLIENT_SECRET=your-client-secret
-
-# Redis (optional, for caching)
-REDIS_URL=redis://localhost:6379
-
-# Service Ports
-CONTROLS_SERVICE_PORT=3001
-FRAMEWORKS_SERVICE_PORT=3002
-POLICIES_SERVICE_PORT=3003
-TRUST_SERVICE_PORT=3004
-AUDIT_SERVICE_PORT=3005
-TPRM_SERVICE_PORT=3006
-
-# Frontend
-VITE_API_URL=http://localhost:3001
-VITE_KEYCLOAK_URL=http://localhost:8080
-VITE_KEYCLOAK_REALM=gigachad-grc
-VITE_KEYCLOAK_CLIENT_ID=grc-frontend`}
-        />
-      </section>
-
-      <section>
-        <h3 className="text-xl font-bold text-surface-900 mb-4">Generating Encryption Key</h3>
-        <p className="text-surface-700 mb-4">Generate a secure 32-byte encryption key:</p>
-        <CodeBlock code="openssl rand -hex 32" />
-        <div className="bg-amber-50 dark:bg-yellow-500/10 border border-amber-300 dark:border-yellow-500/30 rounded-lg p-4 mt-4">
-          <p className="text-amber-700 dark:text-yellow-600 text-sm">
-            <strong>Important:</strong> Store your encryption key securely. If lost, encrypted
-            credentials cannot be recovered.
-          </p>
-        </div>
-      </section>
-
-      <section>
-        <h3 className="text-xl font-bold text-surface-900 mb-4">Optional Configuration</h3>
-        <div className="bg-white rounded-lg overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-surface-200">
-              <tr>
-                <th className="px-4 py-3 text-left text-surface-700 font-medium">Variable</th>
-                <th className="px-4 py-3 text-left text-surface-700 font-medium">Default</th>
-                <th className="px-4 py-3 text-left text-surface-700 font-medium">Description</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-surface-200">
-              <tr>
-                <td className="px-4 py-3 text-surface-800 font-mono text-xs">LOG_LEVEL</td>
-                <td className="px-4 py-3 text-surface-600">info</td>
-                <td className="px-4 py-3 text-surface-600">
-                  Logging level (debug, info, warn, error)
-                </td>
-              </tr>
-              <tr>
-                <td className="px-4 py-3 text-surface-800 font-mono text-xs">CORS_ORIGINS</td>
-                <td className="px-4 py-3 text-surface-600">*</td>
-                <td className="px-4 py-3 text-surface-600">Allowed CORS origins</td>
-              </tr>
-              <tr>
-                <td className="px-4 py-3 text-surface-800 font-mono text-xs">SESSION_TIMEOUT</td>
-                <td className="px-4 py-3 text-surface-600">3600</td>
-                <td className="px-4 py-3 text-surface-600">Session timeout in seconds</td>
-              </tr>
-              <tr>
-                <td className="px-4 py-3 text-surface-800 font-mono text-xs">MAX_UPLOAD_SIZE</td>
-                <td className="px-4 py-3 text-surface-600">10MB</td>
-                <td className="px-4 py-3 text-surface-600">Maximum file upload size</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-    </div>
-  );
-}
-
-// Deployment Documentation Content
-function DeploymentDocs() {
-  return (
-    <div className="space-y-8">
-      <section>
-        <h2 className="text-2xl font-bold text-surface-900 mb-4">Deployment Guide</h2>
-        <p className="text-surface-700 mb-4">
-          This guide covers deploying GigaChad GRC to production environments using Docker and
-          Docker Compose.
-        </p>
-      </section>
-
-      <section>
-        <h3 className="text-xl font-bold text-surface-900 mb-4">Prerequisites</h3>
-        <ul className="space-y-2 text-surface-700">
-          <li className="flex gap-3">
-            <span className="text-brand-400">•</span>
-            <span>Docker 20.10+ and Docker Compose 2.0+</span>
-          </li>
-          <li className="flex gap-3">
-            <span className="text-brand-400">•</span>
-            <span>PostgreSQL 15+ (or use included Docker container)</span>
-          </li>
-          <li className="flex gap-3">
-            <span className="text-brand-400">•</span>
-            <span>Redis 7+ (optional, for caching)</span>
-          </li>
-          <li className="flex gap-3">
-            <span className="text-brand-400">•</span>
-            <span>Minimum 4GB RAM, 2 CPU cores</span>
-          </li>
-        </ul>
-      </section>
-
-      <section>
-        <h3 className="text-xl font-bold text-surface-900 mb-4">Quick Start with Docker Compose</h3>
-        <CodeBlock
-          code={`# Clone the repository
-git clone https://github.com/grcengineering/gigachad-grc.git
-cd gigachad-grc
-
-# Copy environment template
-cp .env.example .env
-
-# Edit .env with your configuration
-nano .env
-
-# Start all services
-docker-compose up -d
-
-# View logs
-docker-compose logs -f`}
-        />
-      </section>
-
-      <section>
-        <h3 className="text-xl font-bold text-surface-900 mb-4">Production Checklist</h3>
-        <ul className="space-y-2 text-surface-700">
-          <li className="flex gap-3">
-            <input type="checkbox" className="mt-1 w-4 h-4 bg-white border-surface-300 rounded" />
-            <span>
-              Generate unique ENCRYPTION_KEY using{' '}
-              <code className="text-brand-400 text-sm">openssl rand -hex 32</code>
-            </span>
-          </li>
-          <li className="flex gap-3">
-            <input type="checkbox" className="mt-1 w-4 h-4 bg-white border-surface-300 rounded" />
-            <span>Configure SSL/TLS certificates (Let's Encrypt or custom)</span>
-          </li>
-          <li className="flex gap-3">
-            <input type="checkbox" className="mt-1 w-4 h-4 bg-white border-surface-300 rounded" />
-            <span>Set up database backups (daily recommended)</span>
-          </li>
-          <li className="flex gap-3">
-            <input type="checkbox" className="mt-1 w-4 h-4 bg-white border-surface-300 rounded" />
-            <span>Configure firewall rules (allow ports 80, 443)</span>
-          </li>
-          <li className="flex gap-3">
-            <input type="checkbox" className="mt-1 w-4 h-4 bg-white border-surface-300 rounded" />
-            <span>Set up monitoring and alerting</span>
-          </li>
-          <li className="flex gap-3">
-            <input type="checkbox" className="mt-1 w-4 h-4 bg-white border-surface-300 rounded" />
-            <span>Configure log aggregation</span>
-          </li>
-          <li className="flex gap-3">
-            <input type="checkbox" className="mt-1 w-4 h-4 bg-white border-surface-300 rounded" />
-            <span>Test disaster recovery procedures</span>
-          </li>
-        </ul>
-      </section>
-
-      <section>
-        <h3 className="text-xl font-bold text-surface-900 mb-4">Database Migration</h3>
-        <CodeBlock
-          code={`# Run database migrations
-docker-compose exec controls npx prisma migrate deploy
-
-# Seed initial data (optional)
-docker-compose exec controls npx prisma db seed`}
-        />
-      </section>
-
-      <section>
-        <h3 className="text-xl font-bold text-surface-900 mb-4">Health Checks</h3>
-        <p className="text-surface-700 mb-4">Verify all services are running:</p>
-        <CodeBlock
-          code={`# Check service health
-curl http://localhost:3001/health  # Controls service
-curl http://localhost:3002/health  # Frameworks service
-curl http://localhost:3003/health  # Policies service
-
-# Or use Docker
-docker-compose ps`}
-        />
-      </section>
-    </div>
-  );
-}
-
-// Development Documentation Content
-function DevelopmentDocs() {
-  return (
-    <div className="space-y-8">
-      <section>
-        <h2 className="text-2xl font-bold text-surface-900 mb-4">Development Setup</h2>
-        <p className="text-surface-700 mb-4">
-          This guide walks through setting up a local development environment for GigaChad GRC.
-        </p>
-      </section>
-
-      <section>
-        <h3 className="text-xl font-bold text-surface-900 mb-4">Prerequisites</h3>
-        <ul className="space-y-2 text-surface-700">
-          <li className="flex gap-3">
-            <span className="text-brand-400">•</span>
-            <span>Node.js 18+ and npm 9+</span>
-          </li>
-          <li className="flex gap-3">
-            <span className="text-brand-400">•</span>
-            <span>Docker and Docker Compose</span>
-          </li>
-          <li className="flex gap-3">
-            <span className="text-brand-400">•</span>
-            <span>Git</span>
-          </li>
-        </ul>
-      </section>
-
-      <section>
-        <h3 className="text-xl font-bold text-surface-900 mb-4">Quick Start</h3>
-        <CodeBlock
-          code={`# Clone the repository
-git clone https://github.com/grcengineering/gigachad-grc.git
-cd gigachad-grc
-
-# Install dependencies
-npm install
-
-# Start infrastructure (PostgreSQL, Redis, Keycloak)
-docker-compose -f docker-compose.dev.yml up -d
-
-# Generate Prisma client
-npx prisma generate
-
-# Run database migrations
-npx prisma migrate dev
-
-# Start development servers
-npm run dev`}
-        />
-      </section>
-
-      <section>
-        <h3 className="text-xl font-bold text-surface-900 mb-4">Project Structure</h3>
-        <CodeBlock
-          language="text"
-          code={`gigachad-grc/
-├── frontend/           # React frontend application
-│   ├── src/
-│   │   ├── components/ # Reusable UI components
-│   │   ├── pages/      # Page components
-│   │   ├── lib/        # Utilities and API client
-│   │   └── contexts/   # React contexts
-│   └── package.json
-├── services/           # Backend microservices
-│   ├── controls/       # Controls service
-│   ├── frameworks/     # Frameworks service
-│   ├── policies/       # Policies service
-│   ├── trust/          # Trust Center service
-│   ├── audit/          # Audit service
-│   ├── tprm/           # Third-party risk service
-│   └── shared/         # Shared utilities and Prisma schema
-├── database/           # Database migrations and seeds
-├── docs/               # Documentation
-└── docker-compose.yml  # Docker configuration`}
-        />
-      </section>
-
-      <section>
-        <h3 className="text-xl font-bold text-surface-900 mb-4">Running Tests</h3>
-        <CodeBlock
-          code={`# Run all tests
-npm test
-
-# Run tests with coverage
-npm run test:coverage
-
-# Run tests in watch mode
-npm run test:watch
-
-# Run e2e tests
-npm run test:e2e`}
-        />
-      </section>
-
-      <section>
-        <h3 className="text-xl font-bold text-surface-900 mb-4">Code Style</h3>
-        <p className="text-surface-700 mb-4">
-          The project uses ESLint and Prettier for code formatting:
-        </p>
-        <CodeBlock
-          code={`# Check linting
-npm run lint
-
-# Fix linting issues
-npm run lint:fix
-
-# Format code
-npm run format`}
-        />
-      </section>
-
-      <section>
-        <h3 className="text-xl font-bold text-surface-900 mb-4">Useful Commands</h3>
-        <div className="bg-white rounded-lg overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-surface-200">
-              <tr>
-                <th className="px-4 py-3 text-left text-surface-700 font-medium">Command</th>
-                <th className="px-4 py-3 text-left text-surface-700 font-medium">Description</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-surface-200">
-              <tr>
-                <td className="px-4 py-3 text-surface-800 font-mono text-xs">npm run dev</td>
-                <td className="px-4 py-3 text-surface-600">Start all services in dev mode</td>
-              </tr>
-              <tr>
-                <td className="px-4 py-3 text-surface-800 font-mono text-xs">npm run build</td>
-                <td className="px-4 py-3 text-surface-600">Build all services for production</td>
-              </tr>
-              <tr>
-                <td className="px-4 py-3 text-surface-800 font-mono text-xs">npx prisma studio</td>
-                <td className="px-4 py-3 text-surface-600">Open Prisma database GUI</td>
-              </tr>
-              <tr>
-                <td className="px-4 py-3 text-surface-800 font-mono text-xs">
-                  npx prisma migrate dev
-                </td>
-                <td className="px-4 py-3 text-surface-600">Run database migrations</td>
-              </tr>
-              <tr>
-                <td className="px-4 py-3 text-surface-800 font-mono text-xs">
-                  docker-compose logs -f
-                </td>
-                <td className="px-4 py-3 text-surface-600">View service logs</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
+      </div>
     </div>
   );
 }
 
 export default function DeveloperDocs() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const activeSection = (searchParams.get('section') as DocSection) || 'api';
-
-  const renderContent = () => {
-    switch (activeSection) {
-      case 'api':
-        return <ApiDocs />;
-      case 'architecture':
-        return <ArchitectureDocs />;
-      case 'configuration':
-        return <ConfigurationDocs />;
-      case 'deployment':
-        return <DeploymentDocs />;
-      case 'development':
-        return <DevelopmentDocs />;
-      default:
-        return <ApiDocs />;
-    }
-  };
-
-  const currentSection = docSections.find((s) => s.id === activeSection);
+  const [activeId, setActiveId] = useState<string>(DOCS[0].id);
+  const active = DOCS.find((d) => d.id === activeId) ?? DOCS[0];
 
   return (
-    <div className="max-w-6xl mx-auto">
-      {/* Back Link */}
-      <Link
-        to="/help"
-        className="inline-flex items-center gap-2 text-surface-600 hover:text-surface-800 mb-6"
-      >
-        <ArrowLeftIcon className="w-4 h-4" />
-        Back to Help Center
-      </Link>
+    <div className="space-y-5">
+      <PageHeader
+        title="Developer Docs"
+        description="Reference for the GigaChad GRC REST API. Browse categories on the left."
+      />
 
-      {/* Header */}
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold text-surface-900">Developer Documentation</h1>
-        <p className="text-surface-600 mt-2">Technical guides and API reference for developers</p>
-      </header>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div className="lg:col-span-1">
+          <Card>
+            <CardHeader>
+              <CardTitle>Categories</CardTitle>
+            </CardHeader>
+            <CardBody density="compact">
+              <ul className="space-y-1">
+                {DOCS.map((cat) => {
+                  const isActive = cat.id === activeId;
+                  return (
+                    <li key={cat.id}>
+                      <button
+                        type="button"
+                        onClick={() => setActiveId(cat.id)}
+                        className={cn(
+                          'w-full text-left px-3 py-2 rounded-md transition-colors',
+                          'focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500',
+                          isActive
+                            ? 'bg-brand-50 text-brand-800'
+                            : 'text-surface-700 hover:bg-surface-100 hover:text-surface-900'
+                        )}
+                      >
+                        <span className="block text-body font-medium">{cat.name}</span>
+                        <span className="block text-xs text-surface-600 mt-0.5">
+                          {cat.endpoints.length} endpoint
+                          {cat.endpoints.length === 1 ? '' : 's'}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </CardBody>
+          </Card>
+        </div>
 
-      <div className="flex flex-col lg:flex-row gap-8">
-        {/* Sidebar Navigation */}
-        <nav className="lg:w-64 flex-shrink-0">
-          <div className="sticky top-4 space-y-1">
-            {docSections.map((section) => {
-              const Icon = section.icon;
-              const isActive = activeSection === section.id;
-              return (
-                <button
-                  key={section.id}
-                  onClick={() => setSearchParams({ section: section.id })}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
-                    isActive
-                      ? 'bg-brand-600/20 text-brand-400 border border-brand-500/30'
-                      : 'text-surface-600 hover:bg-white hover:text-surface-800'
-                  }`}
-                >
-                  <Icon className="w-5 h-5" />
-                  <div>
-                    <span className="font-medium block">{section.name}</span>
-                    <span className="text-xs opacity-70">{section.description}</span>
-                  </div>
-                </button>
-              );
-            })}
+        <div className="lg:col-span-2 space-y-4">
+          <div>
+            <h2 className="text-h2 text-surface-900">{active.name}</h2>
+            <p className="text-small text-surface-600 mt-1">{active.description}</p>
           </div>
-        </nav>
-
-        {/* Main Content */}
-        <main className="flex-1 min-w-0">
-          <div className="bg-white/30 border border-surface-200 rounded-xl p-6 lg:p-8">
-            {currentSection && (
-              <div className="flex items-center gap-3 mb-6 pb-6 border-b border-surface-200">
-                <div className="p-2 bg-brand-600/20 rounded-lg">
-                  <currentSection.icon className="w-6 h-6 text-brand-400" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-semibold text-surface-900">{currentSection.name}</h2>
-                  <p className="text-surface-600 text-sm">{currentSection.description}</p>
-                </div>
-              </div>
-            )}
-            {renderContent()}
+          <div className="space-y-4">
+            {active.endpoints.map((ep) => (
+              <EndpointBlock key={`${ep.method}-${ep.path}`} endpoint={ep} />
+            ))}
           </div>
-        </main>
+        </div>
       </div>
     </div>
   );

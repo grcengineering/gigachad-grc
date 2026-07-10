@@ -41,11 +41,11 @@ interface UserPermissions {
 export function usePermissions() {
   const { data: currentUser, isLoading: userLoading } = useQuery({
     queryKey: ['current-user'],
-    queryFn: () => usersApi.getMe().then(res => res.data),
+    queryFn: () => usersApi.getMe().then((res) => res.data),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  const permissions: UserPermissions | null = (currentUser?.permissions as unknown as UserPermissions) || null;
+  const permissions: UserPermissions | null = currentUser?.permissions || null;
 
   /**
    * Check if user has permission to perform action on resource
@@ -53,7 +53,7 @@ export function usePermissions() {
   const hasPermission = (resource: Resource, action: Action): boolean => {
     if (!permissions) return false;
 
-    const perm = permissions.effectivePermissions.find(p => p.resource === resource);
+    const perm = permissions.effectivePermissions.find((p) => p.resource === resource);
     if (!perm) return false;
 
     return perm.actions.includes(action);
@@ -79,7 +79,7 @@ export function usePermissions() {
   const getResourceActions = (resource: Resource): Action[] => {
     if (!permissions) return [];
 
-    const perm = permissions.effectivePermissions.find(p => p.resource === resource);
+    const perm = permissions.effectivePermissions.find((p) => p.resource === resource);
     return perm?.actions || [];
   };
 
@@ -90,11 +90,11 @@ export function usePermissions() {
     resource: Resource,
     action: Action,
     ownerId?: string,
-    userId?: string,
+    userId?: string
   ): boolean => {
     if (!permissions || !userId) return false;
 
-    const perm = permissions.effectivePermissions.find(p => p.resource === resource);
+    const perm = permissions.effectivePermissions.find((p) => p.resource === resource);
     if (!perm || !perm.actions.includes(action)) return false;
 
     // Check ownership scope
@@ -121,7 +121,7 @@ export function usePermissions() {
    */
   const isAdmin = (): boolean => {
     if (!permissions) return false;
-    return permissions.groups.some(g => g.name === 'Administrator');
+    return permissions.groups.some((g) => g.name === 'Administrator');
   };
 
   return {
@@ -159,4 +159,3 @@ export function PermissionGate({
 
   return <>{children}</>;
 }
-

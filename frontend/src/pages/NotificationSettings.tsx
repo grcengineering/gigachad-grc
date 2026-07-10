@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   BellIcon,
@@ -6,10 +6,9 @@ import {
   CheckIcon,
   ArrowPathIcon,
   TrashIcon,
-  CheckCircleIcon,
 } from '@heroicons/react/24/outline';
-import { notificationsApi, notificationsConfigApi, EmailStatus } from '../lib/api';
-import { formatDistanceToNow } from 'date-fns';
+import { notificationsApi } from '../lib/api';
+import { formatRelativeTimeFromNow } from '../lib/date';
 
 interface NotificationPreference {
   notificationType: string;
@@ -35,10 +34,10 @@ interface Notification {
 }
 
 const severityColors = {
-  info: 'bg-blue-900/30 text-blue-600 border-blue-700',
-  success: 'bg-green-900/30 text-green-600 border-green-700',
-  warning: 'bg-amber-900/30 text-amber-600 border-amber-700',
-  error: 'bg-red-900/30 text-red-600 border-red-700',
+  info: 'bg-blue-50 text-blue-700 border-blue-200',
+  success: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  warning: 'bg-amber-50 text-amber-700 border-amber-200',
+  error: 'bg-red-50 text-red-700 border-red-200',
 };
 
 const categoryIcons: Record<string, string> = {
@@ -51,67 +50,9 @@ const categoryIcons: Record<string, string> = {
   System: '⚙️',
 };
 
-/**
- * Component to display dynamic email configuration status
- */
-function EmailConfigurationNotice() {
-  const { data: emailStatus, isLoading } = useQuery<EmailStatus>({
-    queryKey: ['email-status'],
-    queryFn: () => notificationsConfigApi.getEmailStatus(),
-    staleTime: 60000, // Cache for 1 minute
-  });
-
-  if (isLoading) {
-    return (
-      <div className="bg-gray-800 border border-gray-700 rounded-xl p-4 animate-pulse">
-        <div className="h-4 bg-gray-700 rounded w-1/4 mb-2"></div>
-        <div className="h-3 bg-gray-700 rounded w-3/4"></div>
-      </div>
-    );
-  }
-
-  const isConfigured = emailStatus?.isConfigured ?? false;
-
-  if (isConfigured) {
-    return (
-      <div className="bg-green-900/20 border border-green-700 rounded-xl p-4">
-        <div className="flex items-start space-x-3">
-          <CheckCircleIcon className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
-          <div>
-            <h4 className="text-green-600 font-medium">Email Notifications Active</h4>
-            <p className="text-gray-300 text-sm mt-1">
-              Email delivery is configured using {emailStatus?.provider?.toUpperCase() || 'SMTP'}.
-              Notifications will be sent to recipient email addresses.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="bg-amber-900/20 border border-amber-700 rounded-xl p-4">
-      <div className="flex items-start space-x-3">
-        <EnvelopeIcon className="h-6 w-6 text-amber-600 flex-shrink-0 mt-0.5" />
-        <div>
-          <h4 className="text-amber-600 font-medium">Email Notifications (Demo Mode)</h4>
-          <p className="text-gray-300 text-sm mt-1">
-            {emailStatus?.consoleReason ||
-              'Email provider not configured. Configure SMTP, SendGrid, or AWS SES in environment variables to enable email delivery.'}
-          </p>
-          <p className="text-gray-400 text-xs mt-2">
-            In demo mode, emails are logged to the console instead of being sent.
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function NotificationSettings() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'all' | 'unread' | 'settings'>('all');
-  const [_selectedCategory] = useState<string>('all');
   const [localPreferences, setLocalPreferences] = useState<NotificationPreference[]>([]);
   const [hasChanges, setHasChanges] = useState(false);
 
@@ -138,14 +79,17 @@ export default function NotificationSettings() {
     queryFn: () => notificationsApi.getPreferences(),
     enabled: activeTab === 'settings',
   });
-  const preferences = (preferencesData?.data || []) as NotificationPreference[];
+  const preferences: NotificationPreference[] = useMemo(
+    () => preferencesData?.data || [],
+    [preferencesData]
+  );
 
   // Update local preferences when fetched
   useEffect(() => {
     if (preferences.length > 0 && localPreferences.length === 0) {
       setLocalPreferences(preferences);
     }
-  }, [preferences]);
+  }, [preferences, localPreferences.length]);
 
   // Save preferences mutation
   const savePreferencesMutation = useMutation({
@@ -155,7 +99,7 @@ export default function NotificationSettings() {
           notificationType: p.notificationType,
           inApp: p.inApp,
           email: p.email,
-        })) as any
+        }))
       ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications', 'preferences'] });
@@ -223,16 +167,13 @@ export default function NotificationSettings() {
     {} as Record<string, NotificationPreference[]>
   );
 
-  const _categories = ['all', ...Object.keys(preferencesByCategory)];
-  void _categories; // Available for filter UI
-
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Notifications</h1>
-          <p className="text-gray-400 mt-1">
+          <h1 className="text-2xl font-bold text-surface-900">Notifications</h1>
+          <p className="text-surface-500 mt-1">
             Manage your notification preferences and view history
           </p>
         </div>
@@ -241,7 +182,7 @@ export default function NotificationSettings() {
             <>
               <button
                 onClick={() => refetch()}
-                className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+                className="p-2 text-surface-500 hover:text-white hover:bg-surface-100 rounded-lg transition-colors"
                 title="Refresh"
               >
                 <ArrowPathIcon className="h-5 w-5" />
@@ -249,7 +190,7 @@ export default function NotificationSettings() {
               {unreadCount > 0 && (
                 <button
                   onClick={() => markAllReadMutation.mutate()}
-                  className="px-3 py-2 text-sm text-indigo-600 hover:text-indigo-700 hover:bg-gray-700 rounded-lg transition-colors flex items-center space-x-1"
+                  className="px-3 py-2 text-sm text-indigo-700 hover:text-indigo-800 hover:bg-surface-100 rounded-lg transition-colors flex items-center space-x-1"
                 >
                   <CheckIcon className="h-4 w-4" />
                   <span>Mark all read</span>
@@ -262,7 +203,7 @@ export default function NotificationSettings() {
                       deleteAllMutation.mutate();
                     }
                   }}
-                  className="px-3 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-gray-700 rounded-lg transition-colors flex items-center space-x-1"
+                  className="px-3 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-surface-100 rounded-lg transition-colors flex items-center space-x-1"
                 >
                   <TrashIcon className="h-4 w-4" />
                   <span>Clear all</span>
@@ -284,14 +225,14 @@ export default function NotificationSettings() {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-700">
+      <div className="border-b border-surface-200">
         <nav className="flex space-x-8">
           <button
             onClick={() => setActiveTab('all')}
             className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
               activeTab === 'all'
                 ? 'border-indigo-500 text-indigo-600'
-                : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-500'
+                : 'border-transparent text-surface-500 hover:text-surface-500 hover:border-surface-300'
             }`}
           >
             All Notifications
@@ -301,7 +242,7 @@ export default function NotificationSettings() {
             className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center space-x-2 ${
               activeTab === 'unread'
                 ? 'border-indigo-500 text-indigo-600'
-                : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-500'
+                : 'border-transparent text-surface-500 hover:text-surface-500 hover:border-surface-300'
             }`}
           >
             <span>Unread</span>
@@ -316,7 +257,7 @@ export default function NotificationSettings() {
             className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
               activeTab === 'settings'
                 ? 'border-indigo-500 text-indigo-600'
-                : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-500'
+                : 'border-transparent text-surface-500 hover:text-surface-500 hover:border-surface-300'
             }`}
           >
             Settings
@@ -329,11 +270,11 @@ export default function NotificationSettings() {
         /* Preferences Settings */
         <div className="space-y-6">
           {/* Quick Toggles */}
-          <div className="bg-gray-800 rounded-xl p-4 border border-gray-700">
-            <h3 className="text-lg font-medium text-white mb-4">Quick Settings</h3>
+          <div className="bg-white rounded-xl p-4 border border-surface-200">
+            <h3 className="text-lg font-medium text-surface-900 mb-4">Quick Settings</h3>
             <div className="flex items-center space-x-6">
               <div className="flex items-center space-x-4">
-                <span className="text-gray-300 flex items-center space-x-2">
+                <span className="text-surface-500 flex items-center space-x-2">
                   <BellIcon className="h-5 w-5" />
                   <span>In-App</span>
                 </span>
@@ -345,13 +286,13 @@ export default function NotificationSettings() {
                 </button>
                 <button
                   onClick={() => handleToggleAll('inApp', false)}
-                  className="px-2 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-500"
+                  className="px-2 py-1 text-xs bg-surface-200 text-white rounded hover:bg-surface-300"
                 >
                   All Off
                 </button>
               </div>
               <div className="flex items-center space-x-4">
-                <span className="text-gray-300 flex items-center space-x-2">
+                <span className="text-surface-500 flex items-center space-x-2">
                   <EnvelopeIcon className="h-5 w-5" />
                   <span>Email</span>
                 </span>
@@ -363,7 +304,7 @@ export default function NotificationSettings() {
                 </button>
                 <button
                   onClick={() => handleToggleAll('email', false)}
-                  className="px-2 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-500"
+                  className="px-2 py-1 text-xs bg-surface-200 text-white rounded hover:bg-surface-300"
                 >
                   All Off
                 </button>
@@ -375,35 +316,35 @@ export default function NotificationSettings() {
           {preferencesLoading ? (
             <div className="text-center py-12">
               <div className="animate-spin h-8 w-8 border-2 border-indigo-500 border-t-transparent rounded-full mx-auto"></div>
-              <p className="mt-4 text-gray-400">Loading preferences...</p>
+              <p className="mt-4 text-surface-500">Loading preferences...</p>
             </div>
           ) : (
             Object.entries(preferencesByCategory).map(([category, prefs]) => (
               <div
                 key={category}
-                className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden"
+                className="bg-white rounded-xl border border-surface-200 overflow-hidden"
               >
-                <div className="px-4 py-3 bg-gray-900 border-b border-gray-700">
-                  <h3 className="text-lg font-medium text-white flex items-center space-x-2">
+                <div className="px-4 py-3 bg-white border-b border-surface-200">
+                  <h3 className="text-lg font-medium text-surface-900 flex items-center space-x-2">
                     <span>{categoryIcons[category] || '📌'}</span>
                     <span>{category}</span>
                   </h3>
                 </div>
-                <div className="divide-y divide-gray-700">
+                <div className="divide-y divide-surface-200">
                   {prefs.map((pref) => (
                     <div
                       key={pref.notificationType}
                       className="px-4 py-4 flex items-center justify-between"
                     >
                       <div className="flex-1">
-                        <p className="text-white font-medium">{pref.typeName}</p>
-                        <p className="text-sm text-gray-400">{pref.description}</p>
+                        <p className="text-surface-900 font-medium">{pref.typeName}</p>
+                        <p className="text-sm text-surface-500">{pref.description}</p>
                       </div>
                       <div className="flex items-center space-x-6">
                         {/* In-App Toggle */}
                         <label className="flex items-center space-x-2 cursor-pointer">
                           <BellIcon
-                            className={`h-5 w-5 ${pref.inApp ? 'text-indigo-600' : 'text-gray-500'}`}
+                            className={`h-5 w-5 ${pref.inApp ? 'text-indigo-600' : 'text-surface-600'}`}
                           />
                           <input
                             type="checkbox"
@@ -418,7 +359,7 @@ export default function NotificationSettings() {
                             className="sr-only"
                           />
                           <div
-                            className={`relative w-10 h-6 rounded-full transition-colors ${pref.inApp ? 'bg-indigo-600' : 'bg-gray-600'}`}
+                            className={`relative w-10 h-6 rounded-full transition-colors ${pref.inApp ? 'bg-indigo-600' : 'bg-surface-200'}`}
                           >
                             <div
                               className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${pref.inApp ? 'translate-x-4' : 'translate-x-0'}`}
@@ -428,7 +369,7 @@ export default function NotificationSettings() {
                         {/* Email Toggle */}
                         <label className="flex items-center space-x-2 cursor-pointer">
                           <EnvelopeIcon
-                            className={`h-5 w-5 ${pref.email ? 'text-indigo-600' : 'text-gray-500'}`}
+                            className={`h-5 w-5 ${pref.email ? 'text-indigo-600' : 'text-surface-600'}`}
                           />
                           <input
                             type="checkbox"
@@ -443,7 +384,7 @@ export default function NotificationSettings() {
                             className="sr-only"
                           />
                           <div
-                            className={`relative w-10 h-6 rounded-full transition-colors ${pref.email ? 'bg-indigo-600' : 'bg-gray-600'}`}
+                            className={`relative w-10 h-6 rounded-full transition-colors ${pref.email ? 'bg-indigo-600' : 'bg-surface-200'}`}
                           >
                             <div
                               className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${pref.email ? 'translate-x-4' : 'translate-x-0'}`}
@@ -459,7 +400,18 @@ export default function NotificationSettings() {
           )}
 
           {/* Email Configuration Notice */}
-          <EmailConfigurationNotice />
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+            <div className="flex items-start space-x-3">
+              <EnvelopeIcon className="h-6 w-6 text-amber-700 flex-shrink-0 mt-0.5" />
+              <div>
+                <h4 className="text-amber-700 font-medium">Email Notifications</h4>
+                <p className="text-surface-500 text-sm mt-1">
+                  Email notifications are currently in placeholder mode. Configure your email
+                  provider in the settings to enable email delivery.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       ) : (
         /* Notifications List */
@@ -467,24 +419,24 @@ export default function NotificationSettings() {
           {notificationsLoading ? (
             <div className="text-center py-12">
               <div className="animate-spin h-8 w-8 border-2 border-indigo-500 border-t-transparent rounded-full mx-auto"></div>
-              <p className="mt-4 text-gray-400">Loading notifications...</p>
+              <p className="mt-4 text-surface-500">Loading notifications...</p>
             </div>
           ) : notifications.length === 0 ? (
-            <div className="text-center py-12 bg-gray-800 rounded-xl border border-gray-700">
-              <BellIcon className="h-16 w-16 mx-auto text-gray-600 mb-4" />
-              <h3 className="text-lg font-medium text-white">No notifications</h3>
-              <p className="text-gray-400 mt-1">
+            <div className="text-center py-12 bg-white rounded-xl border border-surface-200">
+              <BellIcon className="h-16 w-16 mx-auto text-surface-700 mb-4" />
+              <h3 className="text-lg font-medium text-surface-900">No notifications</h3>
+              <p className="text-surface-500 mt-1">
                 {activeTab === 'unread'
                   ? "You're all caught up!"
                   : "You haven't received any notifications yet."}
               </p>
             </div>
           ) : (
-            <div className="bg-gray-800 rounded-xl border border-gray-700 divide-y divide-gray-700 overflow-hidden">
+            <div className="bg-white rounded-xl border border-surface-200 divide-y divide-surface-200 overflow-hidden">
               {notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`p-4 hover:bg-gray-700/50 transition-colors ${!notification.isRead ? 'bg-gray-700/30' : ''}`}
+                  className={`p-4 hover:bg-surface-100/50 transition-colors ${!notification.isRead ? 'bg-surface-100/30' : ''}`}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-start space-x-4 flex-1">
@@ -498,7 +450,7 @@ export default function NotificationSettings() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-2">
                           <h4
-                            className={`text-sm font-medium ${notification.isRead ? 'text-gray-300' : 'text-white'}`}
+                            className={`text-sm font-medium ${notification.isRead ? 'text-surface-500' : 'text-surface-900'}`}
                           >
                             {notification.title}
                           </h4>
@@ -506,15 +458,13 @@ export default function NotificationSettings() {
                             <span className="h-2 w-2 bg-indigo-500 rounded-full"></span>
                           )}
                         </div>
-                        <p className="text-sm text-gray-400 mt-1">{notification.message}</p>
+                        <p className="text-sm text-surface-500 mt-1">{notification.message}</p>
                         <div className="flex items-center space-x-3 mt-2">
-                          <span className="text-xs text-gray-500">
-                            {formatDistanceToNow(new Date(notification.createdAt), {
-                              addSuffix: true,
-                            })}
+                          <span className="text-xs text-surface-600">
+                            {formatRelativeTimeFromNow(notification.createdAt)}
                           </span>
                           {notification.entityType && (
-                            <span className="text-xs text-gray-500 bg-gray-700 px-2 py-0.5 rounded">
+                            <span className="text-xs text-surface-600 bg-surface-100 px-2 py-0.5 rounded">
                               {notification.entityType}
                             </span>
                           )}
@@ -527,7 +477,7 @@ export default function NotificationSettings() {
                       {!notification.isRead && (
                         <button
                           onClick={() => markReadMutation.mutate(notification.id)}
-                          className="p-2 text-gray-400 hover:text-green-600 hover:bg-gray-700 rounded-lg transition-colors"
+                          className="p-2 text-surface-500 hover:text-emerald-700 hover:bg-surface-100 rounded-lg transition-colors"
                           title="Mark as read"
                         >
                           <CheckIcon className="h-4 w-4" />
@@ -535,7 +485,7 @@ export default function NotificationSettings() {
                       )}
                       <button
                         onClick={() => deleteMutation.mutate(notification.id)}
-                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-gray-700 rounded-lg transition-colors"
+                        className="p-2 text-surface-500 hover:text-red-600 hover:bg-surface-100 rounded-lg transition-colors"
                         title="Delete"
                       >
                         <TrashIcon className="h-4 w-4" />

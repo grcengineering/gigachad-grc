@@ -1,16 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { frameworksApi, mappingsApi, usersApi } from '@/lib/api';
+import { CategoryChip, Button, Input, Textarea, Select, Dialog, Badge } from '@/components/ui';
 import toast from 'react-hot-toast';
 import CommentsPanel from '@/components/CommentsPanel';
 import TasksPanel from '@/components/TasksPanel';
-import MappingEditorModal from '@/components/mappings/MappingEditorModal';
-import { MappingCoverageWidget } from '@/components/widgets/MappingCoverageWidget';
-import MappingHistoryDrawer from '@/components/mappings/MappingHistoryDrawer';
-import MappingImportWizard from '@/components/mappings/MappingImportWizard';
-import { SkeletonDetailHeader, SkeletonDetailSection } from '@/components/Skeleton';
-import { useAuth } from '@/contexts/AuthContext';
 import {
   ArrowLeftIcon,
   ChevronRightIcon,
@@ -26,56 +21,52 @@ import {
   FlagIcon,
   PlusIcon,
   ArrowUpTrayIcon,
-  ArrowDownTrayIcon,
   DocumentArrowDownIcon,
-  EllipsisVerticalIcon,
-  ClockIcon,
 } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 
-import { Textarea } from '@/components/ui/Textarea';
-
-import { Input } from '@/components/ui/Input';
-
-import { SelectNative } from '@/components/ui/SelectNative';
-
-import { Button } from '@/components/ui/Button';
-
-import { Badge } from '@/components/ui/Badge';
-import { Dialog } from '@/components/ui/Dialog';
-
 const STATUS_CONFIG = {
-  compliant: { icon: CheckCircleIcon, color: 'text-green-600', bg: 'bg-green-400/10' },
-  partial: { icon: ExclamationTriangleIcon, color: 'text-yellow-600', bg: 'bg-yellow-400/10' },
+  compliant: { icon: CheckCircleIcon, color: 'text-emerald-700', bg: 'bg-green-400/10' },
+  partial: { icon: ExclamationTriangleIcon, color: 'text-yellow-700', bg: 'bg-yellow-400/10' },
   non_compliant: { icon: XCircleIcon, color: 'text-red-600', bg: 'bg-red-400/10' },
   not_applicable: { icon: MinusCircleIcon, color: 'text-surface-600', bg: 'bg-surface-400/10' },
   not_assessed: { icon: MinusCircleIcon, color: 'text-surface-500', bg: 'bg-surface-500/10' },
 };
 
-type StatusFilter =
-  | 'all'
-  | 'compliant'
-  | 'partial'
-  | 'non_compliant'
-  | 'not_applicable'
-  | 'not_assessed';
+/** Walk the tree, building parent-id paths. Returns the path to the target id (excluding the target itself). */
+function findRequirementPath(tree: any[], targetId: string): string[] | null {
+  for (const node of tree) {
+    if (node.id === targetId) return [];
+    if (node.children && node.children.length > 0) {
+      const childPath = findRequirementPath(node.children, targetId);
+      if (childPath !== null) return [node.id, ...childPath];
+    }
+  }
+  return null;
+}
+
+function findRequirement(tree: any[], targetId: string): any | null {
+  for (const node of tree) {
+    if (node.id === targetId) return node;
+    if (node.children && node.children.length > 0) {
+      const hit = findRequirement(node.children, targetId);
+      if (hit) return hit;
+    }
+  }
+  return null;
+}
 
 export default function FrameworkDetail() {
   const { id } = useParams<{ id: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
-  const { user, hasPermission } = useAuth();
   const [expandedReqs, setExpandedReqs] = useState<Set<string>>(new Set());
   const [selectedReq, setSelectedReq] = useState<any>(null);
+  const [highlightedReqId, setHighlightedReqId] = useState<string | null>(null);
+  const deepLinkAppliedRef = useRef(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [isMappingImportOpen, setIsMappingImportOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-
-  const canManageMappings = hasPermission('frameworks:manage');
-  const canExportMappings = user
-    ? ['admin', 'compliance_manager', 'auditor'].includes(user.role)
-    : false;
   const [formData, setFormData] = useState({
     reference: '',
     title: '',
@@ -101,6 +92,36 @@ export default function FrameworkDetail() {
     queryFn: () => frameworksApi.getRequirementTree(id!).then((res) => res.data),
     enabled: !!id,
   });
+
+  // Deep-link: ?requirement=<id> expands ancestors, selects it, scrolls into view, highlights briefly
+  useEffect(() => {
+    if (deepLinkAppliedRef.current) return;
+    const targetId = searchParams.get('requirement');
+    if (!targetId || !requirements) return;
+    const path = findRequirementPath(requirements, targetId);
+    if (path === null) return;
+    deepLinkAppliedRef.current = true;
+    // Expand all ancestors
+    setExpandedReqs((prev) => {
+      const next = new Set(prev);
+      path.forEach((pid) => next.add(pid));
+      return next;
+    });
+    // Select the target so the side panel opens
+    const target = findRequirement(requirements, targetId);
+    if (target) setSelectedReq(target);
+    setHighlightedReqId(targetId);
+    // Scroll & clear highlight after DOM update
+    setTimeout(() => {
+      const el = document.querySelector(`[data-req-id="${targetId}"]`);
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 80);
+    setTimeout(() => setHighlightedReqId(null), 2400);
+    // Clean URL so refresh doesn't re-trigger
+    const next = new URLSearchParams(searchParams);
+    next.delete('requirement');
+    setSearchParams(next, { replace: true });
+  }, [requirements, searchParams, setSearchParams]);
 
   const createMutation = useMutation({
     mutationFn: (data: any) => frameworksApi.createRequirement(id!, data),
@@ -142,28 +163,6 @@ export default function FrameworkDetail() {
     }
   };
 
-  const handleExportMappings = async () => {
-    if (!id) return;
-    try {
-      const blob = await mappingsApi.exportFile(id, 'xlsx');
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `mappings-${framework?.type || 'framework'}-${new Date()
-        .toISOString()
-        .slice(0, 10)}.xlsx`;
-      a.click();
-      window.URL.revokeObjectURL(url);
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Failed to export mappings');
-    }
-  };
-
-  const handleMappingImportComplete = () => {
-    queryClient.invalidateQueries({ queryKey: ['framework-requirements', id] });
-    queryClient.invalidateQueries({ queryKey: ['framework-readiness', id] });
-  };
-
   const toggleExpanded = (reqId: string) => {
     setExpandedReqs((prev) => {
       const next = new Set(prev);
@@ -178,17 +177,8 @@ export default function FrameworkDetail() {
 
   if (loadingFramework || loadingReadiness) {
     return (
-      <div className="space-y-6">
-        <SkeletonDetailHeader />
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-          <div>
-            <SkeletonDetailSection />
-          </div>
-          <div className="lg:col-span-3">
-            <SkeletonDetailSection />
-          </div>
-        </div>
-        <SkeletonDetailSection />
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin w-8 h-8 border-4 border-surface-300 rounded-full border-t-brand-500"></div>
       </div>
     );
   }
@@ -203,7 +193,7 @@ export default function FrameworkDetail() {
 
   const score = readiness?.score || 0;
   const scoreColor =
-    score >= 80 ? 'text-green-600' : score >= 50 ? 'text-yellow-600' : 'text-red-600';
+    score >= 80 ? 'text-emerald-700' : score >= 50 ? 'text-yellow-700' : 'text-red-600';
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -221,13 +211,12 @@ export default function FrameworkDetail() {
             <h1 className="text-2xl font-bold text-surface-900">{framework.name}</h1>
             <p className="text-surface-600 mt-1">{framework.description}</p>
           </div>
-          <Badge className="text-sm uppercase" variant="info">
-            {framework.type}
-          </Badge>
+          <CategoryChip value={framework.type} case="upper" />
         </div>
       </div>
+
       {/* Readiness Overview */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         {/* Score Card */}
         <div className="card p-6 lg:col-span-1">
           <p className="text-sm text-surface-600 mb-2">Readiness Score</p>
@@ -245,7 +234,7 @@ export default function FrameworkDetail() {
 
         {/* Status Breakdown */}
         <div className="card p-6 lg:col-span-3">
-          <p className="text-sm text-surface-600 mb-4">Requirements by Status (click to filter)</p>
+          <p className="text-sm text-surface-600 mb-4">Requirements by Status</p>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             {readiness?.requirementsByStatus && (
               <>
@@ -253,106 +242,33 @@ export default function FrameworkDetail() {
                   label="Compliant"
                   value={readiness.requirementsByStatus.compliant}
                   status="compliant"
-                  isActive={statusFilter === 'compliant'}
-                  onClick={() =>
-                    setStatusFilter(statusFilter === 'compliant' ? 'all' : 'compliant')
-                  }
                 />
                 <StatusCard
                   label="Partial"
                   value={readiness.requirementsByStatus.partial}
                   status="partial"
-                  isActive={statusFilter === 'partial'}
-                  onClick={() => setStatusFilter(statusFilter === 'partial' ? 'all' : 'partial')}
                 />
                 <StatusCard
                   label="Non-Compliant"
                   value={readiness.requirementsByStatus.non_compliant}
                   status="non_compliant"
-                  isActive={statusFilter === 'non_compliant'}
-                  onClick={() =>
-                    setStatusFilter(statusFilter === 'non_compliant' ? 'all' : 'non_compliant')
-                  }
                 />
                 <StatusCard
                   label="N/A"
                   value={readiness.requirementsByStatus.not_applicable}
                   status="not_applicable"
-                  isActive={statusFilter === 'not_applicable'}
-                  onClick={() =>
-                    setStatusFilter(statusFilter === 'not_applicable' ? 'all' : 'not_applicable')
-                  }
                 />
                 <StatusCard
                   label="Not Assessed"
                   value={readiness.requirementsByStatus.not_assessed}
                   status="not_assessed"
-                  isActive={statusFilter === 'not_assessed'}
-                  onClick={() =>
-                    setStatusFilter(statusFilter === 'not_assessed' ? 'all' : 'not_assessed')
-                  }
                 />
               </>
             )}
           </div>
-          {statusFilter !== 'all' && (
-            <div className="flex items-center gap-2 text-sm mt-4 pt-4 border-t border-surface-200">
-              <span className="text-surface-600">Filtering by:</span>
-              <span
-                className={clsx(
-                  'px-2 py-1 rounded-full text-xs font-medium',
-                  statusFilter === 'compliant' && 'bg-green-400/20 text-green-600',
-                  statusFilter === 'partial' && 'bg-yellow-400/20 text-yellow-600',
-                  statusFilter === 'non_compliant' && 'bg-red-400/20 text-red-600',
-                  statusFilter === 'not_applicable' && 'bg-surface-400/20 text-surface-600',
-                  statusFilter === 'not_assessed' && 'bg-surface-500/20 text-surface-500'
-                )}
-              >
-                {statusFilter === 'compliant' && 'Compliant'}
-                {statusFilter === 'partial' && 'Partial'}
-                {statusFilter === 'non_compliant' && 'Non-Compliant'}
-                {statusFilter === 'not_applicable' && 'Not Applicable'}
-                {statusFilter === 'not_assessed' && 'Not Assessed'}
-              </span>
-              <button
-                onClick={() => setStatusFilter('all')}
-                className="text-surface-600 hover:text-surface-900 ml-2"
-              >
-                <XMarkIcon className="w-4 h-4" />
-              </button>
-            </div>
-          )}
         </div>
-
-        <MappingCoverageWidget frameworkId={id} className="lg:col-span-1" />
       </div>
-      {/* Mappings toolbar */}
-      {(canManageMappings || canExportMappings) && (
-        <div className="flex items-center justify-end gap-2 mb-4">
-          {canManageMappings && (
-            <Button
-              type="button"
-              onClick={() => setIsMappingImportOpen(true)}
-              className="text-sm"
-              variant="secondary"
-            >
-              <ArrowUpTrayIcon className="w-4 h-4 mr-1" />
-              Import mappings
-            </Button>
-          )}
-          {canExportMappings && (
-            <Button
-              type="button"
-              onClick={handleExportMappings}
-              className="text-sm"
-              variant="secondary"
-            >
-              <ArrowDownTrayIcon className="w-4 h-4 mr-1" />
-              Export mappings
-            </Button>
-          )}
-        </div>
-      )}
+
       {/* Requirements Tree */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className={clsx('card', selectedReq ? 'lg:col-span-2' : 'lg:col-span-3')}>
@@ -367,19 +283,18 @@ export default function FrameworkDetail() {
             </div>
             <div className="flex gap-2">
               <Button
-                onClick={() => setIsUploadModalOpen(true)}
-                className="text-sm"
                 variant="secondary"
+                size="sm"
+                onClick={() => setIsUploadModalOpen(true)}
+                leftIcon={<ArrowUpTrayIcon className="w-4 h-4" />}
               >
-                <ArrowUpTrayIcon className="w-4 h-4 mr-1" />
                 Bulk Upload
               </Button>
               <Button
+                size="sm"
                 onClick={() => setIsCreateModalOpen(true)}
-                className="text-sm"
-                variant="primary"
+                leftIcon={<PlusIcon className="w-4 h-4" />}
               >
-                <PlusIcon className="w-4 h-4 mr-1" />
                 Add Requirement
               </Button>
             </div>
@@ -395,18 +310,18 @@ export default function FrameworkDetail() {
                   onToggle={toggleExpanded}
                   onSelect={setSelectedReq}
                   selectedId={selectedReq?.id}
-                  statusFilter={statusFilter}
+                  highlightedId={highlightedReqId}
                 />
               ))
             ) : (
               <div className="p-12 text-center">
                 <p className="text-surface-600 mb-4">No requirements yet</p>
                 <Button
-                  onClick={() => setIsCreateModalOpen(true)}
-                  className="text-sm"
                   variant="secondary"
+                  size="sm"
+                  onClick={() => setIsCreateModalOpen(true)}
+                  leftIcon={<PlusIcon className="w-4 h-4" />}
                 >
-                  <PlusIcon className="w-4 h-4 mr-1" />
                   Add Your First Requirement
                 </Button>
               </div>
@@ -423,19 +338,29 @@ export default function FrameworkDetail() {
           />
         )}
       </div>
-      {/* Create Requirement Modal */}
-      <Dialog open={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)}>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-surface-900">Add Requirement</h2>
-          <button
-            onClick={() => setIsCreateModalOpen(false)}
-            className="text-surface-600 hover:text-surface-800"
-          >
-            <XMarkIcon className="w-6 h-6" />
-          </button>
-        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Create Requirement Modal */}
+      <Dialog
+        open={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        title="Add Requirement"
+        size="lg"
+        footer={
+          <>
+            <Button type="button" variant="secondary" onClick={() => setIsCreateModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              form="framework-create-requirement-form"
+              disabled={createMutation.isPending}
+            >
+              {createMutation.isPending ? 'Creating...' : 'Create Requirement'}
+            </Button>
+          </>
+        }
+      >
+        <form id="framework-create-requirement-form" onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-surface-700 mb-1">Reference *</label>
@@ -445,7 +370,6 @@ export default function FrameworkDetail() {
                 value={formData.reference}
                 onChange={(e) => setFormData({ ...formData, reference: e.target.value })}
                 placeholder="e.g., CC1.1, A.5.1.1"
-                className="input w-full"
               />
               <p className="text-xs text-surface-500 mt-1">
                 Unique identifier for this requirement
@@ -473,7 +397,6 @@ export default function FrameworkDetail() {
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               placeholder="Brief title for the requirement"
-              className="input w-full"
             />
           </div>
 
@@ -485,7 +408,6 @@ export default function FrameworkDetail() {
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               placeholder="What does this requirement entail?"
               rows={3}
-              className="input w-full"
             />
           </div>
 
@@ -498,48 +420,41 @@ export default function FrameworkDetail() {
               onChange={(e) => setFormData({ ...formData, guidance: e.target.value })}
               placeholder="Additional implementation guidance..."
               rows={3}
-              className="input w-full"
             />
-          </div>
-
-          <div className="flex gap-3 pt-4">
-            <Button
-              type="button"
-              onClick={() => setIsCreateModalOpen(false)}
-              className="flex-1"
-              variant="secondary"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={createMutation.isPending}
-              className="flex-1"
-              variant="primary"
-            >
-              {createMutation.isPending ? 'Creating...' : 'Create Requirement'}
-            </Button>
           </div>
         </form>
       </Dialog>
-      {/* Bulk Upload Modal */}
-      <Dialog open={isUploadModalOpen} onClose={() => setIsUploadModalOpen(false)}>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-surface-900">Bulk Upload Requirements</h2>
-          <button
-            onClick={() => {
-              setIsUploadModalOpen(false);
-              setSelectedFile(null);
-            }}
-            className="text-surface-600 hover:text-surface-800"
-          >
-            <XMarkIcon className="w-6 h-6" />
-          </button>
-        </div>
 
+      {/* Bulk Upload Modal */}
+      <Dialog
+        open={isUploadModalOpen}
+        onClose={() => {
+          setIsUploadModalOpen(false);
+          setSelectedFile(null);
+        }}
+        title="Bulk Upload Requirements"
+        size="md"
+        footer={
+          <>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                setIsUploadModalOpen(false);
+                setSelectedFile(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleFileUpload} disabled={!selectedFile || uploadMutation.isPending}>
+              {uploadMutation.isPending ? 'Uploading...' : 'Upload'}
+            </Button>
+          </>
+        }
+      >
         <div className="space-y-4">
           {/* Instructions */}
-          <div className="p-4 bg-white/50 rounded-lg border border-surface-200">
+          <div className="p-4 bg-white rounded-lg border border-surface-200">
             <p className="text-sm text-surface-700 mb-2">
               Upload a CSV, Excel (.xlsx, .xls), or JSON file with the following columns:
             </p>
@@ -584,12 +499,12 @@ export default function FrameworkDetail() {
                 accept=".csv,.xlsx,.xls,.json"
                 onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
                 className="block w-full text-sm text-surface-700
-                      file:mr-4 file:py-2 file:px-4
-                      file:rounded-lg file:border-0
-                      file:text-sm file:font-medium
-                      file:bg-brand-600 file:text-white
-                      hover:file:bg-brand-700
-                      file:cursor-pointer cursor-pointer"
+                  file:mr-4 file:py-2 file:px-4
+                  file:rounded-lg file:border-0
+                  file:text-sm file:font-medium
+                  file:bg-brand-600 file:text-white
+                  hover:file:bg-brand-700
+                  file:cursor-pointer cursor-pointer"
               />
             </div>
             {selectedFile && (
@@ -602,56 +517,26 @@ export default function FrameworkDetail() {
           {/* Download Template Links */}
           <div className="flex items-center gap-4 text-sm">
             <div className="flex items-center gap-2">
-              <DocumentArrowDownIcon className="w-4 h-4 text-brand-400" />
+              <DocumentArrowDownIcon className="w-4 h-4 text-brand-700" />
               <span className="text-surface-600">Templates:</span>
             </div>
             <a
               href="/templates/requirements-template.csv"
               download
-              className="text-brand-400 hover:text-brand-300 underline"
+              className="text-brand-700 hover:text-brand-800 underline"
             >
               CSV
             </a>
             <a
               href="/templates/requirements-template.json"
               download
-              className="text-brand-400 hover:text-brand-300 underline"
+              className="text-brand-700 hover:text-brand-800 underline"
             >
               JSON
             </a>
           </div>
-
-          {/* Action Buttons */}
-          <div className="flex gap-3 pt-4">
-            <Button
-              type="button"
-              onClick={() => {
-                setIsUploadModalOpen(false);
-                setSelectedFile(null);
-              }}
-              className="flex-1"
-              variant="secondary"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleFileUpload}
-              disabled={!selectedFile || uploadMutation.isPending}
-              className="flex-1"
-              variant="primary"
-            >
-              {uploadMutation.isPending ? 'Uploading...' : 'Upload'}
-            </Button>
-          </div>
         </div>
       </Dialog>
-      {/* Mapping Import Wizard */}
-      <MappingImportWizard
-        open={isMappingImportOpen}
-        onClose={() => setIsMappingImportOpen(false)}
-        frameworkId={id}
-        onComplete={handleMappingImportComplete}
-      />
     </div>
   );
 }
@@ -660,41 +545,22 @@ function StatusCard({
   label,
   value,
   status,
-  isActive,
-  onClick,
 }: {
   label: string;
   value: number;
   status: keyof typeof STATUS_CONFIG;
-  isActive?: boolean;
-  onClick?: () => void;
 }) {
   const config = STATUS_CONFIG[status];
   const Icon = config.icon;
 
   return (
-    <button
-      onClick={onClick}
-      className={clsx(
-        'p-3 rounded-lg text-left transition-all w-full',
-        config.bg,
-        isActive
-          ? 'ring-2 ring-offset-1 ring-offset-surface-50'
-          : 'hover:opacity-80 cursor-pointer',
-        isActive && status === 'compliant' && 'ring-green-400',
-        isActive && status === 'partial' && 'ring-yellow-400',
-        isActive && status === 'non_compliant' && 'ring-red-400',
-        isActive && status === 'not_applicable' && 'ring-surface-400',
-        isActive && status === 'not_assessed' && 'ring-surface-500'
-      )}
-    >
+    <div className={clsx('p-3 rounded-lg', config.bg)}>
       <div className="flex items-center gap-2">
         <Icon className={clsx('w-4 h-4', config.color)} />
         <span className={clsx('text-xl font-bold', config.color)}>{value}</span>
       </div>
       <p className="text-xs text-surface-600 mt-1">{label}</p>
-      {isActive && <p className={clsx('text-xs mt-1', config.color)}>Click to clear</p>}
-    </button>
+    </div>
   );
 }
 
@@ -705,7 +571,7 @@ function RequirementRow({
   onToggle,
   onSelect,
   selectedId,
-  statusFilter,
+  highlightedId,
 }: {
   requirement: any;
   level: number;
@@ -713,37 +579,12 @@ function RequirementRow({
   onToggle: (id: string) => void;
   onSelect: (req: any) => void;
   selectedId?: string;
-  statusFilter?: StatusFilter;
+  highlightedId?: string | null;
 }) {
   const hasChildren = requirement.children?.length > 0;
   const isExpanded = expanded.has(requirement.id);
   const isSelected = selectedId === requirement.id;
-
-  // Get requirement's compliance status (now provided by backend)
-  const reqStatus = requirement.isCategory
-    ? 'category'
-    : requirement.complianceStatus || 'not_assessed';
-
-  // Check if this requirement or any children match the filter
-  const matchesFilter = (req: any): boolean => {
-    if (!statusFilter || statusFilter === 'all') return true;
-
-    const status = req.isCategory ? 'category' : req.complianceStatus || 'not_assessed';
-
-    if (status === statusFilter) return true;
-
-    // Check children recursively
-    if (req.children?.length > 0) {
-      return req.children.some((child: any) => matchesFilter(child));
-    }
-
-    return false;
-  };
-
-  // If filtering and this requirement doesn't match, hide it
-  if (statusFilter && statusFilter !== 'all' && !matchesFilter(requirement)) {
-    return null;
-  }
+  const isHighlighted = highlightedId === requirement.id;
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -753,17 +594,14 @@ function RequirementRow({
     onSelect(requirement);
   };
 
-  // Visual highlight if this specific item matches the filter (not just a parent with matching children)
-  const directlyMatchesFilter =
-    statusFilter && statusFilter !== 'all' && reqStatus === statusFilter;
-
   return (
     <>
       <div
+        data-req-id={requirement.id}
         className={clsx(
           'flex items-center gap-3 p-4 transition-colors cursor-pointer',
-          isSelected ? 'bg-brand-500/20 border-l-2 border-brand-500' : 'hover:bg-white/50',
-          directlyMatchesFilter && !isSelected && 'bg-surface-200/30'
+          isSelected ? 'bg-brand-500/20 border-l-2 border-brand-500' : 'hover:bg-surface-100/50',
+          isHighlighted && 'ring-2 ring-accent-500 ring-inset bg-accent-500/10 animate-pulse'
         )}
         style={{ paddingLeft: `${level * 24 + 16}px` }}
         onClick={handleClick}
@@ -771,8 +609,6 @@ function RequirementRow({
         {hasChildren ? (
           <button
             className="p-1 -ml-1"
-            aria-label={`Toggle ${requirement.reference}`}
-            aria-expanded={isExpanded}
             onClick={(e) => {
               e.stopPropagation();
               onToggle(requirement.id);
@@ -788,7 +624,7 @@ function RequirementRow({
           <div className="w-6" />
         )}
 
-        <span className="font-mono text-sm text-brand-400 w-20 flex-shrink-0">
+        <span className="font-mono text-sm text-brand-700 w-20 flex-shrink-0">
           {requirement.reference}
         </span>
 
@@ -802,15 +638,16 @@ function RequirementRow({
         </div>
 
         {requirement.isCategory ? (
-          <Badge className="text-xs" variant="neutral">
+          <Badge variant="neutral" size="sm">
             Category
           </Badge>
         ) : (
-          <Badge className="text-xs" variant="neutral">
+          <Badge variant="neutral" size="sm" capitalize={false}>
             {requirement.mappings?.length || 0} controls
           </Badge>
         )}
       </div>
+
       {hasChildren && isExpanded && (
         <>
           {requirement.children.map((child: any) => (
@@ -822,7 +659,7 @@ function RequirementRow({
               onToggle={onToggle}
               onSelect={onSelect}
               selectedId={selectedId}
-              statusFilter={statusFilter}
+              highlightedId={highlightedId}
             />
           ))}
         </>
@@ -841,9 +678,6 @@ function RequirementDetailPanel({
   onClose: () => void;
 }) {
   const queryClient = useQueryClient();
-  const { hasPermission } = useAuth();
-  const canEditMappings = hasPermission('controls:update');
-  const canDeleteMappings = hasPermission('controls:delete');
   const [isEditing, setIsEditing] = useState(false);
   const [selectedOwner, setSelectedOwner] = useState<string>(requirement.ownerId || '');
   const [ownerNotes, setOwnerNotes] = useState(requirement.ownerNotes || '');
@@ -851,115 +685,17 @@ function RequirementDetailPanel({
     requirement.dueDate ? requirement.dueDate.split('T')[0] : ''
   );
   const [priority, setPriority] = useState(requirement.priority || '');
-  const [isMappingModalOpen, setIsMappingModalOpen] = useState(false);
-  const [editingMappingId, setEditingMappingId] = useState<string | null>(null);
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
-  const [copyState, setCopyState] = useState<{
-    sourceMapping: {
-      controlId: string;
-      mappingType: 'primary' | 'supporting';
-      notes: string | null;
-    };
-  } | null>(null);
-  const [historyDrawerMappingId, setHistoryDrawerMappingId] = useState<string | null>(null);
-  const menuContainerRef = useRef<HTMLDivElement | null>(null);
 
   const { data: mappings, isLoading } = useQuery({
-    queryKey: ['mappings', 'by-requirement', requirement.id],
+    queryKey: ['requirement-mappings', requirement.id],
     queryFn: () => mappingsApi.byRequirement(requirement.id).then((res) => res.data),
     enabled: !!requirement.id && !requirement.isCategory,
   });
 
-  useEffect(() => {
-    if (!openMenuId) return;
-    const onDocClick = (e: MouseEvent) => {
-      if (menuContainerRef.current && !menuContainerRef.current.contains(e.target as Node)) {
-        setOpenMenuId(null);
-      }
-    };
-    document.addEventListener('mousedown', onDocClick);
-    return () => document.removeEventListener('mousedown', onDocClick);
-  }, [openMenuId]);
-
-  const invalidateMappingQueries = (controlId?: string) => {
-    queryClient.invalidateQueries({
-      queryKey: ['mappings', 'by-requirement', requirement.id],
-    });
-    if (controlId) {
-      queryClient.invalidateQueries({
-        queryKey: ['mappings', 'by-control', controlId],
-      });
-    }
-    // Keep legacy query keys in sync until callers migrate.
-    queryClient.invalidateQueries({
-      queryKey: ['requirement-mappings', requirement.id],
-    });
-  };
-
-  const deleteMutation = useMutation({
-    mutationFn: ({ id }: { id: string; controlId?: string }) => mappingsApi.delete(id),
-    onSuccess: (_data, variables) => {
-      toast.success('Mapping removed');
-      invalidateMappingQueries(variables.controlId);
-      setPendingDeleteId(null);
-      setOpenMenuId(null);
-    },
-    onError: () => {
-      toast.error('Failed to remove mapping');
-    },
-  });
-
-  const handleOpenCreateMapping = () => {
-    setEditingMappingId(null);
-    setIsMappingModalOpen(true);
-  };
-
-  const handleOpenEditMapping = (mappingId: string) => {
-    setEditingMappingId(mappingId);
-    setIsMappingModalOpen(true);
-    setOpenMenuId(null);
-  };
-
-  const handleOpenCopyMapping = (mapping: any) => {
-    setOpenMenuId(null);
-    setCopyState({
-      sourceMapping: {
-        controlId: mapping.controlId || mapping.control?.id,
-        mappingType: (mapping.mappingType || 'primary') as 'primary' | 'supporting',
-        notes: mapping.notes || null,
-      },
-    });
-  };
-
-  const handleCopySaved = (createdIds: string[]) => {
-    if (createdIds.length > 0) {
-      toast.success(`Copied to ${createdIds.length} requirement(s).`);
-      if (copyState) {
-        queryClient.invalidateQueries({
-          queryKey: ['mappings', 'by-control', copyState.sourceMapping.controlId],
-        });
-      }
-      queryClient.invalidateQueries({ queryKey: ['framework-requirements', frameworkId] });
-    }
-    setCopyState(null);
-  };
-
-  const handleMappingModalClose = () => {
-    setIsMappingModalOpen(false);
-    setEditingMappingId(null);
-  };
-
-  const handleMappingSaved = () => {
-    invalidateMappingQueries();
-    handleMappingModalClose();
-  };
-
-  const { data: usersData } = useQuery({
+  const { data: users } = useQuery({
     queryKey: ['users'],
-    queryFn: () => usersApi.list().then((res) => res.data),
+    queryFn: () => usersApi.list().then((res) => res.data.users ?? []),
   });
-  const users = usersData?.data || [];
 
   const { data: reqDetail } = useQuery({
     queryKey: ['requirement-detail', frameworkId, requirement.id],
@@ -1006,10 +742,11 @@ function RequirementDetailPanel({
           <XMarkIcon className="w-5 h-5 text-surface-600" />
         </button>
       </div>
+
       <div className="p-4 space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto">
         {/* Reference & Title */}
         <div>
-          <span className="font-mono text-sm text-brand-400 bg-brand-500/10 px-2 py-1 rounded">
+          <span className="font-mono text-sm text-brand-700 bg-brand-500/10 px-2 py-1 rounded">
             {requirement.reference}
           </span>
           <h4 className="text-lg font-medium text-surface-900 mt-2">{requirement.title}</h4>
@@ -1039,7 +776,7 @@ function RequirementDetailPanel({
                     setPriority(currentPriority || '');
                     setIsEditing(true);
                   }}
-                  className="text-xs text-brand-400 hover:text-brand-300"
+                  className="text-xs text-brand-700 hover:text-brand-800"
                 >
                   Edit
                 </button>
@@ -1054,7 +791,7 @@ function RequirementDetailPanel({
                   <button
                     onClick={handleSave}
                     disabled={updateMutation.isPending}
-                    className="text-xs text-green-600 hover:text-green-700"
+                    className="text-xs text-emerald-700 hover:text-emerald-800"
                   >
                     {updateMutation.isPending ? 'Saving...' : 'Save'}
                   </button>
@@ -1067,33 +804,34 @@ function RequirementDetailPanel({
                 {/* Owner Select */}
                 <div>
                   <label className="block text-xs text-surface-600 mb-1">Owner</label>
-                  <SelectNative
+                  <Select
                     value={selectedOwner}
-                    onChange={(e) => setSelectedOwner(e.target.value)}
-                    className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-sm text-surface-900 focus:outline-none focus:border-brand-500"
-                  >
-                    <option value="">Unassigned</option>
-                    {users?.map((user: any) => (
-                      <option key={user.id} value={user.id}>
-                        {user.displayName} ({user.role})
-                      </option>
-                    ))}
-                  </SelectNative>
+                    onChange={setSelectedOwner}
+                    size="sm"
+                    options={[
+                      { value: '', label: 'Unassigned' },
+                      ...(users?.map((user: any) => ({
+                        value: user.id,
+                        label: `${user.displayName} (${user.role})`,
+                      })) || []),
+                    ]}
+                  />
                 </div>
 
                 {/* Priority */}
                 <div>
                   <label className="block text-xs text-surface-600 mb-1">Priority</label>
-                  <SelectNative
+                  <Select
                     value={priority}
-                    onChange={(e) => setPriority(e.target.value)}
-                    className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-sm text-surface-900 focus:outline-none focus:border-brand-500"
-                  >
-                    <option value="">Not Set</option>
-                    <option value="high">High</option>
-                    <option value="medium">Medium</option>
-                    <option value="low">Low</option>
-                  </SelectNative>
+                    onChange={setPriority}
+                    size="sm"
+                    options={[
+                      { value: '', label: 'Not Set' },
+                      { value: 'high', label: 'High' },
+                      { value: 'medium', label: 'Medium' },
+                      { value: 'low', label: 'Low' },
+                    ]}
+                  />
                 </div>
 
                 {/* Due Date */}
@@ -1101,9 +839,9 @@ function RequirementDetailPanel({
                   <label className="block text-xs text-surface-600 mb-1">Due Date</label>
                   <Input
                     type="date"
+                    inputSize="sm"
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
-                    className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-sm text-surface-900 focus:outline-none focus:border-brand-500"
                   />
                 </div>
 
@@ -1115,14 +853,13 @@ function RequirementDetailPanel({
                     onChange={(e) => setOwnerNotes(e.target.value)}
                     rows={3}
                     placeholder="Add notes about this requirement..."
-                    className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-sm text-surface-900 focus:outline-none focus:border-brand-500 resize-none"
                   />
                 </div>
               </div>
             ) : (
               <div className="space-y-2">
                 {/* Current Owner */}
-                <div className="flex items-center gap-2 p-2 bg-white/50 rounded-lg">
+                <div className="flex items-center gap-2 p-2 bg-surface-100/50 rounded-lg">
                   <UserIcon className="w-4 h-4 text-surface-500" />
                   <span className="text-sm text-surface-700">
                     {currentOwner?.displayName || 'Unassigned'}
@@ -1131,15 +868,15 @@ function RequirementDetailPanel({
 
                 {/* Priority */}
                 {currentPriority && (
-                  <div className="flex items-center gap-2 p-2 bg-white/50 rounded-lg">
+                  <div className="flex items-center gap-2 p-2 bg-surface-100/50 rounded-lg">
                     <FlagIcon
                       className={clsx(
                         'w-4 h-4',
                         currentPriority === 'high'
                           ? 'text-red-600'
                           : currentPriority === 'medium'
-                            ? 'text-yellow-600'
-                            : 'text-green-600'
+                            ? 'text-yellow-700'
+                            : 'text-emerald-700'
                       )}
                     />
                     <span className="text-sm text-surface-700 capitalize">
@@ -1150,7 +887,7 @@ function RequirementDetailPanel({
 
                 {/* Due Date */}
                 {currentDueDate && (
-                  <div className="flex items-center gap-2 p-2 bg-white/50 rounded-lg">
+                  <div className="flex items-center gap-2 p-2 bg-surface-100/50 rounded-lg">
                     <CalendarIcon className="w-4 h-4 text-surface-500" />
                     <span className="text-sm text-surface-700">
                       Due: {new Date(currentDueDate).toLocaleDateString()}
@@ -1160,7 +897,7 @@ function RequirementDetailPanel({
 
                 {/* Notes */}
                 {currentNotes && (
-                  <div className="p-2 bg-white/50 rounded-lg">
+                  <div className="p-2 bg-surface-100/50 rounded-lg">
                     <p className="text-xs text-surface-500 mb-1">Notes</p>
                     <p className="text-sm text-surface-700">{currentNotes}</p>
                   </div>
@@ -1173,257 +910,37 @@ function RequirementDetailPanel({
         {/* Mapped Controls */}
         {!requirement.isCategory && (
           <div className="border-t border-surface-200 pt-4">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs text-surface-500 uppercase tracking-wide">
-                Mapped Controls ({mappings?.length || 0})
-              </p>
-              {canEditMappings && (
-                <button
-                  type="button"
-                  onClick={handleOpenCreateMapping}
-                  className="inline-flex items-center gap-1 text-xs text-brand-400 hover:text-brand-300"
-                >
-                  <PlusIcon className="w-3.5 h-3.5" />
-                  Add mapping…
-                </button>
-              )}
-            </div>
+            <p className="text-xs text-surface-500 uppercase tracking-wide mb-2">
+              Mapped Controls ({mappings?.length || 0})
+            </p>
             {isLoading ? (
               <div className="flex items-center justify-center py-4">
-                <div className="animate-spin w-5 h-5 border-2 border-surface-200 rounded-full border-t-brand-500"></div>
+                <div className="animate-spin w-5 h-5 border-2 border-surface-300 rounded-full border-t-brand-500"></div>
               </div>
             ) : mappings && mappings.length > 0 ? (
-              <div
-                role="list"
-                aria-label="Mapped controls"
-                className="space-y-2 max-h-48 overflow-y-auto"
-              >
-                {mappings.map((mapping: any) => {
-                  const controlRef = mapping.control?.controlId || mapping.controlId;
-                  const isMenuOpen = openMenuId === mapping.id;
-                  const isConfirmingDelete = pendingDeleteId === mapping.id;
-                  const showKebab = true;
-                  return (
-                    <div
-                      key={mapping.id}
-                      role="listitem"
-                      className="group relative bg-white/50 rounded-lg hover:bg-white transition-colors"
-                    >
-                      <div className="flex items-start gap-2 p-3">
-                        <Link
-                          to={`/controls/${mapping.control?.id}`}
-                          className="flex items-start gap-2 min-w-0 flex-1"
-                        >
-                          <LinkIcon className="w-4 h-4 text-brand-400 mt-0.5 flex-shrink-0" />
-                          <div className="min-w-0">
-                            <p className="text-sm font-mono text-brand-400">
-                              {mapping.control?.controlId}
-                            </p>
-                            <p className="text-sm text-surface-800 truncate">
-                              {mapping.control?.title}
-                            </p>
-                            <span
-                              className={
-                                mapping.mappingType === 'supporting'
-                                  ? 'inline-block mt-1 text-xs text-surface-600 uppercase tracking-wide'
-                                  : 'inline-block mt-1 text-xs text-brand-400 uppercase tracking-wide'
-                              }
-                            >
-                              {mapping.mappingType || 'primary'}
-                            </span>
-                          </div>
-                        </Link>
-                        {showKebab && (
-                          <div
-                            className="relative flex-shrink-0"
-                            ref={isMenuOpen ? menuContainerRef : null}
-                          >
-                            <button
-                              type="button"
-                              aria-label={`Mapping actions for ${controlRef}`}
-                              aria-haspopup="menu"
-                              aria-expanded={isMenuOpen}
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                setOpenMenuId(isMenuOpen ? null : mapping.id);
-                                setPendingDeleteId(null);
-                              }}
-                              className="p-1 rounded hover:bg-surface-200 text-surface-600 hover:text-surface-800 opacity-60 group-hover:opacity-100 focus:opacity-100 focus:outline-none focus:ring-1 focus:ring-brand-500 transition-opacity"
-                            >
-                              <EllipsisVerticalIcon className="w-4 h-4" />
-                            </button>
-                            {isMenuOpen && (
-                              <div
-                                role="menu"
-                                className="absolute right-0 top-7 z-10 min-w-[10rem] bg-white border border-surface-200 rounded-lg shadow-lg py-1"
-                              >
-                                {canEditMappings && (
-                                  <button
-                                    type="button"
-                                    role="menuitem"
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      setOpenMenuId(null);
-                                      handleOpenEditMapping(mapping.id);
-                                    }}
-                                    className="block w-full text-left px-3 py-1.5 text-sm text-surface-800 hover:bg-surface-200"
-                                  >
-                                    Edit
-                                  </button>
-                                )}
-                                {canEditMappings && (
-                                  <button
-                                    type="button"
-                                    role="menuitem"
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      setOpenMenuId(null);
-                                      handleOpenCopyMapping(mapping);
-                                    }}
-                                    className="block w-full text-left px-3 py-1.5 text-sm text-surface-800 hover:bg-surface-200"
-                                  >
-                                    Copy to framework…
-                                  </button>
-                                )}
-                                <button
-                                  type="button"
-                                  role="menuitem"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    setHistoryDrawerMappingId(mapping.id);
-                                    setOpenMenuId(null);
-                                  }}
-                                  className="flex items-center gap-2 w-full text-left px-3 py-1.5 text-sm text-surface-800 hover:bg-surface-200"
-                                >
-                                  <ClockIcon className="w-4 h-4" aria-hidden="true" />
-                                  History
-                                </button>
-                                {canDeleteMappings && (
-                                  <button
-                                    type="button"
-                                    role="menuitem"
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      setOpenMenuId(null);
-                                      setPendingDeleteId(mapping.id);
-                                    }}
-                                    className="block w-full text-left px-3 py-1.5 text-sm text-red-600 hover:bg-surface-200"
-                                  >
-                                    Delete
-                                  </button>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        )}
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {mappings.map((mapping: any) => (
+                  <Link
+                    key={mapping.id}
+                    to={`/controls/${mapping.control?.id}`}
+                    className="block p-3 bg-surface-100/50 rounded-lg hover:bg-surface-100 transition-colors"
+                  >
+                    <div className="flex items-start gap-2">
+                      <LinkIcon className="w-4 h-4 text-brand-700 mt-0.5 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-sm font-mono text-brand-700">
+                          {mapping.control?.controlId}
+                        </p>
+                        <p className="text-sm text-surface-800 truncate">
+                          {mapping.control?.title}
+                        </p>
                       </div>
-                      {isConfirmingDelete && (
-                        <div className="px-3 pb-3 -mt-1">
-                          <div
-                            role="alertdialog"
-                            aria-label="Confirm mapping deletion"
-                            className="bg-white/60 border border-red-500/30 rounded-md p-2 text-xs text-surface-800"
-                          >
-                            <p className="mb-2">Remove this mapping?</p>
-                            <div className="flex justify-end gap-2">
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  setPendingDeleteId(null);
-                                }}
-                                className="px-2 py-1 text-surface-700 hover:text-surface-900"
-                                disabled={deleteMutation.isPending}
-                              >
-                                Cancel
-                              </button>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  deleteMutation.mutate({
-                                    id: mapping.id,
-                                    controlId: mapping.controlId || mapping.control?.id,
-                                  });
-                                }}
-                                disabled={deleteMutation.isPending}
-                                className="px-2 py-1 bg-red-500/20 text-red-700 hover:bg-red-500/30 rounded disabled:opacity-50"
-                              >
-                                {deleteMutation.isPending ? 'Removing…' : 'Confirm'}
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      )}
                     </div>
-                  );
-                })}
+                  </Link>
+                ))}
               </div>
             ) : (
               <p className="text-sm text-surface-500 italic">No controls mapped yet</p>
-            )}
-            {isMappingModalOpen &&
-              (() => {
-                const editingMapping = editingMappingId
-                  ? (mappings || []).find((m: any) => m.id === editingMappingId)
-                  : undefined;
-                const editingControlId = editingMapping?.controlId || editingMapping?.control?.id;
-                return (
-                  <MappingEditorModal
-                    open={isMappingModalOpen}
-                    onClose={handleMappingModalClose}
-                    mode="requirement-to-controls"
-                    requirementId={requirement.id}
-                    frameworkId={frameworkId}
-                    controlId={editingControlId}
-                    existingMappingIds={
-                      editingMappingId
-                        ? []
-                        : (mappings || [])
-                            .map((m: any) => m.controlId || m.control?.id)
-                            .filter(Boolean)
-                    }
-                    editingMappingId={editingMappingId || undefined}
-                    onSaved={handleMappingSaved}
-                  />
-                );
-              })()}
-            {copyState && (
-              <MappingEditorModal
-                open={true}
-                onClose={() => setCopyState(null)}
-                mode="control-to-requirements"
-                controlId={copyState.sourceMapping.controlId}
-                existingMappingIds={[]}
-                defaultMappingType={copyState.sourceMapping.mappingType}
-                defaultNotes={copyState.sourceMapping.notes ?? undefined}
-                onSaved={handleCopySaved}
-              />
-            )}
-            {historyDrawerMappingId && (
-              <MappingHistoryDrawer
-                open={true}
-                onClose={() => setHistoryDrawerMappingId(null)}
-                mappingId={historyDrawerMappingId}
-                mode="requirement-to-controls"
-                invalidateOnRestore={[
-                  ['mappings', 'by-requirement', requirement.id],
-                  [
-                    'mappings',
-                    'by-control',
-                    (mappings || []).find((m: any) => m.id === historyDrawerMappingId)?.controlId ??
-                      (mappings || []).find((m: any) => m.id === historyDrawerMappingId)?.control
-                        ?.id,
-                  ],
-                ]}
-              />
             )}
           </div>
         )}

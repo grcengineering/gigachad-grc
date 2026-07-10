@@ -1,9 +1,7 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
 import { trustCenterApi } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
-import { TrustCenterConfig, TrustCenterContent } from '../lib/apiTypes';
-import toast from 'react-hot-toast';
+import { Button, Input, Textarea, Dialog, Badge } from '@/components/ui';
 import {
   GlobeAltIcon,
   ShieldCheckIcon,
@@ -14,19 +12,38 @@ import {
   EyeIcon,
   EyeSlashIcon,
   PlusIcon,
-  Cog6ToothIcon,
-  ArrowTopRightOnSquareIcon,
 } from '@heroicons/react/24/outline';
 
-import { Textarea } from '@/components/ui/Textarea';
+interface TrustCenterConfig {
+  id: string;
+  isEnabled: boolean;
+  companyName: string;
+  description?: string;
+  logoUrl?: string;
+  primaryColor?: string;
+  securityEmail?: string;
+  supportUrl?: string;
+  showCertifications: boolean;
+  showPolicies: boolean;
+  showSecurityFeatures: boolean;
+  showPrivacy: boolean;
+  showIncidentResponse: boolean;
+}
 
-import { Input } from '@/components/ui/Input';
-import { Dialog } from '@/components/ui/Dialog';
+interface TrustCenterContent {
+  id: string;
+  organizationId: string;
+  section: string;
+  title: string;
+  content: string;
+  order: number;
+  isPublished: boolean;
+}
 
 type SectionType = 'overview' | 'certifications' | 'controls' | 'policies' | 'updates' | 'contact';
 
 export default function TrustCenter() {
-  const { user, isLoading: authLoading } = useAuth();
+  const { user } = useAuth();
   const [config, setConfig] = useState<TrustCenterConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<SectionType>('overview');
@@ -37,41 +54,37 @@ export default function TrustCenter() {
 
   const organizationId = user?.organizationId || '';
 
-  useEffect(() => {
-    if (organizationId && !authLoading) {
-      fetchConfig();
-      fetchContents();
-    }
-  }, [organizationId, authLoading]);
-
-  // Wait for auth to load before rendering
-  if (authLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-surface-600">Loading...</div>
-      </div>
-    );
-  }
-
-  const fetchConfig = async () => {
+  const fetchConfig = useCallback(async () => {
     try {
       const response = await trustCenterApi.getConfig({ organizationId });
       setConfig(response.data);
     } catch (error) {
       console.error('Error fetching trust center config:', error);
-      toast.error('Failed to load trust center config');
     } finally {
       setLoading(false);
     }
-  };
+  }, [organizationId]);
 
-  const fetchContents = async () => {
+  const fetchContents = useCallback(async () => {
     try {
       const response = await trustCenterApi.getContent({ organizationId });
-      setContents(Array.isArray(response.data) ? response.data : []);
+      setContents(response.data);
     } catch (error) {
       console.error('Error fetching trust center contents:', error);
-      toast.error('Failed to load trust center contents');
+    }
+  }, [organizationId]);
+
+  useEffect(() => {
+    fetchConfig();
+    fetchContents();
+  }, [fetchConfig, fetchContents]);
+
+  const updateConfig = async (updates: Partial<TrustCenterConfig>) => {
+    try {
+      const response = await trustCenterApi.updateConfig(updates, { organizationId });
+      setConfig(response.data);
+    } catch (error) {
+      console.error('Error updating trust center config:', error);
     }
   };
 
@@ -83,18 +96,16 @@ export default function TrustCenter() {
       };
 
       if (editingContent) {
-        await trustCenterApi.updateContent(editingContent.id, data);
+        await trustCenterApi.updateContent(editingContent.id, data, { organizationId });
       } else {
-        await trustCenterApi.createContent(data as any);
+        await trustCenterApi.createContent(data, { organizationId });
       }
 
       fetchContents();
       setShowContentModal(false);
       setEditingContent(null);
-      toast.success('Content saved');
     } catch (error) {
       console.error('Error saving content:', error);
-      toast.error('Failed to save content');
     }
   };
 
@@ -102,36 +113,36 @@ export default function TrustCenter() {
     if (!confirm('Are you sure you want to delete this content?')) return;
 
     try {
-      await trustCenterApi.deleteContent(id);
+      await trustCenterApi.deleteContent(id, { organizationId });
       fetchContents();
-      toast.success('Content deleted');
     } catch (error) {
       console.error('Error deleting content:', error);
-      toast.error('Failed to delete content');
     }
   };
 
   const toggleContentPublish = async (content: TrustCenterContent) => {
     try {
-      await trustCenterApi.updateContent(content.id, { isPublished: !content.isPublished });
+      await trustCenterApi.updateContent(
+        content.id,
+        { isPublished: !content.isPublished },
+        { organizationId }
+      );
       fetchContents();
-      toast.success(`Content ${content.isPublished ? 'unpublished' : 'published'}`);
     } catch (error) {
       console.error('Error toggling publish status:', error);
-      toast.error('Failed to update publish status');
     }
   };
 
   const sections = [
     {
       id: 'overview' as SectionType,
-      name: 'Overview',
+      name: 'Hero & Overview',
       icon: GlobeAltIcon,
       description: 'Main banner and company overview',
     },
     {
       id: 'certifications' as SectionType,
-      name: 'Certifications',
+      name: 'Certifications & Compliance',
       icon: CheckBadgeIcon,
       description: 'Compliance frameworks and certifications',
     },
@@ -143,19 +154,19 @@ export default function TrustCenter() {
     },
     {
       id: 'policies' as SectionType,
-      name: 'Policies',
+      name: 'Policies & Documentation',
       icon: DocumentTextIcon,
       description: 'Security policies and documentation',
     },
     {
       id: 'updates' as SectionType,
-      name: 'Updates',
+      name: 'Security Updates',
       icon: NewspaperIcon,
       description: 'News and security updates',
     },
     {
       id: 'contact' as SectionType,
-      name: 'Contact',
+      name: 'Contact Information',
       icon: EnvelopeIcon,
       description: 'Security team contact details',
     },
@@ -165,13 +176,10 @@ export default function TrustCenter() {
     return contents.filter((c) => c.section === section).sort((a, b) => a.order - b.order);
   };
 
-  const publishedCount = contents.filter((c) => c.isPublished).length;
-  const draftCount = contents.filter((c) => !c.isPublished).length;
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500 dark:text-surface-600">Loading trust center...</div>
+        <div className="text-surface-600">Loading trust center configuration...</div>
       </div>
     );
   }
@@ -181,225 +189,258 @@ export default function TrustCenter() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-surface-900">
-            Trust Center Content
-          </h1>
-          <p className="mt-1 text-gray-500 dark:text-surface-600">
-            Manage the content displayed on your public trust center
+          <h1 className="text-3xl font-bold text-surface-900">Trust Center</h1>
+          <p className="mt-1 text-surface-600">
+            Configure your public-facing security trust center
           </p>
         </div>
         <div className="flex gap-2">
-          <Link
-            to="/trust-center/settings"
-            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-white text-gray-700 dark:text-surface-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-100 dark:bg-surface-200 transition-colors"
-          >
-            <Cog6ToothIcon className="w-5 h-5" />
-            Settings
-          </Link>
-          <button
+          <Button
+            variant="secondary"
             onClick={() => setShowPreview(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-white text-gray-700 dark:text-surface-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-100 dark:bg-surface-200 transition-colors"
+            leftIcon={<EyeIcon className="w-5 h-5" />}
           >
-            <EyeIcon className="w-5 h-5" />
             Preview
-          </button>
+          </Button>
           {config?.isEnabled && (
             <a
               href={`/trust-center/public?organizationId=${organizationId}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-gray-900 dark:text-white rounded-lg hover:bg-brand-700 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors"
             >
-              <ArrowTopRightOnSquareIcon className="w-5 h-5" />
-              View Live
+              <GlobeAltIcon className="w-5 h-5" />
+              View Live Page
             </a>
           )}
         </div>
       </div>
 
-      {/* Status Banner */}
-      {!config?.isEnabled && (
-        <div className="bg-amber-50 dark:bg-yellow-500/10 border border-amber-300 dark:border-yellow-500/30 rounded-lg p-4">
-          <div className="flex items-center gap-3">
-            <EyeSlashIcon className="w-6 h-6 text-amber-600 dark:text-yellow-600" />
+      {config && (
+        <div className="space-y-6">
+          {/* Enable/Disable & Basic Settings */}
+          <div className="bg-white border border-surface-200 rounded-lg p-6 space-y-6">
+            <div className="flex items-center justify-between pb-6 border-b border-surface-200">
+              <div>
+                <h3 className="text-lg font-medium text-surface-900">Trust Center Status</h3>
+                <p className="text-sm text-surface-600">
+                  Make your trust center publicly accessible
+                </p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={config.isEnabled}
+                  onChange={(e) => updateConfig({ isEnabled: e.target.checked })}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-surface-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
+              </label>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-surface-600 mb-1">
+                  Company Name
+                </label>
+                <Input
+                  type="text"
+                  value={config.companyName}
+                  onChange={(e) => updateConfig({ companyName: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-surface-600 mb-1">
+                  Primary Color
+                </label>
+                <Input
+                  type="text"
+                  value={config.primaryColor || ''}
+                  onChange={(e) => updateConfig({ primaryColor: e.target.value })}
+                  placeholder="#6366f1"
+                />
+              </div>
+            </div>
+
             <div>
-              <p className="text-amber-700 dark:text-yellow-600 font-medium">
-                Trust Center is not published
-              </p>
-              <p className="text-sm text-gray-600 dark:text-surface-600">
-                Go to{' '}
-                <Link
-                  to="/trust-center/settings"
-                  className="text-brand-600 dark:text-brand-400 hover:underline"
-                >
-                  Settings
-                </Link>{' '}
-                to enable your trust center
-              </p>
+              <label className="block text-sm font-medium text-surface-600 mb-1">Logo URL</label>
+              <Input
+                type="url"
+                value={config.logoUrl || ''}
+                onChange={(e) => updateConfig({ logoUrl: e.target.value })}
+                placeholder="https://example.com/logo.png"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-surface-600 mb-1">
+                Company Description
+              </label>
+              <Textarea
+                value={config.description || ''}
+                onChange={(e) => updateConfig({ description: e.target.value })}
+                rows={3}
+                placeholder="Describe your security posture and commitment to security..."
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-surface-600 mb-1">
+                  Security Email
+                </label>
+                <Input
+                  type="email"
+                  value={config.securityEmail || ''}
+                  onChange={(e) => updateConfig({ securityEmail: e.target.value })}
+                  placeholder="security@company.com"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-surface-600 mb-1">
+                  Support URL
+                </label>
+                <Input
+                  type="url"
+                  value={config.supportUrl || ''}
+                  onChange={(e) => updateConfig({ supportUrl: e.target.value })}
+                  placeholder="https://support.company.com"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Section Navigation */}
+          <div className="bg-white border border-surface-200 rounded-lg overflow-hidden">
+            <div className="border-b border-surface-200">
+              <nav className="flex overflow-x-auto">
+                {sections.map((section) => {
+                  const Icon = section.icon;
+                  return (
+                    <button
+                      key={section.id}
+                      onClick={() => setActiveSection(section.id)}
+                      className={`flex items-center gap-2 px-6 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                        activeSection === section.id
+                          ? 'border-brand-500 text-brand-700 bg-surface-100/50'
+                          : 'border-transparent text-surface-600 hover:text-surface-700 hover:bg-surface-100/30'
+                      }`}
+                    >
+                      <Icon className="w-5 h-5" />
+                      {section.name}
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
+
+            <div className="p-6">
+              {/* Section Description */}
+              <div className="mb-6">
+                <p className="text-surface-600">
+                  {sections.find((s) => s.id === activeSection)?.description}
+                </p>
+              </div>
+
+              {/* Section Content */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-surface-900">
+                    {activeSection === 'overview' && 'Hero Banner Content'}
+                    {activeSection === 'certifications' && 'Certification Items'}
+                    {activeSection === 'controls' && 'Security Control Items'}
+                    {activeSection === 'policies' && 'Policy Documents'}
+                    {activeSection === 'updates' && 'Security Updates & News'}
+                    {activeSection === 'contact' && 'Contact Information'}
+                  </h3>
+                  <Button
+                    onClick={() => {
+                      setEditingContent(null);
+                      setShowContentModal(true);
+                    }}
+                    leftIcon={<PlusIcon className="w-5 h-5" />}
+                  >
+                    Add Content
+                  </Button>
+                </div>
+
+                {/* Content List */}
+                <div className="space-y-3">
+                  {getSectionContents(activeSection).length === 0 ? (
+                    <div className="text-center py-12 bg-white rounded-lg border-2 border-dashed border-surface-200">
+                      <p className="text-surface-600 mb-4">No content added yet</p>
+                      <Button
+                        onClick={() => {
+                          setEditingContent(null);
+                          setShowContentModal(true);
+                        }}
+                        leftIcon={<PlusIcon className="w-5 h-5" />}
+                      >
+                        Add First Item
+                      </Button>
+                    </div>
+                  ) : (
+                    getSectionContents(activeSection).map((content) => (
+                      <div
+                        key={content.id}
+                        className="bg-white border border-surface-200 rounded-lg p-4"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h4 className="text-surface-900 font-medium">{content.title}</h4>
+                              {content.isPublished ? (
+                                <Badge variant="success" capitalize={false}>
+                                  <EyeIcon className="w-3 h-3" />
+                                  Published
+                                </Badge>
+                              ) : (
+                                <Badge variant="neutral" capitalize={false}>
+                                  <EyeSlashIcon className="w-3 h-3" />
+                                  Draft
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-sm text-surface-600 line-clamp-2">
+                              {content.content}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2 ml-4">
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => toggleContentPublish(content)}
+                            >
+                              {content.isPublished ? 'Unpublish' : 'Publish'}
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => {
+                                setEditingContent(content);
+                                setShowContentModal(true);
+                              }}
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              variant="danger"
+                              size="sm"
+                              onClick={() => deleteContent(content.id)}
+                            >
+                              Delete
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
       )}
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-gray-50 dark:bg-white border border-gray-200 dark:border-surface-200 rounded-lg p-4">
-          <div className="text-2xl font-bold text-gray-800 dark:text-surface-900">
-            {contents.length}
-          </div>
-          <div className="text-sm text-gray-500 dark:text-surface-600">Total Content Items</div>
-        </div>
-        <div className="bg-gray-50 dark:bg-white border border-gray-200 dark:border-surface-200 rounded-lg p-4">
-          <div className="text-2xl font-bold text-green-600">{publishedCount}</div>
-          <div className="text-sm text-gray-500 dark:text-surface-600">Published</div>
-        </div>
-        <div className="bg-gray-50 dark:bg-white border border-gray-200 dark:border-surface-200 rounded-lg p-4">
-          <div className="text-2xl font-bold text-amber-600 dark:text-yellow-600">{draftCount}</div>
-          <div className="text-sm text-gray-500 dark:text-surface-600">Drafts</div>
-        </div>
-      </div>
-
-      {/* Content Management */}
-      <div className="bg-gray-50 dark:bg-white border border-gray-200 dark:border-surface-200 rounded-lg overflow-hidden">
-        {/* Section Tabs */}
-        <div className="border-b border-gray-200 dark:border-surface-200">
-          <nav className="flex overflow-x-auto">
-            {sections.map((section) => {
-              const Icon = section.icon;
-              const sectionContents = getSectionContents(section.id);
-              const hasContent = sectionContents.length > 0;
-              return (
-                <button
-                  key={section.id}
-                  onClick={() => setActiveSection(section.id)}
-                  className={`flex items-center gap-2 px-5 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
-                    activeSection === section.id
-                      ? 'border-brand-500 text-brand-400 bg-white dark:bg-white/50'
-                      : 'border-transparent text-gray-500 dark:text-surface-600 hover:text-gray-600 dark:text-surface-700 hover:bg-white dark:bg-white/30'
-                  }`}
-                >
-                  <Icon className="w-5 h-5" />
-                  {section.name}
-                  {hasContent && (
-                    <span className="px-1.5 py-0.5 text-xs bg-gray-100 dark:bg-surface-200 text-gray-600 dark:text-surface-700 rounded">
-                      {sectionContents.length}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-
-        {/* Section Content */}
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-surface-900">
-                {sections.find((s) => s.id === activeSection)?.name}
-              </h3>
-              <p className="text-sm text-gray-500 dark:text-surface-600">
-                {sections.find((s) => s.id === activeSection)?.description}
-              </p>
-            </div>
-            <button
-              onClick={() => {
-                setEditingContent(null);
-                setShowContentModal(true);
-              }}
-              className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-gray-900 dark:text-white rounded-lg hover:bg-brand-700 transition-colors"
-            >
-              <PlusIcon className="w-5 h-5" />
-              Add Content
-            </button>
-          </div>
-
-          {/* Content List */}
-          <div className="space-y-3">
-            {getSectionContents(activeSection).length === 0 ? (
-              <div className="text-center py-16 bg-white dark:bg-white/30 rounded-lg border-2 border-dashed border-gray-200 dark:border-surface-200">
-                <div className="text-surface-500 mb-4">
-                  {(() => {
-                    const Icon = sections.find((s) => s.id === activeSection)?.icon || GlobeAltIcon;
-                    return <Icon className="w-12 h-12 mx-auto" />;
-                  })()}
-                </div>
-                <p className="text-gray-500 dark:text-surface-600 mb-4">
-                  No content in this section yet
-                </p>
-                <button
-                  onClick={() => {
-                    setEditingContent(null);
-                    setShowContentModal(true);
-                  }}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-brand-600 text-gray-900 dark:text-white rounded-lg hover:bg-brand-700 transition-colors"
-                >
-                  <PlusIcon className="w-5 h-5" />
-                  Add First Item
-                </button>
-              </div>
-            ) : (
-              getSectionContents(activeSection).map((content) => (
-                <div
-                  key={content.id}
-                  className="bg-white dark:bg-white border border-gray-200 dark:border-surface-200 rounded-lg p-4"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h4 className="text-gray-800 dark:text-surface-900 font-medium truncate">
-                          {content.title}
-                        </h4>
-                        {content.isPublished ? (
-                          <span className="flex items-center gap-1 px-2 py-0.5 text-xs bg-green-500/20 text-green-600 rounded shrink-0">
-                            <EyeIcon className="w-3 h-3" />
-                            Published
-                          </span>
-                        ) : (
-                          <span className="flex items-center gap-1 px-2 py-0.5 text-xs bg-surface-600 text-gray-500 dark:text-surface-600 rounded shrink-0">
-                            <EyeSlashIcon className="w-3 h-3" />
-                            Draft
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-500 dark:text-surface-600 line-clamp-2">
-                        {content.content}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2 ml-4 shrink-0">
-                      <button
-                        onClick={() => toggleContentPublish(content)}
-                        className={`px-3 py-1.5 text-xs rounded transition-colors ${
-                          content.isPublished
-                            ? 'bg-gray-100 dark:bg-surface-200 text-gray-700 dark:text-surface-800 hover:bg-gray-200 dark:hover:bg-surface-600'
-                            : 'bg-green-500/20 text-green-600 hover:bg-green-500/30'
-                        }`}
-                      >
-                        {content.isPublished ? 'Unpublish' : 'Publish'}
-                      </button>
-                      <button
-                        onClick={() => {
-                          setEditingContent(content);
-                          setShowContentModal(true);
-                        }}
-                        className="px-3 py-1.5 text-xs bg-gray-100 dark:bg-surface-200 text-gray-700 dark:text-surface-800 rounded hover:bg-gray-200 dark:hover:bg-surface-600 transition-colors"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => deleteContent(content.id)}
-                        className="px-3 py-1.5 text-xs bg-red-500/20 text-red-600 rounded hover:bg-red-500/30 transition-colors"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      </div>
 
       {/* Content Modal */}
       {showContentModal && (
@@ -415,7 +456,7 @@ export default function TrustCenter() {
       )}
 
       {/* Preview Modal */}
-      {showPreview && config && (
+      {showPreview && (
         <PreviewModal config={config} contents={contents} onClose={() => setShowPreview(false)} />
       )}
     </div>
@@ -447,82 +488,66 @@ function ContentModal({ section, content, onSave, onClose }: ContentModalProps) 
   };
 
   return (
-    <Dialog open onClose={onClose}>
-      <h2 className="text-2xl font-bold text-gray-800 dark:text-surface-900 mb-4">
-        {content ? 'Edit Content' : 'Add New Content'}
-      </h2>
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <Dialog
+      open
+      onClose={onClose}
+      title={content ? 'Edit Content' : 'Add New Content'}
+      size="lg"
+      footer={
+        <>
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" form="trust-center-content-form">
+            {content ? 'Update' : 'Create'}
+          </Button>
+        </>
+      }
+    >
+      <form id="trust-center-content-form" onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-500 dark:text-surface-600 mb-1">
-            Title
-          </label>
+          <label className="block text-sm font-medium text-surface-600 mb-1">Title</label>
           <Input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
-            className="w-full px-3 py-2 bg-white dark:bg-white border border-gray-200 dark:border-surface-200 rounded-lg text-gray-800 dark:text-surface-900 focus:outline-none focus:border-brand-500"
             placeholder="Enter title..."
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-500 dark:text-surface-600 mb-1">
-            Content
-          </label>
+          <label className="block text-sm font-medium text-surface-600 mb-1">Content</label>
           <Textarea
             value={contentText}
             onChange={(e) => setContentText(e.target.value)}
             required
-            rows={8}
-            className="w-full px-3 py-2 bg-white dark:bg-white border border-gray-200 dark:border-surface-200 rounded-lg text-gray-800 dark:text-surface-900 focus:outline-none focus:border-brand-500"
+            rows={6}
             placeholder="Enter content..."
           />
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-500 dark:text-surface-600 mb-1">
-              Display Order
-            </label>
+            <label className="block text-sm font-medium text-surface-600 mb-1">Display Order</label>
             <Input
               type="number"
               value={order}
               onChange={(e) => setOrder(parseInt(e.target.value))}
-              className="w-full px-3 py-2 bg-white dark:bg-white border border-gray-200 dark:border-surface-200 rounded-lg text-gray-800 dark:text-surface-900 focus:outline-none focus:border-brand-500"
             />
-            <p className="text-xs text-surface-500 mt-1">Lower numbers appear first</p>
           </div>
 
-          <div className="flex items-end pb-6">
-            <label className="flex items-center gap-2 cursor-pointer">
+          <div className="flex items-end">
+            <label className="flex items-center gap-2">
               <input
                 type="checkbox"
                 checked={isPublished}
                 onChange={(e) => setIsPublished(e.target.checked)}
-                className="w-4 h-4 bg-white dark:bg-white border-gray-200 dark:border-surface-200 rounded text-brand-600 focus:ring-brand-500"
+                className="w-4 h-4 bg-surface-100 border-surface-300 rounded text-brand-600 focus:ring-brand-500"
               />
-              <span className="text-sm text-gray-600 dark:text-surface-700">
-                Publish immediately
-              </span>
+              <span className="text-sm text-surface-700">Publish immediately</span>
             </label>
           </div>
-        </div>
-
-        <div className="flex justify-end gap-2 pt-4 border-t border-gray-200 dark:border-surface-200">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 bg-white dark:bg-white text-gray-800 dark:text-surface-900 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-100 dark:bg-surface-200 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className="px-4 py-2 bg-brand-600 text-gray-900 dark:text-white rounded-lg hover:bg-brand-700 transition-colors"
-          >
-            {content ? 'Update' : 'Create'}
-          </button>
         </div>
       </form>
     </Dialog>
@@ -530,108 +555,232 @@ function ContentModal({ section, content, onSave, onClose }: ContentModalProps) 
 }
 
 interface PreviewModalProps {
-  config: TrustCenterConfig;
+  config: TrustCenterConfig | null;
   contents: TrustCenterContent[];
   onClose: () => void;
 }
 
 function PreviewModal({ config, contents, onClose }: PreviewModalProps) {
+  if (!config) return null;
+
   const publishedContents = contents.filter((c) => c.isPublished);
   const getSectionContents = (section: string) => {
     return publishedContents.filter((c) => c.section === section).sort((a, b) => a.order - b.order);
   };
 
+  const overviewContents = getSectionContents('overview');
+  const certificationContents = getSectionContents('certifications');
+  const controlContents = getSectionContents('controls');
+  const policyContents = getSectionContents('policies');
+  const updateContents = getSectionContents('updates');
+  const contactContents = getSectionContents('contact');
+
   return (
-    <Dialog open onClose={onClose}>
-      {/* Close Button */}
-      <button
-        onClick={onClose}
-        className="sticky top-4 right-4 float-right z-10 p-2 bg-gray-800 text-gray-900 dark:text-white rounded-full hover:bg-gray-700 transition-colors m-4"
-      >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M6 18L18 6M6 6l12 12"
-          />
-        </svg>
-      </button>
-
-      {/* Preview Badge */}
-      <div className="sticky top-0 left-0 right-0 bg-yellow-500 text-yellow-900 px-4 py-2 text-center font-semibold z-10">
-        PREVIEW - This is how your trust center will appear to visitors
-      </div>
-
-      {/* Trust Center Preview */}
-      <div className="p-8" style={{ color: '#1f2937' }}>
-        {/* Hero */}
-        <div className="text-center mb-12">
-          {config.logoUrl && (
-            <img src={config.logoUrl} alt={config.companyName} className="h-12 mx-auto mb-4" />
-          )}
-          <h1
-            className="text-4xl font-bold mb-3"
-            style={{ color: config.primaryColor || '#6366f1' }}
-          >
-            {config.companyName} Trust Center
-          </h1>
-          {config.description && (
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">{config.description}</p>
-          )}
+    <Dialog open onClose={onClose} size="xl" className="max-w-6xl">
+      <div className="relative max-h-[80vh] overflow-y-auto -mx-5 -my-4">
+        {/* Preview Badge */}
+        <div className="sticky top-0 left-0 right-0 bg-yellow-500 text-yellow-900 px-4 py-2 text-center font-semibold z-10">
+          PREVIEW MODE - This is how your trust center will appear to visitors
         </div>
 
-        {/* Sections */}
-        {['overview', 'certifications', 'controls', 'policies', 'updates', 'contact'].map(
-          (section) => {
-            const sectionContents = getSectionContents(section);
-            if (sectionContents.length === 0) return null;
-
-            const sectionTitles: Record<string, string> = {
-              overview: 'Overview',
-              certifications: 'Certifications & Compliance',
-              controls: 'Security Controls',
-              policies: 'Policies & Documentation',
-              updates: 'Security Updates',
-              contact: 'Contact Us',
-            };
-
-            return (
-              <section key={section} className="mb-10">
-                <h2
-                  className="text-2xl font-bold mb-4"
-                  style={{ color: config.primaryColor || '#6366f1' }}
-                >
-                  {sectionTitles[section]}
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {sectionContents.map((content) => (
-                    <div key={content.id} className="bg-gray-50 p-5 rounded-lg">
-                      <h3 className="text-lg font-semibold mb-2">{content.title}</h3>
-                      <p className="text-gray-600">{content.content}</p>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            );
-          }
-        )}
-
-        {/* Empty State */}
-        {publishedContents.length === 0 && (
-          <div className="text-center py-16">
-            <GlobeAltIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-500 mb-2">No Published Content</h3>
-            <p className="text-gray-400">Add and publish content to see it here</p>
+        {/* Trust Center Preview Content */}
+        <div
+          className="p-8"
+          style={{ backgroundColor: '#ffffff', color: config.primaryColor || '#1f2937' }}
+        >
+          {/* Hero Section */}
+          <div className="text-center mb-16">
+            {config.logoUrl && (
+              <img src={config.logoUrl} alt={config.companyName} className="h-16 mx-auto mb-6" />
+            )}
+            <h1
+              className="text-5xl font-bold mb-4"
+              style={{ color: config.primaryColor || '#1f2937' }}
+            >
+              {config.companyName} Trust Center
+            </h1>
+            {config.description && (
+              <p className="text-xl text-surface-700 max-w-3xl mx-auto">{config.description}</p>
+            )}
           </div>
-        )}
 
-        {/* Footer */}
-        <footer className="text-center pt-8 mt-12 border-t border-gray-200">
-          <p className="text-gray-400 text-sm">
-            © {new Date().getFullYear()} {config.companyName}. All rights reserved.
-          </p>
-        </footer>
+          {/* Overview Section */}
+          {overviewContents.length > 0 && (
+            <section className="mb-12">
+              <h2
+                className="text-3xl font-bold mb-6"
+                style={{ color: config.primaryColor || '#1f2937' }}
+              >
+                Overview
+              </h2>
+              <div className="grid grid-cols-1 gap-6">
+                {overviewContents.map((content) => (
+                  <div key={content.id} className="bg-surface-100 p-6 rounded-lg">
+                    <h3 className="text-xl font-semibold mb-2">{content.title}</h3>
+                    <p className="text-surface-800">{content.content}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Certifications Section */}
+          {certificationContents.length > 0 && (
+            <section className="mb-12">
+              <h2
+                className="text-3xl font-bold mb-6"
+                style={{ color: config.primaryColor || '#1f2937' }}
+              >
+                <CheckBadgeIcon className="w-8 h-8 inline mr-2" />
+                Certifications & Compliance
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {certificationContents.map((content) => (
+                  <div
+                    key={content.id}
+                    className="bg-white p-6 rounded-lg border-2"
+                    style={{ borderColor: config.primaryColor || '#1f2937' }}
+                  >
+                    <h3 className="text-xl font-semibold mb-2">{content.title}</h3>
+                    <p className="text-surface-800">{content.content}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Security Controls Section */}
+          {controlContents.length > 0 && (
+            <section className="mb-12">
+              <h2
+                className="text-3xl font-bold mb-6"
+                style={{ color: config.primaryColor || '#1f2937' }}
+              >
+                <ShieldCheckIcon className="w-8 h-8 inline mr-2" />
+                Security Controls
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {controlContents.map((content) => (
+                  <div key={content.id} className="bg-surface-100 p-6 rounded-lg">
+                    <h3 className="text-xl font-semibold mb-2">{content.title}</h3>
+                    <p className="text-surface-800">{content.content}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Policies Section */}
+          {policyContents.length > 0 && (
+            <section className="mb-12">
+              <h2
+                className="text-3xl font-bold mb-6"
+                style={{ color: config.primaryColor || '#1f2937' }}
+              >
+                <DocumentTextIcon className="w-8 h-8 inline mr-2" />
+                Policies & Documentation
+              </h2>
+              <div className="grid grid-cols-1 gap-4">
+                {policyContents.map((content) => (
+                  <div key={content.id} className="bg-surface-100 p-6 rounded-lg">
+                    <h3 className="text-xl font-semibold mb-2">{content.title}</h3>
+                    <p className="text-surface-800">{content.content}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Security Updates Section */}
+          {updateContents.length > 0 && (
+            <section className="mb-12">
+              <h2
+                className="text-3xl font-bold mb-6"
+                style={{ color: config.primaryColor || '#1f2937' }}
+              >
+                <NewspaperIcon className="w-8 h-8 inline mr-2" />
+                Security Updates
+              </h2>
+              <div className="grid grid-cols-1 gap-6">
+                {updateContents.map((content) => (
+                  <div
+                    key={content.id}
+                    className="bg-white p-6 rounded-lg border-l-4"
+                    style={{ borderLeftColor: config.primaryColor || '#1f2937' }}
+                  >
+                    <h3 className="text-xl font-semibold mb-2">{content.title}</h3>
+                    <p className="text-surface-800">{content.content}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Contact Section */}
+          {(contactContents.length > 0 || config.securityEmail || config.supportUrl) && (
+            <section className="mb-12">
+              <h2
+                className="text-3xl font-bold mb-6"
+                style={{ color: config.primaryColor || '#1f2937' }}
+              >
+                <EnvelopeIcon className="w-8 h-8 inline mr-2" />
+                Contact Us
+              </h2>
+              <div className="bg-surface-100 p-8 rounded-lg">
+                {contactContents.map((content) => (
+                  <div key={content.id} className="mb-4">
+                    <h3 className="text-xl font-semibold mb-2">{content.title}</h3>
+                    <p className="text-surface-800">{content.content}</p>
+                  </div>
+                ))}
+                {config.securityEmail && (
+                  <div className="mt-4">
+                    <span className="font-semibold">Security Email: </span>
+                    <a
+                      href={`mailto:${config.securityEmail}`}
+                      className="text-blue-600 hover:underline"
+                    >
+                      {config.securityEmail}
+                    </a>
+                  </div>
+                )}
+                {config.supportUrl && (
+                  <div className="mt-2">
+                    <span className="font-semibold">Support: </span>
+                    <a
+                      href={config.supportUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline"
+                    >
+                      {config.supportUrl}
+                    </a>
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* Empty State */}
+          {publishedContents.length === 0 && (
+            <div className="text-center py-16">
+              <div className="text-surface-500 mb-4">
+                <GlobeAltIcon className="w-16 h-16 mx-auto mb-4" />
+              </div>
+              <h3 className="text-2xl font-semibold text-surface-700 mb-2">No Published Content</h3>
+              <p className="text-surface-600">
+                Add and publish content sections to see them appear here.
+              </p>
+            </div>
+          )}
+
+          {/* Footer */}
+          <footer className="text-center pt-8 mt-16 border-t border-surface-200">
+            <p className="text-surface-600 text-sm">
+              © {new Date().getFullYear()} {config.companyName}. All rights reserved.
+            </p>
+          </footer>
+        </div>
       </div>
     </Dialog>
   );

@@ -11,12 +11,7 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
-
-import { Input } from '@/components/ui/Input';
-
-import { Button } from '@/components/ui/Button';
-
-import { Badge } from '@/components/ui/Badge';
+import { Badge, Button, Input } from '@/components/ui';
 
 interface CommentsPanelProps {
   entityType: string;
@@ -95,6 +90,7 @@ export default function CommentsPanel({ entityType, entityId }: CommentsPanelPro
         <ChatBubbleLeftRightIcon className="w-5 h-5 text-surface-600" />
         <h3 className="text-sm font-semibold text-surface-900">Comments ({comments.length})</h3>
       </div>
+
       {/* New Comment Form */}
       <form onSubmit={handleSubmit} className="flex gap-2">
         <Input
@@ -102,17 +98,13 @@ export default function CommentsPanel({ entityType, entityId }: CommentsPanelPro
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
           placeholder="Add a comment..."
-          className="input flex-1"
+          className="flex-1"
         />
-        <Button
-          type="submit"
-          disabled={!newComment.trim() || createMutation.isPending}
-          className="px-3"
-          variant="primary"
-        >
+        <Button type="submit" disabled={!newComment.trim() || createMutation.isPending}>
           <PaperAirplaneIcon className="w-4 h-4" />
         </Button>
       </form>
+
       {/* Comments List */}
       {isLoading ? (
         <div className="text-center py-4 text-surface-500">Loading comments...</div>
@@ -125,7 +117,10 @@ export default function CommentsPanel({ entityType, entityId }: CommentsPanelPro
           {comments.map((comment: any) => (
             <div
               key={comment.id}
-              className={clsx('p-3 rounded-lg', comment.isResolved ? 'bg-white/50' : 'bg-white')}
+              className={clsx(
+                'p-3 rounded-lg',
+                comment.isResolved ? 'bg-surface-100/50' : 'bg-surface-100'
+              )}
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1">
@@ -137,7 +132,7 @@ export default function CommentsPanel({ entityType, entityId }: CommentsPanelPro
                       {formatDate(comment.createdAt)}
                     </span>
                     {comment.isResolved && (
-                      <Badge className="text-xs" variant="success">
+                      <Badge variant="success" size="sm">
                         Resolved
                       </Badge>
                     )}
@@ -154,7 +149,7 @@ export default function CommentsPanel({ entityType, entityId }: CommentsPanelPro
                     }
                     className={clsx(
                       'p-1 rounded hover:bg-surface-200 transition-colors',
-                      comment.isResolved ? 'text-green-600' : 'text-surface-500'
+                      comment.isResolved ? 'text-emerald-700' : 'text-surface-500'
                     )}
                     title={comment.isResolved ? 'Unresolve' : 'Mark as resolved'}
                   >
@@ -174,7 +169,7 @@ export default function CommentsPanel({ entityType, entityId }: CommentsPanelPro
 
               {/* Replies */}
               {comment.replies?.length > 0 && (
-                <div className="mt-3 ml-4 pl-3 border-l-2 border-surface-200 space-y-2">
+                <div className="mt-3 ml-4 pl-3 border-l-2 border-surface-300 space-y-2">
                   {comment.replies.map((reply: any) => (
                     <div key={reply.id} className="text-sm">
                       <div className="flex items-center gap-2 mb-1">
@@ -199,14 +194,14 @@ export default function CommentsPanel({ entityType, entityId }: CommentsPanelPro
                     value={replyContent}
                     onChange={(e) => setReplyContent(e.target.value)}
                     placeholder="Write a reply..."
-                    className="input flex-1 text-sm"
+                    className="flex-1"
+                    inputSize="sm"
                     autoFocus
                   />
                   <Button
                     onClick={() => handleReply(comment.id)}
                     disabled={!replyContent.trim()}
-                    className="px-2 py-1 text-sm"
-                    variant="primary"
+                    size="sm"
                   >
                     Reply
                   </Button>

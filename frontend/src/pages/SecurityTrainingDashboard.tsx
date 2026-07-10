@@ -1,472 +1,541 @@
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
 import {
-  AcademicCapIcon,
-  UsersIcon,
-  ClockIcon,
-  CheckCircleIcon,
-  ExclamationTriangleIcon,
-  ArrowTrendingUpIcon,
-  BuildingOffice2Icon,
-  CalendarDaysIcon,
-} from '@heroicons/react/24/outline';
-import { trainingApi, employeeComplianceApi } from '@/lib/api';
-import { SkeletonCard, SkeletonTable } from '@/components/Skeleton';
-import clsx from 'clsx';
+  GraduationCap,
+  Play,
+  Award,
+  Download,
+  CalendarClock,
+  CheckCircle2,
+  Clock,
+  AlertTriangle,
+  Activity,
+} from 'lucide-react';
+import api from '@/lib/api';
+import { cn } from '@/lib/cn';
+import {
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+  EmptyState,
+  PageHeader,
+  Skeleton,
+  StatCard,
+} from '@/components/ui';
 
-interface TrainingOrgStats {
-  totalEmployees: number;
-  totalAssignments: number;
-  completedAssignments: number;
-  overdueAssignments: number;
-  inProgressAssignments: number;
-  completionRate: number;
-  averageScore: number;
-  courseStats: {
-    courseId: string;
-    courseName: string;
-    assigned: number;
-    completed: number;
-    overdue: number;
-    averageScore: number;
-  }[];
-  departmentStats: {
-    department: string;
-    employeeCount: number;
-    completionRate: number;
-    overdueCount: number;
-  }[];
-  recentCompletions: {
-    employeeName: string;
-    employeeEmail: string;
-    courseName: string;
-    completedAt: string;
-    score?: number;
-  }[];
-  upcomingDue: {
-    employeeName: string;
-    employeeEmail: string;
-    courseName: string;
-    dueDate: string;
-  }[];
-}
-
-// Fallback data for when API returns empty
-const FALLBACK_STATS: TrainingOrgStats = {
-  totalEmployees: 0,
-  totalAssignments: 0,
-  completedAssignments: 0,
-  overdueAssignments: 0,
-  inProgressAssignments: 0,
-  completionRate: 0,
-  averageScore: 0,
-  courseStats: [],
-  departmentStats: [],
-  recentCompletions: [],
-  upcomingDue: [],
-};
-
-function StatCard({
-  title,
-  value,
-  subtitle,
-  icon: Icon,
-  color,
-  trend,
-  isLoading = false,
-}: {
+interface AssignedCourse {
+  id: string;
+  courseId?: string;
   title: string;
-  value: string | number;
-  subtitle?: string;
-  icon: typeof UsersIcon;
-  color: string;
-  trend?: { value: number; isPositive: boolean };
-  isLoading?: boolean;
-}) {
-  if (isLoading) {
-    return <SkeletonCard className="h-32" />;
-  }
+  description?: string;
+  status?: 'not_started' | 'in_progress' | 'completed' | 'overdue';
+  progress?: number; // 0-100
+  dueDate?: string;
+  startUrl?: string;
+}
 
+interface EarnedCertificate {
+  id: string;
+  name: string;
+  courseName?: string;
+  issuedAt?: string;
+  expiresAt?: string;
+  pdfUrl?: string;
+}
+
+interface MyTrainingResponse {
+  summary?: {
+    assigned?: number;
+    inProgress?: number;
+    completed?: number;
+    overdue?: number;
+    completionPct?: number;
+  };
+  courses?: AssignedCourse[];
+  certificates?: EarnedCertificate[];
+}
+
+function formatDate(value?: string): string {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString();
+}
+
+function daysUntil(value?: string): number | null {
+  if (!value) return null;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+  const diff = Math.ceil((d.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  return diff;
+}
+
+function CompletionRing({ value, size = 132 }: { value: number; size?: number }) {
+  const radius = (size - 14) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const clamped = Math.max(0, Math.min(100, value));
+  const offset = circumference - (clamped / 100) * circumference;
+  const stroke =
+    clamped >= 80 ? 'rgb(16 185 129)' : clamped >= 50 ? 'rgb(251 191 36)' : 'rgb(239 68 68)';
   return (
-    <div className="card p-6">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm text-muted-foreground">{title}</p>
-          <p className="text-3xl font-bold text-foreground mt-1">{value}</p>
-          {subtitle && <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>}
-          {trend && (
-            <div
-              className={clsx(
-                'flex items-center gap-1 mt-2 text-sm',
-                trend.isPositive ? 'text-green-600' : 'text-red-600'
-              )}
-            >
-              <ArrowTrendingUpIcon className={clsx('w-4 h-4', !trend.isPositive && 'rotate-180')} />
-              <span>{trend.value}% vs last month</span>
-            </div>
-          )}
-        </div>
-        <div className={clsx('p-3 rounded-lg', color)}>
-          <Icon className="w-6 h-6 text-white" />
-        </div>
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90">
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke="rgb(229 229 226)"
+          strokeWidth={10}
+          fill="none"
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke={stroke}
+          strokeWidth={10}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          fill="none"
+          className="transition-all duration-500"
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-h1 text-surface-900 tabular-nums leading-none">{clamped}%</span>
+        <span className="text-xs text-surface-500 uppercase tracking-wider mt-1">Complete</span>
       </div>
     </div>
   );
 }
 
-function ProgressBar({ value, max, color }: { value: number; max: number; color: string }) {
-  const percentage = max > 0 ? Math.round((value / max) * 100) : 0;
+function ProgressBar({
+  value,
+  tone = 'brand',
+}: {
+  value: number;
+  tone?: 'brand' | 'amber' | 'red';
+}) {
+  const clamped = Math.max(0, Math.min(100, value));
+  const color = tone === 'red' ? 'bg-red-500' : tone === 'amber' ? 'bg-amber-500' : 'bg-brand-500';
   return (
-    <div className="flex items-center gap-3">
-      <div className="flex-1 h-2 bg-surface-200 rounded-full overflow-hidden">
-        <div
-          className={clsx('h-full rounded-full transition-all', color)}
-          style={{ width: `${percentage}%` }}
-        />
-      </div>
-      <span className="text-sm text-surface-600 w-12 text-right">{percentage}%</span>
+    <div className="h-1.5 w-full bg-surface-100 rounded-full overflow-hidden">
+      <div className={cn('h-full transition-all', color)} style={{ width: `${clamped}%` }} />
     </div>
   );
+}
+
+function statusVariant(status?: string): 'success' | 'warning' | 'danger' | 'info' | 'neutral' {
+  switch (status) {
+    case 'completed':
+      return 'success';
+    case 'in_progress':
+      return 'info';
+    case 'overdue':
+      return 'danger';
+    case 'not_started':
+      return 'warning';
+    default:
+      return 'neutral';
+  }
+}
+
+function statusLabel(status?: string): string {
+  if (!status) return 'Pending';
+  return status.replace(/_/g, ' ');
 }
 
 export default function SecurityTrainingDashboard() {
-  // Fetch organization-level training stats
-  const { data: orgStatsData, isLoading: isLoadingOrgStats } = useQuery({
-    queryKey: ['training-org-stats'],
+  const { data, isLoading } = useQuery<MyTrainingResponse>({
+    queryKey: ['training', 'my'],
     queryFn: async () => {
-      const response = await trainingApi.getOrgStats();
-      return response.data;
+      const res = await api.get('/api/training/my');
+      return res.data ?? {};
     },
-    retry: 1,
-    staleTime: 60000,
+    staleTime: 30_000,
   });
 
-  // Fetch employee compliance data for overdue trainings
-  const { data: complianceData, isLoading: isLoadingCompliance } = useQuery({
-    queryKey: ['employee-compliance-dashboard'],
-    queryFn: async () => {
-      const response = await employeeComplianceApi.getDashboard();
-      return response.data;
-    },
-    retry: 1,
-    staleTime: 60000,
-  });
+  const summary = data?.summary ?? {};
+  const courses = useMemo(() => data?.courses ?? [], [data?.courses]);
+  const certificates = useMemo(() => data?.certificates ?? [], [data?.certificates]);
 
-  const isLoading = isLoadingOrgStats || isLoadingCompliance;
+  const assigned = summary.assigned ?? courses.length;
+  const completed = summary.completed ?? courses.filter((c) => c.status === 'completed').length;
+  const inProgress = summary.inProgress ?? courses.filter((c) => c.status === 'in_progress').length;
+  const overdue = summary.overdue ?? courses.filter((c) => c.status === 'overdue').length;
+  const completionPct =
+    summary.completionPct ?? (assigned > 0 ? Math.round((completed / assigned) * 100) : 0);
 
-  // Merge data from both sources with fallback - handle different API response formats
-  const stats: TrainingOrgStats = {
-    ...FALLBACK_STATS,
-    // From training API (different field names)
-    totalAssignments: orgStatsData?.totalAssignments || 0,
-    completedAssignments: orgStatsData?.completedAssignments || 0,
-    overdueAssignments:
-      orgStatsData?.overdueAssignments || complianceData?.issueBreakdown?.overdueTrainings || 0,
-    inProgressAssignments:
-      (orgStatsData?.totalAssignments || 0) -
-      (orgStatsData?.completedAssignments || 0) -
-      (orgStatsData?.overdueAssignments || 0),
-    completionRate: orgStatsData?.completionRate || orgStatsData?.assignmentCompletionRate || 0,
-    averageScore: orgStatsData?.averageScore || 0,
-    // From compliance API
-    totalEmployees: complianceData?.totalEmployees || 0,
-    departmentStats: (complianceData?.departmentStats || []).map((d: any) => ({
-      department: d.department || 'Unknown',
-      employeeCount: d.employeeCount || 0,
-      completionRate: d.averageScore || 0,
-      overdueCount: 0,
-    })),
-    upcomingDue: (complianceData?.upcomingDeadlines?.overdueTrainings || []).map((t: any) => ({
-      employeeName: t.employeeName || '',
-      employeeEmail: t.employeeEmail || '',
-      courseName: t.details?.courseName || 'Security Training',
-      dueDate: t.deadline || '',
-    })),
-    courseStats: orgStatsData?.courseStats || [],
-    recentCompletions: orgStatsData?.recentCompletions || [],
-  };
+  const nextUp = useMemo(
+    () =>
+      courses
+        .filter((c) => c.status !== 'completed')
+        .sort((a, b) => {
+          const ad = a.dueDate ? new Date(a.dueDate).getTime() : Number.POSITIVE_INFINITY;
+          const bd = b.dueDate ? new Date(b.dueDate).getTime() : Number.POSITIVE_INFINITY;
+          return ad - bd;
+        })
+        .slice(0, 8),
+    [courses]
+  );
 
-  const pendingCount =
-    stats.totalAssignments - stats.completedAssignments - stats.overdueAssignments;
+  const upcomingDueDates = useMemo(
+    () =>
+      courses
+        .filter((c) => c.dueDate && c.status !== 'completed')
+        .sort(
+          (a, b) =>
+            new Date(a.dueDate as string).getTime() - new Date(b.dueDate as string).getTime()
+        ),
+    [courses]
+  );
+
+  const earnedCerts = useMemo(
+    () =>
+      [...certificates].sort((a, b) => {
+        const at = a.issuedAt ? new Date(a.issuedAt).getTime() : 0;
+        const bt = b.issuedAt ? new Date(b.issuedAt).getTime() : 0;
+        return bt - at;
+      }),
+    [certificates]
+  );
+
+  if (isLoading) {
+    return (
+      <div className="space-y-5 animate-fade-in">
+        <PageHeader
+          title="My Training"
+          description="Your assigned security training, progress, and certificates."
+        />
+        <Skeleton className="h-40" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-28" />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <Skeleton className="h-72" />
+          <Skeleton className="h-72" />
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Security Training Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
-            Organization-wide security awareness training metrics and compliance
-          </p>
-        </div>
-        <Link to="/tools/awareness" className="">
-          Manage Training
-        </Link>
-      </div>
+    <div className="space-y-5 animate-fade-in">
+      <PageHeader
+        title="My Training"
+        description="Your assigned security training, progress, and certificates."
+      />
 
-      {/* Key Metrics */}
+      {/* Hero personal completion */}
+      <Card>
+        <CardBody
+          density="comfy"
+          className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div className="flex items-center gap-6">
+            <CompletionRing value={completionPct} />
+            <div>
+              <p className="text-xs text-surface-500 uppercase tracking-wider font-medium">
+                Your progress
+              </p>
+              <p className="text-h2 text-surface-900 mt-1">
+                {completed} of {assigned} completed
+              </p>
+              <p className="text-small text-surface-600 mt-1">
+                {overdue > 0
+                  ? `${overdue} ${overdue === 1 ? 'course is' : 'courses are'} overdue — finish them first.`
+                  : inProgress > 0
+                    ? `${inProgress} in progress. Keep going!`
+                    : assigned === 0
+                      ? 'No training is currently assigned to you.'
+                      : 'Nice — your training is on track.'}
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-6 text-center">
+            <div>
+              <p className="text-xs text-surface-500 uppercase tracking-wider">In progress</p>
+              <p className="text-h2 text-surface-900 tabular-nums">{inProgress}</p>
+            </div>
+            <div>
+              <p className="text-xs text-surface-500 uppercase tracking-wider">Completed</p>
+              <p className="text-h2 text-emerald-700 tabular-nums">{completed}</p>
+            </div>
+            <div>
+              <p className="text-xs text-surface-500 uppercase tracking-wider">Overdue</p>
+              <p
+                className={cn(
+                  'text-h2 tabular-nums',
+                  overdue > 0 ? 'text-red-700' : 'text-surface-900'
+                )}
+              >
+                {overdue}
+              </p>
+            </div>
+          </div>
+        </CardBody>
+      </Card>
+
+      {/* Stat cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title="Total Employees"
-          value={stats.totalEmployees}
-          subtitle="Enrolled in training"
-          icon={UsersIcon}
-          color="bg-blue-500"
-          isLoading={isLoading}
+          label="Assigned"
+          value={assigned}
+          icon={<GraduationCap className="h-5 w-5" />}
+          tone="brand"
+          caption="Across all active campaigns"
         />
         <StatCard
-          title="Completion Rate"
-          value={`${stats.completionRate || 0}%`}
-          subtitle={`${stats.completedAssignments} of ${stats.totalAssignments} completed`}
-          icon={CheckCircleIcon}
-          color="bg-green-500"
-          isLoading={isLoading}
+          label="In Progress"
+          value={inProgress}
+          icon={<Activity className="h-5 w-5" />}
+          tone="blue"
+          caption={inProgress === 1 ? '1 course started' : `${inProgress} courses started`}
         />
         <StatCard
-          title="Overdue Trainings"
-          value={stats.overdueAssignments}
-          subtitle="Require immediate attention"
-          icon={ExclamationTriangleIcon}
-          color="bg-red-500"
-          isLoading={isLoading}
+          label="Completed"
+          value={completed}
+          icon={<CheckCircle2 className="h-5 w-5" />}
+          tone="emerald"
+          caption={assigned > 0 ? `${completionPct}% of total` : 'None yet'}
         />
         <StatCard
-          title="Average Score"
-          value={stats.averageScore ? `${stats.averageScore}%` : 'N/A'}
-          subtitle="Across all assessments"
-          icon={AcademicCapIcon}
-          color="bg-purple-500"
-          isLoading={isLoading}
+          label="Overdue"
+          value={overdue}
+          icon={<AlertTriangle className="h-5 w-5" />}
+          tone="red"
+          caption={overdue > 0 ? 'Needs attention now' : 'Nothing overdue'}
         />
       </div>
 
-      {/* Training Status Breakdown */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Status Distribution */}
-        <div className="card p-6">
-          <h2 className="text-lg font-semibold text-foreground mb-4">Training Status</h2>
-          {isLoading ? (
-            <SkeletonTable rows={3} />
-          ) : (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-green-500" />
-                  <span className="text-surface-700">Completed</span>
-                </div>
-                <span className="text-foreground font-medium">{stats.completedAssignments}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-blue-500" />
-                  <span className="text-surface-700">In Progress</span>
-                </div>
-                <span className="text-foreground font-medium">{stats.inProgressAssignments}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                  <span className="text-surface-700">Pending</span>
-                </div>
-                <span className="text-foreground font-medium">
-                  {pendingCount > 0 ? pendingCount : 0}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-red-500" />
-                  <span className="text-surface-700">Overdue</span>
-                </div>
-                <span className="text-foreground font-medium">{stats.overdueAssignments}</span>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Course Performance */}
-        <div className="card p-6 lg:col-span-2">
-          <h2 className="text-lg font-semibold text-foreground mb-4">Course Completion Rates</h2>
-          {isLoading ? (
-            <SkeletonTable rows={4} />
-          ) : !stats.courseStats?.length ? (
-            <div className="text-center py-8 text-surface-600">
-              <AcademicCapIcon className="w-10 h-10 mx-auto mb-2 opacity-50" />
-              <p>No course data available</p>
-              <p className="text-sm mt-1">Training courses will appear here once assigned</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {(stats.courseStats || []).slice(0, 5).map((course) => (
-                <div key={course.courseId}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-surface-700 text-sm">{course.courseName}</span>
-                    <span className="text-surface-600 text-sm">
-                      {course.completed}/{course.assigned}
-                    </span>
-                  </div>
-                  <ProgressBar
-                    value={course.completed}
-                    max={course.assigned}
-                    color="bg-green-500"
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Department Stats & Overdue Trainings */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Department Compliance */}
-        <div className="card p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-foreground">Training by Department</h2>
-            <BuildingOffice2Icon className="w-5 h-5 text-surface-600" />
-          </div>
-          {isLoading ? (
-            <SkeletonTable rows={5} />
-          ) : stats.departmentStats.length === 0 ? (
-            <div className="text-center py-8 text-surface-600">
-              <BuildingOffice2Icon className="w-10 h-10 mx-auto mb-2 opacity-50" />
-              <p>No department data available</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {stats.departmentStats.slice(0, 6).map((dept) => (
-                <div
-                  key={dept.department}
-                  className="flex items-center justify-between py-2 border-b border-surface-200 last:border-0"
-                >
-                  <div>
-                    <p className="text-foreground font-medium">{dept.department}</p>
-                    <p className="text-sm text-surface-600">{dept.employeeCount} employees</p>
-                  </div>
-                  <div className="text-right">
-                    <p
-                      className={clsx(
-                        'font-medium',
-                        dept.completionRate >= 80
-                          ? 'text-green-600'
-                          : dept.completionRate >= 60
-                            ? 'text-yellow-600'
-                            : 'text-red-600'
-                      )}
+      {/* 2-col: Next up | Certificates */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {/* Next up */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Next up</CardTitle>
+            {nextUp.length > 0 && (
+              <Badge variant="info" size="sm" capitalize={false}>
+                {nextUp.length} {nextUp.length === 1 ? 'course' : 'courses'}
+              </Badge>
+            )}
+          </CardHeader>
+          <CardBody density="comfy">
+            {nextUp.length === 0 ? (
+              <EmptyState
+                icon={<CheckCircle2 className="h-6 w-6 text-emerald-600" />}
+                title="You're all caught up"
+                description="No outstanding training right now. New assignments will show up here."
+                size="sm"
+              />
+            ) : (
+              <div className="space-y-3">
+                {nextUp.map((course) => {
+                  const progress = course.progress ?? 0;
+                  const isOverdue = course.status === 'overdue';
+                  const isInProgress = course.status === 'in_progress';
+                  const tone: 'brand' | 'amber' | 'red' = isOverdue
+                    ? 'red'
+                    : isInProgress
+                      ? 'amber'
+                      : 'brand';
+                  const ctaLabel = isInProgress ? 'Resume' : isOverdue ? 'Resume now' : 'Start';
+                  return (
+                    <div
+                      key={course.id}
+                      className="rounded-md border border-surface-200 bg-white p-3"
                     >
-                      {dept.completionRate}%
-                    </p>
-                    {dept.overdueCount > 0 && (
-                      <p className="text-sm text-red-600">{dept.overdueCount} overdue</p>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="text-surface-900 font-medium truncate">{course.title}</p>
+                            <Badge variant={statusVariant(course.status)} size="sm" dot>
+                              {statusLabel(course.status)}
+                            </Badge>
+                          </div>
+                          {course.description && (
+                            <p className="text-xs text-surface-500 mt-0.5 truncate">
+                              {course.description}
+                            </p>
+                          )}
+                          {course.dueDate && (
+                            <p
+                              className={cn(
+                                'text-xs mt-1 tabular-nums',
+                                isOverdue ? 'text-red-700' : 'text-surface-600'
+                              )}
+                            >
+                              Due {formatDate(course.dueDate)}
+                            </p>
+                          )}
+                        </div>
+                        {course.startUrl ? (
+                          <a href={course.startUrl} target="_blank" rel="noreferrer">
+                            <Button
+                              size="sm"
+                              variant={isOverdue ? 'danger' : 'primary'}
+                              leftIcon={<Play className="h-3.5 w-3.5" />}
+                            >
+                              {ctaLabel}
+                            </Button>
+                          </a>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant={isOverdue ? 'danger' : 'primary'}
+                            leftIcon={<Play className="h-3.5 w-3.5" />}
+                          >
+                            {ctaLabel}
+                          </Button>
+                        )}
+                      </div>
+                      <div className="mt-3 flex items-center gap-3">
+                        <div className="flex-1">
+                          <ProgressBar value={progress} tone={tone} />
+                        </div>
+                        <span className="text-xs text-surface-600 tabular-nums w-9 text-right">
+                          {progress}%
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardBody>
+        </Card>
+
+        {/* Earned certificates */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Earned certificates</CardTitle>
+            {earnedCerts.length > 0 && (
+              <Badge variant="success" size="sm" capitalize={false}>
+                {earnedCerts.length}
+              </Badge>
+            )}
+          </CardHeader>
+          <CardBody density="comfy">
+            {earnedCerts.length === 0 ? (
+              <EmptyState
+                icon={<Award className="h-6 w-6" />}
+                title="No certificates yet"
+                description="Complete a course to earn your first certificate."
+                size="sm"
+              />
+            ) : (
+              <div className="space-y-2">
+                {earnedCerts.map((cert) => (
+                  <div
+                    key={cert.id}
+                    className="flex items-center gap-3 rounded-md border border-surface-200 bg-white p-3"
+                  >
+                    <div className="p-2 rounded-md bg-emerald-500/10 text-emerald-700 shrink-0">
+                      <Award className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-surface-900 font-medium truncate">{cert.name}</p>
+                      <p className="text-xs text-surface-500 truncate">
+                        {cert.courseName ? `${cert.courseName} · ` : ''}
+                        Issued {formatDate(cert.issuedAt)}
+                        {cert.expiresAt ? ` · Expires ${formatDate(cert.expiresAt)}` : ''}
+                      </p>
+                    </div>
+                    {cert.pdfUrl ? (
+                      <a href={cert.pdfUrl} target="_blank" rel="noreferrer" download>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          leftIcon={<Download className="h-3.5 w-3.5" />}
+                        >
+                          PDF
+                        </Button>
+                      </a>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled
+                        leftIcon={<Download className="h-3.5 w-3.5" />}
+                      >
+                        PDF
+                      </Button>
                     )}
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Overdue Trainings */}
-        <div className="card p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-foreground">Overdue Trainings</h2>
-            <span className="text-sm text-red-600 bg-red-500/10 px-2 py-1 rounded">
-              {stats.overdueAssignments} total
-            </span>
-          </div>
-          {isLoading ? (
-            <SkeletonTable rows={5} />
-          ) : stats.upcomingDue.length === 0 && stats.overdueAssignments === 0 ? (
-            <div className="text-center py-8 text-surface-600">
-              <CheckCircleIcon className="w-10 h-10 mx-auto mb-2 text-green-600 opacity-50" />
-              <p>No overdue trainings</p>
-              <p className="text-sm mt-1">All employees are up to date</p>
-            </div>
-          ) : (
-            <div className="space-y-3 max-h-[300px] overflow-y-auto">
-              {stats.upcomingDue.slice(0, 10).map((item, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-center justify-between py-2 border-b border-surface-200 last:border-0"
-                >
-                  <div>
-                    <p className="text-foreground font-medium">
-                      {item.employeeName || item.employeeEmail}
-                    </p>
-                    <p className="text-sm text-surface-600">{item.courseName}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-red-600">
-                      {item.dueDate ? new Date(item.dueDate).toLocaleDateString() : 'Overdue'}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Recent Completions */}
-      <div className="card p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-foreground">Recent Completions</h2>
-          <CalendarDaysIcon className="w-5 h-5 text-surface-600" />
-        </div>
-        {isLoading ? (
-          <SkeletonTable rows={5} />
-        ) : stats.recentCompletions.length === 0 ? (
-          <div className="text-center py-8 text-surface-600">
-            <ClockIcon className="w-10 h-10 mx-auto mb-2 opacity-50" />
-            <p>No recent completions</p>
-            <p className="text-sm mt-1">Training completions will appear here</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-surface-200">
-                  <th className="text-left text-sm font-medium text-surface-600 pb-3">Employee</th>
-                  <th className="text-left text-sm font-medium text-surface-600 pb-3">Course</th>
-                  <th className="text-left text-sm font-medium text-surface-600 pb-3">Completed</th>
-                  <th className="text-right text-sm font-medium text-surface-600 pb-3">Score</th>
-                </tr>
-              </thead>
-              <tbody>
-                {stats.recentCompletions.slice(0, 10).map((completion, idx) => (
-                  <tr key={idx} className="border-b border-surface-200/50">
-                    <td className="py-3">
-                      <p className="text-foreground">{completion.employeeName}</p>
-                      <p className="text-sm text-surface-600">{completion.employeeEmail}</p>
-                    </td>
-                    <td className="py-3 text-surface-700">{completion.courseName}</td>
-                    <td className="py-3 text-surface-600">
-                      {new Date(completion.completedAt).toLocaleDateString()}
-                    </td>
-                    <td className="py-3 text-right">
-                      {completion.score !== undefined ? (
-                        <span
-                          className={clsx(
-                            'font-medium',
-                            completion.score >= 80
-                              ? 'text-green-600'
-                              : completion.score >= 60
-                                ? 'text-yellow-600'
-                                : 'text-red-600'
-                          )}
-                        >
-                          {completion.score}%
-                        </span>
-                      ) : (
-                        <span className="text-surface-500">—</span>
-                      )}
-                    </td>
-                  </tr>
                 ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+              </div>
+            )}
+          </CardBody>
+        </Card>
       </div>
+
+      {/* Upcoming due dates */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Upcoming due dates</CardTitle>
+          {upcomingDueDates.length > 0 && (
+            <Badge variant={overdue > 0 ? 'danger' : 'warning'} size="sm" capitalize={false}>
+              {upcomingDueDates.length}
+            </Badge>
+          )}
+        </CardHeader>
+        <CardBody density="comfy">
+          {upcomingDueDates.length === 0 ? (
+            <EmptyState
+              icon={<CalendarClock className="h-6 w-6" />}
+              title="Nothing on the calendar"
+              description="You don't have any training with an upcoming due date."
+              size="sm"
+            />
+          ) : (
+            <ul className="divide-y divide-surface-200">
+              {upcomingDueDates.map((course) => {
+                const days = daysUntil(course.dueDate);
+                const isOverdue = course.status === 'overdue' || (days !== null && days < 0);
+                return (
+                  <li
+                    key={course.id}
+                    className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0"
+                  >
+                    <div
+                      className={cn(
+                        'p-2 rounded-md shrink-0',
+                        isOverdue ? 'bg-red-500/10 text-red-700' : 'bg-amber-500/10 text-amber-700'
+                      )}
+                    >
+                      {isOverdue ? (
+                        <AlertTriangle className="h-4 w-4" />
+                      ) : (
+                        <Clock className="h-4 w-4" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-surface-900 truncate">{course.title}</p>
+                      <p className="text-xs text-surface-500">
+                        {isOverdue
+                          ? `Overdue · was due ${formatDate(course.dueDate)}`
+                          : days === 0
+                            ? 'Due today'
+                            : days !== null && days > 0
+                              ? `Due in ${days} day${days === 1 ? '' : 's'} · ${formatDate(course.dueDate)}`
+                              : `Due ${formatDate(course.dueDate)}`}
+                      </p>
+                    </div>
+                    <Badge variant={statusVariant(course.status)} size="sm" dot>
+                      {statusLabel(course.status)}
+                    </Badge>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </CardBody>
+      </Card>
     </div>
   );
 }

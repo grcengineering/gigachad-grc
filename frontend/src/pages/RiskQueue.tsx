@@ -1,164 +1,105 @@
 import { useState } from 'react';
-import { Badge } from '@/components/ui/Badge';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link, useNavigate } from 'react-router-dom';
-import { risksApi, riskTasksApi, RiskWorkflowTask } from '../lib/api';
-import { format, formatDistanceToNow, isPast } from 'date-fns';
-import toast from 'react-hot-toast';
+import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
+import { risksApi } from '../lib/api';
+import { Clock, CheckCircle2, AlertTriangle, User, ArrowRight } from 'lucide-react';
+import { cn } from '@/lib/cn';
 import {
-  ClockIcon,
-  CheckCircleIcon,
-  ExclamationTriangleIcon,
-  UserIcon,
-  ArrowRightIcon,
-  PlayIcon,
-  ClipboardDocumentListIcon,
-} from '@heroicons/react/24/outline';
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+  PageHeader,
+  EmptyState,
+} from '@/components/ui';
 
-type QueueTab = 'tasks' | 'assessments' | 'treatments' | 'approvals' | 'reviews';
+type QueueTab = 'assessments' | 'treatments' | 'approvals' | 'reviews';
+
+interface QueueRisk {
+  id: string;
+  riskId: string;
+  title: string;
+  description: string;
+  category: string;
+  inherentRisk: string;
+  createdAt: string;
+  treatmentDueDate?: string;
+}
+
+const LEVEL_DOT: Record<string, string> = {
+  critical: 'bg-red-500',
+  high: 'bg-orange-500',
+  medium: 'bg-amber-500',
+  low: 'bg-emerald-500',
+};
 
 export default function RiskQueue() {
-  const [activeTab, setActiveTab] = useState<QueueTab>('tasks');
-  const queryClient = useQueryClient();
-  const navigate = useNavigate();
-
-  // Get current user ID from localStorage
+  const [activeTab, setActiveTab] = useState<QueueTab>('assessments');
   const userId = localStorage.getItem('userId') || '';
 
-  // Fetch user's assigned tasks
-  const { data: myTasksData } = useQuery({
-    queryKey: ['risk-tasks', 'my-tasks'],
-    queryFn: () => riskTasksApi.getMyTasks(),
-  });
-
-  // Fetch user's task stats
-  const { data: taskStats } = useQuery({
-    queryKey: ['risk-tasks', 'my-stats'],
-    queryFn: () => riskTasksApi.getMyStats(),
-  });
-
-  // Task mutations
-  const startTaskMutation = useMutation({
-    mutationFn: ({ taskId, riskId }: { taskId: string; riskId: string }) =>
-      riskTasksApi.start(taskId).then((res) => ({ ...res, riskId })),
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['risk-tasks'] });
-      toast.success('Task started');
-      // Navigate to the risk detail page with tasks tab
-      navigate(`/risks/${data.riskId}?tab=tasks`);
-    },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to start task');
-    },
-  });
-
-  const completeTaskMutation = useMutation({
-    mutationFn: (taskId: string) => riskTasksApi.complete(taskId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['risk-tasks'] });
-      toast.success('Task completed');
-    },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to complete task');
-    },
-  });
-
-  // Fetch risks where user is assigned as assessor (pending assessment)
   const { data: assessmentQueue } = useQuery({
     queryKey: ['risk-queue', 'assessments', userId],
-    queryFn: async () => {
-      const response = await risksApi.list({
-        status: 'risk_analysis_in_progress',
-        limit: 50,
-      });
-      return response.data;
-    },
+    queryFn: () =>
+      risksApi.list({ status: 'risk_analysis_in_progress', limit: 50 }).then((r) => r.data),
   });
-
-  // Fetch risks where user is risk owner (pending treatment)
   const { data: treatmentQueue } = useQuery({
     queryKey: ['risk-queue', 'treatments', userId],
-    queryFn: async () => {
-      const response = await risksApi.list({
-        status: 'treatment_decision_review',
-        limit: 50,
-      });
-      return response.data;
-    },
+    queryFn: () =>
+      risksApi.list({ status: 'treatment_decision_review', limit: 50 }).then((r) => r.data),
   });
-
-  // Fetch risks pending executive approval
   const { data: approvalQueue } = useQuery({
     queryKey: ['risk-queue', 'approvals', userId],
-    queryFn: async () => {
-      const response = await risksApi.list({
-        status: 'executive_approval',
-        limit: 50,
-      });
-      return response.data;
-    },
+    queryFn: () => risksApi.list({ status: 'executive_approval', limit: 50 }).then((r) => r.data),
   });
-
-  // Fetch risks pending GRC review
   const { data: reviewQueue } = useQuery({
     queryKey: ['risk-queue', 'reviews', userId],
-    queryFn: async () => {
-      const response = await risksApi.list({
-        status: 'grc_approval',
-        limit: 50,
-      });
-      return response.data;
-    },
+    queryFn: () => risksApi.list({ status: 'grc_approval', limit: 50 }).then((r) => r.data),
   });
 
-  const myTasks = myTasksData?.data?.tasks || [];
-  const stats = taskStats?.data || {
-    pending: 0,
-    inProgress: 0,
-    overdue: 0,
-    completedThisWeek: 0,
-    total: 0,
-  };
-
-  const tabs = [
+  const tabs: Array<{
+    key: QueueTab;
+    label: string;
+    count: number;
+    icon: typeof Clock;
+    color: string;
+    bg: string;
+  }> = [
     {
-      key: 'tasks' as QueueTab,
-      label: 'My Tasks',
-      count: stats.total,
-      icon: ClipboardDocumentListIcon,
-      color: 'text-brand-400',
-    },
-    {
-      key: 'assessments' as QueueTab,
+      key: 'assessments',
       label: 'My Assessments',
       count: assessmentQueue?.risks?.length || 0,
-      icon: ClockIcon,
-      color: 'text-amber-600',
+      icon: Clock,
+      color: 'text-amber-700',
+      bg: 'bg-amber-500/10',
     },
     {
-      key: 'treatments' as QueueTab,
+      key: 'treatments',
       label: 'Treatment Decisions',
       count: treatmentQueue?.risks?.length || 0,
-      icon: ExclamationTriangleIcon,
+      icon: AlertTriangle,
       color: 'text-orange-600',
+      bg: 'bg-orange-500/10',
     },
     {
-      key: 'approvals' as QueueTab,
+      key: 'approvals',
       label: 'Executive Approvals',
       count: approvalQueue?.risks?.length || 0,
-      icon: UserIcon,
+      icon: User,
       color: 'text-purple-600',
+      bg: 'bg-purple-500/10',
     },
     {
-      key: 'reviews' as QueueTab,
+      key: 'reviews',
       label: 'GRC Reviews',
       count: reviewQueue?.risks?.length || 0,
-      icon: CheckCircleIcon,
+      icon: CheckCircle2,
       color: 'text-cyan-600',
+      bg: 'bg-cyan-500/10',
     },
   ];
 
-  const getActiveQueue = () => {
+  const getActiveQueue = (): QueueRisk[] => {
     switch (activeTab) {
       case 'assessments':
         return assessmentQueue?.risks || [];
@@ -168,23 +109,6 @@ export default function RiskQueue() {
         return approvalQueue?.risks || [];
       case 'reviews':
         return reviewQueue?.risks || [];
-      default:
-        return [];
-    }
-  };
-
-  const getRiskLevelColor = (level: string) => {
-    switch (level) {
-      case 'critical':
-        return 'bg-red-500';
-      case 'high':
-        return 'bg-orange-500';
-      case 'medium':
-        return 'bg-amber-500';
-      case 'low':
-        return 'bg-emerald-500';
-      default:
-        return 'bg-surface-500';
     }
   };
 
@@ -198,283 +122,158 @@ export default function RiskQueue() {
         return 'Review & Approve';
       case 'reviews':
         return 'Review Assessment';
-      default:
-        return 'View';
     }
   };
 
+  const queue = getActiveQueue();
+  const activeTabLabel = tabs.find((t) => t.key === activeTab)?.label ?? '';
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-semibold text-white">My Risk Queue</h1>
-        <p className="text-surface-600 mt-1">Tasks and actions awaiting your attention</p>
+    <div className="space-y-5 animate-fade-in">
+      <PageHeader title="My Risk Queue" description="Tasks and actions awaiting your attention." />
+
+      {/* Tab cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.key;
+          return (
+            <Card
+              key={tab.key}
+              interactive
+              onClick={() => setActiveTab(tab.key)}
+              className={cn(isActive && 'border-brand-500 bg-brand-500/5')}
+            >
+              <CardBody density="cozy" className="flex items-center gap-3">
+                <div className={cn('p-2 rounded-md', tab.bg)}>
+                  <Icon className={cn('h-5 w-5', tab.color)} />
+                </div>
+                <div>
+                  <p className="text-h1 text-surface-900">{tab.count}</p>
+                  <p className="text-xs text-surface-600">{tab.label}</p>
+                </div>
+              </CardBody>
+            </Card>
+          );
+        })}
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        {tabs.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`p-4 rounded-xl border transition-colors text-left ${
-              activeTab === tab.key
-                ? 'bg-brand-500/20 border-brand-500'
-                : 'bg-white border-surface-200 hover:border-surface-300'
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <div
-                className={`p-2 rounded-lg ${activeTab === tab.key ? 'bg-brand-500/30' : 'bg-surface-200'}`}
-              >
-                <tab.icon className={`w-5 h-5 ${tab.color}`} />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-white">{tab.count}</p>
-                <p className="text-sm text-surface-600">{tab.label}</p>
-              </div>
-            </div>
-          </button>
-        ))}
-      </div>
-
-      {/* Queue List */}
-      <div className="bg-white rounded-xl border border-surface-200">
-        <div className="p-4 border-b border-surface-200">
-          <h2 className="text-lg font-medium text-white">
-            {tabs.find((t) => t.key === activeTab)?.label}
-          </h2>
-          {activeTab === 'tasks' && stats.overdue > 0 && (
-            <p className="text-red-600 text-sm mt-1">
-              {stats.overdue} overdue task{stats.overdue > 1 ? 's' : ''}
-            </p>
-          )}
-        </div>
-
+      {/* Queue list */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{activeTabLabel}</CardTitle>
+        </CardHeader>
         <div className="divide-y divide-surface-200">
-          {/* Tasks Tab Content */}
-          {activeTab === 'tasks' && (
-            <>
-              {myTasks.length === 0 ? (
-                <div className="p-8 text-center">
-                  <CheckCircleIcon className="w-12 h-12 text-emerald-600 mx-auto mb-3" />
-                  <p className="text-surface-600">No tasks assigned to you</p>
-                  <p className="text-surface-500 text-sm mt-1">You're all caught up!</p>
-                </div>
-              ) : (
-                myTasks.map((task: RiskWorkflowTask) => {
-                  const isOverdue = task.dueDate && isPast(new Date(task.dueDate));
-                  return (
-                    <div
-                      key={task.id}
-                      className={`p-4 hover:bg-surface-200/50 transition-colors ${
-                        isOverdue ? 'bg-red-900/10' : ''
-                      }`}
+          {queue.length === 0 ? (
+            <EmptyState
+              icon={<CheckCircle2 className="h-8 w-8 text-emerald-600" />}
+              title="You're all caught up"
+              description="No items in this queue right now."
+            />
+          ) : (
+            queue.map((risk) => (
+              <div
+                key={risk.id}
+                className="p-4 hover:bg-surface-100/40 transition-colors flex items-center gap-4"
+              >
+                <span
+                  className={cn(
+                    'h-3 w-3 rounded-full shrink-0',
+                    LEVEL_DOT[risk.inherentRisk] || 'bg-surface-500'
+                  )}
+                  aria-label={`Inherent risk: ${risk.inherentRisk}`}
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-brand-700 font-mono text-xs">{risk.riskId}</span>
+                    <span
+                      className={cn(
+                        'px-1.5 py-0.5 rounded text-[10px] font-medium text-surface-900 uppercase tracking-wider',
+                        LEVEL_DOT[risk.inherentRisk] || 'bg-surface-500'
+                      )}
                     >
-                      <div className="flex items-center gap-4">
-                        {/* Status Icon */}
-                        <div
-                          className={`p-2 rounded-lg ${
-                            task.status === 'in_progress' ? 'bg-blue-500/20' : 'bg-amber-500/20'
-                          }`}
-                        >
-                          {task.status === 'in_progress' ? (
-                            <ClockIcon className="w-5 h-5 text-blue-600" />
-                          ) : (
-                            <ClipboardDocumentListIcon className="w-5 h-5 text-amber-600" />
-                          )}
-                        </div>
-
-                        {/* Task Info */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-brand-400 font-mono text-sm">
-                              {task.risk?.riskId}
-                            </span>
-                            <span
-                              className={`px-2 py-0.5 rounded text-xs font-medium ${
-                                task.status === 'in_progress'
-                                  ? 'bg-blue-500/20 text-blue-600'
-                                  : 'bg-amber-500/20 text-amber-600'
-                              }`}
-                            >
-                              {task.status.replace('_', ' ')}
-                            </span>
-                            <span
-                              className={`px-2 py-0.5 rounded text-xs font-medium ${
-                                task.priority === 'critical'
-                                  ? 'bg-red-500/20 text-red-600'
-                                  : task.priority === 'high'
-                                    ? 'bg-orange-500/20 text-orange-600'
-                                    : task.priority === 'medium'
-                                      ? 'bg-amber-500/20 text-amber-600'
-                                      : 'bg-gray-500/20 text-gray-400'
-                              }`}
-                            >
-                              {task.priority}
-                            </span>
-                            {isOverdue && <Badge variant="danger">Overdue</Badge>}
-                          </div>
-                          <p className="text-white font-medium mt-1">{task.title}</p>
-                          <p className="text-surface-600 text-sm truncate">
-                            Risk: {task.risk?.title}
-                          </p>
-
-                          {/* Meta Info */}
-                          <div className="flex items-center gap-4 mt-2 text-xs text-surface-500">
-                            <span>Type: {task.taskType.replace('_', ' ')}</span>
-                            {task.dueDate && (
-                              <span className={isOverdue ? 'text-red-600 font-medium' : ''}>
-                                Due:{' '}
-                                {formatDistanceToNow(new Date(task.dueDate), { addSuffix: true })}
-                              </span>
-                            )}
-                            <span>Assigned: {format(new Date(task.assignedAt), 'MMM d')}</span>
-                          </div>
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div className="flex items-center gap-2 shrink-0">
-                          {task.status === 'pending' && (
-                            <button
-                              onClick={() =>
-                                startTaskMutation.mutate({ taskId: task.id, riskId: task.riskId })
-                              }
-                              disabled={startTaskMutation.isPending}
-                              className="flex items-center gap-1 px-3 py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm"
-                            >
-                              <PlayIcon className="w-4 h-4" />
-                              Start
-                            </button>
-                          )}
-                          {task.status === 'in_progress' && (
-                            <button
-                              onClick={() => completeTaskMutation.mutate(task.id)}
-                              disabled={completeTaskMutation.isPending}
-                              className="flex items-center gap-1 px-3 py-1.5 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 text-sm"
-                            >
-                              <CheckCircleIcon className="w-4 h-4" />
-                              Complete
-                            </button>
-                          )}
-                          <Link
-                            to={`/risks/${task.riskId}`}
-                            className="flex items-center gap-1 px-3 py-1.5 bg-surface-200 text-white rounded-lg hover:bg-surface-600 text-sm"
-                          >
-                            View Risk
-                            <ArrowRightIcon className="w-4 h-4" />
-                          </Link>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </>
-          )}
-
-          {/* Other Tabs - Risk-based Queue */}
-          {activeTab !== 'tasks' && (
-            <>
-              {getActiveQueue().length === 0 ? (
-                <div className="p-8 text-center">
-                  <CheckCircleIcon className="w-12 h-12 text-emerald-600 mx-auto mb-3" />
-                  <p className="text-surface-600">No items in this queue</p>
-                  <p className="text-surface-500 text-sm mt-1">You're all caught up!</p>
-                </div>
-              ) : (
-                getActiveQueue().map((risk: any) => (
-                  <div key={risk.id} className="p-4 hover:bg-surface-200/50 transition-colors">
-                    <div className="flex items-center gap-4">
-                      {/* Risk Level Indicator */}
-                      <div
-                        className={`w-3 h-3 rounded-full ${getRiskLevelColor(risk.inherentRisk)}`}
-                      />
-
-                      {/* Risk Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-brand-400 font-mono text-sm">{risk.riskId}</span>
-                          <span
-                            className={`px-2 py-0.5 rounded text-xs font-medium ${getRiskLevelColor(risk.inherentRisk)} text-white`}
-                          >
-                            {risk.inherentRisk}
-                          </span>
-                        </div>
-                        <p className="text-white font-medium mt-1 truncate">{risk.title}</p>
-                        <p className="text-surface-600 text-sm truncate">{risk.description}</p>
-
-                        {/* Meta Info */}
-                        <div className="flex items-center gap-4 mt-2 text-xs text-surface-500">
-                          <span>Category: {risk.category}</span>
-                          <span>Created: {new Date(risk.createdAt).toLocaleDateString()}</span>
-                          {risk.treatmentDueDate && (
-                            <span className="text-amber-600">
-                              Due: {new Date(risk.treatmentDueDate).toLocaleDateString()}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Action Button */}
-                      <Link
-                        to={`/risks/${risk.id}`}
-                        className="flex items-center gap-2 px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors shrink-0"
-                      >
-                        {getActionText()}
-                        <ArrowRightIcon className="w-4 h-4" />
-                      </Link>
-                    </div>
+                      {risk.inherentRisk}
+                    </span>
                   </div>
-                ))
-              )}
-            </>
+                  <p className="text-surface-900 font-medium mt-1 truncate">{risk.title}</p>
+                  <p className="text-small text-surface-600 truncate">{risk.description}</p>
+                  <div className="flex items-center gap-3 mt-1.5 text-xs text-surface-500 flex-wrap">
+                    <span>Category: {risk.category}</span>
+                    <span>Created: {new Date(risk.createdAt).toLocaleDateString()}</span>
+                    {risk.treatmentDueDate && (
+                      <span className="text-amber-700">
+                        Due: {new Date(risk.treatmentDueDate).toLocaleDateString()}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <Link to={`/risks/${risk.id}`} className="shrink-0">
+                  <Button size="sm" rightIcon={<ArrowRight className="h-3.5 w-3.5" />}>
+                    {getActionText()}
+                  </Button>
+                </Link>
+              </div>
+            ))
           )}
         </div>
-      </div>
+      </Card>
 
-      {/* Tips Section */}
-      <div className="bg-white rounded-xl border border-surface-200 p-6">
-        <h3 className="text-lg font-medium text-white mb-3">Queue Tips</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-          <div className="flex gap-3">
-            <div className="w-6 h-6 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0">
-              <span className="text-amber-600 font-bold">1</span>
-            </div>
-            <p className="text-surface-600">
-              <strong className="text-surface-800">Assessments:</strong> Complete risk analysis
-              including likelihood, impact, and recommended treatment.
-            </p>
+      {/* Tips */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Queue Tips</CardTitle>
+        </CardHeader>
+        <CardBody density="comfy">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-small">
+            <Tip n={1} tone="amber" label="Assessments">
+              Complete risk analysis including likelihood, impact, and recommended treatment.
+            </Tip>
+            <Tip n={2} tone="orange" label="Treatments">
+              Decide how to handle the risk — mitigate, accept, transfer, or avoid.
+            </Tip>
+            <Tip n={3} tone="purple" label="Approvals">
+              Executive review required for high-risk accept/transfer/avoid decisions.
+            </Tip>
+            <Tip n={4} tone="cyan" label="Reviews">
+              GRC team validates assessments before treatment decisions.
+            </Tip>
           </div>
-          <div className="flex gap-3">
-            <div className="w-6 h-6 rounded-full bg-orange-500/20 flex items-center justify-center shrink-0">
-              <span className="text-orange-600 font-bold">2</span>
-            </div>
-            <p className="text-surface-600">
-              <strong className="text-surface-800">Treatments:</strong> Decide how to handle the
-              risk - mitigate, accept, transfer, or avoid.
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <div className="w-6 h-6 rounded-full bg-purple-500/20 flex items-center justify-center shrink-0">
-              <span className="text-purple-600 font-bold">3</span>
-            </div>
-            <p className="text-surface-600">
-              <strong className="text-surface-800">Approvals:</strong> Executive review required for
-              high-risk accept/transfer/avoid decisions.
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <div className="w-6 h-6 rounded-full bg-cyan-500/20 flex items-center justify-center shrink-0">
-              <span className="text-cyan-600 font-bold">4</span>
-            </div>
-            <p className="text-surface-600">
-              <strong className="text-surface-800">Reviews:</strong> GRC team validates assessments
-              before treatment decisions.
-            </p>
-          </div>
-        </div>
+        </CardBody>
+      </Card>
+    </div>
+  );
+}
+
+function Tip({
+  n,
+  tone,
+  label,
+  children,
+}: {
+  n: number;
+  tone: 'amber' | 'orange' | 'purple' | 'cyan';
+  label: string;
+  children: React.ReactNode;
+}) {
+  const tones = {
+    amber: 'bg-amber-500/10 text-amber-700',
+    orange: 'bg-orange-500/10 text-orange-600',
+    purple: 'bg-purple-500/10 text-purple-600',
+    cyan: 'bg-cyan-500/10 text-cyan-600',
+  };
+  return (
+    <div className="flex gap-3">
+      <div
+        className={cn(
+          'h-6 w-6 rounded-full flex items-center justify-center shrink-0',
+          tones[tone]
+        )}
+      >
+        <span className="font-bold text-xs">{n}</span>
       </div>
+      <p className="text-surface-600">
+        <strong className="text-surface-800">{label}:</strong> {children}
+      </p>
     </div>
   );
 }

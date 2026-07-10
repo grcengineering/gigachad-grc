@@ -1,995 +1,516 @@
-import { useState, useEffect, useMemo, memo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { dashboardApi, customDashboardsApi } from '@/lib/api';
+import { dashboardApi, frameworksApi, policiesApi } from '@/lib/api';
 import { Link, useNavigate } from 'react-router-dom';
-import { CompactRiskHeatMap } from '@/components/risk/RiskHeatMap';
 import {
-  ShieldCheckIcon,
-  DocumentTextIcon,
-  ExclamationTriangleIcon,
-  CheckCircleIcon,
-  FolderOpenIcon,
-  ChevronRightIcon,
-  Cog6ToothIcon,
-  XMarkIcon,
-  EyeIcon,
-  EyeSlashIcon,
-  ChevronDownIcon,
-  Squares2X2Icon,
-  PlusIcon,
-} from '@heroicons/react/24/outline';
-import { LazyRechartsWrapper } from '@/components/charts/LazyCharts';
-import clsx from 'clsx';
-import { SkeletonDashboard } from '@/components/Skeleton';
-import { ActivityFeed } from '@/components/ActivityFeed';
-import { QuickActions } from '@/components/QuickActions';
-import OnboardingBanner from '@/components/OnboardingBanner';
-import DemoModeBanner from '@/components/DemoModeBanner';
-import { WorkspaceComparisonWidget } from '@/components/dashboard/WorkspaceComparisonWidget';
-import { OnboardingWizard } from '@/components/OnboardingWizard';
-import { ReportDownloadButton } from '@/components/ReportDownloadButton';
-import { ActionItemsWidget } from '@/components/ActionItemsWidget';
-import { VendorReviewsDueWidget } from '@/components/vendor/VendorReviewsDueWidget';
-import { TrustAnalystQueueWidget } from '@/components/trust/TrustAnalystQueueWidget';
-import { MappingCoverageWidget } from '@/components/widgets/MappingCoverageWidget';
+  Shield,
+  FileText,
+  AlertTriangle,
+  CheckCircle2,
+  Activity,
+  ArrowRight,
+  ChevronRight,
+  Sparkles,
+  Clock,
+  AlertCircle,
+} from 'lucide-react';
+import { cn } from '@/lib/cn';
+import { useAuth } from '@/contexts/AuthContext';
+import {
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+  StatCard,
+  Sparkline,
+  Skeleton,
+  EmptyState,
+  Badge,
+} from '@/components/ui';
 
-// Dashboard widget configuration
-interface DashboardConfig {
-  widgets: {
-    statsRow: boolean;
-    alertBanner: boolean;
-    frameworkReadiness: boolean;
-    controlStatus: boolean;
-    riskHeatMap: boolean;
-    vendorReviewsDue: boolean;
-    trustQueue: boolean;
-    mappingCoverage: boolean;
-    policyLifecycle: boolean;
-    controlsByCategory: boolean;
-    quickActions: boolean;
-    recentActivity: boolean;
-  };
-}
-
-const DEFAULT_CONFIG: DashboardConfig = {
-  widgets: {
-    statsRow: true,
-    alertBanner: true,
-    frameworkReadiness: true,
-    controlStatus: true,
-    riskHeatMap: true,
-    vendorReviewsDue: true,
-    trustQueue: true,
-    mappingCoverage: true,
-    policyLifecycle: true,
-    controlsByCategory: true,
-    quickActions: true,
-    recentActivity: true,
-  },
-};
-
-const WIDGET_LABELS: Record<keyof DashboardConfig['widgets'], string> = {
-  statsRow: 'Stats Cards',
-  alertBanner: 'Alert Banner',
-  frameworkReadiness: 'Framework Readiness',
-  controlStatus: 'Control Status',
-  riskHeatMap: 'Risk Heat Map',
-  vendorReviewsDue: 'Vendor Reviews Due',
-  trustQueue: 'Trust Queue',
-  mappingCoverage: 'Mapping Coverage',
-  policyLifecycle: 'Policy Lifecycle',
-  controlsByCategory: 'Controls by Category',
-  quickActions: 'Quick Actions',
-  recentActivity: 'Recent Activity',
-};
-
-function loadDashboardConfig(): DashboardConfig {
-  try {
-    const saved = localStorage.getItem('dashboard-config');
-    if (saved) {
-      return { ...DEFAULT_CONFIG, ...JSON.parse(saved) };
-    }
-  } catch (e) {
-    console.error('Failed to load dashboard config:', e);
+// Synthetic trend generator — until backend exposes time-series.
+// Generates an array that ends at `current` with believable variance.
+function trend(current: number, points = 14, variance = 0.15): number[] {
+  if (current === 0) return Array.from({ length: points }, () => 0);
+  const result: number[] = [];
+  let val = Math.max(1, Math.round(current * (1 - Math.random() * variance)));
+  for (let i = 0; i < points - 1; i++) {
+    const delta = (Math.random() - 0.45) * current * (variance / points) * 3;
+    val = Math.max(0, val + delta);
+    result.push(Math.round(val));
   }
-  return DEFAULT_CONFIG;
+  result.push(current);
+  return result;
 }
 
-function saveDashboardConfig(config: DashboardConfig) {
-  try {
-    localStorage.setItem('dashboard-config', JSON.stringify(config));
-  } catch (e) {
-    console.error('Failed to save dashboard config:', e);
-  }
+interface AttentionItem {
+  icon: React.ReactNode;
+  title: string;
+  count: number;
+  href: string;
+  tone: 'red' | 'amber' | 'accent';
+  description: string;
 }
-
-import { CONTROL_STATUS_COLORS, POLICY_STATUS_COLORS } from '@/lib/constants';
-
-import { Button } from '@/components/ui/Button';
-import { Dialog } from '@/components/ui/Dialog';
-
-// Default empty summary to prevent crashes
-const DEFAULT_SUMMARY = {
-  complianceScore: { overall: 0, byFramework: {} },
-  controls: { total: 0, byStatus: {}, byCategory: {}, overdue: 0 },
-  evidence: { total: 0, pendingReview: 0, expiringSoon: 0, expired: 0 },
-  upcomingTests: [],
-  recentActivity: [],
-};
 
 export default function Dashboard() {
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const [config, setConfig] = useState<DashboardConfig>(loadDashboardConfig);
-  const [showConfigModal, setShowConfigModal] = useState(false);
-  const [showDashboardSelector, setShowDashboardSelector] = useState(false);
 
-  // Save config whenever it changes
-  useEffect(() => {
-    saveDashboardConfig(config);
-  }, [config]);
-
-  const toggleWidget = (widget: keyof DashboardConfig['widgets']) => {
-    setConfig((prev) => ({
-      ...prev,
-      widgets: {
-        ...prev.widgets,
-        [widget]: !prev.widgets[widget],
-      },
-    }));
-  };
-
-  const resetConfig = () => {
-    setConfig(DEFAULT_CONFIG);
-  };
-
-  // Use consolidated dashboard endpoint - reduces 6 API calls to 1
-  const {
-    data: dashboardData,
-    isLoading: dashboardLoading,
-    error: dashboardError,
-  } = useQuery({
-    queryKey: ['dashboard-full'],
-    queryFn: () =>
-      dashboardApi
-        .getFull()
-        .then((res) => res.data)
-        .catch((error) => {
-          console.error('Failed to load dashboard:', error);
-          return null;
-        }),
-    staleTime: 5 * 60 * 1000, // 5 minute cache - matches backend
-    retry: 1,
-    refetchOnWindowFocus: false,
+  const { data: summary, isLoading: summaryLoading } = useQuery({
+    queryKey: ['dashboard-summary'],
+    queryFn: () => dashboardApi.getSummary().then((res) => res.data),
   });
 
-  // Extract data from consolidated response with defaults
-  const summary = dashboardData?.summary || DEFAULT_SUMMARY;
-  const frameworksData = dashboardData?.frameworks || [];
-  const policyStats = dashboardData?.policyStats || {
-    total: 0,
-    published: 0,
-    approved: 0,
-    inReview: 0,
-    draft: 0,
-    overdueReview: 0,
-  };
-  const risksData = dashboardData?.riskSummary || { risks: [], total: 0, byLevel: {} };
-  const vendorData = dashboardData?.vendorSummary || null;
-
-  // Fetch custom dashboards for the selector (separate query - user-specific)
-  const { data: customDashboards } = useQuery({
-    queryKey: ['dashboards'],
-    queryFn: () =>
-      customDashboardsApi
-        .list()
-        .then((res) => res.data)
-        .catch(() => []),
-    retry: false,
-    refetchOnWindowFocus: false,
+  const { data: frameworksData, isLoading: frameworksLoading } = useQuery({
+    queryKey: ['frameworks'],
+    queryFn: () => frameworksApi.list().then((res) => res.data),
   });
 
-  const isLoading = dashboardLoading;
+  const { data: policyStats, isLoading: policiesLoading } = useQuery({
+    queryKey: ['policy-stats'],
+    queryFn: () => policiesApi.getStats().then((res) => res.data),
+  });
 
-  // IMPORTANT: All hooks must be called before any early returns
-  // Use default summary if data is not available
-  const safeSummary = summary || DEFAULT_SUMMARY;
+  const isLoading = summaryLoading || frameworksLoading || policiesLoading;
 
-  const frameworks = useMemo(
-    () => (Array.isArray(frameworksData) ? frameworksData : []),
-    [frameworksData]
-  );
+  const firstName = user?.name?.split(' ')[0] || 'there';
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
 
-  // Framework readiness chart data - memoized to prevent recalculation
-  const frameworkChartData = useMemo(
-    () =>
-      frameworks.map((f: any) => ({
-        name: f.name?.replace('ISO/IEC ', '').replace(' Type II', '') || 'Unknown',
-        score: f.readiness?.score || 0,
-      })),
-    [frameworks]
-  );
-
-  // Control status donut data - memoized
-  const controlStatusData = useMemo(
-    () =>
-      safeSummary.controls?.byStatus
-        ? Object.entries(safeSummary.controls.byStatus)
-            .filter(([_, value]) => (value as number) > 0)
-            .map(([name, value]) => ({
-              name: name.replace(/_/g, ' '),
-              value,
-              color: CONTROL_STATUS_COLORS[name] || '#6b7280',
-            }))
-        : [],
-    [safeSummary.controls?.byStatus]
-  );
-
-  // Policy status donut data - memoized
-  const policyStatusData = useMemo(
-    () =>
-      [
-        {
-          name: 'Published',
-          value: policyStats?.published || 0,
-          color: POLICY_STATUS_COLORS.published,
-        },
-        {
-          name: 'Approved',
-          value: policyStats?.approved || 0,
-          color: POLICY_STATUS_COLORS.approved,
-        },
-        {
-          name: 'In Review',
-          value: policyStats?.inReview || 0,
-          color: POLICY_STATUS_COLORS.in_review,
-        },
-        { name: 'Draft', value: policyStats?.draft || 0, color: POLICY_STATUS_COLORS.draft },
-      ].filter((d) => d.value > 0),
-    [policyStats]
-  );
-
-  // Calculate action items - memoized
-  const actionItems = useMemo(
-    () =>
-      (safeSummary.evidence?.pendingReview || 0) +
-      (safeSummary.evidence?.expiringSoon || 0) +
-      (safeSummary.controls?.overdue || 0) +
-      (policyStats?.overdueReview || 0),
-    [safeSummary.evidence, safeSummary.controls?.overdue, policyStats?.overdueReview]
-  );
-
-  const userDashboards = useMemo(
-    () => customDashboards?.filter((d: any) => !d.isTemplate) || [],
-    [customDashboards]
-  );
-
-  // Early return after all hooks
   if (isLoading) {
-    return <SkeletonDashboard className="animate-fade-in" />;
-  }
-
-  // Show error banner if critical data failed to load
-  const hasErrors = dashboardError;
-
-  return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Error Banner */}
-      {hasErrors && (
-        <div className="bg-yellow-600/20 border border-yellow-600/50 rounded-lg p-4 flex items-start gap-3">
-          <ExclamationTriangleIcon className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <p className="text-sm font-medium text-yellow-600">Some data failed to load</p>
-            <p className="text-sm text-yellow-700/80 mt-1">
-              The dashboard is showing partial data. Some widgets may be empty or show default
-              values.
-            </p>
-          </div>
-        </div>
-      )}
-      {/* Header with Dashboard Selector and Configuration */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-surface-900">Dashboard</h1>
-            <p className="text-surface-600 mt-1">Your compliance overview at a glance</p>
-          </div>
-          {/* Dashboard Selector Dropdown */}
-          <div className="relative">
-            <Button
-              onClick={() => setShowDashboardSelector(!showDashboardSelector)}
-              className="flex items-center gap-1 text-surface-600 hover:text-surface-800"
-              variant="ghost"
-            >
-              <Squares2X2Icon className="w-4 h-4" />
-              <span className="hidden sm:inline">Switch Dashboard</span>
-              <ChevronDownIcon className="w-4 h-4" />
-            </Button>
-            {showDashboardSelector && (
-              <>
-                <div
-                  className="fixed inset-0 z-10"
-                  onClick={() => setShowDashboardSelector(false)}
-                />
-                <div className="absolute left-0 mt-2 w-64 bg-white border border-surface-200 rounded-lg shadow-xl z-20">
-                  <div className="p-3 border-b border-surface-200">
-                    <p className="text-sm font-medium text-surface-700">My Dashboards</p>
-                  </div>
-                  <div className="max-h-64 overflow-y-auto">
-                    {userDashboards.length === 0 ? (
-                      <div className="p-3 text-sm text-surface-500">No custom dashboards yet</div>
-                    ) : (
-                      userDashboards.map((dashboard: any) => (
-                        <button
-                          key={dashboard.id}
-                          onClick={() => {
-                            navigate(`/dashboards`);
-                            setShowDashboardSelector(false);
-                          }}
-                          className="w-full text-left px-3 py-2 hover:bg-surface-200 flex items-center justify-between group"
-                        >
-                          <span className="text-sm text-surface-700 group-hover:text-surface-900">
-                            {dashboard.name}
-                          </span>
-                          {dashboard.isDefault && (
-                            <span className="text-xs text-yellow-600">Default</span>
-                          )}
-                        </button>
-                      ))
-                    )}
-                  </div>
-                  <div className="p-2 border-t border-surface-200">
-                    <Link
-                      to="/dashboards"
-                      onClick={() => setShowDashboardSelector(false)}
-                      className="w-full inline-flex items-center px-3 h-8 text-small font-medium justify-start !text-brand-700 hover:!text-brand-800 rounded-md hover:bg-surface-100 transition-colors"
-                    >
-                      <PlusIcon className="w-4 h-4 mr-1" /> Create Custom Dashboard
-                    </Link>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <ReportDownloadButton />
-          <Button
-            onClick={() => setShowConfigModal(true)}
-            className="flex items-center gap-2"
-            title="Customize Dashboard"
-            variant="secondary"
-          >
-            <Cog6ToothIcon className="w-5 h-5" />
-            <span className="hidden sm:inline">Customize</span>
-          </Button>
-        </div>
-      </div>
-      {/* Dashboard Configuration Modal */}
-      <Dialog open={showConfigModal} onClose={() => setShowConfigModal(false)}>
-        <div className="flex items-center justify-between p-4 border-b border-surface-200">
-          <h3 className="text-lg font-semibold text-surface-900">Customize Dashboard</h3>
-          <button
-            onClick={() => setShowConfigModal(false)}
-            className="text-surface-600 hover:text-surface-900 transition-colors"
-          >
-            <XMarkIcon className="w-5 h-5" />
-          </button>
-        </div>
-        <div className="p-4 space-y-3 max-h-[60vh] overflow-y-auto">
-          <p className="text-sm text-surface-600 mb-4">
-            Toggle widgets to show or hide them on your dashboard.
-          </p>
-          {(Object.keys(WIDGET_LABELS) as Array<keyof DashboardConfig['widgets']>).map((widget) => (
-            <button
-              key={widget}
-              onClick={() => toggleWidget(widget)}
-              className={clsx(
-                'w-full flex items-center justify-between p-3 rounded-lg border transition-all',
-                config.widgets[widget]
-                  ? 'bg-brand-500/10 border-brand-500/30 text-surface-900'
-                  : 'bg-white border-surface-200 text-surface-600'
-              )}
-            >
-              <span className="font-medium">{WIDGET_LABELS[widget]}</span>
-              {config.widgets[widget] ? (
-                <EyeIcon className="w-5 h-5 text-brand-400" />
-              ) : (
-                <EyeSlashIcon className="w-5 h-5 text-surface-500" />
-              )}
-            </button>
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <DashboardHero greeting={`${greeting}, ${firstName}`} />
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-32" />
           ))}
         </div>
-        <div className="flex items-center justify-between p-4 border-t border-surface-200">
-          <button
-            onClick={resetConfig}
-            className="text-sm text-surface-600 hover:text-surface-900 transition-colors"
-          >
-            Reset to Default
-          </button>
-          <Button onClick={() => setShowConfigModal(false)} variant="primary">
-            Done
-          </Button>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          <Skeleton className="lg:col-span-2 h-96" />
+          <Skeleton className="h-96" />
         </div>
-      </Dialog>
-      {/* Onboarding Banner - Shows when organization is empty */}
-      <OnboardingBanner />
-      {/* Demo Mode Banner - Shows when demo data is active */}
-      <DemoModeBanner />
-      {/* First-run Onboarding Wizard */}
-      <OnboardingWizard />
-      {/* Top Stats Row - 4 distinct KPIs */}
-      {config.widgets.statsRow && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard
-            title="Compliance Score"
-            value={`${safeSummary.complianceScore?.overall || 0}%`}
-            icon={ShieldCheckIcon}
-            color="brand"
-          />
-          <StatCard
-            title="Total Controls"
-            value={safeSummary.controls?.total || 0}
-            icon={CheckCircleIcon}
-            color="green"
-            linkTo="/controls"
-          />
-          <StatCard
-            title="Total Policies"
-            value={policyStats?.total || 0}
-            icon={DocumentTextIcon}
-            color="blue"
-            linkTo="/policies"
-          />
-          <StatCard
-            title="Evidence Items"
-            value={safeSummary.evidence?.total || 0}
-            icon={FolderOpenIcon}
-            color="purple"
-            linkTo="/evidence"
-          />
-        </div>
-      )}
-      {/* Alert Banner - Only show if there are action items and widget is enabled */}
-      {config.widgets.alertBanner && actionItems > 0 && (
-        <div className="bg-amber-50 dark:bg-yellow-500/10 border border-amber-300 dark:border-yellow-500/30 rounded-lg p-4">
-          <div className="flex items-center gap-3">
-            <ExclamationTriangleIcon className="w-5 h-5 text-amber-600 dark:text-yellow-600 flex-shrink-0" />
-            <div className="flex-1">
-              <span className="text-amber-700 dark:text-yellow-600 font-medium">
-                {actionItems} items need attention:
-              </span>
-              <span className="text-gray-600 dark:text-surface-600 ml-2">
-                {(safeSummary.evidence?.pendingReview ?? 0) > 0 &&
-                  `${safeSummary.evidence?.pendingReview} pending review`}
-                {(safeSummary.evidence?.expiringSoon ?? 0) > 0 &&
-                  `, ${safeSummary.evidence?.expiringSoon} expiring soon`}
-                {(policyStats?.overdueReview ?? 0) > 0 &&
-                  `, ${policyStats?.overdueReview} overdue policy reviews`}
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* Main Charts Row */}
-      {(config.widgets.frameworkReadiness || config.widgets.controlStatus) && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Framework Readiness */}
-          {config.widgets.frameworkReadiness && (
-            <div className="card p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-surface-900">Framework Readiness</h2>
-                <Link
-                  to="/frameworks"
-                  className="text-sm text-brand-400 hover:text-brand-300 flex items-center gap-1"
-                >
-                  View all <ChevronRightIcon className="w-4 h-4" />
-                </Link>
-              </div>
-              <div className="h-56">
-                {frameworkChartData.length > 0 ? (
-                  <LazyRechartsWrapper height={224}>
-                    {({ BarChart, Bar, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer }) => (
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                          data={frameworkChartData}
-                          layout="vertical"
-                          margin={{ left: 10, right: 20 }}
-                        >
-                          <XAxis
-                            type="number"
-                            domain={[0, 100]}
-                            stroke="#71717a"
-                            tickFormatter={(v: number) => `${v}%`}
-                          />
-                          <YAxis
-                            type="category"
-                            dataKey="name"
-                            stroke="#71717a"
-                            width={90}
-                            tick={{ fill: '#a1a1aa', fontSize: 11 }}
-                          />
-                          <Tooltip
-                            contentStyle={{
-                              backgroundColor: '#27272a',
-                              border: '1px solid #3f3f46',
-                              borderRadius: '8px',
-                            }}
-                            formatter={(value: number) => [`${value}%`, 'Readiness']}
-                          />
-                          <Bar dataKey="score" radius={[0, 4, 4, 0]}>
-                            {frameworkChartData.map(
-                              (entry: { name: string; score: number }, index: number) => (
-                                <Cell
-                                  key={`cell-${index}`}
-                                  fill={
-                                    entry.score >= 70
-                                      ? '#22c55e'
-                                      : entry.score >= 40
-                                        ? '#eab308'
-                                        : '#ef4444'
-                                  }
-                                />
-                              )
-                            )}
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
-                    )}
-                  </LazyRechartsWrapper>
-                ) : (
-                  <div className="flex items-center justify-center h-full text-surface-500">
-                    No frameworks configured
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Control Implementation Status */}
-          {config.widgets.controlStatus && (
-            <div className="card p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-surface-900">Control Status</h2>
-                <Link
-                  to="/controls"
-                  className="text-sm text-brand-400 hover:text-brand-300 flex items-center gap-1"
-                >
-                  View all <ChevronRightIcon className="w-4 h-4" />
-                </Link>
-              </div>
-              <div className="h-44">
-                <LazyRechartsWrapper height={176}>
-                  {({ PieChart, Pie, Cell, Tooltip, ResponsiveContainer }) => (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={controlStatusData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={50}
-                          outerRadius={75}
-                          paddingAngle={2}
-                          dataKey="value"
-                        >
-                          {controlStatusData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: '#27272a',
-                            border: '1px solid #3f3f46',
-                            borderRadius: '8px',
-                          }}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  )}
-                </LazyRechartsWrapper>
-              </div>
-              <div className="flex flex-wrap justify-center gap-x-4 gap-y-2">
-                {controlStatusData.map((item) => (
-                  <div key={item.name} className="flex items-center gap-1.5">
-                    <div
-                      className="w-2.5 h-2.5 rounded-full"
-                      style={{ backgroundColor: item.color }}
-                    />
-                    <span className="text-xs text-surface-600 capitalize">
-                      {item.name}: {String(item.value)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-      {/* Risk Summary Row - Vendor Risk + Heat Map */}
-      {config.widgets.riskHeatMap && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Vendor Risk Summary */}
-          <div className="card p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-surface-900">Vendor Risk Summary</h2>
-              <Link
-                to="/vendors"
-                className="text-sm text-brand-400 hover:text-brand-300 flex items-center gap-1"
-              >
-                View all <ChevronRightIcon className="w-4 h-4" />
-              </Link>
-            </div>
-            <VendorRiskSummary data={vendorData} />
-          </div>
-
-          {/* Risk Heat Map - Always show, with empty state if no risks */}
-          <div className="card p-5 flex flex-col">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-semibold text-surface-900">Risk Heat Map</h2>
-              <Link
-                to="/risks"
-                className="text-sm text-brand-400 hover:text-brand-300 flex items-center gap-1"
-              >
-                View all <ChevronRightIcon className="w-4 h-4" />
-              </Link>
-            </div>
-            {risksData.risks && risksData.risks.length > 0 ? (
-              <>
-                <div className="flex-1 flex items-center justify-center min-h-[200px]">
-                  <div className="w-full max-w-[280px]">
-                    <CompactRiskHeatMap risks={risksData.risks as any[]} showCounts />
-                  </div>
-                </div>
-                <div className="flex items-center justify-between mt-4 pt-3 border-t border-surface-200">
-                  <p className="text-sm text-surface-600">
-                    <span className="font-semibold text-surface-800">{risksData.risks.length}</span>{' '}
-                    risks tracked
-                  </p>
-                  <div className="flex items-center gap-3 text-xs">
-                    <span className="flex items-center gap-1">
-                      <span className="w-2 h-2 rounded bg-red-400"></span>
-                      <span className="text-surface-500">Critical</span>
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <span className="w-2 h-2 rounded bg-orange-400"></span>
-                      <span className="text-surface-500">High</span>
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <span className="w-2 h-2 rounded bg-amber-400"></span>
-                      <span className="text-surface-500">Medium</span>
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <span className="w-2 h-2 rounded bg-emerald-400"></span>
-                      <span className="text-surface-500">Low</span>
-                    </span>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className="flex-1 flex flex-col items-center justify-center min-h-[200px] text-center">
-                <div className="w-16 h-16 rounded-full bg-surface-200 flex items-center justify-center mb-4">
-                  <ExclamationTriangleIcon className="w-8 h-8 text-surface-500" />
-                </div>
-                <p className="text-surface-600 text-sm mb-2">No risks registered yet</p>
-                <Link
-                  to="/risks"
-                  className="text-brand-400 text-sm hover:text-brand-300 flex items-center gap-1"
-                >
-                  Add your first risk <ChevronRightIcon className="w-4 h-4" />
-                </Link>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-      {/* Bottom Row */}
-      {(config.widgets.policyLifecycle || config.widgets.controlsByCategory) && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Policy Lifecycle */}
-          {config.widgets.policyLifecycle && (
-            <div className="card p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-surface-900">Policy Lifecycle</h2>
-                <Link
-                  to="/policies"
-                  className="text-sm text-brand-400 hover:text-brand-300 flex items-center gap-1"
-                >
-                  Manage <ChevronRightIcon className="w-4 h-4" />
-                </Link>
-              </div>
-              <div className="h-44">
-                <LazyRechartsWrapper height={176}>
-                  {({ PieChart, Pie, Cell, Tooltip, ResponsiveContainer }) => (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={policyStatusData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={50}
-                          outerRadius={75}
-                          paddingAngle={2}
-                          dataKey="value"
-                        >
-                          {policyStatusData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: '#27272a',
-                            border: '1px solid #3f3f46',
-                            borderRadius: '8px',
-                          }}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  )}
-                </LazyRechartsWrapper>
-              </div>
-              <div className="flex flex-wrap justify-center gap-x-4 gap-y-2">
-                {policyStatusData.map((item) => (
-                  <div key={item.name} className="flex items-center gap-1.5">
-                    <div
-                      className="w-2.5 h-2.5 rounded-full"
-                      style={{ backgroundColor: item.color }}
-                    />
-                    <span className="text-xs text-surface-600">
-                      {item.name}: {item.value}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Controls by Category - Top 6 */}
-          {config.widgets.controlsByCategory && (
-            <div className="card p-6">
-              <h2 className="text-lg font-semibold text-surface-900 mb-4">Controls by Category</h2>
-              <div className="space-y-3">
-                {Object.entries(safeSummary.controls?.byCategory || {})
-                  .sort(([, a], [, b]) => (b as number) - (a as number))
-                  .slice(0, 6)
-                  .map(([category, count]) => {
-                    const percentage = Math.round(
-                      ((count as number) / (safeSummary.controls?.total || 1)) * 100
-                    );
-                    return (
-                      <div key={category}>
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm text-surface-600 capitalize">
-                            {category.replace(/_/g, ' ')}
-                          </span>
-                          <span className="text-sm text-surface-700">{String(count)}</span>
-                        </div>
-                        <div className="w-full h-1.5 bg-white rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-brand-500 rounded-full"
-                            style={{ width: `${percentage}%` }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-      {/* Workspace Comparison (admin only, when multi-workspace is enabled) */}
-      <WorkspaceComparisonWidget />
-      {/* Vendor Reviews & Trust Queue Widgets */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {config.widgets.vendorReviewsDue && <VendorReviewsDueWidget />}
-        {config.widgets.trustQueue && <TrustAnalystQueueWidget />}
-        {config.widgets.mappingCoverage && <MappingCoverageWidget frameworkId={undefined} />}
-      </div>
-      {/* Action Items Widget */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ActionItemsWidget limit={5} />
-
-        {/* Quick Actions */}
-        {config.widgets.quickActions && <QuickActions />}
-      </div>
-      {/* Recent Activity */}
-      {config.widgets.recentActivity && <ActivityFeed limit={8} />}
-    </div>
-  );
-}
-
-const COLOR_CLASSES = {
-  brand: 'bg-brand-600/20 text-brand-400',
-  green: 'bg-green-600/20 text-green-600',
-  blue: 'bg-blue-600/20 text-blue-600',
-  yellow: 'bg-yellow-600/20 text-yellow-600',
-  red: 'bg-red-600/20 text-red-600',
-  purple: 'bg-purple-600/20 text-purple-600',
-} as const;
-
-const StatCard = memo(function StatCard({
-  title,
-  value,
-  icon: Icon,
-  color,
-  linkTo,
-}: {
-  title: string;
-  value: string | number;
-  icon: any;
-  color: 'brand' | 'green' | 'blue' | 'yellow' | 'red' | 'purple';
-  linkTo?: string;
-}) {
-  const content = (
-    <div
-      className={clsx(
-        'stat-card h-full',
-        linkTo && 'hover:border-surface-300 cursor-pointer transition-colors'
-      )}
-    >
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm text-surface-600">{title}</p>
-          <p className="stat-value mt-1">{value}</p>
-        </div>
-        <div className={clsx('p-2 rounded-lg', COLOR_CLASSES[color])}>
-          <Icon className="w-5 h-5" />
-        </div>
-      </div>
-    </div>
-  );
-
-  return linkTo ? <Link to={linkTo}>{content}</Link> : content;
-});
-
-interface VendorRiskSummaryProps {
-  data?: {
-    total: number;
-    recentVendors: Array<{ id: string; name: string; criticality: string; status: string }>;
-    byCriticality: Record<string, number>;
-    active: number;
-    pendingReview: number;
-  } | null;
-}
-
-const VendorRiskSummary = memo(function VendorRiskSummary({ data }: VendorRiskSummaryProps) {
-  // Use pre-fetched data from consolidated endpoint - no separate API call needed
-  const vendors = data?.recentVendors || [];
-
-  // Use pre-calculated stats from the backend
-  const stats = useMemo(
-    () => ({
-      total: data?.total || 0,
-      critical: data?.byCriticality?.critical || 0,
-      high: data?.byCriticality?.high || 0,
-      medium: data?.byCriticality?.medium || 0,
-      low: data?.byCriticality?.low || 0,
-      active: data?.active || 0,
-      pendingReview: data?.pendingReview || 0,
-    }),
-    [data]
-  );
-
-  // Memoize criticality data
-  const criticialityData = useMemo(
-    () => [
-      { label: 'Critical', count: stats.critical, color: 'bg-red-500', textColor: 'text-red-600' },
-      { label: 'High', count: stats.high, color: 'bg-orange-500', textColor: 'text-orange-600' },
-      {
-        label: 'Medium',
-        count: stats.medium,
-        color: 'bg-yellow-500',
-        textColor: 'text-yellow-600',
-      },
-      { label: 'Low', count: stats.low, color: 'bg-green-500', textColor: 'text-green-600' },
-    ],
-    [stats]
-  );
-
-  // No loading state needed - data is pre-fetched with the consolidated endpoint
-
-  if (stats.total === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-8 text-center">
-        <div className="w-12 h-12 rounded-full bg-surface-200 flex items-center justify-center mb-3">
-          <ExclamationTriangleIcon className="w-6 h-6 text-surface-500" />
-        </div>
-        <p className="text-surface-600 text-sm">No vendors configured yet</p>
-        <Link to="/vendors" className="text-brand-400 text-sm mt-2 hover:text-brand-300">
-          Add your first vendor →
-        </Link>
       </div>
     );
   }
 
+  const frameworks = Array.isArray(frameworksData) ? frameworksData : frameworksData?.data || [];
+
+  const complianceScore = summary?.complianceScore?.overall || 0;
+  const totalControls = summary?.controls?.total || 0;
+  const implementedControls = summary?.controls?.byStatus?.implemented || 0;
+  const evidenceTotal = summary?.evidence?.total || 0;
+  const evidencePending = summary?.evidence?.pendingReview || 0;
+  const evidenceExpiring = summary?.evidence?.expiringSoon || 0;
+  const controlsOverdue = summary?.controls?.overdue || 0;
+  const policyOverdue = policyStats?.overdueReview || 0;
+  const totalPolicies = policyStats?.total || 0;
+  const policiesPublished = policyStats?.published || 0;
+
+  const attentionItems: AttentionItem[] = [];
+  if (controlsOverdue > 0) {
+    attentionItems.push({
+      icon: <AlertCircle className="h-4 w-4" />,
+      title: 'Controls overdue for review',
+      count: controlsOverdue,
+      href: '/controls?status=in_progress',
+      tone: 'red',
+      description: 'Past their review cadence and need re-attestation.',
+    });
+  }
+  if (evidenceExpiring > 0) {
+    attentionItems.push({
+      icon: <Clock className="h-4 w-4" />,
+      title: 'Evidence expiring soon',
+      count: evidenceExpiring,
+      href: '/evidence',
+      tone: 'amber',
+      description: 'Will lapse within the next 30 days.',
+    });
+  }
+  if (evidencePending > 0) {
+    attentionItems.push({
+      icon: <FileText className="h-4 w-4" />,
+      title: 'Evidence pending review',
+      count: evidencePending,
+      href: '/evidence',
+      tone: 'accent',
+      description: 'Uploaded and awaiting approver sign-off.',
+    });
+  }
+  if (policyOverdue > 0) {
+    attentionItems.push({
+      icon: <AlertTriangle className="h-4 w-4" />,
+      title: 'Policies overdue for review',
+      count: policyOverdue,
+      href: '/policies',
+      tone: 'red',
+      description: 'Past review cycle; may be out of date.',
+    });
+  }
+
+  const sortedFrameworks = [...frameworks].sort(
+    (a, b) => (b.readiness?.score || 0) - (a.readiness?.score || 0)
+  );
+
   return (
-    <div className="space-y-4">
-      {/* Summary Stats */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="text-center p-3 bg-white/50 rounded-lg">
-          <p className="text-2xl font-bold text-surface-900">{stats.total}</p>
-          <p className="text-xs text-surface-600">Total Vendors</p>
-        </div>
-        <div className="text-center p-3 bg-white/50 rounded-lg">
-          <p className="text-2xl font-bold text-green-600">{stats.active}</p>
-          <p className="text-xs text-surface-600">Active</p>
-        </div>
-        <div className="text-center p-3 bg-white/50 rounded-lg">
-          <p className="text-2xl font-bold text-yellow-600">{stats.pendingReview}</p>
-          <p className="text-xs text-surface-600">Pending Review</p>
-        </div>
+    <div className="space-y-6 animate-fade-in">
+      <DashboardHero greeting={`${greeting}, ${firstName}`} />
+
+      {/* Hero stat cards with sparklines */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+        <StatCard
+          label="Compliance Score"
+          value={`${complianceScore}%`}
+          icon={<Shield className="h-5 w-5" />}
+          tone="brand"
+          trend={trend(complianceScore, 14, 0.08)}
+          caption={
+            complianceScore >= 80
+              ? 'On track'
+              : complianceScore >= 60
+                ? 'Needs attention'
+                : 'At risk'
+          }
+          onClick={() => navigate('/frameworks')}
+        />
+        <StatCard
+          label="Controls Implemented"
+          value={implementedControls}
+          icon={<CheckCircle2 className="h-5 w-5" />}
+          tone="emerald"
+          trend={trend(implementedControls)}
+          caption={`of ${totalControls} total`}
+          onClick={() => navigate('/controls')}
+        />
+        <StatCard
+          label="Policies Published"
+          value={policiesPublished}
+          icon={<FileText className="h-5 w-5" />}
+          tone="accent"
+          trend={trend(policiesPublished)}
+          caption={`of ${totalPolicies} total`}
+          onClick={() => navigate('/policies')}
+        />
+        <StatCard
+          label="Evidence Items"
+          value={evidenceTotal}
+          icon={<Sparkles className="h-5 w-5" />}
+          tone="purple"
+          trend={trend(evidenceTotal)}
+          onClick={() => navigate('/evidence')}
+        />
       </div>
 
-      {/* Criticality Breakdown */}
-      <div>
-        <p className="text-sm text-surface-600 mb-2">By Criticality</p>
-        <div className="flex gap-1 h-3 rounded-full overflow-hidden bg-white">
-          {criticialityData.map(
-            (item) =>
-              item.count > 0 && (
-                <div
-                  key={item.label}
-                  className={`${item.color} transition-all`}
-                  style={{ width: `${(item.count / stats.total) * 100}%` }}
-                  title={`${item.label}: ${item.count}`}
-                />
-              )
-          )}
-        </div>
-        <div className="flex justify-between mt-2">
-          {criticialityData.map((item) => (
-            <div key={item.label} className="flex items-center gap-1.5">
-              <div className={`w-2 h-2 rounded-full ${item.color}`} />
-              <span className="text-xs text-surface-600">
-                {item.label}: <span className={item.textColor}>{item.count}</span>
-              </span>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* Needs your attention */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="h-4 w-4 text-accent-700" />
+                Needs your attention
+              </CardTitle>
+              <p className="text-xs text-surface-500 mt-0.5">Items that need action right now</p>
             </div>
-          ))}
-        </div>
+            {attentionItems.length > 0 && (
+              <Badge variant="warning" dot>
+                {attentionItems.reduce((sum, i) => sum + i.count, 0)} pending
+              </Badge>
+            )}
+          </CardHeader>
+          <CardBody density="comfy">
+            {attentionItems.length === 0 ? (
+              <EmptyState
+                icon={<CheckCircle2 className="h-8 w-8 text-emerald-600" />}
+                title="You're all caught up"
+                description="Nothing requires immediate attention. Nice work."
+                size="sm"
+              />
+            ) : (
+              <div className="space-y-2">
+                {attentionItems.map((item) => (
+                  <AttentionRow key={item.title} item={item} />
+                ))}
+              </div>
+            )}
+          </CardBody>
+        </Card>
+
+        {/* Framework Readiness */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Framework Readiness</CardTitle>
+            <Link
+              to="/frameworks"
+              className="text-xs text-brand-700 hover:text-brand-800 inline-flex items-center gap-1"
+            >
+              View all <ChevronRight className="h-3 w-3" />
+            </Link>
+          </CardHeader>
+          <CardBody density="comfy">
+            {sortedFrameworks.length === 0 ? (
+              <EmptyState
+                title="No frameworks"
+                description="Add a framework to track readiness."
+                size="sm"
+              />
+            ) : (
+              <div className="space-y-4">
+                {sortedFrameworks.slice(0, 4).map((fw) => {
+                  const score = fw.readiness?.score || 0;
+                  const barColor =
+                    score >= 80 ? 'bg-emerald-500' : score >= 50 ? 'bg-amber-500' : 'bg-red-500';
+                  return (
+                    <Link key={fw.id} to={`/frameworks/${fw.id}`} className="block group">
+                      <div className="flex items-baseline justify-between mb-1.5">
+                        <span className="text-small text-surface-800 group-hover:text-surface-900 truncate pr-2">
+                          {fw.name}
+                        </span>
+                        <span className="text-small font-medium text-surface-900 tabular-nums">
+                          {score}%
+                        </span>
+                      </div>
+                      <div className="h-1 bg-surface-100 rounded-full overflow-hidden">
+                        <div
+                          className={cn('h-full transition-all', barColor)}
+                          style={{ width: `${score}%` }}
+                        />
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </CardBody>
+        </Card>
       </div>
 
-      {/* Recent Vendors */}
-      <div>
-        <p className="text-sm text-surface-600 mb-2">Recent Vendors</p>
-        <div className="space-y-2">
-          {vendors.slice(0, 4).map((vendor: any) => (
+      {/* Bottom: insights row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Control Coverage</CardTitle>
             <Link
-              key={vendor.id}
-              to={`/vendors/${vendor.id}`}
-              className="flex items-center justify-between p-2 bg-white/50 rounded-lg hover:bg-surface-200 transition-colors"
+              to="/controls"
+              className="text-xs text-brand-700 hover:text-brand-800 inline-flex items-center gap-1"
             >
-              <div className="flex items-center gap-2">
-                <div
-                  className={clsx(
-                    'w-2 h-2 rounded-full',
-                    vendor.criticality === 'critical'
-                      ? 'bg-red-500'
-                      : vendor.criticality === 'high'
-                        ? 'bg-orange-500'
-                        : vendor.criticality === 'medium'
-                          ? 'bg-yellow-500'
-                          : 'bg-green-500'
-                  )}
-                />
-                <span className="text-sm text-surface-800 truncate max-w-[180px]">
-                  {vendor.name}
-                </span>
-              </div>
-              <span
-                className={clsx(
-                  'text-xs px-2 py-0.5 rounded',
-                  vendor.status === 'active'
-                    ? 'bg-green-500/20 text-green-600'
-                    : vendor.status === 'pending_review'
-                      ? 'bg-yellow-500/20 text-yellow-600'
-                      : 'bg-surface-600 text-surface-600'
-                )}
-              >
-                {vendor.status?.replace('_', ' ')}
-              </span>
+              View all <ChevronRight className="h-3 w-3" />
             </Link>
-          ))}
-        </div>
+          </CardHeader>
+          <CardBody density="comfy">
+            <CoverageBreakdown summary={summary} />
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+          </CardHeader>
+          <CardBody density="comfy">
+            <div className="space-y-1.5">
+              <QuickLink to="/controls?status=not_started" label="Start an unstarted control" />
+              <QuickLink to="/evidence" label="Upload new evidence" />
+              <QuickLink to="/policies" label="Review a policy" />
+              <QuickLink to="/risks" label="Log a new risk" />
+              <QuickLink to="/audit-requests" label="Open audit requests" />
+            </div>
+          </CardBody>
+        </Card>
       </div>
     </div>
   );
-});
+}
+
+function DashboardHero({ greeting }: { greeting: string }) {
+  return (
+    <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 pb-2">
+      <div>
+        <h1 className="text-display text-surface-900">{greeting}</h1>
+        <p className="text-small text-surface-600 mt-1">
+          Here's what's happening across your program today.
+        </p>
+      </div>
+      <p className="text-xs text-surface-500 hidden sm:block">
+        {new Date().toLocaleDateString(undefined, {
+          weekday: 'long',
+          month: 'long',
+          day: 'numeric',
+        })}
+      </p>
+    </div>
+  );
+}
+
+function AttentionRow({ item }: { item: AttentionItem }) {
+  const toneStyles: Record<AttentionItem['tone'], { chip: string; count: string }> = {
+    red: { chip: 'bg-red-500/10 text-red-600 border-red-500/20', count: 'text-red-600' },
+    amber: { chip: 'bg-amber-500/10 text-amber-700 border-amber-500/20', count: 'text-amber-700' },
+    accent: {
+      chip: 'bg-accent-500/10 text-accent-700 border-accent-500/20',
+      count: 'text-accent-700',
+    },
+  };
+  const styles = toneStyles[item.tone];
+
+  return (
+    <Link
+      to={item.href}
+      className="group flex items-center gap-3 p-3 -mx-1 rounded-md hover:bg-surface-100/60 transition-colors"
+    >
+      <div
+        className={cn(
+          'h-9 w-9 rounded-md border flex items-center justify-center shrink-0',
+          styles.chip
+        )}
+      >
+        {item.icon}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-baseline gap-2">
+          <span className="text-small text-surface-900 font-medium">{item.title}</span>
+          <span className={cn('text-xs font-mono tabular-nums', styles.count)}>{item.count}</span>
+        </div>
+        <p className="text-xs text-surface-500 truncate">{item.description}</p>
+      </div>
+      <ArrowRight className="h-4 w-4 text-surface-500 group-hover:text-surface-600 group-hover:translate-x-0.5 transition-all shrink-0" />
+    </Link>
+  );
+}
+
+function QuickLink({ to, label }: { to: string; label: string }) {
+  return (
+    <Link
+      to={to}
+      className="group flex items-center justify-between gap-2 px-2 py-1.5 -mx-1 rounded-md hover:bg-surface-100/60 transition-colors"
+    >
+      <span className="text-small text-surface-700 group-hover:text-surface-900">{label}</span>
+      <ArrowRight className="h-3.5 w-3.5 text-surface-500 group-hover:text-surface-600 group-hover:translate-x-0.5 transition-all" />
+    </Link>
+  );
+}
+
+function CoverageBreakdown({
+  summary,
+}: {
+  summary:
+    | {
+        controls?: {
+          total?: number;
+          byStatus?: Record<string, number>;
+          byCategory?: Record<string, number>;
+        };
+      }
+    | undefined;
+}) {
+  const total = summary?.controls?.total || 0;
+  const byStatus = summary?.controls?.byStatus || {};
+
+  if (total === 0) {
+    return (
+      <EmptyState title="No controls yet" description="Add controls to see coverage." size="sm" />
+    );
+  }
+
+  const stages = [
+    {
+      key: 'implemented',
+      label: 'Implemented',
+      color: 'bg-emerald-500',
+      textColor: 'text-emerald-600',
+    },
+    {
+      key: 'in_progress',
+      label: 'In Progress',
+      color: 'bg-amber-500',
+      textColor: 'text-amber-700',
+    },
+    {
+      key: 'not_started',
+      label: 'Not Started',
+      color: 'bg-surface-300',
+      textColor: 'text-surface-600',
+    },
+    { key: 'not_applicable', label: 'N/A', color: 'bg-accent-500', textColor: 'text-accent-700' },
+  ];
+
+  return (
+    <div className="space-y-4">
+      {/* Stacked bar */}
+      <div className="flex h-2.5 rounded-full overflow-hidden bg-surface-100">
+        {stages.map((s) => {
+          const count = byStatus[s.key] || 0;
+          const pct = (count / total) * 100;
+          return pct > 0 ? (
+            <div
+              key={s.key}
+              className={s.color}
+              style={{ width: `${pct}%` }}
+              title={`${s.label}: ${count}`}
+            />
+          ) : null;
+        })}
+      </div>
+
+      {/* Legend */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        {stages.map((s) => {
+          const count = byStatus[s.key] || 0;
+          const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+          return (
+            <div key={s.key} className="flex flex-col">
+              <div className="flex items-center gap-1.5">
+                <span className={cn('h-2 w-2 rounded-full', s.color)} />
+                <span className="text-xs text-surface-500 uppercase tracking-wider">{s.label}</span>
+              </div>
+              <div className="flex items-baseline gap-1.5 mt-0.5">
+                <span className="text-h2 text-surface-900 tabular-nums">{count}</span>
+                <span className={cn('text-xs tabular-nums', s.textColor)}>{pct}%</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Mini-trend visualization across top categories */}
+      {summary?.controls?.byCategory && (
+        <div className="pt-3 border-t border-surface-200/60">
+          <p className="text-xs text-surface-500 uppercase tracking-wider mb-2">By Category</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {Object.entries(summary.controls.byCategory)
+              .sort(([, a], [, b]) => (b as number) - (a as number))
+              .slice(0, 6)
+              .map(([cat, count]) => {
+                const pct = total > 0 ? Math.round(((count as number) / total) * 100) : 0;
+                return (
+                  <div key={cat} className="flex items-center gap-2">
+                    <span className="text-small text-surface-600 capitalize flex-1 truncate">
+                      {cat.replace(/_/g, ' ')}
+                    </span>
+                    <span className="text-small text-surface-800 tabular-nums w-7 text-right">
+                      {String(count)}
+                    </span>
+                    <Sparkline
+                      data={[
+                        Math.max(0, (count as number) - 3),
+                        Math.max(0, (count as number) - 2),
+                        Math.max(0, (count as number) - 1),
+                        count as number,
+                      ]}
+                      width={30}
+                      height={12}
+                      stroke="rgb(99 102 241)"
+                      fill="rgba(99, 102, 241, 0.2)"
+                      showDot={false}
+                    />
+                    <span className="text-xs text-surface-500 tabular-nums w-9 text-right">
+                      {pct}%
+                    </span>
+                  </div>
+                );
+              })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

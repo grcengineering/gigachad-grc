@@ -1,562 +1,666 @@
-import { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { useTheme, Theme } from '@/contexts/ThemeContext';
+import { useEffect, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  UserIcon,
-  BellIcon,
-  ShieldCheckIcon,
-  PaintBrushIcon,
-  ComputerDesktopIcon,
-  SunIcon,
-  MoonIcon,
-} from '@heroicons/react/24/outline';
-import clsx from 'clsx';
-import { Input } from '@/components/ui/Input';
-import { SelectNative } from '@/components/ui/SelectNative';
-import { Button } from '@/components/ui/Button';
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+  DataTable,
+  Dialog,
+  EmptyState,
+  Input,
+  Label,
+  PageHeader,
+  Select,
+  Skeleton,
+  Tabs,
+  type DataTableColumn,
+} from '@/components/ui';
+import api from '@/lib/api';
 
-const TABS = [
-  { id: 'profile', label: 'Profile', icon: UserIcon },
-  { id: 'notifications', label: 'Notifications', icon: BellIcon },
-  { id: 'appearance', label: 'Appearance', icon: PaintBrushIcon },
-  { id: 'security', label: 'Security', icon: ShieldCheckIcon },
+interface ApiKey {
+  id: string;
+  name: string;
+  createdAt: string;
+  lastUsedAt: string | null;
+  scopes: string[];
+}
+
+interface NotificationPref {
+  key: string;
+  label: string;
+  description: string;
+  email: boolean;
+  inApp: boolean;
+}
+
+interface MeResponse {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  avatarUrl: string | null;
+  timezone: string;
+  twoFactorEnabled: boolean;
+  apiKeys: ApiKey[];
+  notifications: NotificationPref[];
+}
+
+const TIMEZONE_OPTIONS = [
+  { value: 'UTC', label: 'UTC' },
+  { value: 'America/New_York', label: 'Eastern (America/New_York)' },
+  { value: 'America/Chicago', label: 'Central (America/Chicago)' },
+  { value: 'America/Denver', label: 'Mountain (America/Denver)' },
+  { value: 'America/Los_Angeles', label: 'Pacific (America/Los_Angeles)' },
+  { value: 'Europe/London', label: 'London' },
+  { value: 'Europe/Berlin', label: 'Berlin' },
+  { value: 'Asia/Tokyo', label: 'Tokyo' },
+  { value: 'Australia/Sydney', label: 'Sydney' },
 ];
 
-export default function AccountSettings() {
-  const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('profile');
-
-  return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-surface-900">Account Settings</h1>
-        <p className="text-surface-600 mt-1">Manage your personal preferences</p>
-      </div>
-
-      <div className="flex flex-col lg:flex-row gap-6">
-        {/* Tabs */}
-        <div className="lg:w-64 flex-shrink-0">
-          <nav className="card p-2 space-y-1">
-            {TABS.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={clsx(
-                  'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-                  activeTab === tab.id
-                    ? 'bg-brand-600/20 text-brand-400'
-                    : 'text-surface-600 hover:bg-white hover:text-surface-900'
-                )}
-              >
-                <tab.icon className="w-5 h-5" />
-                {tab.label}
-              </button>
-            ))}
-          </nav>
-        </div>
-
-        {/* Content */}
-        <div className="flex-1">
-          {activeTab === 'profile' && <ProfileSettings user={user} />}
-          {activeTab === 'notifications' && <NotificationPreferences />}
-          {activeTab === 'appearance' && <AppearanceSettings />}
-          {activeTab === 'security' && <SecuritySettings />}
-        </div>
-      </div>
-    </div>
-  );
+function formatDate(value: string | null): string {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString();
 }
 
-function ProfileSettings({ user }: { user: any }) {
-  return (
-    <div className="card p-6 space-y-6">
-      <h2 className="text-lg font-semibold text-surface-900">Profile</h2>
-      <div className="flex items-center gap-4">
-        <div className="w-16 h-16 rounded-full bg-surface-200 flex items-center justify-center">
-          <span className="text-2xl font-medium text-surface-700">
-            {user?.name?.charAt(0)?.toUpperCase() || 'U'}
-          </span>
-        </div>
-        <Button variant="secondary">Change Avatar</Button>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="label">Full Name</label>
-          <Input type="text" defaultValue={user?.name || ''} className="input mt-1" />
-        </div>
-        <div>
-          <label className="label">Email</label>
-          <Input
-            type="email"
-            defaultValue={user?.email || ''}
-            disabled
-            className="input mt-1 opacity-50"
-          />
-        </div>
-        <div>
-          <label className="label">Role</label>
-          <Input
-            type="text"
-            value={user?.role?.replace('_', ' ') || 'Viewer'}
-            disabled
-            className="input mt-1 opacity-50 capitalize"
-          />
-        </div>
-        <div>
-          <label className="label">Organization</label>
-          <Input
-            type="text"
-            value="Default Organization"
-            disabled
-            className="input mt-1 opacity-50"
-          />
-        </div>
-      </div>
-      <div className="flex justify-end pt-4 border-t border-surface-200">
-        <Button variant="primary">Save Changes</Button>
-      </div>
-    </div>
-  );
-}
+function ProfilePanel({ me }: { me: MeResponse }) {
+  const queryClient = useQueryClient();
+  const [name, setName] = useState(me.name);
+  const [email, setEmail] = useState(me.email);
+  const [timezone, setTimezone] = useState(me.timezone || 'UTC');
 
-function NotificationPreferences() {
-  const [preferences, setPreferences] = useState({
-    emailNotifications: true,
-    complianceAlerts: true,
-    evidenceReminders: true,
-    riskAlerts: true,
-    weeklyDigest: false,
-    inAppNotifications: true,
+  useEffect(() => {
+    setName(me.name);
+    setEmail(me.email);
+    setTimezone(me.timezone || 'UTC');
+  }, [me]);
+
+  const updateProfile = useMutation({
+    mutationFn: async (payload: { name: string; email: string; timezone: string }) => {
+      const res = await api.put('/api/me', payload);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['me'] });
+    },
   });
 
-  // Risk Task Notification Preferences
-  const [riskTaskPrefs, setRiskTaskPrefs] = useState({
-    email: true,
-    inApp: true,
-    slack: false,
-    slackUserId: '',
-    digestMode: 'immediate', // immediate, daily_digest, weekly_digest
-    timezone: 'UTC',
-  });
-
-  const togglePreference = (key: keyof typeof preferences) => {
-    setPreferences((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
-
-  const toggleRiskTaskPref = (key: 'email' | 'inApp' | 'slack') => {
-    setRiskTaskPrefs((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
+  const initials = (me.name || me.email || '?').charAt(0).toUpperCase();
 
   return (
-    <div className="space-y-6">
-      {/* Risk Task Notifications - New Section */}
-      <div className="card p-6 space-y-6">
-        <div>
-          <h2 className="text-lg font-semibold text-surface-900">
-            Risk Workflow Task Notifications
-          </h2>
-          <p className="text-surface-600 text-sm mt-1">
-            Choose how you want to be notified when tasks are assigned to you or completed.
-          </p>
-        </div>
-
-        <div className="space-y-4">
-          <h3 className="text-sm font-medium text-surface-700">Notification Channels</h3>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Email */}
-            <label className="flex flex-col p-4 bg-white/50 rounded-lg cursor-pointer hover:bg-white border-2 transition-colors border-transparent has-[:checked]:border-brand-500">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-surface-900 font-medium flex items-center gap-2">
-                  <svg
-                    className="w-5 h-5 text-surface-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                    />
-                  </svg>
-                  Email
-                </span>
-                <input
-                  type="checkbox"
-                  checked={riskTaskPrefs.email}
-                  onChange={() => toggleRiskTaskPref('email')}
-                  className="w-5 h-5 rounded border-surface-300 text-brand-500 focus:ring-brand-500"
-                />
-              </div>
-              <p className="text-surface-500 text-sm">Receive task notifications via email</p>
-            </label>
-
-            {/* In-App */}
-            <label className="flex flex-col p-4 bg-white/50 rounded-lg cursor-pointer hover:bg-white border-2 transition-colors border-transparent has-[:checked]:border-brand-500">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-surface-900 font-medium flex items-center gap-2">
-                  <BellIcon className="w-5 h-5 text-surface-600" />
-                  In-App
-                </span>
-                <input
-                  type="checkbox"
-                  checked={riskTaskPrefs.inApp}
-                  onChange={() => toggleRiskTaskPref('inApp')}
-                  className="w-5 h-5 rounded border-surface-300 text-brand-500 focus:ring-brand-500"
-                />
-              </div>
-              <p className="text-surface-500 text-sm">Show notifications in the app</p>
-            </label>
-
-            {/* Slack */}
-            <label className="flex flex-col p-4 bg-white/50 rounded-lg cursor-pointer hover:bg-white border-2 transition-colors border-transparent has-[:checked]:border-brand-500">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-surface-900 font-medium flex items-center gap-2">
-                  <svg className="w-5 h-5 text-surface-600" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zM6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zM8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zM18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zM17.688 8.834a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312zM15.165 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zM15.165 17.688a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z" />
-                  </svg>
-                  Slack
-                </span>
-                <input
-                  type="checkbox"
-                  checked={riskTaskPrefs.slack}
-                  onChange={() => toggleRiskTaskPref('slack')}
-                  className="w-5 h-5 rounded border-surface-300 text-brand-500 focus:ring-brand-500"
-                />
-              </div>
-              <p className="text-surface-500 text-sm">Get notifications in Slack DMs</p>
-            </label>
+    <Card>
+      <CardHeader>
+        <CardTitle>Profile</CardTitle>
+      </CardHeader>
+      <CardBody className="space-y-5">
+        <div className="flex items-center gap-4">
+          <div className="h-16 w-16 rounded-full bg-brand-100 text-brand-800 flex items-center justify-center text-h2 font-semibold">
+            {initials}
           </div>
+          <Button variant="secondary" size="sm">
+            Change avatar
+          </Button>
+        </div>
 
-          {/* Slack User ID - only shown when Slack is enabled */}
-          {riskTaskPrefs.slack && (
-            <div className="p-4 bg-white/30 rounded-lg border border-surface-200">
-              <label className="label">Slack User ID</label>
-              <Input
-                type="text"
-                value={riskTaskPrefs.slackUserId}
-                onChange={(e) =>
-                  setRiskTaskPrefs((prev) => ({ ...prev, slackUserId: e.target.value }))
-                }
-                placeholder="e.g., U12345678"
-                className="input mt-1 max-w-xs"
-              />
-              <p className="text-surface-500 text-xs mt-1">
-                Find your Slack Member ID in your Slack profile settings.
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="acct-name" required>
+              Full name
+            </Label>
+            <Input
+              id="acct-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Jane Doe"
+            />
+          </div>
+          <div>
+            <Label htmlFor="acct-email" required>
+              Email
+            </Label>
+            <Input
+              id="acct-email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+            />
+          </div>
+          <div>
+            <Label htmlFor="acct-role">Role</Label>
+            <Input id="acct-role" value={me.role} disabled />
+          </div>
+          <div>
+            <Label htmlFor="acct-tz">Timezone</Label>
+            <Select value={timezone} onChange={setTimezone} options={TIMEZONE_OPTIONS} searchable />
+          </div>
+        </div>
+
+        <div className="flex items-center justify-end gap-3 pt-2">
+          {updateProfile.isSuccess && (
+            <span className="text-small text-brand-700">Profile saved.</span>
+          )}
+          {updateProfile.isError && (
+            <span className="text-small text-red-700">Failed to save profile.</span>
+          )}
+          <Button
+            onClick={() => updateProfile.mutate({ name, email, timezone })}
+            loading={updateProfile.isPending}
+          >
+            Save changes
+          </Button>
+        </div>
+      </CardBody>
+    </Card>
+  );
+}
+
+function PasswordPanel() {
+  const [current, setCurrent] = useState('');
+  const [next, setNext] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [error, setError] = useState<string | null>(null);
+
+  const changePassword = useMutation({
+    mutationFn: async (payload: { currentPassword: string; newPassword: string }) => {
+      const res = await api.post('/api/me/password', payload);
+      return res.data;
+    },
+    onSuccess: () => {
+      setCurrent('');
+      setNext('');
+      setConfirm('');
+      setError(null);
+    },
+  });
+
+  const handleSubmit = () => {
+    if (!current || !next) {
+      setError('Current and new password are required.');
+      return;
+    }
+    if (next !== confirm) {
+      setError('New password and confirmation do not match.');
+      return;
+    }
+    if (next.length < 8) {
+      setError('New password must be at least 8 characters.');
+      return;
+    }
+    setError(null);
+    changePassword.mutate({ currentPassword: current, newPassword: next });
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Change password</CardTitle>
+      </CardHeader>
+      <CardBody className="space-y-4 max-w-md">
+        <div>
+          <Label htmlFor="acct-pw-current" required>
+            Current password
+          </Label>
+          <Input
+            id="acct-pw-current"
+            type="password"
+            value={current}
+            onChange={(e) => setCurrent(e.target.value)}
+            autoComplete="current-password"
+          />
+        </div>
+        <div>
+          <Label htmlFor="acct-pw-new" required>
+            New password
+          </Label>
+          <Input
+            id="acct-pw-new"
+            type="password"
+            value={next}
+            onChange={(e) => setNext(e.target.value)}
+            autoComplete="new-password"
+          />
+        </div>
+        <div>
+          <Label htmlFor="acct-pw-confirm" required>
+            Confirm new password
+          </Label>
+          <Input
+            id="acct-pw-confirm"
+            type="password"
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+            autoComplete="new-password"
+          />
+        </div>
+
+        {error && <p className="text-small text-red-700">{error}</p>}
+        {changePassword.isSuccess && <p className="text-small text-brand-700">Password updated.</p>}
+        {changePassword.isError && (
+          <p className="text-small text-red-700">Failed to update password.</p>
+        )}
+
+        <div className="flex justify-end">
+          <Button onClick={handleSubmit} loading={changePassword.isPending}>
+            Change password
+          </Button>
+        </div>
+      </CardBody>
+    </Card>
+  );
+}
+
+function TwoFactorPanel({ me }: { me: MeResponse }) {
+  const queryClient = useQueryClient();
+  const [showEnable, setShowEnable] = useState(false);
+  const [showDisable, setShowDisable] = useState(false);
+
+  const toggle = useMutation({
+    mutationFn: async (enable: boolean) => {
+      const res = await api.post('/api/me/2fa', { enable });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['me'] });
+      setShowEnable(false);
+      setShowDisable(false);
+    },
+  });
+
+  return (
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle>Two-factor authentication</CardTitle>
+        </CardHeader>
+        <CardBody className="space-y-4">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-body text-surface-900">
+                Status:{' '}
+                {me.twoFactorEnabled ? (
+                  <Badge variant="success">Enabled</Badge>
+                ) : (
+                  <Badge variant="neutral">Disabled</Badge>
+                )}
+              </p>
+              <p className="text-small text-surface-600 mt-1">
+                Add a second factor to your account using an authenticator app.
               </p>
             </div>
-          )}
-
-          <h3 className="text-sm font-medium text-surface-700 pt-4">Notification Timing</h3>
-
-          <div className="flex flex-wrap gap-3">
-            {[
-              {
-                value: 'immediate',
-                label: 'Immediate',
-                desc: 'Notify as soon as tasks are assigned',
-              },
-              { value: 'daily_digest', label: 'Daily Digest', desc: 'Summary once per day' },
-              { value: 'weekly_digest', label: 'Weekly Digest', desc: 'Summary once per week' },
-            ].map((option) => (
-              <label
-                key={option.value}
-                className={clsx(
-                  'flex-1 min-w-[200px] p-3 rounded-lg cursor-pointer border-2 transition-colors',
-                  riskTaskPrefs.digestMode === option.value
-                    ? 'border-brand-500 bg-brand-500/10'
-                    : 'border-surface-200 bg-white/50 hover:border-surface-300'
-                )}
-              >
-                <div className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="digestMode"
-                    value={option.value}
-                    checked={riskTaskPrefs.digestMode === option.value}
-                    onChange={() =>
-                      setRiskTaskPrefs((prev) => ({ ...prev, digestMode: option.value }))
-                    }
-                    className="w-4 h-4 text-brand-500 focus:ring-brand-500"
-                  />
-                  <span className="text-surface-900 font-medium">{option.label}</span>
-                </div>
-                <p className="text-surface-500 text-sm mt-1 ml-6">{option.desc}</p>
-              </label>
-            ))}
+            {me.twoFactorEnabled ? (
+              <Button variant="danger" onClick={() => setShowDisable(true)}>
+                Disable 2FA
+              </Button>
+            ) : (
+              <Button onClick={() => setShowEnable(true)}>Enable 2FA</Button>
+            )}
           </div>
-        </div>
+        </CardBody>
+      </Card>
 
-        <div className="flex justify-end pt-4 border-t border-surface-200">
-          <Button variant="primary">Save Task Preferences</Button>
+      <Dialog
+        open={showEnable}
+        onClose={() => setShowEnable(false)}
+        title="Enable two-factor authentication"
+        description="Scan the QR code in your authenticator app to enable 2FA."
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setShowEnable(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => toggle.mutate(true)} loading={toggle.isPending}>
+              I've scanned the code
+            </Button>
+          </>
+        }
+      >
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-48 w-48 rounded-md border border-surface-300 bg-surface-50 flex items-center justify-center text-surface-500 text-small">
+            QR code placeholder
+          </div>
+          <p className="text-small text-surface-600 text-center">
+            Use an app like 1Password, Authy, or Google Authenticator.
+          </p>
         </div>
-      </div>
-      {/* General Notifications */}
-      <div className="card p-6 space-y-6">
-        <h2 className="text-lg font-semibold text-surface-900">General Notifications</h2>
-        <p className="text-surface-600 text-sm">
-          Choose how you want to be notified about other activity.
+      </Dialog>
+
+      <Dialog
+        open={showDisable}
+        onClose={() => setShowDisable(false)}
+        title="Disable two-factor authentication"
+        description="Your account will only require a password to sign in."
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setShowDisable(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              onClick={() => toggle.mutate(false)}
+              loading={toggle.isPending}
+            >
+              Disable 2FA
+            </Button>
+          </>
+        }
+      >
+        <p className="text-small text-surface-700">
+          Are you sure you want to disable two-factor authentication on your account?
         </p>
-
-        <div className="space-y-4">
-          <h3 className="text-sm font-medium text-surface-700">Email Notifications</h3>
-
-          <div className="space-y-3">
-            <label className="flex items-center justify-between p-3 bg-white/50 rounded-lg cursor-pointer hover:bg-white">
-              <div>
-                <span className="text-surface-900 font-medium">Email Notifications</span>
-                <p className="text-surface-500 text-sm">Receive notifications via email</p>
-              </div>
-              <input
-                type="checkbox"
-                checked={preferences.emailNotifications}
-                onChange={() => togglePreference('emailNotifications')}
-                className="w-5 h-5 rounded border-surface-300 text-brand-500 focus:ring-brand-500"
-              />
-            </label>
-
-            <label className="flex items-center justify-between p-3 bg-white/50 rounded-lg cursor-pointer hover:bg-white">
-              <div>
-                <span className="text-surface-900 font-medium">Compliance Alerts</span>
-                <p className="text-surface-500 text-sm">
-                  Get notified about compliance drift and issues
-                </p>
-              </div>
-              <input
-                type="checkbox"
-                checked={preferences.complianceAlerts}
-                onChange={() => togglePreference('complianceAlerts')}
-                className="w-5 h-5 rounded border-surface-300 text-brand-500 focus:ring-brand-500"
-              />
-            </label>
-
-            <label className="flex items-center justify-between p-3 bg-white/50 rounded-lg cursor-pointer hover:bg-white">
-              <div>
-                <span className="text-surface-900 font-medium">Evidence Reminders</span>
-                <p className="text-surface-500 text-sm">
-                  Reminders for expiring or missing evidence
-                </p>
-              </div>
-              <input
-                type="checkbox"
-                checked={preferences.evidenceReminders}
-                onChange={() => togglePreference('evidenceReminders')}
-                className="w-5 h-5 rounded border-surface-300 text-brand-500 focus:ring-brand-500"
-              />
-            </label>
-
-            <label className="flex items-center justify-between p-3 bg-white/50 rounded-lg cursor-pointer hover:bg-white">
-              <div>
-                <span className="text-surface-900 font-medium">Risk Alerts</span>
-                <p className="text-surface-500 text-sm">
-                  Notifications about new or escalated risks
-                </p>
-              </div>
-              <input
-                type="checkbox"
-                checked={preferences.riskAlerts}
-                onChange={() => togglePreference('riskAlerts')}
-                className="w-5 h-5 rounded border-surface-300 text-brand-500 focus:ring-brand-500"
-              />
-            </label>
-
-            <label className="flex items-center justify-between p-3 bg-white/50 rounded-lg cursor-pointer hover:bg-white">
-              <div>
-                <span className="text-surface-900 font-medium">Weekly Digest</span>
-                <p className="text-surface-500 text-sm">Summary of activity sent weekly</p>
-              </div>
-              <input
-                type="checkbox"
-                checked={preferences.weeklyDigest}
-                onChange={() => togglePreference('weeklyDigest')}
-                className="w-5 h-5 rounded border-surface-300 text-brand-500 focus:ring-brand-500"
-              />
-            </label>
-          </div>
-
-          <h3 className="text-sm font-medium text-surface-700 pt-4">In-App Notifications</h3>
-
-          <label className="flex items-center justify-between p-3 bg-white/50 rounded-lg cursor-pointer hover:bg-white">
-            <div>
-              <span className="text-surface-900 font-medium">In-App Notifications</span>
-              <p className="text-surface-500 text-sm">Show notifications in the app</p>
-            </div>
-            <input
-              type="checkbox"
-              checked={preferences.inAppNotifications}
-              onChange={() => togglePreference('inAppNotifications')}
-              className="w-5 h-5 rounded border-surface-300 text-brand-500 focus:ring-brand-500"
-            />
-          </label>
-        </div>
-
-        <div className="flex justify-end pt-4 border-t border-surface-200">
-          <Button variant="primary">Save Preferences</Button>
-        </div>
-      </div>
-    </div>
+      </Dialog>
+    </>
   );
 }
 
-function AppearanceSettings() {
-  const { theme, setTheme } = useTheme();
+function ApiKeysPanel({ me }: { me: MeResponse }) {
+  const queryClient = useQueryClient();
+  const [showCreate, setShowCreate] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newScopes, setNewScopes] = useState('read');
+  const [createdSecret, setCreatedSecret] = useState<string | null>(null);
 
-  const themeOptions: {
-    id: Theme;
-    label: string;
-    description: string;
-    icon: typeof SunIcon;
-  }[] = [
-    { id: 'light', label: 'Light', description: 'Cream background with dark text', icon: SunIcon },
+  const createKey = useMutation({
+    mutationFn: async (payload: { name: string; scopes: string[] }) => {
+      const res = await api.post('/api/me/api-keys', payload);
+      return res.data as { id: string; secret: string };
+    },
+    onSuccess: (data) => {
+      setCreatedSecret(data.secret);
+      queryClient.invalidateQueries({ queryKey: ['me'] });
+    },
+  });
+
+  const revokeKey = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await api.delete(`/api/me/api-keys/${id}`);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['me'] });
+    },
+  });
+
+  const columns: DataTableColumn<ApiKey>[] = [
     {
-      id: 'dark',
-      label: 'Dark',
-      description: 'Warm ink background with bright text',
-      icon: MoonIcon,
+      id: 'name',
+      accessorKey: 'name',
+      header: 'Name',
+      mobileLabel: 'Name',
+      cell: ({ row }) => <span className="text-surface-900 font-medium">{row.original.name}</span>,
     },
     {
-      id: 'system',
-      label: 'System',
-      description: 'Follow your OS preference',
-      icon: ComputerDesktopIcon,
+      id: 'createdAt',
+      accessorKey: 'createdAt',
+      header: 'Created',
+      mobileLabel: 'Created',
+      cell: ({ row }) => (
+        <span className="text-small text-surface-700">{formatDate(row.original.createdAt)}</span>
+      ),
+    },
+    {
+      id: 'lastUsedAt',
+      accessorKey: 'lastUsedAt',
+      header: 'Last used',
+      mobileLabel: 'Last used',
+      cell: ({ row }) => (
+        <span className="text-small text-surface-700">{formatDate(row.original.lastUsedAt)}</span>
+      ),
+    },
+    {
+      id: 'scopes',
+      accessorKey: 'scopes',
+      header: 'Scopes',
+      mobileLabel: 'Scopes',
+      cell: ({ row }) => (
+        <div className="flex flex-wrap gap-1">
+          {row.original.scopes.length === 0 ? (
+            <span className="text-surface-500">—</span>
+          ) : (
+            row.original.scopes.map((s) => (
+              <Badge key={s} variant="info">
+                {s}
+              </Badge>
+            ))
+          )}
+        </div>
+      ),
+    },
+    {
+      id: 'actions',
+      header: '',
+      cell: ({ row }) => (
+        <div className="flex justify-end">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => revokeKey.mutate(row.original.id)}
+            loading={revokeKey.isPending && revokeKey.variables === row.original.id}
+          >
+            Revoke
+          </Button>
+        </div>
+      ),
     },
   ];
 
+  const closeCreate = () => {
+    setShowCreate(false);
+    setNewName('');
+    setNewScopes('read');
+    setCreatedSecret(null);
+  };
+
   return (
-    <div className="card p-6 space-y-6">
-      <div>
-        <h2 className="text-lg font-semibold text-surface-900 dark:text-surface-100">Appearance</h2>
-        <p className="text-surface-600 dark:text-surface-400 text-sm mt-1">
-          Customize how GigaChad GRC looks on your device
-        </p>
-      </div>
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle>API keys</CardTitle>
+          <Button size="sm" onClick={() => setShowCreate(true)}>
+            Create API key
+          </Button>
+        </CardHeader>
+        <CardBody>
+          {me.apiKeys.length === 0 ? (
+            <EmptyState
+              title="No API keys yet"
+              description="Create one to authenticate requests from scripts or integrations."
+            />
+          ) : (
+            <DataTable<ApiKey> data={me.apiKeys} columns={columns} density="cozy" />
+          )}
+        </CardBody>
+      </Card>
 
-      <div className="space-y-3">
-        <label className="label">Theme</label>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {themeOptions.map((option) => {
-            const selected = theme === option.id;
-            return (
-              <button
-                key={option.id}
-                onClick={() => setTheme(option.id)}
-                aria-pressed={selected}
-                className={clsx(
-                  'p-4 rounded-lg border-2 text-left transition-all',
-                  selected
-                    ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/15'
-                    : 'border-surface-200 hover:border-surface-300 bg-white dark:bg-surface-900 dark:border-surface-800 dark:hover:border-surface-700'
-                )}
+      <Dialog
+        open={showCreate}
+        onClose={closeCreate}
+        title={createdSecret ? 'API key created' : 'Create API key'}
+        description={
+          createdSecret
+            ? 'Copy this key now — it will not be shown again.'
+            : 'Name the key and pick a scope.'
+        }
+        footer={
+          createdSecret ? (
+            <Button onClick={closeCreate}>Done</Button>
+          ) : (
+            <>
+              <Button variant="ghost" onClick={closeCreate}>
+                Cancel
+              </Button>
+              <Button
+                onClick={() =>
+                  createKey.mutate({
+                    name: newName.trim(),
+                    scopes: newScopes
+                      .split(',')
+                      .map((s) => s.trim())
+                      .filter(Boolean),
+                  })
+                }
+                loading={createKey.isPending}
+                disabled={!newName.trim()}
               >
-                <option.icon
-                  className={clsx(
-                    'w-7 h-7 mb-2',
-                    selected
-                      ? 'text-brand-700 dark:text-brand-300'
-                      : 'text-surface-600 dark:text-surface-400'
-                  )}
-                />
-                <div
-                  className={clsx(
-                    'font-medium',
-                    selected
-                      ? 'text-brand-800 dark:text-brand-200'
-                      : 'text-surface-900 dark:text-surface-100'
-                  )}
-                >
-                  {option.label}
-                </div>
-                <div className="text-surface-600 dark:text-surface-400 text-xs mt-0.5">
-                  {option.description}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div>
-        <label className="label">Date Format</label>
-        <SelectNative className="input mt-1 max-w-xs">
-          <option value="YYYY-MM-DD">YYYY-MM-DD (2025-01-15)</option>
-          <option value="MM/DD/YYYY">MM/DD/YYYY (01/15/2025)</option>
-          <option value="DD/MM/YYYY">DD/MM/YYYY (15/01/2025)</option>
-          <option value="MMM DD, YYYY">MMM DD, YYYY (Jan 15, 2025)</option>
-        </SelectNative>
-      </div>
-    </div>
+                Create key
+              </Button>
+            </>
+          )
+        }
+      >
+        {createdSecret ? (
+          <pre className="rounded-md border border-surface-200 bg-surface-50/40 p-3 overflow-x-auto text-xs font-mono text-surface-800">
+            <code>{createdSecret}</code>
+          </pre>
+        ) : (
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="ak-name" required>
+                Name
+              </Label>
+              <Input
+                id="ak-name"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder="CI deployer"
+              />
+            </div>
+            <div>
+              <Label htmlFor="ak-scopes">Scopes (comma-separated)</Label>
+              <Input
+                id="ak-scopes"
+                value={newScopes}
+                onChange={(e) => setNewScopes(e.target.value)}
+                placeholder="read,write"
+              />
+            </div>
+          </div>
+        )}
+      </Dialog>
+    </>
   );
 }
 
-function SecuritySettings() {
+function NotificationsPanel({ me }: { me: MeResponse }) {
+  const queryClient = useQueryClient();
+  const [prefs, setPrefs] = useState<NotificationPref[]>(me.notifications);
+
+  useEffect(() => {
+    setPrefs(me.notifications);
+  }, [me.notifications]);
+
+  const save = useMutation({
+    mutationFn: async (payload: NotificationPref[]) => {
+      const res = await api.put('/api/me/notifications', { notifications: payload });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['me'] });
+    },
+  });
+
+  const toggle = (key: string, channel: 'email' | 'inApp') => {
+    setPrefs((prev) => prev.map((p) => (p.key === key ? { ...p, [channel]: !p[channel] } : p)));
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="card p-6 space-y-6">
-        <h2 className="text-lg font-semibold text-surface-900">Password</h2>
-
-        <div className="space-y-4">
-          <div>
-            <label className="label">Current Password</label>
-            <Input type="password" className="input mt-1" placeholder="Enter current password" />
-          </div>
-          <div>
-            <label className="label">New Password</label>
-            <Input type="password" className="input mt-1" placeholder="Enter new password" />
-          </div>
-          <div>
-            <label className="label">Confirm New Password</label>
-            <Input type="password" className="input mt-1" placeholder="Confirm new password" />
-          </div>
-        </div>
-
-        <div className="flex justify-end pt-4 border-t border-surface-200">
-          <Button variant="primary">Update Password</Button>
-        </div>
-      </div>
-      <div className="card p-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-surface-900">Two-Factor Authentication</h2>
-            <p className="text-surface-600 text-sm mt-1">
-              Add an extra layer of security to your account
-            </p>
-          </div>
-          <span className="px-3 py-1 text-sm rounded-full bg-surface-200 text-surface-700">
-            Not enabled
-          </span>
-        </div>
-
-        <Button variant="secondary">
-          <ShieldCheckIcon className="w-5 h-5 mr-2" />
-          Enable 2FA
+    <Card>
+      <CardHeader>
+        <CardTitle>Notifications</CardTitle>
+        <Button size="sm" onClick={() => save.mutate(prefs)} loading={save.isPending}>
+          Save preferences
         </Button>
-      </div>
-      <div className="card p-6 space-y-6">
-        <h2 className="text-lg font-semibold text-surface-900">Active Sessions</h2>
-        <p className="text-surface-600 text-sm">Manage your active sessions across devices</p>
-
-        <div className="space-y-3">
-          <div className="flex items-center justify-between p-3 bg-white/50 rounded-lg">
-            <div className="flex items-center gap-3">
-              <ComputerDesktopIcon className="w-8 h-8 text-surface-600" />
-              <div>
-                <p className="text-surface-900 font-medium">MacOS - Chrome</p>
-                <p className="text-surface-500 text-sm">Current session • Last active now</p>
+      </CardHeader>
+      <CardBody className="space-y-3">
+        {prefs.length === 0 ? (
+          <EmptyState
+            title="No notification preferences"
+            description="There are no notification types available for your account."
+          />
+        ) : (
+          prefs.map((p) => (
+            <div
+              key={p.key}
+              className="flex items-start justify-between gap-4 rounded-md border border-surface-200 bg-white px-4 py-3"
+            >
+              <div className="min-w-0">
+                <p className="text-body text-surface-900 font-medium">{p.label}</p>
+                <p className="text-small text-surface-600 mt-0.5">{p.description}</p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Button
+                  variant={p.email ? 'primary' : 'outline'}
+                  size="sm"
+                  onClick={() => toggle(p.key, 'email')}
+                >
+                  Email {p.email ? 'on' : 'off'}
+                </Button>
+                <Button
+                  variant={p.inApp ? 'primary' : 'outline'}
+                  size="sm"
+                  onClick={() => toggle(p.key, 'inApp')}
+                >
+                  In-app {p.inApp ? 'on' : 'off'}
+                </Button>
               </div>
             </div>
-            <span className="px-2 py-1 text-xs bg-brand-500/20 text-brand-400 rounded">
-              Current
-            </span>
-          </div>
-        </div>
+          ))
+        )}
+      </CardBody>
+    </Card>
+  );
+}
 
-        <button className="text-red-600 text-sm hover:text-red-700">
-          Sign out of all other sessions
-        </button>
+export default function AccountSettings() {
+  const { data, isLoading, isError } = useQuery<MeResponse>({
+    queryKey: ['me'],
+    queryFn: async () => {
+      const res = await api.get('/api/me');
+      return res.data as MeResponse;
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <div className="space-y-5">
+        <PageHeader title="Account" description="Manage your profile, security, and preferences." />
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-64 w-full" />
       </div>
+    );
+  }
+
+  if (isError || !data) {
+    return (
+      <div className="space-y-5">
+        <PageHeader title="Account" description="Manage your profile, security, and preferences." />
+        <Card>
+          <CardBody>
+            <EmptyState
+              title="Could not load your account"
+              description="Please refresh the page or try again later."
+            />
+          </CardBody>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      <PageHeader title="Account" description="Manage your profile, security, and preferences." />
+      <Tabs
+        tabs={[
+          { label: 'Profile', content: <ProfilePanel me={data} /> },
+          { label: 'Password', content: <PasswordPanel /> },
+          { label: '2FA', content: <TwoFactorPanel me={data} /> },
+          { label: 'API Keys', content: <ApiKeysPanel me={data} /> },
+          { label: 'Notifications', content: <NotificationsPanel me={data} /> },
+        ]}
+      />
     </div>
   );
 }

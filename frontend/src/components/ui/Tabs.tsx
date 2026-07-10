@@ -12,12 +12,7 @@ export interface TabsProps {
 export function Tabs({ tabs, defaultIndex, onChange, className }: TabsProps) {
   return (
     <Tab.Group defaultIndex={defaultIndex} onChange={onChange}>
-      <Tab.List
-        className={cn(
-          'flex items-center gap-1 border-b border-surface-200 dark:border-surface-800',
-          className
-        )}
-      >
+      <Tab.List className={cn('flex items-center gap-1 border-b border-surface-200', className)}>
         {tabs.map((tab, i) => (
           <Tab
             key={i}
@@ -26,8 +21,8 @@ export function Tabs({ tabs, defaultIndex, onChange, className }: TabsProps) {
               cn(
                 'relative px-3 py-2 text-small font-medium transition-colors -mb-px border-b-2 outline-none',
                 selected
-                  ? 'border-brand-500 text-surface-900 dark:text-surface-100'
-                  : 'border-transparent text-surface-600 hover:text-surface-900 dark:text-surface-400 dark:hover:text-surface-100',
+                  ? 'border-brand-500 text-surface-900'
+                  : 'border-transparent text-surface-600 hover:text-surface-900',
                 'focus-visible:ring-2 focus-visible:ring-brand-500 rounded-t-md',
                 tab.disabled && 'opacity-50 cursor-not-allowed'
               )

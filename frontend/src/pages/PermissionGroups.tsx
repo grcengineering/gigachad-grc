@@ -5,15 +5,11 @@ import {
   PencilSquareIcon,
   TrashIcon,
   UserGroupIcon,
-  XMarkIcon,
   CheckIcon,
 } from '@heroicons/react/24/outline';
 import { permissionsApi } from '../lib/api';
-import { SkeletonGrid } from '@/components/Skeleton';
-import { EmptyState } from '@/components/EmptyState';
-
-import { Input } from '@/components/ui/Input';
-import { Dialog } from '@/components/ui/Dialog';
+import { Button, CategoryChip, Dialog, Input } from '@/components/ui';
+import { toTitleCase } from '@/lib/categoryStyle';
 
 const RESOURCES = [
   { id: 'controls', label: 'Controls', description: 'Security and compliance controls' },
@@ -77,13 +73,13 @@ export default function PermissionGroups() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Permission Groups</h1>
+          <h1 className="text-2xl font-bold text-surface-900">Permission Groups</h1>
           <p className="text-surface-600 mt-1">Define roles and their access levels</p>
         </div>
         <div className="flex gap-2">
           <button
             onClick={() => seedMutation.mutate()}
-            className="px-4 py-2 bg-surface-200 text-white rounded-lg hover:bg-surface-600 transition-colors"
+            className="px-4 py-2 bg-surface-200 text-surface-900 rounded-lg hover:bg-surface-300 transition-colors"
           >
             Seed Defaults
           </button>
@@ -99,21 +95,21 @@ export default function PermissionGroups() {
 
       {/* Groups Grid */}
       {isLoading ? (
-        <SkeletonGrid count={6} />
+        <div className="text-center text-surface-600 py-12">Loading permission groups...</div>
       ) : groups?.length === 0 ? (
-        <EmptyState
-          variant="users"
-          title="No Permission Groups"
-          description="Create your first permission group or seed the defaults to get started."
-          action={{
-            label: 'Seed Default Groups',
-            onClick: () => seedMutation.mutate(),
-          }}
-          secondaryAction={{
-            label: 'Create Custom Group',
-            onClick: () => setShowCreateModal(true),
-          }}
-        />
+        <div className="bg-white rounded-lg border border-surface-200 p-8 text-center">
+          <UserGroupIcon className="w-12 h-12 mx-auto text-surface-500 mb-3" />
+          <h3 className="text-lg font-medium text-surface-900 mb-1">No Permission Groups</h3>
+          <p className="text-surface-600 mb-4">
+            Create your first permission group or seed the defaults to get started.
+          </p>
+          <button
+            onClick={() => seedMutation.mutate()}
+            className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors"
+          >
+            Seed Default Groups
+          </button>
+        </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {groups?.map((group: PermissionGroup) => (
@@ -121,26 +117,30 @@ export default function PermissionGroups() {
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-semibold text-white">{group.name}</h3>
-                    {group.isSystem && (
-                      <span className="text-xs bg-surface-600 text-surface-700 px-2 py-0.5 rounded">
-                        System
-                      </span>
-                    )}
+                    <h3 className="text-lg font-semibold text-surface-900">{group.name}</h3>
+                    <span
+                      className={
+                        group.isSystem
+                          ? 'inline-flex items-center rounded-md border border-violet-200 bg-violet-50 px-2 py-0.5 text-xs font-medium text-violet-800 uppercase tracking-wider'
+                          : 'inline-flex items-center rounded-md border border-surface-300 bg-surface-100 px-2 py-0.5 text-xs font-medium text-surface-700 uppercase tracking-wider'
+                      }
+                    >
+                      {group.isSystem ? 'System' : 'Custom'}
+                    </span>
                   </div>
                   <p className="text-surface-600 text-sm mt-1">{group.description}</p>
                 </div>
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => setShowMembersModal(group)}
-                    className="p-2 text-surface-600 hover:text-white hover:bg-surface-200 rounded-lg"
+                    className="p-2 text-surface-600 hover:text-surface-900 hover:bg-surface-200 rounded-lg"
                     title="View Members"
                   >
                     <UserGroupIcon className="w-5 h-5" />
                   </button>
                   <button
                     onClick={() => setEditingGroup(group)}
-                    className="p-2 text-surface-600 hover:text-white hover:bg-surface-200 rounded-lg"
+                    className="p-2 text-surface-600 hover:text-surface-900 hover:bg-surface-200 rounded-lg"
                     title="Edit Group"
                   >
                     <PencilSquareIcon className="w-5 h-5" />
@@ -164,24 +164,23 @@ export default function PermissionGroups() {
               {/* Permission Summary */}
               <div className="space-y-2">
                 <div className="text-xs text-surface-500 uppercase tracking-wider">Permissions</div>
-                <div className="flex flex-wrap gap-1">
-                  {group.permissions.slice(0, 6).map((perm, idx) => (
-                    <span
+                <div className="flex flex-wrap gap-1.5">
+                  {group.permissions.slice(0, 8).map((perm, idx) => (
+                    <CategoryChip
                       key={idx}
-                      className="px-2 py-1 bg-surface-200 rounded text-xs text-surface-800"
-                    >
-                      {perm.resource}: {perm.actions.length} actions
-                    </span>
+                      value={perm.resource}
+                      label={`${toTitleCase(perm.resource)} · ${perm.actions.length}`}
+                    />
                   ))}
-                  {group.permissions.length > 6 && (
-                    <span className="px-2 py-1 text-xs text-surface-600">
-                      +{group.permissions.length - 6} more
+                  {group.permissions.length > 8 && (
+                    <span className="px-2 py-0.5 text-xs text-surface-600">
+                      +{group.permissions.length - 8} more
                     </span>
                   )}
                 </div>
               </div>
 
-              <div className="mt-4 pt-4 border-t border-surface-200 flex items-center justify-between text-sm text-surface-600">
+              <div className="mt-4 pt-4 border-t border-surface-300 flex items-center justify-between text-sm text-surface-600">
                 <span>
                   {group.memberCount} member{group.memberCount !== 1 ? 's' : ''}
                 </span>
@@ -227,7 +226,7 @@ function PermissionGroupModal({
 
   const createMutation = useMutation({
     mutationFn: (data: { name: string; description?: string; permissions: Permission[] }) =>
-      permissionsApi.createGroup(data as any),
+      permissionsApi.createGroup(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['permission-groups'] });
       onClose();
@@ -236,7 +235,7 @@ function PermissionGroupModal({
 
   const updateMutation = useMutation({
     mutationFn: (data: { name?: string; description?: string; permissions?: Permission[] }) =>
-      permissionsApi.updateGroup(group!.id, data as any),
+      permissionsApi.updateGroup(group!.id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['permission-groups'] });
       onClose();
@@ -286,17 +285,26 @@ function PermissionGroupModal({
   };
 
   return (
-    <Dialog open onClose={onClose}>
-      <div className="p-4 border-b border-surface-200 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-white">
-          {group ? 'Edit Permission Group' : 'Create Permission Group'}
-        </h2>
-        <button onClick={onClose} className="p-1 text-surface-600 hover:text-white">
-          <XMarkIcon className="w-5 h-5" />
-        </button>
-      </div>
-
-      <div className="p-4 overflow-y-auto flex-1 space-y-6">
+    <Dialog
+      open={true}
+      onClose={onClose}
+      size="xl"
+      title={group ? 'Edit Permission Group' : 'Create Permission Group'}
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={!name.trim() || createMutation.isPending || updateMutation.isPending}
+          >
+            {group ? 'Save Changes' : 'Create Group'}
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-6">
         {/* Name and Description */}
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -305,7 +313,6 @@ function PermissionGroupModal({
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full bg-white border border-surface-300 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
               placeholder="e.g., Compliance Manager"
             />
           </div>
@@ -315,7 +322,6 @@ function PermissionGroupModal({
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full bg-white border border-surface-300 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
               placeholder="Brief description of this role"
             />
           </div>
@@ -324,10 +330,10 @@ function PermissionGroupModal({
         {/* Permission Matrix */}
         <div>
           <label className="block text-sm text-surface-600 mb-3">Permission Matrix</label>
-          <div className="bg-white rounded-lg border border-surface-200 overflow-hidden">
+          <div className="bg-white rounded-lg border border-surface-300 overflow-hidden">
             <table className="w-full">
               <thead>
-                <tr className="bg-white">
+                <tr className="bg-surface-100">
                   <th className="text-left text-surface-600 font-medium px-4 py-3 w-48">
                     Resource
                   </th>
@@ -344,14 +350,14 @@ function PermissionGroupModal({
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-surface-200">
+              <tbody className="divide-y divide-surface-300">
                 {RESOURCES.map((resource) => {
                   const currentActions = permissions[resource.id] || [];
                   const allSelected = currentActions.length === ACTIONS.length;
                   return (
-                    <tr key={resource.id} className="hover:bg-white/50">
+                    <tr key={resource.id} className="hover:bg-surface-100/50">
                       <td className="px-4 py-3">
-                        <div className="text-white text-sm font-medium">{resource.label}</div>
+                        <div className="text-surface-900 text-sm font-medium">{resource.label}</div>
                         <div className="text-surface-500 text-xs">{resource.description}</div>
                       </td>
                       {ACTIONS.map((action) => (
@@ -361,11 +367,11 @@ function PermissionGroupModal({
                             className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${
                               currentActions.includes(action)
                                 ? 'bg-brand-500 border-brand-500'
-                                : 'border-surface-300 hover:border-surface-500'
+                                : 'border-surface-400 hover:border-surface-500'
                             }`}
                           >
                             {currentActions.includes(action) && (
-                              <CheckIcon className="w-4 h-4 text-white" />
+                              <CheckIcon className="w-4 h-4 text-surface-900" />
                             )}
                           </button>
                         </td>
@@ -376,10 +382,10 @@ function PermissionGroupModal({
                           className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${
                             allSelected
                               ? 'bg-emerald-500 border-emerald-500'
-                              : 'border-surface-300 hover:border-surface-500'
+                              : 'border-surface-400 hover:border-surface-500'
                           }`}
                         >
-                          {allSelected && <CheckIcon className="w-4 h-4 text-white" />}
+                          {allSelected && <CheckIcon className="w-4 h-4 text-surface-900" />}
                         </button>
                       </td>
                     </tr>
@@ -389,22 +395,6 @@ function PermissionGroupModal({
             </table>
           </div>
         </div>
-      </div>
-
-      <div className="p-4 border-t border-surface-200 flex justify-end gap-3">
-        <button
-          onClick={onClose}
-          className="px-4 py-2 bg-surface-200 text-white rounded-lg hover:bg-surface-600 transition-colors"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={handleSubmit}
-          disabled={!name.trim() || createMutation.isPending || updateMutation.isPending}
-          className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {group ? 'Save Changes' : 'Create Group'}
-        </button>
       </div>
     </Dialog>
   );
@@ -417,14 +407,8 @@ function GroupMembersModal({ group, onClose }: { group: PermissionGroup; onClose
   });
 
   return (
-    <Dialog open onClose={onClose}>
-      <div className="p-4 border-b border-surface-200 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-white">Members of {group.name}</h2>
-        <button onClick={onClose} className="p-1 text-surface-600 hover:text-white">
-          <XMarkIcon className="w-5 h-5" />
-        </button>
-      </div>
-      <div className="p-4 overflow-y-auto max-h-[60vh]">
+    <Dialog open={true} onClose={onClose} size="md" title={`Members of ${group.name}`}>
+      <div className="overflow-y-auto max-h-[60vh]">
         {isLoading ? (
           <div className="text-center text-surface-600 py-8">Loading members...</div>
         ) : members?.length === 0 ? (
@@ -436,11 +420,11 @@ function GroupMembersModal({ group, onClose }: { group: PermissionGroup; onClose
                 key={member.id}
                 className="flex items-center gap-3 p-3 bg-surface-200 rounded-lg"
               >
-                <div className="w-10 h-10 rounded-full bg-brand-500/20 flex items-center justify-center text-brand-400 font-medium">
+                <div className="w-10 h-10 rounded-full bg-brand-500/20 flex items-center justify-center text-brand-700 font-medium">
                   {member.displayName.charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1">
-                  <div className="text-white font-medium">{member.displayName}</div>
+                  <div className="text-surface-900 font-medium">{member.displayName}</div>
                   <div className="text-surface-600 text-sm">{member.email}</div>
                 </div>
                 <div className="text-surface-500 text-xs">

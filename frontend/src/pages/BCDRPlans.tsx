@@ -1,269 +1,388 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
-import {
-  PlusIcon,
-  MagnifyingGlassIcon,
-  DocumentTextIcon,
-  ArrowPathIcon,
-  ExclamationCircleIcon,
-} from '@heroicons/react/24/outline';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { FileText, Plus, Search } from 'lucide-react';
 import api from '@/lib/api';
-import { useDebounce } from '@/hooks/useDebounce';
-import clsx from 'clsx';
-
-import { Input } from '@/components/ui/Input';
-
-import { SelectNative } from '@/components/ui/SelectNative';
-
-import { Button } from '@/components/ui/Button';
+import {
+  Badge,
+  Button,
+  DataTable,
+  EmptyState,
+  FilterBar,
+  Input,
+  PageHeader,
+  Select,
+  type ActiveFilter,
+  type BadgeVariant,
+  type DataTableColumn,
+} from '@/components/ui';
 
 interface BCDRPlan {
   id: string;
-  plan_id: string;
+  plan_id?: string;
+  planId?: string;
   title: string;
-  description: string;
-  plan_type: string;
+  description?: string;
+  plan_type?: string;
+  planType?: string;
   status: string;
-  version: string;
-  owner_name: string;
-  effective_date: string;
-  next_review_due: string;
-  control_count: number;
+  version?: string | number;
+  owner_id?: string;
+  owner_name?: string;
+  ownerName?: string;
+  effective_date?: string;
+  effectiveDate?: string;
+  next_review_due?: string;
+  nextReviewDue?: string;
+  updated_at?: string;
+  updatedAt?: string;
+  last_updated?: string;
+  lastUpdated?: string;
 }
 
-const statusColors: Record<string, string> = {
-  draft: 'bg-surface-600 text-surface-700',
-  in_review: 'bg-yellow-500/20 text-yellow-600',
-  approved: 'bg-blue-500/20 text-blue-600',
-  published: 'bg-green-500/20 text-green-600',
-  archived: 'bg-surface-200 text-surface-600',
-  expired: 'bg-red-500/20 text-red-600',
+interface PlansResponse {
+  data?: BCDRPlan[];
+  plans?: BCDRPlan[];
+  total?: number;
+  totalPages?: number;
+  page?: number;
+  limit?: number;
+}
+
+const PLAN_TYPE_OPTS: { value: string; label: string }[] = [
+  { value: 'business_continuity', label: 'Business Continuity' },
+  { value: 'disaster_recovery', label: 'Disaster Recovery' },
+  { value: 'incident_response', label: 'Incident Response' },
+  { value: 'crisis_communication', label: 'Crisis Communication' },
+  { value: 'pandemic_response', label: 'Pandemic Response' },
+  { value: 'it_recovery', label: 'IT Recovery' },
+  { value: 'data_backup', label: 'Data Backup' },
+  { value: 'other', label: 'Other' },
+];
+
+const STATUS_OPTS: { value: string; label: string }[] = [
+  { value: 'draft', label: 'Draft' },
+  { value: 'in_review', label: 'In Review' },
+  { value: 'approved', label: 'Approved' },
+  { value: 'published', label: 'Published' },
+  { value: 'archived', label: 'Archived' },
+  { value: 'expired', label: 'Expired' },
+];
+
+const STATUS_VARIANT: Record<string, BadgeVariant> = {
+  draft: 'neutral',
+  in_review: 'warning',
+  approved: 'info',
+  published: 'success',
+  archived: 'neutral',
+  expired: 'danger',
 };
 
-const planTypeLabels: Record<string, string> = {
-  business_continuity: 'Business Continuity',
-  disaster_recovery: 'Disaster Recovery',
-  incident_response: 'Incident Response',
-  crisis_communication: 'Crisis Communication',
-  pandemic_response: 'Pandemic Response',
-  it_recovery: 'IT Recovery',
-  data_backup: 'Data Backup',
-  other: 'Other',
-};
+const PAGE_SIZE = 25;
+
+function formatDate(value?: string) {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString();
+}
+
+function getPlanType(plan: BCDRPlan): string {
+  return plan.planType || plan.plan_type || '';
+}
+
+function getPlanCode(plan: BCDRPlan): string {
+  return plan.planId || plan.plan_id || '';
+}
+
+function getOwner(plan: BCDRPlan): string {
+  return plan.ownerName || plan.owner_name || '';
+}
+
+function getLastUpdated(plan: BCDRPlan): string | undefined {
+  return plan.lastUpdated || plan.last_updated || plan.updatedAt || plan.updated_at;
+}
+
+function planTypeLabel(value: string) {
+  return PLAN_TYPE_OPTS.find((o) => o.value === value)?.label ?? value.replace(/_/g, ' ');
+}
+
+function statusLabel(value: string) {
+  return STATUS_OPTS.find((o) => o.value === value)?.label ?? value.replace(/_/g, ' ');
+}
 
 export default function BCDRPlans() {
-  const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState<string>('');
-  const [statusFilter, setStatusFilter] = useState<string>('');
-  const [page, setPage] = useState(1);
-  const debouncedSearch = useDebounce(search, 300);
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  // Reset page when filters change
+  const search = searchParams.get('search') || '';
+  const planType = searchParams.get('planType') || '';
+  const status = searchParams.get('status') || '';
+  const page = parseInt(searchParams.get('page') || '1', 10);
+
+  const [searchInput, setSearchInput] = useState(search);
+
   useEffect(() => {
-    setPage(1);
-  }, [debouncedSearch, typeFilter, statusFilter]);
+    setSearchInput(search);
+  }, [search]);
 
-  const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['bcdr-plans', debouncedSearch, typeFilter, statusFilter, page],
+  // Inline debounce: push searchInput into URL after a delay.
+  useEffect(() => {
+    if (searchInput === search) return;
+    const handle = setTimeout(() => {
+      const next = new URLSearchParams(searchParams);
+      if (searchInput) next.set('search', searchInput);
+      else next.delete('search');
+      next.set('page', '1');
+      setSearchParams(next, { replace: true });
+    }, 300);
+    return () => clearTimeout(handle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchInput]);
+
+  const updateParam = (key: string, value: string) => {
+    const next = new URLSearchParams(searchParams);
+    if (value) next.set(key, value);
+    else next.delete(key);
+    if (key !== 'page') next.set('page', '1');
+    setSearchParams(next);
+  };
+
+  const clearAll = () => {
+    const next = new URLSearchParams(searchParams);
+    ['search', 'planType', 'status', 'page'].forEach((k) => next.delete(k));
+    setSearchInput('');
+    setSearchParams(next);
+  };
+
+  const { data, isLoading } = useQuery<PlansResponse>({
+    queryKey: ['bcdr', 'plans', { search, planType, status, page }],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (debouncedSearch) params.append('search', debouncedSearch);
-      if (typeFilter) params.append('planType', typeFilter);
-      if (statusFilter) params.append('status', statusFilter);
-      params.append('page', page.toString());
-      params.append('limit', '25');
-
-      const res = await api.get(`/api/bcdr/plans?${params}`);
-      return res.data;
+      if (search) params.set('search', search);
+      if (planType) params.set('planType', planType);
+      if (status) params.set('status', status);
+      params.set('page', String(page));
+      params.set('limit', String(PAGE_SIZE));
+      const res = await api.get(`/api/bcdr/plans?${params.toString()}`);
+      return res.data ?? {};
     },
-    retry: 1,
   });
 
-  const plans = data?.data || [];
-  const totalPages = data?.totalPages || 1;
+  const plans: BCDRPlan[] = useMemo(() => {
+    if (Array.isArray(data?.data)) return data!.data;
+    if (Array.isArray(data?.plans)) return data!.plans;
+    return [];
+  }, [data]);
 
-  // Error state
-  if (error) {
-    return (
-      <div className="p-6">
-        <div className="card p-8 text-center">
-          <ExclamationCircleIcon className="w-12 h-12 mx-auto mb-4 text-red-600" />
-          <h2 className="text-lg font-semibold text-surface-900 mb-2">
-            Failed to load BC/DR Plans
-          </h2>
-          <p className="text-surface-600 mb-4">
-            {(error as Error).message || 'An unexpected error occurred'}
-          </p>
-          <Button onClick={() => refetch()} variant="primary">
-            Try Again
-          </Button>
-        </div>
-      </div>
-    );
+  const total = data?.total ?? plans.length;
+  const totalPages = data?.totalPages ?? Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  const activeFilters: ActiveFilter[] = [];
+  if (search) {
+    activeFilters.push({
+      key: 'search',
+      label: `Search: ${search}`,
+      onClear: () => updateParam('search', ''),
+    });
+  }
+  if (planType) {
+    activeFilters.push({
+      key: 'planType',
+      label: `Type: ${planTypeLabel(planType)}`,
+      onClear: () => updateParam('planType', ''),
+    });
+  }
+  if (status) {
+    activeFilters.push({
+      key: 'status',
+      label: `Status: ${statusLabel(status)}`,
+      onClear: () => updateParam('status', ''),
+    });
   }
 
+  const columns: DataTableColumn<BCDRPlan>[] = [
+    {
+      id: 'planId',
+      header: 'Plan ID',
+      mobileLabel: 'ID',
+      cell: ({ row }) => (
+        <span className="font-mono text-small text-brand-700">
+          {getPlanCode(row.original) || '—'}
+        </span>
+      ),
+    },
+    {
+      id: 'title',
+      accessorKey: 'title',
+      header: 'Title',
+      mobileLabel: 'Title',
+      cell: ({ row }) => (
+        <div className="min-w-0">
+          <p className="text-surface-900 truncate">{row.original.title}</p>
+          {row.original.description && (
+            <p className="text-xs text-surface-500 truncate max-w-md">{row.original.description}</p>
+          )}
+        </div>
+      ),
+    },
+    {
+      id: 'planType',
+      header: 'Type',
+      mobileLabel: 'Type',
+      cell: ({ row }) => {
+        const t = getPlanType(row.original);
+        if (!t) return <span className="text-surface-500">—</span>;
+        return <span className="text-surface-700">{planTypeLabel(t)}</span>;
+      },
+    },
+    {
+      id: 'status',
+      accessorKey: 'status',
+      header: 'Status',
+      mobileLabel: 'Status',
+      cell: ({ row }) => {
+        const s = row.original.status;
+        if (!s) return <span className="text-surface-500">—</span>;
+        return (
+          <Badge variant={STATUS_VARIANT[s] ?? 'neutral'} dot>
+            {statusLabel(s)}
+          </Badge>
+        );
+      },
+    },
+    {
+      id: 'version',
+      header: 'Version',
+      mobileLabel: 'Version',
+      cell: ({ row }) => (
+        <span className="font-mono text-small text-surface-700">
+          {row.original.version ? `v${row.original.version}` : '—'}
+        </span>
+      ),
+    },
+    {
+      id: 'owner',
+      header: 'Owner',
+      mobileLabel: 'Owner',
+      cell: ({ row }) => <span className="text-surface-700">{getOwner(row.original) || '—'}</span>,
+    },
+    {
+      id: 'lastUpdated',
+      header: 'Last Updated',
+      mobileLabel: 'Updated',
+      cell: ({ row }) => (
+        <span className="text-surface-700 tabular-nums">
+          {formatDate(getLastUpdated(row.original))}
+        </span>
+      ),
+    },
+  ];
+
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-surface-900">BC/DR Plans</h1>
-          <p className="text-surface-600 mt-1">
-            Manage business continuity and disaster recovery plans
-          </p>
-        </div>
-        <Link to="/bcdr/plans/new" className="">
-          <PlusIcon className="w-5 h-5 mr-2" />
-          Create Plan
-        </Link>
-      </div>
-      {/* Filters */}
-      <div className="card p-4">
-        <div className="flex flex-wrap gap-4">
-          <div className="flex-1 min-w-64">
-            <div className="relative">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-600" />
-              <Input
-                type="text"
-                placeholder="Search plans..."
-                className="form-input pl-10 w-full"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
-          </div>
-          <div className="w-48">
-            <SelectNative
-              className="form-select w-full"
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-            >
-              <option value="">All Types</option>
-              {Object.entries(planTypeLabels).map(([key, label]) => (
-                <option key={key} value={key}>
-                  {label}
-                </option>
-              ))}
-            </SelectNative>
-          </div>
-          <div className="w-36">
-            <SelectNative
-              className="form-select w-full"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="">All Status</option>
-              <option value="draft">Draft</option>
-              <option value="in_review">In Review</option>
-              <option value="approved">Approved</option>
-              <option value="published">Published</option>
-              <option value="archived">Archived</option>
-            </SelectNative>
-          </div>
-          <Button onClick={() => refetch()} variant="secondary">
-            <ArrowPathIcon className="w-5 h-5" />
-          </Button>
-        </div>
-      </div>
-      {/* Grid */}
-      {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="card p-6 animate-pulse">
-              <div className="h-6 bg-surface-200 rounded w-3/4 mb-4"></div>
-              <div className="h-4 bg-surface-200 rounded w-1/2 mb-2"></div>
-              <div className="h-4 bg-surface-200 rounded w-2/3"></div>
-            </div>
-          ))}
-        </div>
-      ) : plans.length === 0 ? (
-        <div className="card p-8 text-center text-surface-600">
-          <DocumentTextIcon className="w-12 h-12 mx-auto mb-4 opacity-50" />
-          <p>No BC/DR plans found</p>
-          <Link
-            to="/bcdr/plans/new"
-            className="text-brand-400 hover:text-brand-300 mt-2 inline-block"
-          >
-            Create your first plan →
+    <div className="space-y-5 animate-fade-in">
+      <PageHeader
+        title="BC/DR Plans"
+        description="Manage business continuity and disaster recovery plans."
+        actions={
+          <Link to="/bcdr/plans/new">
+            <Button size="sm" leftIcon={<Plus className="h-4 w-4" />}>
+              Create Plan
+            </Button>
           </Link>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {plans.map((plan: BCDRPlan) => (
-            <Link
-              key={plan.id}
-              to={`/bcdr/plans/${plan.id}`}
-              className="card p-6 hover:border-brand-500/50 transition-colors"
-            >
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <DocumentTextIcon className="w-5 h-5 text-brand-400" />
-                  <span
-                    className={clsx(
-                      'px-2 py-0.5 rounded text-xs font-medium',
-                      statusColors[plan.status]
-                    )}
-                  >
-                    {plan.status}
-                  </span>
-                </div>
-                <span className="text-surface-600 text-xs">v{plan.version}</span>
-              </div>
+        }
+      />
 
-              <h3 className="text-lg font-semibold text-surface-900 mb-1">{plan.title}</h3>
-              <p className="text-surface-600 text-sm mb-3">{plan.plan_id}</p>
+      <FilterBar active={activeFilters} onClearAll={activeFilters.length ? clearAll : undefined}>
+        <Input
+          inputSize="sm"
+          className="w-64"
+          placeholder="Search plans…"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          leftIcon={<Search className="h-4 w-4" />}
+        />
+        <Select
+          size="sm"
+          fullWidth={false}
+          className="w-52"
+          placeholder="All Types"
+          value={planType}
+          onChange={(v) => updateParam('planType', v)}
+          options={PLAN_TYPE_OPTS}
+          clearable
+          searchable
+        />
+        <Select
+          size="sm"
+          fullWidth={false}
+          className="w-44"
+          placeholder="All Statuses"
+          value={status}
+          onChange={(v) => updateParam('status', v)}
+          options={STATUS_OPTS}
+          clearable
+        />
+      </FilterBar>
 
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-surface-600">Type</span>
-                  <span className="text-surface-700">
-                    {planTypeLabels[plan.plan_type] || plan.plan_type}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-surface-600">Owner</span>
-                  <span className="text-surface-700">{plan.owner_name || '-'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-surface-600">Linked Controls</span>
-                  <span className="text-surface-700">{plan.control_count || 0}</span>
-                </div>
-                {plan.effective_date && (
-                  <div className="flex justify-between">
-                    <span className="text-surface-600">Effective</span>
-                    <span className="text-surface-700">
-                      {new Date(plan.effective_date).toLocaleDateString()}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-4">
-          <Button
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1}
-            className=""
-            variant="secondary"
-          >
-            Previous
-          </Button>
-          <span className="text-surface-600 text-sm">
-            Page {page} of {totalPages}
+      <DataTable
+        data={plans}
+        columns={columns}
+        loading={isLoading}
+        getRowId={(p) => p.id}
+        onRowClick={(p) => navigate(`/bcdr/plans/${p.id}`)}
+        emptyState={
+          <EmptyState
+            icon={<FileText className="h-8 w-8" />}
+            title="No plans found"
+            description={
+              activeFilters.length
+                ? 'Try clearing your filters to see all plans.'
+                : 'Create your first BC/DR plan to begin tracking continuity coverage.'
+            }
+            action={
+              activeFilters.length ? (
+                <Button variant="outline" size="sm" onClick={clearAll}>
+                  Clear filters
+                </Button>
+              ) : (
+                <Link to="/bcdr/plans/new">
+                  <Button size="sm" leftIcon={<Plus className="h-4 w-4" />}>
+                    Create Plan
+                  </Button>
+                </Link>
+              )
+            }
+          />
+        }
+      />
+
+      {total > PAGE_SIZE && (
+        <div className="flex items-center justify-between text-xs text-surface-500">
+          <span>
+            Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)} of {total}
           </span>
-          <Button
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages}
-            className=""
-            variant="secondary"
-          >
-            Next
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page === 1}
+              onClick={() => updateParam('page', String(page - 1))}
+            >
+              Previous
+            </Button>
+            <span className="text-surface-500">
+              Page {page} of {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page >= totalPages}
+              onClick={() => updateParam('page', String(page + 1))}
+            >
+              Next
+            </Button>
+          </div>
         </div>
       )}
     </div>

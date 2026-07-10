@@ -9,8 +9,7 @@ import {
   XCircleIcon,
 } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
-
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui';
 
 interface ValidationResult {
   valid: boolean;
@@ -175,32 +174,23 @@ export default function CodeEditor({
   return (
     <div className="h-full flex flex-col">
       {/* Toolbar */}
-      <div className="flex items-center justify-between px-4 py-2 bg-white/50 border-b border-surface-200">
+      <div className="flex items-center justify-between px-4 py-2 bg-surface-100/50 border-b border-surface-300">
         <div className="flex items-center gap-2">
           <Button
-            onClick={handleValidate}
-            disabled={isValidating}
-            className="text-sm flex items-center gap-1"
             variant="secondary"
+            size="sm"
+            onClick={handleValidate}
+            loading={isValidating}
+            leftIcon={!isValidating ? <CheckCircleIcon className="w-4 h-4" /> : undefined}
           >
-            {isValidating ? (
-              <ArrowPathIcon className="w-4 h-4 animate-spin" />
-            ) : (
-              <CheckCircleIcon className="w-4 h-4" />
-            )}
             Validate
           </Button>
           <Button
+            size="sm"
             onClick={onTest}
-            disabled={isTestLoading}
-            className="text-sm flex items-center gap-1"
-            variant="primary"
+            loading={isTestLoading}
+            leftIcon={!isTestLoading ? <PlayIcon className="w-4 h-4" /> : undefined}
           >
-            {isTestLoading ? (
-              <ArrowPathIcon className="w-4 h-4 animate-spin" />
-            ) : (
-              <PlayIcon className="w-4 h-4" />
-            )}
             Test Run
           </Button>
         </div>
@@ -221,14 +211,15 @@ export default function CodeEditor({
           </button>
         </div>
       </div>
+
       {/* Validation/Test Results */}
       {(validation || testResult) && (
-        <div className="px-4 py-2 bg-white/30 border-b border-surface-200">
+        <div className="px-4 py-2 bg-surface-100/30 border-b border-surface-300">
           {validation && (
             <div
               className={clsx(
                 'flex items-start gap-2 text-sm',
-                validation.valid ? 'text-green-600' : 'text-red-600'
+                validation.valid ? 'text-emerald-700' : 'text-red-600'
               )}
             >
               {validation.valid ? (
@@ -247,7 +238,7 @@ export default function CodeEditor({
                   </div>
                 )}
                 {validation.warnings && validation.warnings.length > 0 && (
-                  <div className="text-yellow-600 mt-1 flex items-start gap-1">
+                  <div className="text-yellow-700 mt-1 flex items-start gap-1">
                     <ExclamationTriangleIcon className="w-4 h-4 flex-shrink-0 mt-0.5" />
                     <div>
                       {validation.warnings.map((warn, i) => (
@@ -264,7 +255,7 @@ export default function CodeEditor({
             <div
               className={clsx(
                 'flex items-start gap-2 text-sm mt-2',
-                testResult.success ? 'text-green-600' : 'text-red-600'
+                testResult.success ? 'text-emerald-700' : 'text-red-600'
               )}
             >
               {testResult.success ? (
@@ -284,6 +275,7 @@ export default function CodeEditor({
           )}
         </div>
       )}
+
       {/* Editor */}
       <div className="flex-1 min-h-0">
         <Editor
@@ -304,8 +296,9 @@ export default function CodeEditor({
           }}
         />
       </div>
+
       {/* Help Text */}
-      <div className="px-4 py-2 bg-white/30 border-t border-surface-200 text-xs text-surface-500">
+      <div className="px-4 py-2 bg-surface-100/30 border-t border-surface-300 text-xs text-surface-500">
         <strong>Tip:</strong> The <code className="bg-surface-200 px-1 rounded">sync(context)</code>{' '}
         function is called when syncing. Return an object with an{' '}
         <code className="bg-surface-200 px-1 rounded">evidence</code> array containing data to save.

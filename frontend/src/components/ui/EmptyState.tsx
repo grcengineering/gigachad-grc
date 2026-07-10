@@ -40,20 +40,13 @@ export function EmptyState({
     >
       {icon && (
         <div
-          className={cn(
-            'mb-3 rounded-full bg-surface-100 p-3 text-surface-500 dark:bg-surface-800 dark:text-surface-400',
-            iconSizes[size]
-          )}
+          className={cn('mb-3 rounded-full bg-surface-100 p-3 text-surface-500', iconSizes[size])}
         >
           {icon}
         </div>
       )}
-      <h3 className="text-h3 text-surface-900 dark:text-surface-100">{title}</h3>
-      {description && (
-        <p className="mt-1 max-w-sm text-small text-surface-600 dark:text-surface-400">
-          {description}
-        </p>
-      )}
+      <h3 className="text-h3 text-surface-900">{title}</h3>
+      {description && <p className="mt-1 max-w-sm text-small text-surface-600">{description}</p>}
       {action && <div className="mt-4">{action}</div>}
     </div>
   );

@@ -1,666 +1,278 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import api from '@/lib/api';
 import {
-  ClockIcon,
-  UserGroupIcon,
-  BookOpenIcon,
-  GlobeAltIcon,
-  SparklesIcon,
-  ArrowPathIcon,
-  CheckIcon,
-  ExclamationTriangleIcon,
-} from '@heroicons/react/24/outline';
-import { trustConfigApi, TrustConfiguration as TrustConfigType } from '../lib/api';
-import { useAuth } from '../contexts/AuthContext';
-import { Button } from '@/components/ui/Button';
-import { EmptyState } from '@/components/EmptyState';
-import toast from 'react-hot-toast';
-import clsx from 'clsx';
+  Button,
+  Card,
+  CardBody,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Input,
+  Label,
+  PageHeader,
+  Select,
+} from '@/components/ui';
 
-import { Input } from '@/components/ui/Input';
+type Visibility = 'private' | 'nda_required' | 'public';
+type LoginMethod = 'email' | 'sso' | 'both';
 
-type TabId = 'sla' | 'assignment' | 'kb' | 'trust-center' | 'ai';
+interface TrustSection {
+  id: string;
+  name: string;
+  description: string;
+  enabled: boolean;
+}
 
-const TABS: { id: TabId; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-  { id: 'sla', label: 'SLA Settings', icon: ClockIcon },
-  { id: 'assignment', label: 'Assignment', icon: UserGroupIcon },
-  { id: 'kb', label: 'Knowledge Base', icon: BookOpenIcon },
-  { id: 'trust-center', label: 'Trust Center', icon: GlobeAltIcon },
-  { id: 'ai', label: 'AI Features', icon: SparklesIcon },
+interface TrustConfig {
+  visibility: Visibility;
+  customDomain: string;
+  brandColor: string;
+  sections: TrustSection[];
+  ndaRequired: boolean;
+  loginMethod: LoginMethod;
+  sessionTimeoutMinutes: number;
+}
+
+const DEFAULT_SECTIONS: TrustSection[] = [
+  {
+    id: 'compliance',
+    name: 'Compliance',
+    description: 'Framework attestations and certifications.',
+    enabled: true,
+  },
+  {
+    id: 'policies',
+    name: 'Policies',
+    description: 'Published security and privacy policies.',
+    enabled: true,
+  },
+  {
+    id: 'documents',
+    name: 'Documents',
+    description: 'Audit reports, SOC 2, ISO 27001 letters.',
+    enabled: true,
+  },
+  {
+    id: 'subprocessors',
+    name: 'Subprocessors',
+    description: 'List of subprocessors and data flows.',
+    enabled: false,
+  },
+  {
+    id: 'security',
+    name: 'Security',
+    description: 'Overview of security program and controls.',
+    enabled: true,
+  },
+];
+
+const DEFAULT_CONFIG: TrustConfig = {
+  visibility: 'nda_required',
+  customDomain: '',
+  brandColor: '#10b981',
+  sections: DEFAULT_SECTIONS,
+  ndaRequired: true,
+  loginMethod: 'email',
+  sessionTimeoutMinutes: 60,
+};
+
+const VISIBILITY_OPTIONS: { value: Visibility; label: string; description?: string }[] = [
+  { value: 'private', label: 'Private', description: 'Invite-only access' },
+  { value: 'nda_required', label: 'NDA required', description: 'Users must accept NDA' },
+  { value: 'public', label: 'Public', description: 'Open to anyone' },
+];
+
+const LOGIN_OPTIONS: { value: LoginMethod; label: string }[] = [
+  { value: 'email', label: 'Email + password' },
+  { value: 'sso', label: 'SSO only' },
+  { value: 'both', label: 'Email or SSO' },
 ];
 
 export default function TrustConfiguration() {
-  const { user } = useAuth();
   const queryClient = useQueryClient();
-  const organizationId = user?.organizationId;
-  const [activeTab, setActiveTab] = useState<TabId>('sla');
+  const [draft, setDraft] = useState<TrustConfig>(DEFAULT_CONFIG);
 
-  const { data: config, isLoading } = useQuery({
-    queryKey: ['trust-config', organizationId],
+  const { data, isLoading } = useQuery<TrustConfig>({
+    queryKey: ['trust-config'],
     queryFn: async () => {
-      const response = await trustConfigApi.get(organizationId!);
-      return response.data;
-    },
-    enabled: !!organizationId,
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: async (data: Partial<TrustConfigType>) => {
-      if (!organizationId) throw new Error('Not signed in');
-      const response = await trustConfigApi.update(data, organizationId);
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['trust-config'] });
-      toast.success('Configuration saved successfully');
-    },
-    onError: () => {
-      toast.error('Failed to save configuration');
+      const res = await api.get('/api/trust-config');
+      const payload = res.data?.data ?? res.data;
+      return {
+        visibility: (payload?.visibility as Visibility) ?? DEFAULT_CONFIG.visibility,
+        customDomain: payload?.customDomain ?? '',
+        brandColor: payload?.brandColor ?? DEFAULT_CONFIG.brandColor,
+        sections:
+          Array.isArray(payload?.sections) && payload.sections.length > 0
+            ? (payload.sections as TrustSection[])
+            : DEFAULT_SECTIONS,
+        ndaRequired: payload?.ndaRequired ?? true,
+        loginMethod: (payload?.loginMethod as LoginMethod) ?? 'email',
+        sessionTimeoutMinutes: payload?.sessionTimeoutMinutes ?? 60,
+      };
     },
   });
 
-  const resetMutation = useMutation({
-    mutationFn: async () => {
-      if (!organizationId) throw new Error('Not signed in');
-      const response = await trustConfigApi.reset(organizationId);
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['trust-config'] });
-      toast.success('Configuration reset to defaults');
-    },
-    onError: () => {
-      toast.error('Failed to reset configuration');
-    },
+  useEffect(() => {
+    if (data) setDraft(data);
+  }, [data]);
+
+  const saveMutation = useMutation({
+    mutationFn: (payload: TrustConfig) => api.put('/api/trust-config', payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['trust-config'] }),
   });
 
-  if (!organizationId) {
-    return (
-      <EmptyState
-        variant="warning"
-        title="Sign in required"
-        description="You need to be signed in to view or change Trust Configuration."
-      />
-    );
-  }
+  const isDirty = useMemo(() => JSON.stringify(draft) !== JSON.stringify(data), [draft, data]);
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="animate-pulse">
-          <div className="h-8 bg-surface-200 rounded w-48 mb-4" />
-          <div className="h-64 bg-white rounded" />
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-surface-900">Trust Configuration</h1>
-          <p className="mt-1 text-surface-600">
-            Configure SLAs, assignments, and features for the Trust module
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={() => resetMutation.mutate()}
-            isLoading={resetMutation.isPending}
-            leftIcon={<ArrowPathIcon className="w-4 h-4" />}
-          >
-            Reset to Defaults
-          </Button>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="border-b border-surface-200">
-        <nav className="flex gap-6">
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={clsx(
-                'flex items-center gap-2 px-1 py-3 text-sm font-medium border-b-2 transition-colors',
-                activeTab === tab.id
-                  ? 'border-brand-500 text-brand-400'
-                  : 'border-transparent text-surface-600 hover:text-surface-800'
-              )}
-            >
-              <tab.icon className="w-4 h-4" />
-              {tab.label}
-            </button>
-          ))}
-        </nav>
-      </div>
-
-      {/* Tab Content */}
-      <div className="bg-white border border-surface-200 rounded-xl p-6">
-        {activeTab === 'sla' && config && (
-          <SlaSettingsTab
-            config={config}
-            onUpdate={(slaSettings) => {
-              updateMutation.mutate({ slaSettings });
-            }}
-            isUpdating={updateMutation.isPending}
-          />
-        )}
-        {activeTab === 'assignment' && config && (
-          <AssignmentSettingsTab
-            config={config}
-            onUpdate={(assignmentSettings) => {
-              updateMutation.mutate({ assignmentSettings });
-            }}
-            isUpdating={updateMutation.isPending}
-          />
-        )}
-        {activeTab === 'kb' && config && (
-          <KbSettingsTab
-            config={config}
-            onUpdate={(kbSettings) => {
-              updateMutation.mutate({ kbSettings });
-            }}
-            isUpdating={updateMutation.isPending}
-          />
-        )}
-        {activeTab === 'trust-center' && config && (
-          <TrustCenterSettingsTab
-            config={config}
-            onUpdate={(trustCenterSettings) => {
-              updateMutation.mutate({ trustCenterSettings });
-            }}
-            isUpdating={updateMutation.isPending}
-          />
-        )}
-        {activeTab === 'ai' && config && (
-          <AiSettingsTab
-            config={config}
-            onUpdate={(aiSettings) => {
-              updateMutation.mutate({ aiSettings });
-            }}
-            isUpdating={updateMutation.isPending}
-          />
-        )}
-      </div>
-    </div>
-  );
-}
-
-// SLA Settings Tab
-function SlaSettingsTab({
-  config,
-  onUpdate,
-  isUpdating,
-}: {
-  config: TrustConfigType;
-  onUpdate: (settings: TrustConfigType['slaSettings']) => void;
-  isUpdating: boolean;
-}) {
-  const [settings, setSettings] = useState(config.slaSettings);
-  const priorities = ['urgent', 'high', 'medium', 'low'] as const;
-
-  const handleChange = (
-    priority: keyof typeof settings,
-    field: 'targetHours' | 'warningHours',
-    value: number
-  ) => {
-    setSettings((prev) => ({
-      ...prev,
-      [priority]: { ...prev[priority], [field]: value },
+  const toggleSection = (id: string) => {
+    setDraft((d) => ({
+      ...d,
+      sections: d.sections.map((s) => (s.id === id ? { ...s, enabled: !s.enabled } : s)),
     }));
   };
 
-  const formatHoursToLabel = (hours: number): string => {
-    if (hours < 24) return `${hours} hours`;
-    const days = Math.floor(hours / 24);
-    const remainingHours = hours % 24;
-    if (remainingHours === 0) return `${days} day${days > 1 ? 's' : ''}`;
-    return `${days}d ${remainingHours}h`;
-  };
-
   return (
     <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-semibold text-surface-900 mb-2">SLA Targets by Priority</h3>
-        <p className="text-sm text-surface-600">
-          Define target response times for questionnaires based on priority level. The warning
-          threshold triggers "At Risk" status.
-        </p>
-      </div>
-      <div className="space-y-4">
-        {priorities.map((priority) => (
-          <div key={priority} className="bg-white rounded-lg p-4">
-            <div className="flex items-center gap-3 mb-4">
-              <span
-                className={clsx(
-                  'px-3 py-1 text-sm font-medium rounded-full capitalize',
-                  priority === 'urgent'
-                    ? 'bg-red-500/20 text-red-600'
-                    : priority === 'high'
-                      ? 'bg-orange-500/20 text-orange-600'
-                      : priority === 'medium'
-                        ? 'bg-yellow-500/20 text-yellow-600'
-                        : 'bg-surface-200 text-surface-700'
-                )}
+      <PageHeader
+        title="Trust Center Configuration"
+        description="Configure publishing, sections, and access for your public trust center."
+        actions={
+          <Button
+            loading={saveMutation.isPending}
+            disabled={!isDirty || isLoading}
+            onClick={() => saveMutation.mutate(draft)}
+          >
+            Save
+          </Button>
+        }
+      />
+
+      <Card density="comfy">
+        <CardHeader className="px-0 pt-0">
+          <div>
+            <CardTitle>Publishing</CardTitle>
+            <CardDescription>How your trust center is published and branded.</CardDescription>
+          </div>
+        </CardHeader>
+        <CardBody density="cozy" className="px-0 pb-0 space-y-4">
+          <div>
+            <Label htmlFor="trust-visibility">Visibility</Label>
+            <Select
+              value={draft.visibility}
+              onChange={(v) => setDraft({ ...draft, visibility: v as Visibility })}
+              options={VISIBILITY_OPTIONS}
+            />
+          </div>
+          <div>
+            <Label htmlFor="trust-domain">Custom domain</Label>
+            <Input
+              id="trust-domain"
+              value={draft.customDomain}
+              onChange={(e) => setDraft({ ...draft, customDomain: e.target.value })}
+              placeholder="trust.example.com"
+            />
+          </div>
+          <div>
+            <Label htmlFor="trust-color">Brand color</Label>
+            <div className="flex items-center gap-3">
+              <Input
+                id="trust-color"
+                value={draft.brandColor}
+                onChange={(e) => setDraft({ ...draft, brandColor: e.target.value })}
+                placeholder="#10b981"
+                className="max-w-xs font-mono"
+              />
+              <div
+                className="h-9 w-9 rounded-md border border-surface-300 shrink-0"
+                style={{ backgroundColor: draft.brandColor }}
+                aria-label="Brand color preview"
+              />
+            </div>
+          </div>
+        </CardBody>
+      </Card>
+
+      <Card density="comfy">
+        <CardHeader className="px-0 pt-0">
+          <div>
+            <CardTitle>Sections</CardTitle>
+            <CardDescription>
+              Toggle which sections appear on your published trust center.
+            </CardDescription>
+          </div>
+        </CardHeader>
+        <CardBody density="cozy" className="px-0 pb-0">
+          <div className="space-y-3">
+            {draft.sections.map((section) => (
+              <div
+                key={section.id}
+                className="rounded-lg border border-surface-200 bg-white p-4 flex items-start justify-between gap-4"
               >
-                {priority}
-              </span>
-              <span className="text-xs text-surface-500">
-                Current: {formatHoursToLabel(settings[priority].targetHours)} target,{' '}
-                {formatHoursToLabel(settings[priority].warningHours)} warning
-              </span>
+                <div className="min-w-0">
+                  <p className="text-surface-900 font-medium">{section.name}</p>
+                  <p className="text-small text-surface-600 mt-1">{section.description}</p>
+                </div>
+                <Button variant="secondary" size="sm" onClick={() => toggleSection(section.id)}>
+                  {section.enabled ? 'Enabled' : 'Disabled'}
+                </Button>
+              </div>
+            ))}
+          </div>
+        </CardBody>
+      </Card>
+
+      <Card density="comfy">
+        <CardHeader className="px-0 pt-0">
+          <div>
+            <CardTitle>NDA & Auth</CardTitle>
+            <CardDescription>Control access and authentication for visitors.</CardDescription>
+          </div>
+        </CardHeader>
+        <CardBody density="cozy" className="px-0 pb-0 space-y-4">
+          <div className="rounded-lg border border-surface-200 bg-white p-4 flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <p className="text-surface-900 font-medium">NDA required</p>
+              <p className="text-small text-surface-600 mt-1">
+                Visitors must accept the NDA before viewing private content.
+              </p>
             </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-surface-600 mb-1">
-                  Target Time (hours)
-                </label>
-                <Input
-                  type="number"
-                  min="1"
-                  value={settings[priority].targetHours}
-                  onChange={(e) =>
-                    handleChange(priority, 'targetHours', parseInt(e.target.value) || 1)
-                  }
-                  className="w-full px-3 py-2 bg-white border border-surface-300 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-surface-600 mb-1">
-                  Warning Threshold (hours)
-                </label>
-                <Input
-                  type="number"
-                  min="1"
-                  max={settings[priority].targetHours - 1}
-                  value={settings[priority].warningHours}
-                  onChange={(e) =>
-                    handleChange(priority, 'warningHours', parseInt(e.target.value) || 1)
-                  }
-                  className="w-full px-3 py-2 bg-white border border-surface-300 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
-                />
-              </div>
-            </div>
-
-            {/* Visual SLA Bar */}
-            <div className="mt-4">
-              <div className="flex items-center gap-2 text-xs text-surface-500 mb-1">
-                <span>0h</span>
-                <div className="flex-1" />
-                <span>{formatHoursToLabel(settings[priority].targetHours)}</span>
-              </div>
-              <div className="h-3 bg-surface-200 rounded-full overflow-hidden flex">
-                <div
-                  className="bg-green-500/60 h-full"
-                  style={{
-                    width: `${(settings[priority].warningHours / settings[priority].targetHours) * 100}%`,
-                  }}
-                  title="On Track zone"
-                />
-                <div
-                  className="bg-amber-500/60 h-full"
-                  style={{
-                    width: `${((settings[priority].targetHours - settings[priority].warningHours) / settings[priority].targetHours) * 100}%`,
-                  }}
-                  title="At Risk zone"
-                />
-              </div>
-              <div className="flex items-center gap-4 mt-2 text-xs">
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-green-500" />
-                  On Track
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-amber-500" />
-                  At Risk
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-red-500" />
-                  Breached (past target)
-                </span>
-              </div>
-            </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setDraft({ ...draft, ndaRequired: !draft.ndaRequired })}
+            >
+              {draft.ndaRequired ? 'Enabled' : 'Disabled'}
+            </Button>
           </div>
-        ))}
-      </div>
-      <div className="flex justify-end">
-        <Button
-          onClick={() => onUpdate(settings)}
-          isLoading={isUpdating}
-          leftIcon={<CheckIcon className="w-4 h-4" />}
-        >
-          Save SLA Settings
-        </Button>
-      </div>
-    </div>
-  );
-}
 
-// Assignment Settings Tab
-function AssignmentSettingsTab({
-  config,
-  onUpdate,
-  isUpdating,
-}: {
-  config: TrustConfigType;
-  onUpdate: (settings: TrustConfigType['assignmentSettings']) => void;
-  isUpdating: boolean;
-}) {
-  const [settings, setSettings] = useState(config.assignmentSettings);
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-semibold text-surface-900 mb-2">Assignment Settings</h3>
-        <p className="text-sm text-surface-600">
-          Configure how questionnaires and questions are assigned to team members.
-        </p>
-      </div>
-
-      <div className="space-y-4">
-        <label className="flex items-center gap-3 p-4 bg-white rounded-lg cursor-pointer">
-          <input
-            type="checkbox"
-            checked={settings.enableAutoAssignment}
-            onChange={(e) =>
-              setSettings((prev) => ({ ...prev, enableAutoAssignment: e.target.checked }))
-            }
-            className="w-5 h-5 rounded border-surface-300 text-brand-500 focus:ring-brand-500 focus:ring-offset-surface-50"
-          />
           <div>
-            <p className="font-medium text-surface-900">Enable Auto-Assignment</p>
-            <p className="text-sm text-surface-600">
-              Automatically assign new questionnaires to team members based on workload
-            </p>
+            <Label htmlFor="trust-login">Login method</Label>
+            <Select
+              value={draft.loginMethod}
+              onChange={(v) => setDraft({ ...draft, loginMethod: v as LoginMethod })}
+              options={LOGIN_OPTIONS}
+            />
           </div>
-        </label>
-      </div>
 
-      <div className="flex justify-end">
-        <Button
-          onClick={() => onUpdate(settings)}
-          isLoading={isUpdating}
-          leftIcon={<CheckIcon className="w-4 h-4" />}
-        >
-          Save Assignment Settings
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-// Knowledge Base Settings Tab
-function KbSettingsTab({
-  config,
-  onUpdate,
-  isUpdating,
-}: {
-  config: TrustConfigType;
-  onUpdate: (settings: TrustConfigType['kbSettings']) => void;
-  isUpdating: boolean;
-}) {
-  const [settings, setSettings] = useState(config.kbSettings);
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-semibold text-surface-900 mb-2">Knowledge Base Settings</h3>
-        <p className="text-sm text-surface-600">
-          Configure how the knowledge base works for answer suggestions and quality control.
-        </p>
-      </div>
-
-      <div className="space-y-4">
-        <label className="flex items-center gap-3 p-4 bg-white rounded-lg cursor-pointer">
-          <input
-            type="checkbox"
-            checked={settings.requireApprovalForNewEntries}
-            onChange={(e) =>
-              setSettings((prev) => ({ ...prev, requireApprovalForNewEntries: e.target.checked }))
-            }
-            className="w-5 h-5 rounded border-surface-300 text-brand-500 focus:ring-brand-500 focus:ring-offset-surface-50"
-          />
           <div>
-            <p className="font-medium text-surface-900">Require Approval for New Entries</p>
-            <p className="text-sm text-surface-600">
-              New knowledge base entries must be approved before they can be used
-            </p>
+            <Label htmlFor="trust-session">Session timeout (minutes)</Label>
+            <Input
+              id="trust-session"
+              type="number"
+              min={5}
+              max={1440}
+              value={draft.sessionTimeoutMinutes}
+              onChange={(e) =>
+                setDraft({
+                  ...draft,
+                  sessionTimeoutMinutes: Number(e.target.value) || 0,
+                })
+              }
+              className="max-w-xs"
+            />
           </div>
-        </label>
-
-        <label className="flex items-center gap-3 p-4 bg-white rounded-lg cursor-pointer">
-          <input
-            type="checkbox"
-            checked={settings.autoSuggestFromKB}
-            onChange={(e) =>
-              setSettings((prev) => ({ ...prev, autoSuggestFromKB: e.target.checked }))
-            }
-            className="w-5 h-5 rounded border-surface-300 text-brand-500 focus:ring-brand-500 focus:ring-offset-surface-50"
-          />
-          <div>
-            <p className="font-medium text-surface-900">Auto-Suggest from Knowledge Base</p>
-            <p className="text-sm text-surface-600">
-              Automatically show relevant KB entries when answering questions
-            </p>
-          </div>
-        </label>
-
-        <label className="flex items-center gap-3 p-4 bg-white rounded-lg cursor-pointer">
-          <input
-            type="checkbox"
-            checked={settings.trackUsageMetrics}
-            onChange={(e) =>
-              setSettings((prev) => ({ ...prev, trackUsageMetrics: e.target.checked }))
-            }
-            className="w-5 h-5 rounded border-surface-300 text-brand-500 focus:ring-brand-500 focus:ring-offset-surface-50"
-          />
-          <div>
-            <p className="font-medium text-surface-900">Track Usage Metrics</p>
-            <p className="text-sm text-surface-600">
-              Track how often KB entries are used to identify popular answers
-            </p>
-          </div>
-        </label>
-      </div>
-
-      <div className="flex justify-end">
-        <Button
-          onClick={() => onUpdate(settings)}
-          isLoading={isUpdating}
-          leftIcon={<CheckIcon className="w-4 h-4" />}
-        >
-          Save KB Settings
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-// Trust Center Settings Tab
-function TrustCenterSettingsTab({
-  config,
-  onUpdate,
-  isUpdating,
-}: {
-  config: TrustConfigType;
-  onUpdate: (settings: TrustConfigType['trustCenterSettings']) => void;
-  isUpdating: boolean;
-}) {
-  const [settings, setSettings] = useState(config.trustCenterSettings);
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-semibold text-surface-900 mb-2">Trust Center Settings</h3>
-        <p className="text-sm text-surface-600">
-          Configure your public-facing trust center portal.
-        </p>
-      </div>
-      <div className="space-y-4">
-        <label className="flex items-center gap-3 p-4 bg-white rounded-lg cursor-pointer">
-          <input
-            type="checkbox"
-            checked={settings.enabled}
-            onChange={(e) => setSettings((prev) => ({ ...prev, enabled: e.target.checked }))}
-            className="w-5 h-5 rounded border-surface-300 text-brand-500 focus:ring-brand-500 focus:ring-offset-surface-50"
-          />
-          <div>
-            <p className="font-medium text-surface-900">Enable Trust Center</p>
-            <p className="text-sm text-surface-600">Make your trust center publicly accessible</p>
-          </div>
-        </label>
-
-        <label className="flex items-center gap-3 p-4 bg-white rounded-lg cursor-pointer">
-          <input
-            type="checkbox"
-            checked={settings.allowAnonymousAccess}
-            onChange={(e) =>
-              setSettings((prev) => ({ ...prev, allowAnonymousAccess: e.target.checked }))
-            }
-            className="w-5 h-5 rounded border-surface-300 text-brand-500 focus:ring-brand-500 focus:ring-offset-surface-50"
-          />
-          <div>
-            <p className="font-medium text-surface-900">Allow Anonymous Access</p>
-            <p className="text-sm text-surface-600">
-              Allow visitors to view the trust center without logging in
-            </p>
-          </div>
-        </label>
-
-        <div className="p-4 bg-white rounded-lg">
-          <label className="block text-sm font-medium text-surface-600 mb-2">
-            Custom Domain (optional)
-          </label>
-          <Input
-            type="text"
-            value={settings.customDomain || ''}
-            onChange={(e) =>
-              setSettings((prev) => ({ ...prev, customDomain: e.target.value || null }))
-            }
-            placeholder="trust.yourcompany.com"
-            className="w-full px-3 py-2 bg-white border border-surface-300 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
-          />
-          <p className="text-xs text-surface-500 mt-1">
-            Point a CNAME record to your trust center URL
-          </p>
-        </div>
-      </div>
-      <div className="flex justify-end">
-        <Button
-          onClick={() => onUpdate(settings)}
-          isLoading={isUpdating}
-          leftIcon={<CheckIcon className="w-4 h-4" />}
-        >
-          Save Trust Center Settings
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-// AI Settings Tab
-function AiSettingsTab({
-  config,
-  onUpdate,
-  isUpdating,
-}: {
-  config: TrustConfigType;
-  onUpdate: (settings: TrustConfigType['aiSettings']) => void;
-  isUpdating: boolean;
-}) {
-  const [settings, setSettings] = useState(config.aiSettings);
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-semibold text-surface-900 mb-2">AI Features</h3>
-        <p className="text-sm text-surface-600">
-          Enable optional AI-powered features to assist trust analysts.
-        </p>
-      </div>
-
-      {!settings.enabled && (
-        <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg flex items-start gap-3">
-          <ExclamationTriangleIcon className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm text-amber-200 font-medium">AI Features Disabled</p>
-            <p className="text-xs text-amber-700/80 mt-1">
-              Enable AI to unlock auto-categorization and answer suggestions. Requires AI provider
-              configuration in system settings.
-            </p>
-          </div>
-        </div>
-      )}
-
-      <div className="space-y-4">
-        <label className="flex items-center gap-3 p-4 bg-white rounded-lg cursor-pointer">
-          <input
-            type="checkbox"
-            checked={settings.enabled}
-            onChange={(e) => setSettings((prev) => ({ ...prev, enabled: e.target.checked }))}
-            className="w-5 h-5 rounded border-surface-300 text-brand-500 focus:ring-brand-500 focus:ring-offset-surface-50"
-          />
-          <div>
-            <p className="font-medium text-surface-900">Enable AI Features</p>
-            <p className="text-sm text-surface-600">
-              Turn on AI-powered assistance for the Trust module
-            </p>
-          </div>
-        </label>
-
-        {settings.enabled && (
-          <>
-            <label className="flex items-center gap-3 p-4 bg-white rounded-lg cursor-pointer">
-              <input
-                type="checkbox"
-                checked={settings.autoCategorizationEnabled}
-                onChange={(e) =>
-                  setSettings((prev) => ({ ...prev, autoCategorizationEnabled: e.target.checked }))
-                }
-                className="w-5 h-5 rounded border-surface-300 text-brand-500 focus:ring-brand-500 focus:ring-offset-surface-50"
-              />
-              <div>
-                <p className="font-medium text-surface-900">Auto-Categorization</p>
-                <p className="text-sm text-surface-600">
-                  Automatically categorize incoming questions (Security, Privacy, Compliance, etc.)
-                </p>
-              </div>
-            </label>
-
-            <label className="flex items-center gap-3 p-4 bg-white rounded-lg cursor-pointer">
-              <input
-                type="checkbox"
-                checked={settings.answerSuggestionsEnabled}
-                onChange={(e) =>
-                  setSettings((prev) => ({ ...prev, answerSuggestionsEnabled: e.target.checked }))
-                }
-                className="w-5 h-5 rounded border-surface-300 text-brand-500 focus:ring-brand-500 focus:ring-offset-surface-50"
-              />
-              <div>
-                <p className="font-medium text-surface-900">AI Answer Suggestions</p>
-                <p className="text-sm text-surface-600">
-                  Generate draft answers using AI based on your knowledge base
-                </p>
-              </div>
-            </label>
-          </>
-        )}
-      </div>
-
-      <div className="flex justify-end">
-        <Button
-          onClick={() => onUpdate(settings)}
-          isLoading={isUpdating}
-          leftIcon={<CheckIcon className="w-4 h-4" />}
-        >
-          Save AI Settings
-        </Button>
-      </div>
+        </CardBody>
+      </Card>
     </div>
   );
 }

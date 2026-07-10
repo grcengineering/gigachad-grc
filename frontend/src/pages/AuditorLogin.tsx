@@ -1,197 +1,245 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuditor } from '../contexts/AuditorContext';
-import {
-  ShieldCheckIcon,
-  EyeIcon,
-  EyeSlashIcon,
-  ExclamationCircleIcon,
-  ClipboardDocumentIcon,
-} from '@heroicons/react/24/outline';
-import { Input } from '@/components/ui/Input';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { ShieldCheck } from 'lucide-react';
+import { AxiosError } from 'axios';
+import api from '@/lib/api';
+import { Button, Card, CardBody, FieldHint, Input, Label } from '@/components/ui';
+
+interface AuditorLoginResponse {
+  token?: string;
+  auditorToken?: string;
+  accessToken?: string;
+  message?: string;
+}
+
+function extractToken(payload: AuditorLoginResponse | undefined): string | undefined {
+  if (!payload) return undefined;
+  return payload.token ?? payload.auditorToken ?? payload.accessToken;
+}
+
+function extractError(err: unknown, fallback: string): string {
+  if (err instanceof AxiosError) {
+    const data = err.response?.data as { error?: string; message?: string } | undefined;
+    return data?.error ?? data?.message ?? err.message ?? fallback;
+  }
+  if (err instanceof Error) return err.message;
+  return fallback;
+}
 
 export default function AuditorLogin() {
   const navigate = useNavigate();
-  const { login, isAuthenticated, isLoading, error, clearError } = useAuditor();
-  const [accessCode, setAccessCode] = useState('');
-  const [showCode, setShowCode] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [localError, setLocalError] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
 
-  // Redirect if already authenticated
+  const [step, setStep] = useState<1 | 2>(1);
+  const [email, setEmail] = useState('');
+  const [code, setCode] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
+
+  const verify = useCallback(
+    async (emailValue: string, token: string) => {
+      setSubmitting(true);
+      setError(null);
+      try {
+        const res = await api.post<AuditorLoginResponse>('/api/auditor/auth/login', {
+          email: emailValue,
+          token,
+        });
+        const issued = extractToken(res.data);
+        if (issued) {
+          localStorage.setItem('auditorToken', issued);
+        }
+        navigate('/auditor-portal');
+      } catch (err) {
+        setError(extractError(err, 'Verification failed. Please check the code and try again.'));
+      } finally {
+        setSubmitting(false);
+      }
+    },
+    [navigate]
+  );
+
+  // Auto-verify when ?token=... is present.
+  const autoVerifiedRef = useRef(false);
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/portal/dashboard');
-    }
-  }, [isAuthenticated, navigate]);
+    if (autoVerifiedRef.current) return;
+    const token = searchParams.get('token');
+    if (!token) return;
+    autoVerifiedRef.current = true;
+    const emailParam = searchParams.get('email') ?? '';
+    setStep(2);
+    setEmail(emailParam);
+    setCode(token);
+    void verify(emailParam, token);
+  }, [searchParams, verify]);
 
-  // Clear errors when input changes
-  useEffect(() => {
-    if (accessCode) {
-      clearError();
-      setLocalError(null);
-    }
-  }, [accessCode, clearError]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!accessCode.trim()) {
-      setLocalError('Please enter your access code');
+  const handleSendLink = async () => {
+    if (!email.trim()) {
+      setError('Please enter your email address.');
       return;
     }
-
-    setIsSubmitting(true);
-    setLocalError(null);
-
+    setSubmitting(true);
+    setError(null);
+    setInfo(null);
     try {
-      await login(accessCode.trim());
-      navigate('/portal/dashboard');
-    } catch {
-      // Error is handled by context
-      setIsSubmitting(false);
-    }
-  };
-
-  const handlePaste = async () => {
-    try {
-      const text = await navigator.clipboard.readText();
-      setAccessCode(text.trim());
+      await api.post('/api/auditor/auth/login', { email: email.trim() });
+      setInfo('Check your inbox for a sign-in link and one-time code.');
+      setStep(2);
     } catch (err) {
-      console.error('Failed to read clipboard:', err);
+      setError(extractError(err, 'Could not send sign-in link. Please try again.'));
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const displayError = error || localError;
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-400"></div>
-      </div>
-    );
-  }
+  const handleVerify = () => {
+    if (!code.trim()) {
+      setError('Please enter the one-time code from your email.');
+      return;
+    }
+    void verify(email.trim(), code.trim());
+  };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 px-4 py-12">
-      {/* Background decoration */}
+    <div className="min-h-screen flex flex-col items-center justify-center bg-surface-50 px-4 py-12">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500/20 rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-brand-600/20 rounded-full blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-brand-600/10 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative w-full max-w-md">
-        {/* Logo/Brand */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 shadow-lg shadow-purple-500/30 mb-4">
-            <ShieldCheckIcon className="w-8 h-8 text-white" />
+      <div className="relative z-10 w-full max-w-md">
+        <div className="flex flex-col items-center mb-6">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-lg bg-brand-500/10 text-brand-700 mb-3">
+            <ShieldCheck className="h-7 w-7" />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Auditor Portal</h1>
-          <p className="text-purple-200/70">Enter your access code to view audit materials</p>
-        </div>
-
-        {/* Login Card */}
-        <div className="bg-white/10 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Error Message */}
-            {displayError && (
-              <div className="flex items-start gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
-                <ExclamationCircleIcon className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-red-700 text-sm font-medium">Authentication Failed</p>
-                  <p className="text-red-700/70 text-sm mt-1">{displayError}</p>
-                </div>
-              </div>
-            )}
-
-            {/* Access Code Input */}
-            <div>
-              <label
-                htmlFor="accessCode"
-                className="block text-sm font-medium text-purple-200 mb-2"
-              >
-                Access Code
-              </label>
-              <div className="relative">
-                <Input
-                  id="accessCode"
-                  type={showCode ? 'text' : 'password'}
-                  value={accessCode}
-                  onChange={(e) => setAccessCode(e.target.value)}
-                  placeholder="Enter your access code"
-                  className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white placeholder-purple-300/50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all pr-24"
-                  autoComplete="off"
-                  autoFocus
-                />
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={handlePaste}
-                    className="p-2 text-purple-700 hover:text-white transition-colors"
-                    title="Paste from clipboard"
-                  >
-                    <ClipboardDocumentIcon className="w-5 h-5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowCode(!showCode)}
-                    className="p-2 text-purple-700 hover:text-white transition-colors"
-                    title={showCode ? 'Hide code' : 'Show code'}
-                  >
-                    {showCode ? (
-                      <EyeSlashIcon className="w-5 h-5" />
-                    ) : (
-                      <EyeIcon className="w-5 h-5" />
-                    )}
-                  </button>
-                </div>
-              </div>
-              <p className="mt-2 text-xs text-purple-700/50">
-                Your access code was provided by the audit team
-              </p>
-            </div>
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={isSubmitting || !accessCode.trim()}
-              className="w-full py-3 px-4 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white font-medium rounded-xl shadow-lg shadow-purple-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2"
-            >
-              {isSubmitting ? (
-                <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white/30 border-t-white"></div>
-                  <span>Verifying...</span>
-                </>
-              ) : (
-                <>
-                  <ShieldCheckIcon className="w-5 h-5" />
-                  <span>Access Portal</span>
-                </>
-              )}
-            </button>
-          </form>
-
-          {/* Help Text */}
-          <div className="mt-6 pt-6 border-t border-white/10">
-            <p className="text-center text-sm text-purple-200/50">
-              Having trouble accessing the portal?{' '}
-              <a
-                href="mailto:support@example.com"
-                className="text-purple-600 hover:text-purple-700 transition-colors"
-              >
-                Contact support
-              </a>
-            </p>
-          </div>
-        </div>
-
-        {/* Security Notice */}
-        <div className="mt-6 text-center">
-          <p className="text-xs text-purple-700/40">
-            🔒 This portal uses secure, encrypted connections. Your access code provides temporary,
-            limited access to audit materials.
+          <h1 className="text-h1 text-surface-900">Auditor Sign-in</h1>
+          <p className="text-small text-surface-600 mt-1.5 text-center">
+            Use your work email to access the auditor portal.
           </p>
         </div>
+
+        <Card>
+          <CardBody density="comfy" className="space-y-4">
+            {step === 1 ? (
+              <>
+                <div>
+                  <Label htmlFor="auditor-email" required>
+                    Email address
+                  </Label>
+                  <Input
+                    id="auditor-email"
+                    type="email"
+                    autoComplete="email"
+                    autoFocus
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (error) setError(null);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !submitting) {
+                        e.preventDefault();
+                        void handleSendLink();
+                      }
+                    }}
+                    invalid={!!error}
+                  />
+                  {error ? (
+                    <FieldHint error>{error}</FieldHint>
+                  ) : (
+                    <FieldHint>We&apos;ll send you a one-time sign-in link.</FieldHint>
+                  )}
+                </div>
+
+                <Button
+                  fullWidth
+                  size="lg"
+                  loading={submitting}
+                  disabled={!email.trim()}
+                  onClick={handleSendLink}
+                >
+                  Send sign-in link
+                </Button>
+              </>
+            ) : (
+              <>
+                <div>
+                  <Label htmlFor="auditor-email-readonly">Email address</Label>
+                  <Input
+                    id="auditor-email-readonly"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={submitting}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="auditor-code" required>
+                    One-time code
+                  </Label>
+                  <Input
+                    id="auditor-code"
+                    type="text"
+                    autoComplete="one-time-code"
+                    autoFocus
+                    placeholder="Paste your code"
+                    value={code}
+                    onChange={(e) => {
+                      setCode(e.target.value);
+                      if (error) setError(null);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !submitting) {
+                        e.preventDefault();
+                        handleVerify();
+                      }
+                    }}
+                    invalid={!!error}
+                  />
+                  {error ? (
+                    <FieldHint error>{error}</FieldHint>
+                  ) : info ? (
+                    <FieldHint>{info}</FieldHint>
+                  ) : (
+                    <FieldHint>Paste the code from your email to continue.</FieldHint>
+                  )}
+                </div>
+
+                <Button
+                  fullWidth
+                  size="lg"
+                  loading={submitting}
+                  disabled={!code.trim()}
+                  onClick={handleVerify}
+                >
+                  Verify
+                </Button>
+
+                <Button
+                  fullWidth
+                  variant="ghost"
+                  size="sm"
+                  disabled={submitting}
+                  onClick={() => {
+                    setStep(1);
+                    setCode('');
+                    setError(null);
+                    setInfo(null);
+                  }}
+                >
+                  Use a different email
+                </Button>
+              </>
+            )}
+          </CardBody>
+        </Card>
+
+        <p className="text-center text-xs text-surface-500 mt-6">
+          Having trouble? Contact your audit coordinator for assistance.
+        </p>
       </div>
     </div>
   );

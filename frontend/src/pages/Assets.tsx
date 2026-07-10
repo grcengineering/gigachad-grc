@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { assetsApi, integrationsApi } from '../lib/api';
-import { Asset } from '../lib/apiTypes';
 import {
   Server,
   Plus,
@@ -14,50 +13,130 @@ import {
   Cloud,
   Database,
   Network,
-  X,
   AlertTriangle,
   CheckCircle,
 } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { SkeletonTable } from '@/components/Skeleton';
-import { ExportDropdown } from '@/components/ExportDropdown';
-import { exportConfigs } from '@/lib/export';
-import toast from 'react-hot-toast';
+import { cn } from '@/lib/cn';
+import {
+  Button,
+  Badge,
+  Card,
+  CardBody,
+  Input,
+  Label,
+  Select,
+  PageHeader,
+  FilterBar,
+  DataTable,
+  EmptyState,
+  Dialog,
+  type DataTableColumn,
+  type BadgeVariant,
+  type ActiveFilter,
+} from '@/components/ui';
 
-import { Input } from '@/components/ui/Input';
-
-import { SelectNative } from '@/components/ui/SelectNative';
-import { Dialog } from '@/components/ui/Dialog';
+interface Asset {
+  id: string;
+  externalId?: string;
+  source: string;
+  name: string;
+  type: string;
+  category?: string;
+  status: string;
+  criticality: string;
+  owner?: string;
+  location?: string;
+  department?: string;
+  metadata?: Record<string, unknown>;
+  lastSyncAt?: string;
+  riskCount: number;
+  createdAt: string;
+}
 
 interface AssetListResponse {
   assets: Asset[];
   total: number;
-  page?: number;
-  limit?: number;
+  page: number;
+  limit: number;
 }
 
-const ASSET_TYPES = [
-  { value: 'server', label: 'Server', icon: HardDrive },
-  { value: 'workstation', label: 'Workstation', icon: Monitor },
-  { value: 'mobile', label: 'Mobile', icon: Smartphone },
-  { value: 'network', label: 'Network', icon: Network },
-  { value: 'application', label: 'Application', icon: Database },
-  { value: 'data', label: 'Data', icon: Database },
-  { value: 'cloud', label: 'Cloud', icon: Cloud },
+const TYPE_ICON: Record<string, typeof Server> = {
+  server: HardDrive,
+  workstation: Monitor,
+  mobile: Smartphone,
+  network: Network,
+  application: Database,
+  data: Database,
+  cloud: Cloud,
+};
+
+const TYPE_OPTS = [
+  { value: 'server', label: 'Server' },
+  { value: 'workstation', label: 'Workstation' },
+  { value: 'mobile', label: 'Mobile' },
+  { value: 'network', label: 'Network' },
+  { value: 'application', label: 'Application' },
+  { value: 'data', label: 'Data' },
+  { value: 'cloud', label: 'Cloud' },
 ];
 
-const CRITICALITY_LEVELS = [
-  { value: 'low', label: 'Low', color: 'bg-surface-500' },
-  { value: 'medium', label: 'Medium', color: 'bg-amber-500' },
-  { value: 'high', label: 'High', color: 'bg-orange-500' },
-  { value: 'critical', label: 'Critical', color: 'bg-red-500' },
+const CRITICALITY_OPTS = [
+  { value: 'low', label: 'Low' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'high', label: 'High' },
+  { value: 'critical', label: 'Critical' },
 ];
 
-const STATUSES = [
-  { value: 'active', label: 'Active', color: 'bg-emerald-500/20 text-emerald-600' },
-  { value: 'inactive', label: 'Inactive', color: 'bg-surface-500/20 text-surface-600' },
-  { value: 'decommissioned', label: 'Decommissioned', color: 'bg-red-500/20 text-red-600' },
+const CRITICALITY_DOT: Record<string, string> = {
+  low: 'bg-surface-500',
+  medium: 'bg-amber-500',
+  high: 'bg-orange-500',
+  critical: 'bg-red-500',
+};
+
+const STATUS_OPTS = [
+  { value: 'active', label: 'Active' },
+  { value: 'inactive', label: 'Inactive' },
+  { value: 'decommissioned', label: 'Decommissioned' },
 ];
+
+const STATUS_VARIANT: Record<string, BadgeVariant> = {
+  active: 'success',
+  inactive: 'neutral',
+  decommissioned: 'danger',
+};
+
+const PAGE_SIZE = 25;
+
+function StatCard({
+  icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: React.ReactNode;
+  tone: 'brand' | 'emerald' | 'red' | 'amber';
+}) {
+  const tones = {
+    brand: 'bg-brand-500/10 text-brand-700',
+    emerald: 'bg-emerald-500/10 text-emerald-600',
+    red: 'bg-red-500/10 text-red-600',
+    amber: 'bg-amber-500/10 text-amber-700',
+  };
+  return (
+    <Card>
+      <CardBody density="cozy" className="flex items-center gap-3">
+        <div className={cn('p-2 rounded-md', tones[tone])}>{icon}</div>
+        <div>
+          <p className="text-xs text-surface-500 uppercase tracking-wider">{label}</p>
+          <p className="text-h1 text-surface-900">{value}</p>
+        </div>
+      </CardBody>
+    </Card>
+  );
+}
 
 export default function Assets() {
   const navigate = useNavigate();
@@ -76,7 +155,6 @@ export default function Assets() {
     department: '',
   });
 
-  // Get filters from URL
   const filters = {
     search: searchParams.get('search') || '',
     source: searchParams.get('source') || '',
@@ -88,22 +166,22 @@ export default function Assets() {
 
   const updateFilter = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams);
-    if (value) {
-      params.set(key, value);
-    } else {
-      params.delete(key);
-    }
-    if (key !== 'page') {
-      params.set('page', '1');
-    }
+    if (value) params.set(key, value);
+    else params.delete(key);
+    if (key !== 'page') params.set('page', '1');
     setSearchParams(params);
   };
 
-  // Fetch assets
+  const clearAllFilters = () => {
+    const params = new URLSearchParams(searchParams);
+    ['search', 'source', 'type', 'status', 'criticality', 'page'].forEach((k) => params.delete(k));
+    setSearchParams(params);
+  };
+
   const { data, isLoading } = useQuery<AssetListResponse>({
     queryKey: ['assets', filters],
     queryFn: async () => {
-      const params: any = { page: filters.page, limit: 25 };
+      const params: Record<string, string | number> = { page: filters.page, limit: PAGE_SIZE };
       if (filters.search) params.search = filters.search;
       if (filters.source) params.source = filters.source;
       if (filters.type) params.type = filters.type;
@@ -114,30 +192,18 @@ export default function Assets() {
     },
   });
 
-  // Fetch stats
   const { data: stats } = useQuery({
     queryKey: ['assets', 'stats'],
-    queryFn: async () => {
-      const response = await assetsApi.getStats();
-      return response.data;
-    },
+    queryFn: () => assetsApi.getStats().then((r) => r.data),
   });
 
-  // Fetch sources for filter
-  const { data: sources } = useQuery({
+  const { data: sources } = useQuery<string[]>({
     queryKey: ['assets', 'sources'],
-    queryFn: async () => {
-      const response = await assetsApi.getSources();
-      return response.data;
-    },
+    queryFn: () => assetsApi.getSources().then((r) => r.data),
   });
 
-  // Create asset mutation
   const createMutation = useMutation({
-    mutationFn: async (data: typeof newAsset) => {
-      const response = await assetsApi.create(data);
-      return response.data;
-    },
+    mutationFn: (payload: typeof newAsset) => assetsApi.create(payload).then((r) => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assets'] });
       setShowCreateModal(false);
@@ -150,312 +216,418 @@ export default function Assets() {
         location: '',
         department: '',
       });
-      toast.success('Asset created successfully');
-    },
-    onError: () => {
-      toast.error('Failed to create asset');
     },
   });
 
-  const getCriticalityColor = (criticality: string) => {
-    const level = CRITICALITY_LEVELS.find((l) => l.value === criticality);
-    return level?.color || 'bg-surface-500';
-  };
+  const sourceOptions = (sources || []).map((s) => ({ value: s, label: s }));
 
-  const getStatusBadge = (status: string) => {
-    const s = STATUSES.find((st) => st.value === status);
-    return s?.color || 'bg-surface-500/20 text-surface-600';
-  };
+  const activeFilters: ActiveFilter[] = [];
+  if (filters.search)
+    activeFilters.push({
+      key: 'search',
+      label: `Search: ${filters.search}`,
+      onClear: () => updateFilter('search', ''),
+    });
+  if (filters.source)
+    activeFilters.push({
+      key: 'source',
+      label: `Source: ${filters.source}`,
+      onClear: () => updateFilter('source', ''),
+    });
+  if (filters.type) {
+    const l = TYPE_OPTS.find((o) => o.value === filters.type)?.label ?? filters.type;
+    activeFilters.push({
+      key: 'type',
+      label: `Type: ${l}`,
+      onClear: () => updateFilter('type', ''),
+    });
+  }
+  if (filters.criticality) {
+    const l =
+      CRITICALITY_OPTS.find((o) => o.value === filters.criticality)?.label ?? filters.criticality;
+    activeFilters.push({
+      key: 'criticality',
+      label: `Criticality: ${l}`,
+      onClear: () => updateFilter('criticality', ''),
+    });
+  }
+  if (filters.status) {
+    const l = STATUS_OPTS.find((o) => o.value === filters.status)?.label ?? filters.status;
+    activeFilters.push({
+      key: 'status',
+      label: `Status: ${l}`,
+      onClear: () => updateFilter('status', ''),
+    });
+  }
 
-  const getTypeIcon = (type: string) => {
-    const t = ASSET_TYPES.find((at) => at.value === type);
-    const Icon = t?.icon || Server;
-    return <Icon className="w-5 h-5 text-surface-600" />;
-  };
+  const columns: DataTableColumn<Asset>[] = [
+    {
+      id: 'name',
+      accessorKey: 'name',
+      header: 'Asset',
+      mobileLabel: 'Asset',
+      cell: ({ row }) => {
+        const Icon = TYPE_ICON[row.original.type] || Server;
+        return (
+          <div className="flex items-center gap-3">
+            <Icon className="h-4 w-4 text-surface-600 shrink-0" />
+            <div className="min-w-0">
+              <p className="text-surface-900 font-medium truncate">{row.original.name}</p>
+              {row.original.owner && (
+                <p className="text-xs text-surface-500 truncate">{row.original.owner}</p>
+              )}
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      id: 'type',
+      accessorKey: 'type',
+      header: 'Type',
+      mobileLabel: 'Type',
+      cell: ({ row }) => <span className="capitalize text-surface-700">{row.original.type}</span>,
+    },
+    {
+      id: 'source',
+      accessorKey: 'source',
+      header: 'Source',
+      mobileLabel: 'Source',
+      cell: ({ row }) => <span className="capitalize text-surface-700">{row.original.source}</span>,
+    },
+    {
+      id: 'criticality',
+      accessorKey: 'criticality',
+      header: 'Criticality',
+      mobileLabel: 'Criticality',
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <span
+            className={cn(
+              'h-2 w-2 rounded-full',
+              CRITICALITY_DOT[row.original.criticality] || 'bg-surface-500'
+            )}
+          />
+          <span className="capitalize text-surface-700">{row.original.criticality}</span>
+        </div>
+      ),
+    },
+    {
+      id: 'status',
+      accessorKey: 'status',
+      header: 'Status',
+      mobileLabel: 'Status',
+      cell: ({ row }) => (
+        <Badge
+          variant={STATUS_VARIANT[row.original.status] ?? 'neutral'}
+          dot
+          className="capitalize"
+        >
+          {row.original.status}
+        </Badge>
+      ),
+    },
+    {
+      id: 'riskCount',
+      accessorKey: 'riskCount',
+      header: 'Risks',
+      mobileLabel: 'Risks',
+      cell: ({ row }) =>
+        row.original.riskCount > 0 ? (
+          <Badge variant="danger">{row.original.riskCount}</Badge>
+        ) : (
+          <span className="text-surface-500">—</span>
+        ),
+    },
+    {
+      id: 'lastSync',
+      accessorKey: 'lastSyncAt',
+      header: 'Last Synced',
+      mobileLabel: 'Last Synced',
+      cell: ({ row }) =>
+        row.original.lastSyncAt ? (
+          <span className="text-small text-surface-600">
+            {new Date(row.original.lastSyncAt).toLocaleDateString()}
+          </span>
+        ) : (
+          <span className="text-surface-500">—</span>
+        ),
+    },
+  ];
+
+  const assets = data?.assets ?? [];
+  const total = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-white">Asset Inventory</h1>
-          <p className="text-surface-600 mt-1">
-            View and manage organizational assets synced from integrations
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <ExportDropdown
-            data={data?.assets || []}
-            columns={exportConfigs.assets}
-            filename="assets"
-            sheetName="Assets"
-            disabled={isLoading || !data?.assets?.length}
-          />
-          <Button
-            variant="secondary"
-            onClick={() => setShowSyncModal(true)}
-            leftIcon={<RefreshCw className="w-4 h-4" />}
-          >
-            Sync Assets
-          </Button>
-          <Button onClick={() => setShowCreateModal(true)} leftIcon={<Plus className="w-4 h-4" />}>
-            Add Asset
-          </Button>
-        </div>
-      </div>
-      {/* Stats Cards */}
+    <div className="space-y-5 animate-fade-in">
+      <PageHeader
+        title="Asset Inventory"
+        description="View and manage organizational assets synced from integrations."
+        actions={
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              leftIcon={<RefreshCw className="h-4 w-4" />}
+              onClick={() => setShowSyncModal(true)}
+            >
+              Sync Assets
+            </Button>
+            <Button
+              size="sm"
+              leftIcon={<Plus className="h-4 w-4" />}
+              onClick={() => setShowCreateModal(true)}
+            >
+              Add Asset
+            </Button>
+          </>
+        }
+      />
+
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-xl border border-surface-200 p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-brand-500/20 rounded-lg">
-                <Server className="w-5 h-5 text-brand-400" />
-              </div>
-              <div>
-                <p className="text-sm text-surface-600">Total Assets</p>
-                <p className="text-2xl font-semibold text-white">{stats.totalAssets}</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white rounded-xl border border-surface-200 p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-emerald-500/20 rounded-lg">
-                <CheckCircle className="w-5 h-5 text-emerald-600" />
-              </div>
-              <div>
-                <p className="text-sm text-surface-600">Active</p>
-                <p className="text-2xl font-semibold text-white">
-                  {stats.byStatus?.find((s: any) => s.status === 'active')?.count || 0}
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white rounded-xl border border-surface-200 p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-red-500/20 rounded-lg">
-                <AlertTriangle className="w-5 h-5 text-red-600" />
-              </div>
-              <div>
-                <p className="text-sm text-surface-600">Critical</p>
-                <p className="text-2xl font-semibold text-white">
-                  {stats.byCriticality?.find((c: any) => c.criticality === 'critical')?.count || 0}
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white rounded-xl border border-surface-200 p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-amber-500/20 rounded-lg">
-                <RefreshCw className="w-5 h-5 text-amber-600" />
-              </div>
-              <div>
-                <p className="text-sm text-surface-600">Recently Synced</p>
-                <p className="text-2xl font-semibold text-white">{stats.recentlySynced || 0}</p>
-              </div>
-            </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <StatCard
+            icon={<Server className="h-5 w-5" />}
+            label="Total"
+            value={stats.totalAssets ?? 0}
+            tone="brand"
+          />
+          <StatCard
+            icon={<CheckCircle className="h-5 w-5" />}
+            label="Active"
+            value={
+              stats.byStatus?.find((s: { status: string; count: number }) => s.status === 'active')
+                ?.count || 0
+            }
+            tone="emerald"
+          />
+          <StatCard
+            icon={<AlertTriangle className="h-5 w-5" />}
+            label="Critical"
+            value={
+              stats.byCriticality?.find(
+                (c: { criticality: string; count: number }) => c.criticality === 'critical'
+              )?.count || 0
+            }
+            tone="red"
+          />
+          <StatCard
+            icon={<RefreshCw className="h-5 w-5" />}
+            label="Recently Synced"
+            value={stats.recentlySynced ?? 0}
+            tone="amber"
+          />
+        </div>
+      )}
+
+      <FilterBar
+        active={activeFilters}
+        onClearAll={activeFilters.length ? clearAllFilters : undefined}
+      >
+        <Input
+          inputSize="sm"
+          className="w-64"
+          placeholder="Search assets…"
+          value={filters.search}
+          onChange={(e) => updateFilter('search', e.target.value)}
+          leftIcon={<Search className="h-4 w-4" />}
+        />
+        <Select
+          size="sm"
+          fullWidth={false}
+          className="w-40"
+          placeholder="All Sources"
+          value={filters.source}
+          onChange={(v) => updateFilter('source', v)}
+          options={sourceOptions}
+          clearable
+        />
+        <Select
+          size="sm"
+          fullWidth={false}
+          className="w-40"
+          placeholder="All Types"
+          value={filters.type}
+          onChange={(v) => updateFilter('type', v)}
+          options={TYPE_OPTS}
+          clearable
+        />
+        <Select
+          size="sm"
+          fullWidth={false}
+          className="w-40"
+          placeholder="All Criticality"
+          value={filters.criticality}
+          onChange={(v) => updateFilter('criticality', v)}
+          options={CRITICALITY_OPTS}
+          clearable
+        />
+        <Select
+          size="sm"
+          fullWidth={false}
+          className="w-40"
+          placeholder="All Statuses"
+          value={filters.status}
+          onChange={(v) => updateFilter('status', v)}
+          options={STATUS_OPTS}
+          clearable
+        />
+      </FilterBar>
+
+      <DataTable
+        data={assets}
+        columns={columns}
+        loading={isLoading}
+        getRowId={(a) => a.id}
+        onRowClick={(a) => navigate(`/assets/${a.id}`)}
+        emptyState={
+          <EmptyState
+            icon={<Server className="h-8 w-8" />}
+            title="No assets found"
+            description={
+              activeFilters.length
+                ? 'Try clearing your filters.'
+                : 'Sync assets from integrations or add them manually.'
+            }
+            action={
+              activeFilters.length ? (
+                <Button variant="outline" size="sm" onClick={clearAllFilters}>
+                  Clear filters
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  leftIcon={<Plus className="h-4 w-4" />}
+                  onClick={() => setShowCreateModal(true)}
+                >
+                  Add Asset
+                </Button>
+              )
+            }
+          />
+        }
+      />
+
+      {total > PAGE_SIZE && (
+        <div className="flex items-center justify-between text-xs text-surface-500">
+          <span>
+            Showing {(filters.page - 1) * PAGE_SIZE + 1}–{Math.min(filters.page * PAGE_SIZE, total)}{' '}
+            of {total}
+          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={filters.page === 1}
+              onClick={() => updateFilter('page', String(filters.page - 1))}
+            >
+              Previous
+            </Button>
+            <span>
+              Page {filters.page} of {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={filters.page * PAGE_SIZE >= total}
+              onClick={() => updateFilter('page', String(filters.page + 1))}
+            >
+              Next
+            </Button>
           </div>
         </div>
       )}
-      {/* Search and Filters */}
-      <div className="bg-white rounded-xl border border-surface-200 p-4">
-        <div className="flex flex-col lg:flex-row gap-4">
-          {/* Search */}
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-600" />
+
+      <Dialog
+        open={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        title="Add Manual Asset"
+        size="md"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setShowCreateModal(false)}>
+              Cancel
+            </Button>
+            <Button
+              loading={createMutation.isPending}
+              disabled={!newAsset.name}
+              onClick={() => createMutation.mutate(newAsset)}
+            >
+              Create Asset
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="asset-name" required>
+              Name
+            </Label>
             <Input
-              type="text"
-              placeholder="Search assets..."
-              value={filters.search}
-              onChange={(e) => updateFilter('search', e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white placeholder-surface-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+              id="asset-name"
+              value={newAsset.name}
+              onChange={(e) => setNewAsset({ ...newAsset, name: e.target.value })}
+              placeholder="e.g., Production Server 1"
             />
           </div>
-
-          {/* Filters */}
-          <div className="flex gap-3">
-            <SelectNative
-              value={filters.source}
-              onChange={(e) => updateFilter('source', e.target.value)}
-              className="px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-            >
-              <option value="">All Sources</option>
-              {sources?.map((source: string) => (
-                <option key={source} value={source}>
-                  {source}
-                </option>
-              ))}
-            </SelectNative>
-
-            <SelectNative
-              value={filters.type}
-              onChange={(e) => updateFilter('type', e.target.value)}
-              className="px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-            >
-              <option value="">All Types</option>
-              {ASSET_TYPES.map((type) => (
-                <option key={type.value} value={type.value}>
-                  {type.label}
-                </option>
-              ))}
-            </SelectNative>
-
-            <SelectNative
-              value={filters.criticality}
-              onChange={(e) => updateFilter('criticality', e.target.value)}
-              className="px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-            >
-              <option value="">All Criticality</option>
-              {CRITICALITY_LEVELS.map((level) => (
-                <option key={level.value} value={level.value}>
-                  {level.label}
-                </option>
-              ))}
-            </SelectNative>
-
-            <SelectNative
-              value={filters.status}
-              onChange={(e) => updateFilter('status', e.target.value)}
-              className="px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-            >
-              <option value="">All Statuses</option>
-              {STATUSES.map((status) => (
-                <option key={status.value} value={status.value}>
-                  {status.label}
-                </option>
-              ))}
-            </SelectNative>
-          </div>
-        </div>
-      </div>
-      {/* Assets Table */}
-      <div className="bg-white rounded-xl border border-surface-200 overflow-hidden">
-        {isLoading ? (
-          <SkeletonTable rows={10} columns={7} className="border-none" />
-        ) : data?.assets.length === 0 ? (
-          <div className="p-8 text-center">
-            <Server className="w-12 h-12 text-surface-500 mx-auto mb-4" />
-            <p className="text-surface-600">No assets found</p>
-            <p className="text-surface-500 text-sm mt-2">
-              Sync assets from integrations or add them manually
-            </p>
-          </div>
-        ) : (
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-surface-200">
-                <th className="text-left px-4 py-3 text-sm font-medium text-surface-600">Asset</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-surface-600">Type</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-surface-600">Source</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-surface-600">
-                  Criticality
-                </th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-surface-600">Status</th>
-                <th className="text-center px-4 py-3 text-sm font-medium text-surface-600">
-                  Risks
-                </th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-surface-600">
-                  Last Synced
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {data?.assets.map((asset) => (
-                <tr
-                  key={asset.id}
-                  onClick={() => navigate(`/assets/${asset.id}`)}
-                  className="border-b border-surface-200 hover:bg-surface-200/50 cursor-pointer transition-colors"
-                >
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      {getTypeIcon(asset.type)}
-                      <div>
-                        <p className="text-white font-medium">{asset.name}</p>
-                        {asset.owner && <p className="text-surface-600 text-sm">{asset.owner}</p>}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="text-surface-700 capitalize">{asset.type}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="text-surface-700 capitalize">{asset.source}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`w-2 h-2 rounded-full ${getCriticalityColor(asset.criticality || '')}`}
-                      />
-                      <span className="text-surface-700 capitalize">{asset.criticality}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`px-2 py-1 rounded text-xs font-medium ${getStatusBadge(asset.status || '')}`}
-                    >
-                      {asset.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    {(asset.riskCount ?? 0) > 0 ? (
-                      <span className="px-2 py-1 bg-red-500/20 text-red-600 rounded text-sm">
-                        {asset.riskCount ?? 0}
-                      </span>
-                    ) : (
-                      <span className="text-surface-500">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    {asset.lastSyncAt ? (
-                      <span className="text-surface-600 text-sm">
-                        {new Date(asset.lastSyncAt).toLocaleDateString()}
-                      </span>
-                    ) : (
-                      <span className="text-surface-500">—</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-
-        {/* Pagination */}
-        {data && data.total > 25 && (
-          <div className="px-4 py-3 border-t border-surface-200 flex items-center justify-between">
-            <p className="text-sm text-surface-600">
-              Showing {(filters.page - 1) * 25 + 1} to {Math.min(filters.page * 25, data.total)} of{' '}
-              {data.total} assets
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => updateFilter('page', String(filters.page - 1))}
-                disabled={filters.page === 1}
-                className="px-3 py-1 bg-surface-200 rounded text-surface-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-surface-600"
-              >
-                Previous
-              </button>
-              <button
-                onClick={() => updateFilter('page', String(filters.page + 1))}
-                disabled={filters.page * 25 >= data.total}
-                className="px-3 py-1 bg-surface-200 rounded text-surface-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-surface-600"
-              >
-                Next
-              </button>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label required>Type</Label>
+              <Select
+                value={newAsset.type}
+                onChange={(v) => setNewAsset({ ...newAsset, type: v })}
+                options={TYPE_OPTS}
+              />
+            </div>
+            <div>
+              <Label>Criticality</Label>
+              <Select
+                value={newAsset.criticality}
+                onChange={(v) => setNewAsset({ ...newAsset, criticality: v })}
+                options={CRITICALITY_OPTS}
+              />
             </div>
           </div>
-        )}
-      </div>
-      {/* Create Asset Modal */}
-      {showCreateModal && (
-        <CreateAssetModal
-          asset={newAsset}
-          onChange={setNewAsset}
-          onSubmit={() => createMutation.mutate(newAsset)}
-          onClose={() => setShowCreateModal(false)}
-          isPending={createMutation.isPending}
-        />
-      )}
-      {/* Sync Modal */}
+          <div>
+            <Label htmlFor="asset-category">Category</Label>
+            <Input
+              id="asset-category"
+              value={newAsset.category}
+              onChange={(e) => setNewAsset({ ...newAsset, category: e.target.value })}
+              placeholder="e.g., Web Server, Database"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="asset-owner">Owner</Label>
+              <Input
+                id="asset-owner"
+                value={newAsset.owner}
+                onChange={(e) => setNewAsset({ ...newAsset, owner: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="asset-dept">Department</Label>
+              <Input
+                id="asset-dept"
+                value={newAsset.department}
+                onChange={(e) => setNewAsset({ ...newAsset, department: e.target.value })}
+              />
+            </div>
+          </div>
+          <div>
+            <Label htmlFor="asset-location">Location</Label>
+            <Input
+              id="asset-location"
+              value={newAsset.location}
+              onChange={(e) => setNewAsset({ ...newAsset, location: e.target.value })}
+              placeholder="e.g., AWS us-east-1, Office HQ"
+            />
+          </div>
+        </div>
+      </Dialog>
+
       {showSyncModal && (
         <SyncAssetModal
           onClose={() => setShowSyncModal(false)}
@@ -469,253 +641,139 @@ export default function Assets() {
   );
 }
 
-// Create Asset Modal Component
-function CreateAssetModal({
-  asset,
-  onChange,
-  onSubmit,
-  onClose,
-  isPending,
-}: {
-  asset: any;
-  onChange: (asset: any) => void;
-  onSubmit: () => void;
-  onClose: () => void;
-  isPending: boolean;
-}) {
-  return (
-    <Dialog open onClose={onClose}>
-      <div className="p-4 border-b border-surface-200 flex justify-between items-center">
-        <h3 className="text-lg font-medium text-white">Add Manual Asset</h3>
-        <button onClick={onClose} className="p-1 hover:bg-surface-200 rounded">
-          <X className="w-5 h-5 text-surface-600" />
-        </button>
-      </div>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          onSubmit();
-        }}
-        className="p-4 space-y-4"
-      >
-        <div>
-          <label className="block text-sm text-surface-600 mb-2">Name *</label>
-          <Input
-            type="text"
-            value={asset.name}
-            onChange={(e) => onChange({ ...asset, name: e.target.value })}
-            required
-            className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
-            placeholder="e.g., Production Server 1"
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm text-surface-600 mb-2">Type *</label>
-            <SelectNative
-              value={asset.type}
-              onChange={(e) => onChange({ ...asset, type: e.target.value })}
-              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
-            >
-              {ASSET_TYPES.map((type) => (
-                <option key={type.value} value={type.value}>
-                  {type.label}
-                </option>
-              ))}
-            </SelectNative>
-          </div>
-          <div>
-            <label className="block text-sm text-surface-600 mb-2">Criticality</label>
-            <SelectNative
-              value={asset.criticality}
-              onChange={(e) => onChange({ ...asset, criticality: e.target.value })}
-              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
-            >
-              {CRITICALITY_LEVELS.map((level) => (
-                <option key={level.value} value={level.value}>
-                  {level.label}
-                </option>
-              ))}
-            </SelectNative>
-          </div>
-        </div>
-        <div>
-          <label className="block text-sm text-surface-600 mb-2">Category</label>
-          <Input
-            type="text"
-            value={asset.category}
-            onChange={(e) => onChange({ ...asset, category: e.target.value })}
-            className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
-            placeholder="e.g., Web Server, Database"
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm text-surface-600 mb-2">Owner</label>
-            <Input
-              type="text"
-              value={asset.owner}
-              onChange={(e) => onChange({ ...asset, owner: e.target.value })}
-              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
-            />
-          </div>
-          <div>
-            <label className="block text-sm text-surface-600 mb-2">Department</label>
-            <Input
-              type="text"
-              value={asset.department}
-              onChange={(e) => onChange({ ...asset, department: e.target.value })}
-              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
-            />
-          </div>
-        </div>
-        <div>
-          <label className="block text-sm text-surface-600 mb-2">Location</label>
-          <Input
-            type="text"
-            value={asset.location}
-            onChange={(e) => onChange({ ...asset, location: e.target.value })}
-            className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
-            placeholder="e.g., AWS us-east-1, Office HQ"
-          />
-        </div>
-        <div className="flex justify-end gap-3 pt-2">
-          <Button variant="secondary" type="button" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button type="submit" isLoading={isPending}>
-            Create Asset
-          </Button>
-        </div>
-      </form>
-    </Dialog>
-  );
+interface Integration {
+  id: string;
+  name: string;
+  type: string;
 }
 
-// Sync Modal Component
+interface SyncResult {
+  itemsProcessed: number;
+  itemsCreated: number;
+  itemsFailed: number;
+  duration: number;
+  errors?: string[];
+}
+
 function SyncAssetModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
   const [selectedIntegration, setSelectedIntegration] = useState('');
-  const [syncResult, setSyncResult] = useState<any>(null);
+  const [syncResult, setSyncResult] = useState<SyncResult | null>(null);
 
-  // Fetch integrations that can provide assets
-  const { data: integrations } = useQuery({
+  const { data: integrations } = useQuery<Integration[]>({
     queryKey: ['integrations', 'asset-sources'],
     queryFn: async () => {
       const response = await integrationsApi.list({ status: 'active' });
-      // Filter to only show integrations that support asset sync (e.g., Jamf)
-      return (response.data || []).filter((i: any) => ['jamf'].includes(i.type));
+      return response.data.integrations.filter((i: Integration) => ['jamf'].includes(i.type));
     },
   });
 
   const syncMutation = useMutation({
     mutationFn: async () => {
-      const integration = integrations?.find((i: any) => i.id === selectedIntegration);
+      const integration = integrations?.find((i) => i.id === selectedIntegration);
       if (!integration) throw new Error('Integration not found');
       const response = await assetsApi.syncFromSource(integration.type, integration.id);
-      return response.data;
+      return response.data as SyncResult;
     },
-    onSuccess: (data) => {
-      setSyncResult(data);
-    },
+    onSuccess: (data) => setSyncResult(data),
   });
 
   return (
-    <Dialog open onClose={onClose}>
-      <div className="p-4 border-b border-surface-200 flex justify-between items-center">
-        <h3 className="text-lg font-medium text-white">Sync Assets from Integration</h3>
-        <button onClick={onClose} className="p-1 hover:bg-surface-200 rounded">
-          <X className="w-5 h-5 text-surface-600" />
-        </button>
-      </div>
-      <div className="p-4 space-y-4">
-        {syncResult ? (
-          <div className="space-y-4">
-            <div
-              className={`p-4 rounded-lg ${syncResult.itemsFailed === 0 ? 'bg-emerald-500/20' : 'bg-amber-500/20'}`}
-            >
-              <h4
-                className={`font-medium ${syncResult.itemsFailed === 0 ? 'text-emerald-600' : 'text-amber-600'}`}
-              >
-                Sync Complete
-              </h4>
-              <div className="mt-2 space-y-1 text-sm">
-                <p className="text-surface-700">Items processed: {syncResult.itemsProcessed}</p>
-                <p className="text-surface-700">Items created/updated: {syncResult.itemsCreated}</p>
-                <p className="text-surface-700">Items failed: {syncResult.itemsFailed}</p>
-                <p className="text-surface-700">Duration: {syncResult.duration}ms</p>
-              </div>
-              {syncResult.errors?.length > 0 && (
-                <div className="mt-3">
-                  <p className="text-red-600 text-sm font-medium">Errors:</p>
-                  <ul className="text-red-700 text-sm mt-1 list-disc list-inside">
-                    {syncResult.errors.slice(0, 5).map((err: string, i: number) => (
-                      <li key={i}>{err}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-            <div className="flex justify-end">
-              <button onClick={onSuccess} className="px-4 py-2 bg-brand-500 text-white rounded-lg">
-                Done
-              </button>
-            </div>
-          </div>
+    <Dialog
+      open
+      onClose={onClose}
+      title="Sync Assets from Integration"
+      size="md"
+      footer={
+        syncResult ? (
+          <Button onClick={onSuccess}>Done</Button>
         ) : (
           <>
-            <div>
-              <label className="block text-sm text-surface-600 mb-2">Select Integration</label>
-              {integrations?.length === 0 ? (
-                <p className="text-surface-500 py-4">
-                  No integrations available for asset sync. Configure a Jamf integration first.
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {integrations?.map((integration: any) => (
-                    <label
-                      key={integration.id}
-                      className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer ${
-                        selectedIntegration === integration.id
-                          ? 'bg-brand-500/20 border border-brand-500'
-                          : 'bg-surface-200 border border-surface-300 hover:bg-surface-600'
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="integration"
-                        value={integration.id}
-                        checked={selectedIntegration === integration.id}
-                        onChange={(e) => setSelectedIntegration(e.target.value)}
-                        className="sr-only"
-                      />
-                      <div>
-                        <p className="text-white font-medium">{integration.name}</p>
-                        <p className="text-surface-600 text-sm capitalize">{integration.type}</p>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div className="flex justify-end gap-3 pt-2">
-              <button
-                onClick={onClose}
-                className="px-4 py-2 bg-surface-200 text-surface-700 rounded-lg"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => syncMutation.mutate()}
-                disabled={!selectedIntegration || syncMutation.isPending}
-                className="px-4 py-2 bg-brand-500 text-white rounded-lg disabled:opacity-50 flex items-center gap-2"
-              >
-                {syncMutation.isPending && <RefreshCw className="w-4 h-4 animate-spin" />}
-                {syncMutation.isPending ? 'Syncing...' : 'Start Sync'}
-              </button>
-            </div>
+            <Button variant="ghost" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button
+              loading={syncMutation.isPending}
+              disabled={!selectedIntegration}
+              onClick={() => syncMutation.mutate()}
+              leftIcon={syncMutation.isPending ? undefined : <RefreshCw className="h-4 w-4" />}
+            >
+              Start Sync
+            </Button>
           </>
-        )}
-      </div>
+        )
+      }
+    >
+      {syncResult ? (
+        <div className="space-y-3">
+          <div
+            className={cn(
+              'p-4 rounded-md',
+              syncResult.itemsFailed === 0 ? 'bg-emerald-500/10' : 'bg-amber-500/10'
+            )}
+          >
+            <h4
+              className={cn(
+                'font-medium',
+                syncResult.itemsFailed === 0 ? 'text-emerald-600' : 'text-amber-700'
+              )}
+            >
+              Sync Complete
+            </h4>
+            <div className="mt-2 space-y-0.5 text-small text-surface-700">
+              <p>Items processed: {syncResult.itemsProcessed}</p>
+              <p>Items created/updated: {syncResult.itemsCreated}</p>
+              <p>Items failed: {syncResult.itemsFailed}</p>
+              <p>Duration: {syncResult.duration}ms</p>
+            </div>
+            {syncResult.errors && syncResult.errors.length > 0 && (
+              <div className="mt-3">
+                <p className="text-red-600 text-small font-medium">Errors:</p>
+                <ul className="text-red-700 text-small mt-1 list-disc list-inside">
+                  {syncResult.errors.slice(0, 5).map((err, i) => (
+                    <li key={i}>{err}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div>
+          <Label>Select Integration</Label>
+          {!integrations || integrations.length === 0 ? (
+            <p className="text-small text-surface-500 py-3">
+              No integrations available for asset sync. Configure a Jamf integration first.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {integrations.map((integration) => (
+                <label
+                  key={integration.id}
+                  className={cn(
+                    'flex items-center gap-3 p-3 rounded-md cursor-pointer transition-colors',
+                    selectedIntegration === integration.id
+                      ? 'bg-brand-500/10 border border-brand-500/40'
+                      : 'bg-surface-100 border border-surface-300 hover:bg-surface-200'
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name="integration"
+                    value={integration.id}
+                    checked={selectedIntegration === integration.id}
+                    onChange={(e) => setSelectedIntegration(e.target.value)}
+                    className="sr-only"
+                  />
+                  <div>
+                    <p className="text-surface-900 font-medium">{integration.name}</p>
+                    <p className="text-xs text-surface-500 capitalize">{integration.type}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </Dialog>
   );
 }

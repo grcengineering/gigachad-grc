@@ -1,377 +1,411 @@
-import { useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import clsx from 'clsx';
-import { ArrowDownTrayIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
-import toast from 'react-hot-toast';
-import { frameworksApi, mappingsApi } from '@/lib/api';
-import type { Framework, MappingGapRow, MappingGapType } from '@/lib/apiTypes';
-import { useAuth } from '@/contexts/AuthContext';
-import { EmptyState } from '@/components/EmptyState';
-import { Button } from '@/components/ui/Button';
-import { exportData } from '@/lib/export';
+import { AlertTriangle, CheckCircle2, Download, FileText, Link2, ShieldAlert } from 'lucide-react';
+import api from '@/lib/api';
+import {
+  Badge,
+  Button,
+  CategoryChip,
+  DataTable,
+  EmptyState,
+  PageHeader,
+  Skeleton,
+  StatCard,
+  Tabs,
+  type DataTableColumn,
+} from '@/components/ui';
 
-import { SelectNative } from '@/components/ui/SelectNative';
+interface RequirementGap {
+  id: string;
+  framework: string;
+  requirementCode: string;
+  requirementTitle: string;
+  mappedControlCount: number;
+}
 
-type TabKey = 'all' | MappingGapType;
+interface ControlGap {
+  id: string;
+  controlCode: string;
+  controlTitle: string;
+  evidenceCount: number;
+  lastReviewDate?: string;
+}
 
-const TABS: { key: TabKey; label: string }[] = [
-  { key: 'all', label: 'All gap types' },
-  { key: 'no-controls', label: 'Requirements with no controls' },
-  { key: 'supporting-only', label: 'Requirements with only supporting controls' },
-  { key: 'unused-controls', label: 'Controls not mapped to anything' },
-];
+interface EvidenceGap {
+  id: string;
+  evidenceTitle: string;
+  type: string;
+  status: string;
+  daysPending: number;
+}
 
-const TYPE_LABEL: Record<MappingGapType, string> = {
-  'no-controls': 'No controls',
-  'supporting-only': 'Supporting only',
-  'unused-controls': 'Unused control',
+interface MappingGapsResponse {
+  totals?: {
+    totalGaps?: number;
+    requirementsWithoutControls?: number;
+    controlsWithoutEvidence?: number;
+    evidenceWithoutApproval?: number;
+  };
+  requirementGaps?: RequirementGap[];
+  controlGaps?: ControlGap[];
+  evidenceGaps?: EvidenceGap[];
+}
+
+const EVIDENCE_STATUS_VARIANT: Record<
+  string,
+  'success' | 'warning' | 'danger' | 'info' | 'brand' | 'neutral'
+> = {
+  approved: 'success',
+  pending: 'warning',
+  pending_review: 'warning',
+  in_review: 'info',
+  rejected: 'danger',
+  expired: 'danger',
+  draft: 'neutral',
 };
 
-function todayIso(): string {
-  return new Date().toISOString().split('T')[0];
+function formatDate(s?: string) {
+  if (!s) return '—';
+  try {
+    return new Date(s).toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  } catch {
+    return s;
+  }
+}
+
+function severityFromMappedCount(count: number): {
+  variant: 'success' | 'warning' | 'danger';
+  label: string;
+} {
+  if (count === 0) return { variant: 'danger', label: 'Critical' };
+  if (count <= 2) return { variant: 'warning', label: 'Partial' };
+  return { variant: 'success', label: 'Covered' };
+}
+
+function toCSV(rows: Record<string, unknown>[]): string {
+  if (rows.length === 0) return '';
+  const headers = Object.keys(rows[0]);
+  const escape = (v: unknown) => {
+    const s = String(v ?? '');
+    if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+    return s;
+  };
+  return [headers.join(','), ...rows.map((r) => headers.map((h) => escape(r[h])).join(','))].join(
+    '\n'
+  );
 }
 
 export default function MappingGaps() {
-  const { hasPermission } = useAuth();
-  const canRead = hasPermission('frameworks:view');
-
-  const [activeTab, setActiveTab] = useState<TabKey>('all');
-  const [frameworkId, setFrameworkId] = useState<string>('');
-  const tableRef = useRef<HTMLDivElement | null>(null);
-  const [isExportingPdf, setIsExportingPdf] = useState(false);
-
-  const frameworkFilterDisabled = activeTab === 'unused-controls';
-  const effectiveFrameworkId = frameworkFilterDisabled ? undefined : frameworkId || undefined;
-  const effectiveType: MappingGapType | undefined = activeTab === 'all' ? undefined : activeTab;
-
-  const { data: frameworks } = useQuery({
-    queryKey: ['frameworks', 'list'],
-    queryFn: () => frameworksApi.list().then((res) => res.data as Framework[]),
-    enabled: canRead,
+  const { data, isLoading } = useQuery<MappingGapsResponse>({
+    queryKey: ['reports', 'mapping-gaps'],
+    queryFn: async () => {
+      const res = await api.get('/api/reports/mapping-gaps');
+      return res.data ?? {};
+    },
   });
 
-  const gapsQuery = useQuery<MappingGapRow[]>({
-    queryKey: ['mappings', 'gaps', effectiveFrameworkId ?? 'all', effectiveType ?? 'all'],
-    queryFn: () =>
-      mappingsApi
-        .findGaps({
-          frameworkId: effectiveFrameworkId,
-          type: effectiveType,
-        })
-        .then((res) => res.data as MappingGapRow[]),
-    enabled: canRead,
-  });
+  const requirementGaps = useMemo(() => data?.requirementGaps ?? [], [data?.requirementGaps]);
+  const controlGaps = useMemo(() => data?.controlGaps ?? [], [data?.controlGaps]);
+  const evidenceGaps = useMemo(() => data?.evidenceGaps ?? [], [data?.evidenceGaps]);
 
-  const rows: MappingGapRow[] = useMemo(
-    () => (Array.isArray(gapsQuery.data) ? gapsQuery.data : []),
-    [gapsQuery.data]
-  );
-
-  const exportColumns = useMemo(() => {
-    if (activeTab === 'unused-controls') {
-      return [
-        {
-          key: 'controlId',
-          header: 'Control ID',
-          transform: (_v: unknown, row: MappingGapRow) => row.control?.controlId ?? '',
-        },
-        {
-          key: 'controlTitle',
-          header: 'Title',
-          transform: (_v: unknown, row: MappingGapRow) => row.control?.title ?? '',
-        },
-      ];
-    }
-    if (activeTab === 'no-controls' || activeTab === 'supporting-only') {
-      return [
-        {
-          key: 'framework',
-          header: 'Framework',
-          transform: (_v: unknown, row: MappingGapRow) => row.framework?.name ?? '',
-        },
-        {
-          key: 'reference',
-          header: 'Reference',
-          transform: (_v: unknown, row: MappingGapRow) => row.requirement?.reference ?? '',
-        },
-        {
-          key: 'title',
-          header: 'Title',
-          transform: (_v: unknown, row: MappingGapRow) => row.requirement?.title ?? '',
-        },
-      ];
-    }
-    // 'all'
-    return [
+  const handleExportCSV = () => {
+    const sections: { name: string; rows: Record<string, unknown>[] }[] = [
       {
-        key: 'type',
-        header: 'Type',
-        transform: (_v: unknown, row: MappingGapRow) => TYPE_LABEL[row.type],
+        name: 'requirements_to_controls',
+        rows: requirementGaps.map((r) => ({
+          framework: r.framework,
+          requirement_code: r.requirementCode,
+          requirement_title: r.requirementTitle,
+          mapped_controls: r.mappedControlCount,
+          severity: severityFromMappedCount(r.mappedControlCount).label,
+        })),
       },
       {
-        key: 'framework',
-        header: 'Framework',
-        transform: (_v: unknown, row: MappingGapRow) => row.framework?.name ?? '',
+        name: 'controls_to_evidence',
+        rows: controlGaps.map((c) => ({
+          control_code: c.controlCode,
+          control_title: c.controlTitle,
+          evidence_count: c.evidenceCount,
+          last_review_date: c.lastReviewDate ?? '',
+        })),
       },
       {
-        key: 'reference',
-        header: 'Reference',
-        transform: (_v: unknown, row: MappingGapRow) =>
-          row.requirement?.reference ?? row.control?.controlId ?? '',
-      },
-      {
-        key: 'name',
-        header: 'Requirement/Control',
-        transform: (_v: unknown, row: MappingGapRow) =>
-          row.requirement
-            ? `${row.requirement.reference} ${row.requirement.title}`
-            : row.control
-              ? `${row.control.controlId} ${row.control.title}`
-              : '',
-      },
-      {
-        key: 'title',
-        header: 'Title',
-        transform: (_v: unknown, row: MappingGapRow) =>
-          row.requirement?.title ?? row.control?.title ?? '',
+        name: 'evidence_to_approval',
+        rows: evidenceGaps.map((e) => ({
+          evidence_title: e.evidenceTitle,
+          type: e.type,
+          status: e.status,
+          days_pending: e.daysPending,
+        })),
       },
     ];
-  }, [activeTab]);
-
-  const csvSlug = activeTab === 'all' ? 'all' : activeTab;
-  const exportFilename = `mapping-gaps-${csvSlug}-${todayIso()}`;
-
-  const handleExportCsv = async () => {
-    if (rows.length === 0) {
-      toast.error('No data to export');
-      return;
-    }
-    try {
-      await exportData({
-        filename: exportFilename,
-        columns: exportColumns,
-        data: rows,
-        format: 'csv',
-      });
-      toast.success(`Exported ${rows.length} record(s) as CSV`);
-    } catch (err) {
-      console.error('CSV export error:', err);
-      toast.error('Failed to export CSV');
-    }
+    const body = sections.map((s) => `# ${s.name}\n${toCSV(s.rows)}`).join('\n\n');
+    const blob = new Blob([body], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `mapping-gaps-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
-  const handleExportPdf = async () => {
-    if (!tableRef.current) return;
-    if (rows.length === 0) {
-      toast.error('No data to export');
-      return;
-    }
-    setIsExportingPdf(true);
-    try {
-      const [html2canvas, { jsPDF }] = await Promise.all([
-        import('html2canvas').then((m) => m.default),
-        import('jspdf'),
-      ]);
-      const canvas = await html2canvas(tableRef.current, {
-        backgroundColor: '#1f2937',
-        scale: 2,
-        logging: false,
-      });
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-      const pdfWidth = 210;
-      const pdfHeight = 297;
-      pdf.setFillColor(31, 41, 55);
-      pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
-      pdf.setFontSize(16);
-      pdf.setTextColor(255, 255, 255);
-      pdf.text('Mapping Gap Analysis', 10, 15);
-      pdf.setFontSize(10);
-      pdf.setTextColor(156, 163, 175);
-      pdf.text(`Generated: ${new Date().toLocaleString()}`, 10, 22);
+  const requirementColumns: DataTableColumn<RequirementGap>[] = [
+    {
+      id: 'framework',
+      accessorKey: 'framework',
+      header: 'Framework',
+      mobileLabel: 'Framework',
+      cell: ({ row }) => <CategoryChip value={row.original.framework} case="upper" />,
+    },
+    {
+      id: 'requirementCode',
+      accessorKey: 'requirementCode',
+      header: 'Code',
+      mobileLabel: 'Code',
+      cell: ({ row }) => (
+        <span className="font-mono text-small text-brand-700">{row.original.requirementCode}</span>
+      ),
+    },
+    {
+      id: 'requirementTitle',
+      accessorKey: 'requirementTitle',
+      header: 'Requirement',
+      mobileLabel: 'Requirement',
+      cell: ({ row }) => <span className="text-surface-900">{row.original.requirementTitle}</span>,
+    },
+    {
+      id: 'mappedControlCount',
+      accessorKey: 'mappedControlCount',
+      header: 'Mapped controls',
+      mobileLabel: 'Mapped',
+      cell: ({ row }) => (
+        <span className="text-surface-700 tabular-nums">{row.original.mappedControlCount}</span>
+      ),
+    },
+    {
+      id: 'severity',
+      header: 'Severity',
+      mobileLabel: 'Severity',
+      cell: ({ row }) => {
+        const s = severityFromMappedCount(row.original.mappedControlCount);
+        return (
+          <Badge variant={s.variant} dot>
+            {s.label}
+          </Badge>
+        );
+      },
+    },
+  ];
 
-      const ratio = Math.min((pdfWidth - 20) / canvas.width, (pdfHeight - 40) / canvas.height);
-      const scaledWidth = canvas.width * ratio;
-      const scaledHeight = canvas.height * ratio;
-      const x = (pdfWidth - scaledWidth) / 2;
-      pdf.addImage(imgData, 'PNG', x, 28, scaledWidth, scaledHeight);
-      pdf.save(`${exportFilename}.pdf`);
-      toast.success('Exported as PDF');
-    } catch (err) {
-      console.error('PDF export error:', err);
-      toast.error('Failed to export PDF');
-    } finally {
-      setIsExportingPdf(false);
-    }
-  };
+  const controlColumns: DataTableColumn<ControlGap>[] = [
+    {
+      id: 'controlCode',
+      accessorKey: 'controlCode',
+      header: 'Code',
+      mobileLabel: 'Code',
+      cell: ({ row }) => (
+        <span className="font-mono text-small text-brand-700">{row.original.controlCode}</span>
+      ),
+    },
+    {
+      id: 'controlTitle',
+      accessorKey: 'controlTitle',
+      header: 'Control',
+      mobileLabel: 'Control',
+      cell: ({ row }) => <span className="text-surface-900">{row.original.controlTitle}</span>,
+    },
+    {
+      id: 'evidenceCount',
+      accessorKey: 'evidenceCount',
+      header: 'Evidence',
+      mobileLabel: 'Evidence',
+      cell: ({ row }) => {
+        const c = row.original.evidenceCount;
+        const variant: 'success' | 'warning' | 'danger' =
+          c === 0 ? 'danger' : c <= 2 ? 'warning' : 'success';
+        return (
+          <Badge variant={variant} dot>
+            {c}
+          </Badge>
+        );
+      },
+    },
+    {
+      id: 'lastReviewDate',
+      accessorKey: 'lastReviewDate',
+      header: 'Last review',
+      mobileLabel: 'Last review',
+      cell: ({ row }) => (
+        <span className="text-surface-700">{formatDate(row.original.lastReviewDate)}</span>
+      ),
+    },
+  ];
 
-  if (!canRead) {
+  const evidenceColumns: DataTableColumn<EvidenceGap>[] = [
+    {
+      id: 'evidenceTitle',
+      accessorKey: 'evidenceTitle',
+      header: 'Evidence',
+      mobileLabel: 'Evidence',
+      cell: ({ row }) => <span className="text-surface-900">{row.original.evidenceTitle}</span>,
+    },
+    {
+      id: 'type',
+      accessorKey: 'type',
+      header: 'Type',
+      mobileLabel: 'Type',
+      cell: ({ row }) => <CategoryChip value={row.original.type} />,
+    },
+    {
+      id: 'status',
+      accessorKey: 'status',
+      header: 'Status',
+      mobileLabel: 'Status',
+      cell: ({ row }) => {
+        const status = row.original.status;
+        const variant = EVIDENCE_STATUS_VARIANT[status] ?? 'neutral';
+        return (
+          <Badge variant={variant} dot>
+            {status.replace(/_/g, ' ')}
+          </Badge>
+        );
+      },
+    },
+    {
+      id: 'daysPending',
+      accessorKey: 'daysPending',
+      header: 'Days pending',
+      mobileLabel: 'Days pending',
+      cell: ({ row }) => (
+        <span className="text-surface-700 tabular-nums">{row.original.daysPending}</span>
+      ),
+    },
+  ];
+
+  if (isLoading) {
     return (
-      <div className="p-6">
-        <EmptyState
-          variant="warning"
-          title="Not authorized"
-          description="You do not have permission to view mapping gaps."
+      <div className="space-y-5 animate-fade-in">
+        <PageHeader
+          title="Mapping Gaps"
+          description="Find unmapped requirements, controls without evidence, and stalled approvals."
         />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-28" />
+          ))}
+        </div>
+        <Skeleton className="h-96" />
       </div>
     );
   }
 
-  const showFrameworkColumn = activeTab !== 'unused-controls';
-  const showTypeColumn = activeTab === 'all';
+  const totals = data?.totals ?? {};
 
   return (
-    <div className="p-6 space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold text-surface-900">Mapping Gap Analysis</h1>
-        <p className="text-sm text-surface-600 mt-1">
-          Find requirements without coverage and controls that are not mapped to any requirement.
-        </p>
-      </header>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <label htmlFor="gap-framework-filter" className="text-sm text-surface-700">
-            Framework
-          </label>
-          <SelectNative
-            id="gap-framework-filter"
-            className="input min-w-[14rem]"
-            value={frameworkId}
-            onChange={(e) => setFrameworkId(e.target.value)}
-            disabled={frameworkFilterDisabled}
-            aria-label="Filter by framework"
-          >
-            <option value="">All frameworks</option>
-            {(frameworks ?? []).map((f) => (
-              <option key={f.id} value={f.id}>
-                {f.name}
-              </option>
-            ))}
-          </SelectNative>
-        </div>
-
-        <div className="flex items-center gap-2">
+    <div className="space-y-5 animate-fade-in">
+      <PageHeader
+        title="Mapping Gaps"
+        description="Find unmapped requirements, controls without evidence, and stalled approvals."
+        actions={
           <Button
-            variant="secondary"
             size="sm"
-            onClick={handleExportCsv}
-            disabled={rows.length === 0}
-            leftIcon={<ArrowDownTrayIcon className="w-4 h-4" />}
+            variant="outline"
+            leftIcon={<Download className="h-4 w-4" />}
+            onClick={handleExportCSV}
           >
-            Export to CSV
+            Export CSV
           </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={handleExportPdf}
-            disabled={rows.length === 0}
-            isLoading={isExportingPdf}
-            loadingText="Exporting..."
-            leftIcon={<DocumentTextIcon className="w-4 h-4" />}
-          >
-            Export to PDF
-          </Button>
-        </div>
-      </div>
-      <div className="card overflow-hidden">
-        <div className="border-b border-surface-200 px-4">
-          <nav className="flex flex-wrap gap-6" aria-label="Tabs" role="tablist">
-            {TABS.map((tab) => (
-              <button
-                key={tab.key}
-                type="button"
-                role="tab"
-                aria-selected={activeTab === tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={clsx(
-                  'py-3 px-1 border-b-2 font-medium text-sm transition-colors',
-                  activeTab === tab.key
-                    ? 'border-brand-500 text-brand-400'
-                    : 'border-transparent text-surface-600 hover:text-surface-800 hover:border-surface-300'
-                )}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </nav>
-        </div>
+        }
+      />
 
-        <div ref={tableRef} className="p-4">
-          {gapsQuery.isLoading ? (
-            <div className="space-y-2" role="status" aria-label="Loading gaps">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="h-10 bg-white rounded animate-pulse" />
-              ))}
-            </div>
-          ) : gapsQuery.isError ? (
-            <EmptyState
-              variant="warning"
-              title="Could not load mapping gaps"
-              description="An error occurred. Please try again."
-              action={{ label: 'Retry', onClick: () => gapsQuery.refetch() }}
-            />
-          ) : rows.length === 0 ? (
-            <EmptyState
-              variant="security"
-              title="No mapping gaps"
-              description="All requirements have controls and all controls are mapped."
-            />
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-surface-600 border-b border-surface-200">
-                    {showTypeColumn && <th className="py-2 px-3 font-medium">Type</th>}
-                    {showFrameworkColumn && <th className="py-2 px-3 font-medium">Framework</th>}
-                    <th className="py-2 px-3 font-medium">
-                      {activeTab === 'unused-controls' ? 'Control ID' : 'Reference'}
-                    </th>
-                    {activeTab === 'all' && (
-                      <th className="py-2 px-3 font-medium">Requirement/Control</th>
-                    )}
-                    <th className="py-2 px-3 font-medium">Title</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((row) => {
-                    const linkTo = row.requirement
-                      ? `/frameworks/${row.framework?.id ?? ''}`
-                      : row.control
-                        ? `/controls/${row.control.id}`
-                        : '#';
-                    return (
-                      <tr key={row.id} className="border-b border-surface-200 hover:bg-white/50">
-                        {showTypeColumn && (
-                          <td className="py-2 px-3 text-surface-700">{TYPE_LABEL[row.type]}</td>
-                        )}
-                        {showFrameworkColumn && (
-                          <td className="py-2 px-3 text-surface-700">
-                            {row.framework?.name ?? '—'}
-                          </td>
-                        )}
-                        <td className="py-2 px-3">
-                          <Link to={linkTo} className="text-brand-400 hover:text-brand-300">
-                            {row.requirement?.reference ?? row.control?.controlId ?? '—'}
-                          </Link>
-                        </td>
-                        {activeTab === 'all' && (
-                          <td className="py-2 px-3 text-surface-700">
-                            {row.requirement ? 'Requirement' : row.control ? 'Control' : '—'}
-                          </td>
-                        )}
-                        <td className="py-2 px-3 text-surface-800">
-                          {row.requirement?.title ?? row.control?.title ?? '—'}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label="Total Gaps"
+          value={totals.totalGaps ?? 0}
+          icon={<AlertTriangle className="h-5 w-5" />}
+          tone="red"
+        />
+        <StatCard
+          label="Requirements w/o Controls"
+          value={totals.requirementsWithoutControls ?? 0}
+          icon={<ShieldAlert className="h-5 w-5" />}
+          tone="amber"
+        />
+        <StatCard
+          label="Controls w/o Evidence"
+          value={totals.controlsWithoutEvidence ?? 0}
+          icon={<Link2 className="h-5 w-5" />}
+          tone="blue"
+        />
+        <StatCard
+          label="Evidence w/o Approval"
+          value={totals.evidenceWithoutApproval ?? 0}
+          icon={<FileText className="h-5 w-5" />}
+          tone="purple"
+        />
       </div>
+
+      <Tabs
+        tabs={[
+          {
+            label: `Requirements → Controls (${requirementGaps.length})`,
+            content: (
+              <DataTable
+                data={requirementGaps}
+                columns={requirementColumns}
+                getRowId={(r) => r.id}
+                emptyState={
+                  <EmptyState
+                    icon={<CheckCircle2 className="h-8 w-8" />}
+                    title="No requirement gaps"
+                    description="Every requirement has at least one mapped control."
+                  />
+                }
+              />
+            ),
+          },
+          {
+            label: `Controls → Evidence (${controlGaps.length})`,
+            content: (
+              <DataTable
+                data={controlGaps}
+                columns={controlColumns}
+                getRowId={(r) => r.id}
+                emptyState={
+                  <EmptyState
+                    icon={<CheckCircle2 className="h-8 w-8" />}
+                    title="No control evidence gaps"
+                    description="Every control has supporting evidence."
+                  />
+                }
+              />
+            ),
+          },
+          {
+            label: `Evidence → Approval (${evidenceGaps.length})`,
+            content: (
+              <DataTable
+                data={evidenceGaps}
+                columns={evidenceColumns}
+                getRowId={(r) => r.id}
+                emptyState={
+                  <EmptyState
+                    icon={<CheckCircle2 className="h-8 w-8" />}
+                    title="No pending approvals"
+                    description="All evidence has been reviewed and approved."
+                  />
+                }
+              />
+            ),
+          },
+        ]}
+      />
     </div>
   );
 }

@@ -1,467 +1,376 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Badge } from '@/components/ui/Badge';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Users, CheckCircle2, ClockAlert, ShieldCheck, Search, Mail, UserPlus } from 'lucide-react';
+import api from '@/lib/api';
+import { useDebounce } from '@/hooks/useDebounce';
 import {
-  MagnifyingGlassIcon,
-  FunnelIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  UserIcon,
-  ExclamationTriangleIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  BuildingOffice2Icon,
-  ComputerDesktopIcon,
-  AcademicCapIcon,
-  ShieldCheckIcon,
-  KeyIcon,
-  ArrowPathIcon,
-} from '@heroicons/react/24/outline';
-import { employeeComplianceApi } from '../lib/api';
-
-import { Input } from '@/components/ui/Input';
-
-import { SelectNative } from '@/components/ui/SelectNative';
-
-import { Button } from '@/components/ui/Button';
+  Badge,
+  Button,
+  CategoryChip,
+  DataTable,
+  EmptyState,
+  FilterBar,
+  Input,
+  PageHeader,
+  Select,
+  StatCard,
+  type ActiveFilter,
+  type BadgeVariant,
+  type DataTableColumn,
+} from '@/components/ui';
 
 interface Employee {
   id: string;
   email: string;
   firstName?: string;
   lastName?: string;
-  fullName: string;
-  department?: string;
+  fullName?: string;
   jobTitle?: string;
-  employmentStatus?: string;
-  complianceScore?: number;
-  backgroundCheckStatus?: string;
-  overdueTrainings: number;
-  pendingAttestations: number;
-  dataSources: {
-    hasHris: boolean;
-    hasBackgroundCheck: boolean;
-    hasTraining: boolean;
-    hasAssets: boolean;
-    hasAccess: boolean;
+  department?: string;
+  status?: string;
+  trainingCompletionPct?: number;
+  lastTrainingAt?: string;
+  overdueTrainings?: number;
+}
+
+interface EmployeesResponse {
+  data: Employee[];
+  total: number;
+  stats?: {
+    total?: number;
+    active?: number;
+    compliantPct?: number;
+    overdue?: number;
   };
-  lastCorrelatedAt: string;
+  departments?: string[];
 }
 
-function getScoreColor(score: number | undefined): string {
-  if (score === undefined) return 'text-gray-400';
-  if (score >= 80) return 'text-green-500';
-  if (score >= 60) return 'text-yellow-500';
-  return 'text-red-500';
+const STATUS_OPTS: { value: string; label: string }[] = [
+  { value: 'active', label: 'Active' },
+  { value: 'onboarding', label: 'Onboarding' },
+  { value: 'inactive', label: 'Inactive' },
+  { value: 'offboarded', label: 'Offboarded' },
+];
+
+const STATUS_VARIANT: Record<string, BadgeVariant> = {
+  active: 'success',
+  onboarding: 'info',
+  inactive: 'neutral',
+  offboarded: 'neutral',
+};
+
+function getDisplayName(emp: Employee): string {
+  if (emp.fullName) return emp.fullName;
+  const composed = `${emp.firstName ?? ''} ${emp.lastName ?? ''}`.trim();
+  return composed || emp.email;
 }
 
-function getScoreBgColor(score: number | undefined): string {
-  if (score === undefined) return 'bg-gray-500/20';
-  if (score >= 80) return 'bg-green-500/20';
-  if (score >= 60) return 'bg-yellow-500/20';
-  return 'bg-red-500/20';
+function getInitials(emp: Employee): string {
+  const name = getDisplayName(emp);
+  const parts = name.split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
 }
 
-function getStatusBadge(status: string | undefined) {
-  switch (status) {
-    case 'clear':
-      return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-green-500/20 text-green-600">
-          <CheckCircleIcon className="h-3 w-3" />
-          Clear
-        </span>
-      );
-    case 'pending':
-    case 'in_progress':
-      return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-yellow-500/20 text-yellow-600">
-          <ArrowPathIcon className="h-3 w-3" />
-          Pending
-        </span>
-      );
-    case 'flagged':
-      return (
-        <Badge variant="danger" className="inline-flex items-center gap-1">
-          <XCircleIcon className="h-3 w-3" />
-          Flagged
-        </Badge>
-      );
-    default:
-      return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-gray-500/20 text-gray-400">
-          <ExclamationTriangleIcon className="h-3 w-3" />
-          None
-        </span>
-      );
-  }
+function formatDate(value?: string) {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString();
 }
 
-function DataSourceIcons({ dataSources }: { dataSources: Employee['dataSources'] }) {
-  // Handle case where dataSources might be undefined or have missing properties
-  const sources = dataSources || {
-    hasHris: false,
-    hasBackgroundCheck: false,
-    hasTraining: false,
-    hasAssets: false,
-    hasAccess: false,
-  };
+function CompletionBar({ pct }: { pct: number }) {
+  const safe = Math.max(0, Math.min(100, Math.round(pct)));
+  const tone = safe >= 80 ? 'bg-emerald-500' : safe >= 50 ? 'bg-amber-500' : 'bg-red-500';
   return (
-    <div className="flex items-center gap-1">
-      <div
-        className={`p-1 rounded ${sources.hasHris ? 'text-blue-600' : 'text-gray-600'}`}
-        title="HRIS"
-      >
-        <BuildingOffice2Icon className="h-4 w-4" />
+    <div className="flex items-center gap-2 min-w-[8rem]">
+      <div className="flex-1 h-1.5 rounded-full bg-surface-200 overflow-hidden">
+        <div className={`h-full ${tone} transition-all`} style={{ width: `${safe}%` }} />
       </div>
-      <div
-        className={`p-1 rounded ${sources.hasBackgroundCheck ? 'text-green-600' : 'text-gray-600'}`}
-        title="Background Check"
-      >
-        <ShieldCheckIcon className="h-4 w-4" />
-      </div>
-      <div
-        className={`p-1 rounded ${sources.hasTraining ? 'text-purple-600' : 'text-gray-600'}`}
-        title="Training"
-      >
-        <AcademicCapIcon className="h-4 w-4" />
-      </div>
-      <div
-        className={`p-1 rounded ${sources.hasAssets ? 'text-orange-600' : 'text-gray-600'}`}
-        title="Assets"
-      >
-        <ComputerDesktopIcon className="h-4 w-4" />
-      </div>
-      <div
-        className={`p-1 rounded ${sources.hasAccess ? 'text-cyan-600' : 'text-gray-600'}`}
-        title="Access"
-      >
-        <KeyIcon className="h-4 w-4" />
-      </div>
+      <span className="text-xs tabular-nums text-surface-700 w-9 text-right">{safe}%</span>
     </div>
   );
 }
 
 export default function Employees() {
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [departments, setDepartments] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [departmentFilter, setDepartmentFilter] = useState('');
-  const [complianceFilter, setComplianceFilter] = useState('');
-  const [sortBy, setSortBy] = useState('lastName');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [showFilters, setShowFilters] = useState(false);
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const fetchEmployees = useCallback(async () => {
-    setLoading(true);
-    try {
-      const response = await employeeComplianceApi.list({
-        search: search || undefined,
-        department: departmentFilter || undefined,
-        complianceStatus: complianceFilter || undefined,
-        sortBy,
-        sortOrder,
-        page,
-        limit: 25,
-      });
+  const [searchInput, setSearchInput] = useState(searchParams.get('search') || '');
+  const debouncedSearch = useDebounce(searchInput, 300);
 
-      const data = response.data;
-
-      // Transform API response to match our Employee interface
-      const transformedEmployees: Employee[] = (data.data || data || []).map((emp: any) => ({
-        id: emp.id,
-        email: emp.email,
-        firstName: emp.firstName,
-        lastName: emp.lastName,
-        fullName:
-          emp.fullName || `${emp.firstName || ''} ${emp.lastName || ''}`.trim() || emp.email,
-        department: emp.department,
-        jobTitle: emp.jobTitle,
-        employmentStatus: emp.employmentStatus,
-        complianceScore: emp.complianceScore,
-        backgroundCheckStatus: emp.backgroundCheckStatus || emp.latestBackgroundCheck?.status,
-        overdueTrainings: emp.overdueTrainings ?? emp.overdueTrainingCount ?? 0,
-        pendingAttestations: emp.pendingAttestations ?? emp.pendingAttestationCount ?? 0,
-        dataSources: emp.dataSources || {
-          hasHris: !!emp.hrisSource,
-          hasBackgroundCheck: !!emp.latestBackgroundCheck,
-          hasTraining: (emp.trainingRecordCount ?? 0) > 0,
-          hasAssets: (emp.assetCount ?? 0) > 0,
-          hasAccess: (emp.accessRecordCount ?? 0) > 0,
-        },
-        lastCorrelatedAt: emp.lastCorrelatedAt || emp.updatedAt,
-      }));
-
-      setEmployees(transformedEmployees);
-      setTotal(data.total || transformedEmployees.length);
-      setTotalPages(Math.ceil((data.total || transformedEmployees.length) / 25));
-    } catch (error) {
-      console.error('Failed to fetch employees:', error);
-      setEmployees([]);
-      setTotal(0);
-      setTotalPages(1);
-    } finally {
-      setLoading(false);
-    }
-  }, [search, departmentFilter, complianceFilter, sortBy, sortOrder, page]);
-
-  const fetchDepartments = useCallback(async () => {
-    try {
-      const response = await employeeComplianceApi.getDepartments();
-      setDepartments(response.data || []);
-    } catch (error) {
-      console.error('Failed to fetch departments:', error);
-    }
-  }, []);
+  const department = searchParams.get('department') || '';
+  const status = searchParams.get('status') || '';
 
   useEffect(() => {
-    fetchDepartments();
-  }, [fetchDepartments]);
+    const params = new URLSearchParams(searchParams);
+    if (debouncedSearch) params.set('search', debouncedSearch);
+    else params.delete('search');
+    setSearchParams(params, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch]);
 
-  useEffect(() => {
-    fetchEmployees();
-  }, [fetchEmployees]);
-
-  const handleSort = (field: string) => {
-    if (sortBy === field) setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    else {
-      setSortBy(field);
-      setSortOrder('asc');
-    }
+  const setParam = (key: string, value: string) => {
+    const params = new URLSearchParams(searchParams);
+    if (value) params.set(key, value);
+    else params.delete(key);
+    setSearchParams(params);
   };
 
+  const clearAll = () => {
+    setSearchInput('');
+    setSearchParams(new URLSearchParams());
+  };
+
+  const { data, isLoading } = useQuery<EmployeesResponse>({
+    queryKey: ['people', { search: debouncedSearch, department, status }],
+    queryFn: async () => {
+      const params: Record<string, string> = {};
+      if (debouncedSearch) params.search = debouncedSearch;
+      if (department) params.department = department;
+      if (status) params.status = status;
+      const res = await api.get('/api/people', { params });
+      const body = res.data ?? {};
+      const rows: Employee[] = Array.isArray(body)
+        ? body
+        : (body.data ?? body.people ?? body.employees ?? []);
+      return {
+        data: rows,
+        total: body.total ?? rows.length,
+        stats: body.stats,
+        departments: body.departments,
+      };
+    },
+    staleTime: 30_000,
+  });
+
+  const employees = data?.data ?? [];
+  const stats = data?.stats ?? {};
+
+  // Build department options. Prefer server-provided list; fall back to unique values present.
+  const departmentOptions: { value: string; label: string }[] = (() => {
+    const fromServer = data?.departments ?? [];
+    const fromRows = Array.from(
+      new Set(employees.map((e) => e.department).filter((d): d is string => !!d))
+    );
+    const merged = Array.from(new Set([...fromServer, ...fromRows])).sort();
+    return merged.map((d) => ({ value: d, label: d }));
+  })();
+
+  const activeFilters: ActiveFilter[] = [];
+  if (debouncedSearch) {
+    activeFilters.push({
+      key: 'search',
+      label: `Search: ${debouncedSearch}`,
+      onClear: () => {
+        setSearchInput('');
+      },
+    });
+  }
+  if (department) {
+    activeFilters.push({
+      key: 'department',
+      label: `Department: ${department}`,
+      onClear: () => setParam('department', ''),
+    });
+  }
+  if (status) {
+    const lbl = STATUS_OPTS.find((s) => s.value === status)?.label ?? status;
+    activeFilters.push({
+      key: 'status',
+      label: `Status: ${lbl}`,
+      onClear: () => setParam('status', ''),
+    });
+  }
+
+  const columns: DataTableColumn<Employee>[] = [
+    {
+      id: 'name',
+      accessorKey: 'fullName',
+      header: 'Employee',
+      mobileLabel: 'Employee',
+      cell: ({ row }) => {
+        const emp = row.original;
+        return (
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="h-9 w-9 rounded-full bg-brand-50 text-brand-700 flex items-center justify-center text-xs font-semibold shrink-0">
+              {getInitials(emp)}
+            </div>
+            <div className="min-w-0">
+              <p className="text-surface-900 truncate">{getDisplayName(emp)}</p>
+              <p className="text-xs text-surface-500 truncate flex items-center gap-1">
+                <Mail className="h-3 w-3" />
+                {emp.email}
+              </p>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      id: 'jobTitle',
+      accessorKey: 'jobTitle',
+      header: 'Role',
+      mobileLabel: 'Role',
+      cell: ({ row }) =>
+        row.original.jobTitle ? (
+          <span className="text-surface-800">{row.original.jobTitle}</span>
+        ) : (
+          <span className="text-surface-500">—</span>
+        ),
+    },
+    {
+      id: 'department',
+      accessorKey: 'department',
+      header: 'Department',
+      mobileLabel: 'Department',
+      cell: ({ row }) =>
+        row.original.department ? (
+          <CategoryChip value={row.original.department} />
+        ) : (
+          <span className="text-surface-500">—</span>
+        ),
+    },
+    {
+      id: 'status',
+      accessorKey: 'status',
+      header: 'Status',
+      mobileLabel: 'Status',
+      cell: ({ row }) => {
+        const s = row.original.status;
+        if (!s) return <span className="text-surface-500">—</span>;
+        return (
+          <Badge variant={STATUS_VARIANT[s] ?? 'neutral'} dot>
+            {s.replace(/_/g, ' ')}
+          </Badge>
+        );
+      },
+    },
+    {
+      id: 'training',
+      accessorKey: 'trainingCompletionPct',
+      header: 'Training',
+      mobileLabel: 'Training',
+      cell: ({ row }) => <CompletionBar pct={row.original.trainingCompletionPct ?? 0} />,
+    },
+    {
+      id: 'lastTrainingAt',
+      accessorKey: 'lastTrainingAt',
+      header: 'Last Training',
+      mobileLabel: 'Last Training',
+      cell: ({ row }) => (
+        <span className="text-surface-700 tabular-nums">
+          {formatDate(row.original.lastTrainingAt)}
+        </span>
+      ),
+    },
+  ];
+
+  const compliantPct = Math.round(stats.compliantPct ?? 0);
+
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Employee Compliance</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Track employee compliance with training, background checks, and attestations
-          </p>
-        </div>
-        <Link to="/people/dashboard" className="">
-          View Dashboard
-        </Link>
+    <div className="space-y-5 animate-fade-in">
+      <PageHeader
+        title="People"
+        description="Employees, training, and access compliance."
+        actions={
+          <Button size="sm" leftIcon={<UserPlus className="h-4 w-4" />}>
+            Invite employee
+          </Button>
+        }
+      />
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard
+          label="Total"
+          value={stats.total ?? data?.total ?? employees.length}
+          icon={<Users className="h-5 w-5" />}
+          tone="brand"
+        />
+        <StatCard
+          label="Active"
+          value={stats.active ?? employees.filter((e) => e.status === 'active').length}
+          icon={<CheckCircle2 className="h-5 w-5" />}
+          tone="emerald"
+        />
+        <StatCard
+          label="Compliant"
+          value={`${compliantPct}%`}
+          icon={<ShieldCheck className="h-5 w-5" />}
+          tone="blue"
+          caption="Training up to date"
+        />
+        <StatCard
+          label="Overdue"
+          value={stats.overdue ?? employees.reduce((sum, e) => sum + (e.overdueTrainings ?? 0), 0)}
+          icon={<ClockAlert className="h-5 w-5" />}
+          tone="amber"
+        />
       </div>
-      <div className="card p-4 space-y-4">
-        <div className="flex items-center gap-4">
-          <div className="flex-1 relative">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Search by name, email, or department..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="input pl-10 w-full"
-            />
-          </div>
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={`btn-secondary ${showFilters ? 'bg-primary/20' : ''}`}
-          >
-            <FunnelIcon className="h-5 w-5" />
-            Filters
-          </button>
-        </div>
-        {showFilters && (
-          <div className="flex flex-wrap gap-4 pt-4 border-t border-border">
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-muted-foreground">Department:</label>
-              <SelectNative
-                value={departmentFilter}
-                onChange={(e) => setDepartmentFilter(e.target.value)}
-                className="input"
-              >
-                <option value="">All Departments</option>
-                {departments.map((dept) => (
-                  <option key={dept} value={dept}>
-                    {dept}
-                  </option>
-                ))}
-              </SelectNative>
-            </div>
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-muted-foreground">Compliance:</label>
-              <SelectNative
-                value={complianceFilter}
-                onChange={(e) => setComplianceFilter(e.target.value)}
-                className="input"
-              >
-                <option value="">All Status</option>
-                <option value="compliant">Compliant (80+)</option>
-                <option value="at_risk">At Risk (60-79)</option>
-                <option value="non_compliant">Non-Compliant (&lt;60)</option>
-              </SelectNative>
-            </div>
-            <button
-              onClick={() => {
-                setDepartmentFilter('');
-                setComplianceFilter('');
-              }}
-              className="text-sm text-primary hover:text-primary/80"
-            >
-              Clear Filters
-            </button>
-          </div>
-        )}
-      </div>
-      <div className="flex items-center justify-between text-sm text-muted-foreground">
-        <span>{total} employees found</span>
-        <div className="flex items-center gap-2">
-          <span>Sort by:</span>
-          <button
-            onClick={() => handleSort('lastName')}
-            className={`px-2 py-1 rounded ${sortBy === 'lastName' ? 'bg-surface-200 text-foreground' : ''}`}
-          >
-            Name {sortBy === 'lastName' && (sortOrder === 'asc' ? '↑' : '↓')}
-          </button>
-          <button
-            onClick={() => handleSort('complianceScore')}
-            className={`px-2 py-1 rounded ${sortBy === 'complianceScore' ? 'bg-surface-200 text-foreground' : ''}`}
-          >
-            Score {sortBy === 'complianceScore' && (sortOrder === 'asc' ? '↑' : '↓')}
-          </button>
-          <button
-            onClick={() => handleSort('department')}
-            className={`px-2 py-1 rounded ${sortBy === 'department' ? 'bg-surface-200 text-foreground' : ''}`}
-          >
-            Dept {sortBy === 'department' && (sortOrder === 'asc' ? '↑' : '↓')}
-          </button>
-        </div>
-      </div>
-      <div className="card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-border bg-white/50">
-                <th className="text-left p-4 font-medium text-muted-foreground">Employee</th>
-                <th className="text-left p-4 font-medium text-muted-foreground">Department</th>
-                <th className="text-center p-4 font-medium text-muted-foreground">Score</th>
-                <th className="text-center p-4 font-medium text-muted-foreground">Background</th>
-                <th className="text-center p-4 font-medium text-muted-foreground">Issues</th>
-                <th className="text-center p-4 font-medium text-muted-foreground">Data Sources</th>
-                <th className="text-right p-4 font-medium text-muted-foreground">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={7} className="p-8 text-center text-muted-foreground">
-                    <ArrowPathIcon className="h-6 w-6 animate-spin mx-auto mb-2" />
-                    Loading employees...
-                  </td>
-                </tr>
-              ) : employees.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="p-8 text-center text-muted-foreground">
-                    No employees found.{' '}
-                    {total === 0 &&
-                      'Load demo data to see sample employees or configure HR integrations to import employee data.'}
-                  </td>
-                </tr>
+
+      <FilterBar active={activeFilters} onClearAll={activeFilters.length ? clearAll : undefined}>
+        <Input
+          inputSize="sm"
+          className="w-64"
+          placeholder="Search name or email…"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          leftIcon={<Search className="h-4 w-4" />}
+        />
+        <Select
+          size="sm"
+          fullWidth={false}
+          className="w-48"
+          placeholder="All Departments"
+          value={department}
+          onChange={(v) => setParam('department', v)}
+          options={departmentOptions}
+          clearable
+          searchable
+        />
+        <Select
+          size="sm"
+          fullWidth={false}
+          className="w-44"
+          placeholder="All Statuses"
+          value={status}
+          onChange={(v) => setParam('status', v)}
+          options={STATUS_OPTS}
+          clearable
+        />
+      </FilterBar>
+
+      <DataTable
+        data={employees}
+        columns={columns}
+        loading={isLoading}
+        getRowId={(r) => r.id}
+        onRowClick={(r) => navigate(`/people/${r.id}`)}
+        emptyState={
+          <EmptyState
+            icon={<Users className="h-8 w-8" />}
+            title="No employees found"
+            description={
+              activeFilters.length
+                ? 'Try clearing your filters to see all employees.'
+                : 'Invite an employee or connect an HRIS integration to begin.'
+            }
+            action={
+              activeFilters.length ? (
+                <Button variant="outline" size="sm" onClick={clearAll}>
+                  Clear filters
+                </Button>
               ) : (
-                employees.map((employee) => (
-                  <tr key={employee.id} className="border-b border-border hover:bg-white/30">
-                    <td className="p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-surface-200 flex items-center justify-center">
-                          <UserIcon className="h-5 w-5 text-muted-foreground" />
-                        </div>
-                        <div>
-                          <Link
-                            to={`/people/${employee.id}`}
-                            className="font-medium text-foreground hover:text-primary"
-                          >
-                            {employee.fullName}
-                          </Link>
-                          <p className="text-sm text-muted-foreground">{employee.email}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <span className="text-foreground">{employee.department || '—'}</span>
-                      {employee.jobTitle && (
-                        <p className="text-sm text-muted-foreground">{employee.jobTitle}</p>
-                      )}
-                    </td>
-                    <td className="p-4 text-center">
-                      <span
-                        className={`inline-flex items-center justify-center w-12 h-12 rounded-full text-lg font-bold ${getScoreBgColor(employee.complianceScore)} ${getScoreColor(employee.complianceScore)}`}
-                      >
-                        {employee.complianceScore ?? '—'}
-                      </span>
-                    </td>
-                    <td className="p-4 text-center">
-                      {getStatusBadge(employee.backgroundCheckStatus)}
-                    </td>
-                    <td className="p-4 text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        {employee.overdueTrainings > 0 && (
-                          <Badge variant="danger" className="inline-flex items-center gap-1">
-                            <AcademicCapIcon className="h-3 w-3" />
-                            {employee.overdueTrainings}
-                          </Badge>
-                        )}
-                        {employee.pendingAttestations > 0 && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-yellow-500/20 text-yellow-600">
-                            <ExclamationTriangleIcon className="h-3 w-3" />
-                            {employee.pendingAttestations}
-                          </span>
-                        )}
-                        {employee.overdueTrainings === 0 && employee.pendingAttestations === 0 && (
-                          <span className="text-sm text-green-600">None</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <DataSourceIcons dataSources={employee.dataSources} />
-                    </td>
-                    <td className="p-4 text-right">
-                      <Link
-                        to={`/people/${employee.id}`}
-                        className="text-sm text-primary hover:text-primary/80"
-                      >
-                        View Details →
-                      </Link>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between p-4 border-t border-border">
-            <span className="text-sm text-muted-foreground">
-              Showing {(page - 1) * 25 + 1} to {Math.min(page * 25, total)} of {total}
-            </span>
-            <div className="flex items-center gap-2">
-              <Button
-                onClick={() => setPage(page - 1)}
-                disabled={page === 1}
-                className="disabled:opacity-50"
-                variant="secondary"
-              >
-                <ChevronLeftIcon className="h-4 w-4" />
-              </Button>
-              <span className="text-sm">
-                Page {page} of {totalPages}
-              </span>
-              <Button
-                onClick={() => setPage(page + 1)}
-                disabled={page === totalPages}
-                className="disabled:opacity-50"
-                variant="secondary"
-              >
-                <ChevronRightIcon className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        )}
-      </div>
+                <Button size="sm" leftIcon={<UserPlus className="h-4 w-4" />}>
+                  Invite employee
+                </Button>
+              )
+            }
+          />
+        }
+      />
     </div>
   );
 }

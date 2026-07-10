@@ -1,7 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  XMarkIcon,
   CloudArrowUpIcon,
   DocumentTextIcon,
   ArrowDownTrayIcon,
@@ -9,9 +8,8 @@ import {
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import { controlsApi } from '@/lib/api';
+import { Button, Dialog } from '@/components/ui';
 import clsx from 'clsx';
-
-import { Button } from '@/components/ui/Button';
 
 interface BulkUploadModalProps {
   isOpen: boolean;
@@ -19,11 +17,11 @@ interface BulkUploadModalProps {
 }
 
 interface UploadResult {
-  total?: number;
+  total: number;
   created: number;
   updated: number;
   skipped: number;
-  errors?: Array<{
+  errors: Array<{
     controlId: string;
     error: string;
     row?: number;
@@ -31,8 +29,6 @@ interface UploadResult {
 }
 
 type UploadMode = 'csv' | 'json';
-
-const MAX_BULK_ITEMS = 500;
 
 export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProps) {
   const queryClient = useQueryClient();
@@ -48,13 +44,7 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
 
   const uploadMutation = useMutation({
     mutationFn: async (data: { content: string; mode: UploadMode }) => {
-      // Pre-validate row count before upload
       if (data.mode === 'csv') {
-        const lines = data.content.split('\n').filter((line) => line.trim());
-        const rowCount = lines.length - 1; // Subtract header row
-        if (rowCount > MAX_BULK_ITEMS) {
-          throw new Error(`Maximum ${MAX_BULK_ITEMS} items per upload. File has ${rowCount} rows.`);
-        }
         const response = await controlsApi.bulkUploadCSV({
           csv: data.content,
           skipExisting,
@@ -63,14 +53,8 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
         return response.data;
       } else {
         const controls = JSON.parse(data.content);
-        const items = Array.isArray(controls) ? controls : controls.controls;
-        if (items.length > MAX_BULK_ITEMS) {
-          throw new Error(
-            `Maximum ${MAX_BULK_ITEMS} items per upload. File has ${items.length} items.`
-          );
-        }
         const response = await controlsApi.bulkUpload({
-          controls: items,
+          controls: Array.isArray(controls) ? controls : controls.controls,
           skipExisting,
           updateExisting,
         });
@@ -154,266 +138,233 @@ export default function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProp
     onClose();
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex min-h-screen items-center justify-center p-4">
-        {/* Backdrop */}
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" onClick={handleClose} />
-
-        {/* Modal */}
-        <div className="relative w-full max-w-2xl bg-white rounded-xl shadow-2xl border border-surface-200">
-          {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-surface-200">
-            <div>
-              <h2 className="text-xl font-semibold text-surface-900">Bulk Upload Controls</h2>
-              <p className="text-sm text-surface-600 mt-1">Import controls from CSV or JSON file</p>
+    <Dialog
+      open={isOpen}
+      onClose={handleClose}
+      size="lg"
+      title="Bulk Upload Controls"
+      description="Import controls from CSV or JSON file"
+      footer={
+        !result ? (
+          <>
+            <Button variant="secondary" onClick={handleClose}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpload} disabled={!fileContent || uploadMutation.isPending}>
+              {uploadMutation.isPending ? (
+                <>
+                  <div className="animate-spin w-4 h-4 border-2 border-white/30 rounded-full border-t-white mr-2" />
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <CloudArrowUpIcon className="w-4 h-4 mr-2" />
+                  Upload Controls
+                </>
+              )}
+            </Button>
+          </>
+        ) : undefined
+      }
+    >
+      <div className="space-y-6">
+        {/* Result display */}
+        {result ? (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              {result.errors.length === 0 ? (
+                <CheckCircleIcon className="w-8 h-8 text-emerald-700" />
+              ) : (
+                <ExclamationTriangleIcon className="w-8 h-8 text-yellow-700" />
+              )}
+              <div>
+                <h3 className="text-lg font-medium text-surface-900">Upload Complete</h3>
+                <p className="text-surface-600">Processed {result.total} controls</p>
+              </div>
             </div>
-            <button
-              onClick={handleClose}
-              className="p-2 text-surface-600 hover:text-surface-800 hover:bg-white rounded-lg transition-colors"
-            >
-              <XMarkIcon className="w-5 h-5" />
-            </button>
+
+            <div className="grid grid-cols-4 gap-4">
+              <div className="bg-surface-100 rounded-lg p-4 text-center">
+                <div className="text-2xl font-bold text-emerald-700">{result.created}</div>
+                <div className="text-sm text-surface-600">Created</div>
+              </div>
+              <div className="bg-surface-100 rounded-lg p-4 text-center">
+                <div className="text-2xl font-bold text-blue-600">{result.updated}</div>
+                <div className="text-sm text-surface-600">Updated</div>
+              </div>
+              <div className="bg-surface-100 rounded-lg p-4 text-center">
+                <div className="text-2xl font-bold text-surface-600">{result.skipped}</div>
+                <div className="text-sm text-surface-600">Skipped</div>
+              </div>
+              <div className="bg-surface-100 rounded-lg p-4 text-center">
+                <div className="text-2xl font-bold text-red-600">{result.errors.length}</div>
+                <div className="text-sm text-surface-600">Errors</div>
+              </div>
+            </div>
+
+            {result.errors.length > 0 && (
+              <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+                <h4 className="font-medium text-red-600 mb-2">Errors</h4>
+                <div className="max-h-40 overflow-y-auto space-y-1">
+                  {result.errors.map((error, index) => (
+                    <div key={index} className="text-sm text-surface-700">
+                      <span className="font-mono text-red-600">
+                        Row {error.row || '?'} ({error.controlId}):
+                      </span>{' '}
+                      {error.error}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <Button onClick={handleClose} fullWidth>
+              Done
+            </Button>
           </div>
-
-          {/* Content */}
-          <div className="p-6 space-y-6">
-            {/* Result display */}
-            {result ? (
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  {!result.errors?.length ? (
-                    <CheckCircleIcon className="w-8 h-8 text-green-600" />
-                  ) : (
-                    <ExclamationTriangleIcon className="w-8 h-8 text-yellow-600" />
-                  )}
-                  <div>
-                    <h3 className="text-lg font-medium text-surface-900">Upload Complete</h3>
-                    <p className="text-surface-600">
-                      Processed {result.total || result.created + result.updated + result.skipped}{' '}
-                      controls
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-4 gap-4">
-                  <div className="bg-white rounded-lg p-4 text-center">
-                    <div className="text-2xl font-bold text-green-600">{result.created}</div>
-                    <div className="text-sm text-surface-600">Created</div>
-                  </div>
-                  <div className="bg-white rounded-lg p-4 text-center">
-                    <div className="text-2xl font-bold text-blue-600">{result.updated}</div>
-                    <div className="text-sm text-surface-600">Updated</div>
-                  </div>
-                  <div className="bg-white rounded-lg p-4 text-center">
-                    <div className="text-2xl font-bold text-surface-600">{result.skipped}</div>
-                    <div className="text-sm text-surface-600">Skipped</div>
-                  </div>
-                  <div className="bg-white rounded-lg p-4 text-center">
-                    <div className="text-2xl font-bold text-red-600">
-                      {result.errors?.length || 0}
-                    </div>
-                    <div className="text-sm text-surface-600">Errors</div>
-                  </div>
-                </div>
-
-                {(result.errors?.length ?? 0) > 0 && (
-                  <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
-                    <h4 className="font-medium text-red-600 mb-2">Errors</h4>
-                    <div className="max-h-40 overflow-y-auto space-y-1">
-                      {result.errors?.map((error, index) => (
-                        <div key={index} className="text-sm text-surface-700">
-                          <span className="font-mono text-red-600">
-                            Row {error.row || '?'} ({error.controlId}):
-                          </span>{' '}
-                          {error.error}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+        ) : (
+          <>
+            {/* File format selector */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setUploadMode('csv')}
+                className={clsx(
+                  'flex-1 py-2 px-4 rounded-lg border transition-colors',
+                  uploadMode === 'csv'
+                    ? 'bg-brand-600 border-brand-500 text-white'
+                    : 'bg-surface-100 border-surface-300 text-surface-700 hover:border-surface-400'
                 )}
+              >
+                CSV Format
+              </button>
+              <button
+                onClick={() => setUploadMode('json')}
+                className={clsx(
+                  'flex-1 py-2 px-4 rounded-lg border transition-colors',
+                  uploadMode === 'json'
+                    ? 'bg-brand-600 border-brand-500 text-white'
+                    : 'bg-surface-100 border-surface-300 text-surface-700 hover:border-surface-400'
+                )}
+              >
+                JSON Format
+              </button>
+            </div>
 
-                <Button onClick={handleClose} className="w-full" variant="primary">
-                  Done
+            {/* Drop zone */}
+            <div
+              className={clsx(
+                'relative border-2 border-dashed rounded-xl p-8 text-center transition-colors',
+                dragActive
+                  ? 'border-brand-500 bg-brand-500/10'
+                  : fileContent
+                    ? 'border-green-500 bg-green-500/10'
+                    : 'border-surface-300 hover:border-surface-400'
+              )}
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDragOver={handleDrag}
+              onDrop={handleDrop}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,.json"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+
+              {fileContent ? (
+                <div className="space-y-2">
+                  <DocumentTextIcon className="w-12 h-12 mx-auto text-emerald-700" />
+                  <p className="text-surface-900 font-medium">{fileName}</p>
+                  <p className="text-surface-600 text-sm">
+                    {fileContent.split('\n').length} lines loaded
+                  </p>
+                  <button
+                    onClick={() => {
+                      setFileContent('');
+                      setFileName('');
+                    }}
+                    className="text-sm text-brand-700 hover:text-brand-800"
+                  >
+                    Choose different file
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <CloudArrowUpIcon className="w-12 h-12 mx-auto text-surface-500" />
+                  <p className="text-surface-700">
+                    Drag and drop your file here, or{' '}
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="text-brand-700 hover:text-brand-800"
+                    >
+                      browse
+                    </button>
+                  </p>
+                  <p className="text-surface-500 text-sm">Supports .csv and .json files</p>
+                </div>
+              )}
+            </div>
+
+            {/* Options */}
+            <div className="space-y-3">
+              <label className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={skipExisting}
+                  onChange={(e) => {
+                    setSkipExisting(e.target.checked);
+                    if (e.target.checked) setUpdateExisting(false);
+                  }}
+                  className="w-4 h-4 rounded border-surface-400 bg-surface-100 text-brand-500 focus:ring-brand-500"
+                />
+                <span className="text-surface-700">Skip existing controls</span>
+              </label>
+              <label className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={updateExisting}
+                  onChange={(e) => {
+                    setUpdateExisting(e.target.checked);
+                    if (e.target.checked) setSkipExisting(false);
+                  }}
+                  className="w-4 h-4 rounded border-surface-400 bg-surface-100 text-brand-500 focus:ring-brand-500"
+                />
+                <span className="text-surface-700">Update existing controls</span>
+              </label>
+            </div>
+
+            {/* Template download */}
+            <div className="bg-surface-100 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium text-surface-800">Need a template?</h4>
+                  <p className="text-sm text-surface-600">
+                    Download our CSV template with example data
+                  </p>
+                </div>
+                <Button variant="secondary" size="sm" onClick={handleDownloadTemplate}>
+                  <ArrowDownTrayIcon className="w-4 h-4 mr-2" />
+                  Download
                 </Button>
               </div>
-            ) : (
-              <>
-                {/* File format selector */}
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setUploadMode('csv')}
-                    className={clsx(
-                      'flex-1 py-2 px-4 rounded-lg border transition-colors',
-                      uploadMode === 'csv'
-                        ? 'bg-brand-600 border-brand-500 text-white'
-                        : 'bg-white border-surface-200 text-surface-700 hover:border-surface-300'
-                    )}
-                  >
-                    CSV Format
-                  </button>
-                  <button
-                    onClick={() => setUploadMode('json')}
-                    className={clsx(
-                      'flex-1 py-2 px-4 rounded-lg border transition-colors',
-                      uploadMode === 'json'
-                        ? 'bg-brand-600 border-brand-500 text-white'
-                        : 'bg-white border-surface-200 text-surface-700 hover:border-surface-300'
-                    )}
-                  >
-                    JSON Format
-                  </button>
-                </div>
-
-                {/* Drop zone */}
-                <div
-                  className={clsx(
-                    'relative border-2 border-dashed rounded-xl p-8 text-center transition-colors',
-                    dragActive
-                      ? 'border-brand-500 bg-brand-500/10'
-                      : fileContent
-                        ? 'border-green-500 bg-green-500/10'
-                        : 'border-surface-200 hover:border-surface-300'
-                  )}
-                  onDragEnter={handleDrag}
-                  onDragLeave={handleDrag}
-                  onDragOver={handleDrag}
-                  onDrop={handleDrop}
-                >
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".csv,.json"
-                    onChange={handleFileSelect}
-                    className="hidden"
-                  />
-
-                  {fileContent ? (
-                    <div className="space-y-2">
-                      <DocumentTextIcon className="w-12 h-12 mx-auto text-green-600" />
-                      <p className="text-surface-900 font-medium">{fileName}</p>
-                      <p className="text-surface-600 text-sm">
-                        {fileContent.split('\n').length} lines loaded
-                      </p>
-                      <button
-                        onClick={() => {
-                          setFileContent('');
-                          setFileName('');
-                        }}
-                        className="text-sm text-brand-400 hover:text-brand-300"
-                      >
-                        Choose different file
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <CloudArrowUpIcon className="w-12 h-12 mx-auto text-surface-500" />
-                      <p className="text-surface-700">
-                        Drag and drop your file here, or{' '}
-                        <button
-                          onClick={() => fileInputRef.current?.click()}
-                          className="text-brand-400 hover:text-brand-300"
-                        >
-                          browse
-                        </button>
-                      </p>
-                      <p className="text-surface-500 text-sm">Supports .csv and .json files</p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Options */}
-                <div className="space-y-3">
-                  <label className="flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      checked={skipExisting}
-                      onChange={(e) => {
-                        setSkipExisting(e.target.checked);
-                        if (e.target.checked) setUpdateExisting(false);
-                      }}
-                      className="w-4 h-4 rounded border-surface-300 bg-white text-brand-500 focus:ring-brand-500"
-                    />
-                    <span className="text-surface-700">Skip existing controls</span>
-                  </label>
-                  <label className="flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      checked={updateExisting}
-                      onChange={(e) => {
-                        setUpdateExisting(e.target.checked);
-                        if (e.target.checked) setSkipExisting(false);
-                      }}
-                      className="w-4 h-4 rounded border-surface-300 bg-white text-brand-500 focus:ring-brand-500"
-                    />
-                    <span className="text-surface-700">Update existing controls</span>
-                  </label>
-                </div>
-
-                {/* Template download */}
-                <div className="bg-white rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium text-surface-800">Need a template?</h4>
-                      <p className="text-sm text-surface-600">
-                        Download our CSV template with example data
-                      </p>
-                    </div>
-                    <Button
-                      onClick={handleDownloadTemplate}
-                      className="text-sm"
-                      variant="secondary"
-                    >
-                      <ArrowDownTrayIcon className="w-4 h-4 mr-2" />
-                      Download
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Error message */}
-                {uploadMutation.isError && (
-                  <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
-                    <p className="text-red-600">
-                      {(uploadMutation.error as any)?.response?.data?.message ||
-                        (uploadMutation.error as Error)?.message ||
-                        'Upload failed'}
-                    </p>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-
-          {/* Footer */}
-          {!result && (
-            <div className="flex items-center justify-end gap-3 p-6 border-t border-surface-200">
-              <Button onClick={handleClose} variant="secondary">
-                Cancel
-              </Button>
-              <Button
-                onClick={handleUpload}
-                disabled={!fileContent || uploadMutation.isPending}
-                className="disabled:opacity-50 disabled:cursor-not-allowed"
-                variant="primary"
-              >
-                {uploadMutation.isPending ? (
-                  <>
-                    <div className="animate-spin w-4 h-4 border-2 border-white/30 rounded-full border-t-white mr-2" />
-                    Uploading...
-                  </>
-                ) : (
-                  <>
-                    <CloudArrowUpIcon className="w-4 h-4 mr-2" />
-                    Upload Controls
-                  </>
-                )}
-              </Button>
             </div>
-          )}
-        </div>
+
+            {/* Error message */}
+            {uploadMutation.isError && (
+              <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+                <p className="text-red-600">
+                  {(uploadMutation.error as any)?.response?.data?.message ||
+                    (uploadMutation.error as Error)?.message ||
+                    'Upload failed'}
+                </p>
+              </div>
+            )}
+          </>
+        )}
       </div>
-    </div>
+    </Dialog>
   );
 }

@@ -1,102 +1,106 @@
-import { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import Layout from './components/Layout';
+import Dashboard from './pages/Dashboard';
+import Controls from './pages/Controls';
+import ControlDetail from './pages/ControlDetail';
+import Evidence from './pages/Evidence';
+import EvidenceDetail from './pages/EvidenceDetail';
+import Frameworks from './pages/Frameworks';
+import FrameworkDetail from './pages/FrameworkDetail';
+import Policies from './pages/Policies';
+import PolicyDetail from './pages/PolicyDetail';
+import Risks from './pages/Risks';
+import RiskDetail from './pages/RiskDetail';
+import RiskHeatmap from './pages/RiskHeatmap';
+import RiskDashboard from './pages/RiskDashboard';
+import RiskQueue from './pages/RiskQueue';
+import RiskScenarios from './pages/RiskScenarios';
+import RiskReports from './pages/RiskReports';
+import RiskConfiguration from './pages/RiskConfiguration';
+import AwarenessTraining from './pages/AwarenessTraining';
+import Assets from './pages/Assets';
+import Integrations from './pages/Integrations';
+import AuditLog from './pages/AuditLog';
+import Settings from './pages/Settings';
+import NotificationSettings from './pages/NotificationSettings';
+import UserManagement from './pages/UserManagement';
+import PermissionGroups from './pages/PermissionGroups';
+import Vendors from './pages/Vendors';
+import VendorDetail from './pages/VendorDetail';
+import Assessments from './pages/Assessments';
+import AssessmentDetail from './pages/AssessmentDetail';
+import Contracts from './pages/Contracts';
+import ContractDetail from './pages/ContractDetail';
+import Questionnaires from './pages/Questionnaires';
+import QuestionnaireDetail from './pages/QuestionnaireDetail';
+import KnowledgeBase from './pages/KnowledgeBase';
+import KnowledgeBaseDetail from './pages/KnowledgeBaseDetail';
+import TrustCenter from './pages/TrustCenter';
+import Audits from './pages/Audits';
+import AuditRequests from './pages/AuditRequests';
+import AuditFindings from './pages/AuditFindings';
+import AuditDetail from './pages/AuditDetail';
+import AuditNew from './pages/AuditNew';
+import AuditAnalytics from './pages/AuditAnalytics';
+import AuditCalendar from './pages/AuditCalendar';
+import AuditTemplates from './pages/AuditTemplates';
+import AuditWorkpapers from './pages/AuditWorkpapers';
+import TestProcedures from './pages/TestProcedures';
+import AuditorPortal from './pages/AuditorPortal';
+import AuditorLogin from './pages/AuditorLogin';
+// People / Training
+import Employees from './pages/Employees';
+import EmployeeDetail from './pages/EmployeeDetail';
+import EmployeeComplianceDashboard from './pages/EmployeeComplianceDashboard';
+import SecurityTrainingDashboard from './pages/SecurityTrainingDashboard';
+import TrainingAdmin from './pages/TrainingAdmin';
+// Settings deep
+import MCPSettings from './pages/MCPSettings';
+import TPRMConfiguration from './pages/TPRMConfiguration';
+import TrustConfiguration from './pages/TrustConfiguration';
+import ConfigAsCode from './pages/ConfigAsCode';
+import DeveloperDocs from './pages/DeveloperDocs';
+import AccountSettings from './pages/AccountSettings';
+import WorkspaceList from './pages/WorkspaceList';
+import WorkspaceSettings from './pages/WorkspaceSettings';
+// One-offs
+import AIRiskAssistant from './pages/AIRiskAssistant';
+import AnswerTemplates from './pages/AnswerTemplates';
+import MappingGaps from './pages/MappingGaps';
+import ReportBuilder from './pages/ReportBuilder';
+import ScheduledReportsPage from './pages/ScheduledReportsPage';
+import FrameworkLibrary from './pages/FrameworkLibrary';
+import TrustAnalytics from './pages/TrustAnalytics';
+import TrustCenterSettings from './pages/TrustCenterSettings';
+import HelpCenter from './pages/HelpCenter';
+import HelpArticle from './pages/HelpArticle';
+import CustomDashboards from './pages/CustomDashboards';
+import DisabledModulePage from './pages/DisabledModulePage';
+import ComplianceCalendarPage from './pages/ComplianceCalendarPage';
+import AssetDetail from './pages/AssetDetail';
+import ControlNew from './pages/ControlNew';
+import VendorNew from './pages/VendorNew';
+import DesignSystem from './pages/DesignSystem';
+// BCDR module
+import BCDRDashboard from './pages/BCDRDashboard';
+import BCDRPlans from './pages/BCDRPlans';
+import BCDRPlanDetail from './pages/BCDRPlanDetail';
+import BCDRIncidents from './pages/BCDRIncidents';
+import BCDRIncidentDetail from './pages/BCDRIncidentDetail';
+import DRTests from './pages/DRTests';
+import DRTestDetail from './pages/DRTestDetail';
+import Runbooks from './pages/Runbooks';
+import RunbookDetail from './pages/RunbookDetail';
+import BusinessProcesses from './pages/BusinessProcesses';
+import BusinessProcessDetail from './pages/BusinessProcessDetail';
+import RecoveryTeams from './pages/RecoveryTeams';
+import RecoveryTeamDetail from './pages/RecoveryTeamDetail';
+import CommunicationPlans from './pages/CommunicationPlans';
+import CommunicationPlanDetail from './pages/CommunicationPlanDetail';
+import ExerciseTemplates from './pages/ExerciseTemplates';
+import Login from './pages/Login';
 import Loading from './components/Loading';
-
-// Lazy load pages for code splitting
-const Dashboard = lazy(() => import('./pages/Dashboard'));
-const Controls = lazy(() => import('./pages/Controls'));
-const ControlNew = lazy(() => import('./pages/ControlNew'));
-const ControlDetail = lazy(() => import('./pages/ControlDetail'));
-const Evidence = lazy(() => import('./pages/Evidence'));
-const EvidenceDetail = lazy(() => import('./pages/EvidenceDetail'));
-const Frameworks = lazy(() => import('./pages/Frameworks'));
-const FrameworkDetail = lazy(() => import('./pages/FrameworkDetail'));
-const FrameworkLibrary = lazy(() => import('./pages/FrameworkLibrary'));
-const MappingGaps = lazy(() => import('./pages/MappingGaps'));
-const Policies = lazy(() => import('./pages/Policies'));
-const PolicyDetail = lazy(() => import('./pages/PolicyDetail'));
-const Risks = lazy(() => import('./pages/Risks'));
-const RiskDetail = lazy(() => import('./pages/RiskDetail'));
-const RiskHeatmap = lazy(() => import('./pages/RiskHeatmap'));
-const RiskDashboard = lazy(() => import('./pages/RiskDashboard'));
-const RiskQueue = lazy(() => import('./pages/RiskQueue'));
-const RiskScenarios = lazy(() => import('./pages/RiskScenarios'));
-const RiskReports = lazy(() => import('./pages/RiskReports'));
-const RiskConfiguration = lazy(() => import('./pages/RiskConfiguration'));
-const TPRMConfiguration = lazy(() => import('./pages/TPRMConfiguration'));
-const TrustConfiguration = lazy(() => import('./pages/TrustConfiguration'));
-const AnswerTemplates = lazy(() => import('./pages/AnswerTemplates'));
-const TrustAnalytics = lazy(() => import('./pages/TrustAnalytics'));
-const AwarenessTraining = lazy(() => import('./pages/AwarenessTraining'));
-const TrainingAdmin = lazy(() => import('./pages/TrainingAdmin'));
-const SecurityTrainingDashboard = lazy(() => import('./pages/SecurityTrainingDashboard'));
-const Assets = lazy(() => import('./pages/Assets'));
-const AssetDetail = lazy(() => import('./pages/AssetDetail'));
-const Integrations = lazy(() => import('./pages/Integrations'));
-const AuditLog = lazy(() => import('./pages/AuditLog'));
-const Settings = lazy(() => import('./pages/Settings'));
-const AccountSettings = lazy(() => import('./pages/AccountSettings'));
-const NotificationSettings = lazy(() => import('./pages/NotificationSettings'));
-const UserManagement = lazy(() => import('./pages/UserManagement'));
-const PermissionGroups = lazy(() => import('./pages/PermissionGroups'));
-const Vendors = lazy(() => import('./pages/Vendors'));
-const VendorNew = lazy(() => import('./pages/VendorNew'));
-const VendorDetail = lazy(() => import('./pages/VendorDetail'));
-const Assessments = lazy(() => import('./pages/Assessments'));
-const AssessmentDetail = lazy(() => import('./pages/AssessmentDetail'));
-const Contracts = lazy(() => import('./pages/Contracts'));
-const ContractDetail = lazy(() => import('./pages/ContractDetail'));
-const Questionnaires = lazy(() => import('./pages/Questionnaires'));
-const QuestionnaireDetail = lazy(() => import('./pages/QuestionnaireDetail'));
-const KnowledgeBase = lazy(() => import('./pages/KnowledgeBase'));
-const KnowledgeBaseDetail = lazy(() => import('./pages/KnowledgeBaseDetail'));
-const TrustCenter = lazy(() => import('./pages/TrustCenter'));
-const TrustCenterSettings = lazy(() => import('./pages/TrustCenterSettings'));
-const Audits = lazy(() => import('./pages/Audits'));
-const AuditNew = lazy(() => import('./pages/AuditNew'));
-const AuditDetail = lazy(() => import('./pages/AuditDetail'));
-const AuditRequests = lazy(() => import('./pages/AuditRequests'));
-const AuditFindings = lazy(() => import('./pages/AuditFindings'));
-const AuditTemplates = lazy(() => import('./pages/AuditTemplates'));
-const AuditWorkpapers = lazy(() => import('./pages/AuditWorkpapers'));
-const AuditAnalytics = lazy(() => import('./pages/AuditAnalytics'));
-const AuditCalendar = lazy(() => import('./pages/AuditCalendar'));
-const TestProcedures = lazy(() => import('./pages/TestProcedures'));
-const ComplianceCalendarPage = lazy(() => import('./pages/ComplianceCalendarPage'));
-const ScheduledReportsPage = lazy(() => import('./pages/ScheduledReportsPage'));
-const HelpCenter = lazy(() => import('./pages/HelpCenter'));
-const HelpArticle = lazy(() => import('./pages/HelpArticle'));
-const DeveloperDocs = lazy(() => import('./pages/DeveloperDocs'));
-const Employees = lazy(() => import('./pages/Employees'));
-const EmployeeDetail = lazy(() => import('./pages/EmployeeDetail'));
-const EmployeeComplianceDashboard = lazy(() => import('./pages/EmployeeComplianceDashboard'));
-const CustomDashboards = lazy(() => import('./pages/CustomDashboards'));
-const MCPSettings = lazy(() => import('./pages/MCPSettings'));
-const WorkspaceList = lazy(() => import('./pages/WorkspaceList'));
-const WorkspaceSettings = lazy(() => import('./pages/WorkspaceSettings'));
-const Login = lazy(() => import('./pages/Login'));
-const AIRiskAssistant = lazy(() => import('./pages/AIRiskAssistant'));
-const ConfigAsCode = lazy(() => import('./pages/ConfigAsCode'));
-
-// BC/DR Pages
-const BCDRDashboard = lazy(() => import('./pages/BCDRDashboard'));
-const BusinessProcesses = lazy(() => import('./pages/BusinessProcesses'));
-const BusinessProcessDetail = lazy(() => import('./pages/BusinessProcessDetail'));
-const BCDRPlans = lazy(() => import('./pages/BCDRPlans'));
-const BCDRPlanDetail = lazy(() => import('./pages/BCDRPlanDetail'));
-const DRTests = lazy(() => import('./pages/DRTests'));
-const DRTestDetail = lazy(() => import('./pages/DRTestDetail'));
-const Runbooks = lazy(() => import('./pages/Runbooks'));
-const RunbookDetail = lazy(() => import('./pages/RunbookDetail'));
-const CommunicationPlans = lazy(() => import('./pages/CommunicationPlans'));
-const CommunicationPlanDetail = lazy(() => import('./pages/CommunicationPlanDetail'));
-const ExerciseTemplates = lazy(() => import('./pages/ExerciseTemplates'));
-const RecoveryTeams = lazy(() => import('./pages/RecoveryTeams'));
-const RecoveryTeamDetail = lazy(() => import('./pages/RecoveryTeamDetail'));
-const BCDRIncidents = lazy(() => import('./pages/BCDRIncidents'));
-const BCDRIncidentDetail = lazy(() => import('./pages/BCDRIncidentDetail'));
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -107,47 +111,13 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const hasAuthCallback =
     searchParams.has('code') || searchParams.has('error') || searchParams.has('session_state');
 
-  // Prevent redirect loops
-  const isOnLogin = location.pathname === '/login';
-
   if (isLoading || hasAuthCallback) {
     // Still processing auth - show loading
     return <Loading />;
   }
 
-  if (!isAuthenticated && !isOnLogin) {
-    return <Navigate to="/login" replace />;
-  }
-
-  // Don't render protected content if not authenticated
   if (!isAuthenticated) {
-    return null;
-  }
-
-  return <>{children}</>;
-}
-
-// Module route guard - checks if current route's module is enabled
-const DisabledModulePage = lazy(() => import('./pages/DisabledModulePage'));
-const DesignSystem = lazy(() => import('./pages/DesignSystem'));
-
-// Import module context for route checking
-import { useModules, ModuleId } from './contexts/ModuleContext';
-
-interface ModuleRouteProps {
-  children: React.ReactNode;
-  module: ModuleId;
-}
-
-function ModuleRoute({ children, module }: ModuleRouteProps) {
-  const { isModuleEnabled } = useModules();
-
-  if (!isModuleEnabled(module)) {
-    return (
-      <Suspense fallback={<PageLoader />}>
-        <DisabledModulePage moduleId={module} />
-      </Suspense>
-    );
+    return <Navigate to="/login" replace />;
   }
 
   return <>{children}</>;
@@ -162,1010 +132,133 @@ function RootRedirect() {
   const searchParams = new URLSearchParams(location.search);
   const hasAuthCallback = searchParams.has('code') || searchParams.has('session_state');
 
-  // Prevent redirect loops by checking current path
-  const currentPath = location.pathname;
-  const isOnLogin = currentPath === '/login';
-  const isOnDashboard = currentPath === '/dashboard';
-
   if (isLoading || hasAuthCallback) {
     return <Loading />;
   }
 
-  // Only redirect if we're actually on the root path
-  if (currentPath !== '/' && currentPath !== '') {
-    return null; // Don't redirect if already on a specific path
-  }
-
-  if (isAuthenticated && !isOnDashboard) {
+  if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />;
   }
 
-  if (!isAuthenticated && !isOnLogin) {
-    return <Navigate to="/login" replace />;
-  }
-
-  // If already on the correct page, don't redirect
-  return null;
-}
-
-// Page loading fallback
-function PageLoader() {
-  return (
-    <div className="flex items-center justify-center h-64">
-      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-brand-500"></div>
-    </div>
-  );
+  return <Navigate to="/login" replace />;
 }
 
 export default function App() {
   return (
-    <Suspense fallback={<Loading />}>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/" element={<RootRedirect />} />
-        <Route
-          element={
-            <ProtectedRoute>
-              <Layout />
-            </ProtectedRoute>
-          }
-        >
-          <Route
-            path="dashboard"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <Dashboard />
-              </Suspense>
-            }
-          />
-          {/* Tools Module */}
-          <Route
-            path="dashboards"
-            element={
-              <ModuleRoute module="tools">
-                <Suspense fallback={<PageLoader />}>
-                  <CustomDashboards />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          {/* Compliance Module */}
-          <Route
-            path="controls"
-            element={
-              <ModuleRoute module="compliance">
-                <Suspense fallback={<PageLoader />}>
-                  <Controls />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="controls/new"
-            element={
-              <ModuleRoute module="compliance">
-                <Suspense fallback={<PageLoader />}>
-                  <ControlNew />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="controls/:id"
-            element={
-              <ModuleRoute module="compliance">
-                <Suspense fallback={<PageLoader />}>
-                  <ControlDetail />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="evidence"
-            element={
-              <ModuleRoute module="compliance">
-                <Suspense fallback={<PageLoader />}>
-                  <Evidence />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="evidence/:id"
-            element={
-              <ModuleRoute module="compliance">
-                <Suspense fallback={<PageLoader />}>
-                  <EvidenceDetail />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="frameworks"
-            element={
-              <ModuleRoute module="compliance">
-                <Suspense fallback={<PageLoader />}>
-                  <Frameworks />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="frameworks/:id"
-            element={
-              <ModuleRoute module="compliance">
-                <Suspense fallback={<PageLoader />}>
-                  <FrameworkDetail />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="framework-library"
-            element={
-              <ModuleRoute module="compliance">
-                <Suspense fallback={<PageLoader />}>
-                  <FrameworkLibrary />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="reports/mapping-gaps"
-            element={
-              <ModuleRoute module="compliance">
-                <Suspense fallback={<PageLoader />}>
-                  <MappingGaps />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="calendar"
-            element={
-              <ModuleRoute module="compliance">
-                <Suspense fallback={<PageLoader />}>
-                  <ComplianceCalendarPage />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/auditor-login" element={<AuditorLogin />} />
+      <Route path="/" element={<RootRedirect />} />
+      <Route
+        element={
+          <ProtectedRoute>
+            <Layout />
+          </ProtectedRoute>
+        }
+      >
+        <Route path="dashboard" element={<Dashboard />} />
+        <Route path="controls" element={<Controls />} />
+        <Route path="controls/new" element={<ControlNew />} />
+        <Route path="controls/:id" element={<ControlDetail />} />
+        <Route path="evidence" element={<Evidence />} />
+        <Route path="evidence/:id" element={<EvidenceDetail />} />
+        <Route path="frameworks" element={<Frameworks />} />
+        <Route path="frameworks/:id" element={<FrameworkDetail />} />
+        <Route path="policies" element={<Policies />} />
+        <Route path="policies/:id" element={<PolicyDetail />} />
+        <Route path="risks" element={<Risks />} />
+        <Route path="risks/:id" element={<RiskDetail />} />
+        <Route path="risk-dashboard" element={<RiskDashboard />} />
+        <Route path="risk-queue" element={<RiskQueue />} />
+        <Route path="risk-heatmap" element={<RiskHeatmap />} />
+        <Route path="risk-scenarios" element={<RiskScenarios />} />
+        <Route path="risk-reports" element={<RiskReports />} />
+        <Route path="vendors" element={<Vendors />} />
+        <Route path="vendors/new" element={<VendorNew />} />
+        <Route path="vendors/:id" element={<VendorDetail />} />
+        <Route path="assessments" element={<Assessments />} />
+        <Route path="assessments/:id" element={<AssessmentDetail />} />
+        <Route path="contracts" element={<Contracts />} />
+        <Route path="contracts/:id" element={<ContractDetail />} />
+        <Route path="questionnaires" element={<Questionnaires />} />
+        <Route path="questionnaires/:id" element={<QuestionnaireDetail />} />
+        <Route path="knowledge-base" element={<KnowledgeBase />} />
+        <Route path="knowledge-base/:id" element={<KnowledgeBaseDetail />} />
+        <Route path="trust-center" element={<TrustCenter />} />
+        <Route path="audits" element={<Audits />} />
+        <Route path="audits/new" element={<AuditNew />} />
+        <Route path="audits/:id" element={<AuditDetail />} />
+        <Route path="audit-requests" element={<AuditRequests />} />
+        <Route path="audit-findings" element={<AuditFindings />} />
+        <Route path="audit-templates" element={<AuditTemplates />} />
+        <Route path="audit-workpapers" element={<AuditWorkpapers />} />
+        <Route path="audit-analytics" element={<AuditAnalytics />} />
+        <Route path="audit-calendar" element={<AuditCalendar />} />
+        <Route path="test-procedures" element={<TestProcedures />} />
+        <Route path="auditor-portal" element={<AuditorPortal />} />
+        <Route path="assets" element={<Assets />} />
+        <Route path="assets/:id" element={<AssetDetail />} />
+        <Route path="integrations" element={<Integrations />} />
+        <Route path="audit" element={<AuditLog />} />
+        <Route path="settings" element={<Settings />} />
+        <Route path="settings/notifications" element={<NotificationSettings />} />
+        <Route path="settings/risk" element={<RiskConfiguration />} />
+        <Route path="tools/awareness" element={<AwarenessTraining />} />
+        <Route path="users" element={<UserManagement />} />
+        <Route path="permissions" element={<PermissionGroups />} />
+        <Route path="design-system" element={<DesignSystem />} />
 
-          {/* Data Module */}
-          <Route
-            path="policies"
-            element={
-              <ModuleRoute module="data">
-                <Suspense fallback={<PageLoader />}>
-                  <Policies />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="policies/:id"
-            element={
-              <ModuleRoute module="data">
-                <Suspense fallback={<PageLoader />}>
-                  <PolicyDetail />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="assets"
-            element={
-              <ModuleRoute module="data">
-                <Suspense fallback={<PageLoader />}>
-                  <Assets />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="assets/:id"
-            element={
-              <ModuleRoute module="data">
-                <Suspense fallback={<PageLoader />}>
-                  <AssetDetail />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="integrations"
-            element={
-              <ModuleRoute module="data">
-                <Suspense fallback={<PageLoader />}>
-                  <Integrations />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
+        {/* BCDR */}
+        <Route path="bcdr" element={<BCDRDashboard />} />
+        <Route path="bcdr/plans" element={<BCDRPlans />} />
+        <Route path="bcdr/plans/:id" element={<BCDRPlanDetail />} />
+        <Route path="bcdr/incidents" element={<BCDRIncidents />} />
+        <Route path="bcdr/incidents/:id" element={<BCDRIncidentDetail />} />
+        <Route path="bcdr/tests" element={<DRTests />} />
+        <Route path="bcdr/tests/:id" element={<DRTestDetail />} />
+        <Route path="bcdr/runbooks" element={<Runbooks />} />
+        <Route path="bcdr/runbooks/:id" element={<RunbookDetail />} />
+        <Route path="bcdr/processes" element={<BusinessProcesses />} />
+        <Route path="bcdr/processes/:id" element={<BusinessProcessDetail />} />
+        <Route path="bcdr/recovery-teams" element={<RecoveryTeams />} />
+        <Route path="bcdr/recovery-teams/:id" element={<RecoveryTeamDetail />} />
+        <Route path="bcdr/communication" element={<CommunicationPlans />} />
+        <Route path="bcdr/communication/:id" element={<CommunicationPlanDetail />} />
+        <Route path="bcdr/exercise-templates" element={<ExerciseTemplates />} />
 
-          {/* Risk Module */}
-          <Route
-            path="risks"
-            element={
-              <ModuleRoute module="risk">
-                <Suspense fallback={<PageLoader />}>
-                  <Risks />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="risks/:id"
-            element={
-              <ModuleRoute module="risk">
-                <Suspense fallback={<PageLoader />}>
-                  <RiskDetail />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="risk-dashboard"
-            element={
-              <ModuleRoute module="risk">
-                <Suspense fallback={<PageLoader />}>
-                  <RiskDashboard />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="risk-queue"
-            element={
-              <ModuleRoute module="risk">
-                <Suspense fallback={<PageLoader />}>
-                  <RiskQueue />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="risk-heatmap"
-            element={
-              <ModuleRoute module="risk">
-                <Suspense fallback={<PageLoader />}>
-                  <RiskHeatmap />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="risk-scenarios"
-            element={
-              <ModuleRoute module="risk">
-                <Suspense fallback={<PageLoader />}>
-                  <RiskScenarios />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="risk-reports"
-            element={
-              <ModuleRoute module="risk">
-                <Suspense fallback={<PageLoader />}>
-                  <RiskReports />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
+        {/* People / Training */}
+        <Route path="people" element={<Employees />} />
+        <Route path="people/training" element={<SecurityTrainingDashboard />} />
+        <Route path="people/:id" element={<EmployeeDetail />} />
+        <Route path="settings/employee-compliance" element={<EmployeeComplianceDashboard />} />
+        <Route path="settings/training" element={<TrainingAdmin />} />
 
-          {/* TPRM Module */}
-          <Route
-            path="vendors"
-            element={
-              <ModuleRoute module="tprm">
-                <Suspense fallback={<PageLoader />}>
-                  <Vendors />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="vendors/new"
-            element={
-              <ModuleRoute module="tprm">
-                <Suspense fallback={<PageLoader />}>
-                  <VendorNew />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="vendors/:id"
-            element={
-              <ModuleRoute module="tprm">
-                <Suspense fallback={<PageLoader />}>
-                  <VendorDetail />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="assessments"
-            element={
-              <ModuleRoute module="tprm">
-                <Suspense fallback={<PageLoader />}>
-                  <Assessments />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="assessments/:id"
-            element={
-              <ModuleRoute module="tprm">
-                <Suspense fallback={<PageLoader />}>
-                  <AssessmentDetail />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="contracts"
-            element={
-              <ModuleRoute module="tprm">
-                <Suspense fallback={<PageLoader />}>
-                  <Contracts />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="contracts/:id"
-            element={
-              <ModuleRoute module="tprm">
-                <Suspense fallback={<PageLoader />}>
-                  <ContractDetail />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="questionnaires"
-            element={
-              <ModuleRoute module="tprm">
-                <Suspense fallback={<PageLoader />}>
-                  <Questionnaires />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="questionnaires/:id"
-            element={
-              <ModuleRoute module="tprm">
-                <Suspense fallback={<PageLoader />}>
-                  <QuestionnaireDetail />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
+        {/* Settings deep */}
+        <Route path="settings/mcp" element={<MCPSettings />} />
+        <Route path="settings/tprm" element={<TPRMConfiguration />} />
+        <Route path="settings/trust" element={<TrustConfiguration />} />
+        <Route path="settings/config-as-code" element={<ConfigAsCode />} />
+        <Route path="settings/workspaces" element={<WorkspaceList />} />
+        <Route path="settings/workspaces/:id" element={<WorkspaceSettings />} />
+        <Route path="account" element={<AccountSettings />} />
+        <Route path="docs" element={<DeveloperDocs />} />
 
-          {/* Trust Module */}
-          <Route
-            path="knowledge-base"
-            element={
-              <ModuleRoute module="trust">
-                <Suspense fallback={<PageLoader />}>
-                  <KnowledgeBase />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="knowledge-base/:id"
-            element={
-              <ModuleRoute module="trust">
-                <Suspense fallback={<PageLoader />}>
-                  <KnowledgeBaseDetail />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="answer-templates"
-            element={
-              <ModuleRoute module="trust">
-                <Suspense fallback={<PageLoader />}>
-                  <AnswerTemplates />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="trust-analytics"
-            element={
-              <ModuleRoute module="trust">
-                <Suspense fallback={<PageLoader />}>
-                  <TrustAnalytics />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="trust-center"
-            element={
-              <ModuleRoute module="trust">
-                <Suspense fallback={<PageLoader />}>
-                  <TrustCenter />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="trust-center/settings"
-            element={
-              <ModuleRoute module="trust">
-                <Suspense fallback={<PageLoader />}>
-                  <TrustCenterSettings />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-
-          {/* Audit Module */}
-          <Route
-            path="audits"
-            element={
-              <ModuleRoute module="audit">
-                <Suspense fallback={<PageLoader />}>
-                  <Audits />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="audits/new"
-            element={
-              <ModuleRoute module="audit">
-                <Suspense fallback={<PageLoader />}>
-                  <AuditNew />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="audits/:id"
-            element={
-              <ModuleRoute module="audit">
-                <Suspense fallback={<PageLoader />}>
-                  <AuditDetail />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="audit-requests"
-            element={
-              <ModuleRoute module="audit">
-                <Suspense fallback={<PageLoader />}>
-                  <AuditRequests />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="audit-requests/:id"
-            element={
-              <ModuleRoute module="audit">
-                <Suspense fallback={<PageLoader />}>
-                  <AuditRequests />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="audit-findings"
-            element={
-              <ModuleRoute module="audit">
-                <Suspense fallback={<PageLoader />}>
-                  <AuditFindings />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="audit-templates"
-            element={
-              <ModuleRoute module="audit">
-                <Suspense fallback={<PageLoader />}>
-                  <AuditTemplates />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="audit-workpapers"
-            element={
-              <ModuleRoute module="audit">
-                <Suspense fallback={<PageLoader />}>
-                  <AuditWorkpapers />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="audit-analytics"
-            element={
-              <ModuleRoute module="audit">
-                <Suspense fallback={<PageLoader />}>
-                  <AuditAnalytics />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="audit-calendar"
-            element={
-              <ModuleRoute module="audit">
-                <Suspense fallback={<PageLoader />}>
-                  <AuditCalendar />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="test-procedures"
-            element={
-              <ModuleRoute module="audit">
-                <Suspense fallback={<PageLoader />}>
-                  <TestProcedures />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="audit"
-            element={
-              <ModuleRoute module="audit">
-                <Suspense fallback={<PageLoader />}>
-                  <AuditLog />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-
-          {/* Tools Module */}
-          <Route
-            path="scheduled-reports"
-            element={
-              <ModuleRoute module="tools">
-                <Suspense fallback={<PageLoader />}>
-                  <ScheduledReportsPage />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="tools/ai-risk-assistant"
-            element={
-              <ModuleRoute module="ai">
-                <Suspense fallback={<PageLoader />}>
-                  <AIRiskAssistant />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route path="settings" element={<Navigate to="/settings/organization" replace />} />
-          <Route
-            path="settings/organization"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <Settings section="organization" />
-              </Suspense>
-            }
-          />
-          <Route
-            path="settings/communications"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <Settings section="communications" />
-              </Suspense>
-            }
-          />
-          <Route
-            path="settings/api-keys"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <Settings section="api" />
-              </Suspense>
-            }
-          />
-          <Route
-            path="settings/modules"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <Settings section="modules" />
-              </Suspense>
-            }
-          />
-          <Route
-            path="settings/notifications"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <NotificationSettings />
-              </Suspense>
-            }
-          />
-          <Route
-            path="settings/risk"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <RiskConfiguration />
-              </Suspense>
-            }
-          />
-          <Route
-            path="settings/tprm"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <TPRMConfiguration />
-              </Suspense>
-            }
-          />
-          <Route
-            path="settings/trust"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <TrustConfiguration />
-              </Suspense>
-            }
-          />
-          <Route
-            path="settings/dashboard-templates"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <Settings section="dashboard-templates" />
-              </Suspense>
-            }
-          />
-          <Route
-            path="settings/employee-compliance"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <Settings section="employee-compliance" />
-              </Suspense>
-            }
-          />
-          <Route
-            path="settings/ai"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <Settings section="ai" />
-              </Suspense>
-            }
-          />
-          <Route
-            path="settings/config-as-code"
-            element={
-              <ModuleRoute module="config-as-code">
-                <Suspense fallback={<PageLoader />}>
-                  <ConfigAsCode />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="settings/mcp"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <MCPSettings />
-              </Suspense>
-            }
-          />
-          <Route
-            path="settings/workspaces"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <WorkspaceList />
-              </Suspense>
-            }
-          />
-          <Route
-            path="settings/workspaces/:id"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <WorkspaceSettings />
-              </Suspense>
-            }
-          />
-          <Route
-            path="account"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <AccountSettings />
-              </Suspense>
-            }
-          />
-          {/* People Module */}
-          <Route
-            path="tools/awareness"
-            element={
-              <ModuleRoute module="people">
-                <Suspense fallback={<PageLoader />}>
-                  <AwarenessTraining />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="settings/training"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <TrainingAdmin />
-              </Suspense>
-            }
-          />
-          <Route
-            path="people/training"
-            element={
-              <ModuleRoute module="people">
-                <Suspense fallback={<PageLoader />}>
-                  <SecurityTrainingDashboard />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          {/* /people/training shows enterprise-level training dashboard, /tools/awareness is for individual user training */}
-          <Route
-            path="users"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <UserManagement />
-              </Suspense>
-            }
-          />
-          <Route
-            path="permissions"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <PermissionGroups />
-              </Suspense>
-            }
-          />
-          <Route
-            path="help"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <HelpCenter />
-              </Suspense>
-            }
-          />
-          <Route
-            path="help/:category/:article"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <HelpArticle />
-              </Suspense>
-            }
-          />
-          <Route
-            path="docs"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <DeveloperDocs />
-              </Suspense>
-            }
-          />
-          <Route
-            path="people"
-            element={
-              <ModuleRoute module="people">
-                <Suspense fallback={<PageLoader />}>
-                  <Employees />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="people/dashboard"
-            element={
-              <ModuleRoute module="people">
-                <Suspense fallback={<PageLoader />}>
-                  <EmployeeComplianceDashboard />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="people/:id"
-            element={
-              <ModuleRoute module="people">
-                <Suspense fallback={<PageLoader />}>
-                  <EmployeeDetail />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-
-          {/* BC/DR Module */}
-          <Route
-            path="bcdr"
-            element={
-              <ModuleRoute module="bcdr">
-                <Suspense fallback={<PageLoader />}>
-                  <BCDRDashboard />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="bcdr/processes"
-            element={
-              <ModuleRoute module="bcdr">
-                <Suspense fallback={<PageLoader />}>
-                  <BusinessProcesses />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="bcdr/processes/:id"
-            element={
-              <ModuleRoute module="bcdr">
-                <Suspense fallback={<PageLoader />}>
-                  <BusinessProcessDetail />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="bcdr/plans"
-            element={
-              <ModuleRoute module="bcdr">
-                <Suspense fallback={<PageLoader />}>
-                  <BCDRPlans />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="bcdr/plans/:id"
-            element={
-              <ModuleRoute module="bcdr">
-                <Suspense fallback={<PageLoader />}>
-                  <BCDRPlanDetail />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="bcdr/tests"
-            element={
-              <ModuleRoute module="bcdr">
-                <Suspense fallback={<PageLoader />}>
-                  <DRTests />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="bcdr/tests/:id"
-            element={
-              <ModuleRoute module="bcdr">
-                <Suspense fallback={<PageLoader />}>
-                  <DRTestDetail />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="bcdr/runbooks"
-            element={
-              <ModuleRoute module="bcdr">
-                <Suspense fallback={<PageLoader />}>
-                  <Runbooks />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="bcdr/runbooks/:id"
-            element={
-              <ModuleRoute module="bcdr">
-                <Suspense fallback={<PageLoader />}>
-                  <RunbookDetail />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="bcdr/communication"
-            element={
-              <ModuleRoute module="bcdr">
-                <Suspense fallback={<PageLoader />}>
-                  <CommunicationPlans />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="bcdr/communication/:id"
-            element={
-              <ModuleRoute module="bcdr">
-                <Suspense fallback={<PageLoader />}>
-                  <CommunicationPlanDetail />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="bcdr/exercise-templates"
-            element={
-              <ModuleRoute module="bcdr">
-                <Suspense fallback={<PageLoader />}>
-                  <ExerciseTemplates />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="bcdr/exercise-templates/:id"
-            element={
-              <ModuleRoute module="bcdr">
-                <Suspense fallback={<PageLoader />}>
-                  <ExerciseTemplates />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="bcdr/recovery-teams"
-            element={
-              <ModuleRoute module="bcdr">
-                <Suspense fallback={<PageLoader />}>
-                  <RecoveryTeams />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="bcdr/recovery-teams/:id"
-            element={
-              <ModuleRoute module="bcdr">
-                <Suspense fallback={<PageLoader />}>
-                  <RecoveryTeamDetail />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="bcdr/incidents"
-            element={
-              <ModuleRoute module="bcdr">
-                <Suspense fallback={<PageLoader />}>
-                  <BCDRIncidents />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-          <Route
-            path="bcdr/incidents/:id"
-            element={
-              <ModuleRoute module="bcdr">
-                <Suspense fallback={<PageLoader />}>
-                  <BCDRIncidentDetail />
-                </Suspense>
-              </ModuleRoute>
-            }
-          />
-        </Route>
-        <Route
-          path="/design-system"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <DesignSystem />
-            </Suspense>
-          }
-        />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
-      </Routes>
-    </Suspense>
+        {/* One-offs */}
+        <Route path="dashboards" element={<CustomDashboards />} />
+        <Route path="calendar" element={<ComplianceCalendarPage />} />
+        <Route path="framework-library" element={<FrameworkLibrary />} />
+        <Route path="reports/mapping-gaps" element={<MappingGaps />} />
+        <Route path="reports/builder" element={<ReportBuilder />} />
+        <Route path="scheduled-reports" element={<ScheduledReportsPage />} />
+        <Route path="tools/ai-risk-assistant" element={<AIRiskAssistant />} />
+        <Route path="answer-templates" element={<AnswerTemplates />} />
+        <Route path="trust-analytics" element={<TrustAnalytics />} />
+        <Route path="trust-center/settings" element={<TrustCenterSettings />} />
+        <Route path="help" element={<HelpCenter />} />
+        <Route path="help/:category/:article" element={<HelpArticle />} />
+        <Route path="module-disabled" element={<DisabledModulePage />} />
+      </Route>
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+    </Routes>
   );
 }

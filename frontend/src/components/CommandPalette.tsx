@@ -1,391 +1,323 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { Command } from 'cmdk';
+import { Dialog, Transition } from '@headlessui/react';
+import { Fragment } from 'react';
 import {
-  ShieldCheckIcon,
-  DocumentTextIcon,
-  FolderOpenIcon,
-  ExclamationTriangleIcon,
-  BuildingOfficeIcon,
-  ChartBarIcon,
-  ClipboardDocumentCheckIcon,
-  Cog6ToothIcon,
-  HomeIcon,
-  CalendarDaysIcon,
-  BellIcon,
-  PlusIcon,
-  ArrowUpTrayIcon,
-  AcademicCapIcon,
-  UserGroupIcon,
-} from '@heroicons/react/24/outline';
-import { controlsApi, policiesApi, risksApi, vendorsApi } from '@/lib/api';
-import { useBrandingConfig } from '@/contexts/BrandingContext';
-import { CommandMenu, type CommandMenuGroup } from '@/components/ui';
+  Search,
+  Home,
+  Shield,
+  Box,
+  Folder,
+  FileText,
+  Server,
+  Link as LinkIcon,
+  TrendingUp,
+  ListChecks,
+  AlertTriangle,
+  Zap,
+  BarChart,
+  Building2,
+  FileCheck,
+  Files,
+  MessageSquare,
+  BookOpen,
+  Globe,
+  ClipboardList,
+  ScrollText,
+  GraduationCap,
+  SlidersHorizontal,
+  Users,
+  Key,
+  Settings,
+  ArrowRight,
+} from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
 
-type Category = 'navigation' | 'actions' | 'search' | 'settings';
-
-interface CommandData {
-  action: () => void;
-  category: Category;
+interface RouteItem {
+  label: string;
+  path: string;
+  icon: React.ComponentType<{ className?: string }>;
+  group: string;
   keywords?: string[];
 }
 
-interface CommandPaletteProps {
-  isOpen: boolean;
-  onClose: () => void;
+const ROUTES: RouteItem[] = [
+  { label: 'Dashboard', path: '/dashboard', icon: Home, group: 'Navigate' },
+  { label: 'Controls', path: '/controls', icon: Shield, group: 'Compliance' },
+  { label: 'Frameworks', path: '/frameworks', icon: Box, group: 'Compliance' },
+  { label: 'Evidence', path: '/evidence', icon: Folder, group: 'Data' },
+  { label: 'Policies', path: '/policies', icon: FileText, group: 'Data' },
+  { label: 'Assets', path: '/assets', icon: Server, group: 'Data' },
+  { label: 'Integrations', path: '/integrations', icon: LinkIcon, group: 'Data' },
+  { label: 'Risk Dashboard', path: '/risk-dashboard', icon: TrendingUp, group: 'Risk' },
+  {
+    label: 'Risk Register',
+    path: '/risks',
+    icon: AlertTriangle,
+    group: 'Risk',
+    keywords: ['risks'],
+  },
+  { label: 'My Queue', path: '/risk-queue', icon: ListChecks, group: 'Risk' },
+  { label: 'Risk Heatmap', path: '/risk-heatmap', icon: BarChart, group: 'Risk' },
+  { label: 'Scenarios', path: '/risk-scenarios', icon: Zap, group: 'Risk' },
+  { label: 'Risk Reports', path: '/risk-reports', icon: BarChart, group: 'Risk' },
+  { label: 'Vendors', path: '/vendors', icon: Building2, group: 'Third Party' },
+  { label: 'Assessments', path: '/assessments', icon: FileCheck, group: 'Third Party' },
+  { label: 'Contracts', path: '/contracts', icon: Files, group: 'Third Party' },
+  { label: 'Questionnaires', path: '/questionnaires', icon: MessageSquare, group: 'Trust' },
+  { label: 'Knowledge Base', path: '/knowledge-base', icon: BookOpen, group: 'Trust' },
+  { label: 'Trust Center', path: '/trust-center', icon: Globe, group: 'Trust' },
+  { label: 'Audits', path: '/audits', icon: ClipboardList, group: 'Audit' },
+  { label: 'Audit Requests', path: '/audit-requests', icon: FileText, group: 'Audit' },
+  { label: 'Findings', path: '/audit-findings', icon: AlertTriangle, group: 'Audit' },
+  { label: 'Audit Log', path: '/audit', icon: ScrollText, group: 'Audit' },
+  { label: 'Awareness & Training', path: '/tools/awareness', icon: GraduationCap, group: 'Tools' },
+  {
+    label: 'Risk Configuration',
+    path: '/settings/risk',
+    icon: SlidersHorizontal,
+    group: 'Settings',
+  },
+  { label: 'Users', path: '/users', icon: Users, group: 'Settings' },
+  { label: 'Permissions', path: '/permissions', icon: Key, group: 'Settings' },
+  {
+    label: 'Notification Settings',
+    path: '/settings/notifications',
+    icon: Settings,
+    group: 'Settings',
+  },
+  { label: 'Settings', path: '/settings', icon: Settings, group: 'Settings' },
+  {
+    label: 'Design System',
+    path: '/design-system',
+    icon: Box,
+    group: 'Settings',
+    keywords: ['ui', 'primitives'],
+  },
+];
+
+interface SearchResult {
+  type: string;
+  id: string;
+  title: string;
+  subtitle?: string;
+  path: string;
 }
 
-export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
+const RECENT_KEY = 'gc-cmdk-recent';
+const MAX_RECENT = 6;
+
+function loadRecent(): string[] {
+  try {
+    const raw = localStorage.getItem(RECENT_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function pushRecent(path: string) {
+  try {
+    const current = loadRecent().filter((p) => p !== path);
+    current.unshift(path);
+    localStorage.setItem(RECENT_KEY, JSON.stringify(current.slice(0, MAX_RECENT)));
+  } catch {
+    // ignore
+  }
+}
+
+export interface CommandPaletteProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   const navigate = useNavigate();
-  const branding = useBrandingConfig();
   const [query, setQuery] = useState('');
+  const recentPaths = loadRecent();
 
-  const { data: searchResults } = useQuery({
-    queryKey: ['command-search', query],
+  const { data: searchResults = [] } = useQuery<SearchResult[]>({
+    queryKey: ['cmdk-search', query],
     queryFn: async () => {
-      if (query.length < 2) return { controls: [], policies: [], risks: [], vendors: [] };
-
-      const [controls, policies, risks, vendors] = await Promise.all([
-        controlsApi
-          .list({ search: query, limit: 5 })
-          .then((r) => r.data?.data || [])
-          .catch(() => []),
-        policiesApi
-          .list({ search: query, limit: 5 })
-          .then((r) => r.data?.data || [])
-          .catch(() => []),
-        risksApi
-          .list({ search: query, limit: 5 })
-          .then((r) => r.data?.risks || [])
-          .catch(() => []),
-        vendorsApi
-          .list({ search: query, limit: 5 })
-          .then((r) => r.data?.data || [])
-          .catch(() => []),
-      ]);
-
-      return { controls, policies, risks, vendors };
+      if (!query || query.length < 2) return [];
+      try {
+        const apiBase = import.meta.env.VITE_API_URL || '';
+        const res = await axios.get(`${apiBase}/search/global`, {
+          params: { q: query },
+          withCredentials: true,
+        });
+        return res.data?.data || [];
+      } catch {
+        return [];
+      }
     },
     enabled: query.length >= 2,
+    staleTime: 30_000,
   });
 
-  type Item = {
-    id: string;
-    label: string;
-    description?: string;
-    icon?: React.ComponentType<{ className?: string }>;
-    shortcut?: string;
-    data: CommandData;
+  useEffect(() => {
+    if (!open) {
+      // Defer clearing query so closing animation doesn't show empty state.
+      const t = setTimeout(() => setQuery(''), 200);
+      return () => clearTimeout(t);
+    }
+  }, [open]);
+
+  const go = (path: string) => {
+    pushRecent(path);
+    onOpenChange(false);
+    navigate(path);
   };
 
-  const baseCommands: Item[] = useMemo(
-    () => [
-      {
-        id: 'nav-dashboard',
-        label: 'Go to Dashboard',
-        icon: HomeIcon,
-        data: { action: () => navigate('/'), category: 'navigation', keywords: ['home'] },
-      },
-      {
-        id: 'nav-controls',
-        label: 'Go to Controls',
-        icon: ShieldCheckIcon,
-        data: { action: () => navigate('/controls'), category: 'navigation' },
-      },
-      {
-        id: 'nav-risks',
-        label: 'Go to Risks',
-        icon: ExclamationTriangleIcon,
-        data: { action: () => navigate('/risks'), category: 'navigation' },
-      },
-      {
-        id: 'nav-policies',
-        label: 'Go to Policies',
-        icon: DocumentTextIcon,
-        data: { action: () => navigate('/policies'), category: 'navigation' },
-      },
-      {
-        id: 'nav-evidence',
-        label: 'Go to Evidence',
-        icon: FolderOpenIcon,
-        data: { action: () => navigate('/evidence'), category: 'navigation' },
-      },
-      {
-        id: 'nav-vendors',
-        label: 'Go to Vendors',
-        icon: BuildingOfficeIcon,
-        data: {
-          action: () => navigate('/vendors'),
-          category: 'navigation',
-          keywords: ['tprm', 'third party'],
-        },
-      },
-      {
-        id: 'nav-frameworks',
-        label: 'Go to Frameworks',
-        icon: ChartBarIcon,
-        data: {
-          action: () => navigate('/frameworks'),
-          category: 'navigation',
-          keywords: ['compliance', 'soc2', 'iso'],
-        },
-      },
-      {
-        id: 'nav-audits',
-        label: 'Go to Audits',
-        icon: ClipboardDocumentCheckIcon,
-        data: { action: () => navigate('/audits'), category: 'navigation' },
-      },
-      {
-        id: 'nav-calendar',
-        label: 'Go to Calendar',
-        icon: CalendarDaysIcon,
-        data: {
-          action: () => navigate('/compliance-calendar'),
-          category: 'navigation',
-          keywords: ['schedule', 'events'],
-        },
-      },
-      {
-        id: 'nav-reports',
-        label: 'Go to Risk Reports',
-        icon: ChartBarIcon,
-        data: { action: () => navigate('/risk-reports'), category: 'navigation' },
-      },
-      {
-        id: 'nav-training',
-        label: 'Go to Training',
-        icon: AcademicCapIcon,
-        data: {
-          action: () => navigate('/tools/awareness'),
-          category: 'navigation',
-          keywords: ['security awareness'],
-        },
-      },
-      {
-        id: 'nav-users',
-        label: 'Go to Users',
-        icon: UserGroupIcon,
-        data: { action: () => navigate('/users'), category: 'navigation' },
-      },
+  const recentItems = recentPaths
+    .map((p) => ROUTES.find((r) => r.path === p))
+    .filter((r): r is RouteItem => Boolean(r));
 
-      {
-        id: 'action-new-control',
-        label: 'Create New Control',
-        icon: PlusIcon,
-        data: {
-          action: () => navigate('/controls/new'),
-          category: 'actions',
-          keywords: ['add control'],
-        },
-      },
-      {
-        id: 'action-new-risk',
-        label: 'Create New Risk',
-        icon: PlusIcon,
-        data: {
-          action: () => navigate('/risks/new'),
-          category: 'actions',
-          keywords: ['add risk', 'register risk'],
-        },
-      },
-      {
-        id: 'action-upload-evidence',
-        label: 'Upload Evidence',
-        icon: ArrowUpTrayIcon,
-        data: {
-          action: () => navigate('/evidence/new'),
-          category: 'actions',
-          keywords: ['add evidence'],
-        },
-      },
-      {
-        id: 'action-new-vendor',
-        label: 'Add New Vendor',
-        icon: PlusIcon,
-        data: { action: () => navigate('/vendors/new'), category: 'actions' },
-      },
-      {
-        id: 'action-new-policy',
-        label: 'Create New Policy',
-        icon: PlusIcon,
-        data: { action: () => navigate('/policies/new'), category: 'actions' },
-      },
-
-      {
-        id: 'settings-profile',
-        label: 'Profile Settings',
-        icon: Cog6ToothIcon,
-        data: { action: () => navigate('/settings'), category: 'settings' },
-      },
-      {
-        id: 'settings-notifications',
-        label: 'Notification Settings',
-        icon: BellIcon,
-        data: { action: () => navigate('/notification-settings'), category: 'settings' },
-      },
-      {
-        id: 'settings-permissions',
-        label: 'Permission Groups',
-        icon: UserGroupIcon,
-        data: { action: () => navigate('/permission-groups'), category: 'settings' },
-      },
-    ],
-    [navigate]
-  );
-
-  const searchItems: Item[] = useMemo(() => {
-    if (!searchResults) return [];
-
-    const items: Item[] = [];
-
-    searchResults.controls?.forEach((control: any) => {
-      items.push({
-        id: `control-${control.id}`,
-        label: control.title,
-        description: control.controlId,
-        icon: ShieldCheckIcon,
-        data: { action: () => navigate(`/controls/${control.id}`), category: 'search' },
-      });
-    });
-
-    searchResults.policies?.forEach((policy: any) => {
-      items.push({
-        id: `policy-${policy.id}`,
-        label: policy.title,
-        description: policy.status,
-        icon: DocumentTextIcon,
-        data: { action: () => navigate(`/policies/${policy.id}`), category: 'search' },
-      });
-    });
-
-    searchResults.risks?.forEach((risk: any) => {
-      items.push({
-        id: `risk-${risk.id}`,
-        label: risk.title,
-        description: risk.riskLevel,
-        icon: ExclamationTriangleIcon,
-        data: { action: () => navigate(`/risks/${risk.id}`), category: 'search' },
-      });
-    });
-
-    searchResults.vendors?.forEach((vendor: any) => {
-      items.push({
-        id: `vendor-${vendor.id}`,
-        label: vendor.name,
-        description: vendor.tier ? `Tier ${vendor.tier}` : undefined,
-        icon: BuildingOfficeIcon,
-        data: { action: () => navigate(`/vendors/${vendor.id}`), category: 'search' },
-      });
-    });
-
-    return items;
-  }, [searchResults, navigate]);
-
-  const filteredCommands = useMemo(() => {
-    const lowerQuery = query.toLowerCase();
-
-    if (query.length >= 2) {
-      const filtered = baseCommands.filter(
-        (cmd) =>
-          cmd.label.toLowerCase().includes(lowerQuery) ||
-          cmd.data.keywords?.some((k) => k.toLowerCase().includes(lowerQuery))
-      );
-      return [...searchItems, ...filtered];
-    }
-
-    if (!query) return baseCommands;
-
-    return baseCommands.filter(
-      (cmd) =>
-        cmd.label.toLowerCase().includes(lowerQuery) ||
-        cmd.data.keywords?.some((k) => k.toLowerCase().includes(lowerQuery))
-    );
-  }, [query, baseCommands, searchItems]);
-
-  const groups: CommandMenuGroup<CommandData>[] = useMemo(() => {
-    const categoryOrder: Category[] = ['search', 'navigation', 'actions', 'settings'];
-    const labels: Record<Category, string> = {
-      search: 'Search Results',
-      navigation: 'Navigation',
-      actions: 'Actions',
-      settings: 'Settings',
-    };
-
-    return categoryOrder
-      .map((cat) => ({
-        id: cat,
-        label: labels[cat],
-        items: filteredCommands.filter((cmd) => cmd.data.category === cat),
-      }))
-      .filter((g) => g.items.length > 0);
-  }, [filteredCommands]);
-
-  const handleSelect = useCallback(
-    (item: { data?: CommandData }) => {
-      if (!item.data) return;
-      item.data.action();
-      onClose();
-      setQuery('');
-    },
-    [onClose]
-  );
-
-  useEffect(() => {
-    if (!isOpen) setQuery('');
-  }, [isOpen]);
+  const grouped = ROUTES.reduce<Record<string, RouteItem[]>>((acc, r) => {
+    if (!acc[r.group]) acc[r.group] = [];
+    acc[r.group].push(r);
+    return acc;
+  }, {});
 
   return (
-    <CommandMenu<CommandData>
-      open={isOpen}
-      onClose={onClose}
-      query={query}
-      onQueryChange={setQuery}
-      groups={groups}
-      onSelect={handleSelect}
-      placeholder="Search or type a command..."
-      emptyTitle="No results found"
-      emptyDescription="Try searching for controls, policies, risks, or use a command"
-      footer={
-        <>
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 bg-surface-200 dark:bg-surface-800 rounded">↑</kbd>
-              <kbd className="px-1.5 py-0.5 bg-surface-200 dark:bg-surface-800 rounded">↓</kbd>
-              navigate
-            </span>
-            <span className="flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 bg-surface-200 dark:bg-surface-800 rounded">↵</kbd>
-              select
-            </span>
+    <Transition appear show={open} as={Fragment}>
+      <Dialog as="div" className="relative z-[200]" onClose={() => onOpenChange(false)}>
+        <Transition.Child
+          as={Fragment}
+          enter="ease-out duration-150"
+          enterFrom="opacity-0"
+          enterTo="opacity-100"
+          leave="ease-in duration-100"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
+        >
+          <div className="fixed inset-0 bg-white/40 backdrop-blur-sm" />
+        </Transition.Child>
+
+        <div className="fixed inset-0 overflow-y-auto">
+          <div className="flex min-h-full items-start justify-center p-4 pt-[12vh]">
+            <Transition.Child
+              as={Fragment}
+              enter="ease-out duration-150"
+              enterFrom="opacity-0 scale-98 translate-y-2"
+              enterTo="opacity-100 scale-100 translate-y-0"
+              leave="ease-in duration-100"
+              leaveFrom="opacity-100 scale-100 translate-y-0"
+              leaveTo="opacity-0 scale-98 translate-y-2"
+            >
+              <Dialog.Panel className="w-full max-w-2xl overflow-hidden rounded-lg bg-white border border-surface-300 shadow-2xl">
+                <Command label="Command palette" loop>
+                  <div className="flex items-center gap-3 border-b border-surface-200 px-4">
+                    <Search className="h-4 w-4 text-surface-500" />
+                    <Command.Input
+                      value={query}
+                      onValueChange={setQuery}
+                      placeholder="Type a command, search, or jump to…"
+                      className="flex-1 h-12 bg-transparent text-body text-surface-900 placeholder:text-surface-600 outline-none"
+                      autoFocus
+                    />
+                    <kbd className="text-xs text-surface-500 font-mono">ESC</kbd>
+                  </div>
+
+                  <Command.List className="max-h-[60vh] overflow-y-auto px-2 py-2">
+                    <Command.Empty>No results.</Command.Empty>
+
+                    {!query && recentItems.length > 0 && (
+                      <Command.Group heading="Recent">
+                        {recentItems.map((item) => (
+                          <Command.Item
+                            key={`recent-${item.path}`}
+                            value={`recent ${item.label}`}
+                            onSelect={() => go(item.path)}
+                          >
+                            <item.icon className="h-4 w-4 text-surface-500" />
+                            <span className="flex-1">{item.label}</span>
+                            <ArrowRight className="h-3.5 w-3.5 text-surface-500" />
+                          </Command.Item>
+                        ))}
+                      </Command.Group>
+                    )}
+
+                    {searchResults.length > 0 && (
+                      <Command.Group heading="Search results">
+                        {searchResults.map((r) => (
+                          <Command.Item
+                            key={`r-${r.type}-${r.id}`}
+                            value={`${r.title} ${r.subtitle || ''} ${r.type}`}
+                            onSelect={() => go(r.path)}
+                          >
+                            <div className="flex h-5 w-5 items-center justify-center rounded bg-surface-100 text-[10px] uppercase text-surface-500">
+                              {r.type.slice(0, 2)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="truncate">{r.title}</div>
+                              {r.subtitle && (
+                                <div className="text-xs text-surface-500 truncate">
+                                  {r.subtitle}
+                                </div>
+                              )}
+                            </div>
+                          </Command.Item>
+                        ))}
+                      </Command.Group>
+                    )}
+
+                    {Object.entries(grouped).map(([group, items]) => (
+                      <Command.Group key={group} heading={`Go to · ${group}`}>
+                        {items.map((item) => (
+                          <Command.Item
+                            key={item.path}
+                            value={`${item.label} ${item.keywords?.join(' ') || ''} ${group}`}
+                            onSelect={() => go(item.path)}
+                          >
+                            <item.icon className="h-4 w-4 text-surface-500" />
+                            <span className="flex-1">{item.label}</span>
+                            <span className="text-xs text-surface-500">{item.path}</span>
+                          </Command.Item>
+                        ))}
+                      </Command.Group>
+                    ))}
+                  </Command.List>
+
+                  <div className="flex items-center justify-between border-t border-surface-200 px-4 py-2 text-xs text-surface-500">
+                    <div className="flex items-center gap-3">
+                      <span>
+                        <kbd className="font-mono">↑↓</kbd> Navigate
+                      </span>
+                      <span>
+                        <kbd className="font-mono">↵</kbd> Open
+                      </span>
+                    </div>
+                    <span>
+                      <kbd className="font-mono">⌘K</kbd> to toggle
+                    </span>
+                  </div>
+                </Command>
+              </Dialog.Panel>
+            </Transition.Child>
           </div>
-          <span>{branding.platformName}</span>
-        </>
-      }
-    />
+        </div>
+      </Dialog>
+    </Transition>
   );
 }
 
+/** Hook to wire global Cmd+K / Ctrl+K shortcut. */
 export function useCommandPalette() {
-  const [isOpen, setIsOpen] = useState(false);
-
-  const open = useCallback(() => setIsOpen(true), []);
-  const close = useCallback(() => setIsOpen(false), []);
-  const toggle = useCallback(() => setIsOpen((prev) => !prev), []);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
-        toggle();
+        setOpen((v) => !v);
       }
     };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [toggle]);
-
-  return { isOpen, open, close, toggle };
+  return { open, setOpen };
 }
-
-export default CommandPalette;

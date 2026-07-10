@@ -12,33 +12,42 @@ import {
   TrashIcon,
 } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
-
-import { Textarea } from '@/components/ui/Textarea';
-
-import { Input } from '@/components/ui/Input';
-
-import { SelectNative } from '@/components/ui/SelectNative';
-
-import { Button } from '@/components/ui/Button';
+import { Button, Badge, Input, Select, Textarea } from '@/components/ui';
+import type { BadgeVariant } from '@/components/ui';
 
 interface TasksPanelProps {
   entityType: string;
   entityId: string;
 }
 
-const STATUS_OPTIONS = [
-  { value: 'open', label: 'Open', color: 'text-blue-600 bg-blue-400/10' },
-  { value: 'in_progress', label: 'In Progress', color: 'text-yellow-600 bg-yellow-400/10' },
-  { value: 'completed', label: 'Completed', color: 'text-green-600 bg-green-400/10' },
-  { value: 'cancelled', label: 'Cancelled', color: 'text-surface-600 bg-surface-400/10' },
+interface StatusOption {
+  value: string;
+  label: string;
+  variant: BadgeVariant;
+}
+
+interface PriorityOption {
+  value: string;
+  label: string;
+  color: string;
+}
+
+const STATUS_OPTIONS: StatusOption[] = [
+  { value: 'open', label: 'Open', variant: 'info' },
+  { value: 'in_progress', label: 'In Progress', variant: 'warning' },
+  { value: 'completed', label: 'Completed', variant: 'success' },
+  { value: 'cancelled', label: 'Cancelled', variant: 'neutral' },
 ];
 
-const PRIORITY_OPTIONS = [
-  { value: 'low', label: 'Low', color: 'text-green-600' },
-  { value: 'medium', label: 'Medium', color: 'text-yellow-600' },
+const PRIORITY_OPTIONS: PriorityOption[] = [
+  { value: 'low', label: 'Low', color: 'text-emerald-700' },
+  { value: 'medium', label: 'Medium', color: 'text-yellow-700' },
   { value: 'high', label: 'High', color: 'text-orange-600' },
   { value: 'critical', label: 'Critical', color: 'text-red-600' },
 ];
+
+const STATUS_SELECT_OPTIONS = STATUS_OPTIONS.map((s) => ({ value: s.value, label: s.label }));
+const PRIORITY_SELECT_OPTIONS = PRIORITY_OPTIONS.map((p) => ({ value: p.value, label: p.label }));
 
 export default function TasksPanel({ entityType, entityId }: TasksPanelProps) {
   const queryClient = useQueryClient();
@@ -60,8 +69,13 @@ export default function TasksPanel({ entityType, entityId }: TasksPanelProps) {
 
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
-    queryFn: () => usersApi.list().then((res) => res.data?.data || []),
+    queryFn: () => usersApi.list().then((res) => res.data.users ?? []),
   });
+
+  const assigneeOptions = [
+    { value: '', label: 'Unassigned' },
+    ...users.map((user: any) => ({ value: user.id, label: user.displayName })),
+  ];
 
   const createMutation = useMutation({
     mutationFn: (data: any) => tasksApi.create({ entityType, entityId, ...data }),
@@ -126,83 +140,71 @@ export default function TasksPanel({ entityType, entityId }: TasksPanelProps) {
         </div>
         {!isCreating && (
           <Button
-            onClick={() => setIsCreating(true)}
-            className="text-xs px-2 py-1"
             variant="outline"
+            size="sm"
+            onClick={() => setIsCreating(true)}
+            leftIcon={<PlusIcon className="w-3 h-3" />}
           >
-            <PlusIcon className="w-3 h-3 mr-1" />
             Add Task
           </Button>
         )}
       </div>
+
       {/* Create Task Form */}
       {isCreating && (
         <form onSubmit={handleCreate} className="card p-4 space-y-3">
           <Input
-            type="text"
             value={newTask.title}
             onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
             placeholder="Task title..."
-            className="input w-full"
             autoFocus
           />
           <Textarea
             value={newTask.description}
             onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
             placeholder="Description (optional)"
-            className="input w-full h-16"
+            className="h-16 min-h-0"
           />
           <div className="grid grid-cols-3 gap-2">
-            <SelectNative
+            <Select
               value={newTask.priority}
-              onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
-              className="input text-sm"
-            >
-              {PRIORITY_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </SelectNative>
-            <SelectNative
+              onChange={(value) => setNewTask({ ...newTask, priority: value })}
+              options={PRIORITY_SELECT_OPTIONS}
+              size="sm"
+            />
+            <Select
               value={newTask.assigneeId}
-              onChange={(e) => setNewTask({ ...newTask, assigneeId: e.target.value })}
-              className="input text-sm"
-            >
-              <option value="">Unassigned</option>
-              {users.map((user: any) => (
-                <option key={user.id} value={user.id}>
-                  {user.displayName}
-                </option>
-              ))}
-            </SelectNative>
+              onChange={(value) => setNewTask({ ...newTask, assigneeId: value })}
+              options={assigneeOptions}
+              size="sm"
+            />
             <Input
               type="date"
               value={newTask.dueDate}
               onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
-              className="input text-sm"
+              inputSize="sm"
             />
           </div>
           <div className="flex justify-end gap-2">
             <Button
               type="button"
-              onClick={() => setIsCreating(false)}
-              className="text-sm"
               variant="secondary"
+              size="sm"
+              onClick={() => setIsCreating(false)}
             >
               Cancel
             </Button>
             <Button
               type="submit"
+              size="sm"
               disabled={!newTask.title.trim() || createMutation.isPending}
-              className="text-sm"
-              variant="primary"
             >
               {createMutation.isPending ? 'Creating...' : 'Create Task'}
             </Button>
           </div>
         </form>
       )}
+
       {/* Tasks List */}
       {isLoading ? (
         <div className="text-center py-4 text-surface-500">Loading tasks...</div>
@@ -288,6 +290,11 @@ function TaskCard({
   const priorityConfig =
     PRIORITY_OPTIONS.find((p) => p.value === task.priority) || PRIORITY_OPTIONS[1];
 
+  const assigneeOptions = [
+    { value: '', label: 'Unassigned' },
+    ...users.map((user: any) => ({ value: user.id, label: user.displayName })),
+  ];
+
   const isOverdue =
     task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'completed';
 
@@ -295,64 +302,48 @@ function TaskCard({
     return (
       <div className="card p-3 space-y-2">
         <Input
-          type="text"
           value={editData.title}
           onChange={(e) => setEditData({ ...editData, title: e.target.value })}
-          className="input w-full text-sm"
+          inputSize="sm"
         />
         <Textarea
           value={editData.description}
           onChange={(e) => setEditData({ ...editData, description: e.target.value })}
-          className="input w-full h-16 text-sm"
           placeholder="Description"
+          className="h-16 min-h-0 text-sm"
         />
         <div className="grid grid-cols-2 gap-2">
-          <SelectNative
+          <Select
             value={editData.status}
-            onChange={(e) => setEditData({ ...editData, status: e.target.value })}
-            className="input text-sm"
-          >
-            {STATUS_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </SelectNative>
-          <SelectNative
+            onChange={(value) => setEditData({ ...editData, status: value })}
+            options={STATUS_SELECT_OPTIONS}
+            size="sm"
+          />
+          <Select
             value={editData.priority}
-            onChange={(e) => setEditData({ ...editData, priority: e.target.value })}
-            className="input text-sm"
-          >
-            {PRIORITY_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </SelectNative>
-          <SelectNative
+            onChange={(value) => setEditData({ ...editData, priority: value })}
+            options={PRIORITY_SELECT_OPTIONS}
+            size="sm"
+          />
+          <Select
             value={editData.assigneeId}
-            onChange={(e) => setEditData({ ...editData, assigneeId: e.target.value })}
-            className="input text-sm"
-          >
-            <option value="">Unassigned</option>
-            {users.map((user: any) => (
-              <option key={user.id} value={user.id}>
-                {user.displayName}
-              </option>
-            ))}
-          </SelectNative>
+            onChange={(value) => setEditData({ ...editData, assigneeId: value })}
+            options={assigneeOptions}
+            size="sm"
+          />
           <Input
             type="date"
             value={editData.dueDate}
             onChange={(e) => setEditData({ ...editData, dueDate: e.target.value })}
-            className="input text-sm"
+            inputSize="sm"
           />
         </div>
         <div className="flex justify-end gap-2">
-          <Button onClick={onCancelEdit} className="text-xs" variant="secondary">
+          <Button variant="secondary" size="sm" onClick={onCancelEdit}>
             Cancel
           </Button>
           <Button
+            size="sm"
             onClick={() =>
               onUpdate({
                 ...editData,
@@ -361,8 +352,6 @@ function TaskCard({
               })
             }
             disabled={isUpdating}
-            className="text-xs"
-            variant="primary"
           >
             {isUpdating ? 'Saving...' : 'Save'}
           </Button>
@@ -374,7 +363,7 @@ function TaskCard({
   return (
     <div
       className={clsx(
-        'card p-3 cursor-pointer hover:bg-white transition-colors',
+        'card p-3 cursor-pointer hover:bg-surface-100 transition-colors',
         task.status === 'completed' && 'opacity-60'
       )}
       onClick={onEdit}
@@ -382,7 +371,9 @@ function TaskCard({
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className={clsx('text-xs', statusConfig.color)}>{statusConfig.label}</span>
+            <Badge variant={statusConfig.variant} size="sm">
+              {statusConfig.label}
+            </Badge>
             <span className={clsx('text-xs', priorityConfig.color)}>
               <FlagIcon className="w-3 h-3 inline" /> {priorityConfig.label}
             </span>
@@ -421,7 +412,7 @@ function TaskCard({
                 e.stopPropagation();
                 onUpdate({ status: 'completed' });
               }}
-              className="p-1 rounded text-surface-500 hover:text-green-600 hover:bg-surface-200 transition-colors"
+              className="p-1 rounded text-surface-500 hover:text-emerald-700 hover:bg-surface-200 transition-colors"
               title="Mark complete"
             >
               <CheckIcon className="w-4 h-4" />

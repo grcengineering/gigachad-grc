@@ -17,31 +17,41 @@ import {
 } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 import { auditApi } from '../lib/api';
+import { Button, Input, Select } from '@/components/ui';
 import toast from 'react-hot-toast';
 
-import { Input } from '@/components/ui/Input';
-
-import { SelectNative } from '@/components/ui/SelectNative';
-
-import { Button } from '@/components/ui/Button';
-
-// Action icons and colors
-const ACTION_CONFIG: Record<string, { color: string; bg: string }> = {
-  created: { color: 'text-green-600', bg: 'bg-green-500/10' },
-  uploaded: { color: 'text-green-600', bg: 'bg-green-500/10' },
-  updated: { color: 'text-blue-600', bg: 'bg-blue-500/10' },
-  deleted: { color: 'text-red-600', bg: 'bg-red-500/10' },
-  linked: { color: 'text-purple-600', bg: 'bg-purple-500/10' },
-  unlinked: { color: 'text-orange-600', bg: 'bg-orange-500/10' },
-  status_changed: { color: 'text-yellow-600', bg: 'bg-yellow-500/10' },
-  reviewed: { color: 'text-cyan-600', bg: 'bg-cyan-500/10' },
-  approved: { color: 'text-green-600', bg: 'bg-green-500/10' },
-  rejected: { color: 'text-red-600', bg: 'bg-red-500/10' },
-  synced: { color: 'text-indigo-600', bg: 'bg-indigo-500/10' },
-  tested: { color: 'text-teal-600', bg: 'bg-teal-500/10' },
-  version_created: { color: 'text-blue-600', bg: 'bg-blue-500/10' },
-  bulk_uploaded: { color: 'text-green-600', bg: 'bg-green-500/10' },
+// Action chip styles, looked up by the "verb" at the end of the action string
+// (e.g. "mapping_deleted" → "deleted", "evidence_bulk_uploaded" → "uploaded").
+const ACTION_STYLE: Record<string, string> = {
+  created: 'bg-emerald-50 text-emerald-800 border border-emerald-200',
+  uploaded: 'bg-emerald-50 text-emerald-800 border border-emerald-200',
+  approved: 'bg-emerald-50 text-emerald-800 border border-emerald-200',
+  enabled: 'bg-emerald-50 text-emerald-800 border border-emerald-200',
+  updated: 'bg-sky-50 text-sky-800 border border-sky-200',
+  changed: 'bg-sky-50 text-sky-800 border border-sky-200',
+  deleted: 'bg-red-50 text-red-800 border border-red-200',
+  rejected: 'bg-red-50 text-red-800 border border-red-200',
+  disabled: 'bg-red-50 text-red-800 border border-red-200',
+  failed: 'bg-red-50 text-red-800 border border-red-200',
+  linked: 'bg-violet-50 text-violet-800 border border-violet-200',
+  unlinked: 'bg-orange-50 text-orange-800 border border-orange-200',
+  reviewed: 'bg-cyan-50 text-cyan-800 border border-cyan-200',
+  tested: 'bg-teal-50 text-teal-800 border border-teal-200',
+  synced: 'bg-indigo-50 text-indigo-800 border border-indigo-200',
+  reset: 'bg-amber-50 text-amber-800 border border-amber-200',
 };
+const ACTION_FALLBACK = 'bg-surface-100 text-surface-700 border border-surface-300';
+
+function actionStyle(action: string): string {
+  if (!action) return ACTION_FALLBACK;
+  // Try exact match first, then the last underscore segment, then '.' segment.
+  if (ACTION_STYLE[action]) return ACTION_STYLE[action];
+  const underscoreVerb = action.split('_').pop() ?? '';
+  if (ACTION_STYLE[underscoreVerb]) return ACTION_STYLE[underscoreVerb];
+  const dotVerb = action.split('.').pop() ?? '';
+  if (ACTION_STYLE[dotVerb]) return ACTION_STYLE[dotVerb];
+  return ACTION_FALLBACK;
+}
 
 const ENTITY_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   control: DocumentIcon,
@@ -116,28 +126,22 @@ export default function AuditLog() {
     setSearchParams(new URLSearchParams());
   };
 
-  // Fetch audit logs with error handling
-  const { data, isLoading, isError, error, refetch } = useQuery({
+  // Fetch audit logs
+  const { data, isLoading, refetch } = useQuery({
     queryKey: ['audit-logs', filters],
     queryFn: () => auditApi.list(filters).then((res) => res.data),
-    retry: 1,
-    staleTime: 30000,
   });
 
-  // Fetch filter options with fallback
+  // Fetch filter options
   const { data: filterOptions } = useQuery({
     queryKey: ['audit-filters'],
     queryFn: () => auditApi.getFilters().then((res) => res.data),
-    retry: 1,
-    staleTime: 60000,
   });
 
-  // Fetch stats with fallback
+  // Fetch stats
   const { data: stats } = useQuery({
     queryKey: ['audit-stats', filters.startDate, filters.endDate],
     queryFn: () => auditApi.getStats(filters.startDate, filters.endDate).then((res) => res.data),
-    retry: 1,
-    staleTime: 60000,
   });
 
   const handleExport = async () => {
@@ -183,15 +187,15 @@ export default function AuditLog() {
           </p>
         </div>
         <Button
-          onClick={handleExport}
-          className="flex items-center gap-2"
-          disabled={logs.length === 0}
           variant="secondary"
+          onClick={handleExport}
+          disabled={logs.length === 0}
+          leftIcon={<ArrowDownTrayIcon className="w-4 h-4" />}
         >
-          <ArrowDownTrayIcon className="w-4 h-4" />
           Export CSV
         </Button>
       </div>
+
       {/* Stats Cards */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -227,30 +231,31 @@ export default function AuditLog() {
           </div>
         </div>
       )}
+
       {/* Search and Filters */}
       <div className="card p-4 space-y-4">
         <div className="flex items-center gap-4">
           {/* Search */}
-          <div className="relative flex-1">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-500" />
+          <div className="flex-1">
             <Input
               type="text"
               placeholder="Search by description or entity name..."
               value={filters.search}
               onChange={(e) => updateFilter('search', e.target.value)}
-              className="input pl-10 w-full"
+              leftIcon={<MagnifyingGlassIcon className="w-5 h-5" />}
             />
           </div>
 
           {/* Filter toggle */}
-          <button
+          <Button
+            variant="secondary"
             onClick={() => setIsFiltersOpen(!isFiltersOpen)}
-            className={clsx('flex items-center gap-2', hasActiveFilters && 'ring-2 ring-brand-500')}
+            className={clsx(hasActiveFilters && 'ring-2 ring-brand-500')}
+            leftIcon={<FunnelIcon className="w-4 h-4" />}
           >
-            <FunnelIcon className="w-4 h-4" />
             Filters
             {hasActiveFilters && (
-              <span className="bg-brand-500 text-white text-xs px-1.5 rounded-full">
+              <span className="bg-brand-500 text-white text-xs px-1.5 rounded-full ml-1">
                 {
                   [filters.entityType, filters.action, filters.userId, filters.startDate].filter(
                     Boolean
@@ -258,10 +263,10 @@ export default function AuditLog() {
                 }
               </span>
             )}
-          </button>
+          </Button>
 
           {/* Refresh */}
-          <Button onClick={() => refetch()} className="p-2" title="Refresh" variant="secondary">
+          <Button variant="secondary" size="icon" onClick={() => refetch()} title="Refresh">
             <ArrowPathIcon className="w-5 h-5" />
           </Button>
         </div>
@@ -272,53 +277,53 @@ export default function AuditLog() {
             {/* Entity Type */}
             <div>
               <label className="block text-sm text-surface-600 mb-1">Entity Type</label>
-              <SelectNative
+              <Select
                 value={filters.entityType}
-                onChange={(e) => updateFilter('entityType', e.target.value)}
-                className="input w-full"
-              >
-                <option value="">All Types</option>
-                {filterOptions?.entityTypes?.map((type: string) => (
-                  <option key={type} value={type}>
-                    {type.charAt(0).toUpperCase() + type.slice(1)}
-                  </option>
-                ))}
-              </SelectNative>
+                onChange={(v) => updateFilter('entityType', v)}
+                options={[
+                  { value: '', label: 'All Types' },
+                  ...(filterOptions?.entityTypes?.map((type: string) => ({
+                    value: type,
+                    label: type.charAt(0).toUpperCase() + type.slice(1),
+                  })) ?? []),
+                ]}
+              />
             </div>
 
             {/* Action */}
             <div>
               <label className="block text-sm text-surface-600 mb-1">Action</label>
-              <SelectNative
+              <Select
                 value={filters.action}
-                onChange={(e) => updateFilter('action', e.target.value)}
-                className="input w-full"
-              >
-                <option value="">All Actions</option>
-                {filterOptions?.actions?.map((action: string) => (
-                  <option key={action} value={action}>
-                    {action.replace('_', ' ').charAt(0).toUpperCase() +
-                      action.replace('_', ' ').slice(1)}
-                  </option>
-                ))}
-              </SelectNative>
+                onChange={(v) => updateFilter('action', v)}
+                options={[
+                  { value: '', label: 'All Actions' },
+                  ...(filterOptions?.actions?.map((action: string) => ({
+                    value: action,
+                    label:
+                      action.replace('_', ' ').charAt(0).toUpperCase() +
+                      action.replace('_', ' ').slice(1),
+                  })) ?? []),
+                ]}
+              />
             </div>
 
             {/* User */}
             <div>
               <label className="block text-sm text-surface-600 mb-1">User</label>
-              <SelectNative
+              <Select
                 value={filters.userId}
-                onChange={(e) => updateFilter('userId', e.target.value)}
-                className="input w-full"
-              >
-                <option value="">All Users</option>
-                {filterOptions?.users?.map((user: { id: string; name: string; email: string }) => (
-                  <option key={user.id} value={user.id}>
-                    {user.name || user.email}
-                  </option>
-                ))}
-              </SelectNative>
+                onChange={(v) => updateFilter('userId', v)}
+                options={[
+                  { value: '', label: 'All Users' },
+                  ...(filterOptions?.users?.map(
+                    (user: { id: string; name: string; email: string }) => ({
+                      value: user.id,
+                      label: user.name || user.email,
+                    })
+                  ) ?? []),
+                ]}
+              />
             </div>
 
             {/* Start Date */}
@@ -328,7 +333,6 @@ export default function AuditLog() {
                 type="date"
                 value={filters.startDate}
                 onChange={(e) => updateFilter('startDate', e.target.value)}
-                className="input w-full"
               />
             </div>
 
@@ -339,7 +343,6 @@ export default function AuditLog() {
                 type="date"
                 value={filters.endDate}
                 onChange={(e) => updateFilter('endDate', e.target.value)}
-                className="input w-full"
               />
             </div>
 
@@ -358,6 +361,7 @@ export default function AuditLog() {
           </div>
         )}
       </div>
+
       {/* Audit Log Table */}
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">
@@ -380,58 +384,25 @@ export default function AuditLog() {
               {isLoading ? (
                 <tr>
                   <td colSpan={6} className="text-center py-12 text-surface-500">
-                    <div className="flex flex-col items-center gap-2">
-                      <ArrowPathIcon className="w-6 h-6 animate-spin" />
-                      <span>Loading audit logs...</span>
-                    </div>
-                  </td>
-                </tr>
-              ) : isError ? (
-                <tr>
-                  <td colSpan={6} className="text-center py-12 text-surface-500">
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="text-red-600">Unable to load audit logs</div>
-                      <p className="text-sm">
-                        {error instanceof Error ? error.message : 'An unexpected error occurred.'}
-                      </p>
-                      <Button
-                        onClick={() => refetch()}
-                        className="text-sm flex items-center gap-2"
-                        variant="secondary"
-                      >
-                        <ArrowPathIcon className="w-4 h-4" />
-                        Try Again
-                      </Button>
-                    </div>
+                    Loading...
                   </td>
                 </tr>
               ) : logs.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="text-center py-12 text-surface-500">
-                    <div className="flex flex-col items-center gap-2">
-                      <ClockIcon className="w-8 h-8" />
-                      <span>No audit logs found</span>
-                      <p className="text-xs text-surface-600">
-                        {hasActiveFilters
-                          ? 'Try adjusting your filters or clear them to see more results.'
-                          : 'Actions performed in the platform will appear here.'}
-                      </p>
-                    </div>
+                    No audit logs found
                   </td>
                 </tr>
               ) : (
                 logs.map((log: any) => {
-                  const actionConfig = ACTION_CONFIG[log.action] || {
-                    color: 'text-surface-600',
-                    bg: 'bg-white',
-                  };
+                  const actionCls = actionStyle(log.action);
                   const EntityIcon = ENTITY_ICONS[log.entityType] || DocumentIcon;
                   const isExpanded = expandedRow === log.id;
 
                   return (
                     <React.Fragment key={log.id}>
                       <tr
-                        className="border-b border-surface-200/50 hover:bg-white/30 transition-colors cursor-pointer"
+                        className="border-b border-surface-200/50 hover:bg-surface-100/30 transition-colors cursor-pointer"
                         onClick={() => setExpandedRow(isExpanded ? null : log.id)}
                       >
                         <td className="px-4 py-3">
@@ -460,12 +431,11 @@ export default function AuditLog() {
                         <td className="px-4 py-3">
                           <span
                             className={clsx(
-                              'px-2 py-1 rounded text-xs font-medium',
-                              actionConfig.bg,
-                              actionConfig.color
+                              'inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium whitespace-nowrap capitalize',
+                              actionCls
                             )}
                           >
-                            {log.action.replace('_', ' ')}
+                            {(log.action || '').replace(/_/g, ' ')}
                           </span>
                         </td>
                         <td className="px-4 py-3">
@@ -505,7 +475,7 @@ export default function AuditLog() {
 
                       {/* Expanded Details */}
                       {isExpanded && (
-                        <tr className="bg-white/20">
+                        <tr className="bg-surface-100/20">
                           <td colSpan={6} className="px-4 py-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               {/* Left - Details */}
@@ -586,10 +556,10 @@ export default function AuditLog() {
             </div>
             <div className="flex items-center gap-2">
               <Button
+                variant="secondary"
+                size="icon"
                 onClick={() => updateFilter('page', pagination.page - 1)}
                 disabled={pagination.page <= 1}
-                className="p-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                variant="secondary"
               >
                 <ChevronLeftIcon className="w-4 h-4" />
               </Button>
@@ -597,10 +567,10 @@ export default function AuditLog() {
                 Page {pagination.page} of {pagination.pages}
               </span>
               <Button
+                variant="secondary"
+                size="icon"
                 onClick={() => updateFilter('page', pagination.page + 1)}
                 disabled={pagination.page >= pagination.pages}
-                className="p-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                variant="secondary"
               >
                 <ChevronRightIcon className="w-4 h-4" />
               </Button>

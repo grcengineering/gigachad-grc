@@ -1,29 +1,16 @@
 import { useState, useEffect } from 'react';
 
 /**
- * Hook that debounces a value
- * @param value - Value to debounce
- * @param delay - Delay in milliseconds
- * @returns Debounced value
+ * Returns a debounced value that only updates after `delay` ms have passed
+ * without `value` changing. Standard pattern for search inputs.
  */
 export function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
-
+  const [debounced, setDebounced] = useState<T>(value);
   useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(handler);
-    };
+    const t = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(t);
   }, [value, delay]);
-
-  return debouncedValue;
+  return debounced;
 }
 
 export default useDebounce;
-
-
-
-
