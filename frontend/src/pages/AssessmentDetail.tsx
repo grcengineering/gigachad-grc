@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeftIcon, TrashIcon, PencilIcon } from '@heroicons/react/24/outline';
+import { Button, Input, Textarea, Select } from '@/components/ui';
 
 interface Assessment {
   id: string;
@@ -51,66 +52,62 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="bg-surface-900 border border-surface-800 rounded-lg p-6 space-y-6">
+      <div className="bg-white border border-surface-200 rounded-lg p-6 space-y-6">
         {/* Basic Information */}
         <div>
-          <h3 className="text-lg font-medium text-surface-100 mb-4">Basic Information</h3>
+          <h3 className="text-lg font-medium text-surface-900 mb-4">Basic Information</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-surface-400 mb-1">
+              <label className="block text-sm font-medium text-surface-600 mb-1">
                 Vendor ID *
               </label>
-              <input
+              <Input
                 type="text"
                 value={formData.vendorId}
                 onChange={(e) => setFormData({ ...formData, vendorId: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-surface-400 mb-1">
+              <label className="block text-sm font-medium text-surface-600 mb-1">
                 Assessment Type *
               </label>
-              <select
-                value={formData.assessmentType}
-                onChange={(e) => setFormData({ ...formData, assessmentType: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
-                required
-              >
-                <option value="security_review">Security Review</option>
-                <option value="privacy_assessment">Privacy Assessment</option>
-                <option value="compliance_audit">Compliance Audit</option>
-                <option value="vendor_questionnaire">Vendor Questionnaire</option>
-                <option value="on_site_audit">On-site Audit</option>
-                <option value="penetration_test">Penetration Test</option>
-              </select>
+              <Select
+                value={formData.assessmentType || ''}
+                onChange={(value) => setFormData({ ...formData, assessmentType: value })}
+                options={[
+                  { value: 'security_review', label: 'Security Review' },
+                  { value: 'privacy_assessment', label: 'Privacy Assessment' },
+                  { value: 'compliance_audit', label: 'Compliance Audit' },
+                  { value: 'vendor_questionnaire', label: 'Vendor Questionnaire' },
+                  { value: 'on_site_audit', label: 'On-site Audit' },
+                  { value: 'penetration_test', label: 'Penetration Test' },
+                ]}
+              />
             </div>
             <div>
-              <label className="block text-sm font-medium text-surface-400 mb-1">
+              <label className="block text-sm font-medium text-surface-600 mb-1">
                 Status *
               </label>
-              <select
-                value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
-                required
-              >
-                <option value="pending">Pending</option>
-                <option value="in_progress">In Progress</option>
-                <option value="completed">Completed</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
+              <Select
+                value={formData.status || ''}
+                onChange={(value) => setFormData({ ...formData, status: value })}
+                options={[
+                  { value: 'pending', label: 'Pending' },
+                  { value: 'in_progress', label: 'In Progress' },
+                  { value: 'completed', label: 'Completed' },
+                  { value: 'cancelled', label: 'Cancelled' },
+                ]}
+              />
             </div>
             <div>
-              <label className="block text-sm font-medium text-surface-400 mb-1">
+              <label className="block text-sm font-medium text-surface-600 mb-1">
                 Assessor
               </label>
-              <input
+              <Input
                 type="text"
                 value={formData.assessor || ''}
                 onChange={(e) => setFormData({ ...formData, assessor: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
               />
             </div>
           </div>
@@ -118,28 +115,26 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
 
         {/* Dates */}
         <div>
-          <h3 className="text-lg font-medium text-surface-100 mb-4">Schedule</h3>
+          <h3 className="text-lg font-medium text-surface-900 mb-4">Schedule</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-surface-400 mb-1">
+              <label className="block text-sm font-medium text-surface-600 mb-1">
                 Due Date
               </label>
-              <input
+              <Input
                 type="date"
                 value={formData.dueDate || ''}
                 onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-surface-400 mb-1">
+              <label className="block text-sm font-medium text-surface-600 mb-1">
                 Completed Date
               </label>
-              <input
+              <Input
                 type="date"
                 value={formData.completedAt || ''}
                 onChange={(e) => setFormData({ ...formData, completedAt: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
               />
             </div>
           </div>
@@ -147,58 +142,54 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
 
         {/* Scores */}
         <div>
-          <h3 className="text-lg font-medium text-surface-100 mb-4">Assessment Scores</h3>
+          <h3 className="text-lg font-medium text-surface-900 mb-4">Assessment Scores</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-surface-400 mb-1">
+              <label className="block text-sm font-medium text-surface-600 mb-1">
                 Overall Score (0-100)
               </label>
-              <input
+              <Input
                 type="number"
                 min="0"
                 max="100"
                 value={formData.overallScore || ''}
                 onChange={(e) => setFormData({ ...formData, overallScore: parseInt(e.target.value) || undefined })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-surface-400 mb-1">
+              <label className="block text-sm font-medium text-surface-600 mb-1">
                 Security Score (0-100)
               </label>
-              <input
+              <Input
                 type="number"
                 min="0"
                 max="100"
                 value={formData.securityScore || ''}
                 onChange={(e) => setFormData({ ...formData, securityScore: parseInt(e.target.value) || undefined })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-surface-400 mb-1">
+              <label className="block text-sm font-medium text-surface-600 mb-1">
                 Privacy Score (0-100)
               </label>
-              <input
+              <Input
                 type="number"
                 min="0"
                 max="100"
                 value={formData.privacyScore || ''}
                 onChange={(e) => setFormData({ ...formData, privacyScore: parseInt(e.target.value) || undefined })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-surface-400 mb-1">
+              <label className="block text-sm font-medium text-surface-600 mb-1">
                 Compliance Score (0-100)
               </label>
-              <input
+              <Input
                 type="number"
                 min="0"
                 max="100"
                 value={formData.complianceScore || ''}
                 onChange={(e) => setFormData({ ...formData, complianceScore: parseInt(e.target.value) || undefined })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
               />
             </div>
           </div>
@@ -206,28 +197,26 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
 
         {/* Findings */}
         <div>
-          <label className="block text-sm font-medium text-surface-400 mb-1">
+          <label className="block text-sm font-medium text-surface-600 mb-1">
             Findings
           </label>
-          <textarea
+          <Textarea
             value={formData.findings || ''}
             onChange={(e) => setFormData({ ...formData, findings: e.target.value })}
             rows={4}
-            className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
             placeholder="Document any findings, issues, or concerns discovered during the assessment..."
           />
         </div>
 
         {/* Recommendations */}
         <div>
-          <label className="block text-sm font-medium text-surface-400 mb-1">
+          <label className="block text-sm font-medium text-surface-600 mb-1">
             Recommendations
           </label>
-          <textarea
+          <Textarea
             value={formData.recommendations || ''}
             onChange={(e) => setFormData({ ...formData, recommendations: e.target.value })}
             rows={4}
-            className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
             placeholder="Provide recommendations for improvement or remediation..."
           />
         </div>
@@ -235,19 +224,12 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
 
       {/* Actions */}
       <div className="flex items-center justify-end gap-3">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-4 py-2 text-surface-300 hover:text-surface-100 transition-colors"
-        >
+        <Button type="button" variant="ghost" onClick={onCancel}>
           Cancel
-        </button>
-        <button
-          type="submit"
-          className="px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors"
-        >
+        </Button>
+        <Button type="submit">
           Save Assessment
-        </button>
+        </Button>
       </div>
     </form>
   );
@@ -256,25 +238,25 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
 function AssessmentView({ assessment, onEdit, onDelete }: { assessment: Assessment; onEdit: () => void; onDelete: () => void }) {
   return (
     <div className="space-y-6">
-      <div className="bg-surface-900 border border-surface-800 rounded-lg p-6 space-y-6">
+      <div className="bg-white border border-surface-200 rounded-lg p-6 space-y-6">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-surface-100 capitalize">
+            <h2 className="text-2xl font-bold text-surface-900 capitalize">
               {assessment.assessmentType.replace('_', ' ')}
             </h2>
-            <p className="mt-1 text-surface-400">{assessment.vendor.name}</p>
+            <p className="mt-1 text-surface-600">{assessment.vendor.name}</p>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={onEdit}
-              className="p-2 text-surface-400 hover:text-surface-100 hover:bg-surface-800 rounded-lg transition-colors"
+              className="p-2 text-surface-600 hover:text-surface-900 hover:bg-surface-100 rounded-lg transition-colors"
             >
               <PencilIcon className="w-5 h-5" />
             </button>
             <button
               onClick={onDelete}
-              className="p-2 text-red-400 hover:text-red-300 hover:bg-surface-800 rounded-lg transition-colors"
+              className="p-2 text-red-600 hover:text-red-700 hover:bg-surface-100 rounded-lg transition-colors"
             >
               <TrashIcon className="w-5 h-5" />
             </button>
@@ -283,26 +265,26 @@ function AssessmentView({ assessment, onEdit, onDelete }: { assessment: Assessme
 
         {/* Basic Information */}
         <div>
-          <h3 className="text-lg font-medium text-surface-100 mb-4">Basic Information</h3>
+          <h3 className="text-lg font-medium text-surface-900 mb-4">Basic Information</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <dt className="text-sm font-medium text-surface-400 mb-1">Vendor</dt>
-              <dd className="text-sm text-surface-100">{assessment.vendor.name}</dd>
+              <dt className="text-sm font-medium text-surface-600 mb-1">Vendor</dt>
+              <dd className="text-sm text-surface-900">{assessment.vendor.name}</dd>
             </div>
             <div>
-              <dt className="text-sm font-medium text-surface-400 mb-1">Type</dt>
-              <dd className="text-sm text-surface-100 capitalize">
+              <dt className="text-sm font-medium text-surface-600 mb-1">Type</dt>
+              <dd className="text-sm text-surface-900 capitalize">
                 {assessment.assessmentType.replace('_', ' ')}
               </dd>
             </div>
             <div>
-              <dt className="text-sm font-medium text-surface-400 mb-1">Status</dt>
+              <dt className="text-sm font-medium text-surface-600 mb-1">Status</dt>
               <dd>
                 <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full capitalize ${
-                  assessment.status === 'completed' ? 'bg-green-500/20 text-green-400' :
-                  assessment.status === 'in_progress' ? 'bg-blue-500/20 text-blue-400' :
-                  assessment.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
-                  'bg-surface-700 text-surface-400'
+                  assessment.status === 'completed' ? 'bg-green-500/20 text-emerald-700' :
+                  assessment.status === 'in_progress' ? 'bg-blue-500/20 text-blue-600' :
+                  assessment.status === 'pending' ? 'bg-yellow-500/20 text-yellow-700' :
+                  'bg-surface-200 text-surface-600'
                 }`}>
                   {assessment.status.replace('_', ' ')}
                 </span>
@@ -310,8 +292,8 @@ function AssessmentView({ assessment, onEdit, onDelete }: { assessment: Assessme
             </div>
             {assessment.assessor && (
               <div>
-                <dt className="text-sm font-medium text-surface-400 mb-1">Assessor</dt>
-                <dd className="text-sm text-surface-100">{assessment.assessor}</dd>
+                <dt className="text-sm font-medium text-surface-600 mb-1">Assessor</dt>
+                <dd className="text-sm text-surface-900">{assessment.assessor}</dd>
               </div>
             )}
           </div>
@@ -319,20 +301,20 @@ function AssessmentView({ assessment, onEdit, onDelete }: { assessment: Assessme
 
         {/* Schedule */}
         <div>
-          <h3 className="text-lg font-medium text-surface-100 mb-4">Schedule</h3>
+          <h3 className="text-lg font-medium text-surface-900 mb-4">Schedule</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {assessment.dueDate && (
               <div>
-                <dt className="text-sm font-medium text-surface-400 mb-1">Due Date</dt>
-                <dd className="text-sm text-surface-100">
+                <dt className="text-sm font-medium text-surface-600 mb-1">Due Date</dt>
+                <dd className="text-sm text-surface-900">
                   {new Date(assessment.dueDate).toLocaleDateString()}
                 </dd>
               </div>
             )}
             {assessment.completedAt && (
               <div>
-                <dt className="text-sm font-medium text-surface-400 mb-1">Completed</dt>
-                <dd className="text-sm text-surface-100">
+                <dt className="text-sm font-medium text-surface-600 mb-1">Completed</dt>
+                <dd className="text-sm text-surface-900">
                   {new Date(assessment.completedAt).toLocaleDateString()}
                 </dd>
               </div>
@@ -343,14 +325,14 @@ function AssessmentView({ assessment, onEdit, onDelete }: { assessment: Assessme
         {/* Scores */}
         {(assessment.overallScore || assessment.securityScore || assessment.privacyScore || assessment.complianceScore) && (
           <div>
-            <h3 className="text-lg font-medium text-surface-100 mb-4">Assessment Scores</h3>
+            <h3 className="text-lg font-medium text-surface-900 mb-4">Assessment Scores</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {assessment.overallScore !== null && assessment.overallScore !== undefined && (
                 <div>
-                  <dt className="text-sm font-medium text-surface-400 mb-2">Overall Score</dt>
+                  <dt className="text-sm font-medium text-surface-600 mb-2">Overall Score</dt>
                   <dd className="flex items-center gap-3">
-                    <span className="text-2xl font-bold text-surface-100">{assessment.overallScore}</span>
-                    <div className="flex-1 h-3 bg-surface-700 rounded-full overflow-hidden">
+                    <span className="text-2xl font-bold text-surface-900">{assessment.overallScore}</span>
+                    <div className="flex-1 h-3 bg-surface-200 rounded-full overflow-hidden">
                       <div
                         className={`h-full ${
                           assessment.overallScore >= 80 ? 'bg-green-500' :
@@ -365,10 +347,10 @@ function AssessmentView({ assessment, onEdit, onDelete }: { assessment: Assessme
               )}
               {assessment.securityScore !== null && assessment.securityScore !== undefined && (
                 <div>
-                  <dt className="text-sm font-medium text-surface-400 mb-2">Security Score</dt>
+                  <dt className="text-sm font-medium text-surface-600 mb-2">Security Score</dt>
                   <dd className="flex items-center gap-3">
-                    <span className="text-2xl font-bold text-surface-100">{assessment.securityScore}</span>
-                    <div className="flex-1 h-3 bg-surface-700 rounded-full overflow-hidden">
+                    <span className="text-2xl font-bold text-surface-900">{assessment.securityScore}</span>
+                    <div className="flex-1 h-3 bg-surface-200 rounded-full overflow-hidden">
                       <div
                         className={`h-full ${
                           assessment.securityScore >= 80 ? 'bg-green-500' :
@@ -383,10 +365,10 @@ function AssessmentView({ assessment, onEdit, onDelete }: { assessment: Assessme
               )}
               {assessment.privacyScore !== null && assessment.privacyScore !== undefined && (
                 <div>
-                  <dt className="text-sm font-medium text-surface-400 mb-2">Privacy Score</dt>
+                  <dt className="text-sm font-medium text-surface-600 mb-2">Privacy Score</dt>
                   <dd className="flex items-center gap-3">
-                    <span className="text-2xl font-bold text-surface-100">{assessment.privacyScore}</span>
-                    <div className="flex-1 h-3 bg-surface-700 rounded-full overflow-hidden">
+                    <span className="text-2xl font-bold text-surface-900">{assessment.privacyScore}</span>
+                    <div className="flex-1 h-3 bg-surface-200 rounded-full overflow-hidden">
                       <div
                         className={`h-full ${
                           assessment.privacyScore >= 80 ? 'bg-green-500' :
@@ -401,10 +383,10 @@ function AssessmentView({ assessment, onEdit, onDelete }: { assessment: Assessme
               )}
               {assessment.complianceScore !== null && assessment.complianceScore !== undefined && (
                 <div>
-                  <dt className="text-sm font-medium text-surface-400 mb-2">Compliance Score</dt>
+                  <dt className="text-sm font-medium text-surface-600 mb-2">Compliance Score</dt>
                   <dd className="flex items-center gap-3">
-                    <span className="text-2xl font-bold text-surface-100">{assessment.complianceScore}</span>
-                    <div className="flex-1 h-3 bg-surface-700 rounded-full overflow-hidden">
+                    <span className="text-2xl font-bold text-surface-900">{assessment.complianceScore}</span>
+                    <div className="flex-1 h-3 bg-surface-200 rounded-full overflow-hidden">
                       <div
                         className={`h-full ${
                           assessment.complianceScore >= 80 ? 'bg-green-500' :
@@ -424,16 +406,16 @@ function AssessmentView({ assessment, onEdit, onDelete }: { assessment: Assessme
         {/* Findings */}
         {assessment.findings && (
           <div>
-            <h3 className="text-lg font-medium text-surface-100 mb-4">Findings</h3>
-            <div className="text-sm text-surface-300 whitespace-pre-wrap">{assessment.findings}</div>
+            <h3 className="text-lg font-medium text-surface-900 mb-4">Findings</h3>
+            <div className="text-sm text-surface-700 whitespace-pre-wrap">{assessment.findings}</div>
           </div>
         )}
 
         {/* Recommendations */}
         {assessment.recommendations && (
           <div>
-            <h3 className="text-lg font-medium text-surface-100 mb-4">Recommendations</h3>
-            <div className="text-sm text-surface-300 whitespace-pre-wrap">{assessment.recommendations}</div>
+            <h3 className="text-lg font-medium text-surface-900 mb-4">Recommendations</h3>
+            <div className="text-sm text-surface-700 whitespace-pre-wrap">{assessment.recommendations}</div>
           </div>
         )}
       </div>
@@ -448,16 +430,7 @@ export default function AssessmentDetail() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
 
-  useEffect(() => {
-    if (id && id !== 'new') {
-      fetchAssessment();
-    } else {
-      setEditing(true);
-      setLoading(false);
-    }
-  }, [id]);
-
-  const fetchAssessment = async () => {
+  const fetchAssessment = useCallback(async () => {
     try {
       const response = await fetch(`/api/assessments/${id}`);
       const data = await response.json();
@@ -467,7 +440,16 @@ export default function AssessmentDetail() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    if (id && id !== 'new') {
+      fetchAssessment();
+    } else {
+      setEditing(true);
+      setLoading(false);
+    }
+  }, [id, fetchAssessment]);
 
   const handleSave = async (formData: Partial<Assessment>) => {
     try {
@@ -523,7 +505,7 @@ export default function AssessmentDetail() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-surface-400">Loading assessment...</div>
+        <div className="text-surface-600">Loading assessment...</div>
       </div>
     );
   }
@@ -533,16 +515,16 @@ export default function AssessmentDetail() {
       <div className="flex items-center gap-4">
         <button
           onClick={() => navigate('/assessments')}
-          className="p-2 text-surface-400 hover:text-surface-100 hover:bg-surface-800 rounded-lg transition-colors"
+          className="p-2 text-surface-600 hover:text-surface-900 hover:bg-surface-100 rounded-lg transition-colors"
         >
           <ArrowLeftIcon className="w-5 h-5" />
         </button>
         <div>
-          <h1 className="text-3xl font-bold text-surface-100">
+          <h1 className="text-3xl font-bold text-surface-900">
             {id === 'new' ? 'New Assessment' : 'Assessment Details'}
           </h1>
           {assessment && (
-            <p className="mt-1 text-surface-400">
+            <p className="mt-1 text-surface-600">
               {assessment.vendor.name} - {assessment.assessmentType.replace('_', ' ')}
             </p>
           )}

@@ -2,15 +2,29 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { risksApi } from '../lib/api';
 import {
-  DocumentChartBarIcon,
-  ArrowDownTrayIcon,
-  CalendarIcon,
-  FunnelIcon,
-  ChartBarIcon,
-  TableCellsIcon,
-  DocumentTextIcon,
-  PresentationChartLineIcon,
-} from '@heroicons/react/24/outline';
+  FileBarChart,
+  Download,
+  Calendar,
+  Filter,
+  BarChart,
+  Table,
+  FileText,
+  TrendingUp,
+} from 'lucide-react';
+import { cn } from '@/lib/cn';
+import {
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+  Input,
+  Label,
+  Select,
+  PageHeader,
+  EmptyState,
+  Skeleton,
+} from '@/components/ui';
 
 type ReportType = 'risk-register' | 'risk-summary' | 'treatment-status' | 'risk-trends' | 'executive-summary';
 
@@ -19,275 +33,260 @@ interface ReportTemplate {
   name: string;
   description: string;
   icon: React.ComponentType<{ className?: string }>;
-  fields: string[];
 }
 
-const reportTemplates: ReportTemplate[] = [
+const REPORTS: ReportTemplate[] = [
   {
     id: 'risk-register',
     name: 'Full Risk Register',
     description: 'Complete list of all risks with details, scores, and treatment status',
-    icon: TableCellsIcon,
-    fields: ['riskId', 'title', 'category', 'status', 'likelihood', 'impact', 'inherentRisk', 'treatmentPlan', 'owner'],
+    icon: Table,
   },
   {
     id: 'risk-summary',
     name: 'Risk Summary',
     description: 'High-level overview of risks by category and risk level',
-    icon: ChartBarIcon,
-    fields: ['category', 'riskLevel', 'count', 'percentageOfTotal'],
+    icon: BarChart,
   },
   {
     id: 'treatment-status',
     name: 'Treatment Status Report',
     description: 'Progress on risk treatments and mitigation activities',
-    icon: DocumentTextIcon,
-    fields: ['riskId', 'title', 'treatmentPlan', 'treatmentStatus', 'dueDate', 'owner', 'progress'],
+    icon: FileText,
   },
   {
     id: 'risk-trends',
     name: 'Risk Trend Analysis',
     description: 'Historical trends in risk identification, treatment, and closure',
-    icon: PresentationChartLineIcon,
-    fields: ['period', 'newRisks', 'closedRisks', 'openRisks', 'avgRiskScore'],
+    icon: TrendingUp,
   },
   {
     id: 'executive-summary',
     name: 'Executive Summary',
     description: 'Board-ready summary with key metrics and top risks',
-    icon: DocumentChartBarIcon,
-    fields: ['keyMetrics', 'topRisks', 'riskAppetite', 'recommendations'],
+    icon: FileBarChart,
   },
 ];
+
+const CATEGORY_OPTS = [
+  { value: 'security', label: 'Security' },
+  { value: 'compliance', label: 'Compliance' },
+  { value: 'operational', label: 'Operational' },
+  { value: 'financial', label: 'Financial' },
+  { value: 'strategic', label: 'Strategic' },
+];
+
+const LEVEL_OPTS = [
+  { value: 'critical', label: 'Critical' },
+  { value: 'high', label: 'High' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'low', label: 'Low' },
+];
+
+const STATUS_OPTS = [
+  { value: 'open', label: 'Open' },
+  { value: 'in_treatment', label: 'In Treatment' },
+  { value: 'mitigated', label: 'Mitigated' },
+  { value: 'accepted', label: 'Accepted' },
+];
+
+const RISK_LEVEL_BG: Record<string, string> = {
+  critical: 'bg-red-500',
+  high: 'bg-orange-500',
+  medium: 'bg-amber-500',
+  low: 'bg-emerald-500',
+};
 
 export default function RiskReports() {
   const [selectedReport, setSelectedReport] = useState<ReportType | null>(null);
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
-  const [filters, setFilters] = useState({
-    category: '',
-    riskLevel: '',
-    status: '',
-  });
+  const [filters, setFilters] = useState({ category: '', riskLevel: '', status: '' });
   const [exportFormat, setExportFormat] = useState<'pdf' | 'excel' | 'csv'>('pdf');
 
-  // Fetch dashboard data for preview
   const { data: dashboardData } = useQuery({
     queryKey: ['risk-dashboard'],
-    queryFn: async () => {
-      const response = await risksApi.getDashboard();
-      return response.data;
-    },
+    queryFn: () => risksApi.getDashboard().then((r) => r.data),
   });
 
-  // Fetch risks for the selected report
   const { data: risksData, isLoading } = useQuery({
     queryKey: ['risks', 'report', filters],
-    queryFn: async () => {
-      const response = await risksApi.list({ ...filters, limit: 1000 });
-      return response.data;
-    },
+    queryFn: () => risksApi.list({ ...filters, limit: 1000 }).then((r) => r.data),
     enabled: !!selectedReport,
   });
 
   const handleExport = () => {
-    // In a real app, this would call the backend to generate the report
-    alert(`Exporting ${selectedReport} report as ${exportFormat.toUpperCase()}...`);
-  };
-
-  const getRiskLevelColor = (level: string) => {
-    switch (level) {
-      case 'critical': return 'bg-red-500';
-      case 'high': return 'bg-orange-500';
-      case 'medium': return 'bg-amber-500';
-      case 'low': return 'bg-emerald-500';
-      default: return 'bg-surface-500';
-    }
+    alert(`Exporting ${selectedReport} report as ${exportFormat.toUpperCase()}…`);
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-white">Risk Reports</h1>
-          <p className="text-surface-400 mt-1">Generate and export risk reports</p>
-        </div>
-      </div>
+    <div className="space-y-5 animate-fade-in">
+      <PageHeader title="Risk Reports" description="Generate and export risk reports." />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Report Templates */}
-        <div className="lg:col-span-1 space-y-4">
-          <h2 className="text-lg font-medium text-white">Report Templates</h2>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* Templates */}
+        <div className="space-y-3">
+          <h2 className="text-h3 text-surface-900">Report Templates</h2>
           <div className="space-y-2">
-            {reportTemplates.map(template => (
-              <button
-                key={template.id}
-                onClick={() => setSelectedReport(template.id)}
-                className={`w-full p-4 rounded-xl border text-left transition-colors ${
-                  selectedReport === template.id
-                    ? 'bg-brand-500/20 border-brand-500'
-                    : 'bg-surface-800 border-surface-700 hover:border-surface-600'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${selectedReport === template.id ? 'bg-brand-500/30' : 'bg-surface-700'}`}>
-                    <template.icon className={`w-5 h-5 ${selectedReport === template.id ? 'text-brand-400' : 'text-surface-400'}`} />
-                  </div>
-                  <div>
-                    <p className="text-white font-medium">{template.name}</p>
-                    <p className="text-surface-400 text-sm">{template.description}</p>
-                  </div>
-                </div>
-              </button>
-            ))}
+            {REPORTS.map((template) => {
+              const Icon = template.icon;
+              const active = selectedReport === template.id;
+              return (
+                <Card
+                  key={template.id}
+                  interactive
+                  onClick={() => setSelectedReport(template.id)}
+                  className={cn(active && 'border-brand-500 bg-brand-500/5')}
+                >
+                  <CardBody density="cozy" className="flex items-center gap-3">
+                    <div
+                      className={cn(
+                        'p-2 rounded-md',
+                        active ? 'bg-brand-500/20 text-brand-700' : 'bg-surface-100 text-surface-600',
+                      )}
+                    >
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-surface-900 font-medium">{template.name}</p>
+                      <p className="text-xs text-surface-600">{template.description}</p>
+                    </div>
+                  </CardBody>
+                </Card>
+              );
+            })}
           </div>
         </div>
 
-        {/* Report Configuration & Preview */}
-        <div className="lg:col-span-2 space-y-6">
+        {/* Config + Preview */}
+        <div className="lg:col-span-2 space-y-5">
           {selectedReport ? (
             <>
-              {/* Configuration */}
-              <div className="bg-surface-800 rounded-xl border border-surface-700 p-6">
-                <h3 className="text-lg font-medium text-white mb-4">Report Configuration</h3>
-                
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <label className="block text-sm text-surface-400 mb-2">
-                      <CalendarIcon className="w-4 h-4 inline mr-1" />
-                      Start Date
-                    </label>
-                    <input
-                      type="date"
-                      value={dateRange.start}
-                      onChange={e => setDateRange(prev => ({ ...prev, start: e.target.value }))}
-                      className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-surface-400 mb-2">
-                      <CalendarIcon className="w-4 h-4 inline mr-1" />
-                      End Date
-                    </label>
-                    <input
-                      type="date"
-                      value={dateRange.end}
-                      onChange={e => setDateRange(prev => ({ ...prev, end: e.target.value }))}
-                      className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-4 mb-4">
-                  <div>
-                    <label className="block text-sm text-surface-400 mb-2">
-                      <FunnelIcon className="w-4 h-4 inline mr-1" />
-                      Category
-                    </label>
-                    <select
-                      value={filters.category}
-                      onChange={e => setFilters(prev => ({ ...prev, category: e.target.value }))}
-                      className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-                    >
-                      <option value="">All Categories</option>
-                      <option value="security">Security</option>
-                      <option value="compliance">Compliance</option>
-                      <option value="operational">Operational</option>
-                      <option value="financial">Financial</option>
-                      <option value="strategic">Strategic</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm text-surface-400 mb-2">Risk Level</label>
-                    <select
-                      value={filters.riskLevel}
-                      onChange={e => setFilters(prev => ({ ...prev, riskLevel: e.target.value }))}
-                      className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-                    >
-                      <option value="">All Levels</option>
-                      <option value="critical">Critical</option>
-                      <option value="high">High</option>
-                      <option value="medium">Medium</option>
-                      <option value="low">Low</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm text-surface-400 mb-2">Status</label>
-                    <select
-                      value={filters.status}
-                      onChange={e => setFilters(prev => ({ ...prev, status: e.target.value }))}
-                      className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-                    >
-                      <option value="">All Statuses</option>
-                      <option value="open">Open</option>
-                      <option value="in_treatment">In Treatment</option>
-                      <option value="mitigated">Mitigated</option>
-                      <option value="accepted">Accepted</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between pt-4 border-t border-surface-700">
-                  <div className="flex items-center gap-4">
-                    <span className="text-sm text-surface-400">Export Format:</span>
-                    <div className="flex gap-2">
-                      {(['pdf', 'excel', 'csv'] as const).map(format => (
-                        <button
-                          key={format}
-                          onClick={() => setExportFormat(format)}
-                          className={`px-3 py-1 rounded text-sm ${
-                            exportFormat === format
-                              ? 'bg-brand-500 text-white'
-                              : 'bg-surface-700 text-surface-300 hover:bg-surface-600'
-                          }`}
-                        >
-                          {format.toUpperCase()}
-                        </button>
-                      ))}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Report Configuration</CardTitle>
+                </CardHeader>
+                <CardBody density="comfy">
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <Label htmlFor="rep-start">
+                        <Calendar className="h-3.5 w-3.5 inline mr-1 -mt-0.5" />
+                        Start Date
+                      </Label>
+                      <Input
+                        id="rep-start"
+                        type="date"
+                        value={dateRange.start}
+                        onChange={(e) => setDateRange((prev) => ({ ...prev, start: e.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="rep-end">
+                        <Calendar className="h-3.5 w-3.5 inline mr-1 -mt-0.5" />
+                        End Date
+                      </Label>
+                      <Input
+                        id="rep-end"
+                        type="date"
+                        value={dateRange.end}
+                        onChange={(e) => setDateRange((prev) => ({ ...prev, end: e.target.value }))}
+                      />
                     </div>
                   </div>
-                  <button
-                    onClick={handleExport}
-                    className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 flex items-center gap-2"
-                  >
-                    <ArrowDownTrayIcon className="w-5 h-5" />
-                    Export Report
-                  </button>
-                </div>
-              </div>
 
-              {/* Preview */}
-              <div className="bg-surface-800 rounded-xl border border-surface-700 p-6">
-                <h3 className="text-lg font-medium text-white mb-4">Preview</h3>
-                
-                {isLoading ? (
-                  <div className="text-center py-8 text-surface-400">Loading preview...</div>
-                ) : (
-                  <div className="space-y-4">
-                    {selectedReport === 'executive-summary' && (
-                      <ExecutiveSummaryPreview data={dashboardData} />
-                    )}
-                    {selectedReport === 'risk-register' && (
-                      <RiskRegisterPreview risks={risksData?.risks || []} />
-                    )}
-                    {selectedReport === 'risk-summary' && (
-                      <RiskSummaryPreview data={dashboardData} />
-                    )}
-                    {selectedReport === 'treatment-status' && (
-                      <TreatmentStatusPreview risks={risksData?.risks || []} />
-                    )}
-                    {selectedReport === 'risk-trends' && (
-                      <RiskTrendsPreview />
-                    )}
+                  <div className="grid grid-cols-3 gap-4 mb-4">
+                    <div>
+                      <Label>
+                        <Filter className="h-3.5 w-3.5 inline mr-1 -mt-0.5" />
+                        Category
+                      </Label>
+                      <Select
+                        value={filters.category}
+                        onChange={(v) => setFilters((p) => ({ ...p, category: v }))}
+                        options={CATEGORY_OPTS}
+                        placeholder="All Categories"
+                        clearable
+                      />
+                    </div>
+                    <div>
+                      <Label>Risk Level</Label>
+                      <Select
+                        value={filters.riskLevel}
+                        onChange={(v) => setFilters((p) => ({ ...p, riskLevel: v }))}
+                        options={LEVEL_OPTS}
+                        placeholder="All Levels"
+                        clearable
+                      />
+                    </div>
+                    <div>
+                      <Label>Status</Label>
+                      <Select
+                        value={filters.status}
+                        onChange={(v) => setFilters((p) => ({ ...p, status: v }))}
+                        options={STATUS_OPTS}
+                        placeholder="All Statuses"
+                        clearable
+                      />
+                    </div>
                   </div>
-                )}
-              </div>
+
+                  <div className="flex items-center justify-between pt-3 border-t border-surface-200">
+                    <div className="flex items-center gap-3">
+                      <span className="text-small text-surface-600">Export Format:</span>
+                      <div className="flex gap-1">
+                        {(['pdf', 'excel', 'csv'] as const).map((format) => (
+                          <Button
+                            key={format}
+                            size="sm"
+                            variant={exportFormat === format ? 'primary' : 'ghost'}
+                            onClick={() => setExportFormat(format)}
+                          >
+                            {format.toUpperCase()}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                    <Button size="sm" leftIcon={<Download className="h-4 w-4" />} onClick={handleExport}>
+                      Export Report
+                    </Button>
+                  </div>
+                </CardBody>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Preview</CardTitle>
+                </CardHeader>
+                <CardBody density="comfy">
+                  {isLoading ? (
+                    <Skeleton className="h-40" />
+                  ) : (
+                    <>
+                      {selectedReport === 'executive-summary' && (
+                        <ExecutiveSummaryPreview data={dashboardData} />
+                      )}
+                      {selectedReport === 'risk-register' && (
+                        <RiskRegisterPreview risks={risksData?.risks || []} />
+                      )}
+                      {selectedReport === 'risk-summary' && (
+                        <RiskSummaryPreview data={dashboardData} />
+                      )}
+                      {selectedReport === 'treatment-status' && (
+                        <TreatmentStatusPreview risks={risksData?.risks || []} />
+                      )}
+                      {selectedReport === 'risk-trends' && <RiskTrendsPreview />}
+                    </>
+                  )}
+                </CardBody>
+              </Card>
             </>
           ) : (
-            <div className="bg-surface-800 rounded-xl border border-surface-700 p-12 text-center">
-              <DocumentChartBarIcon className="w-12 h-12 text-surface-600 mx-auto mb-4" />
-              <p className="text-surface-400">Select a report template to get started</p>
-            </div>
+            <Card>
+              <EmptyState
+                icon={<FileBarChart className="h-8 w-8" />}
+                title="Select a report template"
+                description="Choose a template from the left to configure and preview a report."
+              />
+            </Card>
           )}
         </div>
       </div>
@@ -295,93 +294,106 @@ export default function RiskReports() {
   );
 }
 
-// Preview Components
-function ExecutiveSummaryPreview({ data }: { data: any }) {
+function PreviewStat({ label, value, tone }: { label: string; value: React.ReactNode; tone?: 'red' | 'amber' | 'emerald' }) {
+  const tones = {
+    red: 'text-red-600',
+    amber: 'text-amber-700',
+    emerald: 'text-emerald-600',
+  };
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-4 gap-4">
-        <div className="p-4 bg-surface-700 rounded-lg text-center">
-          <p className="text-2xl font-bold text-white">{data?.totalRisks || 0}</p>
-          <p className="text-surface-400 text-sm">Total Risks</p>
-        </div>
-        <div className="p-4 bg-surface-700 rounded-lg text-center">
-          <p className="text-2xl font-bold text-red-400">{data?.openRisks || 0}</p>
-          <p className="text-surface-400 text-sm">Open</p>
-        </div>
-        <div className="p-4 bg-surface-700 rounded-lg text-center">
-          <p className="text-2xl font-bold text-amber-400">{data?.inTreatment || 0}</p>
-          <p className="text-surface-400 text-sm">In Treatment</p>
-        </div>
-        <div className="p-4 bg-surface-700 rounded-lg text-center">
-          <p className="text-2xl font-bold text-emerald-400">{data?.mitigatedThisMonth || 0}</p>
-          <p className="text-surface-400 text-sm">Mitigated</p>
-        </div>
-      </div>
-      <p className="text-surface-500 text-sm italic">Full executive summary will include charts, top risks, and recommendations</p>
+    <div className="p-3 bg-surface-100 rounded-md text-center">
+      <p className={cn('text-h2', tone ? tones[tone] : 'text-surface-900')}>{value}</p>
+      <p className="text-xs text-surface-600">{label}</p>
     </div>
   );
 }
 
-function RiskRegisterPreview({ risks }: { risks: any[] }) {
+function ExecutiveSummaryPreview({ data }: { data: { totalRisks?: number; openRisks?: number; inTreatment?: number; mitigatedThisMonth?: number } | undefined }) {
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-4 gap-3">
+        <PreviewStat label="Total Risks" value={data?.totalRisks || 0} />
+        <PreviewStat label="Open" value={data?.openRisks || 0} tone="red" />
+        <PreviewStat label="In Treatment" value={data?.inTreatment || 0} tone="amber" />
+        <PreviewStat label="Mitigated" value={data?.mitigatedThisMonth || 0} tone="emerald" />
+      </div>
+      <p className="text-xs text-surface-500 italic">
+        Full executive summary will include charts, top risks, and recommendations.
+      </p>
+    </div>
+  );
+}
+
+interface PreviewRisk {
+  id: string;
+  riskId: string;
+  title: string;
+  category: string;
+  inherentRisk: string;
+  status?: string;
+  treatmentPlan?: string;
+}
+
+function RiskRegisterPreview({ risks }: { risks: PreviewRisk[] }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+      <table className="w-full text-small">
         <thead>
-          <tr className="text-left text-surface-400 border-b border-surface-700">
-            <th className="pb-2">Risk ID</th>
-            <th className="pb-2">Title</th>
-            <th className="pb-2">Category</th>
-            <th className="pb-2">Risk Level</th>
-            <th className="pb-2">Status</th>
+          <tr className="text-left text-xs uppercase tracking-wider text-surface-500 border-b border-surface-200">
+            <th className="pb-2 font-medium">Risk ID</th>
+            <th className="pb-2 font-medium">Title</th>
+            <th className="pb-2 font-medium">Category</th>
+            <th className="pb-2 font-medium">Risk Level</th>
+            <th className="pb-2 font-medium">Status</th>
           </tr>
         </thead>
         <tbody>
-          {risks.slice(0, 5).map((risk: any) => (
-            <tr key={risk.id} className="border-b border-surface-700/50">
-              <td className="py-2 text-brand-400 font-mono">{risk.riskId}</td>
-              <td className="py-2 text-white">{risk.title}</td>
-              <td className="py-2 text-surface-300 capitalize">{risk.category}</td>
+          {risks.slice(0, 5).map((risk) => (
+            <tr key={risk.id} className="border-b border-surface-200/60">
+              <td className="py-2 text-brand-700 font-mono text-xs">{risk.riskId}</td>
+              <td className="py-2 text-surface-900">{risk.title}</td>
+              <td className="py-2 text-surface-700 capitalize">{risk.category}</td>
               <td className="py-2">
-                <span className={`px-2 py-0.5 rounded text-xs text-white capitalize ${
-                  risk.inherentRisk === 'critical' ? 'bg-red-500' :
-                  risk.inherentRisk === 'high' ? 'bg-orange-500' :
-                  risk.inherentRisk === 'medium' ? 'bg-amber-500' : 'bg-emerald-500'
-                }`}>
+                <span
+                  className={cn(
+                    'px-1.5 py-0.5 rounded text-[10px] text-surface-900 capitalize',
+                    RISK_LEVEL_BG[risk.inherentRisk] || 'bg-surface-500',
+                  )}
+                >
                   {risk.inherentRisk}
                 </span>
               </td>
-              <td className="py-2 text-surface-300 capitalize">{risk.status?.replace(/_/g, ' ')}</td>
+              <td className="py-2 text-surface-700 capitalize">{risk.status?.replace(/_/g, ' ')}</td>
             </tr>
           ))}
         </tbody>
       </table>
       {risks.length > 5 && (
-        <p className="text-surface-500 text-sm mt-2">... and {risks.length - 5} more rows</p>
+        <p className="text-xs text-surface-500 mt-2">… and {risks.length - 5} more rows</p>
       )}
     </div>
   );
 }
 
-function RiskSummaryPreview({ data }: { data: any }) {
+function RiskSummaryPreview({ data }: { data: { byRiskLevel?: { level: string; count: number }[]; byCategory?: { category: string; count: number }[] } | undefined }) {
   return (
     <div className="space-y-4">
-      <h4 className="text-white font-medium">By Risk Level</h4>
-      <div className="grid grid-cols-4 gap-4">
-        {['critical', 'high', 'medium', 'low'].map(level => (
-          <div key={level} className="p-3 bg-surface-700 rounded-lg">
-            <p className="text-lg font-bold text-white">
-              {data?.byRiskLevel?.find((r: any) => r.level === level)?.count || 0}
-            </p>
-            <p className="text-surface-400 text-sm capitalize">{level}</p>
-          </div>
+      <h4 className="text-h3 text-surface-900">By Risk Level</h4>
+      <div className="grid grid-cols-4 gap-3">
+        {(['critical', 'high', 'medium', 'low'] as const).map((level) => (
+          <PreviewStat
+            key={level}
+            label={level}
+            value={data?.byRiskLevel?.find((r) => r.level === level)?.count || 0}
+          />
         ))}
       </div>
-      <h4 className="text-white font-medium mt-4">By Category</h4>
-      <div className="space-y-2">
-        {(data?.byCategory || []).slice(0, 4).map((cat: any) => (
-          <div key={cat.category} className="flex justify-between items-center">
-            <span className="text-surface-300 capitalize">{cat.category}</span>
-            <span className="text-white font-medium">{cat.count}</span>
+      <h4 className="text-h3 text-surface-900">By Category</h4>
+      <div className="space-y-1.5">
+        {(data?.byCategory || []).slice(0, 4).map((cat) => (
+          <div key={cat.category} className="flex justify-between items-center px-2.5 py-1.5 bg-surface-100 rounded">
+            <span className="text-small text-surface-700 capitalize">{cat.category}</span>
+            <span className="text-small text-surface-900 font-medium">{cat.count}</span>
           </div>
         ))}
       </div>
@@ -389,43 +401,36 @@ function RiskSummaryPreview({ data }: { data: any }) {
   );
 }
 
-function TreatmentStatusPreview({ risks }: { risks: any[] }) {
-  const inTreatment = risks.filter((r: any) => r.treatmentPlan);
+function TreatmentStatusPreview({ risks }: { risks: PreviewRisk[] }) {
+  const inTreatment = risks.filter((r) => r.treatmentPlan);
+  const counts = {
+    mitigate: inTreatment.filter((r) => r.treatmentPlan === 'mitigate').length,
+    accept: inTreatment.filter((r) => r.treatmentPlan === 'accept').length,
+    transfer: inTreatment.filter((r) => r.treatmentPlan === 'transfer').length,
+    avoid: inTreatment.filter((r) => r.treatmentPlan === 'avoid').length,
+  };
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-4 gap-4">
-        <div className="p-3 bg-surface-700 rounded-lg text-center">
-          <p className="text-lg font-bold text-white">{inTreatment.filter((r: any) => r.treatmentPlan === 'mitigate').length}</p>
-          <p className="text-surface-400 text-xs">Mitigating</p>
-        </div>
-        <div className="p-3 bg-surface-700 rounded-lg text-center">
-          <p className="text-lg font-bold text-white">{inTreatment.filter((r: any) => r.treatmentPlan === 'accept').length}</p>
-          <p className="text-surface-400 text-xs">Accepting</p>
-        </div>
-        <div className="p-3 bg-surface-700 rounded-lg text-center">
-          <p className="text-lg font-bold text-white">{inTreatment.filter((r: any) => r.treatmentPlan === 'transfer').length}</p>
-          <p className="text-surface-400 text-xs">Transferring</p>
-        </div>
-        <div className="p-3 bg-surface-700 rounded-lg text-center">
-          <p className="text-lg font-bold text-white">{inTreatment.filter((r: any) => r.treatmentPlan === 'avoid').length}</p>
-          <p className="text-surface-400 text-xs">Avoiding</p>
-        </div>
+    <div className="space-y-3">
+      <div className="grid grid-cols-4 gap-3">
+        <PreviewStat label="Mitigating" value={counts.mitigate} />
+        <PreviewStat label="Accepting" value={counts.accept} />
+        <PreviewStat label="Transferring" value={counts.transfer} />
+        <PreviewStat label="Avoiding" value={counts.avoid} />
       </div>
-      <p className="text-surface-500 text-sm italic">Full report includes due dates, progress, and owner details</p>
+      <p className="text-xs text-surface-500 italic">
+        Full report includes due dates, progress, and owner details.
+      </p>
     </div>
   );
 }
 
 function RiskTrendsPreview() {
   return (
-    <div className="space-y-4">
-      <div className="h-32 bg-surface-700 rounded-lg flex items-center justify-center">
-        <p className="text-surface-400">Trend chart visualization will appear here</p>
+    <div className="space-y-3">
+      <div className="h-32 bg-surface-100 rounded-md flex items-center justify-center">
+        <p className="text-small text-surface-500">Trend chart visualization will appear here.</p>
       </div>
-      <p className="text-surface-500 text-sm italic">Shows risk trends over selected time period</p>
+      <p className="text-xs text-surface-500 italic">Shows risk trends over selected time period.</p>
     </div>
   );
 }
-
-
-

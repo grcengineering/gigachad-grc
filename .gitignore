@@ -83,3 +83,7 @@ Thumbs.db
 audit-logs/
 evidence/
 backups/
+# Playwright artifacts
+tests/.auth/
+playwright-report/
+test-results/

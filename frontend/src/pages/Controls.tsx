@@ -1,62 +1,74 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useSearchParams, useLocation } from 'react-router-dom';
 import { controlsApi, frameworksApi } from '@/lib/api';
-import {
-  MagnifyingGlassIcon,
-  FunnelIcon,
-  PlusIcon,
-  CheckCircleIcon,
-  ClockIcon,
-  XCircleIcon,
-  MinusCircleIcon,
-  ArrowUpTrayIcon,
-} from '@heroicons/react/24/outline';
-import clsx from 'clsx';
+import { CategoryChip } from '@/components/ui';
+import { Search, Plus, Upload, CheckCircle2, Clock, XCircle, MinusCircle, Inbox } from 'lucide-react';
 import BulkUploadModal from '@/components/BulkUploadModal';
+import { ControlDrawer, type Control } from '@/components/ControlDrawer';
+import {
+  Button,
+  Badge,
+  Input,
+  Select,
+  PageHeader,
+  FilterBar,
+  DataTable,
+  EmptyState,
+  type DataTableColumn,
+  type ActiveFilter,
+} from '@/components/ui';
 
-const STATUS_CONFIG = {
-  implemented: { label: 'Implemented', icon: CheckCircleIcon, color: 'text-green-400 bg-green-400/10' },
-  in_progress: { label: 'In Progress', icon: ClockIcon, color: 'text-yellow-400 bg-yellow-400/10' },
-  not_started: { label: 'Not Started', icon: MinusCircleIcon, color: 'text-surface-400 bg-surface-400/10' },
-  not_applicable: { label: 'N/A', icon: XCircleIcon, color: 'text-blue-400 bg-blue-400/10' },
+type Status = 'implemented' | 'in_progress' | 'not_started' | 'not_applicable';
+
+const STATUS_CONFIG: Record<
+  Status,
+  { label: string; icon: typeof CheckCircle2; variant: 'success' | 'warning' | 'neutral' | 'info' }
+> = {
+  implemented: { label: 'Implemented', icon: CheckCircle2, variant: 'success' },
+  in_progress: { label: 'In Progress', icon: Clock, variant: 'warning' },
+  not_started: { label: 'Not Started', icon: MinusCircle, variant: 'neutral' },
+  not_applicable: { label: 'N/A', icon: XCircle, variant: 'info' },
 };
 
 export default function Controls() {
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
   const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
+  const [drawerControl, setDrawerControl] = useState<Control | null>(null);
 
-  // Current URL with search params for back navigation
   const currentUrl = location.pathname + location.search;
 
-  // Read initial values from URL
   const search = searchParams.get('search') || '';
   const selectedCategory = searchParams.get('category') || '';
   const selectedStatus = searchParams.get('status') || '';
   const selectedFramework = searchParams.get('framework') || '';
 
-  // Update URL when filters change
   const updateFilter = (key: string, value: string) => {
     const newParams = new URLSearchParams(searchParams);
-    if (value) {
-      newParams.set(key, value);
-    } else {
-      newParams.delete(key);
-    }
+    if (value) newParams.set(key, value);
+    else newParams.delete(key);
+    setSearchParams(newParams, { replace: true });
+  };
+
+  const clearAllFilters = () => {
+    const newParams = new URLSearchParams(searchParams);
+    ['search', 'category', 'status', 'framework'].forEach((k) => newParams.delete(k));
     setSearchParams(newParams, { replace: true });
   };
 
   const { data: controlsData, isLoading } = useQuery({
     queryKey: ['controls', search, selectedCategory, selectedStatus, selectedFramework],
     queryFn: () =>
-      controlsApi.list({
-        search: search || undefined,
-        category: selectedCategory ? [selectedCategory] : undefined,
-        status: selectedStatus ? [selectedStatus] : undefined,
-        frameworkId: selectedFramework || undefined,
-        limit: 50,
-      }).then((res) => res.data),
+      controlsApi
+        .list({
+          search: search || undefined,
+          category: selectedCategory ? [selectedCategory] : undefined,
+          status: selectedStatus ? [selectedStatus] : undefined,
+          frameworkId: selectedFramework || undefined,
+          limit: 50,
+        })
+        .then((res) => res.data),
   });
 
   const { data: categories } = useQuery({
@@ -69,185 +81,247 @@ export default function Controls() {
     queryFn: () => frameworksApi.list().then((res) => res.data),
   });
 
-  const controls = controlsData?.data || [];
+  const controls: Control[] = controlsData?.data || [];
+
+  const categoryOptions = useMemo<{ value: string; label: string }[]>(
+    () =>
+      categories?.map((c: { category: string; count: number }) => ({
+        value: c.category,
+        label: `${c.category.replace(/_/g, ' ')} (${c.count})`,
+      })) || [],
+    [categories],
+  );
+
+  const statusOptions = useMemo(
+    () =>
+      (Object.entries(STATUS_CONFIG) as [Status, (typeof STATUS_CONFIG)[Status]][]).map(
+        ([value, cfg]) => ({ value, label: cfg.label }),
+      ),
+    [],
+  );
+
+  const frameworkOptions = useMemo<{ value: string; label: string }[]>(
+    () =>
+      frameworks?.map((fw: { id: string; name: string }) => ({
+        value: fw.id,
+        label: fw.name,
+      })) || [],
+    [frameworks],
+  );
+
+  const activeFilters: ActiveFilter[] = [];
+  if (search) {
+    activeFilters.push({
+      key: 'search',
+      label: `Search: ${search}`,
+      onClear: () => updateFilter('search', ''),
+    });
+  }
+  if (selectedCategory) {
+    const label = categoryOptions.find((o) => o.value === selectedCategory)?.label ?? selectedCategory;
+    activeFilters.push({
+      key: 'category',
+      label: `Category: ${label}`,
+      onClear: () => updateFilter('category', ''),
+    });
+  }
+  if (selectedStatus) {
+    activeFilters.push({
+      key: 'status',
+      label: `Status: ${STATUS_CONFIG[selectedStatus as Status]?.label ?? selectedStatus}`,
+      onClear: () => updateFilter('status', ''),
+    });
+  }
+  if (selectedFramework) {
+    const label = frameworkOptions.find((o) => o.value === selectedFramework)?.label ?? selectedFramework;
+    activeFilters.push({
+      key: 'framework',
+      label: `Framework: ${label}`,
+      onClear: () => updateFilter('framework', ''),
+    });
+  }
+
+  const columns: DataTableColumn<Control>[] = [
+    {
+      id: 'controlId',
+      accessorKey: 'controlId',
+      header: 'Control ID',
+      mobileLabel: 'ID',
+      cell: ({ row }) => (
+        <span className="font-mono text-small text-brand-700">{row.original.controlId}</span>
+      ),
+    },
+    {
+      id: 'title',
+      accessorKey: 'title',
+      header: 'Title',
+      mobileLabel: 'Title',
+      cell: ({ row }) => (
+        <span className="text-surface-900">{row.original.title}</span>
+      ),
+    },
+    {
+      id: 'category',
+      accessorKey: 'category',
+      header: 'Category',
+      mobileLabel: 'Category',
+      cell: ({ row }) => <CategoryChip value={row.original.category} />,
+    },
+    {
+      id: 'status',
+      accessorFn: (row) => row.implementation?.status || 'not_started',
+      header: 'Status',
+      mobileLabel: 'Status',
+      cell: ({ row }) => {
+        const status: Status = row.original.implementation?.status || 'not_started';
+        const cfg = STATUS_CONFIG[status];
+        const Icon = cfg.icon;
+        return (
+          <Badge variant={cfg.variant} className="inline-flex items-center gap-1">
+            <Icon className="h-3 w-3" />
+            {cfg.label}
+          </Badge>
+        );
+      },
+    },
+    {
+      id: 'evidence',
+      accessorFn: (row) => row.evidenceCount || 0,
+      header: 'Evidence',
+      mobileLabel: 'Evidence',
+      cell: ({ row }) => <span className="text-surface-600 tabular-nums">{row.original.evidenceCount || 0}</span>,
+    },
+    {
+      id: 'frameworks',
+      header: 'Frameworks',
+      mobileLabel: 'Frameworks',
+      enableSorting: false,
+      cell: ({ row }) => {
+        const mappings = row.original.frameworkMappings || [];
+        return (
+          <div className="flex flex-wrap gap-1">
+            {mappings.slice(0, 2).map((m) => (
+              <Badge key={m.frameworkId} variant="info" size="sm">
+                {m.frameworkName}
+              </Badge>
+            ))}
+            {mappings.length > 2 && (
+              <Badge variant="neutral" size="sm">
+                +{mappings.length - 2}
+              </Badge>
+            )}
+          </div>
+        );
+      },
+    },
+  ];
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-surface-100">Controls</h1>
-          <p className="text-surface-400 mt-1">
-            Manage your security controls and track implementation status
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <button
-            onClick={() => setIsBulkUploadOpen(true)}
-            className="btn-secondary"
-          >
-            <ArrowUpTrayIcon className="w-4 h-4 mr-2" />
-            Bulk Upload
-          </button>
-          <Link to="/controls/new" className="btn-primary">
-            <PlusIcon className="w-4 h-4 mr-2" />
-            Add Control
-          </Link>
-        </div>
-      </div>
-
-      {/* Bulk Upload Modal */}
-      <BulkUploadModal 
-        isOpen={isBulkUploadOpen} 
-        onClose={() => setIsBulkUploadOpen(false)} 
+    <div className="space-y-5 animate-fade-in">
+      <PageHeader
+        title="Controls"
+        description="Manage your security controls and track implementation status."
+        actions={
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              leftIcon={<Upload className="h-4 w-4" />}
+              onClick={() => setIsBulkUploadOpen(true)}
+            >
+              Bulk Upload
+            </Button>
+            <Link to="/controls/new" state={{ from: currentUrl }}>
+              <Button size="sm" leftIcon={<Plus className="h-4 w-4" />}>
+                Add Control
+              </Button>
+            </Link>
+          </>
+        }
       />
 
-      {/* Filters */}
-      <div className="card p-4">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1 relative">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-500" />
-            <input
-              type="text"
-              placeholder="Search controls..."
-              value={search}
-              onChange={(e) => updateFilter('search', e.target.value)}
-              className="input pl-10"
-            />
-          </div>
-          <select
-            value={selectedCategory}
-            onChange={(e) => updateFilter('category', e.target.value)}
-            className="input w-full md:w-48"
-          >
-            <option value="">All Categories</option>
-            {categories?.map((cat: any) => (
-              <option key={cat.category} value={cat.category}>
-                {cat.category.replace('_', ' ')} ({cat.count})
-              </option>
-            ))}
-          </select>
-          <select
-            value={selectedStatus}
-            onChange={(e) => updateFilter('status', e.target.value)}
-            className="input w-full md:w-40"
-          >
-            <option value="">All Statuses</option>
-            <option value="implemented">Implemented</option>
-            <option value="in_progress">In Progress</option>
-            <option value="not_started">Not Started</option>
-            <option value="not_applicable">N/A</option>
-          </select>
-          <select
-            value={selectedFramework}
-            onChange={(e) => updateFilter('framework', e.target.value)}
-            className="input w-full md:w-48"
-          >
-            <option value="">All Frameworks</option>
-            {frameworks?.map((fw: any) => (
-              <option key={fw.id} value={fw.id}>
-                {fw.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
+      <BulkUploadModal isOpen={isBulkUploadOpen} onClose={() => setIsBulkUploadOpen(false)} />
 
-      {/* Controls Table */}
-      <div className="card overflow-hidden">
-        {isLoading ? (
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin w-8 h-8 border-4 border-surface-700 rounded-full border-t-brand-500"></div>
-          </div>
-        ) : controls.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 text-surface-500">
-            <FunnelIcon className="w-12 h-12 mb-4" />
-            <p>No controls found</p>
-          </div>
-        ) : (
-          <div className="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>Control ID</th>
-                  <th>Title</th>
-                  <th>Category</th>
-                  <th>Status</th>
-                  <th>Evidence</th>
-                  <th>Frameworks</th>
-                </tr>
-              </thead>
-              <tbody>
-                {controls.map((control: any) => {
-                  const status = control.implementation?.status || 'not_started';
-                  const statusConfig = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG];
-                  const StatusIcon = statusConfig.icon;
+      <FilterBar
+        active={activeFilters}
+        onClearAll={activeFilters.length > 0 ? clearAllFilters : undefined}
+      >
+        <Input
+          inputSize="sm"
+          className="w-64"
+          placeholder="Search controls…"
+          value={search}
+          onChange={(e) => updateFilter('search', e.target.value)}
+          leftIcon={<Search className="h-4 w-4" />}
+        />
+        <Select
+          size="sm"
+          fullWidth={false}
+          className="w-44"
+          placeholder="All Categories"
+          value={selectedCategory}
+          onChange={(v) => updateFilter('category', v)}
+          options={categoryOptions}
+          clearable
+          searchable={categoryOptions.length > 7}
+        />
+        <Select
+          size="sm"
+          fullWidth={false}
+          className="w-40"
+          placeholder="All Statuses"
+          value={selectedStatus}
+          onChange={(v) => updateFilter('status', v)}
+          options={statusOptions}
+          clearable
+        />
+        <Select
+          size="sm"
+          fullWidth={false}
+          className="w-48"
+          placeholder="All Frameworks"
+          value={selectedFramework}
+          onChange={(v) => updateFilter('framework', v)}
+          options={frameworkOptions}
+          clearable
+          searchable={frameworkOptions.length > 7}
+        />
+      </FilterBar>
 
-                  return (
-                    <tr key={control.id}>
-                      <td>
-                        <Link
-                          to={`/controls/${control.id}`}
-                          state={{ from: currentUrl }}
-                          className="font-mono text-brand-400 hover:text-brand-300"
-                        >
-                          {control.controlId}
-                        </Link>
-                      </td>
-                      <td>
-                        <Link
-                          to={`/controls/${control.id}`}
-                          state={{ from: currentUrl }}
-                          className="text-surface-100 hover:text-brand-400"
-                        >
-                          {control.title}
-                        </Link>
-                      </td>
-                      <td>
-                        <span className="badge badge-neutral capitalize">
-                          {control.category.replace('_', ' ')}
-                        </span>
-                      </td>
-                      <td>
-                        <div className={clsx('badge', statusConfig.color)}>
-                          <StatusIcon className="w-3 h-3 mr-1" />
-                          {statusConfig.label}
-                        </div>
-                      </td>
-                      <td>
-                        <span className="text-surface-400">
-                          {control.evidenceCount || 0}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="flex flex-wrap gap-1">
-                          {control.frameworkMappings?.slice(0, 2).map((mapping: any) => (
-                            <span
-                              key={mapping.frameworkId}
-                              className="badge badge-info text-xs"
-                            >
-                              {mapping.frameworkName}
-                            </span>
-                          ))}
-                          {control.frameworkMappings?.length > 2 && (
-                            <span className="badge badge-neutral text-xs">
-                              +{control.frameworkMappings.length - 2}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      <DataTable
+        data={controls}
+        columns={columns}
+        loading={isLoading}
+        getRowId={(row) => row.id}
+        onRowClick={(row) => setDrawerControl(row)}
+        emptyState={
+          <EmptyState
+            icon={<Inbox className="h-8 w-8" />}
+            title="No controls found"
+            description={
+              activeFilters.length > 0
+                ? 'Try adjusting your filters or clear them to see all controls.'
+                : 'Add your first control to start tracking implementation.'
+            }
+            action={
+              activeFilters.length > 0 ? (
+                <Button variant="outline" size="sm" onClick={clearAllFilters}>
+                  Clear filters
+                </Button>
+              ) : (
+                <Link to="/controls/new">
+                  <Button size="sm" leftIcon={<Plus className="h-4 w-4" />}>
+                    Add Control
+                  </Button>
+                </Link>
+              )
+            }
+          />
+        }
+      />
 
-      {/* Pagination info */}
       {controlsData?.meta && (
-        <div className="flex items-center justify-between text-sm text-surface-500">
+        <div className="flex items-center justify-between text-xs text-surface-500">
           <span>
             Showing {controls.length} of {controlsData.meta.total} controls
           </span>
@@ -256,7 +330,12 @@ export default function Controls() {
           </span>
         </div>
       )}
+
+      <ControlDrawer
+        control={drawerControl}
+        open={!!drawerControl}
+        onClose={() => setDrawerControl(null)}
+      />
     </div>
   );
 }
-

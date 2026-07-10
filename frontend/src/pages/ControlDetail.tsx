@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { controlsApi, implementationsApi, usersApi, evidenceApi, policiesApi } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,16 +9,35 @@ import TasksPanel from '@/components/TasksPanel';
 import EvidenceCollectors from '@/components/controls/EvidenceCollectors';
 import {
   ArrowLeftIcon,
-  CheckCircleIcon,
-  ClockIcon,
-  XCircleIcon,
-  MinusCircleIcon,
   DocumentTextIcon,
   LinkIcon,
   PencilIcon,
   XMarkIcon,
-, TrashIcon } from '@heroicons/react/24/outline';
+} from '@heroicons/react/24/outline';
+import { Calendar, User, Clock, CheckCircle2, MinusCircle, XCircle as XCircleLucide, AlertTriangle } from 'lucide-react';
 import clsx from 'clsx';
+import { Badge, Button, Dialog, Input, Select, Textarea, type BadgeVariant } from '@/components/ui';
+
+type ControlStatus = 'implemented' | 'in_progress' | 'not_started' | 'not_applicable';
+
+const STATUS_VARIANT: Record<ControlStatus, { variant: BadgeVariant; icon: typeof CheckCircle2; label: string }> = {
+  implemented: { variant: 'success', icon: CheckCircle2, label: 'Implemented' },
+  in_progress: { variant: 'warning', icon: AlertTriangle, label: 'In Progress' },
+  not_started: { variant: 'neutral', icon: MinusCircle, label: 'Not Started' },
+  not_applicable: { variant: 'info', icon: XCircleLucide, label: 'N/A' },
+};
+
+function ControlStatusBadge({ status }: { status?: string }) {
+  const key = (status || 'not_started') as ControlStatus;
+  const cfg = STATUS_VARIANT[key] || STATUS_VARIANT.not_started;
+  const Icon = cfg.icon;
+  return (
+    <Badge variant={cfg.variant} className="inline-flex items-center gap-1" size="md">
+      <Icon className="h-3 w-3" />
+      {cfg.label}
+    </Badge>
+  );
+}
 
 const STATUS_OPTIONS = [
   { value: 'not_started', label: 'Not Started' },
@@ -37,12 +56,10 @@ const FREQUENCY_OPTIONS = [
 
 export default function ControlDetail() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const location = useLocation();
   const { hasPermission } = useAuth();
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isLinkPolicyOpen, setIsLinkPolicyOpen] = useState(false);
   const [editForm, setEditForm] = useState({
     title: '',
@@ -68,7 +85,7 @@ export default function ControlDetail() {
 
   const { data: users } = useQuery({
     queryKey: ['users'],
-    queryFn: () => usersApi.list().then((res) => res.data),
+    queryFn: () => usersApi.list().then((res) => res.data.users ?? []),
   });
 
   const updateStatusMutation = useMutation({
@@ -177,7 +194,7 @@ export default function ControlDetail() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin w-8 h-8 border-4 border-surface-700 rounded-full border-t-brand-500"></div>
+        <div className="animate-spin w-8 h-8 border-4 border-surface-300 rounded-full border-t-brand-500"></div>
       </div>
     );
   }
@@ -185,7 +202,7 @@ export default function ControlDetail() {
   if (!control) {
     return (
       <div className="text-center py-12">
-        <p className="text-surface-400">Control not found</p>
+        <p className="text-surface-600">Control not found</p>
       </div>
     );
   }
@@ -193,205 +210,243 @@ export default function ControlDetail() {
   const implementation = control.implementation;
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <Link
-            to={backUrl}
-            className="inline-flex items-center text-sm text-surface-400 hover:text-surface-100 mb-4"
-          >
-            <ArrowLeftIcon className="w-4 h-4 mr-1" />
-            Back to Controls
-          </Link>
-          <div className="flex items-center gap-3">
-            <span className="font-mono text-brand-400 text-lg">{control.controlId}</span>
-            <h1 className="text-2xl font-bold text-surface-100">{control.title}</h1>
+    <div className="space-y-5 animate-fade-in">
+      {/* Back link */}
+      <Link
+        to={backUrl}
+        className="inline-flex items-center text-xs text-surface-500 hover:text-surface-700 transition-colors"
+      >
+        <ArrowLeftIcon className="w-3.5 h-3.5 mr-1" />
+        Back to Controls
+      </Link>
+
+      {/* Hero */}
+      <div className="surface-elevated rounded-xl border border-surface-200/60 p-6 lg:p-8">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-3 mb-2 flex-wrap">
+              <span className="font-mono text-brand-700 text-sm font-medium">{control.controlId}</span>
+              <span className="text-surface-500">·</span>
+              <Badge variant="neutral" className="capitalize">
+                {control.category.replace(/_/g, ' ')}
+              </Badge>
+              {implementation && <ControlStatusBadge status={implementation.status} />}
+            </div>
+            <h1 className="text-h1 text-surface-900">{control.title}</h1>
+            {control.description && (
+              <p className="text-body text-surface-600 mt-2 max-w-3xl leading-relaxed">
+                {control.description}
+              </p>
+            )}
+            {/* Inline meta row */}
+            {implementation && (
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-4 text-xs text-surface-500">
+                <span className="inline-flex items-center gap-1.5">
+                  <User className="h-3.5 w-3.5" />
+                  <span className="text-surface-700">
+                    {implementation.owner?.displayName || 'Unassigned'}
+                  </span>
+                </span>
+                {implementation.testingFrequency && (
+                  <span className="inline-flex items-center gap-1.5">
+                    <Clock className="h-3.5 w-3.5" />
+                    <span className="capitalize">{implementation.testingFrequency.replace('_', ' ')}</span>
+                  </span>
+                )}
+                {implementation.lastTestedAt && (
+                  <span className="inline-flex items-center gap-1.5">
+                    <Calendar className="h-3.5 w-3.5" />
+                    <span>Tested {new Date(implementation.lastTestedAt).toLocaleDateString()}</span>
+                  </span>
+                )}
+                {implementation.effectivenessScore !== null && implementation.effectivenessScore !== undefined && (
+                  <span className="inline-flex items-center gap-1.5">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                    <span className="text-emerald-600 font-medium">{implementation.effectivenessScore}% effective</span>
+                  </span>
+                )}
+              </div>
+            )}
           </div>
-          <p className="text-surface-400 mt-2 max-w-2xl">{control.description}</p>
+          <div className="flex items-start gap-2 shrink-0">
+            {implementation && hasPermission('controls:update') && (
+              <Select
+                size="sm"
+                fullWidth={false}
+                className="w-44"
+                value={implementation.status}
+                onChange={(v) => updateStatusMutation.mutate(v)}
+                options={STATUS_OPTIONS}
+              />
+            )}
+            {hasPermission('controls:update') && (
+              <Button
+                variant="outline"
+                size="sm"
+                leftIcon={<PencilIcon className="h-4 w-4" />}
+                onClick={handleEdit}
+              >
+                Edit
+              </Button>
+            )}
+          </div>
         </div>
-        {hasPermission('controls:update') && (
-          <button onClick={handleEdit} className="btn-outline">
-            <PencilIcon className="w-4 h-4 mr-2" />
-            Edit
-          </button>
-        )}
       </div>
 
       {/* Edit Modal */}
-      {isEditing && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="card w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-            <div className="p-4 border-b border-surface-800 flex items-center justify-between sticky top-0 bg-surface-900">
-              <h2 className="text-lg font-semibold text-surface-100">Edit Control</h2>
-              <button onClick={() => setIsEditing(false)} className="p-1 hover:bg-surface-700 rounded">
-                <XMarkIcon className="w-5 h-5 text-surface-400" />
-              </button>
-            </div>
-            <div className="p-4 space-y-6">
-              {/* Control Details Section */}
+      <Dialog
+        open={isEditing}
+        onClose={() => setIsEditing(false)}
+        title="Edit Control"
+        size="xl"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setIsEditing(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleSave}
+              disabled={updateControlMutation.isPending || updateImplementationMutation.isPending}
+            >
+              {(updateControlMutation.isPending || updateImplementationMutation.isPending) ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-6">
+          {/* Control Details Section */}
+          <div>
+            <h3 className="text-sm font-semibold text-surface-700 mb-3 uppercase tracking-wide">Control Details</h3>
+            <div className="space-y-4">
               <div>
-                <h3 className="text-sm font-semibold text-surface-300 mb-3 uppercase tracking-wide">Control Details</h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className="label mb-1">Title</label>
-                    <input
-                      type="text"
-                      value={editForm.title}
-                      onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                      className="input w-full"
-                    />
-                  </div>
-                  <div>
-                    <label className="label mb-1">Description</label>
-                    <textarea
-                      value={editForm.description}
-                      onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                      rows={3}
-                      className="input w-full"
-                    />
-                  </div>
-                  <div>
-                    <label className="label mb-1">Tags (comma-separated)</label>
-                    <input
-                      type="text"
-                      value={editForm.tags}
-                      onChange={(e) => setEditForm({ ...editForm, tags: e.target.value })}
-                      placeholder="e.g., authentication, encryption, monitoring"
-                      className="input w-full"
-                    />
-                  </div>
-                  <div>
-                    <label className="label mb-1">Implementation Guidance</label>
-                    <textarea
-                      value={editForm.guidance}
-                      onChange={(e) => setEditForm({ ...editForm, guidance: e.target.value })}
-                      rows={3}
-                      className="input w-full"
-                    />
-                  </div>
-                </div>
+                <label className="label mb-1">Title</label>
+                <Input
+                  type="text"
+                  value={editForm.title}
+                  onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                />
               </div>
-
-              {/* Implementation Details Section */}
-              {control.implementation && (
-                <div className="border-t border-surface-800 pt-6">
-                  <h3 className="text-sm font-semibold text-surface-300 mb-3 uppercase tracking-wide">Implementation Details</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="label mb-1">Owner</label>
-                      <select
-                        value={implForm.ownerId}
-                        onChange={(e) => setImplForm({ ...implForm, ownerId: e.target.value })}
-                        className="input w-full"
-                      >
-                        <option value="">Unassigned</option>
-                        {users?.map((user: any) => (
-                          <option key={user.id} value={user.id}>
-                            {user.displayName} ({user.role})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="label mb-1">Testing Frequency</label>
-                      <select
-                        value={implForm.testingFrequency}
-                        onChange={(e) => setImplForm({ ...implForm, testingFrequency: e.target.value })}
-                        className="input w-full"
-                      >
-                        {FREQUENCY_OPTIONS.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="label mb-1">Effectiveness Score (0-100)</label>
-                      <input
-                        type="number"
-                        min="0"
-                        max="100"
-                        value={implForm.effectivenessScore}
-                        onChange={(e) => setImplForm({ ...implForm, effectivenessScore: e.target.value })}
-                        placeholder="Not rated"
-                        className="input w-full"
-                      />
-                      <p className="text-xs text-surface-500 mt-1">
-                        How effective is this control at mitigating risk?
-                      </p>
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="label mb-1">Implementation Notes</label>
-                      <textarea
-                        value={implForm.implementationNotes}
-                        onChange={(e) => setImplForm({ ...implForm, implementationNotes: e.target.value })}
-                        rows={3}
-                        placeholder="Notes about how this control is implemented..."
-                        className="input w-full"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="p-4 border-t border-surface-800 flex justify-end gap-3 sticky bottom-0 bg-surface-900">
-              <button onClick={() => setIsEditing(false)} className="btn-secondary">
-                Cancel
-              </button>
-              <button 
-                onClick={handleSave} 
-                disabled={updateControlMutation.isPending || updateImplementationMutation.isPending}
-                className="btn-primary"
-              >
-                {(updateControlMutation.isPending || updateImplementationMutation.isPending) ? 'Saving...' : 'Save Changes'}
-              </button>
+              <div>
+                <label className="label mb-1">Description</label>
+                <Textarea
+                  value={editForm.description}
+                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                  rows={3}
+                />
+              </div>
+              <div>
+                <label className="label mb-1">Tags (comma-separated)</label>
+                <Input
+                  type="text"
+                  value={editForm.tags}
+                  onChange={(e) => setEditForm({ ...editForm, tags: e.target.value })}
+                  placeholder="e.g., authentication, encryption, monitoring"
+                />
+              </div>
+              <div>
+                <label className="label mb-1">Implementation Guidance</label>
+                <Textarea
+                  value={editForm.guidance}
+                  onChange={(e) => setEditForm({ ...editForm, guidance: e.target.value })}
+                  rows={3}
+                />
+              </div>
             </div>
           </div>
+
+          {/* Implementation Details Section */}
+          {control.implementation && (
+            <div className="border-t border-surface-200 pt-6">
+              <h3 className="text-sm font-semibold text-surface-700 mb-3 uppercase tracking-wide">Implementation Details</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="label mb-1">Owner</label>
+                  <Select
+                    value={implForm.ownerId}
+                    onChange={(v) => setImplForm({ ...implForm, ownerId: v })}
+                    options={[
+                      { value: '', label: 'Unassigned' },
+                      ...(users?.map((user: any) => ({
+                        value: user.id,
+                        label: `${user.displayName} (${user.role})`,
+                      })) || []),
+                    ]}
+                  />
+                </div>
+                <div>
+                  <label className="label mb-1">Testing Frequency</label>
+                  <Select
+                    value={implForm.testingFrequency}
+                    onChange={(v) => setImplForm({ ...implForm, testingFrequency: v })}
+                    options={FREQUENCY_OPTIONS}
+                  />
+                </div>
+                <div>
+                  <label className="label mb-1">Effectiveness Score (0-100)</label>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={implForm.effectivenessScore}
+                    onChange={(e) => setImplForm({ ...implForm, effectivenessScore: e.target.value })}
+                    placeholder="Not rated"
+                  />
+                  <p className="text-xs text-surface-500 mt-1">
+                    How effective is this control at mitigating risk?
+                  </p>
+                </div>
+                <div className="md:col-span-2">
+                  <label className="label mb-1">Implementation Notes</label>
+                  <Textarea
+                    value={implForm.implementationNotes}
+                    onChange={(e) => setImplForm({ ...implForm, implementationNotes: e.target.value })}
+                    rows={3}
+                    placeholder="Notes about how this control is implemented..."
+                  />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      </Dialog>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main content */}
         <div className="lg:col-span-2 space-y-6">
           {/* Status Card */}
           <div className="card p-6">
-            <h2 className="text-lg font-semibold text-surface-100 mb-4">Implementation Status</h2>
+            <h2 className="text-lg font-semibold text-surface-900 mb-4">Implementation Status</h2>
             {implementation ? (
               <div className="space-y-4">
                 <div>
                   <label className="label mb-2 block">Status</label>
-                  <select
-                    value={implementation.status}
-                    onChange={(e) => updateStatusMutation.mutate(e.target.value)}
-                    disabled={!hasPermission('controls:update')}
-                    className="input w-full max-w-xs"
-                  >
-                    {STATUS_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="max-w-xs">
+                    <Select
+                      value={implementation.status}
+                      onChange={(v) => updateStatusMutation.mutate(v)}
+                      disabled={!hasPermission('controls:update')}
+                      options={STATUS_OPTIONS}
+                    />
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-surface-800">
+                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-surface-200">
                   <div>
                     <p className="text-sm text-surface-500">Owner</p>
-                    <p className="text-surface-200">
+                    <p className="text-surface-800">
                       {implementation.owner?.displayName || 'Unassigned'}
                     </p>
                   </div>
                   <div>
                     <p className="text-sm text-surface-500">Testing Frequency</p>
-                    <p className="text-surface-200 capitalize">
+                    <p className="text-surface-800 capitalize">
                       {implementation.testingFrequency?.replace('_', ' ') || 'Quarterly'}
                     </p>
                   </div>
                   <div>
                     <p className="text-sm text-surface-500">Last Tested</p>
-                    <p className="text-surface-200">
+                    <p className="text-surface-800">
                       {implementation.lastTestedAt
                         ? new Date(implementation.lastTestedAt).toLocaleDateString()
                         : 'Never'}
@@ -399,7 +454,7 @@ export default function ControlDetail() {
                   </div>
                   <div>
                     <p className="text-sm text-surface-500">Effectiveness Score</p>
-                    <p className="text-surface-200">
+                    <p className="text-surface-800">
                       {implementation.effectivenessScore !== null
                         ? `${implementation.effectivenessScore}%`
                         : 'Not rated'}
@@ -408,9 +463,9 @@ export default function ControlDetail() {
                 </div>
 
                 {implementation.implementationNotes && (
-                  <div className="pt-4 border-t border-surface-800">
+                  <div className="pt-4 border-t border-surface-200">
                     <p className="text-sm text-surface-500 mb-2">Implementation Notes</p>
-                    <p className="text-surface-300 text-sm">{implementation.implementationNotes}</p>
+                    <p className="text-surface-700 text-sm">{implementation.implementationNotes}</p>
                   </div>
                 )}
               </div>
@@ -422,10 +477,11 @@ export default function ControlDetail() {
           {/* Evidence Card */}
           <div className="card p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-surface-100">Evidence</h2>
-              <Link to={`/evidence?controlId=${id}`} className="btn-outline text-sm">
-                <LinkIcon className="w-4 h-4 mr-2" />
-                Link Evidence
+              <h2 className="text-lg font-semibold text-surface-900">Evidence</h2>
+              <Link to={`/evidence?controlId=${id}`}>
+                <Button variant="outline" size="sm" leftIcon={<LinkIcon className="w-4 h-4" />}>
+                  Link Evidence
+                </Button>
               </Link>
             </div>
             {control.evidenceLinks?.length > 0 ? (
@@ -433,15 +489,15 @@ export default function ControlDetail() {
                 {control.evidenceLinks.map((link: any) => (
                   <div
                     key={link.id}
-                    className="flex items-center justify-between p-3 bg-surface-800 rounded-lg group"
+                    className="flex items-center justify-between p-3 bg-surface-100 rounded-lg group"
                   >
                     <Link
                       to={`/evidence/${link.evidence.id}`}
                       className="flex items-center gap-3 flex-1 min-w-0"
                     >
-                      <DocumentTextIcon className="w-5 h-5 text-surface-400" />
+                      <DocumentTextIcon className="w-5 h-5 text-surface-600" />
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-surface-200 hover:text-brand-400 truncate">
+                        <p className="text-sm font-medium text-surface-800 hover:text-brand-700 truncate">
                           {link.evidence.title}
                         </p>
                         <p className="text-xs text-surface-500">
@@ -450,23 +506,23 @@ export default function ControlDetail() {
                       </div>
                     </Link>
                     <div className="flex items-center gap-2">
-                      <span
-                        className={clsx(
-                          'badge text-xs',
+                      <Badge
+                        variant={
                           link.evidence.status === 'approved'
-                            ? 'badge-success'
+                            ? 'success'
                             : link.evidence.status === 'expired'
-                            ? 'badge-danger'
-                            : 'badge-warning'
-                        )}
+                            ? 'danger'
+                            : 'warning'
+                        }
+                        size="sm"
                       >
                         {link.evidence.status}
-                      </span>
+                      </Badge>
                       {hasPermission('evidence:write') && (
                         <button
                           onClick={() => unlinkEvidenceMutation.mutate(link.evidence.id)}
                           disabled={unlinkEvidenceMutation.isPending}
-                          className="p-1 text-surface-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="p-1 text-surface-500 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
                           title="Unlink evidence"
                         >
                           <XMarkIcon className="w-4 h-4" />
@@ -484,15 +540,16 @@ export default function ControlDetail() {
           {/* Linked Policies Card */}
           <div className="card p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-surface-100">Linked Policies</h2>
+              <h2 className="text-lg font-semibold text-surface-900">Linked Policies</h2>
               {hasPermission('policies:write') && (
-                <button
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => setIsLinkPolicyOpen(true)}
-                  className="btn-outline text-sm"
+                  leftIcon={<LinkIcon className="w-4 h-4" />}
                 >
-                  <LinkIcon className="w-4 h-4 mr-2" />
                   Link Policy
-                </button>
+                </Button>
               )}
             </div>
             <p className="text-xs text-surface-500 mb-3">
@@ -503,15 +560,15 @@ export default function ControlDetail() {
                 {control.policyLinks.map((link: any) => (
                   <div
                     key={link.id}
-                    className="flex items-center justify-between p-3 bg-surface-800 rounded-lg group"
+                    className="flex items-center justify-between p-3 bg-surface-100 rounded-lg group"
                   >
                     <Link
                       to={`/policies/${link.policy?.id}`}
-                      className="flex items-center gap-3 flex-1 min-w-0 hover:text-brand-400"
+                      className="flex items-center gap-3 flex-1 min-w-0 hover:text-brand-700"
                     >
-                      <DocumentTextIcon className="w-5 h-5 text-brand-400" />
+                      <DocumentTextIcon className="w-5 h-5 text-brand-700" />
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-surface-200 truncate">
+                        <p className="text-sm font-medium text-surface-800 truncate">
                           {link.policy?.title}
                         </p>
                         <p className="text-xs text-surface-500 capitalize">
@@ -520,23 +577,23 @@ export default function ControlDetail() {
                       </div>
                     </Link>
                     <div className="flex items-center gap-2">
-                      <span
-                        className={clsx(
-                          'badge text-xs',
+                      <Badge
+                        variant={
                           link.policy?.status === 'published' || link.policy?.status === 'approved'
-                            ? 'badge-success'
+                            ? 'success'
                             : link.policy?.status === 'retired'
-                            ? 'badge-danger'
-                            : 'badge-warning'
-                        )}
+                            ? 'danger'
+                            : 'warning'
+                        }
+                        size="sm"
                       >
                         {link.policy?.status}
-                      </span>
+                      </Badge>
                       {hasPermission('policies:write') && (
                         <button
                           onClick={() => unlinkPolicyMutation.mutate(link.policy?.id)}
                           disabled={unlinkPolicyMutation.isPending}
-                          className="p-1 text-surface-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="p-1 text-surface-500 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
                           title="Unlink policy"
                         >
                           <XMarkIcon className="w-4 h-4" />
@@ -565,34 +622,33 @@ export default function ControlDetail() {
 
           {/* Test History Card */}
           <div className="card p-6">
-            <h2 className="text-lg font-semibold text-surface-100 mb-4">Test History</h2>
+            <h2 className="text-lg font-semibold text-surface-900 mb-4">Test History</h2>
             {implementation?.tests?.length > 0 ? (
               <div className="space-y-3">
                 {implementation.tests.map((test: any) => (
                   <div
                     key={test.id}
-                    className="flex items-start justify-between p-3 bg-surface-800 rounded-lg"
+                    className="flex items-start justify-between p-3 bg-surface-100 rounded-lg"
                   >
                     <div>
                       <div className="flex items-center gap-2">
-                        <span
-                          className={clsx(
-                            'badge',
+                        <Badge
+                          variant={
                             test.result === 'pass'
-                              ? 'badge-success'
+                              ? 'success'
                               : test.result === 'fail'
-                              ? 'badge-danger'
-                              : 'badge-warning'
-                          )}
+                              ? 'danger'
+                              : 'warning'
+                          }
                         >
                           {test.result}
-                        </span>
+                        </Badge>
                         <span className="text-xs text-surface-500">
                           {test.testType} test
                         </span>
                       </div>
                       {test.findings && (
-                        <p className="text-sm text-surface-400 mt-2">{test.findings}</p>
+                        <p className="text-sm text-surface-600 mt-2">{test.findings}</p>
                       )}
                     </div>
                     <span className="text-xs text-surface-500">
@@ -611,23 +667,23 @@ export default function ControlDetail() {
         <div className="space-y-6">
           {/* Details Card */}
           <div className="card p-6">
-            <h3 className="text-sm font-semibold text-surface-100 mb-4">Details</h3>
+            <h3 className="text-sm font-semibold text-surface-900 mb-4">Details</h3>
             <dl className="space-y-3">
               <div>
                 <dt className="text-xs text-surface-500">Category</dt>
-                <dd className="text-sm text-surface-200 capitalize mt-1">
+                <dd className="text-sm text-surface-800 capitalize mt-1">
                   {control.category.replace('_', ' ')}
                 </dd>
               </div>
               {control.subcategory && (
                 <div>
                   <dt className="text-xs text-surface-500">Subcategory</dt>
-                  <dd className="text-sm text-surface-200 mt-1">{control.subcategory}</dd>
+                  <dd className="text-sm text-surface-800 mt-1">{control.subcategory}</dd>
                 </div>
               )}
               <div>
                 <dt className="text-xs text-surface-500">Type</dt>
-                <dd className="text-sm text-surface-200 mt-1">
+                <dd className="text-sm text-surface-800 mt-1">
                   {control.isCustom ? 'Custom' : 'System'}
                 </dd>
               </div>
@@ -636,9 +692,9 @@ export default function ControlDetail() {
                 <dd className="flex flex-wrap gap-1 mt-1">
                   {control.tags?.length > 0 ? (
                     control.tags.map((tag: string) => (
-                      <span key={tag} className="badge badge-neutral text-xs">
+                      <Badge key={tag} variant="neutral" size="sm">
                         {tag}
-                      </span>
+                      </Badge>
                     ))
                   ) : (
                     <span className="text-sm text-surface-500">No tags</span>
@@ -650,16 +706,16 @@ export default function ControlDetail() {
 
           {/* Framework Mappings Card */}
           <div className="card p-6">
-            <h3 className="text-sm font-semibold text-surface-100 mb-4">Framework Mappings</h3>
+            <h3 className="text-sm font-semibold text-surface-900 mb-4">Framework Mappings</h3>
             {control.mappings?.length > 0 ? (
               <div className="space-y-2">
                 {control.mappings.map((mapping: any) => (
                   <div
                     key={mapping.id}
-                    className="p-2 bg-surface-800 rounded-lg"
+                    className="p-2 bg-surface-100 rounded-lg"
                   >
-                    <p className="text-sm text-brand-400">{mapping.framework.name}</p>
-                    <p className="text-xs text-surface-400 mt-1">
+                    <p className="text-sm text-brand-700">{mapping.framework.name}</p>
+                    <p className="text-xs text-surface-600 mt-1">
                       {mapping.requirement.reference} - {mapping.requirement.title}
                     </p>
                   </div>
@@ -673,8 +729,8 @@ export default function ControlDetail() {
           {/* Guidance Card */}
           {control.guidance && (
             <div className="card p-6">
-              <h3 className="text-sm font-semibold text-surface-100 mb-4">Implementation Guidance</h3>
-              <p className="text-sm text-surface-400">{control.guidance}</p>
+              <h3 className="text-sm font-semibold text-surface-900 mb-4">Implementation Guidance</h3>
+              <p className="text-sm text-surface-600">{control.guidance}</p>
             </div>
           )}
         </div>
@@ -755,122 +811,83 @@ function LinkPolicyModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative bg-surface-900 border border-surface-800 rounded-xl w-full max-w-lg mx-4 p-6 max-h-[80vh] flex flex-col">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-surface-100">Link Policies to Control</h2>
-          <button onClick={onClose} className="text-surface-400 hover:text-surface-100">
-            <XMarkIcon className="w-5 h-5" />
-          </button>
-        </div>
-
-        <p className="text-sm text-surface-400 mb-4">
-          Select policies to link as evidence for this control:
-        </p>
-
-        <div className="relative mb-4">
-          <input
-            type="text"
-            placeholder="Search policies..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="input pl-10"
-          />
-          <DocumentTextIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-500" />
-        </div>
-
-        <div className="flex-1 overflow-y-auto space-y-2 min-h-[200px] max-h-[300px]">
-          {isLoadingPolicies ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin w-6 h-6 border-2 border-surface-700 rounded-full border-t-brand-500"></div>
-              <span className="ml-2 text-surface-400">Searching...</span>
-            </div>
-          ) : availablePolicies.length === 0 ? (
-            <p className="text-surface-500 text-center py-8">
-              {search ? `No policies found for "${search}"` : 'All policies are already linked'}
-            </p>
-          ) : (
-            availablePolicies.map((policy: any) => (
-              <label
-                key={policy.id}
-                className={clsx(
-                  'flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors',
-                  selectedPolicyIds.includes(policy.id)
-                    ? 'bg-brand-500/20 border border-brand-500/50'
-                    : 'bg-surface-800 hover:bg-surface-700'
-                )}
-              >
-                <input
-                  type="checkbox"
-                  checked={selectedPolicyIds.includes(policy.id)}
-                  onChange={() => togglePolicy(policy.id)}
-                  className="rounded border-surface-600"
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-surface-200 truncate">{policy.title}</p>
-                  <p className="text-xs text-surface-500 capitalize">
-                    {policy.category?.replace(/_/g, ' ')} • v{policy.version} • {policy.status}
-                  </p>
-                </div>
-              </label>
-            ))
-          )}
-        </div>
-
-        {selectedPolicyIds.length > 0 && (
-          <p className="text-sm text-surface-400 mt-3">
-            {selectedPolicyIds.length} policy(ies) selected
-          </p>
-        )}
-
-        <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-surface-800">
-          <button onClick={onClose} className="btn-secondary">
+    <Dialog
+      open
+      onClose={onClose}
+      title="Link Policies to Control"
+      size="md"
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="primary"
             onClick={() => linkMutation.mutate()}
             disabled={selectedPolicyIds.length === 0 || linkMutation.isPending}
-            className="btn-primary"
           >
             {linkMutation.isPending ? 'Linking...' : 'Link Policies'}
-          </button>
-        </div>
-      </div>
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-surface-900 border border-surface-800 rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold text-surface-100 mb-2">Delete Control</h3>
-            <p className="text-surface-400 mb-6">
-              Are you sure you want to delete "{control?.title}"? This action cannot be undone.
-            </p>
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="px-4 py-2 bg-surface-800 text-surface-100 rounded-lg hover:bg-surface-700 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={async () => {
-                  try {
-                    await fetch(`/api/controls/${id}`, { method: 'DELETE', headers: { 'x-user-id': 'system' } });
-                    navigate('/controls');
-                  } catch (error) {
-                    console.error('Error deleting control:', error);
-                    alert('Failed to delete control');
-                  }
-                }}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          </Button>
+        </>
+      }
+    >
+      <p className="text-sm text-surface-600 mb-4">
+        Select policies to link as evidence for this control:
+      </p>
 
-    </div>
+      <div className="mb-4">
+        <Input
+          type="text"
+          placeholder="Search policies..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          leftIcon={<DocumentTextIcon className="w-4 h-4" />}
+        />
+      </div>
+
+      <div className="flex-1 overflow-y-auto space-y-2 min-h-[200px] max-h-[300px]">
+        {isLoadingPolicies ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin w-6 h-6 border-2 border-surface-300 rounded-full border-t-brand-500"></div>
+            <span className="ml-2 text-surface-600">Searching...</span>
+          </div>
+        ) : availablePolicies.length === 0 ? (
+          <p className="text-surface-500 text-center py-8">
+            {search ? `No policies found for "${search}"` : 'All policies are already linked'}
+          </p>
+        ) : (
+          availablePolicies.map((policy: any) => (
+            <label
+              key={policy.id}
+              className={clsx(
+                'flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors',
+                selectedPolicyIds.includes(policy.id)
+                  ? 'bg-brand-500/20 border border-brand-500/50'
+                  : 'bg-surface-100 hover:bg-surface-200'
+              )}
+            >
+              <input
+                type="checkbox"
+                checked={selectedPolicyIds.includes(policy.id)}
+                onChange={() => togglePolicy(policy.id)}
+                className="rounded border-surface-400"
+              />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-surface-800 truncate">{policy.title}</p>
+                <p className="text-xs text-surface-500 capitalize">
+                  {policy.category?.replace(/_/g, ' ')} • v{policy.version} • {policy.status}
+                </p>
+              </div>
+            </label>
+          ))
+        )}
+      </div>
+
+      {selectedPolicyIds.length > 0 && (
+        <p className="text-sm text-surface-600 mt-3">
+          {selectedPolicyIds.length} policy(ies) selected
+        </p>
+      )}
+    </Dialog>
   );
 }

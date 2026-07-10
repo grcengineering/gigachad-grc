@@ -2,14 +2,13 @@ import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { riskConfigApi } from '../lib/api';
 import {
-  AdjustmentsHorizontalIcon,
   ChartBarIcon,
   TagIcon,
   ClockIcon,
   ExclamationTriangleIcon,
-  CheckIcon,
   ArrowPathIcon,
 } from '@heroicons/react/24/outline';
+import { Input, Select } from '@/components/ui';
 
 type ConfigTab = 'scoring' | 'categories' | 'workflow' | 'appetite';
 
@@ -109,7 +108,7 @@ export default function RiskConfiguration() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-surface-400">Loading configuration...</div>
+        <div className="text-surface-600">Loading configuration...</div>
       </div>
     );
   }
@@ -117,7 +116,7 @@ export default function RiskConfiguration() {
   if (error) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-red-400">Failed to load configuration</div>
+        <div className="text-red-600">Failed to load configuration</div>
       </div>
     );
   }
@@ -127,12 +126,12 @@ export default function RiskConfiguration() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-white">Risk Configuration</h1>
-          <p className="text-surface-400 mt-1">Configure risk management settings and methodology</p>
+          <h1 className="text-2xl font-semibold text-surface-900">Risk Configuration</h1>
+          <p className="text-surface-600 mt-1">Configure risk management settings and methodology</p>
         </div>
         <div className="flex items-center gap-3">
           {updateMutation.isPending && (
-            <span className="text-brand-400 text-sm flex items-center gap-2">
+            <span className="text-brand-700 text-sm flex items-center gap-2">
               <ArrowPathIcon className="w-4 h-4 animate-spin" />
               Saving...
             </span>
@@ -144,7 +143,7 @@ export default function RiskConfiguration() {
               }
             }}
             disabled={resetMutation.isPending}
-            className="px-4 py-2 bg-surface-700 text-surface-300 rounded-lg hover:bg-surface-600 flex items-center gap-2"
+            className="px-4 py-2 bg-surface-200 text-surface-700 rounded-lg hover:bg-surface-300 flex items-center gap-2"
           >
             <ArrowPathIcon className="w-4 h-4" />
             Reset to Defaults
@@ -153,15 +152,15 @@ export default function RiskConfiguration() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b border-surface-700 pb-px">
+      <div className="flex gap-2 border-b border-surface-300 pb-px">
         {tabs.map(tab => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
               activeTab === tab.key
-                ? 'border-brand-500 text-brand-400'
-                : 'border-transparent text-surface-400 hover:text-surface-300'
+                ? 'border-brand-500 text-brand-700'
+                : 'border-transparent text-surface-600 hover:text-surface-700'
             }`}
           >
             <tab.icon className="w-4 h-4" />
@@ -171,7 +170,7 @@ export default function RiskConfiguration() {
       </div>
 
       {/* Tab Content */}
-      <div className="bg-surface-800 rounded-xl border border-surface-700 p-6">
+      <div className="bg-white rounded-lg border border-surface-200 p-6">
         {activeTab === 'scoring' && config && (
           <ScoringMethodology
             config={config}
@@ -208,95 +207,81 @@ function ScoringMethodology({
   config: RiskConfiguration;
   onUpdate: (data: Partial<RiskConfiguration>) => void;
 }) {
-  const [methodology, setMethodology] = useState(config.methodology);
+  const [methodology, setMethodology] = useState<string>(config.methodology || 'qualitative');
 
   useEffect(() => {
-    setMethodology(config.methodology);
+    if (config.methodology) setMethodology(config.methodology);
   }, [config.methodology]);
 
   const handleMethodologyChange = (value: string) => {
+    if (value === methodology) return;
     setMethodology(value);
     onUpdate({ methodology: value });
   };
 
+  const options = [
+    { value: 'qualitative', label: 'Qualitative', description: 'Likelihood × Impact matrix (standard 5×5)' },
+    { value: 'quantitative', label: 'Quantitative', description: 'Annual Loss Expectancy (ALE) calculation' },
+    { value: 'hybrid', label: 'Hybrid', description: 'Both qualitative and quantitative scoring' },
+  ];
+
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium text-white mb-4">Scoring Methodology</h3>
+        <h3 className="text-lg font-medium text-surface-900 mb-4">Scoring Methodology</h3>
         <div className="flex gap-4">
-          <label className={`flex-1 p-4 rounded-lg border cursor-pointer ${
-            methodology === 'qualitative' ? 'border-brand-500 bg-brand-500/10' : 'border-surface-700 bg-surface-700/50'
-          }`}>
-            <input
-              type="radio"
-              name="methodology"
-              value="qualitative"
-              checked={methodology === 'qualitative'}
-              onChange={e => handleMethodologyChange(e.target.value)}
-              className="sr-only"
-            />
-            <p className="text-white font-medium">Qualitative</p>
-            <p className="text-surface-400 text-sm mt-1">Likelihood × Impact matrix (standard 5×5)</p>
-          </label>
-          <label className={`flex-1 p-4 rounded-lg border cursor-pointer ${
-            methodology === 'quantitative' ? 'border-brand-500 bg-brand-500/10' : 'border-surface-700 bg-surface-700/50'
-          }`}>
-            <input
-              type="radio"
-              name="methodology"
-              value="quantitative"
-              checked={methodology === 'quantitative'}
-              onChange={e => handleMethodologyChange(e.target.value)}
-              className="sr-only"
-            />
-            <p className="text-white font-medium">Quantitative</p>
-            <p className="text-surface-400 text-sm mt-1">Annual Loss Expectancy (ALE) calculation</p>
-          </label>
-          <label className={`flex-1 p-4 rounded-lg border cursor-pointer ${
-            methodology === 'hybrid' ? 'border-brand-500 bg-brand-500/10' : 'border-surface-700 bg-surface-700/50'
-          }`}>
-            <input
-              type="radio"
-              name="methodology"
-              value="hybrid"
-              checked={methodology === 'hybrid'}
-              onChange={e => handleMethodologyChange(e.target.value)}
-              className="sr-only"
-            />
-            <p className="text-white font-medium">Hybrid</p>
-            <p className="text-surface-400 text-sm mt-1">Both qualitative and quantitative scoring</p>
-          </label>
+          {options.map((opt) => {
+            const selected = methodology === opt.value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                aria-pressed={selected}
+                onClick={() => handleMethodologyChange(opt.value)}
+                className={`flex-1 text-left p-4 rounded-lg border-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-50 ${
+                  selected
+                    ? 'border-brand-500 bg-brand-50 shadow-sm'
+                    : 'border-surface-200 bg-white hover:border-surface-300 hover:bg-surface-50'
+                }`}
+              >
+                <p className={`font-medium ${selected ? 'text-brand-800' : 'text-surface-900'}`}>
+                  {opt.label}
+                </p>
+                <p className="text-surface-600 text-sm mt-1">{opt.description}</p>
+              </button>
+            );
+          })}
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-6">
         <div>
-          <h4 className="text-white font-medium mb-3">Likelihood Scale</h4>
+          <h4 className="text-surface-900 font-medium mb-3">Likelihood Scale</h4>
           <div className="space-y-2">
             {config.likelihoodScale.map((level) => (
-              <div key={level.value} className="flex items-center gap-3 p-3 bg-surface-700/50 rounded-lg">
-                <span className="w-6 h-6 rounded bg-surface-600 flex items-center justify-center text-white text-sm font-medium">
+              <div key={level.value} className="flex items-center gap-3 p-3 bg-surface-50 border border-surface-200 rounded-lg">
+                <span className="w-6 h-6 rounded bg-surface-300 flex items-center justify-center text-surface-900 text-sm font-medium">
                   {level.weight}
                 </span>
                 <div className="flex-1">
-                  <p className="text-white text-sm">{level.label}</p>
-                  <p className="text-surface-400 text-xs">{level.description}</p>
+                  <p className="text-surface-900 text-sm">{level.label}</p>
+                  <p className="text-surface-600 text-xs">{level.description}</p>
                 </div>
               </div>
             ))}
           </div>
         </div>
         <div>
-          <h4 className="text-white font-medium mb-3">Impact Scale</h4>
+          <h4 className="text-surface-900 font-medium mb-3">Impact Scale</h4>
           <div className="space-y-2">
             {config.impactScale.map((level) => (
-              <div key={level.value} className="flex items-center gap-3 p-3 bg-surface-700/50 rounded-lg">
-                <span className="w-6 h-6 rounded bg-surface-600 flex items-center justify-center text-white text-sm font-medium">
+              <div key={level.value} className="flex items-center gap-3 p-3 bg-surface-50 border border-surface-200 rounded-lg">
+                <span className="w-6 h-6 rounded bg-surface-300 flex items-center justify-center text-surface-900 text-sm font-medium">
                   {level.weight}
                 </span>
                 <div className="flex-1">
-                  <p className="text-white text-sm">{level.label}</p>
-                  <p className="text-surface-400 text-xs">{level.description}</p>
+                  <p className="text-surface-900 text-sm">{level.label}</p>
+                  <p className="text-surface-600 text-xs">{level.description}</p>
                 </div>
               </div>
             ))}
@@ -305,21 +290,21 @@ function ScoringMethodology({
       </div>
 
       <div>
-        <h4 className="text-white font-medium mb-3">Risk Level Matrix</h4>
+        <h4 className="text-surface-900 font-medium mb-3">Risk Level Matrix</h4>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr>
-                <th className="p-2 text-surface-400 text-left"></th>
+                <th className="p-2 text-surface-600 text-left"></th>
                 {config.impactScale.map(i => (
-                  <th key={i.value} className="p-2 text-center text-surface-400">{i.label}</th>
+                  <th key={i.value} className="p-2 text-center text-surface-600">{i.label}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {[...config.likelihoodScale].reverse().map((likelihood) => (
                 <tr key={likelihood.value}>
-                  <td className="p-2 text-surface-400">{likelihood.label}</td>
+                  <td className="p-2 text-surface-600">{likelihood.label}</td>
                   {config.impactScale.map(impact => {
                     const score = likelihood.weight * impact.weight;
                     let color = 'bg-emerald-500/50';
@@ -328,7 +313,7 @@ function ScoringMethodology({
                     else if (score >= config.riskLevelThresholds.medium) color = 'bg-amber-500/50';
                     else if (score >= config.riskLevelThresholds.low) color = 'bg-emerald-500/50';
                     return (
-                      <td key={impact.value} className={`p-2 text-center ${color} text-white`}>
+                      <td key={impact.value} className={`p-2 text-center ${color} text-surface-900`}>
                         {score}
                       </td>
                     );
@@ -375,24 +360,24 @@ function RiskCategories({
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium text-white mb-4">Risk Categories</h3>
-        <p className="text-surface-400 text-sm mb-4">Define the categories used to classify risks in your organization.</p>
+        <h3 className="text-lg font-medium text-surface-900 mb-4">Risk Categories</h3>
+        <p className="text-surface-600 text-sm mb-4">Define the categories used to classify risks in your organization.</p>
       </div>
 
       <div className="space-y-3">
         {categories.map(cat => (
-          <div key={cat.id} className="flex items-center gap-4 p-4 bg-surface-700/50 rounded-lg">
+          <div key={cat.id} className="flex items-center gap-4 p-4 bg-surface-50 border border-surface-200 rounded-lg">
             <div
               className="w-4 h-4 rounded"
               style={{ backgroundColor: cat.color }}
             />
             <div className="flex-1">
-              <p className="text-white font-medium">{cat.name}</p>
-              <p className="text-surface-400 text-sm">{cat.description}</p>
+              <p className="text-surface-900 font-medium">{cat.name}</p>
+              <p className="text-surface-600 text-sm">{cat.description}</p>
             </div>
             <button
               onClick={() => handleRemoveCategory(cat.id)}
-              className="text-surface-400 hover:text-red-400 text-sm"
+              className="text-surface-600 hover:text-red-600 text-sm"
             >
               Remove
             </button>
@@ -400,22 +385,22 @@ function RiskCategories({
         ))}
       </div>
 
-      <div className="pt-4 border-t border-surface-700">
-        <h4 className="text-white font-medium mb-3">Add Category</h4>
+      <div className="pt-4 border-t border-surface-300">
+        <h4 className="text-surface-900 font-medium mb-3">Add Category</h4>
         <div className="flex gap-4">
-          <input
+          <Input
             type="text"
             placeholder="Category name"
             value={newCategory.name}
             onChange={e => setNewCategory(prev => ({ ...prev, name: e.target.value }))}
-            className="flex-1 px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            className="flex-1"
           />
-          <input
+          <Input
             type="text"
             placeholder="Description"
             value={newCategory.description}
             onChange={e => setNewCategory(prev => ({ ...prev, description: e.target.value }))}
-            className="flex-1 px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            className="flex-1"
           />
           <input
             type="color"
@@ -457,103 +442,102 @@ function WorkflowSettingsTab({
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium text-white mb-4">Workflow Settings</h3>
-        <p className="text-surface-400 text-sm mb-4">Configure how risks flow through the assessment and treatment process.</p>
+        <h3 className="text-lg font-medium text-surface-900 mb-4">Workflow Settings</h3>
+        <p className="text-surface-600 text-sm mb-4">Configure how risks flow through the assessment and treatment process.</p>
       </div>
 
       <div className="space-y-4">
-        <h4 className="text-white font-medium">Assessment Workflow</h4>
+        <h4 className="text-surface-900 font-medium">Assessment Workflow</h4>
         
-        <label className="flex items-center justify-between p-4 bg-surface-700/50 rounded-lg">
+        <label className="flex items-center justify-between p-4 bg-surface-50 border border-surface-200 rounded-lg">
           <div>
-            <p className="text-white">Require Formal Assessment</p>
-            <p className="text-surface-400 text-sm">All risks must go through assessment phase</p>
+            <p className="text-surface-900">Require Formal Assessment</p>
+            <p className="text-surface-600 text-sm">All risks must go through assessment phase</p>
           </div>
           <input
             type="checkbox"
             checked={settings.requireAssessment ?? true}
             onChange={e => handleChange('requireAssessment', e.target.checked)}
-            className="rounded border-surface-600"
+            className="rounded border-surface-400"
           />
         </label>
 
-        <label className="flex items-center justify-between p-4 bg-surface-700/50 rounded-lg">
+        <label className="flex items-center justify-between p-4 bg-surface-50 border border-surface-200 rounded-lg">
           <div>
-            <p className="text-white">Require GRC Review</p>
-            <p className="text-surface-400 text-sm">Assessments must be reviewed by GRC team</p>
+            <p className="text-surface-900">Require GRC Review</p>
+            <p className="text-surface-600 text-sm">Assessments must be reviewed by GRC team</p>
           </div>
           <input
             type="checkbox"
             checked={settings.requireGrcReview ?? true}
             onChange={e => handleChange('requireGrcReview', e.target.checked)}
-            className="rounded border-surface-600"
+            className="rounded border-surface-400"
           />
         </label>
 
-        <div className="p-4 bg-surface-700/50 rounded-lg">
+        <div className="p-4 bg-surface-50 border border-surface-200 rounded-lg">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-white">Executive Approval Threshold</p>
+            <p className="text-surface-900">Executive Approval Threshold</p>
           </div>
-          <p className="text-surface-400 text-sm mb-3">Risk level that requires executive approval for accept/transfer/avoid</p>
-          <select
+          <p className="text-surface-600 text-sm mb-3">Risk level that requires executive approval for accept/transfer/avoid</p>
+          <Select
             value={settings.executiveApprovalThreshold ?? 'high'}
-            onChange={e => handleChange('executiveApprovalThreshold', e.target.value)}
-            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-          >
-            <option value="critical">Critical only</option>
-            <option value="high">High and above</option>
-            <option value="medium">Medium and above</option>
-            <option value="none">No approval required</option>
-          </select>
+            onChange={(v) => handleChange('executiveApprovalThreshold', v)}
+            options={[
+              { value: 'critical', label: 'Critical only' },
+              { value: 'high', label: 'High and above' },
+              { value: 'medium', label: 'Medium and above' },
+              { value: 'none', label: 'No approval required' },
+            ]}
+          />
         </div>
       </div>
 
-      <div className="space-y-4 pt-4 border-t border-surface-700">
-        <h4 className="text-white font-medium">Review Settings</h4>
-        
-        <div className="p-4 bg-surface-700/50 rounded-lg">
-          <p className="text-white mb-2">Default Review Frequency</p>
-          <select
+      <div className="space-y-4 pt-4 border-t border-surface-300">
+        <h4 className="text-surface-900 font-medium">Review Settings</h4>
+
+        <div className="p-4 bg-surface-50 border border-surface-200 rounded-lg">
+          <p className="text-surface-900 mb-2">Default Review Frequency</p>
+          <Select
             value={settings.defaultReviewFrequency ?? 'quarterly'}
-            onChange={e => handleChange('defaultReviewFrequency', e.target.value)}
-            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-          >
-            <option value="monthly">Monthly</option>
-            <option value="quarterly">Quarterly</option>
-            <option value="semi_annually">Semi-Annually</option>
-            <option value="annually">Annually</option>
-          </select>
+            onChange={(v) => handleChange('defaultReviewFrequency', v)}
+            options={[
+              { value: 'monthly', label: 'Monthly' },
+              { value: 'quarterly', label: 'Quarterly' },
+              { value: 'semi_annually', label: 'Semi-Annually' },
+              { value: 'annually', label: 'Annually' },
+            ]}
+          />
         </div>
       </div>
 
-      <div className="space-y-4 pt-4 border-t border-surface-700">
-        <h4 className="text-white font-medium">Notifications</h4>
+      <div className="space-y-4 pt-4 border-t border-surface-300">
+        <h4 className="text-surface-900 font-medium">Notifications</h4>
         
-        <label className="flex items-center justify-between p-4 bg-surface-700/50 rounded-lg">
+        <label className="flex items-center justify-between p-4 bg-surface-50 border border-surface-200 rounded-lg">
           <div>
-            <p className="text-white">Notify on Status Change</p>
-            <p className="text-surface-400 text-sm">Send notifications when risk status changes</p>
+            <p className="text-surface-900">Notify on Status Change</p>
+            <p className="text-surface-600 text-sm">Send notifications when risk status changes</p>
           </div>
           <input
             type="checkbox"
             checked={settings.notifyOnStatusChange ?? true}
             onChange={e => handleChange('notifyOnStatusChange', e.target.checked)}
-            className="rounded border-surface-600"
+            className="rounded border-surface-400"
           />
         </label>
 
-        <div className="p-4 bg-surface-700/50 rounded-lg">
+        <div className="p-4 bg-surface-50 border border-surface-200 rounded-lg">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-white">Due Date Reminder</p>
+            <p className="text-surface-900">Due Date Reminder</p>
           </div>
-          <p className="text-surface-400 text-sm mb-3">Days before due date to send reminder</p>
-          <input
+          <p className="text-surface-600 text-sm mb-3">Days before due date to send reminder</p>
+          <Input
             type="number"
             value={settings.dueDateReminderDays ?? 7}
             onChange={e => handleChange('dueDateReminderDays', parseInt(e.target.value))}
             min="1"
             max="30"
-            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
           />
         </div>
       </div>
@@ -594,8 +578,8 @@ function RiskAppetiteTab({
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium text-white mb-4">Risk Appetite</h3>
-        <p className="text-surface-400 text-sm mb-4">
+        <h3 className="text-lg font-medium text-surface-900 mb-4">Risk Appetite</h3>
+        <p className="text-surface-600 text-sm mb-4">
           Define your organization's risk appetite for each category. This determines acceptable risk levels 
           and influences treatment decisions.
         </p>
@@ -603,41 +587,44 @@ function RiskAppetiteTab({
 
       <div className="space-y-4">
         {appetite.map(item => (
-          <div key={item.category} className="p-4 bg-surface-700/50 rounded-lg">
+          <div key={item.category} className="p-4 bg-surface-50 border border-surface-200 rounded-lg">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
                 <div className={`w-3 h-3 rounded-full ${getLevelColor(item.level)}`} />
-                <p className="text-white font-medium">{item.category}</p>
+                <p className="text-surface-900 font-medium">{item.category}</p>
               </div>
-              <select
-                value={item.level}
-                onChange={e => handleLevelChange(item.category, e.target.value)}
-                className="px-3 py-1 bg-surface-700 border border-surface-600 rounded-lg text-white text-sm"
-              >
-                <option value="low">Low Appetite</option>
-                <option value="medium">Medium Appetite</option>
-                <option value="high">High Appetite</option>
-              </select>
+              <div className="w-48">
+                <Select
+                  value={item.level}
+                  onChange={(v) => handleLevelChange(item.category, v)}
+                  size="sm"
+                  options={[
+                    { value: 'low', label: 'Low Appetite' },
+                    { value: 'medium', label: 'Medium Appetite' },
+                    { value: 'high', label: 'High Appetite' },
+                  ]}
+                />
+              </div>
             </div>
-            <p className="text-surface-400 text-sm">{item.description}</p>
+            <p className="text-surface-600 text-sm">{item.description}</p>
           </div>
         ))}
       </div>
 
-      <div className="p-4 bg-surface-700/50 rounded-lg">
-        <h4 className="text-white font-medium mb-3">Appetite Legend</h4>
+      <div className="p-4 bg-surface-50 border border-surface-200 rounded-lg">
+        <h4 className="text-surface-900 font-medium mb-3">Appetite Legend</h4>
         <div className="flex gap-6">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-emerald-500" />
-            <span className="text-surface-300 text-sm">Low - Minimal risk tolerance</span>
+            <span className="text-surface-700 text-sm">Low - Minimal risk tolerance</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-amber-500" />
-            <span className="text-surface-300 text-sm">Medium - Moderate risk tolerance</span>
+            <span className="text-surface-700 text-sm">Medium - Moderate risk tolerance</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-red-500" />
-            <span className="text-surface-300 text-sm">High - Aggressive risk tolerance</span>
+            <span className="text-surface-700 text-sm">High - Aggressive risk tolerance</span>
           </div>
         </div>
       </div>

@@ -6,21 +6,22 @@ import {
   UserGroupIcon,
   ClockIcon,
 } from '@heroicons/react/24/outline';
+import { Badge, type BadgeVariant } from '@/components/ui';
 
 export default function AwarenessTraining() {
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-semibold text-white">Awareness & Training</h1>
-        <p className="text-surface-400 mt-1">Security awareness training and phishing simulation</p>
+        <h1 className="text-2xl font-semibold text-surface-900">Awareness & Training</h1>
+        <p className="text-surface-600 mt-1">Security awareness training and phishing simulation</p>
       </div>
 
       {/* Coming Soon Banner */}
       <div className="bg-gradient-to-r from-brand-500/20 to-purple-500/20 rounded-xl border border-brand-500/30 p-8 text-center">
-        <AcademicCapIcon className="w-16 h-16 text-brand-400 mx-auto mb-4" />
-        <h2 className="text-2xl font-bold text-white mb-2">Coming Soon</h2>
-        <p className="text-surface-300 max-w-2xl mx-auto">
+        <AcademicCapIcon className="w-16 h-16 text-brand-700 mx-auto mb-4" />
+        <h2 className="text-2xl font-bold text-surface-900 mb-2">Coming Soon</h2>
+        <p className="text-surface-700 max-w-2xl mx-auto">
           A comprehensive security awareness and training module is being developed. 
           This will help you manage employee training, track compliance, and run phishing simulations.
         </p>
@@ -66,11 +67,6 @@ export default function AwarenessTraining() {
         />
       </div>
 
-      {/* Message for Emre */}
-      <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-xl border border-purple-500/30 p-6 text-center">
-        <h3 className="text-lg font-medium text-white mb-2">All you, Emre. Go Wild 🚀</h3>
-        <p className="text-surface-400">This module is ready for your internal tool integration.</p>
-      </div>
     </div>
   );
 }
@@ -86,24 +82,24 @@ function FeatureCard({
   description: string;
   status: 'planned' | 'in-progress' | 'available';
 }) {
-  const statusColors = {
-    planned: 'bg-surface-600 text-surface-400',
-    'in-progress': 'bg-amber-500/20 text-amber-400',
-    available: 'bg-emerald-500/20 text-emerald-400',
+  const statusVariant: Record<typeof status, BadgeVariant> = {
+    planned: 'neutral',
+    'in-progress': 'warning',
+    available: 'success',
   };
 
   return (
-    <div className="bg-surface-800 rounded-xl border border-surface-700 p-6">
+    <div className="bg-white rounded-lg border border-surface-200 p-6">
       <div className="flex items-start justify-between mb-4">
-        <div className="p-2 bg-surface-700 rounded-lg">
-          <Icon className="w-6 h-6 text-brand-400" />
+        <div className="p-2 bg-surface-50 rounded-lg">
+          <Icon className="w-6 h-6 text-brand-700" />
         </div>
-        <span className={`px-2 py-1 rounded text-xs font-medium ${statusColors[status]}`}>
-          {status === 'in-progress' ? 'In Progress' : status.charAt(0).toUpperCase() + status.slice(1)}
-        </span>
+        <Badge variant={statusVariant[status]} size="sm">
+          {status === 'in-progress' ? 'In progress' : status}
+        </Badge>
       </div>
-      <h3 className="text-white font-medium mb-2">{title}</h3>
-      <p className="text-surface-400 text-sm">{description}</p>
+      <h3 className="text-surface-900 font-medium mb-2">{title}</h3>
+      <p className="text-surface-600 text-sm">{description}</p>
     </div>
   );
 }

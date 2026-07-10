@@ -3,7 +3,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { integrationsApi } from '@/lib/api';
 import toast from 'react-hot-toast';
 import {
-  CloudIcon,
   CogIcon,
   CheckCircleIcon,
   ExclamationTriangleIcon,
@@ -20,31 +19,33 @@ import {
 import clsx from 'clsx';
 import CustomConfigModal from '@/components/integrations/CustomConfigModal';
 import { IntegrationIcon } from '@/components/IntegrationIcon';
+import { Button, Input, Textarea, Select, Dialog, Badge } from '@/components/ui';
+import type { BadgeVariant } from '@/components/ui';
 
-const STATUS_CONFIG: Record<string, { label: string; icon: any; color: string; badge: string }> = {
+const STATUS_CONFIG: Record<string, { label: string; icon: any; color: string; variant: BadgeVariant }> = {
   active: {
     label: 'Active',
     icon: CheckCircleIcon,
-    color: 'text-green-400',
-    badge: 'badge-success',
+    color: 'text-emerald-700',
+    variant: 'success',
   },
   inactive: {
     label: 'Inactive',
     icon: XCircleIcon,
-    color: 'text-surface-400',
-    badge: 'badge-neutral',
+    color: 'text-surface-600',
+    variant: 'neutral',
   },
   error: {
     label: 'Error',
     icon: ExclamationTriangleIcon,
-    color: 'text-red-400',
-    badge: 'badge-danger',
+    color: 'text-red-600',
+    variant: 'danger',
   },
   pending_setup: {
     label: 'Setup Required',
     icon: CogIcon,
-    color: 'text-yellow-400',
-    badge: 'badge-warning',
+    color: 'text-yellow-700',
+    variant: 'warning',
   },
 };
 
@@ -175,62 +176,62 @@ export default function Integrations() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-surface-100">Integrations</h1>
-          <p className="text-surface-400 mt-1">
+          <h1 className="text-2xl font-bold text-surface-900">Integrations</h1>
+          <p className="text-surface-600 mt-1">
             Connect external services for automated evidence collection
           </p>
         </div>
-        <button onClick={() => setShowAddModal(true)} className="btn-primary">
-          <PlusIcon className="w-4 h-4 mr-2" />
+        <Button onClick={() => setShowAddModal(true)} leftIcon={<PlusIcon className="w-4 h-4" />}>
           Add Integration
-        </button>
+        </Button>
       </div>
 
       {/* Search Bar */}
       <div className="card p-4">
-        <div className="relative">
-          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-400" />
-          <input
-            type="text"
-            placeholder="Search integrations by name, description, or category..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="input pl-10 w-full"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-surface-400 hover:text-surface-100"
-            >
-              <XMarkIcon className="w-5 h-5" />
-            </button>
-          )}
-        </div>
+        <Input
+          type="text"
+          placeholder="Search integrations by name, description, or category..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          leftIcon={<MagnifyingGlassIcon className="w-5 h-5" />}
+          rightSlot={
+            searchQuery ? (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="text-surface-600 hover:text-surface-900"
+                aria-label="Clear search"
+              >
+                <XMarkIcon className="w-5 h-5" />
+              </button>
+            ) : undefined
+          }
+        />
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="card p-4">
-          <p className="text-sm text-surface-400">Available Integrations</p>
-          <p className="text-2xl font-bold text-surface-100 mt-1">
+          <p className="text-sm text-surface-600">Available Integrations</p>
+          <p className="text-2xl font-bold text-surface-900 mt-1">
             {integrationTypes ? Object.keys(integrationTypes).length : 0}
           </p>
         </div>
         <div className="card p-4">
-          <p className="text-sm text-surface-400">Configured</p>
-          <p className="text-2xl font-bold text-green-400 mt-1">
+          <p className="text-sm text-surface-600">Configured</p>
+          <p className="text-2xl font-bold text-emerald-700 mt-1">
             {stats?.total || 0}
           </p>
         </div>
         <div className="card p-4">
-          <p className="text-sm text-surface-400">Active</p>
-          <p className="text-2xl font-bold text-brand-400 mt-1">
+          <p className="text-sm text-surface-600">Active</p>
+          <p className="text-2xl font-bold text-brand-700 mt-1">
             {stats?.byStatus?.active || 0}
           </p>
         </div>
         <div className="card p-4">
-          <p className="text-sm text-surface-400">Evidence Collected</p>
-          <p className="text-2xl font-bold text-purple-400 mt-1">
+          <p className="text-sm text-surface-600">Evidence Collected</p>
+          <p className="text-2xl font-bold text-purple-600 mt-1">
             {stats?.totalEvidenceCollected || 0}
           </p>
         </div>
@@ -239,7 +240,7 @@ export default function Integrations() {
       {/* Integrations by Category */}
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin w-8 h-8 border-4 border-surface-700 rounded-full border-t-brand-500"></div>
+          <div className="animate-spin w-8 h-8 border-4 border-surface-300 rounded-full border-t-brand-500"></div>
         </div>
       ) : (
         <div className="space-y-8">
@@ -247,7 +248,7 @@ export default function Integrations() {
             .sort(([catA], [catB]) => catA.localeCompare(catB))
             .map(([category, items]) => (
               <div key={category}>
-                <h2 className="text-lg font-semibold text-surface-200 mb-4 flex items-center gap-2">
+                <h2 className="text-lg font-semibold text-surface-800 mb-4 flex items-center gap-2">
                   {category}
                   <span className="text-sm font-normal text-surface-500">({items.length})</span>
                 </h2>
@@ -259,7 +260,7 @@ export default function Integrations() {
                       label: 'Not Configured',
                       icon: CogIcon,
                       color: 'text-surface-500',
-                      badge: 'badge-neutral',
+                      variant: 'neutral' as BadgeVariant,
                     };
                     const StatusIcon = statusConfig.icon;
 
@@ -268,7 +269,7 @@ export default function Integrations() {
                         key={type}
                         className={clsx(
                           'card p-6 transition-colors cursor-pointer',
-                          isConfigured ? 'hover:border-surface-700' : 'hover:border-brand-500/50 opacity-75'
+                          isConfigured ? 'hover:border-surface-300' : 'hover:border-brand-500/50 opacity-75'
                         )}
                         onClick={() => {
                           if (isConfigured) {
@@ -281,30 +282,30 @@ export default function Integrations() {
                       >
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex items-center gap-3">
-                            <div className="p-2 bg-surface-800 rounded-lg flex items-center justify-center">
+                            <div className="p-2 bg-surface-100 rounded-lg flex items-center justify-center">
                               <IntegrationIcon
                                 iconSlug={meta.iconSlug || type}
                                 integrationName={meta.name}
-                                className="w-6 h-6 text-surface-100"
+                                className="w-6 h-6 text-surface-900"
                               />
                             </div>
                             <div>
-                              <h3 className="font-semibold text-surface-100">{meta.name}</h3>
-                              <span className={clsx('badge text-xs', statusConfig.badge)}>
+                              <h3 className="font-semibold text-surface-900">{meta.name}</h3>
+                              <Badge variant={statusConfig.variant} size="sm" capitalize={false}>
                                 {statusConfig.label}
-                              </span>
+                              </Badge>
                             </div>
                           </div>
                           <StatusIcon className={clsx('w-5 h-5', statusConfig.color)} />
                         </div>
 
-                        <p className="text-sm text-surface-400 mb-4 line-clamp-2">
+                        <p className="text-sm text-surface-600 mb-4 line-clamp-2">
                           {meta.description}
                         </p>
 
                         {integration?.lastSyncError && (
                           <div className="p-2 bg-red-500/10 border border-red-500/20 rounded-lg mb-4">
-                            <p className="text-xs text-red-400 truncate">{integration.lastSyncError}</p>
+                            <p className="text-xs text-red-600 truncate">{integration.lastSyncError}</p>
                           </div>
                         )}
 
@@ -314,7 +315,7 @@ export default function Integrations() {
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
-                            className="text-xs text-brand-400 hover:text-brand-300 flex items-center gap-1 mb-4"
+                            className="text-xs text-brand-700 hover:text-brand-800 flex items-center gap-1 mb-4"
                           >
                             API Documentation →
                           </a>
@@ -322,7 +323,7 @@ export default function Integrations() {
 
                         {isConfigured ? (
                           <>
-                            <div className="flex items-center justify-between text-xs text-surface-500 pt-4 border-t border-surface-800">
+                            <div className="flex items-center justify-between text-xs text-surface-500 pt-4 border-t border-surface-200">
                               <span>
                                 {integration.lastSyncAt
                                   ? `Last sync: ${new Date(integration.lastSyncAt).toLocaleDateString()}`
@@ -332,24 +333,26 @@ export default function Integrations() {
                             </div>
 
                             {/* Action buttons */}
-                            <div className="flex items-center gap-2 mt-4 pt-4 border-t border-surface-800">
-                              <button
+                            <div className="flex items-center gap-2 mt-4 pt-4 border-t border-surface-200">
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                fullWidth
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleViewDetails(integration);
                                 }}
-                                className="flex-1 btn-secondary text-sm py-1.5"
+                                leftIcon={<EyeIcon className="w-4 h-4" />}
                               >
-                                <EyeIcon className="w-4 h-4 mr-1" />
                                 Configure
-                              </button>
+                              </Button>
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   testMutation.mutate(integration.id);
                                 }}
                                 disabled={testMutation.isPending}
-                                className="p-1.5 text-surface-400 hover:text-surface-100 hover:bg-surface-800 rounded transition-colors"
+                                className="p-1.5 text-surface-600 hover:text-surface-900 hover:bg-surface-100 rounded transition-colors"
                                 title="Test Connection"
                               >
                                 <ArrowPathIcon className={clsx('w-4 h-4', testMutation.isPending && 'animate-spin')} />
@@ -361,7 +364,7 @@ export default function Integrations() {
                                     syncMutation.mutate(integration.id);
                                   }}
                                   disabled={syncMutation.isPending}
-                                  className="p-1.5 text-surface-400 hover:text-green-400 hover:bg-surface-800 rounded transition-colors"
+                                  className="p-1.5 text-surface-600 hover:text-emerald-700 hover:bg-surface-100 rounded transition-colors"
                                   title="Trigger Sync"
                                 >
                                   <PlayIcon className="w-4 h-4" />
@@ -375,7 +378,7 @@ export default function Integrations() {
                                   }
                                 }}
                                 disabled={deleteMutation.isPending}
-                                className="p-1.5 text-surface-400 hover:text-red-400 hover:bg-surface-800 rounded transition-colors"
+                                className="p-1.5 text-surface-600 hover:text-red-600 hover:bg-surface-100 rounded transition-colors"
                                 title="Delete"
                               >
                                 <TrashIcon className="w-4 h-4" />
@@ -383,14 +386,14 @@ export default function Integrations() {
                             </div>
                           </>
                         ) : (
-                          <div className="pt-4 border-t border-surface-800 text-center">
+                          <div className="pt-4 border-t border-surface-200 text-center">
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setPreselectedType(type);
                                 setShowAddModal(true);
                               }}
-                              className="text-sm text-brand-400 hover:text-brand-300 flex items-center gap-2 mx-auto"
+                              className="text-sm text-brand-700 hover:text-brand-800 flex items-center gap-2 mx-auto"
                             >
                               <PlusIcon className="w-4 h-4" />
                               Click to Configure
@@ -497,125 +500,118 @@ function AddIntegrationModal({
   const typeMeta = integrationTypes[selectedType];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative bg-surface-900 border border-surface-800 rounded-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-hidden flex flex-col">
-        <div className="flex items-center justify-between p-6 border-b border-surface-800">
-          <div>
-            <h2 className="text-lg font-semibold text-surface-100">
-              {step === 'select' ? 'Add Integration' : `Configure ${typeMeta?.name || selectedType}`}
-            </h2>
-            <p className="text-sm text-surface-400 mt-1">
-              {step === 'select'
-                ? 'Select an integration type to configure'
-                : 'Enter connection details for this integration'}
-            </p>
-          </div>
-          <button onClick={onClose} className="p-2 hover:bg-surface-800 rounded-lg">
-            <XMarkIcon className="w-5 h-5 text-surface-400" />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-6">
-          {step === 'select' ? (
-            <div className="grid grid-cols-2 gap-3">
-              {Object.entries(integrationTypes).map(([type, meta]: [string, any]) => (
-                <button
-                  key={type}
-                  onClick={() => handleSelectType(type)}
-                  className="p-4 text-left bg-surface-800 hover:bg-surface-700 rounded-lg border border-surface-700 hover:border-surface-600 transition-colors"
-                >
-                  <div className="flex items-center gap-3 mb-2">
-                    <span className="text-2xl">{TYPE_ICONS[type] || '🔗'}</span>
-                    <span className="font-medium text-surface-100">{meta.name}</span>
-                  </div>
-                  <p className="text-xs text-surface-400 line-clamp-2">{meta.description}</p>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div>
-                <label className="label">Name</label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="input mt-1"
-                  placeholder="Integration name"
-                />
-              </div>
-
-              <div>
-                <label className="label">Description (optional)</label>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="input mt-1"
-                  rows={2}
-                  placeholder="Brief description"
-                />
-              </div>
-
-              {typeMeta?.configFields?.length > 0 && (
-                <div className="pt-4 border-t border-surface-800">
-                  <h3 className="text-sm font-medium text-surface-200 mb-3">Connection Settings</h3>
-                  <div className="space-y-3">
-                    {typeMeta.configFields.map((field: any) => (
-                      <div key={field.key}>
-                        <label className="label">
-                          {field.label}
-                          {field.required && <span className="text-red-400 ml-1">*</span>}
-                        </label>
-                        {field.type === 'textarea' ? (
-                          <textarea
-                            value={config[field.key] || ''}
-                            onChange={(e) => setConfig({ ...config, [field.key]: e.target.value })}
-                            className="input mt-1 font-mono text-sm"
-                            rows={4}
-                            placeholder={field.label}
-                          />
-                        ) : (
-                          <input
-                            type={field.type === 'password' ? 'password' : 'text'}
-                            value={config[field.key] || ''}
-                            onChange={(e) => setConfig({ ...config, [field.key]: e.target.value })}
-                            className="input mt-1"
-                            placeholder={field.label}
-                          />
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        <div className="flex justify-between gap-2 p-6 border-t border-surface-800">
-          {step === 'configure' && !preselectedType && (
-            <button onClick={() => setStep('select')} className="btn-secondary">
+    <Dialog
+      open
+      onClose={onClose}
+      size="lg"
+      title={step === 'select' ? 'Add Integration' : `Configure ${typeMeta?.name || selectedType}`}
+      description={
+        step === 'select'
+          ? 'Select an integration type to configure'
+          : 'Enter connection details for this integration'
+      }
+      footer={
+        <div className="flex justify-between gap-2 w-full">
+          {step === 'configure' && !preselectedType ? (
+            <Button variant="secondary" onClick={() => setStep('select')}>
               Back
-            </button>
+            </Button>
+          ) : (
+            <div />
           )}
           <div className="flex gap-2 ml-auto">
-            <button onClick={onClose} className="btn-secondary">
+            <Button variant="secondary" onClick={onClose}>
               Cancel
-            </button>
+            </Button>
             {step === 'configure' && (
-              <button
+              <Button
                 onClick={handleCreate}
                 disabled={!name || createMutation.isPending}
-                className="btn-primary"
               >
                 {createMutation.isPending ? 'Creating...' : 'Create Integration'}
-              </button>
+              </Button>
             )}
           </div>
         </div>
+      }
+    >
+      <div className="max-h-[60vh] overflow-y-auto">
+        {step === 'select' ? (
+          <div className="grid grid-cols-2 gap-3">
+            {Object.entries(integrationTypes).map(([type, meta]: [string, any]) => (
+              <button
+                key={type}
+                onClick={() => handleSelectType(type)}
+                className="p-4 text-left bg-white hover:bg-surface-50 rounded-lg border border-surface-200 hover:border-surface-300 transition-colors"
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <span className="text-2xl">{TYPE_ICONS[type] || '🔗'}</span>
+                  <span className="font-medium text-surface-900">{meta.name}</span>
+                </div>
+                <p className="text-xs text-surface-600 line-clamp-2">{meta.description}</p>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div>
+              <label className="label">Name</label>
+              <Input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="mt-1"
+                placeholder="Integration name"
+              />
+            </div>
+
+            <div>
+              <label className="label">Description (optional)</label>
+              <Textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="mt-1"
+                rows={2}
+                placeholder="Brief description"
+              />
+            </div>
+
+            {typeMeta?.configFields?.length > 0 && (
+              <div className="pt-4 border-t border-surface-200">
+                <h3 className="text-sm font-medium text-surface-800 mb-3">Connection Settings</h3>
+                <div className="space-y-3">
+                  {typeMeta.configFields.map((field: any) => (
+                    <div key={field.key}>
+                      <label className="label">
+                        {field.label}
+                        {field.required && <span className="text-red-600 ml-1">*</span>}
+                      </label>
+                      {field.type === 'textarea' ? (
+                        <Textarea
+                          value={config[field.key] || ''}
+                          onChange={(e) => setConfig({ ...config, [field.key]: e.target.value })}
+                          className="mt-1 font-mono text-sm"
+                          rows={4}
+                          placeholder={field.label}
+                        />
+                      ) : (
+                        <Input
+                          type={field.type === 'password' ? 'password' : 'text'}
+                          value={config[field.key] || ''}
+                          onChange={(e) => setConfig({ ...config, [field.key]: e.target.value })}
+                          className="mt-1"
+                          placeholder={field.label}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
-    </div>
+    </Dialog>
   );
 }
 
@@ -672,171 +668,169 @@ function IntegrationDetailModal({
   const typeMeta = integrationTypes[integration.type] || integration.typeMeta;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative bg-surface-900 border border-surface-800 rounded-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-hidden flex flex-col">
-        <div className="flex items-center justify-between p-6 border-b border-surface-800">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">{TYPE_ICONS[integration.type] || '🔗'}</span>
-            <div>
-              <h2 className="text-lg font-semibold text-surface-100">{integration.name}</h2>
-              <p className="text-sm text-surface-400">{typeMeta?.name || integration.type}</p>
-            </div>
-          </div>
-          <button onClick={onClose} className="p-2 hover:bg-surface-800 rounded-lg">
-            <XMarkIcon className="w-5 h-5 text-surface-400" />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="label">Name</label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="input mt-1"
-              />
-            </div>
-            <div>
-              <label className="label">Status</label>
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                className="input mt-1"
-              >
-                <option value="pending_setup">Setup Required</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
-            </div>
-          </div>
-
+    <Dialog
+      open
+      onClose={onClose}
+      size="lg"
+      title={
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">{TYPE_ICONS[integration.type] || '🔗'}</span>
           <div>
-            <label className="label">Description</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="input mt-1"
-              rows={2}
-            />
+            <div>{integration.name}</div>
+            <p className="text-sm font-normal text-surface-600">{typeMeta?.name || integration.type}</p>
           </div>
-
-          {typeMeta?.configFields?.length > 0 && (
-            <div className="pt-4 border-t border-surface-800">
-              <h3 className="text-sm font-medium text-surface-200 mb-3">Connection Settings</h3>
-              <div className="space-y-3">
-                {typeMeta.configFields.map((field: any) => (
-                  <div key={field.key}>
-                    <label className="label">
-                      {field.label}
-                      {field.required && <span className="text-red-400 ml-1">*</span>}
-                    </label>
-                    {field.type === 'textarea' ? (
-                      <textarea
-                        value={config[field.key] || ''}
-                        onChange={(e) => setConfig({ ...config, [field.key]: e.target.value })}
-                        className="input mt-1 font-mono text-sm"
-                        rows={4}
-                        placeholder={`Enter new ${field.label.toLowerCase()}`}
-                      />
-                    ) : (
-                      <input
-                        type={field.type === 'password' ? 'password' : 'text'}
-                        value={config[field.key] || ''}
-                        onChange={(e) => setConfig({ ...config, [field.key]: e.target.value })}
-                        className="input mt-1"
-                        placeholder={`Enter new ${field.label.toLowerCase()}`}
-                      />
-                    )}
-                    {field.type === 'password' && config[field.key]?.startsWith('••••') && (
-                      <p className="text-xs text-surface-500 mt-1">
-                        Leave blank to keep existing value
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Custom API Editor Button */}
-          <div className="pt-4 border-t border-surface-800">
-            <h3 className="text-sm font-medium text-surface-200 mb-3">Advanced Configuration</h3>
-            <button
-              onClick={onOpenCustomConfig}
-              className="w-full p-4 bg-surface-800 hover:bg-surface-700 rounded-lg border border-surface-700 hover:border-brand-500/50 transition-colors text-left group"
-            >
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-brand-500/20 rounded-lg group-hover:bg-brand-500/30 transition-colors">
-                  <CodeBracketIcon className="w-5 h-5 text-brand-400" />
-                </div>
-                <div>
-                  <p className="font-medium text-surface-100">Custom API Editor</p>
-                  <p className="text-xs text-surface-400 mt-0.5">
-                    Configure custom endpoints or write JavaScript code to define how data is collected
-                  </p>
-                </div>
-              </div>
-            </button>
-          </div>
-
-          {/* Sync History */}
-          {integration.syncJobs?.length > 0 && (
-            <div className="pt-4 border-t border-surface-800">
-              <h3 className="text-sm font-medium text-surface-200 mb-3">Recent Sync Jobs</h3>
-              <div className="space-y-2">
-                {integration.syncJobs.slice(0, 5).map((job: any) => (
-                  <div
-                    key={job.id}
-                    className="flex items-center justify-between p-2 bg-surface-800 rounded-lg text-sm"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={clsx(
-                          'w-2 h-2 rounded-full',
-                          job.status === 'completed' ? 'bg-green-400' :
-                          job.status === 'failed' ? 'bg-red-400' :
-                          job.status === 'running' ? 'bg-blue-400 animate-pulse' :
-                          'bg-surface-500'
-                        )}
-                      />
-                      <span className="text-surface-300 capitalize">{job.status}</span>
-                    </div>
-                    <span className="text-surface-500">
-                      {new Date(job.createdAt).toLocaleString()}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
-
-        <div className="flex justify-between gap-2 p-6 border-t border-surface-800">
-          <button
+      }
+      footer={
+        <div className="flex justify-between gap-2 w-full">
+          <Button
+            variant="secondary"
             onClick={() => testMutation.mutate()}
             disabled={testMutation.isPending}
-            className="btn-secondary"
+            leftIcon={<ArrowPathIcon className={clsx('w-4 h-4', testMutation.isPending && 'animate-spin')} />}
           >
-            <ArrowPathIcon className={clsx('w-4 h-4 mr-2', testMutation.isPending && 'animate-spin')} />
             Test Connection
-          </button>
+          </Button>
           <div className="flex gap-2">
-            <button onClick={onClose} className="btn-secondary">
+            <Button variant="secondary" onClick={onClose}>
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={handleSave}
               disabled={updateMutation.isPending}
-              className="btn-primary"
             >
               {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
-            </button>
+            </Button>
           </div>
         </div>
+      }
+    >
+      <div className="max-h-[60vh] overflow-y-auto space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="label">Name</label>
+            <Input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="mt-1"
+            />
+          </div>
+          <div>
+            <label className="label">Status</label>
+            <Select
+              value={status}
+              onChange={setStatus}
+              className="mt-1"
+              options={[
+                { value: 'pending_setup', label: 'Setup Required' },
+                { value: 'active', label: 'Active' },
+                { value: 'inactive', label: 'Inactive' },
+              ]}
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="label">Description</label>
+          <Textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="mt-1"
+            rows={2}
+          />
+        </div>
+
+        {typeMeta?.configFields?.length > 0 && (
+          <div className="pt-4 border-t border-surface-200">
+            <h3 className="text-sm font-medium text-surface-800 mb-3">Connection Settings</h3>
+            <div className="space-y-3">
+              {typeMeta.configFields.map((field: any) => (
+                <div key={field.key}>
+                  <label className="label">
+                    {field.label}
+                    {field.required && <span className="text-red-600 ml-1">*</span>}
+                  </label>
+                  {field.type === 'textarea' ? (
+                    <Textarea
+                      value={config[field.key] || ''}
+                      onChange={(e) => setConfig({ ...config, [field.key]: e.target.value })}
+                      className="mt-1 font-mono text-sm"
+                      rows={4}
+                      placeholder={`Enter new ${field.label.toLowerCase()}`}
+                    />
+                  ) : (
+                    <Input
+                      type={field.type === 'password' ? 'password' : 'text'}
+                      value={config[field.key] || ''}
+                      onChange={(e) => setConfig({ ...config, [field.key]: e.target.value })}
+                      className="mt-1"
+                      placeholder={`Enter new ${field.label.toLowerCase()}`}
+                    />
+                  )}
+                  {field.type === 'password' && config[field.key]?.startsWith('••••') && (
+                    <p className="text-xs text-surface-500 mt-1">
+                      Leave blank to keep existing value
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Custom API Editor Button */}
+        <div className="pt-4 border-t border-surface-200">
+          <h3 className="text-sm font-medium text-surface-800 mb-3">Advanced Configuration</h3>
+          <button
+            onClick={onOpenCustomConfig}
+            className="w-full p-4 bg-white hover:bg-surface-50 rounded-lg border border-surface-200 hover:border-brand-500/50 transition-colors text-left group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-brand-500/20 rounded-lg group-hover:bg-brand-500/30 transition-colors">
+                <CodeBracketIcon className="w-5 h-5 text-brand-700" />
+              </div>
+              <div>
+                <p className="font-medium text-surface-900">Custom API Editor</p>
+                <p className="text-xs text-surface-600 mt-0.5">
+                  Configure custom endpoints or write JavaScript code to define how data is collected
+                </p>
+              </div>
+            </div>
+          </button>
+        </div>
+
+        {/* Sync History */}
+        {integration.syncJobs?.length > 0 && (
+          <div className="pt-4 border-t border-surface-200">
+            <h3 className="text-sm font-medium text-surface-800 mb-3">Recent Sync Jobs</h3>
+            <div className="space-y-2">
+              {integration.syncJobs.slice(0, 5).map((job: any) => (
+                <div
+                  key={job.id}
+                  className="flex items-center justify-between p-2 bg-surface-100 rounded-lg text-sm"
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={clsx(
+                        'w-2 h-2 rounded-full',
+                        job.status === 'completed' ? 'bg-green-500' :
+                        job.status === 'failed' ? 'bg-red-500' :
+                        job.status === 'running' ? 'bg-blue-500 animate-pulse' :
+                        'bg-surface-500'
+                      )}
+                    />
+                    <span className="text-surface-700 capitalize">{job.status}</span>
+                  </div>
+                  <span className="text-surface-500">
+                    {new Date(job.createdAt).toLocaleString()}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
-    </div>
+    </Dialog>
   );
 }

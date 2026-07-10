@@ -6,32 +6,48 @@ import {
   ClipboardDocumentListIcon,
   PlusIcon,
   CheckIcon,
-  XMarkIcon,
   CalendarIcon,
   UserIcon,
   FlagIcon,
   TrashIcon,
 } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
+import { Button, Badge, Input, Select, Textarea } from '@/components/ui';
+import type { BadgeVariant } from '@/components/ui';
 
 interface TasksPanelProps {
   entityType: string;
   entityId: string;
 }
 
-const STATUS_OPTIONS = [
-  { value: 'open', label: 'Open', color: 'text-blue-400 bg-blue-400/10' },
-  { value: 'in_progress', label: 'In Progress', color: 'text-yellow-400 bg-yellow-400/10' },
-  { value: 'completed', label: 'Completed', color: 'text-green-400 bg-green-400/10' },
-  { value: 'cancelled', label: 'Cancelled', color: 'text-surface-400 bg-surface-400/10' },
+interface StatusOption {
+  value: string;
+  label: string;
+  variant: BadgeVariant;
+}
+
+interface PriorityOption {
+  value: string;
+  label: string;
+  color: string;
+}
+
+const STATUS_OPTIONS: StatusOption[] = [
+  { value: 'open', label: 'Open', variant: 'info' },
+  { value: 'in_progress', label: 'In Progress', variant: 'warning' },
+  { value: 'completed', label: 'Completed', variant: 'success' },
+  { value: 'cancelled', label: 'Cancelled', variant: 'neutral' },
 ];
 
-const PRIORITY_OPTIONS = [
-  { value: 'low', label: 'Low', color: 'text-green-400' },
-  { value: 'medium', label: 'Medium', color: 'text-yellow-400' },
-  { value: 'high', label: 'High', color: 'text-orange-400' },
-  { value: 'critical', label: 'Critical', color: 'text-red-400' },
+const PRIORITY_OPTIONS: PriorityOption[] = [
+  { value: 'low', label: 'Low', color: 'text-emerald-700' },
+  { value: 'medium', label: 'Medium', color: 'text-yellow-700' },
+  { value: 'high', label: 'High', color: 'text-orange-600' },
+  { value: 'critical', label: 'Critical', color: 'text-red-600' },
 ];
+
+const STATUS_SELECT_OPTIONS = STATUS_OPTIONS.map((s) => ({ value: s.value, label: s.label }));
+const PRIORITY_SELECT_OPTIONS = PRIORITY_OPTIONS.map((p) => ({ value: p.value, label: p.label }));
 
 export default function TasksPanel({ entityType, entityId }: TasksPanelProps) {
   const queryClient = useQueryClient();
@@ -53,8 +69,13 @@ export default function TasksPanel({ entityType, entityId }: TasksPanelProps) {
 
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
-    queryFn: () => usersApi.list().then((res) => res.data),
+    queryFn: () => usersApi.list().then((res) => res.data.users ?? []),
   });
+
+  const assigneeOptions = [
+    { value: '', label: 'Unassigned' },
+    ...users.map((user: any) => ({ value: user.id, label: user.displayName })),
+  ];
 
   const createMutation = useMutation({
     mutationFn: (data: any) => tasksApi.create({ entityType, entityId, ...data }),
@@ -110,85 +131,74 @@ export default function TasksPanel({ entityType, entityId }: TasksPanelProps) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <ClipboardDocumentListIcon className="w-5 h-5 text-surface-400" />
-          <h3 className="text-sm font-semibold text-surface-100">
+          <ClipboardDocumentListIcon className="w-5 h-5 text-surface-600" />
+          <h3 className="text-sm font-semibold text-surface-900">
             Tasks ({openTasks.length} open)
           </h3>
         </div>
         {!isCreating && (
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setIsCreating(true)}
-            className="btn-outline text-xs px-2 py-1"
+            leftIcon={<PlusIcon className="w-3 h-3" />}
           >
-            <PlusIcon className="w-3 h-3 mr-1" />
             Add Task
-          </button>
+          </Button>
         )}
       </div>
 
       {/* Create Task Form */}
       {isCreating && (
         <form onSubmit={handleCreate} className="card p-4 space-y-3">
-          <input
-            type="text"
+          <Input
             value={newTask.title}
             onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
             placeholder="Task title..."
-            className="input w-full"
             autoFocus
           />
-          <textarea
+          <Textarea
             value={newTask.description}
             onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
             placeholder="Description (optional)"
-            className="input w-full h-16"
+            className="h-16 min-h-0"
           />
           <div className="grid grid-cols-3 gap-2">
-            <select
+            <Select
               value={newTask.priority}
-              onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
-              className="input text-sm"
-            >
-              {PRIORITY_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-            <select
+              onChange={(value) => setNewTask({ ...newTask, priority: value })}
+              options={PRIORITY_SELECT_OPTIONS}
+              size="sm"
+            />
+            <Select
               value={newTask.assigneeId}
-              onChange={(e) => setNewTask({ ...newTask, assigneeId: e.target.value })}
-              className="input text-sm"
-            >
-              <option value="">Unassigned</option>
-              {users.map((user: any) => (
-                <option key={user.id} value={user.id}>
-                  {user.displayName}
-                </option>
-              ))}
-            </select>
-            <input
+              onChange={(value) => setNewTask({ ...newTask, assigneeId: value })}
+              options={assigneeOptions}
+              size="sm"
+            />
+            <Input
               type="date"
               value={newTask.dueDate}
               onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
-              className="input text-sm"
+              inputSize="sm"
             />
           </div>
           <div className="flex justify-end gap-2">
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
               onClick={() => setIsCreating(false)}
-              className="btn-secondary text-sm"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
+              size="sm"
               disabled={!newTask.title.trim() || createMutation.isPending}
-              className="btn-primary text-sm"
             >
               {createMutation.isPending ? 'Creating...' : 'Create Task'}
-            </button>
+            </Button>
           </div>
         </form>
       )}
@@ -220,7 +230,7 @@ export default function TasksPanel({ entityType, entityId }: TasksPanelProps) {
           {/* Completed Tasks (collapsed) */}
           {completedTasks.length > 0 && (
             <details className="mt-4">
-              <summary className="text-sm text-surface-500 cursor-pointer hover:text-surface-300">
+              <summary className="text-sm text-surface-500 cursor-pointer hover:text-surface-700">
                 {completedTasks.length} completed task(s)
               </summary>
               <div className="mt-2 space-y-2 opacity-60">
@@ -277,80 +287,68 @@ function TaskCard({
   const statusConfig = STATUS_OPTIONS.find((s) => s.value === task.status) || STATUS_OPTIONS[0];
   const priorityConfig = PRIORITY_OPTIONS.find((p) => p.value === task.priority) || PRIORITY_OPTIONS[1];
 
+  const assigneeOptions = [
+    { value: '', label: 'Unassigned' },
+    ...users.map((user: any) => ({ value: user.id, label: user.displayName })),
+  ];
+
   const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'completed';
 
   if (isEditing) {
     return (
       <div className="card p-3 space-y-2">
-        <input
-          type="text"
+        <Input
           value={editData.title}
           onChange={(e) => setEditData({ ...editData, title: e.target.value })}
-          className="input w-full text-sm"
+          inputSize="sm"
         />
-        <textarea
+        <Textarea
           value={editData.description}
           onChange={(e) => setEditData({ ...editData, description: e.target.value })}
-          className="input w-full h-16 text-sm"
           placeholder="Description"
+          className="h-16 min-h-0 text-sm"
         />
         <div className="grid grid-cols-2 gap-2">
-          <select
+          <Select
             value={editData.status}
-            onChange={(e) => setEditData({ ...editData, status: e.target.value })}
-            className="input text-sm"
-          >
-            {STATUS_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-          <select
+            onChange={(value) => setEditData({ ...editData, status: value })}
+            options={STATUS_SELECT_OPTIONS}
+            size="sm"
+          />
+          <Select
             value={editData.priority}
-            onChange={(e) => setEditData({ ...editData, priority: e.target.value })}
-            className="input text-sm"
-          >
-            {PRIORITY_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-          <select
+            onChange={(value) => setEditData({ ...editData, priority: value })}
+            options={PRIORITY_SELECT_OPTIONS}
+            size="sm"
+          />
+          <Select
             value={editData.assigneeId}
-            onChange={(e) => setEditData({ ...editData, assigneeId: e.target.value })}
-            className="input text-sm"
-          >
-            <option value="">Unassigned</option>
-            {users.map((user: any) => (
-              <option key={user.id} value={user.id}>
-                {user.displayName}
-              </option>
-            ))}
-          </select>
-          <input
+            onChange={(value) => setEditData({ ...editData, assigneeId: value })}
+            options={assigneeOptions}
+            size="sm"
+          />
+          <Input
             type="date"
             value={editData.dueDate}
             onChange={(e) => setEditData({ ...editData, dueDate: e.target.value })}
-            className="input text-sm"
+            inputSize="sm"
           />
         </div>
         <div className="flex justify-end gap-2">
-          <button onClick={onCancelEdit} className="btn-secondary text-xs">
+          <Button variant="secondary" size="sm" onClick={onCancelEdit}>
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
+            size="sm"
             onClick={() => onUpdate({
               ...editData,
               assigneeId: editData.assigneeId || null,
               dueDate: editData.dueDate || null,
             })}
             disabled={isUpdating}
-            className="btn-primary text-xs"
           >
             {isUpdating ? 'Saving...' : 'Save'}
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -359,7 +357,7 @@ function TaskCard({
   return (
     <div
       className={clsx(
-        'card p-3 cursor-pointer hover:bg-surface-800 transition-colors',
+        'card p-3 cursor-pointer hover:bg-surface-100 transition-colors',
         task.status === 'completed' && 'opacity-60'
       )}
       onClick={onEdit}
@@ -367,15 +365,15 @@ function TaskCard({
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className={clsx('badge text-xs', statusConfig.color)}>
+            <Badge variant={statusConfig.variant} size="sm">
               {statusConfig.label}
-            </span>
+            </Badge>
             <span className={clsx('text-xs', priorityConfig.color)}>
               <FlagIcon className="w-3 h-3 inline" /> {priorityConfig.label}
             </span>
           </div>
           <p className={clsx(
-            'text-sm font-medium text-surface-200',
+            'text-sm font-medium text-surface-800',
             task.status === 'completed' && 'line-through'
           )}>
             {task.title}
@@ -395,7 +393,7 @@ function TaskCard({
             {task.dueDate && (
               <span className={clsx(
                 'flex items-center gap-1',
-                isOverdue && 'text-red-400'
+                isOverdue && 'text-red-600'
               )}>
                 <CalendarIcon className="w-3 h-3" />
                 {new Date(task.dueDate).toLocaleDateString()}
@@ -411,7 +409,7 @@ function TaskCard({
                 e.stopPropagation();
                 onUpdate({ status: 'completed' });
               }}
-              className="p-1 rounded text-surface-500 hover:text-green-400 hover:bg-surface-700 transition-colors"
+              className="p-1 rounded text-surface-500 hover:text-emerald-700 hover:bg-surface-200 transition-colors"
               title="Mark complete"
             >
               <CheckIcon className="w-4 h-4" />
@@ -422,7 +420,7 @@ function TaskCard({
               e.stopPropagation();
               onDelete();
             }}
-            className="p-1 rounded text-surface-500 hover:text-red-400 hover:bg-surface-700 transition-colors"
+            className="p-1 rounded text-surface-500 hover:text-red-600 hover:bg-surface-200 transition-colors"
             title="Delete"
           >
             <TrashIcon className="w-4 h-4" />
@@ -432,6 +430,3 @@ function TaskCard({
     </div>
   );
 }
-
-
-

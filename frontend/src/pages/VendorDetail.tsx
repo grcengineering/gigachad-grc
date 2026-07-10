@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeftIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { vendorsApi } from '../lib/api';
+import { Button, Input, Select, Textarea } from '@/components/ui';
 
 interface Vendor {
   id: string;
@@ -40,24 +41,37 @@ interface Vendor {
   updatedAt: string;
 }
 
+const CATEGORY_OPTIONS = [
+  { value: 'software_vendor', label: 'Software Vendor' },
+  { value: 'cloud_provider', label: 'Cloud Provider' },
+  { value: 'professional_services', label: 'Professional Services' },
+  { value: 'hardware_vendor', label: 'Hardware Vendor' },
+  { value: 'consultant', label: 'Consultant' },
+];
+
+const TIER_OPTIONS = [
+  { value: 'tier_1', label: 'Tier 1 (Critical)' },
+  { value: 'tier_2', label: 'Tier 2 (High)' },
+  { value: 'tier_3', label: 'Tier 3 (Medium)' },
+  { value: 'tier_4', label: 'Tier 4 (Low)' },
+];
+
+const STATUS_OPTIONS = [
+  { value: 'active', label: 'Active' },
+  { value: 'inactive', label: 'Inactive' },
+  { value: 'pending_onboarding', label: 'Pending Onboarding' },
+  { value: 'offboarding', label: 'Offboarding' },
+  { value: 'terminated', label: 'Terminated' },
+];
+
 export default function VendorDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [vendor, setVendor] = useState<Vendor | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  useEffect(() => {
-    if (id && id !== 'new') {
-      fetchVendor();
-    } else {
-      setLoading(false);
-      setEditing(true);
-    }
-  }, [id]);
-
-  const fetchVendor = async () => {
+  const fetchVendor = useCallback(async () => {
     try {
       const response = await vendorsApi.get(id!);
       setVendor(response.data);
@@ -66,7 +80,16 @@ export default function VendorDetail() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    if (id && id !== 'new') {
+      fetchVendor();
+    } else {
+      setLoading(false);
+      setEditing(true);
+    }
+  }, [id, fetchVendor]);
 
   const handleSave = async (formData: Partial<Vendor>) => {
     try {
@@ -100,7 +123,7 @@ export default function VendorDetail() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-surface-400">Loading vendor...</div>
+        <div className="text-surface-600">Loading vendor...</div>
       </div>
     );
   }
@@ -112,36 +135,37 @@ export default function VendorDetail() {
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate('/vendors')}
-            className="p-2 text-surface-400 hover:text-surface-100 hover:bg-surface-800 rounded-lg transition-colors"
+            className="p-2 text-surface-600 hover:text-surface-900 hover:bg-surface-100 rounded-lg transition-colors"
           >
             <ArrowLeftIcon className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-3xl font-bold text-surface-100">
+            <h1 className="text-3xl font-bold text-surface-900">
               {id === 'new' ? 'New Vendor' : vendor?.name || 'Vendor Details'}
             </h1>
             {vendor?.vendorId && (
-              <p className="mt-1 text-surface-400">{vendor.vendorId}</p>
+              <p className="mt-1 text-surface-600">{vendor.vendorId}</p>
             )}
           </div>
         </div>
 
         {id !== 'new' && (
           <div className="flex items-center gap-2">
-            <button
+            <Button
+              variant="ghost"
               onClick={() => setEditing(!editing)}
-              className="flex items-center gap-2 px-4 py-2 text-surface-300 hover:text-surface-100 hover:bg-surface-800 rounded-lg transition-colors"
+              leftIcon={<PencilIcon className="w-5 h-5" />}
             >
-              <PencilIcon className="w-5 h-5" />
               {editing ? 'Cancel' : 'Edit'}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="ghost"
               onClick={handleDelete}
-              className="flex items-center gap-2 px-4 py-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
+              leftIcon={<TrashIcon className="w-5 h-5" />}
+              className="text-red-600 hover:text-red-700 hover:bg-red-500/10"
             >
-              <TrashIcon className="w-5 h-5" />
               Delete
-            </button>
+            </Button>
           </div>
         )}
       </div>
@@ -192,98 +216,73 @@ function VendorForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="bg-surface-900 border border-surface-800 rounded-lg p-6 space-y-6">
+      <div className="bg-white border border-surface-200 rounded-lg p-6 space-y-6">
         {/* Basic Information */}
         <div>
-          <h3 className="text-lg font-medium text-surface-100 mb-4">Basic Information</h3>
+          <h3 className="text-lg font-medium text-surface-900 mb-4">Basic Information</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-surface-300 mb-1">
+              <label className="block text-sm font-medium text-surface-700 mb-1">
                 Vendor Name *
               </label>
-              <input
-                type="text"
+              <Input
                 required
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-surface-300 mb-1">
+              <label className="block text-sm font-medium text-surface-700 mb-1">
                 Legal Name
               </label>
-              <input
-                type="text"
+              <Input
                 value={formData.legalName}
                 onChange={(e) => setFormData({ ...formData, legalName: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-surface-300 mb-1">
+              <label className="block text-sm font-medium text-surface-700 mb-1">
                 Category *
               </label>
-              <select
-                required
+              <Select
                 value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
-              >
-                <option value="software_vendor">Software Vendor</option>
-                <option value="cloud_provider">Cloud Provider</option>
-                <option value="professional_services">Professional Services</option>
-                <option value="hardware_vendor">Hardware Vendor</option>
-                <option value="consultant">Consultant</option>
-              </select>
+                onChange={(value) => setFormData({ ...formData, category: value })}
+                options={CATEGORY_OPTIONS}
+              />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-surface-300 mb-1">
+              <label className="block text-sm font-medium text-surface-700 mb-1">
                 Tier *
               </label>
-              <select
-                required
+              <Select
                 value={formData.tier}
-                onChange={(e) => setFormData({ ...formData, tier: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
-              >
-                <option value="tier_1">Tier 1 (Critical)</option>
-                <option value="tier_2">Tier 2 (High)</option>
-                <option value="tier_3">Tier 3 (Medium)</option>
-                <option value="tier_4">Tier 4 (Low)</option>
-              </select>
+                onChange={(value) => setFormData({ ...formData, tier: value })}
+                options={TIER_OPTIONS}
+              />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-surface-300 mb-1">
+              <label className="block text-sm font-medium text-surface-700 mb-1">
                 Status *
               </label>
-              <select
-                required
+              <Select
                 value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
-              >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="pending_onboarding">Pending Onboarding</option>
-                <option value="offboarding">Offboarding</option>
-                <option value="terminated">Terminated</option>
-              </select>
+                onChange={(value) => setFormData({ ...formData, status: value })}
+                options={STATUS_OPTIONS}
+              />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-surface-300 mb-1">
+              <label className="block text-sm font-medium text-surface-700 mb-1">
                 Website
               </label>
-              <input
+              <Input
                 type="url"
                 value={formData.website}
                 onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
               />
             </div>
           </div>
@@ -291,41 +290,37 @@ function VendorForm({
 
         {/* Contact Information */}
         <div>
-          <h3 className="text-lg font-medium text-surface-100 mb-4">Primary Contact</h3>
+          <h3 className="text-lg font-medium text-surface-900 mb-4">Primary Contact</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-surface-300 mb-1">
+              <label className="block text-sm font-medium text-surface-700 mb-1">
                 Contact Name
               </label>
-              <input
-                type="text"
+              <Input
                 value={formData.primaryContact}
                 onChange={(e) => setFormData({ ...formData, primaryContact: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-surface-300 mb-1">
+              <label className="block text-sm font-medium text-surface-700 mb-1">
                 Email
               </label>
-              <input
+              <Input
                 type="email"
                 value={formData.primaryContactEmail}
                 onChange={(e) => setFormData({ ...formData, primaryContactEmail: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-surface-300 mb-1">
+              <label className="block text-sm font-medium text-surface-700 mb-1">
                 Phone
               </label>
-              <input
+              <Input
                 type="tel"
                 value={formData.primaryContactPhone}
                 onChange={(e) => setFormData({ ...formData, primaryContactPhone: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
               />
             </div>
           </div>
@@ -334,26 +329,24 @@ function VendorForm({
         {/* Description and Notes */}
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-surface-300 mb-1">
+            <label className="block text-sm font-medium text-surface-700 mb-1">
               Description
             </label>
-            <textarea
+            <Textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={3}
-              className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-surface-300 mb-1">
+            <label className="block text-sm font-medium text-surface-700 mb-1">
               Notes
             </label>
-            <textarea
+            <Textarea
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               rows={3}
-              className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
             />
           </div>
         </div>
@@ -361,19 +354,12 @@ function VendorForm({
 
       {/* Actions */}
       <div className="flex items-center justify-end gap-3">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-4 py-2 text-surface-300 hover:text-surface-100 hover:bg-surface-800 rounded-lg transition-colors"
-        >
+        <Button type="button" variant="ghost" onClick={onCancel}>
           Cancel
-        </button>
-        <button
-          type="submit"
-          className="px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors"
-        >
+        </Button>
+        <Button type="submit">
           Save Vendor
-        </button>
+        </Button>
       </div>
     </form>
   );
@@ -383,8 +369,8 @@ function VendorView({ vendor }: { vendor: Vendor }) {
   return (
     <div className="space-y-6">
       {/* Basic Information */}
-      <div className="bg-surface-900 border border-surface-800 rounded-lg p-6">
-        <h3 className="text-lg font-medium text-surface-100 mb-4">Basic Information</h3>
+      <div className="bg-white border border-surface-200 rounded-lg p-6">
+        <h3 className="text-lg font-medium text-surface-900 mb-4">Basic Information</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <InfoField label="Vendor Name" value={vendor.name} />
           <InfoField label="Legal Name" value={vendor.legalName} />
@@ -397,8 +383,8 @@ function VendorView({ vendor }: { vendor: Vendor }) {
 
       {/* Contact Information */}
       {(vendor.primaryContact || vendor.primaryContactEmail || vendor.primaryContactPhone) && (
-        <div className="bg-surface-900 border border-surface-800 rounded-lg p-6">
-          <h3 className="text-lg font-medium text-surface-100 mb-4">Primary Contact</h3>
+        <div className="bg-white border border-surface-200 rounded-lg p-6">
+          <h3 className="text-lg font-medium text-surface-900 mb-4">Primary Contact</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <InfoField label="Name" value={vendor.primaryContact} />
             <InfoField label="Email" value={vendor.primaryContactEmail} />
@@ -409,17 +395,17 @@ function VendorView({ vendor }: { vendor: Vendor }) {
 
       {/* Description */}
       {vendor.description && (
-        <div className="bg-surface-900 border border-surface-800 rounded-lg p-6">
-          <h3 className="text-lg font-medium text-surface-100 mb-4">Description</h3>
-          <p className="text-surface-300">{vendor.description}</p>
+        <div className="bg-white border border-surface-200 rounded-lg p-6">
+          <h3 className="text-lg font-medium text-surface-900 mb-4">Description</h3>
+          <p className="text-surface-700">{vendor.description}</p>
         </div>
       )}
 
       {/* Notes */}
       {vendor.notes && (
-        <div className="bg-surface-900 border border-surface-800 rounded-lg p-6">
-          <h3 className="text-lg font-medium text-surface-100 mb-4">Notes</h3>
-          <p className="text-surface-300 whitespace-pre-wrap">{vendor.notes}</p>
+        <div className="bg-white border border-surface-200 rounded-lg p-6">
+          <h3 className="text-lg font-medium text-surface-900 mb-4">Notes</h3>
+          <p className="text-surface-700 whitespace-pre-wrap">{vendor.notes}</p>
         </div>
       )}
     </div>
@@ -441,14 +427,14 @@ function InfoField({
 
   return (
     <div>
-      <dt className="text-sm font-medium text-surface-400 mb-1">{label}</dt>
-      <dd className={`text-sm text-surface-100 ${capitalize ? 'capitalize' : ''}`}>
+      <dt className="text-sm font-medium text-surface-600 mb-1">{label}</dt>
+      <dd className={`text-sm text-surface-900 ${capitalize ? 'capitalize' : ''}`}>
         {link ? (
           <a
             href={value.toString()}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-brand-400 hover:text-brand-300"
+            className="text-brand-700 hover:text-brand-800"
           >
             {value}
           </a>
@@ -456,39 +442,6 @@ function InfoField({
           value
         )}
       </dd>
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-surface-900 border border-surface-800 rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold text-surface-100 mb-2">Delete Vendor</h3>
-            <p className="text-surface-400 mb-6">
-              Are you sure you want to delete "{vendor?.name}"? This action cannot be undone.
-            </p>
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="px-4 py-2 bg-surface-800 text-surface-100 rounded-lg hover:bg-surface-700 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={async () => {
-                  try {
-                    await vendorsApi.delete(id!);
-                    navigate('/vendors');
-                  } catch (error) {
-                    console.error('Error deleting vendor:', error);
-                    alert('Failed to delete vendor');
-                  }
-                }}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

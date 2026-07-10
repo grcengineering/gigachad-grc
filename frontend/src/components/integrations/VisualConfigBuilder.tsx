@@ -6,6 +6,7 @@ import {
   ChevronUpIcon,
 } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
+import { Button, Input, Select, Textarea } from '@/components/ui';
 
 interface EndpointConfig {
   name: string;
@@ -49,6 +50,13 @@ interface Props {
 }
 
 const HTTP_METHODS = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'] as const;
+
+const HTTP_METHOD_OPTIONS = HTTP_METHODS.map((m) => ({ value: m, label: m }));
+
+const API_KEY_LOCATION_OPTIONS = [
+  { value: 'header', label: 'Header' },
+  { value: 'query', label: 'Query Parameter' },
+];
 
 export default function VisualConfigBuilder({ config, onChange, onTest, isTestLoading }: Props) {
   const [expandedEndpoint, setExpandedEndpoint] = useState<number | null>(0);
@@ -105,15 +113,13 @@ export default function VisualConfigBuilder({ config, onChange, onTest, isTestLo
     <div className="space-y-6">
       {/* Base URL */}
       <div>
-        <label className="block text-sm font-medium text-surface-300 mb-2">
+        <label className="block text-sm font-medium text-surface-700 mb-2">
           Base URL
         </label>
-        <input
-          type="text"
+        <Input
           value={config.baseUrl}
           onChange={(e) => updateBaseUrl(e.target.value)}
           placeholder="https://api.example.com"
-          className="input w-full"
         />
         <p className="text-xs text-surface-500 mt-1">
           The base URL for all API requests
@@ -121,9 +127,9 @@ export default function VisualConfigBuilder({ config, onChange, onTest, isTestLo
       </div>
 
       {/* Authentication */}
-      <div className="border border-surface-700 rounded-lg p-4">
-        <h3 className="text-sm font-medium text-surface-200 mb-4">Authentication</h3>
-        
+      <div className="border border-surface-300 rounded-lg p-4">
+        <h3 className="text-sm font-medium text-surface-800 mb-4">Authentication</h3>
+
         <div className="flex gap-4 mb-4">
           <label className="flex items-center gap-2 cursor-pointer">
             <input
@@ -133,7 +139,7 @@ export default function VisualConfigBuilder({ config, onChange, onTest, isTestLo
               onChange={() => updateAuthType(null)}
               className="text-brand-500"
             />
-            <span className="text-sm text-surface-300">None</span>
+            <span className="text-sm text-surface-700">None</span>
           </label>
           <label className="flex items-center gap-2 cursor-pointer">
             <input
@@ -143,7 +149,7 @@ export default function VisualConfigBuilder({ config, onChange, onTest, isTestLo
               onChange={() => updateAuthType('api_key')}
               className="text-brand-500"
             />
-            <span className="text-sm text-surface-300">API Key</span>
+            <span className="text-sm text-surface-700">API Key</span>
           </label>
           <label className="flex items-center gap-2 cursor-pointer">
             <input
@@ -153,7 +159,7 @@ export default function VisualConfigBuilder({ config, onChange, onTest, isTestLo
               onChange={() => updateAuthType('oauth2')}
               className="text-brand-500"
             />
-            <span className="text-sm text-surface-300">OAuth 2.0</span>
+            <span className="text-sm text-surface-700">OAuth 2.0</span>
           </label>
         </div>
 
@@ -161,36 +167,33 @@ export default function VisualConfigBuilder({ config, onChange, onTest, isTestLo
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs text-surface-400 mb-1">Key Name</label>
-                <input
-                  type="text"
+                <label className="block text-xs text-surface-600 mb-1">Key Name</label>
+                <Input
                   value={config.authConfig?.keyName || ''}
                   onChange={(e) => updateAuthConfig({ ...config.authConfig, keyName: e.target.value })}
                   placeholder="X-API-Key"
-                  className="input w-full text-sm"
+                  inputSize="sm"
                 />
               </div>
               <div>
-                <label className="block text-xs text-surface-400 mb-1">Key Value</label>
-                <input
+                <label className="block text-xs text-surface-600 mb-1">Key Value</label>
+                <Input
                   type="password"
                   value={config.authConfig?.keyValue || ''}
                   onChange={(e) => updateAuthConfig({ ...config.authConfig, keyValue: e.target.value })}
                   placeholder="Your API key"
-                  className="input w-full text-sm"
+                  inputSize="sm"
                 />
               </div>
             </div>
             <div>
-              <label className="block text-xs text-surface-400 mb-1">Send In</label>
-              <select
+              <label className="block text-xs text-surface-600 mb-1">Send In</label>
+              <Select
                 value={config.authConfig?.location || 'header'}
-                onChange={(e) => updateAuthConfig({ ...config.authConfig, location: e.target.value as 'header' | 'query' })}
-                className="input w-full text-sm"
-              >
-                <option value="header">Header</option>
-                <option value="query">Query Parameter</option>
-              </select>
+                onChange={(value) => updateAuthConfig({ ...config.authConfig, location: value as 'header' | 'query' })}
+                options={API_KEY_LOCATION_OPTIONS}
+                size="sm"
+              />
             </div>
           </div>
         )}
@@ -198,45 +201,42 @@ export default function VisualConfigBuilder({ config, onChange, onTest, isTestLo
         {config.authType === 'oauth2' && (
           <div className="space-y-3">
             <div>
-              <label className="block text-xs text-surface-400 mb-1">Token URL</label>
-              <input
-                type="text"
+              <label className="block text-xs text-surface-600 mb-1">Token URL</label>
+              <Input
                 value={config.authConfig?.tokenUrl || ''}
                 onChange={(e) => updateAuthConfig({ ...config.authConfig, tokenUrl: e.target.value })}
                 placeholder="https://auth.example.com/oauth/token"
-                className="input w-full text-sm"
+                inputSize="sm"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs text-surface-400 mb-1">Client ID</label>
-                <input
-                  type="text"
+                <label className="block text-xs text-surface-600 mb-1">Client ID</label>
+                <Input
                   value={config.authConfig?.clientId || ''}
                   onChange={(e) => updateAuthConfig({ ...config.authConfig, clientId: e.target.value })}
                   placeholder="client_id"
-                  className="input w-full text-sm"
+                  inputSize="sm"
                 />
               </div>
               <div>
-                <label className="block text-xs text-surface-400 mb-1">Client Secret</label>
-                <input
+                <label className="block text-xs text-surface-600 mb-1">Client Secret</label>
+                <Input
                   type="password"
                   value={config.authConfig?.clientSecret || ''}
                   onChange={(e) => updateAuthConfig({ ...config.authConfig, clientSecret: e.target.value })}
                   placeholder="client_secret"
-                  className="input w-full text-sm"
+                  inputSize="sm"
                 />
               </div>
             </div>
             <div>
-              <label className="block text-xs text-surface-400 mb-1">Scope (optional)</label>
-              <input
-                type="text"
+              <label className="block text-xs text-surface-600 mb-1">Scope (optional)</label>
+              <Input
                 value={config.authConfig?.scope || ''}
                 onChange={(e) => updateAuthConfig({ ...config.authConfig, scope: e.target.value })}
                 placeholder="read write"
-                className="input w-full text-sm"
+                inputSize="sm"
               />
             </div>
           </div>
@@ -246,18 +246,19 @@ export default function VisualConfigBuilder({ config, onChange, onTest, isTestLo
       {/* Endpoints */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-medium text-surface-200">Endpoints</h3>
-          <button
+          <h3 className="text-sm font-medium text-surface-800">Endpoints</h3>
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={addEndpoint}
-            className="btn-secondary text-sm flex items-center gap-1"
+            leftIcon={<PlusIcon className="w-4 h-4" />}
           >
-            <PlusIcon className="w-4 h-4" />
             Add Endpoint
-          </button>
+          </Button>
         </div>
 
         {config.endpoints.length === 0 ? (
-          <div className="text-center py-8 text-surface-500 border border-dashed border-surface-700 rounded-lg">
+          <div className="text-center py-8 text-surface-500 border border-dashed border-surface-300 rounded-lg">
             No endpoints configured. Add an endpoint to get started.
           </div>
         ) : (
@@ -295,7 +296,7 @@ interface EndpointCardProps {
 
 function EndpointCard({
   endpoint,
-  index,
+  index: _index,
   isExpanded,
   onToggle,
   onChange,
@@ -324,43 +325,43 @@ function EndpointCard({
   };
 
   const methodColors: Record<string, string> = {
-    GET: 'bg-green-500/20 text-green-400',
-    POST: 'bg-blue-500/20 text-blue-400',
-    PUT: 'bg-yellow-500/20 text-yellow-400',
-    DELETE: 'bg-red-500/20 text-red-400',
-    PATCH: 'bg-purple-500/20 text-purple-400',
+    GET: 'bg-green-500/20 text-emerald-700',
+    POST: 'bg-blue-500/20 text-blue-600',
+    PUT: 'bg-yellow-500/20 text-yellow-700',
+    DELETE: 'bg-red-500/20 text-red-600',
+    PATCH: 'bg-purple-500/20 text-purple-600',
   };
 
   return (
-    <div className="border border-surface-700 rounded-lg overflow-hidden">
+    <div className="border border-surface-300 rounded-lg overflow-hidden">
       {/* Header */}
       <div
-        className="flex items-center justify-between px-4 py-3 bg-surface-800/50 cursor-pointer"
+        className="flex items-center justify-between px-4 py-3 bg-surface-100/50 cursor-pointer"
         onClick={onToggle}
       >
         <div className="flex items-center gap-3">
           <span className={clsx('px-2 py-0.5 rounded text-xs font-medium', methodColors[endpoint.method])}>
             {endpoint.method}
           </span>
-          <span className="text-surface-200 font-medium">{endpoint.name || endpoint.path}</span>
+          <span className="text-surface-800 font-medium">{endpoint.name || endpoint.path}</span>
         </div>
         <div className="flex items-center gap-2">
-          <button
+          <Button
+            size="sm"
             onClick={(e) => {
               e.stopPropagation();
               onTest();
             }}
             disabled={isTestLoading}
-            className="text-xs px-2 py-1 bg-brand-600 text-white rounded hover:bg-brand-700 disabled:opacity-50"
           >
             {isTestLoading ? 'Testing...' : 'Test'}
-          </button>
+          </Button>
           <button
             onClick={(e) => {
               e.stopPropagation();
               onRemove();
             }}
-            className="p-1 text-surface-500 hover:text-red-400"
+            className="p-1 text-surface-500 hover:text-red-600"
           >
             <TrashIcon className="w-4 h-4" />
           </button>
@@ -374,27 +375,25 @@ function EndpointCard({
 
       {/* Expanded Content */}
       {isExpanded && (
-        <div className="p-4 space-y-4 bg-surface-900/30">
+        <div className="p-4 space-y-4 bg-white/30">
           {/* Name & Description */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs text-surface-400 mb-1">Name</label>
-              <input
-                type="text"
+              <label className="block text-xs text-surface-600 mb-1">Name</label>
+              <Input
                 value={endpoint.name}
                 onChange={(e) => onChange({ name: e.target.value })}
                 placeholder="Endpoint name"
-                className="input w-full text-sm"
+                inputSize="sm"
               />
             </div>
             <div>
-              <label className="block text-xs text-surface-400 mb-1">Description</label>
-              <input
-                type="text"
+              <label className="block text-xs text-surface-600 mb-1">Description</label>
+              <Input
                 value={endpoint.description}
                 onChange={(e) => onChange({ description: e.target.value })}
                 placeholder="What this endpoint does"
-                className="input w-full text-sm"
+                inputSize="sm"
               />
             </div>
           </div>
@@ -402,35 +401,32 @@ function EndpointCard({
           {/* Method & Path */}
           <div className="flex gap-4">
             <div className="w-32">
-              <label className="block text-xs text-surface-400 mb-1">Method</label>
-              <select
+              <label className="block text-xs text-surface-600 mb-1">Method</label>
+              <Select
                 value={endpoint.method}
-                onChange={(e) => onChange({ method: e.target.value as any })}
-                className="input w-full text-sm"
-              >
-                {HTTP_METHODS.map((m) => (
-                  <option key={m} value={m}>{m}</option>
-                ))}
-              </select>
+                onChange={(value) => onChange({ method: value as EndpointConfig['method'] })}
+                options={HTTP_METHOD_OPTIONS}
+                size="sm"
+              />
             </div>
             <div className="flex-1">
-              <label className="block text-xs text-surface-400 mb-1">Path</label>
-              <input
-                type="text"
+              <label className="block text-xs text-surface-600 mb-1">Path</label>
+              <Input
                 value={endpoint.path}
                 onChange={(e) => onChange({ path: e.target.value })}
                 placeholder="/api/endpoint"
-                className="input w-full text-sm font-mono"
+                inputSize="sm"
+                className="font-mono"
               />
             </div>
           </div>
 
           {/* Headers */}
           <div>
-            <label className="block text-xs text-surface-400 mb-1">
-              Headers <span className="text-surface-600">(one per line, format: Key: Value)</span>
+            <label className="block text-xs text-surface-600 mb-1">
+              Headers <span className="text-surface-500">(one per line, format: Key: Value)</span>
             </label>
-            <textarea
+            <Textarea
               value={headersText}
               onChange={(e) => {
                 setHeadersText(e.target.value);
@@ -438,16 +434,16 @@ function EndpointCard({
               }}
               placeholder="Content-Type: application/json"
               rows={2}
-              className="input w-full text-sm font-mono"
+              className="text-sm font-mono min-h-0"
             />
           </div>
 
           {/* Query Params */}
           <div>
-            <label className="block text-xs text-surface-400 mb-1">
-              Query Parameters <span className="text-surface-600">(one per line, format: key=value)</span>
+            <label className="block text-xs text-surface-600 mb-1">
+              Query Parameters <span className="text-surface-500">(one per line, format: key=value)</span>
             </label>
-            <textarea
+            <Textarea
               value={paramsText}
               onChange={(e) => {
                 setParamsText(e.target.value);
@@ -455,15 +451,15 @@ function EndpointCard({
               }}
               placeholder="page=1&#10;limit=100"
               rows={2}
-              className="input w-full text-sm font-mono"
+              className="text-sm font-mono min-h-0"
             />
           </div>
 
           {/* Request Body (for POST/PUT/PATCH) */}
           {['POST', 'PUT', 'PATCH'].includes(endpoint.method) && (
             <div>
-              <label className="block text-xs text-surface-400 mb-1">Request Body (JSON)</label>
-              <textarea
+              <label className="block text-xs text-surface-600 mb-1">Request Body (JSON)</label>
+              <Textarea
                 value={JSON.stringify(endpoint.body || {}, null, 2)}
                 onChange={(e) => {
                   try {
@@ -475,53 +471,53 @@ function EndpointCard({
                 }}
                 placeholder='{"key": "value"}'
                 rows={4}
-                className="input w-full text-sm font-mono"
+                className="text-sm font-mono min-h-0"
               />
             </div>
           )}
 
           {/* Response Mapping */}
-          <div className="border-t border-surface-700 pt-4">
-            <h4 className="text-xs font-medium text-surface-300 mb-3">Response Mapping (JSONPath)</h4>
+          <div className="border-t border-surface-300 pt-4">
+            <h4 className="text-xs font-medium text-surface-700 mb-3">Response Mapping (JSONPath)</h4>
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs text-surface-500 mb-1">Title Field</label>
-                <input
-                  type="text"
+                <Input
                   value={endpoint.responseMapping?.title || ''}
                   onChange={(e) => onChange({
                     responseMapping: { ...endpoint.responseMapping, title: e.target.value }
                   })}
                   placeholder="$.data.name"
-                  className="input w-full text-sm font-mono"
+                  inputSize="sm"
+                  className="font-mono"
                 />
               </div>
               <div>
                 <label className="block text-xs text-surface-500 mb-1">Description Field</label>
-                <input
-                  type="text"
+                <Input
                   value={endpoint.responseMapping?.description || ''}
                   onChange={(e) => onChange({
                     responseMapping: { ...endpoint.responseMapping, description: e.target.value }
                   })}
                   placeholder="$.data.summary"
-                  className="input w-full text-sm font-mono"
+                  inputSize="sm"
+                  className="font-mono"
                 />
               </div>
               <div>
                 <label className="block text-xs text-surface-500 mb-1">Data Field</label>
-                <input
-                  type="text"
+                <Input
                   value={endpoint.responseMapping?.data || ''}
                   onChange={(e) => onChange({
                     responseMapping: { ...endpoint.responseMapping, data: e.target.value }
                   })}
                   placeholder="$.data"
-                  className="input w-full text-sm font-mono"
+                  inputSize="sm"
+                  className="font-mono"
                 />
               </div>
             </div>
-            <p className="text-xs text-surface-600 mt-2">
+            <p className="text-xs text-surface-500 mt-2">
               Use JSONPath syntax to extract values from the API response for evidence records.
             </p>
           </div>
@@ -530,6 +526,3 @@ function EndpointCard({
     </div>
   );
 }
-
-
-

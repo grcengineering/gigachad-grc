@@ -1,270 +1,249 @@
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { risksApi } from '../lib/api';
 import {
-  ExclamationTriangleIcon,
-  CheckCircleIcon,
-  ClockIcon,
-  ArrowTrendingUpIcon,
-  ArrowTrendingDownIcon,
-  ChartBarIcon,
-} from '@heroicons/react/24/outline';
+  AlertTriangle,
+  CheckCircle2,
+  Clock,
+  TrendingUp,
+  TrendingDown,
+  BarChart,
+} from 'lucide-react';
+import { cn } from '@/lib/cn';
+import {
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+  PageHeader,
+  Skeleton,
+  EmptyState,
+} from '@/components/ui';
+import { riskStatusVariant } from '@/lib/riskStatus';
+
+const LEVEL_BG: Record<string, string> = {
+  critical: 'bg-red-500',
+  high: 'bg-orange-500',
+  medium: 'bg-amber-500',
+  low: 'bg-emerald-500',
+};
+
 
 export default function RiskDashboard() {
-  // Fetch dashboard stats
+  const navigate = useNavigate();
   const { data: dashboard, isLoading } = useQuery({
     queryKey: ['risk-dashboard'],
-    queryFn: async () => {
-      const response = await risksApi.getDashboard();
-      return response.data;
-    },
+    queryFn: () => risksApi.getDashboard().then((r) => r.data),
   });
 
-  // Fetch recent risks
   const { data: recentRisks } = useQuery({
     queryKey: ['risks', 'recent'],
-    queryFn: async () => {
-      const response = await risksApi.list({ limit: 5, sortBy: 'createdAt', sortOrder: 'desc' });
-      return response.data;
-    },
+    queryFn: () => risksApi.list({ limit: 5 }).then((r) => r.data),
   });
-
-  // Fetch trend data
-  const { data: trendData } = useQuery({
-    queryKey: ['risk-trend'],
-    queryFn: async () => {
-      const response = await risksApi.getTrend(30);
-      return response.data;
-    },
-  });
-
-  const getRiskLevelColor = (level: string) => {
-    switch (level) {
-      case 'critical':
-        return 'bg-red-500';
-      case 'high':
-        return 'bg-orange-500';
-      case 'medium':
-        return 'bg-amber-500';
-      case 'low':
-        return 'bg-emerald-500';
-      default:
-        return 'bg-surface-500';
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    if (status.includes('complete') || status.includes('mitigat') || status.includes('accept') || status.includes('avoid') || status.includes('transfer')) {
-      return 'text-emerald-400 bg-emerald-500/20';
-    }
-    if (status.includes('progress') || status.includes('review') || status.includes('approval')) {
-      return 'text-amber-400 bg-amber-500/20';
-    }
-    return 'text-blue-400 bg-blue-500/20';
-  };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-surface-400">Loading risk dashboard...</div>
+      <div className="space-y-5 animate-fade-in">
+        <PageHeader title="Risk Dashboard" description="Executive overview of your risk posture." />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-24" />
+          ))}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-white">Risk Dashboard</h1>
-          <p className="text-surface-400 mt-1">Executive overview of your risk posture</p>
-        </div>
-        <Link
-          to="/risks"
-          className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 flex items-center gap-2"
-        >
-          <ExclamationTriangleIcon className="w-5 h-5" />
-          View All Risks
-        </Link>
-      </div>
+    <div className="space-y-5 animate-fade-in">
+      <PageHeader
+        title="Risk Dashboard"
+        description="Executive overview of your risk posture."
+        actions={
+          <Link to="/risks">
+            <Button size="sm" leftIcon={<AlertTriangle className="h-4 w-4" />}>
+              View All Risks
+            </Button>
+          </Link>
+        }
+      />
 
-      {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
           title="Total Risks"
           value={dashboard?.totalRisks || 0}
-          icon={ExclamationTriangleIcon}
-          color="text-blue-400"
-          bgColor="bg-blue-500/20"
+          icon={<AlertTriangle className="h-5 w-5" />}
+          tone="blue"
+          onClick={() => navigate('/risks')}
         />
         <MetricCard
           title="Open Risks"
           value={dashboard?.openRisks || 0}
-          icon={ClockIcon}
-          color="text-amber-400"
-          bgColor="bg-amber-500/20"
+          icon={<Clock className="h-5 w-5" />}
+          tone="amber"
           trend={dashboard?.openRisksTrend}
+          onClick={() => navigate('/risks?status=open')}
         />
         <MetricCard
           title="In Treatment"
           value={dashboard?.inTreatment || 0}
-          icon={ArrowTrendingUpIcon}
-          color="text-cyan-400"
-          bgColor="bg-cyan-500/20"
+          icon={<TrendingUp className="h-5 w-5" />}
+          tone="cyan"
+          onClick={() => navigate('/risks?status=in_treatment')}
         />
         <MetricCard
           title="Mitigated This Month"
           value={dashboard?.mitigatedThisMonth || 0}
-          icon={CheckCircleIcon}
-          color="text-emerald-400"
-          bgColor="bg-emerald-500/20"
+          icon={<CheckCircle2 className="h-5 w-5" />}
+          tone="emerald"
+          onClick={() => navigate('/risks?status=mitigated')}
         />
       </div>
 
-      {/* Risk Level Distribution & Risk by Category */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Risk Level Distribution */}
-        <div className="bg-surface-800 rounded-xl border border-surface-700 p-6">
-          <h2 className="text-lg font-medium text-white mb-4">Risk Level Distribution</h2>
-          <div className="space-y-4">
-            {['critical', 'high', 'medium', 'low'].map(level => {
-              const count = dashboard?.byRiskLevel?.find((r: any) => r.level === level)?.count || 0;
-              const total = dashboard?.totalRisks || 1;
-              const percentage = Math.round((count / total) * 100);
-              
-              return (
-                <div key={level} className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-surface-300 capitalize">{level}</span>
-                    <span className="text-white font-medium">{count}</span>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <Card>
+          <CardHeader>
+            <CardTitle>Risk Level Distribution</CardTitle>
+          </CardHeader>
+          <CardBody density="comfy">
+            <div className="space-y-3">
+              {(['critical', 'high', 'medium', 'low'] as const).map((level) => {
+                const count = dashboard?.byRiskLevel?.find((r: { level: string; count: number }) => r.level === level)?.count || 0;
+                const total = dashboard?.totalRisks || 1;
+                const percentage = Math.round((count / total) * 100);
+                return (
+                  <div key={level} className="space-y-1">
+                    <div className="flex items-center justify-between text-small">
+                      <span className="text-surface-700 capitalize">{level}</span>
+                      <span className="text-surface-900 font-medium tabular-nums">{count}</span>
+                    </div>
+                    <div className="h-1.5 bg-surface-100 rounded-full overflow-hidden">
+                      <div
+                        className={cn('h-full transition-all duration-500', LEVEL_BG[level])}
+                        style={{ width: `${percentage}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="h-2 bg-surface-700 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full ${getRiskLevelColor(level)} transition-all duration-500`}
-                      style={{ width: `${percentage}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+                );
+              })}
+            </div>
+          </CardBody>
+        </Card>
 
-        {/* Risk by Category */}
-        <div className="bg-surface-800 rounded-xl border border-surface-700 p-6">
-          <h2 className="text-lg font-medium text-white mb-4">Risks by Category</h2>
-          <div className="space-y-3">
-            {(dashboard?.byCategory || []).slice(0, 6).map((cat: any) => (
-              <div key={cat.category} className="flex items-center justify-between">
-                <span className="text-surface-300 capitalize">{cat.category?.replace('_', ' ') || 'Uncategorized'}</span>
-                <span className="px-2 py-1 bg-surface-700 rounded text-white text-sm font-medium">
-                  {cat.count}
-                </span>
+        <Card>
+          <CardHeader>
+            <CardTitle>Risks by Category</CardTitle>
+          </CardHeader>
+          <CardBody density="comfy">
+            {dashboard?.byCategory && dashboard.byCategory.length > 0 ? (
+              <div className="space-y-2">
+                {dashboard.byCategory.slice(0, 6).map((cat: { category: string; count: number }) => (
+                  <button
+                    key={cat.category}
+                    type="button"
+                    onClick={() => navigate(`/risks?category=${encodeURIComponent(cat.category || '')}`)}
+                    className="w-full flex items-center justify-between px-2.5 py-1.5 bg-surface-50 hover:bg-surface-100 border border-surface-200 rounded transition-colors text-left"
+                  >
+                    <span className="text-small text-surface-700 capitalize">
+                      {cat.category?.replace(/_/g, ' ') || 'Uncategorized'}
+                    </span>
+                    <span className="text-small text-surface-900 font-medium tabular-nums">{cat.count}</span>
+                  </button>
+                ))}
               </div>
-            ))}
-            {(!dashboard?.byCategory || dashboard.byCategory.length === 0) && (
-              <p className="text-surface-500 text-center py-4">No risks categorized yet</p>
+            ) : (
+              <EmptyState title="No risks categorized yet" size="sm" />
             )}
-          </div>
-        </div>
+          </CardBody>
+        </Card>
       </div>
 
-      {/* Recent Risks & Quick Actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Risks */}
-        <div className="lg:col-span-2 bg-surface-800 rounded-xl border border-surface-700 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-medium text-white">Recent Risks</h2>
-            <Link to="/risks" className="text-brand-400 text-sm hover:text-brand-300">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Recent Risks</CardTitle>
+            <Link to="/risks" className="text-small text-brand-700 hover:text-brand-800">
               View all →
             </Link>
-          </div>
-          <div className="space-y-3">
-            {(recentRisks?.risks || []).map((risk: any) => (
-              <Link
-                key={risk.id}
-                to={`/risks/${risk.id}`}
-                className="flex items-center gap-4 p-3 bg-surface-700/50 rounded-lg hover:bg-surface-700 transition-colors"
-              >
-                <div className={`w-2 h-2 rounded-full ${getRiskLevelColor(risk.inherentRisk)}`} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-white font-medium truncate">{risk.title}</p>
-                  <p className="text-surface-400 text-sm truncate">{risk.riskId}</p>
-                </div>
-                <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(risk.status)}`}>
-                  {risk.status.replace(/_/g, ' ')}
-                </span>
-              </Link>
-            ))}
-            {(!recentRisks?.risks || recentRisks.risks.length === 0) && (
-              <p className="text-surface-500 text-center py-8">No risks recorded yet</p>
+          </CardHeader>
+          <CardBody density="comfy">
+            {recentRisks?.risks && recentRisks.risks.length > 0 ? (
+              <div className="space-y-2">
+                {recentRisks.risks.map((risk: { id: string; riskId: string; title: string; status: string; inherentRisk: string }) => (
+                  <Link
+                    key={risk.id}
+                    to={`/risks/${risk.id}`}
+                    className="flex items-center gap-3 p-2.5 bg-surface-100/60 rounded-md hover:bg-surface-100 transition-colors"
+                  >
+                    <span className={cn('h-2 w-2 rounded-full shrink-0', LEVEL_BG[risk.inherentRisk] || 'bg-surface-500')} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-surface-900 font-medium truncate">{risk.title}</p>
+                      <p className="text-xs text-surface-500 font-mono">{risk.riskId}</p>
+                    </div>
+                    <Badge variant={riskStatusVariant(risk.status)} size="sm">
+                      {(risk.status || '').replace(/_/g, ' ')}
+                    </Badge>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <EmptyState title="No risks recorded yet" size="sm" />
             )}
-          </div>
-        </div>
+          </CardBody>
+        </Card>
 
-        {/* Quick Actions */}
-        <div className="bg-surface-800 rounded-xl border border-surface-700 p-6">
-          <h2 className="text-lg font-medium text-white mb-4">Quick Actions</h2>
-          <div className="space-y-3">
-            <Link
-              to="/risks?create=true"
-              className="flex items-center gap-3 p-3 bg-brand-500/20 text-brand-400 rounded-lg hover:bg-brand-500/30 transition-colors"
-            >
-              <ExclamationTriangleIcon className="w-5 h-5" />
-              <span>Report New Risk</span>
-            </Link>
-            <Link
-              to="/risk-queue"
-              className="flex items-center gap-3 p-3 bg-surface-700 text-surface-300 rounded-lg hover:bg-surface-600 transition-colors"
-            >
-              <ClockIcon className="w-5 h-5" />
-              <span>View My Queue</span>
-            </Link>
-            <Link
-              to="/risk-heatmap"
-              className="flex items-center gap-3 p-3 bg-surface-700 text-surface-300 rounded-lg hover:bg-surface-600 transition-colors"
-            >
-              <ChartBarIcon className="w-5 h-5" />
-              <span>View Heatmap</span>
-            </Link>
-            <Link
-              to="/risk-reports"
-              className="flex items-center gap-3 p-3 bg-surface-700 text-surface-300 rounded-lg hover:bg-surface-600 transition-colors"
-            >
-              <ArrowTrendingUpIcon className="w-5 h-5" />
-              <span>Generate Report</span>
-            </Link>
-          </div>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+          </CardHeader>
+          <CardBody density="comfy">
+            <div className="space-y-2">
+              <QuickAction to="/risks?create=true" icon={<AlertTriangle className="h-4 w-4" />} tone="brand">
+                Report New Risk
+              </QuickAction>
+              <QuickAction to="/risk-queue" icon={<Clock className="h-4 w-4" />}>
+                View My Queue
+              </QuickAction>
+              <QuickAction to="/risk-heatmap" icon={<BarChart className="h-4 w-4" />}>
+                View Heatmap
+              </QuickAction>
+              <QuickAction to="/risk-reports" icon={<TrendingUp className="h-4 w-4" />}>
+                Generate Report
+              </QuickAction>
+            </div>
+          </CardBody>
+        </Card>
       </div>
 
-      {/* Risk Appetite Indicator */}
-      <div className="bg-surface-800 rounded-xl border border-surface-700 p-6">
-        <h2 className="text-lg font-medium text-white mb-4">Risk Appetite Status</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-500/20 mb-3">
-              <CheckCircleIcon className="w-8 h-8 text-emerald-400" />
-            </div>
-            <p className="text-2xl font-bold text-white">{dashboard?.withinAppetite || 0}</p>
-            <p className="text-surface-400 text-sm">Within Appetite</p>
+      <Card>
+        <CardHeader>
+          <CardTitle>Risk Appetite Status</CardTitle>
+        </CardHeader>
+        <CardBody density="comfy">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <AppetiteTile
+              icon={<CheckCircle2 className="h-7 w-7" />}
+              tone="emerald"
+              label="Within Appetite"
+              value={dashboard?.withinAppetite || 0}
+            />
+            <AppetiteTile
+              icon={<AlertTriangle className="h-7 w-7" />}
+              tone="amber"
+              label="Nearing Threshold"
+              value={dashboard?.nearingThreshold || 0}
+            />
+            <AppetiteTile
+              icon={<TrendingDown className="h-7 w-7" />}
+              tone="red"
+              label="Exceeds Appetite"
+              value={dashboard?.exceedsAppetite || 0}
+            />
           </div>
-          <div className="text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-500/20 mb-3">
-              <ExclamationTriangleIcon className="w-8 h-8 text-amber-400" />
-            </div>
-            <p className="text-2xl font-bold text-white">{dashboard?.nearingThreshold || 0}</p>
-            <p className="text-surface-400 text-sm">Nearing Threshold</p>
-          </div>
-          <div className="text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-500/20 mb-3">
-              <ArrowTrendingDownIcon className="w-8 h-8 text-red-400" />
-            </div>
-            <p className="text-2xl font-bold text-white">{dashboard?.exceedsAppetite || 0}</p>
-            <p className="text-surface-400 text-sm">Exceeds Appetite</p>
-          </div>
-        </div>
-      </div>
+        </CardBody>
+      </Card>
     </div>
   );
 }
@@ -272,39 +251,95 @@ export default function RiskDashboard() {
 function MetricCard({
   title,
   value,
-  icon: Icon,
-  color,
-  bgColor,
+  icon,
+  tone,
   trend,
+  onClick,
 }: {
   title: string;
   value: number;
-  icon: React.ComponentType<{ className?: string }>;
-  color: string;
-  bgColor: string;
+  icon: React.ReactNode;
+  tone: 'blue' | 'amber' | 'cyan' | 'emerald';
   trend?: number;
+  onClick?: () => void;
 }) {
+  const tones = {
+    blue: 'bg-blue-500/10 text-blue-600',
+    amber: 'bg-amber-500/10 text-amber-700',
+    cyan: 'bg-cyan-500/10 text-cyan-600',
+    emerald: 'bg-emerald-500/10 text-emerald-600',
+  };
   return (
-    <div className="bg-surface-800 rounded-xl border border-surface-700 p-6">
-      <div className="flex items-center gap-4">
-        <div className={`p-3 rounded-lg ${bgColor}`}>
-          <Icon className={`w-6 h-6 ${color}`} />
-        </div>
+    <Card interactive={!!onClick} onClick={onClick}>
+      <CardBody density="comfy" className="flex items-center gap-3">
+        <div className={cn('p-2.5 rounded-md', tones[tone])}>{icon}</div>
         <div>
-          <p className="text-surface-400 text-sm">{title}</p>
-          <div className="flex items-center gap-2">
-            <p className="text-2xl font-bold text-white">{value}</p>
+          <p className="text-xs text-surface-500 uppercase tracking-wider">{title}</p>
+          <div className="flex items-baseline gap-2">
+            <p className="text-h1 text-surface-900">{value}</p>
             {trend !== undefined && (
-              <span className={`text-sm ${trend >= 0 ? 'text-red-400' : 'text-emerald-400'}`}>
-                {trend >= 0 ? '+' : ''}{trend}%
+              <span className={cn('text-xs', trend >= 0 ? 'text-red-600' : 'text-emerald-600')}>
+                {trend >= 0 ? '+' : ''}
+                {trend}%
               </span>
             )}
           </div>
         </div>
-      </div>
-    </div>
+      </CardBody>
+    </Card>
   );
 }
 
+function QuickAction({
+  to,
+  icon,
+  children,
+  tone,
+}: {
+  to: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+  tone?: 'brand';
+}) {
+  return (
+    <Link
+      to={to}
+      className={cn(
+        'flex items-center gap-2.5 p-2.5 rounded-md text-small transition-colors',
+        tone === 'brand'
+          ? 'bg-brand-500/10 text-brand-700 hover:bg-brand-500/20'
+          : 'bg-surface-100 text-surface-700 hover:bg-surface-200 hover:text-surface-900',
+      )}
+    >
+      {icon}
+      <span>{children}</span>
+    </Link>
+  );
+}
 
-
+function AppetiteTile({
+  icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: number;
+  tone: 'emerald' | 'amber' | 'red';
+}) {
+  const tones = {
+    emerald: 'bg-emerald-500/10 text-emerald-600',
+    amber: 'bg-amber-500/10 text-amber-700',
+    red: 'bg-red-500/10 text-red-600',
+  };
+  return (
+    <div className="text-center">
+      <div className={cn('inline-flex items-center justify-center w-14 h-14 rounded-full mb-3', tones[tone])}>
+        {icon}
+      </div>
+      <p className="text-h1 text-surface-900">{value}</p>
+      <p className="text-small text-surface-600">{label}</p>
+    </div>
+  );
+}

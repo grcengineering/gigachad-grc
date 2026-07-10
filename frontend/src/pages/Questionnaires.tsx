@@ -1,8 +1,19 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { PlusIcon, ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
+import { Plus, MessageSquare } from 'lucide-react';
+import { cn } from '@/lib/cn';
 import { questionnairesApi } from '@/lib/api';
+import {
+  Button,
+  Badge,
+  PageHeader,
+  Tabs,
+  DataTable,
+  EmptyState,
+  type DataTableColumn,
+  type BadgeVariant,
+} from '@/components/ui';
 
 interface Questionnaire {
   id: string;
@@ -18,176 +29,166 @@ interface Questionnaire {
   questions: { id: string; status: string }[];
 }
 
+const STATUS_VARIANT: Record<string, BadgeVariant> = {
+  completed: 'success',
+  in_progress: 'info',
+  pending: 'warning',
+};
+
+const PRIORITY_VARIANT: Record<string, BadgeVariant> = {
+  urgent: 'danger',
+  high: 'danger',
+  medium: 'warning',
+  low: 'success',
+};
+
+const TAB_FILTERS: { label: string; value: string }[] = [
+  { label: 'All', value: 'all' },
+  { label: 'Pending', value: 'pending' },
+  { label: 'In Progress', value: 'in_progress' },
+  { label: 'Completed', value: 'completed' },
+];
+
 export default function Questionnaires() {
   const [filter, setFilter] = useState('all');
   const navigate = useNavigate();
 
-  const { data: questionnaires = [], isLoading: loading } = useQuery({
+  const { data: questionnaires = [], isLoading } = useQuery<Questionnaire[]>({
     queryKey: ['questionnaires', filter],
-    queryFn: () => questionnairesApi.list(filter !== 'all' ? { status: filter } : undefined).then((res) => res.data),
+    queryFn: () =>
+      questionnairesApi.list(filter !== 'all' ? { status: filter } : undefined).then((res) => res.data),
   });
 
-  const getCompletionPercentage = (questions: { status: string }[]) => {
+  const getCompletion = (questions: { status: string }[]) => {
     if (questions.length === 0) return 0;
-    const answered = questions.filter(q => q.status === 'answered' || q.status === 'approved').length;
+    const answered = questions.filter((q) => q.status === 'answered' || q.status === 'approved').length;
     return Math.round((answered / questions.length) * 100);
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-surface-400">Loading questionnaires...</div>
-      </div>
-    );
-  }
+  const columns: DataTableColumn<Questionnaire>[] = [
+    {
+      id: 'title',
+      accessorKey: 'title',
+      header: 'Customer Request',
+      mobileLabel: 'Request',
+      cell: ({ row }) => (
+        <div>
+          <div className="text-surface-900 font-medium">{row.original.title}</div>
+          <div className="text-xs text-surface-500">{row.original.questions.length} questions</div>
+        </div>
+      ),
+    },
+    {
+      id: 'from',
+      header: 'From',
+      mobileLabel: 'From',
+      enableSorting: false,
+      cell: ({ row }) => (
+        <div>
+          <div className="text-small text-surface-700">{row.original.requesterName}</div>
+          {row.original.company && (
+            <div className="text-xs text-surface-500">{row.original.company}</div>
+          )}
+        </div>
+      ),
+    },
+    {
+      id: 'priority',
+      accessorKey: 'priority',
+      header: 'Priority',
+      mobileLabel: 'Priority',
+      cell: ({ row }) => (
+        <Badge variant={PRIORITY_VARIANT[row.original.priority] ?? 'neutral'} dot className="capitalize">
+          {row.original.priority}
+        </Badge>
+      ),
+    },
+    {
+      id: 'status',
+      accessorKey: 'status',
+      header: 'Status',
+      mobileLabel: 'Status',
+      cell: ({ row }) => (
+        <Badge variant={STATUS_VARIANT[row.original.status] ?? 'neutral'} dot className="capitalize">
+          {row.original.status.replace(/_/g, ' ')}
+        </Badge>
+      ),
+    },
+    {
+      id: 'completion',
+      header: 'Completion',
+      mobileLabel: 'Completion',
+      enableSorting: false,
+      cell: ({ row }) => {
+        const c = getCompletion(row.original.questions);
+        const bar = c === 100 ? 'bg-green-500' : c >= 50 ? 'bg-blue-500' : 'bg-yellow-500';
+        return (
+          <div className="flex items-center gap-2">
+            <span className="text-small text-surface-900 font-medium tabular-nums w-9">{c}%</span>
+            <div className="w-20 h-1.5 bg-surface-100 rounded-full overflow-hidden">
+              <div className={cn('h-full', bar)} style={{ width: `${c}%` }} />
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      id: 'dueDate',
+      accessorKey: 'dueDate',
+      header: 'Due Date',
+      mobileLabel: 'Due Date',
+      cell: ({ row }) => (
+        <span className="text-surface-700">
+          {row.original.dueDate ? new Date(row.original.dueDate).toLocaleDateString() : '—'}
+        </span>
+      ),
+    },
+  ];
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-surface-100">Security Questionnaires</h1>
-          <p className="mt-1 text-surface-400">
-            Respond to incoming customer security questionnaires
-          </p>
-        </div>
-        <button
-          onClick={() => navigate('/questionnaires/new')}
-          className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors"
-        >
-          <PlusIcon className="w-5 h-5" />
-          Log New Request
-        </button>
-      </div>
-
-      {/* Filters */}
-      <div className="flex gap-2">
-        {['all', 'pending', 'in_progress', 'completed'].map((status) => (
-          <button
-            key={status}
-            onClick={() => setFilter(status)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              filter === status
-                ? 'bg-brand-600 text-white'
-                : 'bg-surface-800 text-surface-300 hover:bg-surface-700'
-            }`}
-          >
-            {status === 'all' ? 'All' : status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-          </button>
-        ))}
-      </div>
-
-      {/* Questionnaires List */}
-      {questionnaires.length === 0 ? (
-        <div className="bg-surface-900 border border-surface-800 rounded-lg p-12 text-center">
-          <ChatBubbleLeftRightIcon className="w-12 h-12 text-surface-600 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-surface-300 mb-2">No incoming questionnaires</h3>
-          <p className="text-surface-500 mb-6">
-            When customers send security questionnaires, they'll appear here
-          </p>
-          <button
-            onClick={() => navigate('/questionnaires/new')}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors"
-          >
-            <PlusIcon className="w-5 h-5" />
+    <div className="space-y-5 animate-fade-in">
+      <PageHeader
+        title="Security Questionnaires"
+        description="Respond to incoming customer security questionnaires."
+        actions={
+          <Button size="sm" leftIcon={<Plus className="h-4 w-4" />} onClick={() => navigate('/questionnaires/new')}>
             Log New Request
-          </button>
-        </div>
-      ) : (
-        <div className="bg-surface-900 border border-surface-800 rounded-lg overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-surface-800 border-b border-surface-700">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-surface-400 uppercase tracking-wider">
-                  Customer Request
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-surface-400 uppercase tracking-wider">
-                  From
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-surface-400 uppercase tracking-wider">
-                  Priority
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-surface-400 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-surface-400 uppercase tracking-wider">
-                  Completion
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-surface-400 uppercase tracking-wider">
-                  Due Date
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-surface-800">
-              {questionnaires.map((questionnaire) => {
-                const completion = getCompletionPercentage(questionnaire.questions);
-                return (
-                  <tr
-                    key={questionnaire.id}
-                    onClick={() => navigate(`/questionnaires/${questionnaire.id}`)}
-                    className="hover:bg-surface-800 cursor-pointer transition-colors"
-                  >
-                    <td className="px-6 py-4">
-                      <div>
-                        <div className="text-sm font-medium text-surface-100">{questionnaire.title}</div>
-                        <div className="text-sm text-surface-500">
-                          {questionnaire.questions.length} questions
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div>
-                        <div className="text-sm text-surface-300">{questionnaire.requesterName}</div>
-                        {questionnaire.company && (
-                          <div className="text-sm text-surface-500">{questionnaire.company}</div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full capitalize ${
-                        questionnaire.priority === 'urgent' ? 'bg-red-500/20 text-red-400' :
-                        questionnaire.priority === 'high' ? 'bg-orange-500/20 text-orange-400' :
-                        questionnaire.priority === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                        'bg-green-500/20 text-green-400'
-                      }`}>
-                        {questionnaire.priority}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full capitalize ${
-                        questionnaire.status === 'completed' ? 'bg-green-500/20 text-green-400' :
-                        questionnaire.status === 'in_progress' ? 'bg-blue-500/20 text-blue-400' :
-                        questionnaire.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
-                        'bg-surface-700 text-surface-400'
-                      }`}>
-                        {questionnaire.status.replace('_', ' ')}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-surface-100">{completion}%</span>
-                        <div className="w-24 h-2 bg-surface-700 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full ${
-                              completion === 100 ? 'bg-green-500' :
-                              completion >= 50 ? 'bg-blue-500' :
-                              'bg-yellow-500'
-                            }`}
-                            style={{ width: `${completion}%` }}
-                          />
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-surface-300">
-                      {questionnaire.dueDate ? new Date(questionnaire.dueDate).toLocaleDateString() : '—'}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+          </Button>
+        }
+      />
+
+      <Tabs
+        defaultIndex={TAB_FILTERS.findIndex((t) => t.value === filter)}
+        onChange={(i) => setFilter(TAB_FILTERS[i].value)}
+        tabs={TAB_FILTERS.map((t) => ({
+          label: t.label,
+          content: (
+            <DataTable
+              data={questionnaires}
+              columns={columns}
+              loading={isLoading}
+              getRowId={(q) => q.id}
+              onRowClick={(q) => navigate(`/questionnaires/${q.id}`)}
+              emptyState={
+                <EmptyState
+                  icon={<MessageSquare className="h-8 w-8" />}
+                  title="No questionnaires"
+                  description="When customers send security questionnaires, they'll appear here."
+                  action={
+                    <Button
+                      size="sm"
+                      leftIcon={<Plus className="h-4 w-4" />}
+                      onClick={() => navigate('/questionnaires/new')}
+                    >
+                      Log New Request
+                    </Button>
+                  }
+                />
+              }
+            />
+          ),
+        }))}
+      />
     </div>
   );
 }

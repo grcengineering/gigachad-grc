@@ -1,16 +1,22 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { auditsApi } from '@/lib/api';
+import { Plus, Search, ClipboardList } from 'lucide-react';
 import {
-  PlusIcon,
-  FunnelIcon,
-  MagnifyingGlassIcon,
-  ClipboardDocumentListIcon,
-  CheckCircleIcon,
-  ClockIcon,
-  XCircleIcon,
-} from '@heroicons/react/24/outline';
+  Button,
+  Badge,
+  Card,
+  CardBody,
+  Input,
+  Select,
+  PageHeader,
+  FilterBar,
+  EmptyState,
+  Skeleton,
+  type BadgeVariant,
+  type ActiveFilter,
+} from '@/components/ui';
 
 interface Audit {
   id: string;
@@ -34,175 +40,213 @@ interface Audit {
   createdAt: string;
 }
 
-const statusColors: Record<string, string> = {
-  planning: 'bg-blue-100 text-blue-800',
-  fieldwork: 'bg-yellow-100 text-yellow-800',
-  testing: 'bg-orange-100 text-orange-800',
-  reporting: 'bg-purple-100 text-purple-800',
-  completed: 'bg-green-100 text-green-800',
-  cancelled: 'bg-gray-100 text-gray-800',
+const STATUS_VARIANT: Record<string, BadgeVariant> = {
+  planning: 'info',
+  fieldwork: 'warning',
+  testing: 'warning',
+  reporting: 'brand',
+  completed: 'success',
+  cancelled: 'neutral',
 };
 
-const auditTypeLabels: Record<string, string> = {
-  internal: 'Internal',
-  external: 'External',
-  surveillance: 'Surveillance',
-  certification: 'Certification',
-};
+const STATUS_OPTS = [
+  { value: 'planning', label: 'Planning' },
+  { value: 'fieldwork', label: 'Fieldwork' },
+  { value: 'testing', label: 'Testing' },
+  { value: 'reporting', label: 'Reporting' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'cancelled', label: 'Cancelled' },
+];
+
+const TYPE_OPTS = [
+  { value: 'internal', label: 'Internal' },
+  { value: 'external', label: 'External' },
+  { value: 'surveillance', label: 'Surveillance' },
+  { value: 'certification', label: 'Certification' },
+];
+
+const TYPE_LABEL: Record<string, string> = Object.fromEntries(
+  TYPE_OPTS.map((o) => [o.value, o.label]),
+);
 
 export default function Audits() {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
 
-  const { data: audits = [], isLoading } = useQuery({
+  const { data: audits = [], isLoading } = useQuery<Audit[]>({
     queryKey: ['audits', statusFilter, typeFilter],
-    queryFn: () => auditsApi.list({
-      status: statusFilter || undefined,
-      auditType: typeFilter || undefined,
-    }).then((res) => res.data),
+    queryFn: () =>
+      auditsApi
+        .list({
+          status: statusFilter || undefined,
+          auditType: typeFilter || undefined,
+        })
+        .then((res) => res.data),
   });
 
-  const filteredAudits = audits.filter((audit: Audit) =>
-    audit.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    audit.auditId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    audit.framework?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredAudits = audits.filter(
+    (audit) =>
+      audit.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      audit.auditId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      audit.framework?.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
+  const activeFilters: ActiveFilter[] = [];
+  if (searchTerm) activeFilters.push({ key: 'search', label: `Search: ${searchTerm}`, onClear: () => setSearchTerm('') });
+  if (statusFilter) {
+    const l = STATUS_OPTS.find((o) => o.value === statusFilter)?.label ?? statusFilter;
+    activeFilters.push({ key: 'status', label: `Status: ${l}`, onClear: () => setStatusFilter('') });
+  }
+  if (typeFilter) {
+    const l = TYPE_LABEL[typeFilter] ?? typeFilter;
+    activeFilters.push({ key: 'type', label: `Type: ${l}`, onClear: () => setTypeFilter('') });
+  }
+
+  const clearAll = () => {
+    setSearchTerm('');
+    setStatusFilter('');
+    setTypeFilter('');
+  };
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-surface-100">Audits</h1>
-          <p className="text-surface-400 mt-1">Manage internal and external compliance audits</p>
-        </div>
-        <Link
-          to="/audits/new"
-          className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors"
-        >
-          <PlusIcon className="w-5 h-5" />
-          New Audit
-        </Link>
-      </div>
+    <div className="space-y-5 animate-fade-in">
+      <PageHeader
+        title="Audits"
+        description="Manage internal and external compliance audits."
+        actions={
+          <Link to="/audits/new">
+            <Button size="sm" leftIcon={<Plus className="h-4 w-4" />}>
+              New Audit
+            </Button>
+          </Link>
+        }
+      />
 
-      {/* Filters */}
-      <div className="flex items-center gap-4">
-        <div className="flex-1 relative">
-          <MagnifyingGlassIcon className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-surface-500" />
-          <input
-            type="text"
-            placeholder="Search audits..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 placeholder-surface-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
-          />
-        </div>
-
-        <select
+      <FilterBar active={activeFilters} onClearAll={activeFilters.length ? clearAll : undefined}>
+        <Input
+          inputSize="sm"
+          className="w-64"
+          placeholder="Search audits…"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          leftIcon={<Search className="h-4 w-4" />}
+        />
+        <Select
+          size="sm"
+          fullWidth={false}
+          className="w-44"
+          placeholder="All Statuses"
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:ring-2 focus:ring-brand-500"
-        >
-          <option value="">All Statuses</option>
-          <option value="planning">Planning</option>
-          <option value="fieldwork">Fieldwork</option>
-          <option value="testing">Testing</option>
-          <option value="reporting">Reporting</option>
-          <option value="completed">Completed</option>
-          <option value="cancelled">Cancelled</option>
-        </select>
-
-        <select
+          onChange={setStatusFilter}
+          options={STATUS_OPTS}
+          clearable
+        />
+        <Select
+          size="sm"
+          fullWidth={false}
+          className="w-44"
+          placeholder="All Types"
           value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value)}
-          className="px-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:ring-2 focus:ring-brand-500"
-        >
-          <option value="">All Types</option>
-          <option value="internal">Internal</option>
-          <option value="external">External</option>
-          <option value="surveillance">Surveillance</option>
-          <option value="certification">Certification</option>
-        </select>
-      </div>
+          onChange={setTypeFilter}
+          options={TYPE_OPTS}
+          clearable
+        />
+      </FilterBar>
 
-      {/* Audits List */}
       {isLoading ? (
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin w-8 h-8 border-4 border-surface-700 rounded-full border-t-brand-500"></div>
+        <div className="space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-32" />
+          ))}
         </div>
       ) : filteredAudits.length === 0 ? (
-        <div className="text-center py-12">
-          <ClipboardDocumentListIcon className="w-12 h-12 mx-auto text-surface-600 mb-4" />
-          <h3 className="text-lg font-medium text-surface-300 mb-2">No audits found</h3>
-          <p className="text-surface-500 mb-4">Get started by creating your first audit</p>
-          <Link
-            to="/audits/new"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors"
-          >
-            <PlusIcon className="w-5 h-5" />
-            New Audit
-          </Link>
-        </div>
+        <Card>
+          <EmptyState
+            icon={<ClipboardList className="h-8 w-8" />}
+            title="No audits found"
+            description={
+              activeFilters.length
+                ? 'Try clearing your filters.'
+                : 'Get started by creating your first audit.'
+            }
+            action={
+              activeFilters.length ? (
+                <Button variant="outline" size="sm" onClick={clearAll}>Clear filters</Button>
+              ) : (
+                <Link to="/audits/new">
+                  <Button size="sm" leftIcon={<Plus className="h-4 w-4" />}>New Audit</Button>
+                </Link>
+              )
+            }
+          />
+        </Card>
       ) : (
-        <div className="grid gap-4">
-          {filteredAudits.map((audit: Audit) => (
-            <Link
+        <div className="grid gap-3">
+          {filteredAudits.map((audit) => (
+            <Card
               key={audit.id}
-              to={`/audits/${audit.id}`}
-              className="block bg-surface-800 border border-surface-700 rounded-lg p-6 hover:border-brand-500 transition-colors"
+              interactive
+              onClick={() => navigate(`/audits/${audit.id}`)}
+              className="hover:border-brand-500/50"
             >
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-lg font-semibold text-surface-100">{audit.name}</h3>
-                    <span className="text-sm text-surface-500">#{audit.auditId}</span>
-                    {audit.isExternal && (
-                      <span className="px-2 py-1 bg-purple-600/20 text-purple-400 rounded text-xs font-medium">
-                        External
-                      </span>
-                    )}
+              <CardBody density="comfy">
+                <div className="flex items-start justify-between mb-4 gap-4">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-3 mb-1.5 flex-wrap">
+                      <h3 className="text-h3 text-surface-900">{audit.name}</h3>
+                      <span className="text-xs text-surface-500 font-mono">#{audit.auditId}</span>
+                      <Badge variant={audit.isExternal ? 'info' : 'neutral'} size="sm">
+                        {audit.isExternal ? 'External' : 'Internal'}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-3 text-small text-surface-600 flex-wrap">
+                      <span>{TYPE_LABEL[audit.auditType] || audit.auditType}</span>
+                      {audit.framework && <span>· {audit.framework}</span>}
+                      {audit.plannedStartDate && (
+                        <span>· {new Date(audit.plannedStartDate).toLocaleDateString()}</span>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-4 text-sm text-surface-400">
-                    <span>{auditTypeLabels[audit.auditType] || audit.auditType}</span>
-                    {audit.framework && <span>• {audit.framework}</span>}
-                    {audit.plannedStartDate && (
-                      <span>• {new Date(audit.plannedStartDate).toLocaleDateString()}</span>
-                    )}
-                  </div>
+                  <Badge variant={STATUS_VARIANT[audit.status] ?? 'neutral'} dot className="capitalize shrink-0">
+                    {audit.status}
+                  </Badge>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[audit.status]}`}>
-                  {audit.status.charAt(0).toUpperCase() + audit.status.slice(1)}
-                </span>
-              </div>
 
-              <div className="grid grid-cols-4 gap-4 pt-4 border-t border-surface-700">
-                <div>
-                  <div className="text-sm text-surface-500 mb-1">Requests</div>
-                  <div className="text-lg font-semibold text-surface-100">{audit._count.requests}</div>
+                <div className="grid grid-cols-4 gap-4 pt-3 border-t border-surface-200">
+                  <Stat label="Requests" value={audit._count.requests} />
+                  <Stat label="Evidence" value={audit._count.evidence} />
+                  <Stat label="Tests" value={audit._count.testResults} />
+                  <Stat
+                    label="Findings"
+                    value={audit._count.findings}
+                    extra={
+                      audit.criticalFindings > 0 ? (
+                        <span className="text-xs text-red-600 ml-1.5">
+                          ({audit.criticalFindings} critical)
+                        </span>
+                      ) : null
+                    }
+                  />
                 </div>
-                <div>
-                  <div className="text-sm text-surface-500 mb-1">Evidence</div>
-                  <div className="text-lg font-semibold text-surface-100">{audit._count.evidence}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-surface-500 mb-1">Tests</div>
-                  <div className="text-lg font-semibold text-surface-100">{audit._count.testResults}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-surface-500 mb-1">Findings</div>
-                  <div className="flex items-baseline gap-2">
-                    <div className="text-lg font-semibold text-surface-100">{audit._count.findings}</div>
-                    {audit.criticalFindings > 0 && (
-                      <span className="text-xs text-red-400">({audit.criticalFindings} critical)</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </Link>
+              </CardBody>
+            </Card>
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function Stat({ label, value, extra }: { label: string; value: number; extra?: React.ReactNode }) {
+  return (
+    <div>
+      <div className="text-xs text-surface-500 uppercase tracking-wider mb-0.5">{label}</div>
+      <div className="flex items-baseline">
+        <span className="text-h3 text-surface-900">{value}</span>
+        {extra}
+      </div>
     </div>
   );
 }

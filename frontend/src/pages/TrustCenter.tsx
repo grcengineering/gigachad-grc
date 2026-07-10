@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { trustCenterApi } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
+import { Button, Input, Textarea, Dialog, Badge } from '@/components/ui';
 import {
   GlobeAltIcon,
   ShieldCheckIcon,
@@ -53,12 +54,7 @@ export default function TrustCenter() {
 
   const organizationId = user?.organizationId || '';
 
-  useEffect(() => {
-    fetchConfig();
-    fetchContents();
-  }, []);
-
-  const fetchConfig = async () => {
+  const fetchConfig = useCallback(async () => {
     try {
       const response = await trustCenterApi.getConfig({ organizationId });
       setConfig(response.data);
@@ -67,16 +63,21 @@ export default function TrustCenter() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [organizationId]);
 
-  const fetchContents = async () => {
+  const fetchContents = useCallback(async () => {
     try {
       const response = await trustCenterApi.getContent({ organizationId });
       setContents(response.data);
     } catch (error) {
       console.error('Error fetching trust center contents:', error);
     }
-  };
+  }, [organizationId]);
+
+  useEffect(() => {
+    fetchConfig();
+    fetchContents();
+  }, [fetchConfig, fetchContents]);
 
   const updateConfig = async (updates: Partial<TrustCenterConfig>) => {
     try {
@@ -148,7 +149,7 @@ export default function TrustCenter() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-surface-400">Loading trust center configuration...</div>
+        <div className="text-surface-600">Loading trust center configuration...</div>
       </div>
     );
   }
@@ -158,19 +159,15 @@ export default function TrustCenter() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-surface-100">Trust Center</h1>
-          <p className="mt-1 text-surface-400">
+          <h1 className="text-3xl font-bold text-surface-900">Trust Center</h1>
+          <p className="mt-1 text-surface-600">
             Configure your public-facing security trust center
           </p>
         </div>
         <div className="flex gap-2">
-          <button
-            onClick={() => setShowPreview(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-surface-800 text-surface-100 rounded-lg hover:bg-surface-700 transition-colors"
-          >
-            <EyeIcon className="w-5 h-5" />
+          <Button variant="secondary" onClick={() => setShowPreview(true)} leftIcon={<EyeIcon className="w-5 h-5" />}>
             Preview
-          </button>
+          </Button>
           {config?.isEnabled && (
             <a
               href={`/trust-center/public?organizationId=${organizationId}`}
@@ -188,11 +185,11 @@ export default function TrustCenter() {
       {config && (
         <div className="space-y-6">
           {/* Enable/Disable & Basic Settings */}
-          <div className="bg-surface-900 border border-surface-800 rounded-lg p-6 space-y-6">
-            <div className="flex items-center justify-between pb-6 border-b border-surface-800">
+          <div className="bg-white border border-surface-200 rounded-lg p-6 space-y-6">
+            <div className="flex items-center justify-between pb-6 border-b border-surface-200">
               <div>
-                <h3 className="text-lg font-medium text-surface-100">Trust Center Status</h3>
-                <p className="text-sm text-surface-400">Make your trust center publicly accessible</p>
+                <h3 className="text-lg font-medium text-surface-900">Trust Center Status</h3>
+                <p className="text-sm text-surface-600">Make your trust center publicly accessible</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
@@ -201,84 +198,78 @@ export default function TrustCenter() {
                   onChange={(e) => updateConfig({ isEnabled: e.target.checked })}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-surface-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
+                <div className="w-11 h-6 bg-surface-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
               </label>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-surface-400 mb-1">
+                <label className="block text-sm font-medium text-surface-600 mb-1">
                   Company Name
                 </label>
-                <input
+                <Input
                   type="text"
                   value={config.companyName}
                   onChange={(e) => updateConfig({ companyName: e.target.value })}
-                  className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-surface-400 mb-1">
+                <label className="block text-sm font-medium text-surface-600 mb-1">
                   Primary Color
                 </label>
-                <input
+                <Input
                   type="text"
                   value={config.primaryColor || ''}
                   onChange={(e) => updateConfig({ primaryColor: e.target.value })}
-                  className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
                   placeholder="#6366f1"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-surface-400 mb-1">
+              <label className="block text-sm font-medium text-surface-600 mb-1">
                 Logo URL
               </label>
-              <input
+              <Input
                 type="url"
                 value={config.logoUrl || ''}
                 onChange={(e) => updateConfig({ logoUrl: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
                 placeholder="https://example.com/logo.png"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-surface-400 mb-1">
+              <label className="block text-sm font-medium text-surface-600 mb-1">
                 Company Description
               </label>
-              <textarea
+              <Textarea
                 value={config.description || ''}
                 onChange={(e) => updateConfig({ description: e.target.value })}
                 rows={3}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
                 placeholder="Describe your security posture and commitment to security..."
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-surface-400 mb-1">
+                <label className="block text-sm font-medium text-surface-600 mb-1">
                   Security Email
                 </label>
-                <input
+                <Input
                   type="email"
                   value={config.securityEmail || ''}
                   onChange={(e) => updateConfig({ securityEmail: e.target.value })}
-                  className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
                   placeholder="security@company.com"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-surface-400 mb-1">
+                <label className="block text-sm font-medium text-surface-600 mb-1">
                   Support URL
                 </label>
-                <input
+                <Input
                   type="url"
                   value={config.supportUrl || ''}
                   onChange={(e) => updateConfig({ supportUrl: e.target.value })}
-                  className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
                   placeholder="https://support.company.com"
                 />
               </div>
@@ -286,8 +277,8 @@ export default function TrustCenter() {
           </div>
 
           {/* Section Navigation */}
-          <div className="bg-surface-900 border border-surface-800 rounded-lg overflow-hidden">
-            <div className="border-b border-surface-800">
+          <div className="bg-white border border-surface-200 rounded-lg overflow-hidden">
+            <div className="border-b border-surface-200">
               <nav className="flex overflow-x-auto">
                 {sections.map((section) => {
                   const Icon = section.icon;
@@ -297,8 +288,8 @@ export default function TrustCenter() {
                       onClick={() => setActiveSection(section.id)}
                       className={`flex items-center gap-2 px-6 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                         activeSection === section.id
-                          ? 'border-brand-500 text-brand-400 bg-surface-800/50'
-                          : 'border-transparent text-surface-400 hover:text-surface-300 hover:bg-surface-800/30'
+                          ? 'border-brand-500 text-brand-700 bg-surface-100/50'
+                          : 'border-transparent text-surface-600 hover:text-surface-700 hover:bg-surface-100/30'
                       }`}
                     >
                       <Icon className="w-5 h-5" />
@@ -312,7 +303,7 @@ export default function TrustCenter() {
             <div className="p-6">
               {/* Section Description */}
               <div className="mb-6">
-                <p className="text-surface-400">
+                <p className="text-surface-600">
                   {sections.find(s => s.id === activeSection)?.description}
                 </p>
               </div>
@@ -320,7 +311,7 @@ export default function TrustCenter() {
               {/* Section Content */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-surface-100">
+                  <h3 className="text-lg font-semibold text-surface-900">
                     {activeSection === 'overview' && 'Hero Banner Content'}
                     {activeSection === 'certifications' && 'Certification Items'}
                     {activeSection === 'controls' && 'Security Control Items'}
@@ -328,80 +319,81 @@ export default function TrustCenter() {
                     {activeSection === 'updates' && 'Security Updates & News'}
                     {activeSection === 'contact' && 'Contact Information'}
                   </h3>
-                  <button
+                  <Button
                     onClick={() => {
                       setEditingContent(null);
                       setShowContentModal(true);
                     }}
-                    className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors"
+                    leftIcon={<PlusIcon className="w-5 h-5" />}
                   >
-                    <PlusIcon className="w-5 h-5" />
                     Add Content
-                  </button>
+                  </Button>
                 </div>
 
                 {/* Content List */}
                 <div className="space-y-3">
                   {getSectionContents(activeSection).length === 0 ? (
-                    <div className="text-center py-12 bg-surface-800/50 rounded-lg border-2 border-dashed border-surface-700">
-                      <p className="text-surface-400 mb-4">No content added yet</p>
-                      <button
+                    <div className="text-center py-12 bg-white rounded-lg border-2 border-dashed border-surface-200">
+                      <p className="text-surface-600 mb-4">No content added yet</p>
+                      <Button
                         onClick={() => {
                           setEditingContent(null);
                           setShowContentModal(true);
                         }}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors"
+                        leftIcon={<PlusIcon className="w-5 h-5" />}
                       >
-                        <PlusIcon className="w-5 h-5" />
                         Add First Item
-                      </button>
+                      </Button>
                     </div>
                   ) : (
                     getSectionContents(activeSection).map((content) => (
                       <div
                         key={content.id}
-                        className="bg-surface-800 border border-surface-700 rounded-lg p-4"
+                        className="bg-white border border-surface-200 rounded-lg p-4"
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-2">
-                              <h4 className="text-surface-100 font-medium">{content.title}</h4>
+                              <h4 className="text-surface-900 font-medium">{content.title}</h4>
                               {content.isPublished ? (
-                                <span className="flex items-center gap-1 px-2 py-0.5 text-xs bg-green-500/20 text-green-400 rounded">
+                                <Badge variant="success" capitalize={false}>
                                   <EyeIcon className="w-3 h-3" />
                                   Published
-                                </span>
+                                </Badge>
                               ) : (
-                                <span className="flex items-center gap-1 px-2 py-0.5 text-xs bg-surface-600 text-surface-400 rounded">
+                                <Badge variant="neutral" capitalize={false}>
                                   <EyeSlashIcon className="w-3 h-3" />
                                   Draft
-                                </span>
+                                </Badge>
                               )}
                             </div>
-                            <p className="text-sm text-surface-400 line-clamp-2">{content.content}</p>
+                            <p className="text-sm text-surface-600 line-clamp-2">{content.content}</p>
                           </div>
                           <div className="flex items-center gap-2 ml-4">
-                            <button
+                            <Button
+                              variant="secondary"
+                              size="sm"
                               onClick={() => toggleContentPublish(content)}
-                              className="px-3 py-1.5 text-xs bg-surface-700 text-surface-200 rounded hover:bg-surface-600 transition-colors"
                             >
                               {content.isPublished ? 'Unpublish' : 'Publish'}
-                            </button>
-                            <button
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              size="sm"
                               onClick={() => {
                                 setEditingContent(content);
                                 setShowContentModal(true);
                               }}
-                              className="px-3 py-1.5 text-xs bg-surface-700 text-surface-200 rounded hover:bg-surface-600 transition-colors"
                             >
                               Edit
-                            </button>
-                            <button
+                            </Button>
+                            <Button
+                              variant="danger"
+                              size="sm"
                               onClick={() => deleteContent(content.id)}
-                              className="px-3 py-1.5 text-xs bg-red-500/20 text-red-400 rounded hover:bg-red-500/30 transition-colors"
                             >
                               Delete
-                            </button>
+                            </Button>
                           </div>
                         </div>
                       </div>
@@ -464,84 +456,75 @@ function ContentModal({ section, content, onSave, onClose }: ContentModalProps) 
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-surface-900 border border-surface-800 rounded-lg p-6 max-w-2xl w-full mx-4">
-        <h2 className="text-2xl font-bold text-surface-100 mb-4">
-          {content ? 'Edit Content' : 'Add New Content'}
-        </h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <Dialog
+      open
+      onClose={onClose}
+      title={content ? 'Edit Content' : 'Add New Content'}
+      size="lg"
+      footer={
+        <>
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" form="trust-center-content-form">
+            {content ? 'Update' : 'Create'}
+          </Button>
+        </>
+      }
+    >
+      <form id="trust-center-content-form" onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-surface-600 mb-1">
+            Title
+          </label>
+          <Input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+            placeholder="Enter title..."
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-surface-600 mb-1">
+            Content
+          </label>
+          <Textarea
+            value={contentText}
+            onChange={(e) => setContentText(e.target.value)}
+            required
+            rows={6}
+            placeholder="Enter content..."
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-surface-400 mb-1">
-              Title
+            <label className="block text-sm font-medium text-surface-600 mb-1">
+              Display Order
             </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              required
-              className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
-              placeholder="Enter title..."
+            <Input
+              type="number"
+              value={order}
+              onChange={(e) => setOrder(parseInt(e.target.value))}
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-surface-400 mb-1">
-              Content
-            </label>
-            <textarea
-              value={contentText}
-              onChange={(e) => setContentText(e.target.value)}
-              required
-              rows={6}
-              className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
-              placeholder="Enter content..."
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-surface-400 mb-1">
-                Display Order
-              </label>
+          <div className="flex items-end">
+            <label className="flex items-center gap-2">
               <input
-                type="number"
-                value={order}
-                onChange={(e) => setOrder(parseInt(e.target.value))}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
+                type="checkbox"
+                checked={isPublished}
+                onChange={(e) => setIsPublished(e.target.checked)}
+                className="w-4 h-4 bg-surface-100 border-surface-300 rounded text-brand-600 focus:ring-brand-500"
               />
-            </div>
-
-            <div className="flex items-end">
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={isPublished}
-                  onChange={(e) => setIsPublished(e.target.checked)}
-                  className="w-4 h-4 bg-surface-800 border-surface-700 rounded text-brand-600 focus:ring-brand-500"
-                />
-                <span className="text-sm text-surface-300">Publish immediately</span>
-              </label>
-            </div>
+              <span className="text-sm text-surface-700">Publish immediately</span>
+            </label>
           </div>
-
-          <div className="flex justify-end gap-2 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 bg-surface-800 text-surface-100 rounded-lg hover:bg-surface-700 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors"
-            >
-              {content ? 'Update' : 'Create'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        </div>
+      </form>
+    </Dialog>
   );
 }
 
@@ -567,18 +550,8 @@ function PreviewModal({ config, contents, onClose }: PreviewModalProps) {
   const contactContents = getSectionContents('contact');
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg w-full max-w-6xl max-h-[90vh] overflow-y-auto relative">
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="sticky top-4 right-4 float-right z-10 p-2 bg-gray-800 text-white rounded-full hover:bg-gray-700 transition-colors"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-
+    <Dialog open onClose={onClose} size="xl" className="max-w-6xl">
+      <div className="relative max-h-[80vh] overflow-y-auto -mx-5 -my-4">
         {/* Preview Badge */}
         <div className="sticky top-0 left-0 right-0 bg-yellow-500 text-yellow-900 px-4 py-2 text-center font-semibold z-10">
           PREVIEW MODE - This is how your trust center will appear to visitors
@@ -599,7 +572,7 @@ function PreviewModal({ config, contents, onClose }: PreviewModalProps) {
               {config.companyName} Trust Center
             </h1>
             {config.description && (
-              <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              <p className="text-xl text-surface-700 max-w-3xl mx-auto">
                 {config.description}
               </p>
             )}
@@ -613,9 +586,9 @@ function PreviewModal({ config, contents, onClose }: PreviewModalProps) {
               </h2>
               <div className="grid grid-cols-1 gap-6">
                 {overviewContents.map((content) => (
-                  <div key={content.id} className="bg-gray-50 p-6 rounded-lg">
+                  <div key={content.id} className="bg-surface-100 p-6 rounded-lg">
                     <h3 className="text-xl font-semibold mb-2">{content.title}</h3>
-                    <p className="text-gray-700">{content.content}</p>
+                    <p className="text-surface-800">{content.content}</p>
                   </div>
                 ))}
               </div>
@@ -631,9 +604,9 @@ function PreviewModal({ config, contents, onClose }: PreviewModalProps) {
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {certificationContents.map((content) => (
-                  <div key={content.id} className="bg-gray-50 p-6 rounded-lg border-2" style={{ borderColor: config.primaryColor || '#1f2937' }}>
+                  <div key={content.id} className="bg-white p-6 rounded-lg border-2" style={{ borderColor: config.primaryColor || '#1f2937' }}>
                     <h3 className="text-xl font-semibold mb-2">{content.title}</h3>
-                    <p className="text-gray-700">{content.content}</p>
+                    <p className="text-surface-800">{content.content}</p>
                   </div>
                 ))}
               </div>
@@ -649,9 +622,9 @@ function PreviewModal({ config, contents, onClose }: PreviewModalProps) {
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {controlContents.map((content) => (
-                  <div key={content.id} className="bg-gray-50 p-6 rounded-lg">
+                  <div key={content.id} className="bg-surface-100 p-6 rounded-lg">
                     <h3 className="text-xl font-semibold mb-2">{content.title}</h3>
-                    <p className="text-gray-700">{content.content}</p>
+                    <p className="text-surface-800">{content.content}</p>
                   </div>
                 ))}
               </div>
@@ -667,9 +640,9 @@ function PreviewModal({ config, contents, onClose }: PreviewModalProps) {
               </h2>
               <div className="grid grid-cols-1 gap-4">
                 {policyContents.map((content) => (
-                  <div key={content.id} className="bg-gray-50 p-6 rounded-lg">
+                  <div key={content.id} className="bg-surface-100 p-6 rounded-lg">
                     <h3 className="text-xl font-semibold mb-2">{content.title}</h3>
-                    <p className="text-gray-700">{content.content}</p>
+                    <p className="text-surface-800">{content.content}</p>
                   </div>
                 ))}
               </div>
@@ -685,9 +658,9 @@ function PreviewModal({ config, contents, onClose }: PreviewModalProps) {
               </h2>
               <div className="grid grid-cols-1 gap-6">
                 {updateContents.map((content) => (
-                  <div key={content.id} className="bg-gray-50 p-6 rounded-lg border-l-4" style={{ borderLeftColor: config.primaryColor || '#1f2937' }}>
+                  <div key={content.id} className="bg-white p-6 rounded-lg border-l-4" style={{ borderLeftColor: config.primaryColor || '#1f2937' }}>
                     <h3 className="text-xl font-semibold mb-2">{content.title}</h3>
-                    <p className="text-gray-700">{content.content}</p>
+                    <p className="text-surface-800">{content.content}</p>
                   </div>
                 ))}
               </div>
@@ -701,11 +674,11 @@ function PreviewModal({ config, contents, onClose }: PreviewModalProps) {
                 <EnvelopeIcon className="w-8 h-8 inline mr-2" />
                 Contact Us
               </h2>
-              <div className="bg-gray-50 p-8 rounded-lg">
+              <div className="bg-surface-100 p-8 rounded-lg">
                 {contactContents.map((content) => (
                   <div key={content.id} className="mb-4">
                     <h3 className="text-xl font-semibold mb-2">{content.title}</h3>
-                    <p className="text-gray-700">{content.content}</p>
+                    <p className="text-surface-800">{content.content}</p>
                   </div>
                 ))}
                 {config.securityEmail && (
@@ -731,22 +704,22 @@ function PreviewModal({ config, contents, onClose }: PreviewModalProps) {
           {/* Empty State */}
           {publishedContents.length === 0 && (
             <div className="text-center py-16">
-              <div className="text-gray-400 mb-4">
+              <div className="text-surface-500 mb-4">
                 <GlobeAltIcon className="w-16 h-16 mx-auto mb-4" />
               </div>
-              <h3 className="text-2xl font-semibold text-gray-600 mb-2">No Published Content</h3>
-              <p className="text-gray-500">Add and publish content sections to see them appear here.</p>
+              <h3 className="text-2xl font-semibold text-surface-700 mb-2">No Published Content</h3>
+              <p className="text-surface-600">Add and publish content sections to see them appear here.</p>
             </div>
           )}
 
           {/* Footer */}
-          <footer className="text-center pt-8 mt-16 border-t border-gray-200">
-            <p className="text-gray-500 text-sm">
+          <footer className="text-center pt-8 mt-16 border-t border-surface-200">
+            <p className="text-surface-600 text-sm">
               © {new Date().getFullYear()} {config.companyName}. All rights reserved.
             </p>
           </footer>
         </div>
       </div>
-    </div>
+    </Dialog>
   );
 }

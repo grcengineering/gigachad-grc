@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { XMarkIcon, Cog6ToothIcon, CodeBracketIcon } from '@heroicons/react/24/outline';
+import { Cog6ToothIcon, CodeBracketIcon } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import { integrationsApi } from '../../lib/api';
+import { Button, Dialog } from '@/components/ui';
 import VisualConfigBuilder from './VisualConfigBuilder';
 import CodeEditor from './CodeEditor';
 
@@ -236,50 +237,63 @@ export default function CustomConfigModal({ integrationId, integrationName, isOp
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/70" onClick={onClose} />
-
-      {/* Modal */}
-      <div className="relative bg-surface-900 rounded-xl w-full max-w-5xl h-[85vh] flex flex-col shadow-2xl">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-surface-700">
-          <div>
-            <h2 className="text-lg font-semibold text-surface-100">
-              Configure Custom Integration
-            </h2>
-            <p className="text-sm text-surface-400">{integrationName}</p>
-          </div>
-          <div className="flex items-center gap-3">
+    <Dialog
+      open={isOpen}
+      onClose={onClose}
+      size="xl"
+      className="max-w-5xl"
+      title="Configure Custom Integration"
+      description={integrationName}
+      footer={
+        <div className="flex w-full items-center justify-between">
+          <div className="flex items-center gap-2">
+            {hasChanges && (
+              <span className="text-xs text-yellow-700">• Unsaved changes</span>
+            )}
             {config.lastTestAt && (
               <div className="text-xs text-surface-500">
                 Last test: {new Date(config.lastTestAt).toLocaleString()}
                 <span className={clsx(
                   'ml-2 px-1.5 py-0.5 rounded',
-                  config.lastTestStatus === 'success' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+                  config.lastTestStatus === 'success' ? 'bg-green-500/20 text-emerald-700' : 'bg-red-500/20 text-red-600'
                 )}>
                   {config.lastTestStatus}
                 </span>
               </div>
             )}
-            <button onClick={onClose} className="p-2 text-surface-400 hover:text-surface-200">
-              <XMarkIcon className="w-5 h-5" />
-            </button>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="secondary" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={handleSave}
+              disabled={saveMutation.isPending || !hasChanges}
+            >
+              {saveMutation.isPending ? 'Saving...' : 'Save'}
+            </Button>
+            <Button
+              onClick={handleSync}
+              disabled={syncMutation.isPending}
+            >
+              {syncMutation.isPending ? 'Syncing...' : 'Save & Sync'}
+            </Button>
           </div>
         </div>
-
+      }
+    >
+      <div className="-mx-5 -my-4 flex h-[75vh] flex-col">
         {/* Tabs */}
-        <div className="flex border-b border-surface-700">
+        <div className="flex border-b border-surface-300">
           <button
             onClick={() => handleTabChange('visual')}
             className={clsx(
               'flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 transition-colors',
               activeTab === 'visual'
-                ? 'border-brand-500 text-brand-400'
-                : 'border-transparent text-surface-400 hover:text-surface-200'
+                ? 'border-brand-500 text-brand-700'
+                : 'border-transparent text-surface-600 hover:text-surface-800'
             )}
           >
             <Cog6ToothIcon className="w-4 h-4" />
@@ -290,8 +304,8 @@ export default function CustomConfigModal({ integrationId, integrationName, isOp
             className={clsx(
               'flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 transition-colors',
               activeTab === 'code'
-                ? 'border-brand-500 text-brand-400'
-                : 'border-transparent text-surface-400 hover:text-surface-200'
+                ? 'border-brand-500 text-brand-700'
+                : 'border-transparent text-surface-600 hover:text-surface-800'
             )}
           >
             <CodeBracketIcon className="w-4 h-4" />
@@ -335,36 +349,8 @@ export default function CustomConfigModal({ integrationId, integrationName, isOp
             />
           )}
         </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-surface-700 bg-surface-800/50">
-          <div className="flex items-center gap-2">
-            {hasChanges && (
-              <span className="text-xs text-yellow-400">• Unsaved changes</span>
-            )}
-          </div>
-          <div className="flex items-center gap-3">
-            <button onClick={onClose} className="btn-secondary">
-              Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={saveMutation.isPending || !hasChanges}
-              className="btn-secondary"
-            >
-              {saveMutation.isPending ? 'Saving...' : 'Save'}
-            </button>
-            <button
-              onClick={handleSync}
-              disabled={syncMutation.isPending}
-              className="btn-primary"
-            >
-              {syncMutation.isPending ? 'Syncing...' : 'Save & Sync'}
-            </button>
-          </div>
-        </div>
       </div>
-    </div>
+    </Dialog>
   );
 }
 

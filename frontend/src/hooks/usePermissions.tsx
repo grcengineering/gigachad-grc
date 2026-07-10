@@ -1,6 +1,6 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { usersApi, permissionsApi } from '../lib/api';
+import { usersApi } from '../lib/api';
 
 export type Resource =
   | 'controls'

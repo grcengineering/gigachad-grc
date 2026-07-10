@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeftIcon, DocumentArrowUpIcon } from '@heroicons/react/24/outline';
+import { Badge, Button, Dialog, Input, Select, Textarea } from '@/components/ui';
 
 interface Questionnaire {
   id: string;
@@ -57,15 +58,7 @@ export default function QuestionnaireDetail() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [parsing, setParsing] = useState(false);
 
-  useEffect(() => {
-    if (id && id !== 'new') {
-      fetchQuestionnaire();
-    } else {
-      setLoading(false);
-    }
-  }, [id]);
-
-  const fetchQuestionnaire = async () => {
+  const fetchQuestionnaire = useCallback(async () => {
     try {
       const response = await fetch(`/api/questionnaires/${id}`);
       const data = await response.json();
@@ -75,7 +68,15 @@ export default function QuestionnaireDetail() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    if (id && id !== 'new') {
+      fetchQuestionnaire();
+    } else {
+      setLoading(false);
+    }
+  }, [id, fetchQuestionnaire]);
 
   const updateAnswer = async (questionId: string, answer: string) => {
     try {
@@ -125,7 +126,7 @@ export default function QuestionnaireDetail() {
         questions = text.split('\n')
           .map(line => {
             // Remove common numbering patterns: 1., 1), Q1., etc.
-            return line.replace(/^\s*(\d+[\.\)]|Q\d+[\.\)]?)\s*/, '').trim();
+            return line.replace(/^\s*(\d+[.)]|Q\d+[.)]?)\s*/, '').trim();
           })
           .filter(line => line.length > 0);
       }
@@ -208,7 +209,7 @@ export default function QuestionnaireDetail() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-surface-400">Loading questionnaire...</div>
+        <div className="text-surface-600">Loading questionnaire...</div>
       </div>
     );
   }
@@ -218,16 +219,16 @@ export default function QuestionnaireDetail() {
       <div className="flex items-center gap-4">
         <button
           onClick={() => navigate('/questionnaires')}
-          className="p-2 text-surface-400 hover:text-surface-100 hover:bg-surface-800 rounded-lg transition-colors"
+          className="p-2 text-surface-600 hover:text-surface-900 hover:bg-surface-100 rounded-lg transition-colors"
         >
           <ArrowLeftIcon className="w-5 h-5" />
         </button>
         <div className="flex-1">
-          <h1 className="text-3xl font-bold text-surface-100">
+          <h1 className="text-3xl font-bold text-surface-900">
             {id === 'new' ? 'Log Incoming Questionnaire' : questionnaire?.title || 'Customer Questionnaire'}
           </h1>
           {questionnaire && (
-            <p className="mt-1 text-surface-400">
+            <p className="mt-1 text-surface-600">
               Received from {questionnaire.requesterName} {questionnaire.company && `at ${questionnaire.company}`}
             </p>
           )}
@@ -236,116 +237,110 @@ export default function QuestionnaireDetail() {
 
       {id === 'new' ? (
         <form onSubmit={handleSubmitNewQuestionnaire} className="space-y-6">
-          <div className="bg-surface-900 border border-surface-800 rounded-lg p-6 space-y-4">
-            <h2 className="text-xl font-semibold text-surface-100">Customer Information</h2>
+          <div className="bg-white border border-surface-200 rounded-lg p-6 space-y-4">
+            <h2 className="text-xl font-semibold text-surface-900">Customer Information</h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-surface-400 mb-1">
-                  Requester Name <span className="text-red-400">*</span>
+                <label className="block text-sm font-medium text-surface-600 mb-1">
+                  Requester Name <span className="text-red-600">*</span>
                 </label>
-                <input
+                <Input
                   type="text"
                   required
                   value={formData.requesterName}
                   onChange={(e) => setFormData({ ...formData, requesterName: e.target.value })}
-                  className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
                   placeholder="John Doe"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-surface-400 mb-1">
-                  Requester Email <span className="text-red-400">*</span>
+                <label className="block text-sm font-medium text-surface-600 mb-1">
+                  Requester Email <span className="text-red-600">*</span>
                 </label>
-                <input
+                <Input
                   type="email"
                   required
                   value={formData.requesterEmail}
                   onChange={(e) => setFormData({ ...formData, requesterEmail: e.target.value })}
-                  className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
                   placeholder="john@company.com"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-surface-400 mb-1">
+                <label className="block text-sm font-medium text-surface-600 mb-1">
                   Company
                 </label>
-                <input
+                <Input
                   type="text"
                   value={formData.company}
                   onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                  className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
                   placeholder="Acme Corp"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-surface-400 mb-1">
-                  Title <span className="text-red-400">*</span>
+                <label className="block text-sm font-medium text-surface-600 mb-1">
+                  Title <span className="text-red-600">*</span>
                 </label>
-                <input
+                <Input
                   type="text"
                   required
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
                   placeholder="Security Assessment 2025"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-surface-400 mb-1">
+                <label className="block text-sm font-medium text-surface-600 mb-1">
                   Priority
                 </label>
-                <select
+                <Select
                   value={formData.priority}
-                  onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-                  className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
-                >
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                  <option value="urgent">Urgent</option>
-                </select>
+                  onChange={(v) => setFormData({ ...formData, priority: v })}
+                  options={[
+                    { value: 'low', label: 'Low' },
+                    { value: 'medium', label: 'Medium' },
+                    { value: 'high', label: 'High' },
+                    { value: 'urgent', label: 'Urgent' },
+                  ]}
+                />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-surface-400 mb-1">
+                <label className="block text-sm font-medium text-surface-600 mb-1">
                   Due Date
                 </label>
-                <input
+                <Input
                   type="date"
                   value={formData.dueDate}
                   onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                  className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-surface-400 mb-1">
+              <label className="block text-sm font-medium text-surface-600 mb-1">
                 Description
               </label>
-              <textarea
+              <Textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows={2}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
                 placeholder="Additional context about this questionnaire..."
               />
             </div>
           </div>
 
-          <div className="bg-surface-900 border border-surface-800 rounded-lg p-6 space-y-4">
-            <h2 className="text-xl font-semibold text-surface-100">Upload Questionnaire <span className="text-red-400">*</span></h2>
-            <p className="text-sm text-surface-400">
+          <div className="bg-white border border-surface-200 rounded-lg p-6 space-y-4">
+            <h2 className="text-xl font-semibold text-surface-900">Upload Questionnaire <span className="text-red-600">*</span></h2>
+            <p className="text-sm text-surface-600">
               Upload the questionnaire file you received from the customer. Supports CSV, Excel, Word, PDF, and text files.
             </p>
 
             {!formData.questionsText ? (
-              <div className="border-2 border-dashed border-surface-700 rounded-lg p-12">
+              <div className="border-2 border-dashed border-surface-300 rounded-lg p-12">
                 <input
                   type="file"
                   accept=".csv,.txt,.xlsx,.xls,.doc,.docx,.pdf"
@@ -362,10 +357,10 @@ export default function QuestionnaireDetail() {
                   className="cursor-pointer flex flex-col items-center"
                 >
                   <DocumentArrowUpIcon className="w-16 h-16 text-surface-500 mb-3" />
-                  <span className="text-surface-100 text-lg mb-2">
+                  <span className="text-surface-900 text-lg mb-2">
                     {parsing ? 'Parsing file...' : 'Click to upload questionnaire'}
                   </span>
-                  <span className="text-sm text-surface-400 mb-1">
+                  <span className="text-sm text-surface-600 mb-1">
                     or drag and drop
                   </span>
                   <span className="text-xs text-surface-500">
@@ -375,32 +370,33 @@ export default function QuestionnaireDetail() {
               </div>
             ) : (
               <div className="space-y-3">
-                <div className="flex items-center justify-between p-4 bg-surface-800 rounded-lg border border-surface-700">
+                <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-surface-200">
                   <div className="flex items-center gap-3">
-                    <DocumentArrowUpIcon className="w-6 h-6 text-green-400" />
+                    <DocumentArrowUpIcon className="w-6 h-6 text-emerald-700" />
                     <div>
-                      <p className="text-surface-100 font-medium">{uploadedFile?.name}</p>
-                      <p className="text-sm text-surface-400">
+                      <p className="text-surface-900 font-medium">{uploadedFile?.name}</p>
+                      <p className="text-sm text-surface-600">
                         {formData.questionsText.split('\n').filter(l => l.trim()).length} questions parsed
                       </p>
                     </div>
                   </div>
-                  <button
+                  <Button
                     type="button"
+                    variant="secondary"
+                    size="sm"
                     onClick={() => {
                       setFormData({ ...formData, questionsText: '' });
                       setUploadedFile(null);
                     }}
-                    className="px-3 py-1.5 text-sm bg-surface-700 text-surface-200 rounded hover:bg-surface-600 transition-colors"
                   >
                     Replace File
-                  </button>
+                  </Button>
                 </div>
 
                 {/* Preview of parsed questions */}
-                <div className="border border-surface-700 rounded-lg p-4 max-h-60 overflow-y-auto">
-                  <h4 className="text-sm font-medium text-surface-400 mb-2">Parsed Questions Preview:</h4>
-                  <ol className="space-y-1 text-sm text-surface-300">
+                <div className="border border-surface-300 rounded-lg p-4 max-h-60 overflow-y-auto">
+                  <h4 className="text-sm font-medium text-surface-600 mb-2">Parsed Questions Preview:</h4>
+                  <ol className="space-y-1 text-sm text-surface-700">
                     {formData.questionsText.split('\n').filter(l => l.trim()).slice(0, 10).map((q, i) => (
                       <li key={i} className="flex gap-2">
                         <span className="text-surface-500 min-w-[2rem]">{i + 1}.</span>
@@ -419,56 +415,62 @@ export default function QuestionnaireDetail() {
           </div>
 
           <div className="flex justify-end gap-2">
-            <button
+            <Button
               type="button"
+              variant="secondary"
               onClick={() => navigate('/questionnaires')}
-              className="px-4 py-2 bg-surface-800 text-surface-100 rounded-lg hover:bg-surface-700 transition-colors"
               disabled={submitting}
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
+              variant="primary"
               disabled={submitting}
-              className="px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? 'Creating...' : 'Create Questionnaire'}
-            </button>
+            </Button>
           </div>
         </form>
       ) : questionnaire ? (
         <div className="space-y-6">
           {/* Header Info */}
-          <div className="bg-surface-900 border border-surface-800 rounded-lg p-6">
+          <div className="bg-white border border-surface-200 rounded-lg p-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <dt className="text-sm font-medium text-surface-400 mb-1">Status</dt>
+                <dt className="text-sm font-medium text-surface-600 mb-1">Status</dt>
                 <dd>
-                  <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full capitalize ${
-                    questionnaire.status === 'completed' ? 'bg-green-500/20 text-green-400' :
-                    questionnaire.status === 'in_progress' ? 'bg-blue-500/20 text-blue-400' :
-                    'bg-yellow-500/20 text-yellow-400'
-                  }`}>
+                  <Badge
+                    variant={
+                      questionnaire.status === 'completed' ? 'success' :
+                      questionnaire.status === 'in_progress' ? 'info' :
+                      'warning'
+                    }
+                    size="sm"
+                  >
                     {questionnaire.status.replace('_', ' ')}
-                  </span>
+                  </Badge>
                 </dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-surface-400 mb-1">Priority</dt>
+                <dt className="text-sm font-medium text-surface-600 mb-1">Priority</dt>
                 <dd>
-                  <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full capitalize ${
-                    questionnaire.priority === 'urgent' ? 'bg-red-500/20 text-red-400' :
-                    questionnaire.priority === 'high' ? 'bg-orange-500/20 text-orange-400' :
-                    'bg-yellow-500/20 text-yellow-400'
-                  }`}>
+                  <Badge
+                    variant={
+                      questionnaire.priority === 'urgent' ? 'danger' :
+                      questionnaire.priority === 'high' ? 'warning' :
+                      'warning'
+                    }
+                    size="sm"
+                  >
                     {questionnaire.priority}
-                  </span>
+                  </Badge>
                 </dd>
               </div>
               {questionnaire.dueDate && (
                 <div>
-                  <dt className="text-sm font-medium text-surface-400 mb-1">Due Date</dt>
-                  <dd className="text-sm text-surface-100">
+                  <dt className="text-sm font-medium text-surface-600 mb-1">Due Date</dt>
+                  <dd className="text-sm text-surface-900">
                     {new Date(questionnaire.dueDate).toLocaleDateString()}
                   </dd>
                 </div>
@@ -478,9 +480,9 @@ export default function QuestionnaireDetail() {
 
           {/* Questions */}
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-surface-100">Questions</h2>
+            <h2 className="text-xl font-semibold text-surface-900">Questions</h2>
             {questionnaire.questions.map((question, index) => (
-              <div key={question.id} className="bg-surface-900 border border-surface-800 rounded-lg p-6">
+              <div key={question.id} className="bg-white border border-surface-200 rounded-lg p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
@@ -488,30 +490,32 @@ export default function QuestionnaireDetail() {
                         {question.questionNumber || `Q${index + 1}`}
                       </span>
                       {question.category && (
-                        <span className="px-2 py-1 text-xs bg-surface-700 text-surface-300 rounded">
+                        <Badge variant="neutral" size="sm" capitalize={false}>
                           {question.category}
-                        </span>
+                        </Badge>
                       )}
-                      <span className={`px-2 py-1 text-xs rounded capitalize ${
-                        question.status === 'answered' ? 'bg-green-500/20 text-green-400' :
-                        question.status === 'in_progress' ? 'bg-blue-500/20 text-blue-400' :
-                        'bg-yellow-500/20 text-yellow-400'
-                      }`}>
+                      <Badge
+                        variant={
+                          question.status === 'answered' ? 'success' :
+                          question.status === 'in_progress' ? 'info' :
+                          'warning'
+                        }
+                        size="sm"
+                      >
                         {question.status.replace('_', ' ')}
-                      </span>
+                      </Badge>
                     </div>
-                    <p className="text-surface-100 font-medium mb-4">{question.questionText}</p>
+                    <p className="text-surface-900 font-medium mb-4">{question.questionText}</p>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-surface-400 mb-2">
+                  <label className="block text-sm font-medium text-surface-600 mb-2">
                     Answer
                   </label>
-                  <textarea
+                  <Textarea
                     value={question.answerText || ''}
                     onChange={(e) => updateAnswer(question.id, e.target.value)}
                     rows={4}
-                    className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500"
                     placeholder="Enter your answer here..."
                   />
                 </div>
@@ -522,58 +526,19 @@ export default function QuestionnaireDetail() {
       ) : null}
 
       {/* Edit Modal */}
-      {showEditModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-surface-900 border border-surface-800 rounded-lg p-6 max-w-2xl w-full mx-4">
-            <h3 className="text-lg font-semibold text-surface-100 mb-4">Edit Questionnaire Details</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-surface-400 mb-1">Title</label>
-                <input type="text" value={editForm.title} onChange={(e) => setEditForm({...editForm, title: e.target.value})} 
-                  className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-surface-400 mb-1">Requester Name</label>
-                  <input type="text" value={editForm.requesterName} onChange={(e) => setEditForm({...editForm, requesterName: e.target.value})} 
-                    className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-surface-400 mb-1">Requester Email</label>
-                  <input type="email" value={editForm.requesterEmail} onChange={(e) => setEditForm({...editForm, requesterEmail: e.target.value})} 
-                    className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-surface-400 mb-1">Company</label>
-                  <input type="text" value={editForm.company} onChange={(e) => setEditForm({...editForm, company: e.target.value})} 
-                    className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-surface-400 mb-1">Priority</label>
-                  <select value={editForm.priority} onChange={(e) => setEditForm({...editForm, priority: e.target.value})} 
-                    className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500">
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-surface-400 mb-1">Due Date</label>
-                <input type="date" value={editForm.dueDate} onChange={(e) => setEditForm({...editForm, dueDate: e.target.value})} 
-                  className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-surface-400 mb-1">Description</label>
-                <textarea value={editForm.description} onChange={(e) => setEditForm({...editForm, description: e.target.value})} rows={3}
-                  className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-brand-500" />
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 mt-6">
-              <button onClick={() => setShowEditModal(false)} className="px-4 py-2 bg-surface-800 text-surface-100 rounded-lg hover:bg-surface-700 transition-colors">Cancel</button>
-              <button onClick={async () => {
+      <Dialog
+        open={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        title="Edit Questionnaire Details"
+        size="lg"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setShowEditModal(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={async () => {
                 try {
                   await fetch(`/api/questionnaires/${id}`, {
                     method: 'PATCH',
@@ -586,21 +551,95 @@ export default function QuestionnaireDetail() {
                   console.error('Error updating questionnaire:', error);
                   alert('Failed to update questionnaire');
                 }
-              }} className="px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors">Save Changes</button>
+              }}
+            >
+              Save Changes
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-surface-600 mb-1">Title</label>
+            <Input
+              type="text"
+              value={editForm.title}
+              onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-surface-600 mb-1">Requester Name</label>
+              <Input
+                type="text"
+                value={editForm.requesterName}
+                onChange={(e) => setEditForm({ ...editForm, requesterName: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-surface-600 mb-1">Requester Email</label>
+              <Input
+                type="email"
+                value={editForm.requesterEmail}
+                onChange={(e) => setEditForm({ ...editForm, requesterEmail: e.target.value })}
+              />
             </div>
           </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-surface-600 mb-1">Company</label>
+              <Input
+                type="text"
+                value={editForm.company}
+                onChange={(e) => setEditForm({ ...editForm, company: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-surface-600 mb-1">Priority</label>
+              <Select
+                value={editForm.priority}
+                onChange={(v) => setEditForm({ ...editForm, priority: v })}
+                options={[
+                  { value: 'low', label: 'Low' },
+                  { value: 'medium', label: 'Medium' },
+                  { value: 'high', label: 'High' },
+                ]}
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-surface-600 mb-1">Due Date</label>
+            <Input
+              type="date"
+              value={editForm.dueDate}
+              onChange={(e) => setEditForm({ ...editForm, dueDate: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-surface-600 mb-1">Description</label>
+            <Textarea
+              value={editForm.description}
+              onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+              rows={3}
+            />
+          </div>
         </div>
-      )}
+      </Dialog>
 
       {/* Delete Confirmation */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-surface-900 border border-surface-800 rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold text-surface-100 mb-2">Delete Questionnaire</h3>
-            <p className="text-surface-400 mb-6">Are you sure you want to delete "{questionnaire?.title}"? This action cannot be undone.</p>
-            <div className="flex justify-end gap-2">
-              <button onClick={() => setShowDeleteConfirm(false)} className="px-4 py-2 bg-surface-800 text-surface-100 rounded-lg hover:bg-surface-700 transition-colors">Cancel</button>
-              <button onClick={async () => {
+      <Dialog
+        open={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        title="Delete Questionnaire"
+        size="sm"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setShowDeleteConfirm(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              onClick={async () => {
                 try {
                   await fetch(`/api/questionnaires/${id}`, {
                     method: 'DELETE',
@@ -611,11 +650,17 @@ export default function QuestionnaireDetail() {
                   console.error('Error deleting questionnaire:', error);
                   alert('Failed to delete questionnaire');
                 }
-              }} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">Delete</button>
-            </div>
-          </div>
-        </div>
-      )}
+              }}
+            >
+              Delete
+            </Button>
+          </>
+        }
+      >
+        <p className="text-surface-600">
+          Are you sure you want to delete "{questionnaire?.title}"? This action cannot be undone.
+        </p>
+      </Dialog>
     </div>
   );
 }

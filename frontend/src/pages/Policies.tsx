@@ -1,23 +1,53 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { policiesApi } from '@/lib/api';
 import toast from 'react-hot-toast';
+import { FileText, Plus, Search, Upload, X } from 'lucide-react';
+import { cn } from '@/lib/cn';
 import {
-  DocumentTextIcon,
-  PlusIcon,
-  MagnifyingGlassIcon,
-  XMarkIcon,
-  ArrowUpTrayIcon,
-} from '@heroicons/react/24/outline';
-import clsx from 'clsx';
+  Button,
+  Badge,
+  Card,
+  CardBody,
+  Input,
+  Textarea,
+  Label,
+  Select,
+  PageHeader,
+  FilterBar,
+  DataTable,
+  EmptyState,
+  Dialog,
+  type DataTableColumn,
+  type BadgeVariant,
+  type ActiveFilter,
+} from '@/components/ui';
 
-const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  draft: { label: 'Draft', color: 'badge-neutral' },
-  in_review: { label: 'In Review', color: 'badge-warning' },
-  approved: { label: 'Approved', color: 'badge-success' },
-  published: { label: 'Published', color: 'badge-info' },
-  retired: { label: 'Retired', color: 'badge-danger' },
+interface Policy {
+  id: string;
+  title: string;
+  category: string;
+  status: string;
+  version: string;
+  owner?: { displayName?: string };
+  nextReviewDue?: string;
+}
+
+const STATUS_VARIANT: Record<string, BadgeVariant> = {
+  draft: 'neutral',
+  in_review: 'warning',
+  approved: 'success',
+  published: 'info',
+  retired: 'danger',
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  draft: 'Draft',
+  in_review: 'In Review',
+  approved: 'Approved',
+  published: 'Published',
+  retired: 'Retired',
 };
 
 const CATEGORY_OPTIONS = [
@@ -33,7 +63,25 @@ const CATEGORY_OPTIONS = [
   { value: 'other', label: 'Other' },
 ];
 
+function StatCard({ label, value, tone = 'neutral' }: { label: string; value: number; tone?: 'neutral' | 'success' | 'warning' | 'danger' }) {
+  const tones = {
+    neutral: 'text-surface-900',
+    success: 'text-emerald-700',
+    warning: 'text-yellow-700',
+    danger: 'text-red-600',
+  };
+  return (
+    <Card>
+      <CardBody density="cozy">
+        <p className="text-xs text-surface-500 uppercase tracking-wider">{label}</p>
+        <p className={cn('text-h1 mt-1', tones[tone])}>{value}</p>
+      </CardBody>
+    </Card>
+  );
+}
+
 export default function Policies() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [isUploadOpen, setIsUploadOpen] = useState(false);
@@ -48,142 +96,133 @@ export default function Policies() {
     queryFn: () => policiesApi.getStats().then((res) => res.data),
   });
 
-  const policies = policiesData?.data || [];
+  const policies: Policy[] = policiesData?.data || [];
+
+  const activeFilters: ActiveFilter[] = [];
+  if (search) activeFilters.push({ key: 'search', label: `Search: ${search}`, onClear: () => setSearch('') });
+
+  const columns: DataTableColumn<Policy>[] = [
+    {
+      id: 'title',
+      accessorKey: 'title',
+      header: 'Policy',
+      mobileLabel: 'Policy',
+      cell: ({ row }) => (
+        <div className="flex items-center gap-3">
+          <div className="p-1.5 bg-surface-100 rounded-md">
+            <FileText className="h-4 w-4 text-surface-600" />
+          </div>
+          <span className="font-medium text-surface-900">{row.original.title}</span>
+        </div>
+      ),
+    },
+    {
+      id: 'category',
+      accessorKey: 'category',
+      header: 'Category',
+      mobileLabel: 'Category',
+      cell: ({ row }) => (
+        <span className="capitalize text-surface-700">{row.original.category?.replace(/_/g, ' ')}</span>
+      ),
+    },
+    {
+      id: 'version',
+      accessorKey: 'version',
+      header: 'Version',
+      mobileLabel: 'Version',
+      cell: ({ row }) => <span className="font-mono text-small text-surface-600">v{row.original.version}</span>,
+    },
+    {
+      id: 'status',
+      accessorKey: 'status',
+      header: 'Status',
+      mobileLabel: 'Status',
+      cell: ({ row }) => (
+        <Badge variant={STATUS_VARIANT[row.original.status] ?? 'neutral'} dot>
+          {STATUS_LABELS[row.original.status] ?? row.original.status}
+        </Badge>
+      ),
+    },
+    {
+      id: 'owner',
+      header: 'Owner',
+      mobileLabel: 'Owner',
+      cell: ({ row }) => (
+        <span className="text-surface-700">{row.original.owner?.displayName || 'Unassigned'}</span>
+      ),
+    },
+    {
+      id: 'nextReview',
+      accessorKey: 'nextReviewDue',
+      header: 'Next Review',
+      mobileLabel: 'Next Review',
+      cell: ({ row }) => {
+        const due = row.original.nextReviewDue;
+        if (!due) return <span className="text-surface-500">—</span>;
+        const overdue = new Date(due) < new Date();
+        return (
+          <span className={overdue ? 'text-red-600' : 'text-surface-600'}>
+            {new Date(due).toLocaleDateString()}
+          </span>
+        );
+      },
+    },
+  ];
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-surface-100">Policy Center</h1>
-          <p className="text-surface-400 mt-1">
-            Manage your organization's policies and track review cycles
-          </p>
-        </div>
-        <button className="btn-primary" onClick={() => setIsUploadOpen(true)}>
-          <PlusIcon className="w-4 h-4 mr-2" />
-          Upload Policy
-        </button>
-      </div>
+    <div className="space-y-5 animate-fade-in">
+      <PageHeader
+        title="Policy Center"
+        description="Manage your organization's policies and track review cycles."
+        actions={
+          <Button size="sm" leftIcon={<Plus className="h-4 w-4" />} onClick={() => setIsUploadOpen(true)}>
+            Upload Policy
+          </Button>
+        }
+      />
 
-      {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="card p-4">
-          <p className="text-sm text-surface-400">Total Policies</p>
-          <p className="text-2xl font-bold text-surface-100 mt-1">{stats?.total || 0}</p>
-        </div>
-        <div className="card p-4">
-          <p className="text-sm text-surface-400">Approved</p>
-          <p className="text-2xl font-bold text-green-400 mt-1">{stats?.approved || 0}</p>
-        </div>
-        <div className="card p-4">
-          <p className="text-sm text-surface-400">Pending Review</p>
-          <p className="text-2xl font-bold text-yellow-400 mt-1">{stats?.inReview || 0}</p>
-        </div>
-        <div className="card p-4">
-          <p className="text-sm text-surface-400">Overdue Review</p>
-          <p className="text-2xl font-bold text-red-400 mt-1">{stats?.overdueReview || 0}</p>
-        </div>
+        <StatCard label="Total Policies" value={stats?.total || 0} />
+        <StatCard label="Approved" value={stats?.approved || 0} tone="success" />
+        <StatCard label="Pending Review" value={stats?.inReview || 0} tone="warning" />
+        <StatCard label="Overdue Review" value={stats?.overdueReview || 0} tone="danger" />
       </div>
 
-      {/* Search */}
-      <div className="card p-4">
-        <div className="relative">
-          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-500" />
-          <input
-            type="text"
-            placeholder="Search policies..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="input pl-10"
+      <FilterBar active={activeFilters} onClearAll={activeFilters.length ? () => setSearch('') : undefined}>
+        <Input
+          inputSize="sm"
+          className="w-72"
+          placeholder="Search policies…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          leftIcon={<Search className="h-4 w-4" />}
+        />
+      </FilterBar>
+
+      <DataTable
+        data={policies}
+        columns={columns}
+        loading={isLoading}
+        getRowId={(p) => p.id}
+        onRowClick={(p) => navigate(`/policies/${p.id}`)}
+        emptyState={
+          <EmptyState
+            icon={<FileText className="h-8 w-8" />}
+            title="No policies found"
+            description={search ? 'Try clearing your search.' : 'Upload your first policy to get started.'}
+            action={
+              search ? (
+                <Button variant="outline" size="sm" onClick={() => setSearch('')}>Clear search</Button>
+              ) : (
+                <Button size="sm" leftIcon={<Plus className="h-4 w-4" />} onClick={() => setIsUploadOpen(true)}>
+                  Upload Policy
+                </Button>
+              )
+            }
           />
-        </div>
-      </div>
+        }
+      />
 
-      {/* Policies List */}
-      <div className="card overflow-hidden">
-        {isLoading ? (
-          <div className="flex items-center justify-center py-16">
-            <div className="animate-spin w-8 h-8 border-4 border-surface-700 rounded-full border-t-brand-500"></div>
-          </div>
-        ) : policies.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-surface-500">
-            <DocumentTextIcon className="w-16 h-16 mb-4" />
-            <p className="text-lg mb-2">No policies found</p>
-            <p className="text-sm">Upload your first policy to get started</p>
-          </div>
-        ) : (
-          <div className="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>Policy</th>
-                  <th>Category</th>
-                  <th>Version</th>
-                  <th>Status</th>
-                  <th>Owner</th>
-                  <th>Next Review</th>
-                </tr>
-              </thead>
-              <tbody>
-                {policies.map((policy: any) => {
-                  const statusConfig = STATUS_CONFIG[policy.status] || STATUS_CONFIG.draft;
-
-                  return (
-                    <tr key={policy.id}>
-                      <td>
-                        <Link
-                          to={`/policies/${policy.id}`}
-                          className="flex items-center gap-3 hover:text-brand-400"
-                        >
-                          <div className="p-2 bg-surface-800 rounded-lg">
-                            <DocumentTextIcon className="w-5 h-5 text-surface-400" />
-                          </div>
-                          <span className="font-medium text-surface-100">{policy.title}</span>
-                        </Link>
-                      </td>
-                      <td>
-                        <span className="capitalize text-surface-300">
-                          {policy.category?.replace(/_/g, ' ')}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="font-mono text-surface-400">v{policy.version}</span>
-                      </td>
-                      <td>
-                        <span className={clsx('badge', statusConfig.color)}>
-                          {statusConfig.label}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="text-surface-300">
-                          {policy.owner?.displayName || 'Unassigned'}
-                        </span>
-                      </td>
-                      <td>
-                        {policy.nextReviewDue ? (
-                          <span
-                            className={clsx(
-                              'text-surface-400',
-                              new Date(policy.nextReviewDue) < new Date() && 'text-red-400'
-                            )}
-                          >
-                            {new Date(policy.nextReviewDue).toLocaleDateString()}
-                          </span>
-                        ) : (
-                          <span className="text-surface-500">-</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* Upload Modal */}
       {isUploadOpen && (
         <UploadPolicyModal
           onClose={() => setIsUploadOpen(false)}
@@ -198,13 +237,7 @@ export default function Policies() {
   );
 }
 
-function UploadPolicyModal({
-  onClose,
-  onSuccess,
-}: {
-  onClose: () => void;
-  onSuccess: () => void;
-}) {
+function UploadPolicyModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -215,19 +248,15 @@ function UploadPolicyModal({
   const uploadMutation = useMutation({
     mutationFn: () => {
       if (!file) throw new Error('No file selected');
-      return policiesApi.upload(file, {
-        title,
-        description,
-        category,
-        version,
-      });
+      return policiesApi.upload(file, { title, description, category, version });
     },
     onSuccess: () => {
-      toast.success('Policy uploaded successfully!');
+      toast.success('Policy uploaded successfully');
       onSuccess();
     },
-    onError: (error: any) => {
-      toast.error(error.message || 'Failed to upload policy');
+    onError: (error: unknown) => {
+      const msg = (error as { message?: string })?.message || 'Failed to upload policy';
+      toast.error(msg);
     },
   });
 
@@ -237,9 +266,7 @@ function UploadPolicyModal({
     const droppedFile = e.dataTransfer.files[0];
     if (droppedFile) {
       setFile(droppedFile);
-      if (!title) {
-        setTitle(droppedFile.name.replace(/\.[^/.]+$/, ''));
-      }
+      if (!title) setTitle(droppedFile.name.replace(/\.[^/.]+$/, ''));
     }
   };
 
@@ -247,138 +274,117 @@ function UploadPolicyModal({
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
       setFile(selectedFile);
-      if (!title) {
-        setTitle(selectedFile.name.replace(/\.[^/.]+$/, ''));
-      }
+      if (!title) setTitle(selectedFile.name.replace(/\.[^/.]+$/, ''));
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative bg-surface-900 border border-surface-800 rounded-xl w-full max-w-lg mx-4 p-6 animate-slide-up">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold text-surface-100">Upload Policy</h2>
-          <button onClick={onClose} className="text-surface-400 hover:text-surface-100">
-            <XMarkIcon className="w-5 h-5" />
-          </button>
-        </div>
-
-        <div className="space-y-4">
-          {/* File Drop Zone */}
-          <div
-            className={clsx(
-              'border-2 border-dashed rounded-lg p-8 text-center transition-colors',
-              isDragging ? 'border-brand-500 bg-brand-500/10' : 'border-surface-700',
-              file && 'border-green-500 bg-green-500/10'
-            )}
-            onDragOver={(e) => {
-              e.preventDefault();
-              setIsDragging(true);
-            }}
-            onDragLeave={() => setIsDragging(false)}
-            onDrop={handleDrop}
-          >
-            {file ? (
-              <div className="flex items-center justify-center gap-3">
-                <DocumentTextIcon className="w-8 h-8 text-green-400" />
-                <div className="text-left">
-                  <p className="text-surface-100 font-medium">{file.name}</p>
-                  <p className="text-surface-500 text-sm">
-                    {(file.size / 1024 / 1024).toFixed(2)} MB
-                  </p>
-                </div>
-                <button
-                  onClick={() => setFile(null)}
-                  className="ml-2 text-surface-400 hover:text-red-400"
-                >
-                  <XMarkIcon className="w-5 h-5" />
-                </button>
-              </div>
-            ) : (
-              <>
-                <ArrowUpTrayIcon className="w-10 h-10 text-surface-500 mx-auto mb-3" />
-                <p className="text-surface-300 mb-2">
-                  Drag and drop a file here, or click to browse
-                </p>
-                <input
-                  type="file"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                  id="policy-file"
-                  accept=".pdf,.doc,.docx,.txt"
-                />
-                <label htmlFor="policy-file" className="btn-outline cursor-pointer">
-                  Choose File
-                </label>
-              </>
-            )}
-          </div>
-
-          <div>
-            <label className="label">Title *</label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="input mt-1"
-              placeholder="e.g., Information Security Policy"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="label">Description</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="input mt-1"
-              rows={2}
-              placeholder="Brief description of the policy..."
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="label">Category *</label>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="input mt-1"
-              >
-                {CATEGORY_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="label">Version</label>
-              <input
-                type="text"
-                value={version}
-                onChange={(e) => setVersion(e.target.value)}
-                className="input mt-1"
-                placeholder="1.0"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="flex justify-end gap-3 mt-6">
-          <button onClick={onClose} className="btn-secondary">
-            Cancel
-          </button>
-          <button
+    <Dialog
+      open
+      onClose={onClose}
+      title="Upload Policy"
+      size="md"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button
+            loading={uploadMutation.isPending}
+            disabled={!file || !title}
             onClick={() => uploadMutation.mutate()}
-            disabled={!file || !title || uploadMutation.isPending}
-            className="btn-primary"
           >
-            {uploadMutation.isPending ? 'Uploading...' : 'Upload Policy'}
-          </button>
+            Upload Policy
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <div
+          className={cn(
+            'border-2 border-dashed rounded-md p-6 text-center transition-colors',
+            isDragging ? 'border-brand-500 bg-brand-500/10' : 'border-surface-300',
+            file && 'border-emerald-500 bg-emerald-500/10',
+          )}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setIsDragging(true);
+          }}
+          onDragLeave={() => setIsDragging(false)}
+          onDrop={handleDrop}
+        >
+          {file ? (
+            <div className="flex items-center justify-center gap-3">
+              <FileText className="h-7 w-7 text-emerald-600" />
+              <div className="text-left">
+                <p className="text-surface-900 font-medium">{file.name}</p>
+                <p className="text-xs text-surface-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+              </div>
+              <button
+                onClick={() => setFile(null)}
+                className="ml-2 text-surface-600 hover:text-red-600"
+                aria-label="Clear file"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <>
+              <Upload className="h-8 w-8 text-surface-500 mx-auto mb-2" />
+              <p className="text-body text-surface-700 mb-2">
+                Drag and drop a file, or click to browse
+              </p>
+              <input
+                type="file"
+                onChange={handleFileSelect}
+                className="hidden"
+                id="policy-file"
+                accept=".pdf,.doc,.docx,.txt"
+              />
+              <label htmlFor="policy-file">
+                <Button variant="outline" size="sm" type="button" onClick={() => document.getElementById('policy-file')?.click()}>
+                  Choose File
+                </Button>
+              </label>
+            </>
+          )}
+        </div>
+
+        <div>
+          <Label htmlFor="pol-title" required>Title</Label>
+          <Input
+            id="pol-title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="e.g., Information Security Policy"
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="pol-desc">Description</Label>
+          <Textarea
+            id="pol-desc"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={2}
+            placeholder="Brief description of the policy…"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label required>Category</Label>
+            <Select value={category} onChange={setCategory} options={CATEGORY_OPTIONS} />
+          </div>
+          <div>
+            <Label htmlFor="pol-version">Version</Label>
+            <Input
+              id="pol-version"
+              value={version}
+              onChange={(e) => setVersion(e.target.value)}
+              placeholder="1.0"
+            />
+          </div>
         </div>
       </div>
-    </div>
+    </Dialog>
   );
 }

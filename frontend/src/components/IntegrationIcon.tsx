@@ -260,6 +260,9 @@ const LOGO_URL_OVERRIDE: Record<string, string> = {
 };
 
 export function IntegrationIcon({ iconSlug, integrationName, className = 'w-6 h-6', fallback = '🔗' }: IntegrationIconProps) {
+  // All hooks must be at the top, before any early returns.
+  const [failedAttempts, setFailedAttempts] = useState(0);
+
   // Check if there's a direct logo URL override first
   if (iconSlug && LOGO_URL_OVERRIDE[iconSlug]) {
     return (
@@ -280,8 +283,6 @@ export function IntegrationIcon({ iconSlug, integrationName, className = 'w-6 h-
 
   // Try to get domain from mapping first, then fall back to iconSlug as domain
   const domain = iconSlug ? (DOMAIN_MAP[iconSlug] || `${iconSlug}.com`) : integrationName?.toLowerCase().replace(/\s+/g, '') + '.com';
-
-  const [failedAttempts, setFailedAttempts] = useState(0);
 
   if (!iconSlug && !integrationName) {
     return <span className={className}>{fallback}</span>;

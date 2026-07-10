@@ -19,6 +19,8 @@ import {
   TrendingUp,
   Percent,
 } from 'lucide-react';
+import { Badge, Button, Dialog, Input, Select, Textarea } from '@/components/ui';
+import { riskStatusVariant } from '@/lib/riskStatus';
 
 // Types
 interface RiskDetail {
@@ -138,9 +140,9 @@ const TREATMENT_PLANS = [
 ];
 
 const CONTROL_EFFECTIVENESS = [
-  { value: 'none', label: 'None', color: 'text-red-400' },
-  { value: 'partial', label: 'Partial', color: 'text-amber-400' },
-  { value: 'full', label: 'Full', color: 'text-emerald-400' },
+  { value: 'none', label: 'None', color: 'text-red-600' },
+  { value: 'partial', label: 'Partial', color: 'text-amber-700' },
+  { value: 'full', label: 'Full', color: 'text-emerald-600' },
 ];
 
 export default function RiskDetail() {
@@ -285,25 +287,9 @@ export default function RiskDetail() {
 
   const getRiskLevelColor = (level: string) => {
     const levelConfig = RISK_LEVELS.find(l => l.value === level);
-    return levelConfig?.color || 'bg-gray-500';
+    return levelConfig?.color || 'bg-surface-300';
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'open':
-        return 'bg-red-500/20 text-red-400';
-      case 'in_treatment':
-        return 'bg-amber-500/20 text-amber-400';
-      case 'accepted':
-        return 'bg-blue-500/20 text-blue-400';
-      case 'mitigated':
-        return 'bg-emerald-500/20 text-emerald-400';
-      case 'closed':
-        return 'bg-surface-500/20 text-surface-400';
-      default:
-        return 'bg-surface-500/20 text-surface-400';
-    }
-  };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -316,7 +302,7 @@ export default function RiskDetail() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-surface-400">Loading risk details...</div>
+        <div className="text-surface-600">Loading risk details...</div>
       </div>
     );
   }
@@ -324,7 +310,7 @@ export default function RiskDetail() {
   if (!risk) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-surface-400">Risk not found</div>
+        <div className="text-surface-600">Risk not found</div>
       </div>
     );
   }
@@ -336,25 +322,25 @@ export default function RiskDetail() {
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate('/risks')}
-            className="p-2 hover:bg-surface-700 rounded-lg text-surface-400"
+            className="p-2 hover:bg-surface-200 rounded-lg text-surface-600"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
             <div className="flex items-center gap-3">
-              <span className="text-brand-400 font-mono">{risk.riskId}</span>
-              <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(risk.status)}`}>
-                {risk.status.replace('_', ' ')}
-              </span>
+              <span className="text-brand-700 font-mono">{risk.riskId}</span>
+              <Badge variant={riskStatusVariant(risk.status)} size="sm">
+                {(risk.status || '').replace(/_/g, ' ')}
+              </Badge>
             </div>
-            <h1 className="text-2xl font-semibold text-white mt-1">{risk.title}</h1>
+            <h1 className="text-2xl font-semibold text-surface-900 mt-1">{risk.title}</h1>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={() => markReviewedMutation.mutate()}
             disabled={markReviewedMutation.isPending}
-            className="px-4 py-2 bg-surface-700 text-surface-300 rounded-lg hover:bg-surface-600 flex items-center gap-2"
+            className="px-4 py-2 bg-surface-200 text-surface-700 rounded-lg hover:bg-surface-300 flex items-center gap-2"
           >
             <CheckCircle className="w-4 h-4" />
             Mark Reviewed
@@ -368,7 +354,7 @@ export default function RiskDetail() {
           </button>
           <button
             onClick={() => setShowEditModal(true)}
-            className="p-2 hover:bg-surface-700 rounded-lg text-surface-400"
+            className="p-2 hover:bg-surface-200 rounded-lg text-surface-600"
           >
             <Edit2 className="w-5 h-5" />
           </button>
@@ -378,7 +364,7 @@ export default function RiskDetail() {
                 deleteMutation.mutate();
               }
             }}
-            className="p-2 hover:bg-red-500/20 rounded-lg text-red-400"
+            className="p-2 hover:bg-red-500/20 rounded-lg text-red-600"
           >
             <Trash2 className="w-5 h-5" />
           </button>
@@ -394,33 +380,33 @@ export default function RiskDetail() {
       {/* Risk Overview */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Info */}
-        <div className="lg:col-span-2 bg-surface-800 rounded-xl border border-surface-700 p-6 space-y-6">
+        <div className="lg:col-span-2 bg-white rounded-xl border border-surface-200 p-6 space-y-6">
           <div>
-            <h3 className="text-sm font-medium text-surface-400 mb-2">Description</h3>
-            <p className="text-surface-200">{risk.description}</p>
+            <h3 className="text-sm font-medium text-surface-600 mb-2">Description</h3>
+            <p className="text-surface-800">{risk.description}</p>
           </div>
 
           <div className="grid grid-cols-2 gap-6">
             <div>
-              <h3 className="text-sm font-medium text-surface-400 mb-2">Category</h3>
-              <p className="text-white capitalize">{risk.category}</p>
+              <h3 className="text-sm font-medium text-surface-600 mb-2">Category</h3>
+              <p className="text-surface-900 capitalize">{risk.category}</p>
             </div>
             <div>
-              <h3 className="text-sm font-medium text-surface-400 mb-2">Review Frequency</h3>
-              <p className="text-white capitalize">{risk.reviewFrequency}</p>
+              <h3 className="text-sm font-medium text-surface-600 mb-2">Review Frequency</h3>
+              <p className="text-surface-900 capitalize">{risk.reviewFrequency}</p>
             </div>
             {risk.lastReviewedAt && (
               <div>
-                <h3 className="text-sm font-medium text-surface-400 mb-2">Last Reviewed</h3>
-                <p className="text-white">
+                <h3 className="text-sm font-medium text-surface-600 mb-2">Last Reviewed</h3>
+                <p className="text-surface-900">
                   {new Date(risk.lastReviewedAt).toLocaleDateString()}
                 </p>
               </div>
             )}
             {risk.nextReviewDue && (
               <div>
-                <h3 className="text-sm font-medium text-surface-400 mb-2">Next Review Due</h3>
-                <p className="text-white">
+                <h3 className="text-sm font-medium text-surface-600 mb-2">Next Review Due</h3>
+                <p className="text-surface-900">
                   {new Date(risk.nextReviewDue).toLocaleDateString()}
                 </p>
               </div>
@@ -430,12 +416,12 @@ export default function RiskDetail() {
           {/* Tags */}
           {risk.tags.length > 0 && (
             <div>
-              <h3 className="text-sm font-medium text-surface-400 mb-2">Tags</h3>
+              <h3 className="text-sm font-medium text-surface-600 mb-2">Tags</h3>
               <div className="flex flex-wrap gap-2">
                 {risk.tags.map(tag => (
                   <span
                     key={tag}
-                    className="px-2 py-1 bg-brand-500/20 text-brand-400 rounded text-sm"
+                    className="px-2 py-1 bg-brand-500/20 text-brand-700 rounded text-sm"
                   >
                     {tag}
                   </span>
@@ -446,21 +432,21 @@ export default function RiskDetail() {
 
           {/* Treatment Info */}
           {risk.treatmentPlan && (
-            <div className="pt-4 border-t border-surface-700">
-              <h3 className="text-sm font-medium text-surface-400 mb-2">Treatment Plan</h3>
+            <div className="pt-4 border-t border-surface-300">
+              <h3 className="text-sm font-medium text-surface-600 mb-2">Treatment Plan</h3>
               <div className="flex items-center gap-4">
-                <span className="px-3 py-1 bg-brand-500/20 text-brand-400 rounded capitalize">
+                <span className="px-3 py-1 bg-brand-500/20 text-brand-700 rounded capitalize">
                   {risk.treatmentPlan}
                 </span>
                 {risk.treatmentDueDate && (
-                  <span className="text-surface-400 text-sm flex items-center gap-1">
+                  <span className="text-surface-600 text-sm flex items-center gap-1">
                     <Clock className="w-4 h-4" />
                     Due: {new Date(risk.treatmentDueDate).toLocaleDateString()}
                   </span>
                 )}
               </div>
               {risk.treatmentNotes && (
-                <p className="text-surface-300 mt-2">{risk.treatmentNotes}</p>
+                <p className="text-surface-700 mt-2">{risk.treatmentNotes}</p>
               )}
             </div>
           )}
@@ -469,31 +455,31 @@ export default function RiskDetail() {
         {/* Risk Scoring */}
         <div className="space-y-4">
           {/* Qualitative */}
-          <div className="bg-surface-800 rounded-xl border border-surface-700 p-6">
-            <h3 className="text-lg font-medium text-white mb-4">Risk Assessment</h3>
+          <div className="bg-white rounded-xl border border-surface-200 p-6">
+            <h3 className="text-lg font-medium text-surface-900 mb-4">Risk Assessment</h3>
 
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <span className="text-surface-400">Likelihood</span>
-                <span className="text-white capitalize">{risk.likelihood.replace('_', ' ')}</span>
+                <span className="text-surface-600">Likelihood</span>
+                <span className="text-surface-900 capitalize">{risk.likelihood.replace('_', ' ')}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-surface-400">Impact</span>
-                <span className="text-white capitalize">{risk.impact}</span>
+                <span className="text-surface-600">Impact</span>
+                <span className="text-surface-900 capitalize">{risk.impact}</span>
               </div>
-              <div className="flex justify-between items-center pt-2 border-t border-surface-700">
-                <span className="text-surface-400">Inherent Risk</span>
+              <div className="flex justify-between items-center pt-2 border-t border-surface-300">
+                <span className="text-surface-600">Inherent Risk</span>
                 <div className="flex items-center gap-2">
                   <span className={`w-3 h-3 rounded-full ${getRiskLevelColor(risk.inherentRisk)}`} />
-                  <span className="text-white capitalize font-medium">{risk.inherentRisk}</span>
+                  <span className="text-surface-900 capitalize font-medium">{risk.inherentRisk}</span>
                 </div>
               </div>
               {risk.residualRisk && (
                 <div className="flex justify-between items-center">
-                  <span className="text-surface-400">Residual Risk</span>
+                  <span className="text-surface-600">Residual Risk</span>
                   <div className="flex items-center gap-2">
                     <span className={`w-3 h-3 rounded-full ${getRiskLevelColor(risk.residualRisk)}`} />
-                    <span className="text-white capitalize font-medium">{risk.residualRisk}</span>
+                    <span className="text-surface-900 capitalize font-medium">{risk.residualRisk}</span>
                   </div>
                 </div>
               )}
@@ -502,34 +488,34 @@ export default function RiskDetail() {
 
           {/* Quantitative */}
           {(risk.likelihoodPct !== undefined || risk.impactValue !== undefined) && (
-            <div className="bg-surface-800 rounded-xl border border-surface-700 p-6">
-              <h3 className="text-lg font-medium text-white mb-4">Quantitative Analysis</h3>
+            <div className="bg-white rounded-xl border border-surface-200 p-6">
+              <h3 className="text-lg font-medium text-surface-900 mb-4">Quantitative Analysis</h3>
               <div className="space-y-4">
                 {risk.likelihoodPct !== undefined && (
                   <div className="flex justify-between items-center">
-                    <span className="text-surface-400 flex items-center gap-2">
+                    <span className="text-surface-600 flex items-center gap-2">
                       <Percent className="w-4 h-4" />
                       Likelihood
                     </span>
-                    <span className="text-white">{risk.likelihoodPct}%</span>
+                    <span className="text-surface-900">{risk.likelihoodPct}%</span>
                   </div>
                 )}
                 {risk.impactValue !== undefined && (
                   <div className="flex justify-between items-center">
-                    <span className="text-surface-400 flex items-center gap-2">
+                    <span className="text-surface-600 flex items-center gap-2">
                       <DollarSign className="w-4 h-4" />
                       Impact Value
                     </span>
-                    <span className="text-white">{formatCurrency(risk.impactValue)}</span>
+                    <span className="text-surface-900">{formatCurrency(risk.impactValue)}</span>
                   </div>
                 )}
                 {risk.annualLossExp !== undefined && (
-                  <div className="flex justify-between items-center pt-2 border-t border-surface-700">
-                    <span className="text-surface-400 flex items-center gap-2">
+                  <div className="flex justify-between items-center pt-2 border-t border-surface-300">
+                    <span className="text-surface-600 flex items-center gap-2">
                       <TrendingUp className="w-4 h-4" />
                       Annual Loss Exp.
                     </span>
-                    <span className="text-white font-medium">{formatCurrency(risk.annualLossExp)}</span>
+                    <span className="text-surface-900 font-medium">{formatCurrency(risk.annualLossExp)}</span>
                   </div>
                 )}
               </div>
@@ -537,29 +523,29 @@ export default function RiskDetail() {
           )}
 
           {/* Quick Stats */}
-          <div className="bg-surface-800 rounded-xl border border-surface-700 p-6">
-            <h3 className="text-lg font-medium text-white mb-4">Linked Items</h3>
+          <div className="bg-white rounded-xl border border-surface-200 p-6">
+            <h3 className="text-lg font-medium text-surface-900 mb-4">Linked Items</h3>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-surface-400 flex items-center gap-2">
+                <span className="text-surface-600 flex items-center gap-2">
                   <Server className="w-4 h-4" />
                   Assets
                 </span>
-                <span className="text-white">{risk.assetCount}</span>
+                <span className="text-surface-900">{risk.assetCount}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-surface-400 flex items-center gap-2">
+                <span className="text-surface-600 flex items-center gap-2">
                   <Shield className="w-4 h-4" />
                   Controls
                 </span>
-                <span className="text-white">{risk.controlCount}</span>
+                <span className="text-surface-900">{risk.controlCount}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-surface-400 flex items-center gap-2">
+                <span className="text-surface-600 flex items-center gap-2">
                   <Target className="w-4 h-4" />
                   Scenarios
                 </span>
-                <span className="text-white">{risk.scenarioCount}</span>
+                <span className="text-surface-900">{risk.scenarioCount}</span>
               </div>
             </div>
           </div>
@@ -567,9 +553,9 @@ export default function RiskDetail() {
       </div>
 
       {/* Tabs */}
-      <div className="bg-surface-800 rounded-xl border border-surface-700">
+      <div className="bg-white rounded-xl border border-surface-200">
         {/* Tab Headers */}
-        <div className="flex border-b border-surface-700">
+        <div className="flex border-b border-surface-300">
           {[
             { key: 'controls', label: 'Controls', icon: Shield, count: risk.controls.length },
             { key: 'assets', label: 'Assets', icon: Server, count: risk.assets.length },
@@ -581,13 +567,13 @@ export default function RiskDetail() {
               onClick={() => setActiveTab(tab.key as any)}
               className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${
                 activeTab === tab.key
-                  ? 'border-brand-500 text-brand-400'
-                  : 'border-transparent text-surface-400 hover:text-surface-300'
+                  ? 'border-brand-500 text-brand-700'
+                  : 'border-transparent text-surface-600 hover:text-surface-700'
               }`}
             >
               <tab.icon className="w-4 h-4" />
               {tab.label}
-              <span className="px-2 py-0.5 bg-surface-700 rounded text-xs">{tab.count}</span>
+              <span className="px-2 py-0.5 bg-surface-200 rounded text-xs">{tab.count}</span>
             </button>
           ))}
         </div>
@@ -598,7 +584,7 @@ export default function RiskDetail() {
           {activeTab === 'controls' && (
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <p className="text-surface-400">Controls that mitigate this risk</p>
+                <p className="text-surface-600">Controls that mitigate this risk</p>
                 <button
                   onClick={() => setShowLinkControlModal(true)}
                   className="flex items-center gap-2 px-3 py-1.5 bg-brand-500 text-white rounded-lg hover:bg-brand-600 text-sm"
@@ -616,12 +602,12 @@ export default function RiskDetail() {
                   {risk.controls.map(control => (
                     <div
                       key={control.id}
-                      className="flex items-center justify-between p-4 bg-surface-700 rounded-lg"
+                      className="flex items-center justify-between p-4 bg-surface-200 rounded-lg"
                     >
                       <div className="flex items-center gap-4">
                         <div>
-                          <span className="text-brand-400 font-mono text-sm">{control.controlId}</span>
-                          <p className="text-white">{control.title}</p>
+                          <span className="text-brand-700 font-mono text-sm">{control.controlId}</span>
+                          <p className="text-surface-900">{control.title}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-4">
@@ -634,7 +620,7 @@ export default function RiskDetail() {
                         </span>
                         <button
                           onClick={() => unlinkControlMutation.mutate(control.id)}
-                          className="p-1 hover:bg-surface-600 rounded text-surface-400 hover:text-red-400"
+                          className="p-1 hover:bg-surface-300 rounded text-surface-600 hover:text-red-600"
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -650,7 +636,7 @@ export default function RiskDetail() {
           {activeTab === 'assets' && (
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <p className="text-surface-400">Assets affected by this risk</p>
+                <p className="text-surface-600">Assets affected by this risk</p>
                 <button
                   onClick={() => setShowLinkAssetModal(true)}
                   className="flex items-center gap-2 px-3 py-1.5 bg-brand-500 text-white rounded-lg hover:bg-brand-600 text-sm"
@@ -668,20 +654,20 @@ export default function RiskDetail() {
                   {risk.assets.map(asset => (
                     <div
                       key={asset.id}
-                      className="flex items-center justify-between p-4 bg-surface-700 rounded-lg"
+                      className="flex items-center justify-between p-4 bg-surface-200 rounded-lg"
                     >
                       <div className="flex items-center gap-4">
-                        <Server className="w-8 h-8 text-surface-400" />
+                        <Server className="w-8 h-8 text-surface-600" />
                         <div>
-                          <p className="text-white">{asset.name}</p>
-                          <p className="text-sm text-surface-400">
+                          <p className="text-surface-900">{asset.name}</p>
+                          <p className="text-sm text-surface-600">
                             {asset.type} • {asset.criticality} criticality • {asset.source}
                           </p>
                         </div>
                       </div>
                       <button
                         onClick={() => unlinkAssetMutation.mutate(asset.id)}
-                        className="p-1 hover:bg-surface-600 rounded text-surface-400 hover:text-red-400"
+                        className="p-1 hover:bg-surface-300 rounded text-surface-600 hover:text-red-600"
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -696,7 +682,7 @@ export default function RiskDetail() {
           {activeTab === 'scenarios' && (
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <p className="text-surface-400">Threat scenarios and attack vectors</p>
+                <p className="text-surface-600">Threat scenarios and attack vectors</p>
                 <button
                   onClick={() => setShowScenarioModal(true)}
                   className="flex items-center gap-2 px-3 py-1.5 bg-brand-500 text-white rounded-lg hover:bg-brand-600 text-sm"
@@ -712,33 +698,33 @@ export default function RiskDetail() {
               ) : (
                 <div className="space-y-3">
                   {risk.scenarios.map(scenario => (
-                    <div key={scenario.id} className="p-4 bg-surface-700 rounded-lg">
+                    <div key={scenario.id} className="p-4 bg-surface-200 rounded-lg">
                       <div className="flex justify-between items-start">
                         <div>
-                          <h4 className="text-white font-medium">{scenario.title}</h4>
-                          <p className="text-surface-400 mt-1">{scenario.description}</p>
+                          <h4 className="text-surface-900 font-medium">{scenario.title}</h4>
+                          <p className="text-surface-600 mt-1">{scenario.description}</p>
                           <div className="flex gap-4 mt-2 text-sm">
                             {scenario.threatActor && (
-                              <span className="text-surface-400">
-                                Threat Actor: <span className="text-surface-300">{scenario.threatActor}</span>
+                              <span className="text-surface-600">
+                                Threat Actor: <span className="text-surface-700">{scenario.threatActor}</span>
                               </span>
                             )}
                             {scenario.attackVector && (
-                              <span className="text-surface-400">
-                                Vector: <span className="text-surface-300">{scenario.attackVector}</span>
+                              <span className="text-surface-600">
+                                Vector: <span className="text-surface-700">{scenario.attackVector}</span>
                               </span>
                             )}
-                            <span className="text-surface-400">
-                              L: <span className="text-surface-300 capitalize">{scenario.likelihood.replace('_', ' ')}</span>
+                            <span className="text-surface-600">
+                              L: <span className="text-surface-700 capitalize">{scenario.likelihood.replace('_', ' ')}</span>
                             </span>
-                            <span className="text-surface-400">
-                              I: <span className="text-surface-300 capitalize">{scenario.impact}</span>
+                            <span className="text-surface-600">
+                              I: <span className="text-surface-700 capitalize">{scenario.impact}</span>
                             </span>
                           </div>
                         </div>
                         <button
                           onClick={() => deleteScenarioMutation.mutate(scenario.id)}
-                          className="p-1 hover:bg-surface-600 rounded text-surface-400 hover:text-red-400"
+                          className="p-1 hover:bg-surface-300 rounded text-surface-600 hover:text-red-600"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -753,7 +739,7 @@ export default function RiskDetail() {
           {/* History Tab */}
           {activeTab === 'history' && (
             <div className="space-y-4">
-              <p className="text-surface-400">Activity history for this risk</p>
+              <p className="text-surface-600">Activity history for this risk</p>
               {risk.history.length === 0 ? (
                 <div className="text-center py-8 text-surface-500">No history recorded</div>
               ) : (
@@ -761,17 +747,17 @@ export default function RiskDetail() {
                   {risk.history.map(entry => (
                     <div
                       key={entry.id}
-                      className="flex items-start gap-4 p-4 bg-surface-700 rounded-lg"
+                      className="flex items-start gap-4 p-4 bg-surface-200 rounded-lg"
                     >
-                      <div className="p-2 bg-surface-600 rounded-lg">
-                        <History className="w-4 h-4 text-surface-400" />
+                      <div className="p-2 bg-surface-300 rounded-lg">
+                        <History className="w-4 h-4 text-surface-600" />
                       </div>
                       <div className="flex-1">
-                        <p className="text-white capitalize">
+                        <p className="text-surface-900 capitalize">
                           {entry.action.replace('_', ' ')}
                         </p>
                         {entry.notes && (
-                          <p className="text-surface-400 text-sm mt-1">{entry.notes}</p>
+                          <p className="text-surface-600 text-sm mt-1">{entry.notes}</p>
                         )}
                         <p className="text-surface-500 text-sm mt-2">
                           {new Date(entry.changedAt).toLocaleString()}
@@ -871,74 +857,72 @@ function LinkControlModal({
   );
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-lg">
-        <div className="p-4 border-b border-surface-700 flex justify-between items-center">
-          <h3 className="text-lg font-medium text-white">Link Control</h3>
-          <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
-            <X className="w-5 h-5 text-surface-400" />
-          </button>
-        </div>
-        <div className="p-4 space-y-4">
-          <input
-            type="text"
-            placeholder="Search controls..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-          />
-          <div className="max-h-60 overflow-y-auto space-y-2">
-            {availableControls.map(control => (
-              <label
-                key={control.id}
-                className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer ${
-                  selectedControlId === control.id ? 'bg-brand-500/20' : 'bg-surface-700 hover:bg-surface-600'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="control"
-                  value={control.id}
-                  checked={selectedControlId === control.id}
-                  onChange={e => setSelectedControlId(e.target.value)}
-                  className="sr-only"
-                />
-                <div>
-                  <span className="text-brand-400 font-mono text-sm">{control.controlId}</span>
-                  <p className="text-white">{control.title}</p>
-                </div>
-              </label>
-            ))}
-          </div>
-          {selectedControlId && (
-            <div>
-              <label className="block text-sm text-surface-400 mb-2">Control Effectiveness</label>
-              <select
-                value={effectiveness}
-                onChange={e => setEffectiveness(e.target.value)}
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-              >
-                <option value="none">None</option>
-                <option value="partial">Partial</option>
-                <option value="full">Full</option>
-              </select>
-            </div>
-          )}
-        </div>
-        <div className="p-4 border-t border-surface-700 flex justify-end gap-3">
-          <button onClick={onClose} className="px-4 py-2 bg-surface-700 text-surface-300 rounded-lg">
+    <Dialog
+      open
+      onClose={onClose}
+      title="Link Control"
+      size="md"
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="primary"
             onClick={() => selectedControlId && onLink(selectedControlId, effectiveness)}
             disabled={!selectedControlId || isPending}
-            className="px-4 py-2 bg-brand-500 text-white rounded-lg disabled:opacity-50"
           >
             {isPending ? 'Linking...' : 'Link Control'}
-          </button>
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <Input
+          type="text"
+          placeholder="Search controls..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
+        <div className="max-h-60 overflow-y-auto space-y-2">
+          {availableControls.map(control => (
+            <label
+              key={control.id}
+              className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer ${
+                selectedControlId === control.id ? 'bg-brand-500/20' : 'bg-surface-100 hover:bg-surface-200'
+              }`}
+            >
+              <input
+                type="radio"
+                name="control"
+                value={control.id}
+                checked={selectedControlId === control.id}
+                onChange={e => setSelectedControlId(e.target.value)}
+                className="sr-only"
+              />
+              <div>
+                <span className="text-brand-700 font-mono text-sm">{control.controlId}</span>
+                <p className="text-surface-900">{control.title}</p>
+              </div>
+            </label>
+          ))}
         </div>
+        {selectedControlId && (
+          <div>
+            <label className="block text-sm text-surface-600 mb-2">Control Effectiveness</label>
+            <Select
+              value={effectiveness}
+              onChange={setEffectiveness}
+              options={[
+                { value: 'none', label: 'None' },
+                { value: 'partial', label: 'Partial' },
+                { value: 'full', label: 'Full' },
+              ]}
+            />
+          </div>
+        )}
       </div>
-    </div>
+    </Dialog>
   );
 }
 
@@ -971,62 +955,60 @@ function LinkAssetModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-lg">
-        <div className="p-4 border-b border-surface-700 flex justify-between items-center">
-          <h3 className="text-lg font-medium text-white">Link Assets</h3>
-          <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
-            <X className="w-5 h-5 text-surface-400" />
-          </button>
-        </div>
-        <div className="p-4 space-y-4">
-          <input
-            type="text"
-            placeholder="Search assets..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-          />
-          <div className="max-h-60 overflow-y-auto space-y-2">
-            {availableAssets.length === 0 ? (
-              <p className="text-center text-surface-500 py-4">No assets available</p>
-            ) : (
-              availableAssets.map(asset => (
-                <label
-                  key={asset.id}
-                  className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer ${
-                    selectedAssetIds.includes(asset.id) ? 'bg-brand-500/20' : 'bg-surface-700 hover:bg-surface-600'
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedAssetIds.includes(asset.id)}
-                    onChange={() => toggleAsset(asset.id)}
-                    className="rounded border-surface-500"
-                  />
-                  <div>
-                    <p className="text-white">{asset.name}</p>
-                    <p className="text-sm text-surface-400">{asset.type} • {asset.source}</p>
-                  </div>
-                </label>
-              ))
-            )}
-          </div>
-        </div>
-        <div className="p-4 border-t border-surface-700 flex justify-end gap-3">
-          <button onClick={onClose} className="px-4 py-2 bg-surface-700 text-surface-300 rounded-lg">
+    <Dialog
+      open
+      onClose={onClose}
+      title="Link Assets"
+      size="md"
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="primary"
             onClick={() => onLink(selectedAssetIds)}
             disabled={selectedAssetIds.length === 0 || isPending}
-            className="px-4 py-2 bg-brand-500 text-white rounded-lg disabled:opacity-50"
           >
             {isPending ? 'Linking...' : `Link ${selectedAssetIds.length} Asset(s)`}
-          </button>
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <Input
+          type="text"
+          placeholder="Search assets..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
+        <div className="max-h-60 overflow-y-auto space-y-2">
+          {availableAssets.length === 0 ? (
+            <p className="text-center text-surface-500 py-4">No assets available</p>
+          ) : (
+            availableAssets.map(asset => (
+              <label
+                key={asset.id}
+                className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer ${
+                  selectedAssetIds.includes(asset.id) ? 'bg-brand-500/20' : 'bg-surface-100 hover:bg-surface-200'
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedAssetIds.includes(asset.id)}
+                  onChange={() => toggleAsset(asset.id)}
+                  className="rounded border-surface-500"
+                />
+                <div>
+                  <p className="text-surface-900">{asset.name}</p>
+                  <p className="text-sm text-surface-600">{asset.type} • {asset.source}</p>
+                </div>
+              </label>
+            ))
+          )}
         </div>
       </div>
-    </div>
+    </Dialog>
   );
 }
 
@@ -1050,60 +1032,18 @@ function TreatmentModal({
   const [dueDate, setDueDate] = useState(currentDueDate ? currentDueDate.split('T')[0] : '');
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-lg">
-        <div className="p-4 border-b border-surface-700 flex justify-between items-center">
-          <h3 className="text-lg font-medium text-white">Treatment Plan</h3>
-          <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
-            <X className="w-5 h-5 text-surface-400" />
-          </button>
-        </div>
-        <div className="p-4 space-y-4">
-          <div>
-            <label className="block text-sm text-surface-400 mb-2">Treatment Strategy</label>
-            <div className="grid grid-cols-2 gap-2">
-              {TREATMENT_PLANS.map(tp => (
-                <button
-                  key={tp.value}
-                  type="button"
-                  onClick={() => setPlan(tp.value)}
-                  className={`p-3 rounded-lg text-left ${
-                    plan === tp.value
-                      ? 'bg-brand-500/20 border border-brand-500'
-                      : 'bg-surface-700 border border-surface-600 hover:bg-surface-600'
-                  }`}
-                >
-                  <p className="text-white font-medium">{tp.label}</p>
-                  <p className="text-surface-400 text-sm">{tp.description}</p>
-                </button>
-              ))}
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm text-surface-400 mb-2">Due Date</label>
-            <input
-              type="date"
-              value={dueDate}
-              onChange={e => setDueDate(e.target.value)}
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-            />
-          </div>
-          <div>
-            <label className="block text-sm text-surface-400 mb-2">Notes</label>
-            <textarea
-              value={notes}
-              onChange={e => setNotes(e.target.value)}
-              rows={3}
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-              placeholder="Describe the treatment approach..."
-            />
-          </div>
-        </div>
-        <div className="p-4 border-t border-surface-700 flex justify-end gap-3">
-          <button onClick={onClose} className="px-4 py-2 bg-surface-700 text-surface-300 rounded-lg">
+    <Dialog
+      open
+      onClose={onClose}
+      title="Treatment Plan"
+      size="md"
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="primary"
             onClick={() =>
               onSave({
                 treatmentPlan: plan,
@@ -1112,13 +1052,52 @@ function TreatmentModal({
               })
             }
             disabled={isPending}
-            className="px-4 py-2 bg-brand-500 text-white rounded-lg disabled:opacity-50"
           >
             {isPending ? 'Saving...' : 'Save Treatment'}
-          </button>
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm text-surface-600 mb-2">Treatment Strategy</label>
+          <div className="grid grid-cols-2 gap-2">
+            {TREATMENT_PLANS.map(tp => (
+              <button
+                key={tp.value}
+                type="button"
+                onClick={() => setPlan(tp.value)}
+                className={`p-3 rounded-lg text-left ${
+                  plan === tp.value
+                    ? 'bg-brand-500/20 border border-brand-500'
+                    : 'bg-surface-100 border border-surface-300 hover:bg-surface-200'
+                }`}
+              >
+                <p className="text-surface-900 font-medium">{tp.label}</p>
+                <p className="text-surface-600 text-sm">{tp.description}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm text-surface-600 mb-2">Due Date</label>
+          <Input
+            type="date"
+            value={dueDate}
+            onChange={e => setDueDate(e.target.value)}
+          />
+        </div>
+        <div>
+          <label className="block text-sm text-surface-600 mb-2">Notes</label>
+          <Textarea
+            value={notes}
+            onChange={e => setNotes(e.target.value)}
+            rows={3}
+            placeholder="Describe the treatment approach..."
+          />
         </div>
       </div>
-    </div>
+    </Dialog>
   );
 }
 
@@ -1141,113 +1120,101 @@ function ScenarioModal({
     notes: '',
   });
 
+  const formId = 'scenario-modal-form';
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-lg">
-        <div className="p-4 border-b border-surface-700 flex justify-between items-center">
-          <h3 className="text-lg font-medium text-white">Add Scenario</h3>
-          <button onClick={onClose} className="p-1 hover:bg-surface-700 rounded">
-            <X className="w-5 h-5 text-surface-400" />
-          </button>
+    <Dialog
+      open
+      onClose={onClose}
+      title="Add Scenario"
+      size="md"
+      footer={
+        <>
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            form={formId}
+            variant="primary"
+            disabled={isPending}
+          >
+            {isPending ? 'Creating...' : 'Create Scenario'}
+          </Button>
+        </>
+      }
+    >
+      <form
+        id={formId}
+        onSubmit={e => {
+          e.preventDefault();
+          onCreate(scenario);
+        }}
+        className="space-y-4"
+      >
+        <div>
+          <label className="block text-sm text-surface-600 mb-2">Title *</label>
+          <Input
+            type="text"
+            value={scenario.title}
+            onChange={e => setScenario(prev => ({ ...prev, title: e.target.value }))}
+            required
+            placeholder="e.g., Phishing attack on employees"
+          />
         </div>
-        <form
-          onSubmit={e => {
-            e.preventDefault();
-            onCreate(scenario);
-          }}
-          className="p-4 space-y-4"
-        >
+        <div>
+          <label className="block text-sm text-surface-600 mb-2">Description *</label>
+          <Textarea
+            value={scenario.description}
+            onChange={e => setScenario(prev => ({ ...prev, description: e.target.value }))}
+            required
+            rows={2}
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm text-surface-400 mb-2">Title *</label>
-            <input
+            <label className="block text-sm text-surface-600 mb-2">Threat Actor</label>
+            <Select
+              value={scenario.threatActor}
+              onChange={v => setScenario(prev => ({ ...prev, threatActor: v }))}
+              placeholder="Select..."
+              options={[
+                { value: '', label: 'Select...' },
+                { value: 'insider', label: 'Insider' },
+                { value: 'external', label: 'External' },
+                { value: 'natural', label: 'Natural Event' },
+              ]}
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-surface-600 mb-2">Attack Vector</label>
+            <Input
               type="text"
-              value={scenario.title}
-              onChange={e => setScenario(prev => ({ ...prev, title: e.target.value }))}
-              required
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-              placeholder="e.g., Phishing attack on employees"
+              value={scenario.attackVector}
+              onChange={e => setScenario(prev => ({ ...prev, attackVector: e.target.value }))}
+              placeholder="e.g., Email, Network"
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm text-surface-600 mb-2">Likelihood</label>
+            <Select
+              value={scenario.likelihood}
+              onChange={v => setScenario(prev => ({ ...prev, likelihood: v }))}
+              options={LIKELIHOODS.map(l => ({ value: l, label: l.replace('_', ' ') }))}
             />
           </div>
           <div>
-            <label className="block text-sm text-surface-400 mb-2">Description *</label>
-            <textarea
-              value={scenario.description}
-              onChange={e => setScenario(prev => ({ ...prev, description: e.target.value }))}
-              required
-              rows={2}
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
+            <label className="block text-sm text-surface-600 mb-2">Impact</label>
+            <Select
+              value={scenario.impact}
+              onChange={v => setScenario(prev => ({ ...prev, impact: v }))}
+              options={IMPACTS.map(i => ({ value: i, label: i }))}
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm text-surface-400 mb-2">Threat Actor</label>
-              <select
-                value={scenario.threatActor}
-                onChange={e => setScenario(prev => ({ ...prev, threatActor: e.target.value }))}
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-              >
-                <option value="">Select...</option>
-                <option value="insider">Insider</option>
-                <option value="external">External</option>
-                <option value="natural">Natural Event</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm text-surface-400 mb-2">Attack Vector</label>
-              <input
-                type="text"
-                value={scenario.attackVector}
-                onChange={e => setScenario(prev => ({ ...prev, attackVector: e.target.value }))}
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-                placeholder="e.g., Email, Network"
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm text-surface-400 mb-2">Likelihood</label>
-              <select
-                value={scenario.likelihood}
-                onChange={e => setScenario(prev => ({ ...prev, likelihood: e.target.value }))}
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-              >
-                {LIKELIHOODS.map(l => (
-                  <option key={l} value={l}>
-                    {l.replace('_', ' ')}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm text-surface-400 mb-2">Impact</label>
-              <select
-                value={scenario.impact}
-                onChange={e => setScenario(prev => ({ ...prev, impact: e.target.value }))}
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white"
-              >
-                {IMPACTS.map(i => (
-                  <option key={i} value={i}>
-                    {i}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <div className="flex justify-end gap-3 pt-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 bg-surface-700 text-surface-300 rounded-lg">
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isPending}
-              className="px-4 py-2 bg-brand-500 text-white rounded-lg disabled:opacity-50"
-            >
-              {isPending ? 'Creating...' : 'Create Scenario'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        </div>
+      </form>
+    </Dialog>
   );
 }
 
@@ -1317,167 +1284,133 @@ function EditRiskModal({
     }));
   };
 
+  const formId = 'edit-risk-modal-form';
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-surface-800 rounded-xl border border-surface-700 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-surface-700 flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-white">Edit Risk</h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-surface-700 rounded-lg text-surface-400"
-          >
-            <X className="w-5 h-5" />
-          </button>
+    <Dialog
+      open
+      onClose={onClose}
+      title="Edit Risk"
+      size="lg"
+      footer={
+        <>
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" form={formId} variant="primary" disabled={isPending}>
+            {isPending ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </>
+      }
+    >
+      <form
+        id={formId}
+        onSubmit={e => {
+          e.preventDefault();
+          onSave(formData);
+        }}
+        className="space-y-4"
+      >
+        {/* Title */}
+        <div>
+          <label className="block text-sm font-medium text-surface-700 mb-2">
+            Title *
+          </label>
+          <Input
+            type="text"
+            value={formData.title}
+            onChange={e => setFormData(prev => ({ ...prev, title: e.target.value }))}
+            required
+          />
         </div>
 
-        <form
-          onSubmit={e => {
-            e.preventDefault();
-            onSave(formData);
-          }}
-          className="p-6 space-y-4"
-        >
-          {/* Title */}
+        {/* Description */}
+        <div>
+          <label className="block text-sm font-medium text-surface-700 mb-2">
+            Description *
+          </label>
+          <Textarea
+            value={formData.description}
+            onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
+            required
+            rows={4}
+          />
+        </div>
+
+        {/* Category and Source */}
+        <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-surface-300 mb-2">
-              Title *
+            <label className="block text-sm font-medium text-surface-700 mb-2">
+              Category
             </label>
-            <input
-              type="text"
-              value={formData.title}
-              onChange={e => setFormData(prev => ({ ...prev, title: e.target.value }))}
-              required
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white placeholder-surface-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            <Select
+              value={formData.category}
+              onChange={v => setFormData(prev => ({ ...prev, category: v }))}
+              options={CATEGORIES}
             />
           </div>
-
-          {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-surface-300 mb-2">
-              Description *
+            <label className="block text-sm font-medium text-surface-700 mb-2">
+              Source
             </label>
-            <textarea
-              value={formData.description}
-              onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              required
-              rows={4}
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white placeholder-surface-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            <Select
+              value={formData.source}
+              onChange={v => setFormData(prev => ({ ...prev, source: v }))}
+              options={SOURCES}
             />
           </div>
+        </div>
 
-          {/* Category and Source */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-surface-300 mb-2">
-                Category
-              </label>
-              <select
-                value={formData.category}
-                onChange={e => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+        {/* Initial Severity */}
+        <div>
+          <label className="block text-sm font-medium text-surface-700 mb-2">
+            Initial Severity
+          </label>
+          <Select
+            value={formData.initialSeverity}
+            onChange={v => setFormData(prev => ({ ...prev, initialSeverity: v }))}
+            options={SEVERITIES}
+          />
+        </div>
+
+        {/* Tags */}
+        <div>
+          <label className="block text-sm font-medium text-surface-700 mb-2">Tags</label>
+          <div className="flex gap-2 mb-2 flex-wrap">
+            {formData.tags.map(tag => (
+              <span
+                key={tag}
+                className="px-2 py-1 bg-brand-500/20 text-brand-700 rounded text-sm flex items-center gap-1"
               >
-                {CATEGORIES.map(cat => (
-                  <option key={cat.value} value={cat.value}>
-                    {cat.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-surface-300 mb-2">
-                Source
-              </label>
-              <select
-                value={formData.source}
-                onChange={e => setFormData(prev => ({ ...prev, source: e.target.value }))}
-                className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-              >
-                {SOURCES.map(src => (
-                  <option key={src.value} value={src.value}>
-                    {src.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Initial Severity */}
-          <div>
-            <label className="block text-sm font-medium text-surface-300 mb-2">
-              Initial Severity
-            </label>
-            <select
-              value={formData.initialSeverity}
-              onChange={e => setFormData(prev => ({ ...prev, initialSeverity: e.target.value }))}
-              className="w-full px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-            >
-              {SEVERITIES.map(sev => (
-                <option key={sev.value} value={sev.value}>
-                  {sev.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Tags */}
-          <div>
-            <label className="block text-sm font-medium text-surface-300 mb-2">Tags</label>
-            <div className="flex gap-2 mb-2 flex-wrap">
-              {formData.tags.map(tag => (
-                <span
-                  key={tag}
-                  className="px-2 py-1 bg-brand-500/20 text-brand-400 rounded text-sm flex items-center gap-1"
+                {tag}
+                <button
+                  type="button"
+                  onClick={() => handleRemoveTag(tag)}
+                  className="hover:text-brand-800"
                 >
-                  {tag}
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveTag(tag)}
-                    className="hover:text-brand-300"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={tagInput}
-                onChange={e => setTagInput(e.target.value)}
-                onKeyPress={e => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
-                className="flex-1 px-4 py-2 bg-surface-700 border border-surface-600 rounded-lg text-white placeholder-surface-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                placeholder="Add tag..."
-              />
-              <button
-                type="button"
-                onClick={handleAddTag}
-                className="px-4 py-2 bg-surface-700 text-surface-300 rounded-lg hover:bg-surface-600"
-              >
-                Add
-              </button>
-            </div>
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            ))}
           </div>
-
-          {/* Actions */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-surface-700">
-            <button
+          <div className="flex gap-2">
+            <Input
+              type="text"
+              value={tagInput}
+              onChange={e => setTagInput(e.target.value)}
+              onKeyPress={e => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
+              placeholder="Add tag..."
+            />
+            <Button
               type="button"
-              onClick={onClose}
-              className="px-4 py-2 bg-surface-700 text-surface-300 rounded-lg hover:bg-surface-600"
+              variant="secondary"
+              onClick={handleAddTag}
             >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isPending}
-              className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 disabled:opacity-50"
-            >
-              {isPending ? 'Saving...' : 'Save Changes'}
-            </button>
+              Add
+            </Button>
           </div>
-        </form>
-      </div>
-    </div>
+        </div>
+      </form>
+    </Dialog>
   );
 }
 
