@@ -311,20 +311,21 @@ jobs:
             -H 'x-user-id: 8f88a42b-e799-455c-b68a-308d7d2e9aa4' \
             -H 'x-org-id: 8924f0c1-7bb1-4be8-84ee-ad8725c712bf'
 
+      - name: Install Playwright test runner
+        run: npm install --no-save @playwright/test
+
       - name: Install Playwright + Chromium
         run: npx playwright install --with-deps chromium
-        working-directory: frontend
 
-      - name: Run tenant-isolation + RBAC + mapping-flow + mapping-history + mapping-suggest + mapping-derived-views + mapping-import-export specs
-        run: npx playwright test e2e/tenant-isolation.spec.ts e2e/rbac.spec.ts e2e/mapping-flow.spec.ts e2e/mapping-history.spec.ts e2e/mapping-suggest.spec.ts e2e/mapping-derived-views.spec.ts e2e/mapping-import-export.spec.ts --reporter=line
-        working-directory: frontend
+      - name: Run Playwright tenant + RBAC regression suite
+        run: npx playwright test --config=playwright.config.ts --reporter=line
 
       - name: Upload Playwright report
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: playwright-report
-          path: frontend/playwright-report
+          path: playwright-report
           retention-days: 7
 
       - name: Upload Playwright test-results
@@ -332,7 +333,7 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: playwright-test-results
-          path: frontend/test-results
+          path: test-results
           retention-days: 7
 
       - name: Tear down dev stack
