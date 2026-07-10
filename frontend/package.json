@@ -6,7 +6,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
+    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.18",
@@ -23,8 +23,7 @@
     "react-dom": "^18.2.0",
     "react-hot-toast": "^2.4.1",
     "react-router-dom": "^6.21.1",
-    "tailwind-merge": "^2.2.0",
-    "xlsx": "^0.18.5"
+    "tailwind-merge": "^2.2.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.46",
@@ -38,6 +37,7 @@
     "postcss": "^8.4.33",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.3.3",
-    "vite": "^5.0.11"
+    "vite": "^5.0.11",
+    "xlsx": "^0.18.5"
   }
 }
