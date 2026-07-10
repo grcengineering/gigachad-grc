@@ -5,6 +5,7 @@
  */
 
 import type { Connect } from 'vite';
+import { randomBytes } from 'node:crypto';
 
 export interface StubHandler {
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
@@ -20,7 +21,11 @@ export interface StubHandler {
 export const EMPTY_PAGED = { data: [], total: 0, totalPages: 0, page: 1, limit: 25 };
 
 export function stubId(): string {
-  return `stub-${Math.random().toString(36).slice(2, 10)}`;
+  return `stub-${randomBytes(4).toString('hex')}`;
+}
+
+export function stubToken(prefix: string, byteLength = 16): string {
+  return `${prefix}_${randomBytes(byteLength).toString('hex')}`;
 }
 
 export function now(): string {

@@ -134,34 +134,35 @@ export default function RiskHeatmap() {
   }, [selectedCell]);
 
   const handleCellKeyDown = (e: KeyboardEvent<HTMLButtonElement>, row: number, col: number) => {
-    let next: { row: number; col: number } | null = null;
+    let nextRow = row;
+    let nextCol = col;
     switch (e.key) {
       case 'ArrowRight':
-        next = { row, col: Math.min(COL_COUNT - 1, col + 1) };
+        nextCol = Math.min(COL_COUNT - 1, col + 1);
         break;
       case 'ArrowLeft':
-        next = { row, col: Math.max(0, col - 1) };
+        nextCol = Math.max(0, col - 1);
         break;
       case 'ArrowDown':
-        next = { row: Math.min(ROW_COUNT - 1, row + 1), col };
+        nextRow = Math.min(ROW_COUNT - 1, row + 1);
         break;
       case 'ArrowUp':
-        next = { row: Math.max(0, row - 1), col };
+        nextRow = Math.max(0, row - 1);
         break;
       case 'Home':
-        next = { row, col: 0 };
+        nextCol = 0;
         break;
       case 'End':
-        next = { row, col: COL_COUNT - 1 };
+        nextCol = COL_COUNT - 1;
         break;
       default:
         return;
     }
-    if (next) {
-      e.preventDefault();
-      setFocused(next);
-      cellRefs.current[next.row]?.[next.col]?.focus();
-    }
+
+    const next = { row: nextRow, col: nextCol };
+    e.preventDefault();
+    setFocused(next);
+    cellRefs.current[next.row]?.[next.col]?.focus();
   };
 
   return (

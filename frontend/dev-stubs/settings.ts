@@ -4,7 +4,7 @@
  * realistic empty shapes so the UI renders without errors.
  */
 
-import { type StubHandler, stubId, now } from './_helpers';
+import { type StubHandler, stubId, stubToken, now } from './_helpers';
 
 // ============================================================
 // /api/me
@@ -47,7 +47,7 @@ export const meHandlers: StubHandler[] = [
     body: (_p, payload) => ({
       id: stubId(),
       ...(payload as object),
-      secret: `gck_${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}`,
+      secret: stubToken('gck'),
       createdAt: now(),
       lastUsedAt: null,
     }),

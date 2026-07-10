@@ -9,7 +9,7 @@
  * Vite's proxy chain.
  */
 
-import { type StubHandler, now } from './_helpers';
+import { type StubHandler, stubToken, now } from './_helpers';
 
 export const auditDeepHandlers: StubHandler[] = [
   // Analytics
@@ -56,7 +56,7 @@ export const auditorPortalHandlers: StubHandler[] = [
       const body = (payload as { email?: string; token?: string }) || {};
       if (body.token) {
         return {
-          token: `aud_${Math.random().toString(36).slice(2, 14)}`,
+          token: stubToken('aud', 12),
           redirectTo: '/auditor-portal',
         };
       }
