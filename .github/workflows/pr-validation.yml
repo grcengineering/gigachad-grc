@@ -402,15 +402,32 @@ jobs:
 
       - name: Wait for stack health
         run: |
-          for i in $(seq 1 60); do
-            api_ok=$(curl -fs http://127.0.0.1:3001/health >/dev/null && echo y || echo n)
-            fe_ok=$(curl -fs http://127.0.0.1:3000/ >/dev/null && echo y || echo n)
-            if [ "$api_ok" = "y" ] && [ "$fe_ok" = "y" ]; then
-              echo "Stack ready (api+frontend)"; exit 0
+          set -e
+          deadline=$(( $(date +%s) + 300 ))
+          ready_api=0
+          ready_frontend=0
+          while [ "$(date +%s)" -lt "$deadline" ]; do
+            if [ "$ready_api" -eq 0 ] && \
+               curl -sf -o /dev/null http://127.0.0.1:3001/health; then
+              echo "api ready"
+              ready_api=1
             fi
-            echo "wait $i: api=$api_ok frontend=$fe_ok"; sleep 2
+            if [ "$ready_frontend" -eq 0 ] && \
+               curl -sf -o /dev/null http://127.0.0.1:3000/; then
+              echo "frontend ready"
+              ready_frontend=1
+            fi
+            if [ "$ready_api" -eq 1 ] && [ "$ready_frontend" -eq 1 ]; then
+              echo "Stack ready (api+frontend)"
+              exit 0
+            fi
+            echo "wait: api=$ready_api frontend=$ready_frontend"
+            sleep 5
           done
-          echo "Stack did not become healthy"; exit 1
+          echo "::error::Stack did not become healthy within 5 minutes"
+          docker compose ps
+          docker compose logs --tail=200
+          exit 1
 
       - name: Seed demo data
         run: |
